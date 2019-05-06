@@ -119,7 +119,7 @@ xaxis_bbox_bott, _ = ax.xaxis.get_ticklabel_extents(renderer)
 yaxis_label_bbox = ax.yaxis.label.get_window_extent(renderer)
 lm = margin_width/fwidth + (ax.bbox.x0 - yaxis_label_bbox.x0)/fig.bbox.width
 rm = margin_width/fwidth + (xaxis_bbox_bott.x1 - ax.bbox.x1)/fig.bbox.width
-ax.set_position([lm, bm, 1-lm-rm, 1-bm-tm])
+ax.set_position([lm, 0, 1-lm-rm, 1])
 
 # Add the figure title.
 fig.canvas.draw()
