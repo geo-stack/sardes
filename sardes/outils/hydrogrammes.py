@@ -16,7 +16,6 @@ import locale
 import matplotlib as mpl
 from matplotlib.transforms import ScaledTranslation
 from matplotlib.patches import Rectangle
-from matplotlib import transforms
 import matplotlib.pyplot as plt
 from PIL import Image
 import numpy as np
@@ -115,7 +114,6 @@ ax.text(text_x0, text.get_window_extent(renderer).y0/fig.bbox.height,
         color='blue')
 
 # Setup the left and right margins.
-# ax.yaxis.label.get_window_extent(renderer).x0 / fig.bbox.width
 fig.canvas.draw()
 xaxis_bbox_bott, _ = ax.xaxis.get_ticklabel_extents(renderer)
 yaxis_label_bbox = ax.yaxis.label.get_window_extent(renderer)
