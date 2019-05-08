@@ -148,14 +148,14 @@ info_top_left = ax.text(
 info_bot_left = ax.text(
    ax.bbox.x0/fig.bbox.width,
    info_top_left.get_window_extent(renderer).y0/fig.bbox.height,
-   'Nappe : {}'.format(reader[sid]['Nappe']),
+   "Longitude : {}\u00B0".format(lon),
    ha='left', va='top', fontsize=14, fontweight='bold',
    transform=fig.transFigure+linespacing)
 
 info_top_center = ax.text(
     (ax.bbox.x1 + ax.bbox.x0)/2/fig.bbox.width,
     fig_title.get_window_extent(renderer).y0/fig.bbox.height,
-    "Longitude : {}\u00B0".format(lon),
+    'Nappe : {}'.format(reader[sid]['Nappe']),
     ha='center', va='top', fontsize=14, fontweight='bold',
     transform=fig.transFigure+offset_top)
 
