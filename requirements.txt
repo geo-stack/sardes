@@ -1,1 +1,2 @@
 appconfigs
+qtpy
