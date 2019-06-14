@@ -1,13 +1,14 @@
 # Python package
 # Create and test a Python package on multiple Python versions.
-# Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
+# Add steps that analyze code, save the dist with the build record,
+# publish to a PyPI-compatible index, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
 trigger:
 - master
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'vs2017-win2016'
 strategy:
   matrix:
     Python37:
@@ -25,6 +26,18 @@ steps:
   displayName: 'Install dependencies'
 
 - script: |
-    pip install pytest pytest-azurepipelines
-    pytest
-  displayName: 'pytest'
+    pip install pytest pytest-azurepipelines codecov
+    python runtests.py
+  displayName: 'Run tests'
+  continueOnError: false
+
+- script: |
+  codecov
+  displayName: 'Run codecov'
+
+# Publish test results to the Azure DevOps server
+- task: PublishTestResults@2
+inputs:
+  testResultsFiles: 'result.xml'
+  testRunTitle: 'Windows - Python $(python.version)'
+  condition: succeededOrFailed()
