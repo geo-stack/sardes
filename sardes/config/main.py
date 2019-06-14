@@ -18,6 +18,11 @@ from sardes import __appname__
 DEFAULTS = [
     ('main',
         {'fontsize_global': '14px'}
+     ),
+    ('database',
+        {'database': '',
+         'host': '',
+         'user': ''}
      )
 ]
 
