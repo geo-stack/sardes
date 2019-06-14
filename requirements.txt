@@ -1,1 +1,4 @@
 appconfigs
+keyring
+qtawesome
+qtpy
