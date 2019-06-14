@@ -1,3 +1,4 @@
 appconfigs
+keyring
 qtawesome
 qtpy
