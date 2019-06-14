@@ -32,7 +32,7 @@ steps:
   continueOnError: false
 
 - script: |
-  codecov
+    codecov
   displayName: 'Run codecov'
 
 # Publish test results to the Azure DevOps server
