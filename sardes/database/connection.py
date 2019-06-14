@@ -20,7 +20,7 @@ from qtpy.QtWidgets import (QApplication, QAbstractButton, QDialog,
                             QVBoxLayout, QWidget)
 
 # ---- Local imports
-from sardes.config.database import get_dbconfig
+from sardes.config.database import get_dbconfig, set_dbconfig
 from sardes.config.icons import get_icon
 from sardes.config.gui import RED
 from sardes.widgets.waitingspinner import WaitingSpinner
@@ -272,6 +272,10 @@ class BDConnManager(QDialog):
         Accept user inputs, save them in the configuration file and
         close the dialog window.
         """
+        set_dbconfig(database=self.dbname_lineedit.text(),
+                     user=self.user_lineedit.text(),
+                     host=self.host_lineedit.text(),
+                     password=self.password_lineedit.text())
         self.close()
 
     def disconnect(self):
