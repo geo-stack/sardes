@@ -91,9 +91,12 @@ class WaitingSpinner(QWidget):
                                           self._minimumTrailOpacity,
                                           self._color)
 
+            # Scaling factor for the size of the circle.
+            sf = (self._numberOfLines - distance) / self._numberOfLines
+
             painter.setBrush(color)
             rect = QRect(0, -self._lineWidth/2,
-                         self._lineLength, self._lineWidth)
+                         self._lineLength * sf, self._lineWidth * sf)
             painter.drawRoundedRect(
                     rect, self._roundness, self._roundness, Qt.RelativeSize)
             painter.restore()
