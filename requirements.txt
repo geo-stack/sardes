@@ -1,4 +1,5 @@
 appconfigs
 keyring
+pyqt5
 qtawesome
 qtpy
