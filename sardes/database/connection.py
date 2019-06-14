@@ -222,7 +222,7 @@ class BDConnManager(QDialog):
         click on the 'reset' button.
         """
         dbconfig = get_dbconfig()
-        self.dbname_lineedit.setText(dbconfig.get('dbname', ''))
+        self.dbname_lineedit.setText(dbconfig.get('database', ''))
         self.host_lineedit.setText(dbconfig.get('host', ''))
         self.user_lineedit.setText(dbconfig.get('user', ''))
         self.password_lineedit.setText(dbconfig.get('password', ''))
