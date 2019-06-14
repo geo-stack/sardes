@@ -1,4 +1,6 @@
 appconfigs
 keyring
+psycopg2
+pyqt5
 qtawesome
 qtpy
