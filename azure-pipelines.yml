@@ -37,7 +37,7 @@ steps:
 
 # Publish test results to the Azure DevOps server
 - task: PublishTestResults@2
-inputs:
-  testResultsFiles: 'result.xml'
-  testRunTitle: 'Windows - Python $(python.version)'
-  condition: succeededOrFailed()
+  inputs:
+    testResultsFiles: 'result.xml'
+    testRunTitle: 'Windows - Python $(python.version)'
+    condition: succeededOrFailed()
