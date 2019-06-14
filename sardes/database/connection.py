@@ -15,8 +15,9 @@ import sys
 import psycopg2
 from qtpy.QtCore import QObject, QSize, Qt, QThread, Signal, Slot
 from qtpy.QtWidgets import (QApplication, QAbstractButton, QDialog,
-                            QDialogButtonBox, QGridLayout, QGroupBox, QLabel,
-                            QLineEdit, QPushButton, QVBoxLayout, QWidget)
+                            QDialogButtonBox, QFormLayout, QGridLayout,
+                            QGroupBox, QLabel, QLineEdit, QPushButton,
+                            QVBoxLayout, QWidget)
 
 # ---- Local imports
 from sardes.config.database import get_dbconfig
@@ -165,23 +166,18 @@ class BDConnManager(QDialog):
         self.password_lineedit = QLineEdit()
         self.password_lineedit.setEchoMode(QLineEdit.Password)
 
-        self.input_groupbox = QGroupBox()
-        self.input_groupbox.setAutoFillBackground(True)
+        self.form_groupbox = QGroupBox()
+        self.form_groupbox.setAutoFillBackground(True)
         palette = QApplication.instance().palette()
-        palette.setColor(self.input_groupbox.backgroundRole(),
+        palette.setColor(self.form_groupbox.backgroundRole(),
                          palette.light().color())
-        self.input_groupbox.setPalette(palette)
+        self.form_groupbox.setPalette(palette)
 
-        input_layout = QGridLayout(self.input_groupbox)
-        input_layout.addWidget(QLabel('Database :'), 0, 0)
-        input_layout.addWidget(self.dbname_lineedit, 0, 1)
-        input_layout.addWidget(QLabel('Username :'), 1, 0)
-        input_layout.addWidget(self.user_lineedit, 1, 1)
-        input_layout.addWidget(QLabel('Hostname :'), 2, 0)
-        input_layout.addWidget(self.host_lineedit, 2, 1)
-        input_layout.addWidget(QLabel('Password :'), 3, 0)
-        input_layout.addWidget(self.password_lineedit, 3, 1)
-        input_layout.setRowStretch(input_layout.rowCount(), 1)
+        form_layout = QFormLayout(self.form_groupbox)
+        form_layout.addRow("Database :", self.dbname_lineedit)
+        form_layout.addRow("Username :", self.user_lineedit)
+        form_layout.addRow("Hostname :", self.host_lineedit)
+        form_layout.addRow("Password :", self.password_lineedit)
 
         # Setup the dialog button box.
         self.connect_button = QPushButton('Connect')
@@ -197,7 +193,7 @@ class BDConnManager(QDialog):
 
         # Setup the main layout.
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.input_groupbox)
+        main_layout.addWidget(self.form_groupbox)
         main_layout.addWidget(self.status_bar)
         main_layout.addWidget(button_box)
         main_layout.setStretch(0, 1)
@@ -210,7 +206,7 @@ class BDConnManager(QDialog):
         """
         self.reset_button.setEnabled(
             self.conn is None and not self.db_conn_worker.is_connecting)
-        self.input_groupbox.setEnabled(
+        self.form_groupbox.setEnabled(
             self.conn is None and not self.db_conn_worker.is_connecting)
         self.ok_button.setEnabled(not self.db_conn_worker.is_connecting)
         self.connect_button.setEnabled(not self.db_conn_worker.is_connecting)
