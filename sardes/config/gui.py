@@ -10,3 +10,7 @@
 ICON_COLOR = '#4d4d4d'
 GREEN = '#00aa00'
 RED = '#CC0000'
+
+
+def get_iconsize():
+    return 24
