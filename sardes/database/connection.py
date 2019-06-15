@@ -13,17 +13,15 @@ import sys
 
 # ---- Third party imports
 import psycopg2
-from qtpy.QtCore import QObject, QSize, Qt, QThread, Signal, Slot
+from qtpy.QtCore import QObject, Qt, QThread, Signal, Slot
 from qtpy.QtWidgets import (QApplication, QAbstractButton, QDialog,
-                            QDialogButtonBox, QFormLayout, QGridLayout,
-                            QGroupBox, QLabel, QLineEdit, QPushButton,
-                            QVBoxLayout, QWidget)
+                            QDialogButtonBox, QFormLayout, QGroupBox,
+                            QLineEdit, QPushButton, QVBoxLayout)
 
 # ---- Local imports
 from sardes.config.database import get_dbconfig, set_dbconfig
-from sardes.config.icons import get_icon
 from sardes.config.gui import RED
-from sardes.widgets.waitingspinner import WaitingSpinner
+from sardes.widgets.statusbar import ProcessStatusBar
 
 
 class DBConnWorker(QObject):
@@ -56,80 +54,6 @@ class DBConnWorker(QObject):
         self.sig_conn_finished.emit(conn, error)
 
 
-class DBConnectionStatusBar(QWidget):
-    """
-    A status bar that shows the connection status to the database.
-    """
-
-    def __init__(self, parent=None):
-        super(DBConnectionStatusBar, self).__init__(parent)
-
-        self._label = QLabel()
-        self._label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        self._label.setWordWrap(True)
-        self._label.setTextInteractionFlags(Qt.TextSelectableByMouse)
-
-        self._spinner = WaitingSpinner(self, centerOnParent=False)
-        dots_size = 5
-        self._spinner.setLineLength(dots_size)
-        self._spinner.setLineWidth(dots_size)
-        self._spinner.setNumberOfLines(11)
-        self._spinner.setRevolutionsPerSecond(1.5)
-        self._spinner.setInnerRadius((24 - 2 * dots_size) / 2)
-
-        self._failed_icon = QLabel()
-        self._failed_icon.setPixmap(get_icon('failed').pixmap(QSize(24, 24)))
-        self._failed_icon.hide()
-
-        self._success_icon = QLabel()
-        self._success_icon.setPixmap(get_icon('succes').pixmap(QSize(24, 24)))
-        self._success_icon.hide()
-
-        layout = QGridLayout(self)
-
-        alignment = Qt.AlignLeft | Qt.AlignVCenter
-        layout.addWidget(self._spinner, 1, 0, alignment)
-        layout.addWidget(self._failed_icon, 1, 0, alignment)
-        layout.addWidget(self._success_icon, 1, 0, alignment)
-        layout.setColumnMinimumWidth(1, 5)
-        layout.addWidget(self._label, 1, 2)
-
-        layout.setRowStretch(0, 100)
-        layout.setRowStretch(3, 100)
-        layout.setColumnStretch(2, 100)
-
-    def set_label(self, text):
-        """Set the text that is displayed next to the spinner."""
-        self._label.setText(text)
-
-    def show_fail_icon(self):
-        """Stop and hide the spinner and show a failed icon instead."""
-        self._spinner.hide()
-        self._spinner.stop()
-        self._success_icon.hide()
-        self._failed_icon.show()
-
-    def show_sucess_icon(self):
-        """Stop and hide the spinner and show a success icon instead."""
-        self._spinner.hide()
-        self._spinner.stop()
-        self._failed_icon.hide()
-        self._success_icon.show()
-
-    def show(self):
-        """Extend Qt method to start the waiting spinner."""
-        self._spinner.show()
-        self._failed_icon.hide()
-        self._success_icon.hide()
-        super().show()
-        self._spinner.start()
-
-    def hide(self):
-        """Extend Qt hide to stop waiting spinner."""
-        super().hide()
-        self._spinner.stop()
-
-
 class BDConnManager(QDialog):
     """
     A dialog window to manage the connection to the database.
@@ -156,7 +80,7 @@ class BDConnManager(QDialog):
         """
         Setup the dialog with the provided settings.
         """
-        self.status_bar = DBConnectionStatusBar()
+        self.status_bar = ProcessStatusBar()
         self.status_bar.hide()
 
         # Setup the input data fields.
@@ -251,20 +175,17 @@ class BDConnManager(QDialog):
         self.db_conn_thread.quit()
         self.conn = conn
         if conn is None:
-            self.status_bar.show_fail_icon()
             if error:
-                self.status_bar.set_label(
-                    '<font color="{}">{}:</font>'
-                    ' {}'.format(RED, type(error).__name__, error))
+                message = ('<font color="{}">{}:</font>'
+                           ' {}'.format(RED, type(error).__name__, error))
             else:
-                self.status_bar.set_label(
-                    "The connection to database <i>{}</i> failed.".format(
-                        self.dbname_lineedit.text()))
+                message = ("The connection to database <i>{}</i>"
+                           " failed.".format(self.dbname_lineedit.text()))
+            self.status_bar.show_fail_icon(message)
         else:
-            self.status_bar.show_sucess_icon()
-            self.status_bar.set_label(
-                "Connected to database <i>{}</i>.".format(
-                    self.dbname_lineedit.text()))
+            message = ("Connected to database "
+                       "<i>{}</i>.".format(self.dbname_lineedit.text()))
+            self.status_bar.show_sucess_icon(message)
         self._update_gui()
 
     def accept(self):
@@ -298,6 +219,7 @@ class BDConnManager(QDialog):
         self.db_conn_worker.password = self.password_lineedit.text()
         self.db_conn_worker.host = self.host_lineedit.text()
         self.db_conn_thread.start()
+        self.db_conn_worker.is_connecting = True
 
         self._update_gui()
         self.status_bar.show()
