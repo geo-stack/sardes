@@ -23,7 +23,7 @@ from qtpy.QtWidgets import (QApplication, QAbstractButton, QDialog,
 from sardes.config.database import get_dbconfig, set_dbconfig
 from sardes.config.icons import get_icon
 from sardes.config.gui import RED
-from sardes.widgets.waitingspinner import WaitingSpinner
+from sardes.utils.qthelpers import create_waitspinner
 
 
 class DBConnWorker(QObject):
@@ -69,13 +69,7 @@ class DBConnectionStatusBar(QWidget):
         self._label.setWordWrap(True)
         self._label.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
-        self._spinner = WaitingSpinner(self, centerOnParent=False)
-        dots_size = 5
-        self._spinner.setLineLength(dots_size)
-        self._spinner.setLineWidth(dots_size)
-        self._spinner.setNumberOfLines(11)
-        self._spinner.setRevolutionsPerSecond(1.5)
-        self._spinner.setInnerRadius((24 - 2 * dots_size) / 2)
+        self._spinner = create_waitspinner(size=24)
 
         self._failed_icon = QLabel()
         self._failed_icon.setPixmap(get_icon('failed').pixmap(QSize(24, 24)))
