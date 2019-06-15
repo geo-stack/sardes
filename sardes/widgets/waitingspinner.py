@@ -47,6 +47,7 @@ class WaitingSpinner(QWidget):
         self._roundness = 100.0
         self._minimumTrailOpacity = 3.14159265358979323846
         self._trailFadePercentage = 80.0
+        self._trailSizeDecreasing = False
         self._revolutionsPerSecond = 1.57079632679489661923
         self._numberOfLines = 20
         self._lineLength = 10
@@ -66,6 +67,9 @@ class WaitingSpinner(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground)
 
     def paintEvent(self, QPaintEvent):
+        """
+        Override Qt paintEvent method.
+        """
         self.updatePosition()
         painter = QPainter(self)
         painter.fillRect(self.rect(), Qt.transparent)
@@ -91,8 +95,12 @@ class WaitingSpinner(QWidget):
                                           self._minimumTrailOpacity,
                                           self._color)
 
-            # Scaling factor for the size of the circle.
-            sf = (self._numberOfLines - distance) / self._numberOfLines
+            # Calcul the scaling factor to apply to the size and thickness
+            # of the lines in the trail.
+            if self._trailSizeDecreasing:
+                sf = (self._numberOfLines - distance) / self._numberOfLines
+            else:
+                sf = 1
 
             painter.setBrush(color)
             rect = QRect(0, -self._lineWidth/2,
@@ -171,6 +179,13 @@ class WaitingSpinner(QWidget):
     def isSpinning(self):
         return self._isSpinning
 
+    def isTrailSizeDecreasing(self):
+        """
+        Return whether the length and thickness of the trailing lines
+        are decreasing.
+        """
+        return self._trailSizeDecreasing
+
     def setRoundness(self, roundness):
         self._roundness = max(0.0, min(100.0, roundness))
 
@@ -183,6 +198,13 @@ class WaitingSpinner(QWidget):
 
     def setTrailFadePercentage(self, trail):
         self._trailFadePercentage = trail
+
+    def setTrailSizeDecreasing(self, value):
+        """
+        Set whether the length and thickness of the trailing lines
+        are decreasing.
+        """
+        self._trailSizeDecreasing = value
 
     def setMinimumTrailOpacity(self, minimumTrailOpacity):
         self._minimumTrailOpacity = minimumTrailOpacity
