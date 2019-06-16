@@ -51,4 +51,4 @@ steps:
 - task: PublishPipelineArtifact@0
   inputs:
     artifactName: 'my_artifact'
-    targetPath: '$(Build.SourcesDirectory)/releases/sardes0.1.0.dev0_win_amd64.zip'
+    targetPath: '$(Build.SourcesDirectory)/releases/sardes0.1.0.dev0_win_amd64'
