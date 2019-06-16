@@ -46,6 +46,7 @@ steps:
     cd ./releases
     pyinstaller.exe sardes.spec
     cd ..
+    echo '$(COUOU)'
   displayName: 'Build package'
 
 - task: PublishPipelineArtifact@0
