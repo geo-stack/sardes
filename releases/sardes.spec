@@ -37,7 +37,9 @@ coll = COLLECT(exe,
 
 # Prepare the binary folder.
 shutil.copyfile("../LICENSE", "dist/LICENSE")
-output_dirname = 'sardes'+__version__+'_win_amd64'
+if os.environ.get('AZURE'):
+    output_dirname = os.environ.get('SARDES_OUTPUT_DIRNAME')
+else:
+    output_dirname = 'sardes'+__version__+'_win_amd64'
 delete_folder_recursively(output_dirname, delroot=True)
 os.rename('dist', output_dirname)
-os.environ["SARDES_OUTPUT_DIRNAME"] = output_dirname
