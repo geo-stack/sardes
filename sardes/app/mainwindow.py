@@ -12,7 +12,7 @@ import sys
 
 # ---- Third party imports
 from qtpy.QtCore import QSize, Qt
-from qtpy.QtWidgets import QApplication, QMainWindow
+from qtpy.QtWidgets import QApplication, QLabel, QMainWindow
 
 # ---- Local imports
 from sardes.config.icons import get_icon
@@ -29,6 +29,10 @@ class MainWindow(QMainWindow):
         # Toolbars
         self.visible_toolbars = []
         self.toolbarslist = []
+
+        label = QLabel('Welcome to Sardes!')
+        label.setAlignment(Qt.AlignCenter)
+        self.setCentralWidget(label)
 
     # ---- Window setup
     def create_toolbar(self, title, object_name, iconsize=None):
