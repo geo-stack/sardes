@@ -48,14 +48,7 @@ steps:
     cd ..
   displayName: 'Build package'
 
-- task: ArchiveFiles@2
-  inputs:
-    rootFolderOrFile: '$(Build.SourcesDirectory)/releases/sardes0.1.0.dev0_win_amd64'
-    #includeRootFolder: true 
-    archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-    #replaceExistingArchive: true 
-
 - task: PublishPipelineArtifact@0
   inputs:
-    targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    artifactName: 'sardes0.1.0.dev0_win_amd64'
+    targetPath: '$(Build.SourcesDirectory)/releases/sardes0.1.0.dev0_win_amd64/*'
