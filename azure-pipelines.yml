@@ -46,10 +46,10 @@ steps:
     cd ./releases
     pyinstaller.exe sardes.spec
     cd ..
-    echo '$(COUOU)'
+    echo '$(COUCOU)'
   displayName: 'Build package'
 
 - task: PublishPipelineArtifact@0
   inputs:
     artifactName: 'sardes0.1.0.dev0_win_amd64'
-    targetPath: '$(Build.SourcesDirectory)/releases/sardes0.1.0.dev0_win_amd64/*'
+    targetPath: '$(Build.SourcesDirectory)/releases/sardes0.1.0.dev0_win_amd64'
