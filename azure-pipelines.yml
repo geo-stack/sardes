@@ -15,9 +15,6 @@ variables:
 pool:
   vmImage: 'vs2017-win2016'
 
-variables:
-    SARDES_OUTPUT_DIRNAME: 'sardes_package'
-
 strategy:
   matrix:
     Python37:
