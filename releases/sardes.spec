@@ -40,7 +40,4 @@ shutil.copyfile("../LICENSE", "dist/LICENSE")
 output_dirname = 'sardes'+__version__+'_win_amd64'
 delete_folder_recursively(output_dirname, delroot=True)
 os.rename('dist', output_dirname)
-
-# Zip the binary folder.
-cmd = ['7z', 'a', output_dirname+'.zip', output_dirname, '-mx9']
-sp = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+os.environ['SARDES_DIRNAME'] = output_dirname
