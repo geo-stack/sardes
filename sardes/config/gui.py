@@ -5,7 +5,7 @@
 #
 # This file is part of SARDES.
 # Licensed under the terms of the GNU General Public License.
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 ICON_COLOR = '#4d4d4d'
 GREEN = '#00aa00'
