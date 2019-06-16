@@ -18,6 +18,9 @@ from qtpy.QtWidgets import QApplication, QMainWindow
 from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
 
+from multiprocessing import freeze_support
+freeze_support()
+
 
 class MainWindow(QMainWindow):
     def __init__(self):

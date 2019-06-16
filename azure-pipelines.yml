@@ -39,3 +39,14 @@ steps:
 - script: |
     codecov
   displayName: 'Run codecov'
+
+- script: |
+    python -m pip install pyinstaller pywin32 tornado
+    cmd: set PYTHONPATH=$(Build.SourcesDirectory);%PYTHONPATH%
+    pyinstaller.exe sardes.spec
+  displayName: 'Build package'
+
+- task: PublishPipelineArtifact@0
+  inputs:
+    artifactName: 'my_artifact'
+    targetPath: '$(Build.SourcesDirectory)/requirements.txt'
