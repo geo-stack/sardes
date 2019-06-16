@@ -53,13 +53,9 @@ steps:
     rootFolderOrFile: '$(Build.SourcesDirectory)/releases/sardes0.1.0.dev0_win_amd64'
     #includeRootFolder: true 
     archiveType: 'zip'
-    #tarCompression: 'gz' # Optional. Options: gz, bz2, xz, none
     archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
     #replaceExistingArchive: true 
-    #verbose: # Optional
-    #quiet: # Optional
 
 - task: PublishPipelineArtifact@0
   inputs:
-    artifactName: 'my_artifact'
-    targetPath: '$(Build.SourcesDirectory)/releases/sardes0.1.0.dev0_win_amd64'
+    targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
