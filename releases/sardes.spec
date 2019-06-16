@@ -40,3 +40,4 @@ shutil.copyfile("../LICENSE", "dist/LICENSE")
 output_dirname = 'sardes'+__version__+'_win_amd64'
 delete_folder_recursively(output_dirname, delroot=True)
 os.rename('dist', output_dirname)
+os.environ["SARDES_OUTPUT_DIRNAME"] = output_dirname
