@@ -9,6 +9,8 @@ trigger:
 
 variables:
   CODECOV_TOKEN: "e1a9c98d-d8db-471d-a31d-af2a535323cd"
+  SARDES_VERSION: '0.1.0.dev0'
+  SARDES_OUTPUT_DIRNAME: 'sardes_win_amd64'
 
 pool:
   vmImage: 'vs2017-win2016'
