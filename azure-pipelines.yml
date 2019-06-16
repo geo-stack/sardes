@@ -43,7 +43,9 @@ steps:
 - script: |
     python -m pip install pyinstaller pywin32 tornado
     cmd: set PYTHONPATH=$(Build.SourcesDirectory);%PYTHONPATH%
+    cmd: cd ./releases
     pyinstaller.exe sardes.spec
+    cmd: cd ..
   displayName: 'Build package'
 
 - task: PublishPipelineArtifact@0
