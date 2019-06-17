@@ -97,6 +97,14 @@ class MainWindow(QMainWindow):
             self, 'About Sardes...', icon='information',
             shortcut='Ctrl+Shift+I', context=Qt.ApplicationShortcut
             )
+        exit_action = create_action(
+            self, 'Exit', icon='exit', triggered=self.close,
+            shortcut='Ctrl+Shift+Q', context=Qt.ApplicationShortcut
+            )
+
+        for action in [report_action, about_action, exit_action]:
+            options_menu.addAction(action)
+
         return options_menu
 
     def create_toolbar(self, title, object_name, iconsize=None):
