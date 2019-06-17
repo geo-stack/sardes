@@ -49,6 +49,35 @@ def create_action(parent, text, shortcut=None, icon=None, tip=None,
     return action
 
 
+def create_toolbutton(parent, text=None, shortcut=None, icon=None, tip=None,
+                      toggled=None, triggered=None,
+                      autoraise=True, text_beside_icon=False, iconsize=None):
+    """Create a QToolButton with the provided settings."""
+    button = QToolButton(parent)
+    if text is not None:
+        button.setText(text)
+    if icon is not None:
+        icon = get_icon(icon) if isinstance(icon, str) else icon
+        button.setIcon(icon)
+    if text is not None or tip is not None:
+        ttip = ("<p style='white-space:pre'><b>{} ({})</b></p>"
+                "<p>{}</p>").format(text or '', shortcut or '', tip or '')
+        button.setToolTip(ttip)
+    if text_beside_icon:
+        button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+    button.setAutoRaise(autoraise)
+    if triggered is not None:
+        button.clicked.connect(triggered)
+    if toggled is not None:
+        button.toggled.connect(toggled)
+        button.setCheckable(True)
+    if shortcut is not None:
+        button.setShortcut(shortcut)
+    if iconsize is not None:
+        button.setIconSize(QSize(iconsize, iconsize))
+    return button
+
+
 def create_waitspinner(size=32, n=11, parent=None):
     """
     Create a wait spinner with the specified size built with n circling dots.
