@@ -13,17 +13,17 @@ import os
 import os.path as osp
 
 # ---- Third party imports
-from qtpy.QtCore import QSize, Qt
+from qtpy.QtCore import QSize
 from qtpy.QtGui import QIcon
-from qtpy.QtWidgets import QToolButton
 import qtawesome as qta
 
 # ---- Local imports
 from sardes import __rootdir__
 from sardes.config.gui import ICON_COLOR, GREEN, RED
 
-DIRNAME = os.path.join(__rootdir__, 'ressources', 'icons_png')
-LOCAL_ICONS = {}
+DIRNAME = os.path.join(__rootdir__, 'ressources', 'icons')
+LOCAL_ICONS = {
+    'master': 'sardes'}
 
 FA_ICONS = {
     'bug': [
