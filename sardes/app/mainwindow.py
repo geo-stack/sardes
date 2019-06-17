@@ -44,7 +44,7 @@ class MainWindow(QMainWindow):
         self.visible_toolbars = []
         self.toolbarslist = []
 
-        self.db_conn_manager = BDConnManager()
+        self.db_conn_manager = BDConnManager(self)
         self.db_conn_manager.hide()
 
         self.setup()

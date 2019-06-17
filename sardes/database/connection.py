@@ -62,8 +62,8 @@ class BDConnManager(QDialog):
     sig_disconnected = Signal()
     sig_connection_changed = Signal(bool)
 
-    def __init__(self):
-        super(BDConnManager, self).__init__()
+    def __init__(self, parent=None):
+        super(BDConnManager, self).__init__(parent)
         self.setWindowTitle('Database connection manager')
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
