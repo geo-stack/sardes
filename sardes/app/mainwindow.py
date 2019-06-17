@@ -37,6 +37,8 @@ class MainWindow(QMainWindow):
         self.visible_toolbars = []
         self.toolbarslist = []
 
+        self.db_conn_manager = BDConnManager()
+        self.db_conn_manager.hide()
 
         self.setup()
 
@@ -62,6 +64,17 @@ class MainWindow(QMainWindow):
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.topright_corner_toolbar.addWidget(spacer)
+
+        # Add the database connection manager button.
+        self.database_button = create_toolbutton(
+            self, triggered=self.db_conn_manager.show,
+            text="Database connection manager",
+            tip="Open the database connection manager window.",
+            shortcut='Ctrl+Shift+D')
+        self.setup_database_button_icon()
+        self.db_conn_manager.sig_connection_changed.connect(
+            self.setup_database_button_icon)
+        self.topright_corner_toolbar.addWidget(self.database_button)
 
         # Add the tools and options button.
         self.options_button = self.create_options_button()
@@ -115,6 +128,15 @@ class MainWindow(QMainWindow):
         toolbar.setIconSize(QSize(iconsize, iconsize))
         self.toolbarslist.append(toolbar)
         return toolbar
+
+    def setup_database_button_icon(self):
+        """
+        Set the icon of the database button to show whether a database is
+        currently connected or not.
+        """
+        db_icon = ('database_connected' if self.db_conn_manager.is_connected()
+                   else 'database_disconnected')
+        self.database_button.setIcon(get_icon(db_icon))
 
 
 if __name__ == '__main__':
