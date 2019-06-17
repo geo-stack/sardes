@@ -7,9 +7,15 @@ from sardes.utils.fileio import delete_folder_recursively
 
 block_cipher = None
 
+added_files = [('../sardes/ressources/icons/*.png',
+                'ressources/icons'),
+                ('../sardes/ressources/icons/*.svg',
+                 'ressources/icons')]
+
 a = Analysis(['../sardes/app/mainwindow.py'],
              pathex=['C:\\Program Files (x86)\\Windows Kits\\10\\Redist\\ucrt\\DLLs\\x64'],
              binaries=[],
+             datas=added_files ,
              hiddenimports=['win32timezone'],
              hookspath=[],
              runtime_hooks=[],
@@ -26,7 +32,8 @@ exe = EXE(pyz,
           debug=False,
           strip=False,
           upx=True,
-          console=True)
+          console=True,
+          icon='sardes.ico')
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
