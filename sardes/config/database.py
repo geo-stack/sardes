@@ -7,11 +7,20 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+# ---- Standard imports
+import platform
+
 # ---- Third party imports
-from sardes import __appname__
+from sardes import __appname__, is_frozen
 from sardes.config.main import CONF
 try:
     import keyring
+    if is_frozen():
+        # This woraround is required for keyring to work when the
+        # application is frozen with pyinstaller. See jaraco/keyring#324.
+        if platform.system() == 'Windows':
+            import keyring.backends.Windows
+            keyring.set_keyring(keyring.backends.Windows.WinVaultKeyring())
 except Exception:
     keyring = None
 
@@ -64,9 +73,11 @@ def get_password(database, username):
     Get pasword saved for that database and username or else return an empty
     string.
     """
+    password = ''
     if keyring is not None and database and username:
-        password = keyring.get_password(
-            __appname__, "{}/{}".format(database, username))
-        return password or ''
-    else:
-        return ''
+        try:
+            password = keyring.get_password(
+                __appname__, "{}/{}".format(database, username))
+        except RuntimeError:
+            pass
+    return password or ''
