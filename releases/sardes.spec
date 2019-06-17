@@ -8,8 +8,9 @@ from sardes.utils.fileio import delete_folder_recursively
 block_cipher = None
 
 added_files = [('../sardes/ressources/icons/*.png',
-                '../sardes/ressources/icons/*.svg',
-                'ressources/icons')]
+                'ressources/icons'),
+                ('../sardes/ressources/icons/*.svg',
+                 'ressources/icons')]
 
 a = Analysis(['../sardes/app/mainwindow.py'],
              pathex=['C:\\Program Files (x86)\\Windows Kits\\10\\Redist\\ucrt\\DLLs\\x64'],
