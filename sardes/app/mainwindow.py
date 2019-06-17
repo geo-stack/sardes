@@ -93,6 +93,10 @@ class MainWindow(QMainWindow):
             shortcut='Ctrl+Shift+R', context=Qt.ApplicationShortcut,
             triggered=lambda: QDesktopServices.openUrl(QUrl(GITHUB_ISSUES_URL))
             )
+        about_action = create_action(
+            self, 'About Sardes...', icon='information',
+            shortcut='Ctrl+Shift+I', context=Qt.ApplicationShortcut
+            )
         return options_menu
 
     def create_toolbar(self, title, object_name, iconsize=None):
