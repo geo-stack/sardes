@@ -26,6 +26,8 @@ from sardes.utils.qthelpers import create_action, create_toolbutton
 from multiprocessing import freeze_support
 freeze_support()
 
+GITHUB_ISSUES_URL = __project_url__ + "/issues"
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -86,6 +88,11 @@ class MainWindow(QMainWindow):
         """Create and return the options menu of this application."""
         options_menu = QMenu(self)
 
+        report_action = create_action(
+            self, 'Report issue...', icon='bug',
+            shortcut='Ctrl+Shift+R', context=Qt.ApplicationShortcut,
+            triggered=lambda: QDesktopServices.openUrl(QUrl(GITHUB_ISSUES_URL))
+            )
         return options_menu
 
     def create_toolbar(self, title, object_name, iconsize=None):
