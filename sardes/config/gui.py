@@ -7,7 +7,7 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
-ICON_COLOR = '#4d4d4d'
+ICON_COLOR = '#202020'
 GREEN = '#00aa00'
 RED = '#CC0000'
 
