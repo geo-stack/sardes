@@ -58,6 +58,8 @@ class BDConnManager(QDialog):
     """
     A dialog window to manage the connection to the database.
     """
+    sig_connected = Signal(object)
+    sig_disconnected = Signal()
 
     def __init__(self):
         super(BDConnManager, self).__init__()
@@ -182,10 +184,12 @@ class BDConnManager(QDialog):
                 message = ("The connection to database <i>{}</i>"
                            " failed.".format(self.dbname_lineedit.text()))
             self.status_bar.show_fail_icon(message)
+            self.sig_disconnected.emit()
         else:
             message = ("Connected to database "
                        "<i>{}</i>.".format(self.dbname_lineedit.text()))
             self.status_bar.show_sucess_icon(message)
+            self.sig_connected.emit(self.conn)
         self._update_gui()
 
     def accept(self):
@@ -208,6 +212,7 @@ class BDConnManager(QDialog):
             self.conn = None
             self.status_bar.hide()
             self._update_gui()
+            self.sig_disconnected.emit()
 
     def connect(self):
         """
