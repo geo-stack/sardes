@@ -11,12 +11,42 @@
 
 # ---- Standard imports
 from math import pi
+import sys
 
 # ---- Third party imports
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QSize, Qt
+from qtpy.QtWidgets import QAction, QToolButton
 
 # ---- Local imports
+from sardes.config.icons import get_icon
 from sardes.widgets.waitingspinner import WaitingSpinner
+
+
+def create_action(parent, text, shortcut=None, icon=None, tip=None,
+                  toggled=None, triggered=None, data=None, menurole=None,
+                  context=Qt.WindowShortcut):
+    """Create and return a QAction with the provided settings."""
+    action = QAction(text, parent)
+    if triggered is not None:
+        action.triggered.connect(triggered)
+    if toggled is not None:
+        action.toggled.connect(toggled)
+        action.setCheckable(True)
+    if icon is not None:
+        icon = get_icon(icon) if isinstance(icon, str) else icon
+        action.setIcon(icon)
+    if tip is not None:
+        action.setToolTip(tip)
+        action.setStatusTip(tip)
+    if data is not None:
+        action.setData(data)
+    if menurole is not None:
+        action.setMenuRole(menurole)
+    if shortcut is not None:
+        action.setShortcut(shortcut)
+    action.setShortcutContext(context)
+
+    return action
 
 
 def create_waitspinner(size=32, n=11, parent=None):
