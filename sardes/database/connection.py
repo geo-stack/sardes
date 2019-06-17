@@ -60,6 +60,7 @@ class BDConnManager(QDialog):
     """
     sig_connected = Signal(object)
     sig_disconnected = Signal()
+    sig_connection_changed = Signal(bool)
 
     def __init__(self):
         super(BDConnManager, self).__init__()
@@ -77,6 +78,11 @@ class BDConnManager(QDialog):
         self.db_conn_worker.moveToThread(self.db_conn_thread)
         self.db_conn_worker.sig_conn_finished.connect(self._handle_db_conn)
         self.db_conn_thread.started.connect(self.db_conn_worker.connect_to_bd)
+
+        self.sig_connected.connect(
+            lambda: self.sig_connection_changed.emit(self.is_connected()))
+        self.sig_disconnected.connect(
+            lambda: self.sig_connection_changed.emit(self.is_connected()))
 
     def setup(self):
         """
