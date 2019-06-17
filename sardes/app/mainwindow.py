@@ -11,12 +11,17 @@
 import sys
 
 # ---- Third party imports
-from qtpy.QtCore import QSize, Qt
-from qtpy.QtWidgets import QApplication, QLabel, QMainWindow
+from qtpy.QtCore import QSize, Qt, QUrl
+from qtpy.QtGui import QDesktopServices
+from qtpy.QtWidgets import (QApplication, QLabel, QMainWindow, QMenu,
+                            QSizePolicy, QToolButton, QWidget)
 
 # ---- Local imports
+from sardes import __project_url__
 from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
+from sardes.database.connection import BDConnManager
+from sardes.utils.qthelpers import create_action, create_toolbutton
 
 from multiprocessing import freeze_support
 freeze_support()
