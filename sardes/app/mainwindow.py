@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Standard imports
+import platform
 import sys
 
 # ---- Third party imports
@@ -17,7 +18,7 @@ from qtpy.QtWidgets import (QApplication, QLabel, QMainWindow, QMenu,
                             QSizePolicy, QToolButton, QWidget)
 
 # ---- Local imports
-from sardes import __project_url__
+from sardes import __namever__, __project_url__
 from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
 from sardes.database.connection import BDConnManager
@@ -32,6 +33,12 @@ GITHUB_ISSUES_URL = __project_url__ + "/issues"
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.setWindowIcon(get_icon('master'))
+        self.setWindowTitle(__namever__)
+        if platform.system() == 'Windows':
+            import ctypes
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                __namever__)
 
         # Toolbars
         self.visible_toolbars = []
