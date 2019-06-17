@@ -6,11 +6,3 @@
 # This file is part of SARDES.
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
-
-ICON_COLOR = '#202020'
-GREEN = '#00aa00'
-RED = '#CC0000'
-
-
-def get_iconsize():
-    return 24

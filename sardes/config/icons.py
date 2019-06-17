@@ -26,6 +26,9 @@ DIRNAME = os.path.join(__rootdir__, 'ressources', 'icons_png')
 LOCAL_ICONS = {}
 
 FA_ICONS = {
+    'bug': [
+        ('fa.bug',),
+        {'color': ICON_COLOR}],
     'close_all': [
         ('fa.close', 'fa.close', 'fa.close'),
         {'options': [{'scale_factor': 0.6,
@@ -46,12 +49,27 @@ FA_ICONS = {
     'commit_changes': [
         ('mdi.check-circle-outline',),
         {'color': GREEN, 'scale_factor': 1.3}],
+    'database_connected': [
+        ('mdi.database-check',),
+        {'color': GREEN, 'scale_factor': 1.3}],
+    'database_disconnected': [
+        ('mdi.database',),
+        {'color': RED, 'scale_factor': 1.3}],
     'failed': [
         ('mdi.alert-circle-outline',),
         {'color': RED, 'scale_factor': 1.3}],
+    'exit': [
+        ('fa.power-off',),
+        {'color': ICON_COLOR}],
+    'information': [
+        ('mdi.information-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'succes': [
         ('mdi.check-circle-outline',),
         {'color': GREEN, 'scale_factor': 1.3}],
+    'tooloptions': [
+        ('fa.bars',),
+        {'color': ICON_COLOR}],
     'warning': [
         ('mdi.alert-circle-outline',),
         {'color': RED, 'scale_factor': 1.3}],
