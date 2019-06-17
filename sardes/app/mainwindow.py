@@ -76,6 +76,18 @@ class MainWindow(QMainWindow):
             "QToolButton::menu-indicator{image: none;}")
         options_button.setPopupMode(QToolButton.InstantPopup)
 
+        # Create the tools and options menu.
+        options_menu = self.create_options_menu()
+        options_button.setMenu(options_menu)
+
+        return options_button
+
+    def create_options_menu(self):
+        """Create and return the options menu of this application."""
+        options_menu = QMenu(self)
+
+        return options_menu
+
     def create_toolbar(self, title, object_name, iconsize=None):
         """Create and return a toolbar with title and object_name."""
         toolbar = self.addToolBar(title)
