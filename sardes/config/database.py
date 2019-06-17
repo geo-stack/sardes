@@ -16,6 +16,8 @@ from sardes.config.main import CONF
 try:
     import keyring
     if platform.system() == 'Windows' and is_frozen():
+        # This woraround is required for keyring to work when the
+        # application is frozen with pyinstaller. See jaraco/keyring#324.
         import keyring.backends.Windows
         keyring.set_keyring(keyring.backends.Windows.WinVaultKeyring())
 except Exception:
