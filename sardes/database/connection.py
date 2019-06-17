@@ -125,6 +125,10 @@ class BDConnManager(QDialog):
         main_layout.setStretch(0, 1)
         main_layout.setSizeConstraint(main_layout.SetFixedSize)
 
+    def is_connected(self):
+        """Return whether a connection to a database is currently active."""
+        return self.conn is not None
+
     def _update_gui(self):
         """
         Update the visibility and state of the gui based on the connection
