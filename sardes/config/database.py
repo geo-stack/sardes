@@ -72,9 +72,11 @@ def get_password(database, username):
     Get pasword saved for that database and username or else return an empty
     string.
     """
+    password = ''
     if keyring is not None and database and username:
-        password = keyring.get_password(
-            __appname__, "{}/{}".format(database, username))
-        return password or ''
-    else:
-        return ''
+        try:
+            password = keyring.get_password(
+                __appname__, "{}/{}".format(database, username))
+        except RuntimeError:
+            pass
+    return password or ''
