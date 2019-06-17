@@ -7,11 +7,17 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+# ---- Standard imports
+import platform
+
 # ---- Third party imports
-from sardes import __appname__
+from sardes import __appname__, is_frozen
 from sardes.config.main import CONF
 try:
     import keyring
+    if platform.system() == 'Windows' and is_frozen():
+        import keyring.backends.Windows
+        keyring.set_keyring(keyring.backends.Windows.WinVaultKeyring())
 except Exception:
     keyring = None
 
