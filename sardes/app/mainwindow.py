@@ -35,11 +35,47 @@ class MainWindow(QMainWindow):
         self.visible_toolbars = []
         self.toolbarslist = []
 
+
+        self.setup()
+
+    def setup(self):
+        """Setup the main window"""
         label = QLabel('Welcome to Sardes!')
         label.setAlignment(Qt.AlignCenter)
         self.setCentralWidget(label)
 
-    # ---- Window setup
+        self.create_topright_corner_toolbar()
+
+    # ---- Toolbar setup
+    def create_topright_corner_toolbar(self):
+        """
+        Create and add a toolbar to the top right corner of this
+        application.
+        """
+        self.topright_corner_toolbar = self.create_toolbar(
+            "Options toolbar", "option_toolbar")
+        self.topright_corner_toolbar.setMovable(False)
+
+        # Add a spacer item.
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.topright_corner_toolbar.addWidget(spacer)
+
+        # Add the tools and options button.
+        self.options_button = self.create_options_button()
+        self.topright_corner_toolbar.addWidget(self.options_button)
+
+    def create_options_button(self):
+        """Create and return the options button of this application."""
+        options_button = create_toolbutton(
+            self, icon='tooloptions',
+            text="Tools and options",
+            tip="Open the tools and options menu.",
+            shortcut='Ctrl+Shift+T')
+        options_button.setStyleSheet(
+            "QToolButton::menu-indicator{image: none;}")
+        options_button.setPopupMode(QToolButton.InstantPopup)
+
     def create_toolbar(self, title, object_name, iconsize=None):
         """Create and return a toolbar with title and object_name."""
         toolbar = self.addToolBar(title)
