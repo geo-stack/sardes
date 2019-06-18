@@ -103,9 +103,9 @@ class DatabaseConnManager(QDialog):
         # Setup the database connection parameter input fields.
         self.dbname_lineedit = QLineEdit()
         self.host_lineedit = QLineEdit()
-        self.port_lineedit = QSpinBox()
-        self.port_lineedit.setRange(0, 65535)
-        self.port_lineedit.setValue(5432)
+        self.port_spinbox= QSpinBox()
+        self.port_spinbox.setRange(0, 65535)
+        self.port_spinbox.setValue(5432)
         self.user_lineedit = QLineEdit()
         self.password_lineedit = QLineEdit()
         self.password_lineedit.setEchoMode(QLineEdit.Password)
@@ -125,7 +125,7 @@ class DatabaseConnManager(QDialog):
         form_layout.addWidget(QLabel("Hostname :"), 2, 0)
         form_layout.addWidget(self.host_lineedit, 2, 1)
         form_layout.addWidget(QLabel("Port :"), 2, 2)
-        form_layout.addWidget(self.port_lineedit, 2, 3, Qt.AlignRight)
+        form_layout.addWidget(self.port_spinbox, 2, 3, Qt.AlignRight)
         form_layout.addWidget(QLabel("Password :"), 3, 0)
         form_layout.addWidget(self.password_lineedit, 3, 1, 1, 3)
         form_layout.setRowStretch(4, 1)
@@ -177,10 +177,11 @@ class DatabaseConnManager(QDialog):
         click on the 'reset' button.
         """
         dbconfig = get_dbconfig()
-        self.dbname_lineedit.setText(dbconfig.get('database', ''))
-        self.host_lineedit.setText(dbconfig.get('host', ''))
-        self.user_lineedit.setText(dbconfig.get('user', ''))
-        self.password_lineedit.setText(dbconfig.get('password', ''))
+        self.dbname_lineedit.setText(dbconfig['database'])
+        self.host_lineedit.setText(dbconfig['host'])
+        self.port_spinbox.setValue(dbconfig['port'])
+        self.user_lineedit.setText(dbconfig['user'])
+        self.password_lineedit.setText(dbconfig['password'])
 
     @Slot(QAbstractButton)
     def _handle_button_click_event(self, button):
@@ -229,6 +230,7 @@ class DatabaseConnManager(QDialog):
         set_dbconfig(database=self.dbname_lineedit.text(),
                      user=self.user_lineedit.text(),
                      host=self.host_lineedit.text(),
+                     port=self.port_spinbox.value(),
                      password=self.password_lineedit.text())
         self.close()
 
