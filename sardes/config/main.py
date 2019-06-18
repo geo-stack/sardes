@@ -22,7 +22,8 @@ DEFAULTS = [
     ('database',
         {'database': '',
          'host': '',
-         'user': ''}
+         'user': '',
+         'port': 5432}
      )
 ]
 
