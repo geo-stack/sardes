@@ -12,12 +12,11 @@
 import sys
 
 # ---- Third party imports
-import psycopg2
 from qtpy.QtCore import QObject, Qt, QThread, Signal, Slot
-from qtpy.QtWidgets import (QApplication, QAbstractButton, QDialog,
-                            QDialogButtonBox, QFormLayout, QGridLayout,
-                            QGroupBox, QLabel, QLineEdit, QPushButton,
-                            QVBoxLayout, QSpinBox)
+from qtpy.QtWidgets import (
+    QApplication, QAbstractButton, QComboBox, QDialog, QDialogButtonBox,
+    QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPushButton,
+    QVBoxLayout, QSpinBox)
 from sqlalchemy import create_engine
 from sqlalchemy.exc import DBAPIError
 
@@ -25,6 +24,26 @@ from sqlalchemy.exc import DBAPIError
 from sardes.config.database import get_dbconfig, set_dbconfig
 from sardes.config.gui import RED
 from sardes.widgets.statusbar import ProcessStatusBar
+
+
+# https://docs.python.org/3.7/library/codecs.html#standard-encodings
+CHAR_ENCODINGS = [
+    'ascii', 'big5', 'big5hkscs', 'cp037', 'cp273', 'cp424',  'cp437', 'cp500',
+    'cp720', 'cp737', 'cp775', 'cp850', 'cp852', 'cp855', 'cp856', 'cp857',
+    'cp858', 'cp860', 'cp861', 'cp862', 'cp863', 'cp864', 'cp865', 'cp866',
+    'cp869', 'cp874', 'cp875', 'cp932', 'cp949', 'cp950', 'cp1006', 'cp1026',
+    'cp1125', 'cp1140', 'cp1250', 'cp1251', 'cp1252', 'cp1253', 'cp1254',
+    'cp1255', 'cp1256', 'cp1257', 'cp1258', 'cp65001', 'euc_jp',
+    'euc_jis_2004', 'euc_jisx0213', 'euc_kr', 'gb2312', 'gbk', 'gb18030', 'hz',
+    'iso2022_jp', 'iso2022_jp_1', 'iso2022_jp_2', 'iso2022_jp_2004',
+    'iso2022_jp_3', 'iso2022_jp_ext', 'iso2022_kr', 'latin_1', 'iso8859_2',
+    'iso8859_3', 'iso8859_4', 'iso8859_5', 'iso8859_6', 'iso8859_7',
+    'iso8859_8', 'iso8859_9', 'iso8859_10', 'iso8859_11', 'iso8859_13',
+    'iso8859_14', 'iso8859_15', 'iso8859_16', 'johab', 'koi8_r', 'koi8_t',
+    'koi8_u', 'kz1048', 'mac_cyrillic', 'mac_greek', 'mac_iceland',
+    'mac_latin2', 'mac_roman', 'mac_turkish', 'ptcp154', 'shift_jis',
+    'shift_jis_2004', 'shift_jisx0213', 'utf_32', 'utf_32_be', 'utf_32_le',
+    'utf_16', 'utf_16_be', 'utf_16_le', 'utf_7', 'utf_8', 'utf_8_sig']
 
 
 class DatabaseConnWorker(QObject):
@@ -63,7 +82,7 @@ class DatabaseConnWorker(QObject):
         self.sig_conn_finished.emit(conn, error)
 
 
-class DatabaseConnManager(QDialog):
+class DatabaseConnWidget(QDialog):
     """
     A dialog window to manage the connection to the database.
     """
@@ -72,7 +91,7 @@ class DatabaseConnManager(QDialog):
     sig_connection_changed = Signal(bool)
 
     def __init__(self, parent=None):
-        super(DatabaseConnManager, self).__init__(parent)
+        super(DatabaseConnWidget, self).__init__(parent)
         self.setWindowTitle('Database connection manager')
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
@@ -103,12 +122,18 @@ class DatabaseConnManager(QDialog):
         # Setup the database connection parameter input fields.
         self.dbname_lineedit = QLineEdit()
         self.host_lineedit = QLineEdit()
-        self.port_spinbox= QSpinBox()
+        self.port_spinbox = QSpinBox()
         self.port_spinbox.setRange(0, 65535)
         self.port_spinbox.setValue(5432)
         self.user_lineedit = QLineEdit()
         self.password_lineedit = QLineEdit()
         self.password_lineedit.setEchoMode(QLineEdit.Password)
+
+        self.encoding_combo = QComboBox()
+        self.encoding_combo.addItems(CHAR_ENCODINGS)
+        encoding_layout = QHBoxLayout()
+        encoding_layout.addWidget(self.encoding_combo)
+        encoding_layout.addStretch(1)
 
         self.form_groupbox = QGroupBox()
         self.form_groupbox.setAutoFillBackground(True)
@@ -128,7 +153,9 @@ class DatabaseConnManager(QDialog):
         form_layout.addWidget(self.port_spinbox, 2, 3, Qt.AlignRight)
         form_layout.addWidget(QLabel("Password :"), 3, 0)
         form_layout.addWidget(self.password_lineedit, 3, 1, 1, 3)
-        form_layout.setRowStretch(4, 1)
+        form_layout.addWidget(QLabel("Encoding :"), 4, 0, Qt.AlignLeft)
+        form_layout.addLayout(encoding_layout, 4, 1)
+        form_layout.setRowStretch(form_layout.rowCount(), 1)
 
         # Setup the dialog button box.
         self.connect_button = QPushButton('Connect')
@@ -182,6 +209,8 @@ class DatabaseConnManager(QDialog):
         self.port_spinbox.setValue(dbconfig['port'])
         self.user_lineedit.setText(dbconfig['user'])
         self.password_lineedit.setText(dbconfig['password'])
+        self.encoding_combo.setCurrentIndex(
+            self.encoding_combo.findText(dbconfig['encoding']))
 
     @Slot(QAbstractButton)
     def _handle_button_click_event(self, button):
@@ -231,7 +260,8 @@ class DatabaseConnManager(QDialog):
                      user=self.user_lineedit.text(),
                      host=self.host_lineedit.text(),
                      port=self.port_spinbox.value(),
-                     password=self.password_lineedit.text())
+                     password=self.password_lineedit.text(),
+                     encoding=self.encoding_combo.currentText())
         self.close()
 
     def disconnect(self):
@@ -266,6 +296,6 @@ class DatabaseConnManager(QDialog):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    dialog = DatabaseConnManager()
+    dialog = DatabaseConnWidget()
     dialog.show()
     sys.exit(app.exec_())
