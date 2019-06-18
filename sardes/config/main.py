@@ -23,7 +23,8 @@ DEFAULTS = [
         {'database': '',
          'host': '',
          'user': '',
-         'port': 5432}
+         'port': 5432,
+         'encoding': 'utf_8'}
      )
 ]
 

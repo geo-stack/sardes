@@ -24,7 +24,7 @@ try:
 except Exception:
     keyring = None
 
-DB_CONNECTION_KEYS = ['database', 'user', 'host', 'port']
+DB_CONNECTION_KEYS = ['database', 'user', 'host', 'port', 'encoding']
 
 
 def get_dbconfig():
