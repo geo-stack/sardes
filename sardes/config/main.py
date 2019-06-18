@@ -14,6 +14,7 @@ from appconfigs.base import get_config_dir
 # ---- Local imports
 from sardes import __appname__
 
+CONFIG_DIR = get_config_dir(__appname__)
 
 DEFAULTS = [
     ('main',
@@ -43,9 +44,9 @@ CONF_VERSION = '1.0.0'
 # Setup the main configuration instance.
 try:
     CONF = UserConfig('sardes', defaults=DEFAULTS, load=True,
-                      version=CONF_VERSION, path=get_config_dir(__appname__),
+                      version=CONF_VERSION, path=CONFIG_DIR,
                       backup=True, raw_mode=True)
 except Exception:
     CONF = UserConfig('sardes', defaults=DEFAULTS, load=False,
-                      version=CONF_VERSION, path=get_config_dir(__appname__),
+                      version=CONF_VERSION, path=CONFIG_DIR,
                       backup=True, raw_mode=True)
