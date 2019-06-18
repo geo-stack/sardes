@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 """
-Tests for database/connection.py.
+Tests for the DatabaseConnManager.
 """
 
 # ---- Standard imports
@@ -21,7 +21,7 @@ import pytest
 from qtpy.QtCore import Qt
 
 # ---- Local imports
-from sardes.database.connection import BDConnManager
+from sardes.widgets.dbconnmanager import DatabaseConnManager
 from sardes.widgets.statusbar import ProcessStatusBar
 
 
@@ -30,17 +30,17 @@ from sardes.widgets.statusbar import ProcessStatusBar
 # =============================================================================
 @pytest.fixture
 def dbconnmanager(qtbot, mocker):
-    dbconnmanager = BDConnManager()
+    dbconnmanager = DatabaseConnManager()
     qtbot.addWidget(dbconnmanager)
     dbconnmanager.show()
     return dbconnmanager
 
 
 # =============================================================================
-# ---- Tests for BDConnManager
+# ---- Tests for DatabaseConnManager
 # =============================================================================
 def test_dbconnmanager_init(dbconnmanager):
-    """Test that the BDConnManager is initialized correctly."""
+    """Test that the databse connection manager is initialized correctly."""
     assert dbconnmanager
     assert dbconnmanager.status_bar.status == ProcessStatusBar.HIDDEN
 
