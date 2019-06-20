@@ -25,7 +25,7 @@ import os
 import sys
 
 
-version_info = (0, 1, '0a1')
+version_info = (0, 1, 0, 'dev0')
 __version__ = '.'.join(map(str, version_info))
 __appname__ = 'Sardes'
 __namever__ = __appname__ + " " + __version__
