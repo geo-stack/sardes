@@ -24,7 +24,7 @@ from sardes.config.main import CONFIG_DIR
 PATH_DB_LOGFILE = osp.join(CONFIG_DIR, 'database_log.txt')
 
 
-class PGDatabaseManager(object):
+class PGDatabaseConnManager(object):
     """
     Manage the connection to the database. The default host is the LOCAL_HOST.
     """
