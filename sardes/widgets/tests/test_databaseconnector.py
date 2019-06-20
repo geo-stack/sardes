@@ -16,7 +16,7 @@ import os
 from unittest.mock import Mock
 
 # ---- Third party imports
-import psycopg2
+from sqlalchemy.exc import OperationalError
 import pytest
 from qtpy.QtCore import Qt
 
@@ -50,10 +50,11 @@ def test_dbconnmanager_connect(dbconnmanager, qtbot, mocker):
     Test the database connection manager when the connection to the database
     succeed.
     """
-    def psycopg2_connect_mock(*args, **kargs):
+    def sqlalchemy_connect_mock(*args, **kargs):
         qtbot.wait(300)
         return Mock()
-    mocker.patch('psycopg2.connect', side_effect=psycopg2_connect_mock)
+    mocker.patch('sqlalchemy.engine.Engine.connect',
+                 side_effect=sqlalchemy_connect_mock)
 
     # Try connecting to the database.
     with qtbot.waitSignal(dbconnmanager.db_conn_worker.sig_conn_finished):
@@ -92,13 +93,14 @@ def test_dbconnmanager_failed_connect(mode, dbconnmanager, qtbot, mocker):
     Test the database connection manager when the connection to the database
     fails.
     """
-    def psycopg2_connect_mock(*args, **kargs):
+    def sqlalchemy_connect_mock(*args, **kargs):
         qtbot.wait(300)
         if mode == 'return none':
             return None
         elif mode == 'raise exception':
-            raise psycopg2.OperationalError
-    mocker.patch('psycopg2.connect', side_effect=psycopg2_connect_mock)
+            raise OperationalError(Mock(), Mock(), Mock())
+    mocker.patch('sqlalchemy.engine.Engine.connect',
+                 side_effect=sqlalchemy_connect_mock)
 
     # Try connecting to the database.
     with qtbot.waitSignal(dbconnmanager.db_conn_worker.sig_conn_finished):
