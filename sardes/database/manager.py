@@ -12,12 +12,10 @@ from datetime import datetime
 import os.path as osp
 import sys
 import urllib.parse
-
 # ---- Third party imports
 from sqlalchemy import create_engine
-from sqlalchemy.exc import DBAPIError
+from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.engine.url import URL
-
 # ---- Local imports
 from sardes.config.main import CONFIG_DIR
 
@@ -72,8 +70,13 @@ class PGDatabaseConnManager(object):
             self._connection_error = e
         else:
             self._connection_error = None
+
+    def close_connection(self):
+        """
+        Close the current connection with the database.
+        """
         self._engine.dispose()
-        self.session.close_all()
+        self._connection = None
 
 
 
