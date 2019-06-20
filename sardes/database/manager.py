@@ -78,6 +78,13 @@ class PGDatabaseConnManager(object):
         self._engine.dispose()
         self._connection = None
 
+    def execute(self, sql_request, **kwargs):
+        """Execute a SQL statement construct and return a ResultProxy."""
+        try:
+            return self._connection.execute(sql_request, kwargs)
+        except ProgrammingError as p:
+            print("Permission error for user {}".format(self.user))
+            raise p
 
 
 if __name__ == '__main__':
