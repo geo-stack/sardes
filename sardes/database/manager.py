@@ -58,22 +58,19 @@ class PGDatabaseManager(object):
                              client_encoding=self._client_encoding,
                              echo=False)
 
-    def connect(self):
-        pass
-        # self._init_logfile()
-        # if self._engine is None:
-        #     self._create_engine()
-        # try:
-        #     self._conn = db_engine.connect()
-        # except DBAPIError as e:
-        #     conn = None
-        #     error = e
-        # else:
-        #     error = None
-        # try:
-        #     self._conn = self.db_engine.connect()
 
-    def close_connexion(self):
+    def connect(self):
+        """
+        Create a new connection object in order to communicate with
+        the database.
+        """
+        try:
+            self._connection = self._engine.connect()
+        except DBAPIError as e:
+            self._connection = None
+            self._connection_error = e
+        else:
+            self._connection_error = None
         self._engine.dispose()
         self.session.close_all()
 
