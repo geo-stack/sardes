@@ -12,11 +12,13 @@
 import sys
 
 # ---- Third party imports
-import psycopg2
 from qtpy.QtCore import QObject, Qt, QThread, Signal, Slot
-from qtpy.QtWidgets import (QApplication, QAbstractButton, QDialog,
-                            QDialogButtonBox, QFormLayout, QGroupBox,
-                            QLineEdit, QPushButton, QVBoxLayout)
+from qtpy.QtWidgets import (
+    QApplication, QAbstractButton, QComboBox, QDialog, QDialogButtonBox,
+    QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPushButton,
+    QVBoxLayout, QSpinBox)
+from sqlalchemy import create_engine
+from sqlalchemy.exc import DBAPIError
 
 # ---- Local imports
 from sardes.config.database import get_dbconfig, set_dbconfig
@@ -24,28 +26,35 @@ from sardes.config.gui import RED
 from sardes.widgets.statusbar import ProcessStatusBar
 
 
-class DBConnWorker(QObject):
+class DatabaseConnWorker(QObject):
     """
     A simple worker to create a new database session without blocking the gui.
     """
     sig_conn_finished = Signal(object, object)
 
     def __init__(self, parent=None):
-        super(DBConnWorker, self).__init__(parent)
+        super(DatabaseConnWorker, self).__init__(parent)
         self.is_connecting = False
         self.database = ""
         self.user = ""
         self.password = ""
         self.host = ""
+        self.port = 5432
+        self.client_encoding = 'utf_8'
 
     def connect_to_bd(self):
         """Try to establish a connection with the database"""
         self.is_connecting = True
+        db_engine = create_engine(
+            "postgresql://{}:{}@{}:{}/{}".format(self.user,
+                                                 self.password,
+                                                 self.host,
+                                                 self.port,
+                                                 self.database),
+            client_encoding=self.client_encoding)
         try:
-            conn = psycopg2.connect(
-                database=self.database, user=self.user,
-                host=self.host, password=self.password)
-        except (psycopg2.Error) as e:
+            conn = db_engine.connect()
+        except DBAPIError as e:
             conn = None
             error = e
         else:
@@ -54,7 +63,7 @@ class DBConnWorker(QObject):
         self.sig_conn_finished.emit(conn, error)
 
 
-class BDConnManager(QDialog):
+class DatabaseConnWidget(QDialog):
     """
     A dialog window to manage the connection to the database.
     """
@@ -63,7 +72,7 @@ class BDConnManager(QDialog):
     sig_connection_changed = Signal(bool)
 
     def __init__(self, parent=None):
-        super(BDConnManager, self).__init__(parent)
+        super(DatabaseConnWidget, self).__init__(parent)
         self.setWindowTitle('Database connection manager')
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
@@ -73,7 +82,7 @@ class BDConnManager(QDialog):
         self.setup()
         self._update_gui_from_config()
 
-        self.db_conn_worker = DBConnWorker()
+        self.db_conn_worker = DatabaseConnWorker()
         self.db_conn_thread = QThread()
         self.db_conn_worker.moveToThread(self.db_conn_thread)
         self.db_conn_worker.sig_conn_finished.connect(self._handle_db_conn)
@@ -91,12 +100,20 @@ class BDConnManager(QDialog):
         self.status_bar = ProcessStatusBar()
         self.status_bar.hide()
 
-        # Setup the input data fields.
+        # Setup the database connection parameter input fields.
         self.dbname_lineedit = QLineEdit()
         self.host_lineedit = QLineEdit()
+        self.port_spinbox = QSpinBox()
+        self.port_spinbox.setRange(0, 65535)
+        self.port_spinbox.setValue(5432)
         self.user_lineedit = QLineEdit()
         self.password_lineedit = QLineEdit()
         self.password_lineedit.setEchoMode(QLineEdit.Password)
+
+        self.encoding_lineedit = QLineEdit()
+        encoding_layout = QHBoxLayout()
+        encoding_layout.addWidget(self.encoding_lineedit)
+        encoding_layout.addStretch(1)
 
         self.form_groupbox = QGroupBox()
         self.form_groupbox.setAutoFillBackground(True)
@@ -105,11 +122,20 @@ class BDConnManager(QDialog):
                          palette.light().color())
         self.form_groupbox.setPalette(palette)
 
-        form_layout = QFormLayout(self.form_groupbox)
-        form_layout.addRow("Database :", self.dbname_lineedit)
-        form_layout.addRow("Username :", self.user_lineedit)
-        form_layout.addRow("Hostname :", self.host_lineedit)
-        form_layout.addRow("Password :", self.password_lineedit)
+        form_layout = QGridLayout(self.form_groupbox)
+        form_layout.addWidget(QLabel("Database :"), 0, 0)
+        form_layout.addWidget(self.dbname_lineedit, 0, 1, 1, 3)
+        form_layout.addWidget(QLabel("Username :"), 1, 0)
+        form_layout.addWidget(self.user_lineedit, 1, 1, 1, 3)
+        form_layout.addWidget(QLabel("Hostname :"), 2, 0)
+        form_layout.addWidget(self.host_lineedit, 2, 1)
+        form_layout.addWidget(QLabel("Port :"), 2, 2)
+        form_layout.addWidget(self.port_spinbox, 2, 3, Qt.AlignRight)
+        form_layout.addWidget(QLabel("Password :"), 3, 0)
+        form_layout.addWidget(self.password_lineedit, 3, 1, 1, 3)
+        form_layout.addWidget(QLabel("Encoding :"), 4, 0, Qt.AlignLeft)
+        form_layout.addLayout(encoding_layout, 4, 1)
+        form_layout.setRowStretch(form_layout.rowCount(), 1)
 
         # Setup the dialog button box.
         self.connect_button = QPushButton('Connect')
@@ -158,10 +184,12 @@ class BDConnManager(QDialog):
         click on the 'reset' button.
         """
         dbconfig = get_dbconfig()
-        self.dbname_lineedit.setText(dbconfig.get('database', ''))
-        self.host_lineedit.setText(dbconfig.get('host', ''))
-        self.user_lineedit.setText(dbconfig.get('user', ''))
-        self.password_lineedit.setText(dbconfig.get('password', ''))
+        self.dbname_lineedit.setText(dbconfig['database'])
+        self.host_lineedit.setText(dbconfig['host'])
+        self.port_spinbox.setValue(dbconfig['port'])
+        self.user_lineedit.setText(dbconfig['user'])
+        self.password_lineedit.setText(dbconfig['password'])
+        self.encoding_lineedit.setText(dbconfig['encoding'])
 
     @Slot(QAbstractButton)
     def _handle_button_click_event(self, button):
@@ -210,7 +238,9 @@ class BDConnManager(QDialog):
         set_dbconfig(database=self.dbname_lineedit.text(),
                      user=self.user_lineedit.text(),
                      host=self.host_lineedit.text(),
-                     password=self.password_lineedit.text())
+                     port=self.port_spinbox.value(),
+                     password=self.password_lineedit.text(),
+                     encoding=self.encoding_lineedit.text())
         self.close()
 
     def disconnect(self):
@@ -233,6 +263,9 @@ class BDConnManager(QDialog):
         self.db_conn_worker.user = self.user_lineedit.text()
         self.db_conn_worker.password = self.password_lineedit.text()
         self.db_conn_worker.host = self.host_lineedit.text()
+        self.db_conn_worker.port = self.port_spinbox.value()
+        self.db_conn_worker.client_encoding = self.encoding_lineedit.text()
+
         self.db_conn_thread.start()
         self.db_conn_worker.is_connecting = True
 
@@ -245,6 +278,6 @@ class BDConnManager(QDialog):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    dialog = BDConnManager()
+    dialog = DatabaseConnWidget()
     dialog.show()
     sys.exit(app.exec_())
