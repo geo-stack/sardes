@@ -32,14 +32,15 @@ class PGDatabaseConnManager(object):
     def __init__(self, database, username, password, hostname, port,
                  client_encoding='utf8'):
         self._database = database
-        self._username = user
+        self._username = username
         self._password = password
-        self._hostname = host
+        self._hostname = hostname
         self._port = port
         self._client_encoding = client_encoding
 
         # create a SQL Alchemy engine.
-        self._conn = None
+        self._connection = None
+        self._connection_error = None
         self._engine = self._create_engine()
 
         # self.inspector = inspect(self._engine)
