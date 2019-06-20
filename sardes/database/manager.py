@@ -57,6 +57,9 @@ class PGDatabaseConnManager(object):
                              client_encoding=self._client_encoding,
                              echo=False)
 
+    def is_connected(self):
+        """Return whether a connection to a database is currently active."""
+        return self._connection is not None
 
     def connect(self):
         """
