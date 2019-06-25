@@ -14,11 +14,9 @@ import sys
 # ---- Third party imports
 from qtpy.QtCore import QObject, Qt, QThread, Signal, Slot
 from qtpy.QtWidgets import (
-    QApplication, QAbstractButton, QComboBox, QDialog, QDialogButtonBox,
-    QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-    QVBoxLayout, QSpinBox)
-from sqlalchemy import create_engine
-from sqlalchemy.exc import DBAPIError
+    QApplication, QAbstractButton, QDialog, QDialogButtonBox, QGridLayout,
+    QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout,
+    QSpinBox)
 
 # ---- Local imports
 from sardes.config.database import get_dbconfig, set_dbconfig
