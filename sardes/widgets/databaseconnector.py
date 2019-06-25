@@ -45,7 +45,7 @@ class DatabaseConnWorker(QObject):
 
         self._tasks = []
 
-    def add_task(self, task, args=(), kargs={}):
+    def add_task(self, task, *args, **kargs):
         """
         Add a task to the stack that will be executed when the thread of
         this worker is started.
