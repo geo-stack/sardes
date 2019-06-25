@@ -59,7 +59,10 @@ class PGDatabaseConnManager(object):
 
     def is_connected(self):
         """Return whether a connection to a database is currently active."""
-        return self._connection is not None
+        if self._connection is None:
+            return False
+        else:
+            return not self._connection.closed
 
     def connect(self):
         """
