@@ -21,7 +21,7 @@ from qtpy.QtWidgets import (QApplication, QLabel, QMainWindow, QMenu,
 from sardes import __namever__, __project_url__
 from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
-from sardes.widgets.databaseconnector import DatabaseConnWidget
+from sardes.widgets.databaseconnector import DatabaseConnectionWidget
 from sardes.utils.qthelpers import create_action, create_toolbutton
 
 from multiprocessing import freeze_support
@@ -44,7 +44,7 @@ class MainWindow(QMainWindow):
         self.visible_toolbars = []
         self.toolbarslist = []
 
-        self.db_conn_manager = DatabaseConnWidget(self)
+        self.db_conn_manager = DatabaseConnectionWidget(self)
         self.db_conn_manager.hide()
 
         self.setup()

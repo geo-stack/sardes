@@ -22,10 +22,10 @@ from qtpy.QtWidgets import (
 from sardes.config.database import get_dbconfig, set_dbconfig
 from sardes.config.gui import RED
 from sardes.widgets.statusbar import ProcessStatusBar
-from sardes.database.manager import PGDatabaseConnManager
+from sardes.database.manager import PGDatabaseConnectionManager
 
 
-class DatabaseConnWorker(QObject):
+class DatabaseConnectionWorker(QObject):
     """
     A simple worker to create a new database session without blocking the gui.
     """
@@ -33,7 +33,7 @@ class DatabaseConnWorker(QObject):
     sig_database_disconnected = Signal()
 
     def __init__(self, parent=None):
-        super(DatabaseConnWorker, self).__init__(parent)
+        super(DatabaseConnectionWorker, self).__init__(parent)
         self.db_manager = None
 
         self.database = ""
@@ -66,7 +66,7 @@ class DatabaseConnWorker(QObject):
 
     def connect_to_db(self):
         """Try to create a new connection with the database"""
-        self.db_manager = PGDatabaseConnManager(
+        self.db_manager = PGDatabaseConnectionManager(
             self.database, self.user, self.password, self.host, self.port,
             self.client_encoding)
         self.db_manager.connect()
@@ -85,7 +85,7 @@ class DatabaseConnWorker(QObject):
             return self.db_manager.execute(sql_request, **kwargs)
 
 
-class DatabaseConnWidget(QDialog):
+class DatabaseConnectionWidget(QDialog):
     """
     A dialog window to manage the connection to the database.
     """
@@ -94,7 +94,7 @@ class DatabaseConnWidget(QDialog):
     sig_connection_changed = Signal(bool)
 
     def __init__(self, parent=None):
-        super(DatabaseConnWidget, self).__init__(parent)
+        super(DatabaseConnectionWidget, self).__init__(parent)
         self.setWindowTitle('Database connection manager')
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
@@ -104,7 +104,7 @@ class DatabaseConnWidget(QDialog):
         self._update_gui_from_config()
         self._db_conn_worker_is_connecting = False
 
-        self.db_conn_worker = DatabaseConnWorker()
+        self.db_conn_worker = DatabaseConnectionWorker()
         self.db_conn_thread = QThread()
         self.db_conn_worker.moveToThread(self.db_conn_thread)
         self.db_conn_worker.sig_database_connected.connect(
@@ -297,6 +297,7 @@ class DatabaseConnWidget(QDialog):
         self.db_conn_worker.client_encoding = self.encoding_lineedit.text()
 
         self.db_conn_worker.add_task('connect_to_db')
+
         self.db_conn_thread.start()
         self._db_conn_worker_is_connecting = True
 
@@ -309,6 +310,6 @@ class DatabaseConnWidget(QDialog):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    dialog = DatabaseConnWidget()
+    dialog = DatabaseConnectionWidget()
     dialog.show()
     sys.exit(app.exec_())
