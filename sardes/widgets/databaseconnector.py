@@ -14,27 +14,28 @@ import sys
 # ---- Third party imports
 from qtpy.QtCore import QObject, Qt, QThread, Signal, Slot
 from qtpy.QtWidgets import (
-    QApplication, QAbstractButton, QComboBox, QDialog, QDialogButtonBox,
-    QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-    QVBoxLayout, QSpinBox)
-from sqlalchemy import create_engine
-from sqlalchemy.exc import DBAPIError
+    QApplication, QAbstractButton, QDialog, QDialogButtonBox, QGridLayout,
+    QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout,
+    QSpinBox)
 
 # ---- Local imports
 from sardes.config.database import get_dbconfig, set_dbconfig
 from sardes.config.gui import RED
 from sardes.widgets.statusbar import ProcessStatusBar
+from sardes.database.manager import PGDatabaseConnectionManager
 
 
-class DatabaseConnWorker(QObject):
+class DatabaseConnectionWorker(QObject):
     """
     A simple worker to create a new database session without blocking the gui.
     """
-    sig_conn_finished = Signal(object, object)
+    sig_database_connected = Signal(object, object)
+    sig_database_disconnected = Signal()
 
     def __init__(self, parent=None):
-        super(DatabaseConnWorker, self).__init__(parent)
-        self.is_connecting = False
+        super(DatabaseConnectionWorker, self).__init__(parent)
+        self.db_manager = None
+
         self.database = ""
         self.user = ""
         self.password = ""
@@ -42,55 +43,79 @@ class DatabaseConnWorker(QObject):
         self.port = 5432
         self.client_encoding = 'utf_8'
 
-    def connect_to_bd(self):
-        """Try to establish a connection with the database"""
-        self.is_connecting = True
-        db_engine = create_engine(
-            "postgresql://{}:{}@{}:{}/{}".format(self.user,
-                                                 self.password,
-                                                 self.host,
-                                                 self.port,
-                                                 self.database),
-            client_encoding=self.client_encoding)
-        try:
-            conn = db_engine.connect()
-        except DBAPIError as e:
-            conn = None
-            error = e
-        else:
-            error = None
-        self.is_connecting = False
-        self.sig_conn_finished.emit(conn, error)
+        self._tasks = []
+
+    def add_task(self, task, *args, **kargs):
+        """
+        Add a task to the stack that will be executed when the thread of
+        this worker is started.
+        """
+        self._tasks.append((task, args, kargs))
+
+    def run_tasks(self):
+        """Execute the tasks that were added to the stack."""
+        for task, args, kargs in self._tasks:
+            method_to_exec = getattr(self, task)
+            method_to_exec(*args, **kargs)
+        self._tasks = []
+        self.thread().quit()
+
+    def is_connected(self):
+        """Return whether a connection to a database is currently active."""
+        return self.db_manager is not None and self.db_manager.is_connected()
+
+    def connect_to_db(self):
+        """Try to create a new connection with the database"""
+        self.db_manager = PGDatabaseConnectionManager(
+            self.database, self.user, self.password, self.host, self.port,
+            self.client_encoding)
+        self.db_manager.connect()
+        self.sig_database_connected.emit(
+            self.db_manager._connection,  self.db_manager._connection_error)
+
+    def disconnect_from_db(self):
+        """Close the connection with the database"""
+        if self.db_manager is not None:
+            self.db_manager.close_connection()
+        self.sig_database_disconnected.emit()
+
+    def execute_sql_request(self, sql_request, **kwargs):
+        """Execute a SQL statement construct and return a ResultProxy."""
+        if self.db_manager is not None:
+            return self.db_manager.execute(sql_request, **kwargs)
 
 
-class DatabaseConnWidget(QDialog):
+class DatabaseConnectionWidget(QDialog):
     """
     A dialog window to manage the connection to the database.
     """
-    sig_connected = Signal(object)
-    sig_disconnected = Signal()
+    sig_database_connected = Signal()
+    sig_database_disconnected = Signal()
     sig_connection_changed = Signal(bool)
 
     def __init__(self, parent=None):
-        super(DatabaseConnWidget, self).__init__(parent)
+        super(DatabaseConnectionWidget, self).__init__(parent)
         self.setWindowTitle('Database connection manager')
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setModal(True)
 
-        self.conn = None
         self.setup()
         self._update_gui_from_config()
+        self._db_conn_worker_is_connecting = False
 
-        self.db_conn_worker = DatabaseConnWorker()
+        self.db_conn_worker = DatabaseConnectionWorker()
         self.db_conn_thread = QThread()
         self.db_conn_worker.moveToThread(self.db_conn_thread)
-        self.db_conn_worker.sig_conn_finished.connect(self._handle_db_conn)
-        self.db_conn_thread.started.connect(self.db_conn_worker.connect_to_bd)
+        self.db_conn_worker.sig_database_connected.connect(
+            self._handle_database_connected)
+        self.db_conn_worker.sig_database_disconnected.connect(
+            self._handle_database_disconnected)
+        self.db_conn_thread.started.connect(self.db_conn_worker.run_tasks)
 
-        self.sig_connected.connect(
+        self.sig_database_connected.connect(
             lambda: self.sig_connection_changed.emit(self.is_connected()))
-        self.sig_disconnected.connect(
+        self.sig_database_disconnected.connect(
             lambda: self.sig_connection_changed.emit(self.is_connected()))
 
     def setup(self):
@@ -159,7 +184,7 @@ class DatabaseConnWidget(QDialog):
 
     def is_connected(self):
         """Return whether a connection to a database is currently active."""
-        return self.conn is not None
+        return self.db_conn_worker.is_connected()
 
     def _update_gui(self):
         """
@@ -167,13 +192,13 @@ class DatabaseConnWidget(QDialog):
         status with the database.
         """
         self.reset_button.setEnabled(
-            self.conn is None and not self.db_conn_worker.is_connecting)
+            not self.is_connected() and not self._db_conn_worker_is_connecting)
         self.form_groupbox.setEnabled(
-            self.conn is None and not self.db_conn_worker.is_connecting)
-        self.ok_button.setEnabled(not self.db_conn_worker.is_connecting)
-        self.connect_button.setEnabled(not self.db_conn_worker.is_connecting)
+            not self.is_connected() and not self._db_conn_worker_is_connecting)
+        self.ok_button.setEnabled(not self._db_conn_worker_is_connecting)
+        self.connect_button.setEnabled(not self._db_conn_worker_is_connecting)
         self.connect_button.setText(
-            'Connect' if self.conn is None else 'Disconnect')
+            'Disconnect' if self.is_connected() else 'Connect')
 
     def _update_gui_from_config(self):
         """
@@ -191,6 +216,7 @@ class DatabaseConnWidget(QDialog):
         self.password_lineedit.setText(dbconfig['password'])
         self.encoding_lineedit.setText(dbconfig['encoding'])
 
+    # ---- Signal handlers
     @Slot(QAbstractButton)
     def _handle_button_click_event(self, button):
         """
@@ -201,34 +227,42 @@ class DatabaseConnWidget(QDialog):
         elif button == self.reset_button:
             self._update_gui_from_config()
         elif button == self.connect_button:
-            if self.conn is None:
+            if not self.is_connected():
                 self.connect()
             else:
                 self.disconnect()
 
     @Slot(object, object)
-    def _handle_db_conn(self, conn, error):
+    def _handle_database_connected(self, db_connection, db_connect_error):
         """
         Handle when the database connection worker sucessfully or failed to
         create a new connection with the database.
         """
-        self.db_conn_thread.quit()
-        self.conn = conn
-        if conn is None:
-            if error:
-                message = ('<font color="{}">{}:</font>'
-                           ' {}'.format(RED, type(error).__name__, error))
+        self._db_conn_worker_is_connecting = False
+        if db_connection is None:
+            if db_connect_error:
+                message = ('<font color="{}">{}:</font> {}'.format(
+                    RED, type(db_connect_error).__name__, db_connect_error))
             else:
                 message = ("The connection to database <i>{}</i>"
                            " failed.".format(self.dbname_lineedit.text()))
             self.status_bar.show_fail_icon(message)
-            self.sig_disconnected.emit()
+            self.sig_database_disconnected.emit()
         else:
             message = ("Connected to database "
                        "<i>{}</i>.".format(self.dbname_lineedit.text()))
             self.status_bar.show_sucess_icon(message)
-            self.sig_connected.emit(self.conn)
+            self.sig_database_connected.emit()
         self._update_gui()
+
+    @Slot()
+    def _handle_database_disconnected(self):
+        """
+        Handle when the connection to the database was sucessfully closed.
+        """
+        self.status_bar.hide()
+        self._update_gui()
+        self.sig_database_disconnected.emit()
 
     def accept(self):
         """
@@ -247,12 +281,8 @@ class DatabaseConnWidget(QDialog):
         """
         Close the connection with the database.
         """
-        if self.conn is not None:
-            self.conn.close()
-            self.conn = None
-            self.status_bar.hide()
-            self._update_gui()
-            self.sig_disconnected.emit()
+        self.db_conn_worker.add_task('disconnect_from_db')
+        self.db_conn_thread.start()
 
     def connect(self):
         """
@@ -266,8 +296,10 @@ class DatabaseConnWidget(QDialog):
         self.db_conn_worker.port = self.port_spinbox.value()
         self.db_conn_worker.client_encoding = self.encoding_lineedit.text()
 
+        self.db_conn_worker.add_task('connect_to_db')
+
         self.db_conn_thread.start()
-        self.db_conn_worker.is_connecting = True
+        self._db_conn_worker_is_connecting = True
 
         self._update_gui()
         self.status_bar.show()
@@ -278,6 +310,6 @@ class DatabaseConnWidget(QDialog):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    dialog = DatabaseConnWidget()
+    dialog = DatabaseConnectionWidget()
     dialog.show()
     sys.exit(app.exec_())

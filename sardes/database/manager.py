@@ -12,19 +12,17 @@ from datetime import datetime
 import os.path as osp
 import sys
 import urllib.parse
-
 # ---- Third party imports
 from sqlalchemy import create_engine
-from sqlalchemy.exc import DBAPIError
+from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.engine.url import URL
-
 # ---- Local imports
 from sardes.config.main import CONFIG_DIR
 
 PATH_DB_LOGFILE = osp.join(CONFIG_DIR, 'database_log.txt')
 
 
-class PGDatabaseManager(object):
+class PGDatabaseConnectionManager(object):
     """
     Manage the connection to the database. The default host is the LOCAL_HOST.
     """
@@ -32,14 +30,15 @@ class PGDatabaseManager(object):
     def __init__(self, database, username, password, hostname, port,
                  client_encoding='utf8'):
         self._database = database
-        self._username = user
+        self._username = username
         self._password = password
-        self._hostname = host
+        self._hostname = hostname
         self._port = port
         self._client_encoding = client_encoding
 
         # create a SQL Alchemy engine.
-        self._conn = None
+        self._connection = None
+        self._connection_error = None
         self._engine = self._create_engine()
 
         # self.inspector = inspect(self._engine)
@@ -58,25 +57,39 @@ class PGDatabaseManager(object):
                              client_encoding=self._client_encoding,
                              echo=False)
 
+    def is_connected(self):
+        """Return whether a connection to a database is currently active."""
+        if self._connection is None:
+            return False
+        else:
+            return not self._connection.closed
+
     def connect(self):
-        pass
-        # self._init_logfile()
-        # if self._engine is None:
-        #     self._create_engine()
-        # try:
-        #     self._conn = db_engine.connect()
-        # except DBAPIError as e:
-        #     conn = None
-        #     error = e
-        # else:
-        #     error = None
-        # try:
-        #     self._conn = self.db_engine.connect()
+        """
+        Create a new connection object to communicate with the database.
+        """
+        try:
+            self._connection = self._engine.connect()
+        except DBAPIError as e:
+            self._connection = None
+            self._connection_error = e
+        else:
+            self._connection_error = None
 
-    def close_connexion(self):
+    def close_connection(self):
+        """
+        Close the current connection with the database.
+        """
         self._engine.dispose()
-        self.session.close_all()
+        self._connection = None
 
+    def execute(self, sql_request, **kwargs):
+        """Execute a SQL statement construct and return a ResultProxy."""
+        try:
+            return self._connection.execute(sql_request, **kwargs)
+        except ProgrammingError as p:
+            print("Permission error for user {}".format(self.user))
+            raise p
 
 
 if __name__ == '__main__':
