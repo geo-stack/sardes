@@ -63,8 +63,7 @@ class PGDatabaseConnManager(object):
 
     def connect(self):
         """
-        Create a new connection object in order to communicate with
-        the database.
+        Create a new connection object to communicate with the database.
         """
         try:
             self._connection = self._engine.connect()
