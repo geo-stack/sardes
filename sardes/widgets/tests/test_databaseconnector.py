@@ -52,12 +52,14 @@ def test_dbconnmanager_connect(dbconnmanager, qtbot, mocker):
     """
     def sqlalchemy_connect_mock(*args, **kargs):
         qtbot.wait(300)
-        return Mock()
+        mocked_connection = Mock()
+        mocked_connection.closed = False
+        return mocked_connection
     mocker.patch('sqlalchemy.engine.Engine.connect',
                  side_effect=sqlalchemy_connect_mock)
 
     # Try connecting to the database.
-    with qtbot.waitSignal(dbconnmanager.db_conn_worker.sig_conn_finished):
+    with qtbot.waitSignal(dbconnmanager.db_conn_worker.sig_database_connected):
         qtbot.mouseClick(dbconnmanager.connect_button, Qt.LeftButton)
 
         assert dbconnmanager.status_bar.status == ProcessStatusBar.IN_PROGRESS
@@ -67,7 +69,7 @@ def test_dbconnmanager_connect(dbconnmanager, qtbot, mocker):
         assert not dbconnmanager.ok_button.isEnabled()
 
     # Assert that a connection to the database was created sucessfully.
-    assert dbconnmanager.conn is not None
+    assert dbconnmanager.is_connected() is True
     assert (dbconnmanager.status_bar.status ==
             ProcessStatusBar.PROCESS_SUCCEEDED)
     assert not dbconnmanager.form_groupbox.isEnabled()
@@ -77,8 +79,10 @@ def test_dbconnmanager_connect(dbconnmanager, qtbot, mocker):
     assert dbconnmanager.ok_button.isEnabled()
 
     # Close the database connection.
-    qtbot.mouseClick(dbconnmanager.connect_button, Qt.LeftButton)
-    assert dbconnmanager.conn is None
+    with qtbot.waitSignal(
+            dbconnmanager.db_conn_worker.sig_database_disconnected):
+        qtbot.mouseClick(dbconnmanager.connect_button, Qt.LeftButton)
+    assert dbconnmanager.is_connected() is False
     assert dbconnmanager.status_bar.status == ProcessStatusBar.HIDDEN
     assert dbconnmanager.form_groupbox.isEnabled()
     assert dbconnmanager.connect_button.isEnabled()
@@ -103,7 +107,7 @@ def test_dbconnmanager_failed_connect(mode, dbconnmanager, qtbot, mocker):
                  side_effect=sqlalchemy_connect_mock)
 
     # Try connecting to the database.
-    with qtbot.waitSignal(dbconnmanager.db_conn_worker.sig_conn_finished):
+    with qtbot.waitSignal(dbconnmanager.db_conn_worker.sig_database_connected):
         qtbot.mouseClick(dbconnmanager.connect_button, Qt.LeftButton)
 
         assert dbconnmanager.status_bar.status == ProcessStatusBar.IN_PROGRESS
@@ -113,7 +117,7 @@ def test_dbconnmanager_failed_connect(mode, dbconnmanager, qtbot, mocker):
         assert not dbconnmanager.ok_button.isEnabled()
 
     # Assert that the connection to the database failed.
-    assert dbconnmanager.conn is None
+    assert dbconnmanager.is_connected() is False
     assert dbconnmanager.status_bar.status == ProcessStatusBar.PROCESS_FAILED
     assert dbconnmanager.form_groupbox.isEnabled()
     assert dbconnmanager.connect_button.isEnabled()
