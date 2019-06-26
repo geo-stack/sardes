@@ -34,6 +34,9 @@ GITHUB_ISSUES_URL = __project_url__ + "/issues"
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self._window_normal_size = [self.size()] * 2
+        self._window_normal_pos = [self.pos()] * 2
+
         self.setWindowIcon(get_icon('master'))
         self.setWindowTitle(__namever__)
         if platform.system() == 'Windows':
@@ -57,6 +60,8 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(label)
 
         self.create_topright_corner_toolbar()
+
+        self.set_window_settings(*get_window_settings())
 
     # ---- Toolbar setup
     def create_topright_corner_toolbar(self):
@@ -145,6 +150,69 @@ class MainWindow(QMainWindow):
         db_icon = ('database_connected' if self.db_conn_manager.is_connected()
                    else 'database_disconnected')
         self.database_button.setIcon(get_icon(db_icon))
+
+    # ---- Main window settings
+    def get_window_settings(self):
+        """Return current window settings."""
+        window_size = (self._window_normal_size[1].width(),
+                       self._window_normal_size[1].height())
+        window_position = (self._window_normal_pos[1].x(),
+                           self._window_normal_pos[1].y())
+        is_maximized = self.isMaximized()
+        return (window_size, window_position, is_maximized)
+
+    def set_window_settings(self, window_size, window_position, is_maximized):
+        """Set window settings"""
+        self._window_normal_size = [QSize(*window_size)] * 2
+        self._window_normal_pos = [QPoint(*window_position)] * 2
+
+        self.setGeometry(*window_position, *window_size)
+        if is_maximized:
+            self.setWindowState(
+                self.windowState() ^ Qt.WindowMaximized)
+        self.setAttribute(Qt.WA_Resized, True)
+        # Setting the Qt.WA_Resized attribute to True is required or else the
+        # size of the wigdet will not be updated correctly when restoring the
+        # window from a maximized state and the layout won't be expanded
+        # correctly to the full size of the widget.
+
+    # ---- Main window events
+    def closeEvent(self, event):
+        """Reimplement Qt closeEvent."""
+        set_window_settings(*self.get_window_settings())
+        event.accept()
+
+    def changeEvent(self, event):
+        """Reimplement Qt method."""
+        # We need to restore the values for the normal window size and
+        # position that were stored in the resizeEvent() and moveEvent()
+        # to their previous value because isMaximized() does not work as
+        # expected when when within the resizeEvent() and moveEvent()
+        # caused by the window maximization. It seems as if the state returned
+        # by isMaximized() is set AFTER the resizeEvent() and moveEvent()
+        # were executed.
+        #
+        # See this bug https://bugreports.qt.io/browse/QTBUG-30085 for
+        # more information.
+        if event.type() == QEvent.WindowStateChange:
+            if self.windowState() & Qt.WindowMaximized:
+                self._window_normal_size[1] = self._window_normal_size[0]
+                self._window_normal_pos[1] = self._window_normal_pos[0]
+        super().changeEvent(event)
+
+    def resizeEvent(self, event):
+        """Reimplement Qt method."""
+        if not self.isMaximized():
+            self._window_normal_size[0] = self._window_normal_size[1]
+            self._window_normal_size[1] = self.size()
+        super().resizeEvent(event)
+
+    def moveEvent(self, event):
+        """Reimplement Qt method."""
+        if not self.isMaximized():
+            self._window_normal_pos[0] = self._window_normal_pos[1]
+            self._window_normal_pos[1] = self.pos()
+        super().moveEvent(event)
 
 
 if __name__ == '__main__':
