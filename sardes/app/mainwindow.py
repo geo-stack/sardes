@@ -12,7 +12,7 @@ import platform
 import sys
 
 # ---- Third party imports
-from qtpy.QtCore import QSize, Qt, QUrl
+from qtpy.QtCore import QEvent, QPoint, QSize, Qt, QUrl
 from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import (QApplication, QLabel, QMainWindow, QMenu,
                             QSizePolicy, QToolButton, QWidget)
@@ -20,7 +20,8 @@ from qtpy.QtWidgets import (QApplication, QLabel, QMainWindow, QMenu,
 # ---- Local imports
 from sardes import __namever__, __project_url__
 from sardes.config.icons import get_icon
-from sardes.config.gui import get_iconsize
+from sardes.config.gui import (get_iconsize, get_window_settings,
+                               set_window_settings)
 from sardes.widgets.databaseconnector import DatabaseConnectionWidget
 from sardes.utils.qthelpers import create_action, create_toolbutton
 
