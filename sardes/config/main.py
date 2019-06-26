@@ -18,7 +18,11 @@ CONFIG_DIR = get_config_dir(__appname__)
 
 DEFAULTS = [
     ('main',
-        {'fontsize_global': '14px'}
+        {'fontsize_global': '14px',
+         'window/size': (1260, 740),
+         'window/position': (50, 50),
+         'window/is_maximized': True
+         }
      ),
     ('database',
         {'database': '',
