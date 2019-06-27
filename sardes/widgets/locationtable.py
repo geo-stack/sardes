@@ -13,7 +13,7 @@ import sys
 
 # ---- Third party imports
 from qtpy.QtCore import (QAbstractTableModel, QModelIndex,
-                         QSortFilterProxyModel, Qt, QVariant)
+                         QSortFilterProxyModel, Qt, QVariant, Slot)
 from qtpy.QtGui import QColor
 from qtpy.QtWidgets import QApplication, QHeaderView, QTableView
 
@@ -116,11 +116,20 @@ class LocationTableView(QTableView):
         self.horizontalHeader().setSectionResizeMode(
             self.location_table_model.columnCount() - 1, QHeaderView.Stretch)
 
+    @Slot(bool)
+    def _trigger_location_table_update(self, connection_state):
+        if connection_state:
+            self.db_connection_manager.get_locations()
+        else:
+            self.location_table_model.update_location_table([])
+
     def set_database_connection_manager(self, db_connection_manager):
         self.db_connection_manager = db_connection_manager
         if db_connection_manager is not None:
             self.db_connection_manager.sig_database_locations.connect(
                 self.location_table_model.update_location_table)
+            self.db_connection_manager.sig_database_connection_changed.connect(
+                self._trigger_location_table_update)
 
 
 if __name__ == '__main__':
