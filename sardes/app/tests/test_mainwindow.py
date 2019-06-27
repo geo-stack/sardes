@@ -54,5 +54,60 @@ def test_mainwindow_init(mainwindow):
     assert mainwindow
 
 
+def test_mainwindow_settings(CONF, qtbot, tmpdir, mocker):
+    """
+    Test that the window size and position are store and restore correctly
+    in and from our configs.
+    """
+    mainwindow1 = MainWindow()
+    qtbot.addWidget(mainwindow1)
+    mainwindow1.show()
+    qtbot.waitForWindowShown(mainwindow1)
+
+    # Assert the default values.
+    assert mainwindow1.size() == QSize(1260, 740)
+    assert mainwindow1.pos() == QPoint(50, 50)
+    assert not mainwindow1.isMaximized()
+    assert mainwindow1.get_window_settings() == ((1260, 740), (50, 50), False)
+
+    # Resize and move the window to some expected size and position value.
+    expected_normal_window_size = (650, 400)
+    expected_normal_window_pos = (100, 100)
+    mainwindow1.resize(*expected_normal_window_size)
+    mainwindow1.move(*expected_normal_window_pos)
+
+    assert mainwindow1.size() == QSize(*expected_normal_window_size)
+    assert mainwindow1.pos() == QPoint(*expected_normal_window_pos)
+    assert not mainwindow1.isMaximized()
+    assert mainwindow1.get_window_settings() == (
+        expected_normal_window_size, expected_normal_window_pos, False)
+
+    # Maximize the window.
+    mainwindow1.showMaximized()
+    qtbot.wait(5)
+
+    assert mainwindow1.size() != QSize(*expected_normal_window_size)
+    assert mainwindow1.pos() != QPoint(*expected_normal_window_pos)
+    assert mainwindow1.isMaximized()
+    assert mainwindow1.get_window_settings() == (
+        expected_normal_window_size, expected_normal_window_pos, True)
+
+    # Close and delete the window.
+    with qtbot.waitSignal(mainwindow1.destroyed):
+        mainwindow1.close()
+        mainwindow1.deleteLater()
+
+    # Create a new instance of the main window.
+    mainwindow2 = MainWindow()
+    mainwindow2.show()
+    qtbot.waitForWindowShown(mainwindow2)
+
+    assert mainwindow2.size() != QSize(*expected_normal_window_size)
+    assert mainwindow2.pos() != QPoint(*expected_normal_window_pos)
+    assert mainwindow2.isMaximized()
+    assert mainwindow2.get_window_settings() == (
+        expected_normal_window_size, expected_normal_window_pos, True)
+
+
 if __name__ == "__main__":
     pytest.main(['-x', os.path.basename(__file__), '-v', '-rw'])
