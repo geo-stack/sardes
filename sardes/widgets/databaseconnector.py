@@ -177,7 +177,6 @@ class DatabaseConnectionWidget(QDialog):
                        "<i>{}</i>.".format(self.dbname_lineedit.text()))
             self.status_bar.show_sucess_icon(message)
         self._update_gui()
-        self.db_connection_manager.get_locations()
 
     @Slot()
     def _handle_database_disconnected(self):
@@ -186,7 +185,6 @@ class DatabaseConnectionWidget(QDialog):
         """
         self.status_bar.hide()
         self._update_gui()
-        self.db_connection_manager.get_locations()
 
     def accept(self):
         """
