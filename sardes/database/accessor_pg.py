@@ -25,13 +25,19 @@ PATH_DB_LOGFILE = osp.join(CONFIG_DIR, 'database_log.txt')
 
 Base = declarative_base()
 
+LOCTABLEATTRS = [
+    'no_piezometre', 'nom_communn', 'municipalite', 'aquifere',
+    'nappe', 'code_aqui', 'zone_rechar', 'influences', 'latitude_8',
+    'longitude', 'station_active', 'remarque', 'loc_id', 'geom'
+    ]
+
 
 class Location(Base):
     """
     An object used to map the 'Localisation'table of the database.
     """
-    __tablename__ = 'localisation'
 
+    __tablename__ = 'localisation'
     no_piezometre = Column(String)
     nom_communn = Column(String)
     municipalite = Column(String)
@@ -48,26 +54,11 @@ class Location(Base):
     geom = Column(String)
 
     def __repr__(self):
-        return ("<Location("
-                "no_piezometre={}, "
-                "nom_communn={}, "
-                "municipalite={}), "
-                "aquifere={}), "
-                "nappe={}), "
-                "code_aqui={}), "
-                "zone_rechar={}), "
-                "influences={}), "
-                "latitude_8={}), "
-                "longitude={}), "
-                "station_active={}), "
-                "remarque={}), "
-                "loc_id={}), "
-                "geom={}), "
-                ).format(self.no_piezometre, self.nom_communn,
-                         self.municipalite, self.aquifere, self.nappe,
-                         self.code_aqui, self.zone_rechar, self.influences,
-                         self.latitude_8, self.longitude, self.station_active,
-                         self.remarque, self.loc_id, self.geom)
+        returned_value = "<Location("
+        for attr in LOCTABLEATTRS:
+            returned_value += "{}={}".format(attr, getattr(self, attr))
+        returned_value += ")>"
+        return returned_value
 
 
 class DataAccessorPG(object):
