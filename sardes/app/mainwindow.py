@@ -169,9 +169,9 @@ class MainWindow(QMainWindow):
         self.resize(*window_size)
         self.move(*window_position)
 
+        self.setWindowState(Qt.WindowNoState)
         if is_maximized:
-            self.setWindowState(
-                self.windowState() ^ Qt.WindowMaximized)
+            self.setWindowState(self.windowState() ^ Qt.WindowMaximized)
         self.setAttribute(Qt.WA_Resized, True)
         # Setting the Qt.WA_Resized attribute to True is required or else the
         # size of the wigdet will not be updated correctly when restoring the
