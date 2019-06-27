@@ -12,7 +12,7 @@ import platform
 import sys
 
 # ---- Third party imports
-from qtpy.QtCore import QSize, Qt, QUrl
+from qtpy.QtCore import QPoint, QSize, Qt, QUrl
 from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import (QApplication, QLabel, QMainWindow, QMenu,
                             QSizePolicy, QToolButton, QWidget)
@@ -20,7 +20,8 @@ from qtpy.QtWidgets import (QApplication, QLabel, QMainWindow, QMenu,
 # ---- Local imports
 from sardes import __namever__, __project_url__
 from sardes.config.icons import get_icon
-from sardes.config.gui import get_iconsize
+from sardes.config.gui import (get_iconsize, get_window_settings,
+                               set_window_settings)
 from sardes.widgets.databaseconnector import DatabaseConnectionWidget
 from sardes.utils.qthelpers import create_action, create_toolbutton
 
@@ -33,6 +34,9 @@ GITHUB_ISSUES_URL = __project_url__ + "/issues"
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self._window_normal_size = [self.size()] * 2
+        self._window_normal_pos = [self.pos()] * 2
+
         self.setWindowIcon(get_icon('master'))
         self.setWindowTitle(__namever__)
         if platform.system() == 'Windows':
@@ -56,6 +60,8 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(label)
 
         self.create_topright_corner_toolbar()
+
+        self.set_window_settings(*get_window_settings())
 
     # ---- Toolbar setup
     def create_topright_corner_toolbar(self):
@@ -144,6 +150,66 @@ class MainWindow(QMainWindow):
         db_icon = ('database_connected' if self.db_conn_manager.is_connected()
                    else 'database_disconnected')
         self.database_button.setIcon(get_icon(db_icon))
+
+    # ---- Main window settings
+    def get_window_settings(self):
+        """Return current window settings."""
+        is_maximized = self.isMaximized()
+
+        # NOTE: The isMaximized() method does not work as expected when used
+        # in the resizeEvent() and moveEvent() that are caused by the window
+        # maximization. It seems as if the state returned by isMaximized()
+        # is set AFTER the resizeEvent() and moveEvent() were executed.
+        # See this Qt bug https://bugreports.qt.io/browse/QTBUG-30085
+        # for more information.
+        # As a workaround, we store the last and second to last value of
+        # the window size and position in the resizeEvent() and moveEvent()
+        # regardless of the state of the window. We check for the
+        # isMaximized() state here instead and return the right values
+        # for the normal window size and position accordingly.
+        index = 0 if is_maximized else 1
+        window_size = (self._window_normal_size[index].width(),
+                       self._window_normal_size[index].height())
+        window_position = (self._window_normal_pos[index].x(),
+                           self._window_normal_pos[index].y())
+        return (window_size, window_position, is_maximized)
+
+    def set_window_settings(self, window_size, window_position, is_maximized):
+        """Set window settings"""
+        self._window_normal_size = [QSize(*window_size)] * 2
+        self._window_normal_pos = [QPoint(*window_position)] * 2
+
+        self.resize(*window_size)
+        self.move(*window_position)
+
+        self.setWindowState(Qt.WindowNoState)
+        if is_maximized:
+            self.setWindowState(self.windowState() ^ Qt.WindowMaximized)
+        self.setAttribute(Qt.WA_Resized, True)
+        # NOTE: Setting the Qt.WA_Resized attribute to True is required or
+        # else the size of the wigdet will not be updated correctly when
+        # restoring the window from a maximized state and the layout won't
+        # be expanded correctly to the full size of the widget.
+
+    # ---- Main window events
+    def closeEvent(self, event):
+        """Reimplement Qt closeEvent."""
+        set_window_settings(*self.get_window_settings())
+        event.accept()
+
+    def resizeEvent(self, event):
+        """Reimplement Qt method."""
+        if self.size() != self._window_normal_size[1]:
+            self._window_normal_size[0] = self._window_normal_size[1]
+            self._window_normal_size[1] = self.size()
+        super().resizeEvent(event)
+
+    def moveEvent(self, event):
+        """Reimplement Qt method."""
+        if self.pos() != self._window_normal_pos[1]:
+            self._window_normal_pos[0] = self._window_normal_pos[1]
+            self._window_normal_pos[1] = self.pos()
+        super().moveEvent(event)
 
 
 if __name__ == '__main__':

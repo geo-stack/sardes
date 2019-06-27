@@ -18,7 +18,10 @@ CONFIG_DIR = get_config_dir(__appname__)
 
 DEFAULTS = [
     ('main',
-        {'fontsize_global': '14px'}
+        {'window/size': (900, 450),
+         'window/position': (50, 50),
+         'window/is_maximized': False
+         }
      ),
     ('database',
         {'database': '',
@@ -39,7 +42,7 @@ DEFAULTS = [
 #    or if you want to *rename* options, then you need to do a MAJOR update in
 #    version, e.g. from 3.0.0 to 4.0.0
 # 3. You don't need to touch this value if you're just adding a new option
-CONF_VERSION = '1.0.0'
+CONF_VERSION = '2.0.0'
 
 # Setup the main configuration instance.
 try:
