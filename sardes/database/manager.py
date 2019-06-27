@@ -153,6 +153,9 @@ class DatabaseConnectionManager(QObject):
 
     @Slot()
     def _handle_disconnect_from_db(self):
+        """
+        Handle when the connection to the database was closed successfully.
+        """
         self.sig_database_disconnected.emit()
 
     def disconnect_from_db(self):
@@ -162,9 +165,19 @@ class DatabaseConnectionManager(QObject):
 
     @Slot(list)
     def _handle_get_locations(self, locations):
+        """
+        Handle when the content of the locations table was fetch sucessfully
+        from the database.
+        """
         self._locations = locations
         self.sig_database_locations.emit(self._locations)
 
     def get_locations(self):
+        """
+        Get the content of the locations table from the database.
+
+        The results are sent through the sig_database_locations signal
+        as a list of named tuples.
+        """
         self._db_connection_worker.add_task('get_locations')
         self._db_connection_thread.start()

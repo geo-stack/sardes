@@ -41,6 +41,9 @@ class DatabaseConnectionWidget(QDialog):
         self.set_database_connection_manager(db_connection_manager)
 
     def set_database_connection_manager(self, db_connection_manager):
+        """
+        Setup the database connection manager for this widget.
+        """
         self.db_connection_manager = db_connection_manager
         if db_connection_manager is not None:
             self.db_connection_manager.sig_database_connected.connect(
