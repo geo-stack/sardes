@@ -12,7 +12,7 @@ import platform
 import sys
 
 # ---- Third party imports
-from qtpy.QtCore import QEvent, QPoint, QSize, Qt, QUrl
+from qtpy.QtCore import QPoint, QSize, Qt, QUrl
 from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import (QApplication, QLabel, QMainWindow, QMenu,
                             QSizePolicy, QToolButton, QWidget)
@@ -154,11 +154,24 @@ class MainWindow(QMainWindow):
     # ---- Main window settings
     def get_window_settings(self):
         """Return current window settings."""
-        window_size = (self._window_normal_size[1].width(),
-                       self._window_normal_size[1].height())
-        window_position = (self._window_normal_pos[1].x(),
-                           self._window_normal_pos[1].y())
         is_maximized = self.isMaximized()
+
+        # NOTE: The isMaximized() method does not work as expected when used
+        # in the resizeEvent() and moveEvent() that are caused by the window
+        # maximization. It seems as if the state returned by isMaximized()
+        # is set AFTER the resizeEvent() and moveEvent() were executed.
+        # See this Qt bug https://bugreports.qt.io/browse/QTBUG-30085
+        # for more information.
+        # As a workaround, we store the last and second to last value of
+        # the window size and position in the resizeEvent() and moveEvent()
+        # regardless of the state of the window. We check for the
+        # isMaximized() state here instead and return the right values
+        # for the normal window size and position accordingly.
+        index = 0 if is_maximized else 1
+        window_size = (self._window_normal_size[index].width(),
+                       self._window_normal_size[index].height())
+        window_position = (self._window_normal_pos[index].x(),
+                           self._window_normal_pos[index].y())
         return (window_size, window_position, is_maximized)
 
     def set_window_settings(self, window_size, window_position, is_maximized):
@@ -173,10 +186,10 @@ class MainWindow(QMainWindow):
         if is_maximized:
             self.setWindowState(self.windowState() ^ Qt.WindowMaximized)
         self.setAttribute(Qt.WA_Resized, True)
-        # Setting the Qt.WA_Resized attribute to True is required or else the
-        # size of the wigdet will not be updated correctly when restoring the
-        # window from a maximized state and the layout won't be expanded
-        # correctly to the full size of the widget.
+        # NOTE: Setting the Qt.WA_Resized attribute to True is required or
+        # else the size of the wigdet will not be updated correctly when
+        # restoring the window from a maximized state and the layout won't
+        # be expanded correctly to the full size of the widget.
 
     # ---- Main window events
     def closeEvent(self, event):
@@ -184,34 +197,16 @@ class MainWindow(QMainWindow):
         set_window_settings(*self.get_window_settings())
         event.accept()
 
-    def changeEvent(self, event):
-        """Reimplement Qt method."""
-        # We need to restore the values for the normal window size and
-        # position that were stored in the resizeEvent() and moveEvent()
-        # to their previous value because isMaximized() does not work as
-        # expected when when within the resizeEvent() and moveEvent()
-        # caused by the window maximization. It seems as if the state returned
-        # by isMaximized() is set AFTER the resizeEvent() and moveEvent()
-        # were executed.
-        #
-        # See this bug https://bugreports.qt.io/browse/QTBUG-30085 for
-        # more information.
-        if event.type() == QEvent.WindowStateChange:
-            if self.windowState() & Qt.WindowMaximized:
-                self._window_normal_size[1] = self._window_normal_size[0]
-                self._window_normal_pos[1] = self._window_normal_pos[0]
-        super().changeEvent(event)
-
     def resizeEvent(self, event):
         """Reimplement Qt method."""
-        if not self.isMaximized():
+        if self.size() != self._window_normal_size[1]:
             self._window_normal_size[0] = self._window_normal_size[1]
             self._window_normal_size[1] = self.size()
         super().resizeEvent(event)
 
     def moveEvent(self, event):
         """Reimplement Qt method."""
-        if not self.isMaximized():
+        if self.pos() != self._window_normal_pos[1]:
             self._window_normal_pos[0] = self._window_normal_pos[1]
             self._window_normal_pos[1] = self.pos()
         super().moveEvent(event)
