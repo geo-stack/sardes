@@ -74,8 +74,10 @@ class DatabaseConnectionWorker(QObject):
         self.sig_database_disconnected.emit()
 
     def get_locations(self):
-        if self.db_manager is not None:
+        try:
             locations = self.db_manager.get_locations()
+        except AttributeError:
+            locations = []
         self.sig_database_locations.emit(locations)
 
     def execute_sql_request(self, sql_request, **kwargs):
