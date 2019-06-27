@@ -14,7 +14,7 @@ import sys
 # ---- Third party imports
 from qtpy.QtCore import QPoint, QSize, Qt, QUrl
 from qtpy.QtGui import QDesktopServices
-from qtpy.QtWidgets import (QApplication, QLabel, QMainWindow, QMenu,
+from qtpy.QtWidgets import (QApplication, QMainWindow, QMenu,
                             QSizePolicy, QToolButton, QWidget)
 
 # ---- Local imports
@@ -22,7 +22,9 @@ from sardes import __namever__, __project_url__
 from sardes.config.icons import get_icon
 from sardes.config.gui import (get_iconsize, get_window_settings,
                                set_window_settings)
+from sardes.database.manager import DatabaseConnectionManager
 from sardes.widgets.databaseconnector import DatabaseConnectionWidget
+from sardes.widgets.locationtable import LocationTableView
 from sardes.utils.qthelpers import create_action, create_toolbutton
 
 from multiprocessing import freeze_support
@@ -48,17 +50,23 @@ class MainWindow(QMainWindow):
         self.visible_toolbars = []
         self.toolbarslist = []
 
-        self.db_conn_manager = DatabaseConnectionWidget(self)
-        self.db_conn_manager.hide()
+        # Setup the database connection manager.
+        self.db_connection_manager = DatabaseConnectionManager()
+
+        # Setup the database connection widget.
+        self.db_connection_widget = DatabaseConnectionWidget(
+            self.db_connection_manager, self)
+        self.db_connection_widget.hide()
+
+        # Setup the database locations view table.
+        self.location_view = LocationTableView(
+            self.db_connection_manager, self)
 
         self.setup()
 
     def setup(self):
         """Setup the main window"""
-        label = QLabel('Welcome to Sardes!')
-        label.setAlignment(Qt.AlignCenter)
-        self.setCentralWidget(label)
-
+        self.setCentralWidget(self.location_view)
         self.create_topright_corner_toolbar()
 
         self.set_window_settings(*get_window_settings())
@@ -80,12 +88,12 @@ class MainWindow(QMainWindow):
 
         # Add the database connection manager button.
         self.database_button = create_toolbutton(
-            self, triggered=self.db_conn_manager.show,
+            self, triggered=self.db_connection_widget.show,
             text="Database connection manager",
             tip="Open the database connection manager window.",
             shortcut='Ctrl+Shift+D')
         self.setup_database_button_icon()
-        self.db_conn_manager.sig_connection_changed.connect(
+        self.db_connection_manager.sig_database_connection_changed.connect(
             self.setup_database_button_icon)
         self.topright_corner_toolbar.addWidget(self.database_button)
 
@@ -147,7 +155,8 @@ class MainWindow(QMainWindow):
         Set the icon of the database button to show whether a database is
         currently connected or not.
         """
-        db_icon = ('database_connected' if self.db_conn_manager.is_connected()
+        db_icon = ('database_connected' if
+                   self.db_connection_manager.is_connected()
                    else 'database_disconnected')
         self.database_button.setIcon(get_icon(db_icon))
 
