@@ -12,16 +12,9 @@
 import sys
 
 # ---- Third party imports
-from qtpy.QtCore import QObject, Qt, QThread, Signal, Slot
-from qtpy.QtWidgets import (
-    QApplication, QAbstractButton, QDialog, QDialogButtonBox, QGridLayout,
-    QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout,
-    QSpinBox)
+from qtpy.QtCore import QObject, QThread, Signal, Slot
 
 # ---- Local imports
-from sardes.config.database import get_dbconfig, set_dbconfig
-from sardes.config.gui import RED
-from sardes.widgets.statusbar import ProcessStatusBar
 from sardes.database.accessor_pg import DataAccessorPG
 
 
