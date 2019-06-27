@@ -20,7 +20,7 @@ DEFAULTS = [
     ('main',
         {'window/size': (1260, 740),
          'window/position': (50, 50),
-         'window/is_maximized': True
+         'window/is_maximized': False
          }
      ),
     ('database',
