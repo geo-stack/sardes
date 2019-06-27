@@ -21,7 +21,7 @@ import pytest
 from qtpy.QtCore import Qt
 
 # ---- Local imports
-from sardes.database.manager import DatabaseConnectionManager
+from sardes.database.manager import DatabaseConnectionManager, DataAccessor
 from sardes.widgets.databaseconnector import DatabaseConnectionWidget
 from sardes.widgets.statusbar import ProcessStatusBar
 
@@ -66,6 +66,7 @@ def test_dbconnwidget_connect(dbconnwidget, qtbot, mocker):
         return mocked_connection
     mocker.patch('sqlalchemy.engine.Engine.connect',
                  side_effect=sqlalchemy_connect_mock)
+    mocker.patch.object(DataAccessor, 'get_locations', return_value=[])
 
     # Try connecting to the database.
     with qtbot.waitSignal(dbconnmanager.sig_database_connected):
@@ -116,6 +117,7 @@ def test_dbconnwidget_failed_connect(mode, dbconnwidget, qtbot, mocker):
             raise OperationalError(Mock(), Mock(), Mock())
     mocker.patch('sqlalchemy.engine.Engine.connect',
                  side_effect=sqlalchemy_connect_mock)
+    mocker.patch.object(DataAccessor, 'get_locations', return_value=[])
 
     # Try connecting to the database.
     with qtbot.waitSignal(dbconnmanager.sig_database_connected):

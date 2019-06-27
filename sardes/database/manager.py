@@ -15,7 +15,7 @@ import sys
 from qtpy.QtCore import QObject, QThread, Signal, Slot
 
 # ---- Local imports
-from sardes.database.accessor_pg import DataAccessorPG
+from sardes.database.accessor_pg import DataAccessorPG as DataAccessor
 
 
 class DatabaseConnectionWorker(QObject):
@@ -60,7 +60,7 @@ class DatabaseConnectionWorker(QObject):
 
     def connect_to_db(self):
         """Try to create a new connection with the database"""
-        self.db_manager = DataAccessorPG(
+        self.db_manager = DataAccessor(
             self.database, self.user, self.password, self.host, self.port,
             self.client_encoding)
         self.db_manager.connect()
