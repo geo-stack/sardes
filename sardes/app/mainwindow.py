@@ -166,7 +166,9 @@ class MainWindow(QMainWindow):
         self._window_normal_size = [QSize(*window_size)] * 2
         self._window_normal_pos = [QPoint(*window_position)] * 2
 
-        self.setGeometry(*window_position, *window_size)
+        self.resize(*window_size)
+        self.move(*window_position)
+
         if is_maximized:
             self.setWindowState(
                 self.windowState() ^ Qt.WindowMaximized)
