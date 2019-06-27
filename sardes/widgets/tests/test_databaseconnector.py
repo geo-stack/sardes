@@ -21,7 +21,7 @@ import pytest
 from qtpy.QtCore import Qt
 
 # ---- Local imports
-from sardes.database.manager import DatabaseConnectionManager, DataAccessor
+from sardes.database.manager import DatabaseConnectionManager
 from sardes.widgets.databaseconnector import DatabaseConnectionWidget
 from sardes.widgets.statusbar import ProcessStatusBar
 
