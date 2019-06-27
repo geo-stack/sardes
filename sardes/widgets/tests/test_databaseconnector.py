@@ -12,7 +12,7 @@ Tests for the DatabaseConnectionWidget.
 """
 
 # ---- Standard imports
-import os
+import os.path as osp
 from unittest.mock import Mock
 
 # ---- Third party imports
@@ -138,4 +138,4 @@ def test_dbconnwidget_failed_connect(mode, dbconnwidget, qtbot, mocker):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', os.path.basename(__file__), '-v', '-rw'])
+    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
