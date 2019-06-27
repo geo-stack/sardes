@@ -114,6 +114,7 @@ class LocationTableView(QTableView):
     def __init__(self, db_connection_manager=None, parent=None):
         super().__init__(parent)
         self.setSortingEnabled(True)
+        self.setAlternatingRowColors(True)
 
         self.location_table_model = LocationTableModel()
         self.location_proxy_model = LocationSortFilterProxyModel(
