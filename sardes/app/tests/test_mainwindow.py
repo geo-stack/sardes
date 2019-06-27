@@ -13,22 +13,33 @@ Tests for the mainwindow.
 
 # ---- Standard imports
 import os
-from unittest.mock import Mock
 
 # ---- Third party imports
-import psycopg2
 import pytest
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QPoint, QSize
+from appconfigs.user import UserConfig
 
 # ---- Local imports
 from sardes.app.mainwindow import MainWindow
+from sardes.config.main import CONF_VERSION, DEFAULTS
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def mainwindow(qtbot, mocker):
+def CONF(tmpdir, mocker):
+    CONFIG_DIR = str(tmpdir)
+    CONF = UserConfig('sardes', defaults=DEFAULTS, load=True,
+                      version=CONF_VERSION, path=CONFIG_DIR,
+                      backup=True, raw_mode=True)
+    mocker.patch('sardes.config.main.CONF', new=CONF)
+    mocker.patch('sardes.config.gui.CONF', new=CONF)
+    return CONF
+
+
+@pytest.fixture
+def mainwindow(CONF, qtbot, mocker):
     mainwindow = MainWindow()
     qtbot.addWidget(mainwindow)
     mainwindow.show()
