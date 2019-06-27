@@ -7,90 +7,171 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+
 # ---- Standard imports
-from datetime import datetime
-import os.path as osp
 import sys
-import urllib.parse
+
 # ---- Third party imports
-from sqlalchemy import create_engine
-from sqlalchemy.exc import DBAPIError, ProgrammingError
-from sqlalchemy.engine.url import URL
+from qtpy.QtCore import QObject, Qt, QThread, Signal, Slot
+from qtpy.QtWidgets import (
+    QApplication, QAbstractButton, QDialog, QDialogButtonBox, QGridLayout,
+    QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout,
+    QSpinBox)
+
 # ---- Local imports
-from sardes.config.main import CONFIG_DIR
+from sardes.config.database import get_dbconfig, set_dbconfig
+from sardes.config.gui import RED
+from sardes.widgets.statusbar import ProcessStatusBar
+from sardes.database.accessor_pg import DataAccessorPG
 
-PATH_DB_LOGFILE = osp.join(CONFIG_DIR, 'database_log.txt')
 
-
-class PGDatabaseConnectionManager(object):
+class DatabaseConnectionWorker(QObject):
     """
-    Manage the connection to the database. The default host is the LOCAL_HOST.
+    A simple worker to create a new database session without blocking the gui.
     """
+    sig_database_connected = Signal(object, object)
+    sig_database_disconnected = Signal()
+    sig_database_locations = Signal(list)
 
-    def __init__(self, database, username, password, hostname, port,
-                 client_encoding='utf8'):
-        self._database = database
-        self._username = username
-        self._password = password
-        self._hostname = hostname
-        self._port = port
-        self._client_encoding = client_encoding
+    def __init__(self, parent=None):
+        super(DatabaseConnectionWorker, self).__init__(parent)
+        self.db_manager = None
 
-        # create a SQL Alchemy engine.
-        self._connection = None
-        self._connection_error = None
-        self._engine = self._create_engine()
+        self.database = ""
+        self.user = ""
+        self.password = ""
+        self.host = ""
+        self.port = 5432
+        self.client_encoding = 'utf_8'
 
-        # self.inspector = inspect(self._engine)
+        self._tasks = []
 
-    def _create_engine(self):
-        """Create a SQL Alchemy engine."""
-        database_url = URL('postgresql',
-                           username=self._username,
-                           password=self._password,
-                           host=self._hostname,
-                           port=self._port,
-                           database=self._database)
+    def add_task(self, task, *args, **kargs):
+        """
+        Add a task to the stack that will be executed when the thread of
+        this worker is started.
+        """
+        self._tasks.append((task, args, kargs))
 
-        return create_engine(database_url,
-                             isolation_level="AUTOCOMMIT",
-                             client_encoding=self._client_encoding,
-                             echo=False)
+    def run_tasks(self):
+        """Execute the tasks that were added to the stack."""
+        for task, args, kargs in self._tasks:
+            method_to_exec = getattr(self, task)
+            method_to_exec(*args, **kargs)
+        self._tasks = []
+        self.thread().quit()
 
     def is_connected(self):
         """Return whether a connection to a database is currently active."""
-        if self._connection is None:
-            return False
-        else:
-            return not self._connection.closed
+        return self.db_manager is not None and self.db_manager.is_connected()
 
-    def connect(self):
-        """
-        Create a new connection object to communicate with the database.
-        """
-        try:
-            self._connection = self._engine.connect()
-        except DBAPIError as e:
-            self._connection = None
-            self._connection_error = e
-        else:
-            self._connection_error = None
+    def connect_to_db(self):
+        """Try to create a new connection with the database"""
+        self.db_manager = DataAccessorPG(
+            self.database, self.user, self.password, self.host, self.port,
+            self.client_encoding)
+        self.db_manager.connect()
+        self.sig_database_connected.emit(
+            self.db_manager._connection,  self.db_manager._connection_error)
 
-    def close_connection(self):
-        """
-        Close the current connection with the database.
-        """
-        self._engine.dispose()
-        self._connection = None
+    def disconnect_from_db(self):
+        """Close the connection with the database"""
+        if self.db_manager is not None:
+            self.db_manager.close_connection()
+        self.sig_database_disconnected.emit()
 
-    def execute(self, sql_request, **kwargs):
+    def get_locations(self):
+        if self.db_manager is not None:
+            locations = self.db_manager.get_locations()
+        self.sig_database_locations.emit(locations)
+
+    def execute_sql_request(self, sql_request, **kwargs):
         """Execute a SQL statement construct and return a ResultProxy."""
-        try:
-            return self._connection.execute(sql_request, **kwargs)
-        except ProgrammingError as p:
-            print("Permission error for user {}".format(self.user))
-            raise p
+        if self.db_manager is not None:
+            return self.db_manager.execute(sql_request, **kwargs)
 
 
-if __name__ == '__main__':
-    pass
+class DatabaseConnectionManager(QObject):
+    sig_database_connected = Signal(object, object)
+    sig_database_disconnected = Signal()
+    sig_database_connection_changed = Signal(bool)
+    sig_database_locations = Signal(list)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self._db_connection_worker = DatabaseConnectionWorker()
+        self._db_connection_thread = QThread()
+        self._db_connection_worker.moveToThread(self._db_connection_thread)
+        self._db_connection_thread.started.connect(
+            self._db_connection_worker.run_tasks)
+
+        # Connect the worker signals to handlers.
+        self._db_connection_worker.sig_database_connected.connect(
+            self._handle_connect_to_db)
+        self._db_connection_worker.sig_database_disconnected.connect(
+            self._handle_disconnect_from_db)
+        self._db_connection_worker.sig_database_locations.connect(
+            self._handle_get_locations)
+
+        self._db_connection_worker.sig_database_connected.connect(
+            lambda: self.sig_database_connection_changed.emit(
+                self.is_connected()))
+        self._db_connection_worker.sig_database_disconnected.connect(
+            lambda: self.sig_database_connection_changed.emit(
+                self.is_connected()))
+
+        self._is_connecting = False
+        self._locations = []
+
+    def is_connected(self):
+        """Return whether a connection to a database is currently active."""
+        return self._db_connection_worker.is_connected()
+
+    def is_connecting(self):
+        """
+        Return whether a connection to a database is currently being created.
+        """
+        return self._is_connecting
+
+    @Slot(object, object)
+    def _handle_connect_to_db(self, connection,  connection_error):
+        """
+        Handle when a connection to the database was created successfully
+        or not.
+        """
+        self._is_connecting = False
+        self.sig_database_connected.emit(connection,  connection_error)
+
+    def connect_to_db(self, database, user, password, host, port,
+                      client_encoding):
+        """Try to create a new connection with the database"""
+        self._is_connecting = True
+
+        self._db_connection_worker.database = database
+        self._db_connection_worker.user = user
+        self._db_connection_worker.password = password
+        self._db_connection_worker.host = host
+        self._db_connection_worker.port = port
+        self._db_connection_worker.client_encoding = client_encoding
+
+        self._db_connection_worker.add_task('connect_to_db')
+        self._db_connection_thread.start()
+
+    @Slot()
+    def _handle_disconnect_from_db(self):
+        self.sig_database_disconnected.emit()
+
+    def disconnect_from_db(self):
+        """Close the connection with the database"""
+        self._db_connection_worker.add_task('disconnect_from_db')
+        self._db_connection_thread.start()
+
+    @Slot(list)
+    def _handle_get_locations(self, locations):
+        self._locations = locations
+        self.sig_database_locations.emit(self._locations)
+
+    def get_locations(self):
+        self._db_connection_worker.add_task('get_locations')
+        self._db_connection_thread.start()
