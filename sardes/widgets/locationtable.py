@@ -98,8 +98,8 @@ class LocationSortFilterProxyModel(QSortFilterProxyModel):
 
 class LocationTableView(QTableView):
     """
-    A single table view that displays Watson activity log and
-    allow sorting and filtering of the data through the use of a proxy model.
+    A single tableview that displays the content of the databsase locations
+    table.
     """
 
     def __init__(self, db_connection_manager=None, parent=None):
@@ -118,12 +118,17 @@ class LocationTableView(QTableView):
 
     @Slot(bool)
     def _trigger_location_table_update(self, connection_state):
+        """
+        Get the content of locations table from the database and update
+        the content of this tableview.
+        """
         if connection_state:
             self.db_connection_manager.get_locations()
         else:
             self.location_table_model.update_location_table([])
 
     def set_database_connection_manager(self, db_connection_manager):
+        """Setup the database connection manager for this tableview."""
         self.db_connection_manager = db_connection_manager
         if db_connection_manager is not None:
             self.db_connection_manager.sig_database_locations.connect(
