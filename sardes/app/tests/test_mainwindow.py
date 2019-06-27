@@ -65,10 +65,10 @@ def test_mainwindow_settings(CONF, qtbot, tmpdir, mocker):
     qtbot.waitForWindowShown(mainwindow1)
 
     # Assert the default values.
-    assert mainwindow1.size() == QSize(1260, 740)
+    assert mainwindow1.size() == QSize(900, 450)
     assert mainwindow1.pos() == QPoint(50, 50)
     assert not mainwindow1.isMaximized()
-    assert mainwindow1.get_window_settings() == ((1260, 740), (50, 50), False)
+    assert mainwindow1.get_window_settings() == ((900, 450), (50, 50), False)
 
     # Resize and move the window to some expected size and position value.
     expected_normal_window_size = (650, 400)
