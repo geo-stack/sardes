@@ -27,6 +27,9 @@ Base = declarative_base()
 
 
 class Location(Base):
+    """
+    An object used to map the 'Localisation'table of the database.
+    """
     __tablename__ = 'localisation'
 
     no_piezometre = Column(String)
@@ -133,6 +136,9 @@ class DataAccessorPG(object):
         self._connection = None
 
     def get_locations(self, sort=True):
+        """
+        Get the content of the locations table from the database.
+        """
         if self.is_connected():
             if sort:
                 locations = self._session.query(Location).order_by(
