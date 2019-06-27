@@ -18,7 +18,8 @@ CONFIG_DIR = get_config_dir(__appname__)
 
 DEFAULTS = [
     ('main',
-        {'window/size': (900, 450),
+        {'language': 'en',
+         'window/size': (900, 450),
          'window/position': (50, 50),
          'window/is_maximized': False
          }
