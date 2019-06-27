@@ -22,6 +22,11 @@ from sardes.config.gui import RED, GREEN
 
 
 class LocationTableModel(QAbstractTableModel):
+    """
+    An abstract table model to be used in a table view to display the content
+    of the databsase locations table.
+    """
+
     COLUMNS = ['no_piezometre', 'nom_communn', 'municipalite',
                'aquifere', 'nappe', 'code_aqui', 'zone_rechar',
                'influences', 'latitude_8', 'longitude', 'station_active',
@@ -45,6 +50,10 @@ class LocationTableModel(QAbstractTableModel):
         self.locations = []
 
     def update_location_table(self, locations):
+        """
+        Update the content of this table model with the provided list of
+        locations.
+        """
         self.locations = locations
         self.modelReset.emit()
 
@@ -98,7 +107,7 @@ class LocationSortFilterProxyModel(QSortFilterProxyModel):
 
 class LocationTableView(QTableView):
     """
-    A single tableview that displays the content of the databsase locations
+    A single table view that displays the content of the databsase locations
     table.
     """
 
@@ -120,7 +129,7 @@ class LocationTableView(QTableView):
     def _trigger_location_table_update(self, connection_state):
         """
         Get the content of locations table from the database and update
-        the content of this tableview.
+        the content of this table view.
         """
         if connection_state:
             self.db_connection_manager.get_locations()
@@ -128,7 +137,7 @@ class LocationTableView(QTableView):
             self.location_table_model.update_location_table([])
 
     def set_database_connection_manager(self, db_connection_manager):
-        """Setup the database connection manager for this tableview."""
+        """Setup the database connection manager for this table view."""
         self.db_connection_manager = db_connection_manager
         if db_connection_manager is not None:
             self.db_connection_manager.sig_database_locations.connect(
