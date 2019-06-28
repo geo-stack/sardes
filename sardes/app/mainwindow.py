@@ -14,14 +14,17 @@ import sys
 # ---- Third party imports
 from qtpy.QtCore import QPoint, QSize, Qt, QUrl
 from qtpy.QtGui import QDesktopServices
-from qtpy.QtWidgets import (QApplication, QMainWindow, QMenu,
-                            QSizePolicy, QToolButton, QWidget)
+from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
+                            QMessageBox, QSizePolicy, QToolButton, QWidget,
+                            QLabel)
 
 # ---- Local imports
 from sardes import __namever__, __project_url__
 from sardes.config.icons import get_icon
 from sardes.config.gui import (get_iconsize, get_window_settings,
                                set_window_settings)
+from sardes.config.locale import (_, get_available_translations, get_lang_conf,
+                                  LANGUAGE_CODES, set_lang_conf)
 from sardes.database.manager import DatabaseConnectionManager
 from sardes.widgets.databaseconnector import DatabaseConnectionWidget
 from sardes.widgets.locationtable import LocationTableView
