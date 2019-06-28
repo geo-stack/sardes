@@ -1,4 +1,3 @@
-﻿# -----------------------------------------------------------------------------
 # Copyright © SARDES Project Contributors
 # https://github.com/cgq-qgc/sardes
 #
@@ -11,9 +10,10 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1.0\n"
-"POT-Creation-Date: 2019-06-28 01:04-0400\n"
-"PO-Revision-Date: 2019-06-28 01:08-0400\n"
-"Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs.ca.com>\n"
+"POT-Creation-Date: 2019-06-28 10:28-0400\n"
+"PO-Revision-Date: 2019-06-28 10:30-0400\n"
+"Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs."
+"ca.com>\n"
 "Language-Team: Python\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
@@ -39,32 +39,33 @@ msgstr ""
 msgid "Open the tools and options menu."
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:130
+#: ..\sardes\app\mainwindow.py:131
 msgid "Preferences..."
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:134
+#: ..\sardes\app\mainwindow.py:135
 msgid "Report an issue..."
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:139
+#: ..\sardes\app\mainwindow.py:140
 msgid "About Sardes..."
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:143
+#: ..\sardes\app\mainwindow.py:144
 msgid "Exit"
 msgstr ""
 
 #: ..\sardes\app\mainwindow.py:162
 msgid "Languages"
-msgstr ""
+msgstr "Langues"
 
-#: ..\sardes\app\mainwindow.py:204
+#: ..\sardes\app\mainwindow.py:203
 msgid "Language change"
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:205
-msgid "The language has been set to <i>{}</i>. Restart Sardes to apply this change."
+#: ..\sardes\app\mainwindow.py:204
+msgid ""
+"The language has been set to <i>{}</i>. Restart Sardes to apply this change."
 msgstr ""
 
 #: ..\sardes\widgets\databaseconnector.py:35
@@ -158,16 +159,16 @@ msgstr "Influencé"
 
 #: ..\sardes\widgets\locationtable.py:43
 msgid "Latitude"
-msgstr ""
+msgstr "Latitude"
 
 #: ..\sardes\widgets\locationtable.py:44
 msgid "Longitude"
-msgstr ""
+msgstr "Longitude"
 
 #: ..\sardes\widgets\locationtable.py:45
 msgid "Active"
-msgstr ""
+msgstr "Active"
 
 #: ..\sardes\widgets\locationtable.py:46
 msgid "Note"
-msgstr ""
+msgstr "Note"

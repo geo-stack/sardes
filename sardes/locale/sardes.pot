@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2019-06-28 01:04-0400\n"
+"POT-Creation-Date: 2019-06-28 10:28-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -31,19 +31,19 @@ msgstr ""
 msgid "Open the tools and options menu."
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:130
+#: ..\sardes\app\mainwindow.py:131
 msgid "Preferences..."
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:134
+#: ..\sardes\app\mainwindow.py:135
 msgid "Report an issue..."
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:139
+#: ..\sardes\app\mainwindow.py:140
 msgid "About Sardes..."
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:143
+#: ..\sardes\app\mainwindow.py:144
 msgid "Exit"
 msgstr ""
 
@@ -51,11 +51,11 @@ msgstr ""
 msgid "Languages"
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:204
+#: ..\sardes\app\mainwindow.py:203
 msgid "Language change"
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:205
+#: ..\sardes\app\mainwindow.py:204
 msgid "The language has been set to <i>{}</i>. Restart Sardes to apply this change."
 msgstr ""
 
