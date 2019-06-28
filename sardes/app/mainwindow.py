@@ -126,24 +126,24 @@ class MainWindow(QMainWindow):
         options_menu = QMenu(self)
 
         lang_menu = self.create_lang_menu()
+
         preferences_action = create_action(
             self, _('Preferences...'), icon='preferences',
-            shortcut='Ctrl+Shift+P', context=Qt.ApplicationShortcut,
-            )
+            shortcut='Ctrl+Shift+P', context=Qt.ApplicationShortcut
+        )
         report_action = create_action(
             self, _('Report an issue...'), icon='bug',
             shortcut='Ctrl+Shift+R', context=Qt.ApplicationShortcut,
             triggered=lambda: QDesktopServices.openUrl(QUrl(GITHUB_ISSUES_URL))
-            )
+        )
         about_action = create_action(
             self, _('About Sardes...'), icon='information',
             shortcut='Ctrl+Shift+I', context=Qt.ApplicationShortcut
-            )
+        )
         exit_action = create_action(
             self, _('Exit'), icon='exit', triggered=self.close,
             shortcut='Ctrl+Shift+Q', context=Qt.ApplicationShortcut
-            )
-
+        )
         for item in [lang_menu, preferences_action, None, report_action,
                      about_action, exit_action]:
             if item is None:
@@ -166,8 +166,7 @@ class MainWindow(QMainWindow):
         for lang in get_available_translations():
             lang_action = create_action(
                 action_group, LANGUAGE_CODES[lang], icon='lang_' + lang,
-                toggled=lambda _, lang=lang: self.set_language(lang)
-                )
+                toggled=lambda _, lang=lang: self.set_language(lang))
             self.lang_menu.addAction(lang_action)
             if lang == lang_conf:
                 lang_action.setChecked(True)
@@ -203,8 +202,7 @@ class MainWindow(QMainWindow):
                 self,
                 _("Language change"),
                 _("The language has been set to <i>{}</i>. Restart Sardes to "
-                  "apply this change.").format(LANGUAGE_CODES[lang])
-                )
+                  "apply this change.").format(LANGUAGE_CODES[lang]))
 
     # ---- Main window settings
     def get_window_settings(self):
