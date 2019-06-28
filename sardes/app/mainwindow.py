@@ -163,6 +163,20 @@ class MainWindow(QMainWindow):
                    else 'database_disconnected')
         self.database_button.setIcon(get_icon(db_icon))
 
+    def set_language(self, lang):
+        """
+        Set the language to be used by this application for its labels,
+        menu, messages, etc.
+        """
+        if lang != get_lang_conf():
+            set_lang_conf(lang)
+            QMessageBox.information(
+                self,
+                _("Language change"),
+                _("The language has been set to <i>{}</i>. Restart Sardes to "
+                  "apply this change.").format(LANGUAGE_CODES[lang])
+                )
+
     # ---- Main window settings
     def get_window_settings(self):
         """Return current window settings."""
