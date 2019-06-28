@@ -144,6 +144,24 @@ class MainWindow(QMainWindow):
 
         return options_menu
 
+    def create_lang_menu(self):
+        """Create and return the languages menu of this application."""
+        lang_conf = get_lang_conf()
+
+        lang_menu = QMenu(_('Languages'), self)
+        lang_menu.setIcon(get_icon('languages'))
+
+        action_group = QActionGroup(self)
+        for lang in get_available_translations():
+            lang_action = create_action(
+                action_group, LANGUAGE_CODES[lang], icon='lang_' + lang,
+                toggled=lambda _, lang=lang: self.set_language(lang)
+                )
+            lang_menu.addAction(lang_action)
+            if lang == lang_conf:
+                lang_action.setChecked(True)
+        return lang_menu
+
     def create_toolbar(self, title, object_name, iconsize=None):
         """Create and return a toolbar with title and object_name."""
         toolbar = self.addToolBar(title)
