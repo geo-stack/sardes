@@ -21,6 +21,7 @@ from qtpy.QtWidgets import (
 # ---- Local imports
 from sardes.config.database import get_dbconfig, set_dbconfig
 from sardes.config.gui import RED
+from sardes.config.locale import _
 from sardes.widgets.statusbar import ProcessStatusBar
 
 
@@ -31,7 +32,7 @@ class DatabaseConnectionWidget(QDialog):
 
     def __init__(self, db_connection_manager=None, parent=None):
         super(DatabaseConnectionWidget, self).__init__(parent)
-        self.setWindowTitle('Database connection manager')
+        self.setWindowTitle(_('Database connection manager'))
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setModal(True)
@@ -81,24 +82,24 @@ class DatabaseConnectionWidget(QDialog):
         self.form_groupbox.setPalette(palette)
 
         form_layout = QGridLayout(self.form_groupbox)
-        form_layout.addWidget(QLabel("Database :"), 0, 0)
+        form_layout.addWidget(QLabel(_("Database :")), 0, 0)
         form_layout.addWidget(self.dbname_lineedit, 0, 1, 1, 3)
-        form_layout.addWidget(QLabel("Username :"), 1, 0)
+        form_layout.addWidget(QLabel(_("Username :")), 1, 0)
         form_layout.addWidget(self.user_lineedit, 1, 1, 1, 3)
-        form_layout.addWidget(QLabel("Hostname :"), 2, 0)
+        form_layout.addWidget(QLabel(_("Hostname :")), 2, 0)
         form_layout.addWidget(self.host_lineedit, 2, 1)
-        form_layout.addWidget(QLabel("Port :"), 2, 2)
+        form_layout.addWidget(QLabel(_("Port :")), 2, 2)
         form_layout.addWidget(self.port_spinbox, 2, 3, Qt.AlignRight)
-        form_layout.addWidget(QLabel("Password :"), 3, 0)
+        form_layout.addWidget(QLabel(_("Password :")), 3, 0)
         form_layout.addWidget(self.password_lineedit, 3, 1, 1, 3)
-        form_layout.addWidget(QLabel("Encoding :"), 4, 0, Qt.AlignLeft)
+        form_layout.addWidget(QLabel(_("Encoding :")), 4, 0, Qt.AlignLeft)
         form_layout.addLayout(encoding_layout, 4, 1)
         form_layout.setRowStretch(form_layout.rowCount(), 1)
 
         # Setup the dialog button box.
-        self.connect_button = QPushButton('Connect')
-        self.reset_button = QPushButton('Reset')
-        self.ok_button = QPushButton('Ok')
+        self.connect_button = QPushButton(_('Connect'))
+        self.reset_button = QPushButton(_('Reset'))
+        self.ok_button = QPushButton(_('Ok'))
 
         button_box = QDialogButtonBox()
         button_box.addButton(self.ok_button, QDialogButtonBox.AcceptRole)
@@ -127,7 +128,7 @@ class DatabaseConnectionWidget(QDialog):
         self.ok_button.setEnabled(not is_connecting)
         self.connect_button.setEnabled(not is_connecting)
         self.connect_button.setText(
-            'Disconnect' if is_connected else 'Connect')
+            _('Disconnect') if is_connected else _('Connect'))
 
     def _update_gui_from_config(self):
         """
@@ -172,12 +173,12 @@ class DatabaseConnectionWidget(QDialog):
                 message = ('<font color="{}">{}:</font> {}'.format(
                     RED, type(db_connect_error).__name__, db_connect_error))
             else:
-                message = ("The connection to database <i>{}</i>"
-                           " failed.".format(self.dbname_lineedit.text()))
+                message = _("The connection to database <i>{}</i> "
+                            "failed.").format(self.dbname_lineedit.text())
             self.status_bar.show_fail_icon(message)
         else:
-            message = ("Connected to database "
-                       "<i>{}</i>.".format(self.dbname_lineedit.text()))
+            message = _("Connected to database <i>{}</i>.").format(
+                self.dbname_lineedit.text())
             self.status_bar.show_sucess_icon(message)
         self._update_gui()
 
@@ -223,7 +224,7 @@ class DatabaseConnectionWidget(QDialog):
         self._update_gui()
         self.status_bar.show()
         self.status_bar.set_label(
-            "Connecting to database <i>{}</i>...".format(
+            _("Connecting to database <i>{}</i>...").format(
                 self.dbname_lineedit.text()))
 
 

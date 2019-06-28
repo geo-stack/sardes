@@ -14,14 +14,16 @@ import sys
 # ---- Third party imports
 from qtpy.QtCore import QPoint, QSize, Qt, QUrl
 from qtpy.QtGui import QDesktopServices
-from qtpy.QtWidgets import (QApplication, QMainWindow, QMenu,
-                            QSizePolicy, QToolButton, QWidget)
+from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
+                            QMessageBox, QSizePolicy, QToolButton, QWidget)
 
 # ---- Local imports
 from sardes import __namever__, __project_url__
 from sardes.config.icons import get_icon
 from sardes.config.gui import (get_iconsize, get_window_settings,
                                set_window_settings)
+from sardes.config.locale import (_, get_available_translations, get_lang_conf,
+                                  LANGUAGE_CODES, set_lang_conf)
 from sardes.database.manager import DatabaseConnectionManager
 from sardes.widgets.databaseconnector import DatabaseConnectionWidget
 from sardes.widgets.locationtable import LocationTableView
@@ -89,8 +91,9 @@ class MainWindow(QMainWindow):
         # Add the database connection manager button.
         self.database_button = create_toolbutton(
             self, triggered=self.db_connection_widget.show,
-            text="Database connection manager",
-            tip="Open the database connection manager window.",
+            text=_("Database connection"),
+            tip=_("Open a dialog window to manage the "
+                  "connection to the database."),
             shortcut='Ctrl+Shift+D')
         self.setup_database_button_icon()
         self.db_connection_manager.sig_database_connection_changed.connect(
@@ -105,8 +108,8 @@ class MainWindow(QMainWindow):
         """Create and return the options button of this application."""
         options_button = create_toolbutton(
             self, icon='tooloptions',
-            text="Tools and options",
-            tip="Open the tools and options menu.",
+            text=_("Tools and options"),
+            tip=_("Open the tools and options menu."),
             shortcut='Ctrl+Shift+T')
         options_button.setStyleSheet(
             "QToolButton::menu-indicator{image: none;}")
@@ -122,24 +125,52 @@ class MainWindow(QMainWindow):
         """Create and return the options menu of this application."""
         options_menu = QMenu(self)
 
+        lang_menu = self.create_lang_menu()
+
+        preferences_action = create_action(
+            self, _('Preferences...'), icon='preferences',
+            shortcut='Ctrl+Shift+P', context=Qt.ApplicationShortcut
+        )
         report_action = create_action(
-            self, 'Report issue...', icon='bug',
+            self, _('Report an issue...'), icon='bug',
             shortcut='Ctrl+Shift+R', context=Qt.ApplicationShortcut,
             triggered=lambda: QDesktopServices.openUrl(QUrl(GITHUB_ISSUES_URL))
-            )
+        )
         about_action = create_action(
-            self, 'About Sardes...', icon='information',
+            self, _('About Sardes...'), icon='information',
             shortcut='Ctrl+Shift+I', context=Qt.ApplicationShortcut
-            )
+        )
         exit_action = create_action(
-            self, 'Exit', icon='exit', triggered=self.close,
+            self, _('Exit'), icon='exit', triggered=self.close,
             shortcut='Ctrl+Shift+Q', context=Qt.ApplicationShortcut
-            )
-
-        for action in [report_action, about_action, exit_action]:
-            options_menu.addAction(action)
+        )
+        for item in [lang_menu, preferences_action, None, report_action,
+                     about_action, exit_action]:
+            if item is None:
+                options_menu.addSeparator()
+            elif isinstance(item, QMenu):
+                options_menu.addMenu(item)
+            else:
+                options_menu.addAction(item)
 
         return options_menu
+
+    def create_lang_menu(self):
+        """Create and return the languages menu of this application."""
+        lang_conf = get_lang_conf()
+
+        self.lang_menu = QMenu(_('Languages'), self)
+        self.lang_menu.setIcon(get_icon('languages'))
+
+        action_group = QActionGroup(self)
+        for lang in get_available_translations():
+            lang_action = create_action(
+                action_group, LANGUAGE_CODES[lang], icon='lang_' + lang,
+                toggled=lambda _, lang=lang: self.set_language(lang))
+            self.lang_menu.addAction(lang_action)
+            if lang == lang_conf:
+                lang_action.setChecked(True)
+        return self.lang_menu
 
     def create_toolbar(self, title, object_name, iconsize=None):
         """Create and return a toolbar with title and object_name."""
@@ -159,6 +190,19 @@ class MainWindow(QMainWindow):
                    self.db_connection_manager.is_connected()
                    else 'database_disconnected')
         self.database_button.setIcon(get_icon(db_icon))
+
+    def set_language(self, lang):
+        """
+        Set the language to be used by this application for its labels,
+        menu, messages, etc.
+        """
+        if lang != get_lang_conf():
+            set_lang_conf(lang)
+            QMessageBox.information(
+                self,
+                _("Language change"),
+                _("The language has been set to <i>{}</i>. Restart Sardes to "
+                  "apply this change.").format(LANGUAGE_CODES[lang]))
 
     # ---- Main window settings
     def get_window_settings(self):

@@ -13,33 +13,22 @@ Tests for the mainwindow.
 
 # ---- Standard imports
 import os
+os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import pytest
 from qtpy.QtCore import QPoint, QSize
-from appconfigs.user import UserConfig
 
 # ---- Local imports
-from sardes.app.mainwindow import MainWindow
-from sardes.config.main import CONF_VERSION, DEFAULTS
+from sardes.app.mainwindow import MainWindow, QMessageBox
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def CONF(tmpdir, mocker):
-    CONFIG_DIR = str(tmpdir)
-    CONF = UserConfig('sardes', defaults=DEFAULTS, load=True,
-                      version=CONF_VERSION, path=CONFIG_DIR,
-                      backup=True, raw_mode=True)
-    mocker.patch('sardes.config.main.CONF', new=CONF)
-    mocker.patch('sardes.config.gui.CONF', new=CONF)
-    return CONF
-
-
-@pytest.fixture
-def mainwindow(CONF, qtbot, mocker):
+def mainwindow(qtbot, mocker):
+    """A fixture for Sardes main window."""
     mainwindow = MainWindow()
     qtbot.addWidget(mainwindow)
     mainwindow.show()
@@ -54,13 +43,12 @@ def test_mainwindow_init(mainwindow):
     assert mainwindow
 
 
-def test_mainwindow_settings(CONF, qtbot, tmpdir, mocker):
+def test_mainwindow_settings(qtbot, mocker):
     """
     Test that the window size and position are store and restore correctly
     in and from our configs.
     """
     mainwindow1 = MainWindow()
-    qtbot.addWidget(mainwindow1)
     mainwindow1.show()
     qtbot.waitForWindowShown(mainwindow1)
 
@@ -107,6 +95,40 @@ def test_mainwindow_settings(CONF, qtbot, tmpdir, mocker):
     assert mainwindow2.isMaximized()
     assert mainwindow2.get_window_settings() == (
         expected_normal_window_size, expected_normal_window_pos, True)
+
+
+def test_mainwindow_lang_change(mainwindow, qtbot, mocker):
+    """
+    Test that the window size and position are store and restore correctly
+    in and from our configs.
+    """
+    # Check that English is the default selected language.
+    lang_actions = mainwindow.lang_menu.actions()
+    checked_actions = [act for act in lang_actions if act.isChecked()]
+    assert len(lang_actions) == 2
+    assert len(checked_actions) == 1
+    assert checked_actions[0].text() == 'English'
+
+    # Change the language to French.
+    mocker.patch.object(QMessageBox, 'information')
+    fr_action = [act for act in lang_actions if act.text() == 'Français'][0]
+    fr_action.toggle()
+
+    # Close and delete the window.
+    mainwindow.close()
+    qtbot.wait(5)
+
+    # Create a new instance of the main window and assert that the
+    # language was changed for Français.
+    mainwindow_restart = MainWindow()
+    qtbot.addWidget(mainwindow_restart)
+    mainwindow_restart.show()
+    qtbot.waitForWindowShown(mainwindow_restart)
+
+    lang_actions = mainwindow_restart.lang_menu.actions()
+    checked_actions = [act for act in lang_actions if act.isChecked()]
+    assert len(checked_actions) == 1
+    assert checked_actions[0].text() == 'Français'
 
 
 if __name__ == "__main__":

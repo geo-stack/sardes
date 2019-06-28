@@ -27,8 +27,8 @@ LOCAL_ICONS = {
 
 FA_ICONS = {
     'bug': [
-        ('fa.bug',),
-        {'color': ICON_COLOR}],
+        ('mdi.bug',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'close_all': [
         ('fa.close', 'fa.close', 'fa.close'),
         {'options': [{'scale_factor': 0.6,
@@ -61,8 +61,30 @@ FA_ICONS = {
     'exit': [
         ('fa.power-off',),
         {'color': ICON_COLOR}],
+    'languages': [
+        ('mdi.web',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'lang_en': [
+        ('mdi.alpha-e', 'mdi.alpha-n'),
+        {'options': [{'scale_factor': 1.65,
+                      'offset': (-0.25, 0),
+                      'color': ICON_COLOR},
+                     {'scale_factor': 1.65,
+                      'offset': (0.25, 0),
+                      'color': ICON_COLOR}]}],
+    'lang_fr': [
+        ('mdi.alpha-f', 'mdi.alpha-r'),
+        {'options': [{'scale_factor': 1.65,
+                      'offset': (-0.25, 0),
+                      'color': ICON_COLOR},
+                     {'scale_factor': 1.65,
+                      'offset': (0.25, 0),
+                      'color': ICON_COLOR}]}],
     'information': [
         ('mdi.information-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'preferences': [
+        ('mdi.settings',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'succes': [
         ('mdi.check-circle-outline',),
