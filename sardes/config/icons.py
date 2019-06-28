@@ -61,6 +61,25 @@ FA_ICONS = {
     'exit': [
         ('fa.power-off',),
         {'color': ICON_COLOR}],
+    'languages': [
+        ('mdi.web',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'lang_en': [
+        ('mdi.alpha-e', 'mdi.alpha-n'),
+        {'options': [{'scale_factor': 1.65,
+                      'offset': (-0.25, 0),
+                      'color': ICON_COLOR},
+                     {'scale_factor': 1.65,
+                      'offset': (0.25, 0),
+                      'color': ICON_COLOR}]}],
+    'lang_fr': [
+        ('mdi.alpha-f', 'mdi.alpha-r'),
+        {'options': [{'scale_factor': 1.65,
+                      'offset': (-0.25, 0),
+                      'color': ICON_COLOR},
+                     {'scale_factor': 1.65,
+                      'offset': (0.25, 0),
+                      'color': ICON_COLOR}]}],
     'information': [
         ('mdi.information-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
