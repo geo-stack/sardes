@@ -74,7 +74,7 @@ def get_translation():
     import gettext
     try:
         translation = gettext.translation(
-            'sardes', LOCALE_PATH, languages=['fr'])
+            'sardes', LOCALE_PATH, languages=[lang])
         return translation.gettext
     except Exception:
         return lambda x: x
