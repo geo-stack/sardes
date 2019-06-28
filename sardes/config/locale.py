@@ -44,7 +44,7 @@ def get_available_translations():
     # Remove disabled languages
     langs = list(set(langs) - set(DISABLED_LANGUAGES))
 
-    return langs
+    return sorted(langs)
 
 
 def get_lang_conf():
