@@ -92,8 +92,9 @@ class MainWindow(QMainWindow):
         # Add the database connection manager button.
         self.database_button = create_toolbutton(
             self, triggered=self.db_connection_widget.show,
-            text="Database connection manager",
-            tip="Open the database connection manager window.",
+            text=_("Database connection"),
+            tip=_("Open a dialog window to manage the "
+                  "connection to the database."),
             shortcut='Ctrl+Shift+D')
         self.setup_database_button_icon()
         self.db_connection_manager.sig_database_connection_changed.connect(
@@ -108,8 +109,8 @@ class MainWindow(QMainWindow):
         """Create and return the options button of this application."""
         options_button = create_toolbutton(
             self, icon='tooloptions',
-            text="Tools and options",
-            tip="Open the tools and options menu.",
+            text=_("Tools and options"),
+            tip=_("Open the tools and options menu."),
             shortcut='Ctrl+Shift+T')
         options_button.setStyleSheet(
             "QToolButton::menu-indicator{image: none;}")
@@ -131,16 +132,16 @@ class MainWindow(QMainWindow):
             shortcut='Ctrl+Shift+P', context=Qt.ApplicationShortcut,
             )
         report_action = create_action(
-            self, 'Report issue...', icon='bug',
+            self, _('Report an issue...'), icon='bug',
             shortcut='Ctrl+Shift+R', context=Qt.ApplicationShortcut,
             triggered=lambda: QDesktopServices.openUrl(QUrl(GITHUB_ISSUES_URL))
             )
         about_action = create_action(
-            self, 'About Sardes...', icon='information',
+            self, _('About Sardes...'), icon='information',
             shortcut='Ctrl+Shift+I', context=Qt.ApplicationShortcut
             )
         exit_action = create_action(
-            self, 'Exit', icon='exit', triggered=self.close,
+            self, _('Exit'), icon='exit', triggered=self.close,
             shortcut='Ctrl+Shift+Q', context=Qt.ApplicationShortcut
             )
 
