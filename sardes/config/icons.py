@@ -27,8 +27,8 @@ LOCAL_ICONS = {
 
 FA_ICONS = {
     'bug': [
-        ('fa.bug',),
-        {'color': ICON_COLOR}],
+        ('mdi.bug',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'close_all': [
         ('fa.close', 'fa.close', 'fa.close'),
         {'options': [{'scale_factor': 0.6,
