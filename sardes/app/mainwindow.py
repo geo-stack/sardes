@@ -125,6 +125,11 @@ class MainWindow(QMainWindow):
         """Create and return the options menu of this application."""
         options_menu = QMenu(self)
 
+        lang_menu = self.create_lang_menu()
+        preferences_action = create_action(
+            self, _('Preferences...'), icon='preferences',
+            shortcut='Ctrl+Shift+P', context=Qt.ApplicationShortcut,
+            )
         report_action = create_action(
             self, 'Report issue...', icon='bug',
             shortcut='Ctrl+Shift+R', context=Qt.ApplicationShortcut,
@@ -139,8 +144,14 @@ class MainWindow(QMainWindow):
             shortcut='Ctrl+Shift+Q', context=Qt.ApplicationShortcut
             )
 
-        for action in [report_action, about_action, exit_action]:
-            options_menu.addAction(action)
+        for item in [lang_menu, preferences_action, None, report_action,
+                     about_action, exit_action]:
+            if item is None:
+                options_menu.addSeparator()
+            elif isinstance(item, QMenu):
+                options_menu.addMenu(item)
+            else:
+                options_menu.addAction(item)
 
         return options_menu
 
