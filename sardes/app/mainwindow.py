@@ -130,20 +130,20 @@ class MainWindow(QMainWindow):
         preferences_action = create_action(
             self, _('Preferences...'), icon='preferences',
             shortcut='Ctrl+Shift+P', context=Qt.ApplicationShortcut
-        )
+            )
         report_action = create_action(
             self, _('Report an issue...'), icon='bug',
             shortcut='Ctrl+Shift+R', context=Qt.ApplicationShortcut,
             triggered=lambda: QDesktopServices.openUrl(QUrl(GITHUB_ISSUES_URL))
-        )
+            )
         about_action = create_action(
             self, _('About Sardes...'), icon='information',
             shortcut='Ctrl+Shift+I', context=Qt.ApplicationShortcut
-        )
+            )
         exit_action = create_action(
             self, _('Exit'), icon='exit', triggered=self.close,
             shortcut='Ctrl+Shift+Q', context=Qt.ApplicationShortcut
-        )
+            )
         for item in [lang_menu, preferences_action, None, report_action,
                      about_action, exit_action]:
             if item is None:
