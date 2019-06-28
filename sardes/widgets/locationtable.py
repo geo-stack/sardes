@@ -19,6 +19,7 @@ from qtpy.QtWidgets import QApplication, QHeaderView, QTableView
 
 # ---- Local imports
 from sardes.config.gui import RED, GREEN
+from sardes.config.locale import _
 
 
 class LocationTableModel(QAbstractTableModel):
@@ -31,18 +32,18 @@ class LocationTableModel(QAbstractTableModel):
                'aquifere', 'nappe', 'code_aqui', 'zone_rechar',
                'influences', 'latitude_8', 'longitude', 'station_active',
                'remarque']
-    COLUMN_LABELS = {'no_piezometre': 'Piezometer ID',
-                     'nom_communn': 'Common Name',
-                     'municipalite': 'Municipality',
-                     'aquifere': 'Aquifer',
-                     'nappe': 'Confinement',
-                     'code_aqui': 'Aquifer Code',
-                     'zone_rechar': 'Recharge Zone',
-                     'influences': 'Influenced',
-                     'latitude_8': 'Latitude',
-                     'longitude': 'Longitude',
-                     'station_active': 'Active',
-                     'remarque': 'Note'
+    COLUMN_LABELS = {'no_piezometre': _('Piezometer ID'),
+                     'nom_communn': _('Common Name'),
+                     'municipalite': _('Municipality'),
+                     'aquifere': _('Aquifer'),
+                     'nappe': _('Confinement'),
+                     'code_aqui': _('Aquifer Code'),
+                     'zone_rechar': _('Recharge Zone'),
+                     'influences': _('Influenced'),
+                     'latitude_8': _('Latitude'),
+                     'longitude': _('Longitude'),
+                     'station_active': _('Active'),
+                     'remarque': _('Note')
                      }
 
     def __init__(self):
