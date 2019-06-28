@@ -15,8 +15,7 @@ import sys
 from qtpy.QtCore import QPoint, QSize, Qt, QUrl
 from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
-                            QMessageBox, QSizePolicy, QToolButton, QWidget,
-                            QLabel)
+                            QMessageBox, QSizePolicy, QToolButton, QWidget)
 
 # ---- Local imports
 from sardes import __namever__, __project_url__
