@@ -7,6 +7,9 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+# ---- Standard imports
+import os
+
 # ---- Third party imports
 from appconfigs.user import UserConfig
 from appconfigs.base import get_config_dir
@@ -15,6 +18,8 @@ from appconfigs.base import get_config_dir
 from sardes import __appname__
 
 CONFIG_DIR = get_config_dir(__appname__)
+if bool(os.environ.get('SARDES_PYTEST')):
+    CONFIG_DIR += '_pytest'
 
 DEFAULTS = [
     ('main',
@@ -46,8 +51,9 @@ DEFAULTS = [
 CONF_VERSION = '2.0.0'
 
 # Setup the main configuration instance.
+LOAD = False if bool(os.environ.get('SARDES_PYTEST')) else True
 try:
-    CONF = UserConfig('sardes', defaults=DEFAULTS, load=True,
+    CONF = UserConfig('sardes', defaults=DEFAULTS, load=LOAD,
                       version=CONF_VERSION, path=CONFIG_DIR,
                       backup=True, raw_mode=True)
 except Exception:

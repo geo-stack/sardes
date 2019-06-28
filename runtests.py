@@ -11,6 +11,9 @@
 File for running tests programmatically.
 """
 
+import os
+os.environ['SARDES_PYTEST'] = 'True'
+
 import pytest
 
 
@@ -18,8 +21,8 @@ def main():
     """
     Run pytest tests.
     """
-    errno = pytest.main(['-x', 'sardes',  '-v', '-rw', '--durations=10',
-                         '--cov=sardes'])
+    errno = pytest.main(['-x', 'sardes', '-v', '-rw', '--durations=10',
+                         '--cov=sardes', '-s'])
     if errno != 0:
         raise SystemExit(errno)
 
