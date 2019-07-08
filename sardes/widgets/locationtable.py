@@ -28,23 +28,20 @@ class LocationTableModel(QAbstractTableModel):
     of the databsase locations table.
     """
 
-    COLUMNS = ['no_piezometre', 'nom_communn', 'municipalite',
-               'aquifere', 'nappe', 'code_aqui', 'zone_rechar',
-               'influences', 'latitude_8', 'longitude', 'station_active',
-               'remarque']
-    COLUMN_LABELS = {'no_piezometre': _('Piezometer ID'),
-                     'nom_communn': _('Common Name'),
-                     'municipalite': _('Municipality'),
-                     'aquifere': _('Aquifer'),
-                     'nappe': _('Confinement'),
-                     'code_aqui': _('Aquifer Code'),
-                     'zone_rechar': _('Recharge Zone'),
-                     'influences': _('Influenced'),
-                     'latitude_8': _('Latitude'),
+    COLUMN_LABELS = {'no_well': _('Well ID'),
+                     'common_name': _('Common Name'),
+                     'municipality': _('Municipality'),
+                     'aquifer_type': _('Aquifer'),
+                     'aquifer_code': _('Aquifer Code'),
+                     'confinement': _('Confinement'),
+                     'in_recharge_zone': _('Recharge Zone'),
+                     'is_influenced': _('Influenced'),
+                     'latitude': _('Latitude'),
                      'longitude': _('Longitude'),
-                     'station_active': _('Active'),
-                     'remarque': _('Note')
+                     'is_station_active': _('Active'),
+                     'note': _('Note')
                      }
+    COLUMNS = list(COLUMN_LABELS.keys())
 
     def __init__(self):
         super().__init__()
@@ -79,22 +76,22 @@ class LocationTableModel(QAbstractTableModel):
         """Qt method override."""
         if role == Qt.DisplayRole:
             column_key = self.COLUMNS[index.column()]
-            if column_key == 'station_active':
-                return ('Yes' if self.locations[index.row()].station_active
+            if column_key == 'is_station_active':
+                return ('Yes' if self.locations[index.row()].is_station_active
                         else 'No')
             else:
                 return getattr(self.locations[index.row()], column_key)
         elif role == Qt.ForegroundRole:
             column_key = self.COLUMNS[index.column()]
-            if column_key == 'station_active':
-                color = (GREEN if self.locations[index.row()].station_active
+            if column_key == 'is_station_active':
+                color = (GREEN if self.locations[index.row()].is_station_active
                          else RED)
                 return QColor(color)
             else:
                 return QVariant()
         elif role == Qt.ToolTipRole:
             column_key = self.COLUMNS[index.column()]
-            if column_key == 'remarque':
+            if column_key == 'note':
                 return getattr(self.locations[index.row()], column_key)
         else:
             return QVariant()
@@ -106,10 +103,10 @@ class LocationSortFilterProxyModel(QSortFilterProxyModel):
         self.setSourceModel(source_model)
 
 
-class LocationTableView(QTableView):
+class ObservationWellTableView(QTableView):
     """
-    A single table view that displays the content of the databsase locations
-    table.
+    A single table view that displays the list of observation wells
+    that are saved in the database.
     """
 
     def __init__(self, db_connection_manager=None, parent=None):
@@ -127,6 +124,8 @@ class LocationTableView(QTableView):
         self.horizontalHeader().setSectionResizeMode(
             self.location_table_model.columnCount() - 1, QHeaderView.Stretch)
 
+        self.doubleClicked.connect(self._handle_double_clicked)
+
     @Slot(bool)
     def _trigger_location_table_update(self, connection_state):
         """
@@ -134,7 +133,7 @@ class LocationTableView(QTableView):
         the content of this table view.
         """
         if connection_state:
-            self.db_connection_manager.get_locations()
+            self.db_connection_manager.get_observation_wells()
         else:
             self.location_table_model.update_location_table([])
 
@@ -142,10 +141,14 @@ class LocationTableView(QTableView):
         """Setup the database connection manager for this table view."""
         self.db_connection_manager = db_connection_manager
         if db_connection_manager is not None:
-            self.db_connection_manager.sig_database_locations.connect(
+            self.db_connection_manager.sig_database_observation_wells.connect(
                 self.location_table_model.update_location_table)
             self.db_connection_manager.sig_database_connection_changed.connect(
                 self._trigger_location_table_update)
+
+    def _handle_double_clicked(self, proxy_index):
+        model_index = self.location_proxy_model.mapToSource(proxy_index)
+        print(self.location_table_model.locations[model_index.row()])
 
 
 if __name__ == '__main__':
@@ -158,7 +161,7 @@ if __name__ == '__main__':
     connection_widget = DatabaseConnectionWidget(manager)
     connection_widget.show()
 
-    table_view = LocationTableView(manager)
+    table_view = ObservationWellTableView(manager)
     table_view.show()
 
     connection_widget.connect()
