@@ -7,6 +7,11 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+# It is often said when developing interfaces that you need to fail fast,
+# and iterate often. When creating a UI, you will make mistakes. Just keep
+# moving forward, and remember to keep your UI out of the way.
+# http://blog.teamtreehouse.com/10-user-interface-design-fundamentals
+
 # ---- Standard imports
 import platform
 import sys
