@@ -12,6 +12,33 @@ from abc import ABC, abstractmethod
 from time import sleep
 
 
+class ObservationWell(object):
+    """
+    Sardes observation well class.
+    """
+
+    def __init__(self, no_well: str, common_name: str = None,
+                 municipality: str = None, aquifer_type: str = None,
+                 aquifer_code: int = None, confinement: str = None,
+                 in_recharge_zone: bool = None, is_influenced: bool = None,
+                 latitude: float = None, longitude: float = None,
+                 elevation: float = None, is_station_active: bool = None,
+                 note: str = None):
+        self.no_well = no_well
+        self.common_name = common_name
+        self.municipality = municipality
+        self.aquifer_type = aquifer_type
+        self.aquifer_code = aquifer_code
+        self.confinement = confinement
+        self.in_recharge_zone = in_recharge_zone
+        self.is_influenced = is_influenced
+        self.latitude = latitude
+        self.longitude = longitude
+        self.elevation = elevation
+        self.is_station_active = is_station_active
+        self.note = note
+
+
 class DatabaseAccessorBase(ABC):
     """
     Sardes accessor class.
