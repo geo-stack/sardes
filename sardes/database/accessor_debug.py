@@ -75,9 +75,6 @@ class DatabaseAccessorDebug(DatabaseAccessorBase):
         to the observation wells that are saved in the database.
         """
         print("Fetching observation wells from the database...", end='')
-        if self.is_connected():
-            sleep(0.5)
-            return self._wells
-        else:
-            return []
+        sleep(0.5)
         print("done")
+        return self._wells if self.is_connected() else []
