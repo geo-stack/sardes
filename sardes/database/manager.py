@@ -133,18 +133,15 @@ class DatabaseConnectionManager(QObject):
         self._is_connecting = False
         self.sig_database_connected.emit(connection, connection_error)
 
-    def connect_to_db(self, database, user, password,
-                      host, port, client_encoding):
+    def connect_to_db(self, database, *args, **kargs):
         """Try to create a new connection with the database"""
         self._is_connecting = True
-
         if database.lower() == 'debug':
             from sardes.database.accessor_debug import DatabaseAccessorDebug
-            db_accessor = DatabaseAccessorDebug()
+            db_accessor = DatabaseAccessorDebug(database, *args, **kargs)
         else:
             from sardes.database.accessor_pg import DatabaseAccessorPG
-            db_accessor = DatabaseAccessorPG(database, user, password, host,
-                                             port, client_encoding)
+            db_accessor = DatabaseAccessorPG(database, *args, **kargs)
 
         self._db_connection_worker.add_task('connect_to_db', db_accessor)
         self._db_connection_thread.start()
