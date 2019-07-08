@@ -14,9 +14,6 @@ import sys
 # ---- Third party imports
 from qtpy.QtCore import QObject, QThread, Signal, Slot
 
-# ---- Local imports
-from sardes.database.accessor_pg import DataAccessorPG as DataAccessor
-
 
 class DatabaseConnectionWorker(QObject):
     """
@@ -24,11 +21,11 @@ class DatabaseConnectionWorker(QObject):
     """
     sig_database_connected = Signal(object, object)
     sig_database_disconnected = Signal()
-    sig_database_locations = Signal(list)
+    sig_database_observation_wells = Signal(list)
 
     def __init__(self, parent=None):
         super(DatabaseConnectionWorker, self).__init__(parent)
-        self.db_manager = None
+        self.db_accessor = None
 
         self.database = ""
         self.user = ""
@@ -56,41 +53,39 @@ class DatabaseConnectionWorker(QObject):
 
     def is_connected(self):
         """Return whether a connection to a database is currently active."""
-        return self.db_manager is not None and self.db_manager.is_connected()
+        return self.db_accessor is not None and self.db_accessor.is_connected()
 
-    def connect_to_db(self):
+    def connect_to_db(self, db_accessor):
         """Try to create a new connection with the database"""
-        self.db_manager = DataAccessor(
-            self.database, self.user, self.password, self.host, self.port,
-            self.client_encoding)
-        self.db_manager.connect()
+        self.db_accessor = db_accessor
+        self.db_accessor.connect()
         self.sig_database_connected.emit(
-            self.db_manager._connection,  self.db_manager._connection_error)
+            self.db_accessor._connection, self.db_accessor._connection_error)
 
     def disconnect_from_db(self):
         """Close the connection with the database"""
-        if self.db_manager is not None:
-            self.db_manager.close_connection()
+        if self.db_accessor is not None:
+            self.db_accessor.close_connection()
         self.sig_database_disconnected.emit()
 
-    def get_locations(self):
+    def get_observation_wells(self):
         try:
-            locations = self.db_manager.get_locations()
+            locations = self.db_accessor.get_observation_wells()
         except AttributeError:
             locations = []
-        self.sig_database_locations.emit(locations)
+        self.sig_database_observation_wells.emit(locations)
 
     def execute_sql_request(self, sql_request, **kwargs):
         """Execute a SQL statement construct and return a ResultProxy."""
-        if self.db_manager is not None:
-            return self.db_manager.execute(sql_request, **kwargs)
+        if self.db_accessor is not None:
+            return self.db_accessor.execute(sql_request, **kwargs)
 
 
 class DatabaseConnectionManager(QObject):
     sig_database_connected = Signal(object, object)
     sig_database_disconnected = Signal()
     sig_database_connection_changed = Signal(bool)
-    sig_database_locations = Signal(list)
+    sig_database_observation_wells = Signal(list)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -106,8 +101,8 @@ class DatabaseConnectionManager(QObject):
             self._handle_connect_to_db)
         self._db_connection_worker.sig_database_disconnected.connect(
             self._handle_disconnect_from_db)
-        self._db_connection_worker.sig_database_locations.connect(
-            self._handle_get_locations)
+        self._db_connection_worker.sig_database_observation_wells.connect(
+            self._handle_get_observation_wells)
 
         self._db_connection_worker.sig_database_connected.connect(
             lambda: self.sig_database_connection_changed.emit(
@@ -130,27 +125,28 @@ class DatabaseConnectionManager(QObject):
         return self._is_connecting
 
     @Slot(object, object)
-    def _handle_connect_to_db(self, connection,  connection_error):
+    def _handle_connect_to_db(self, connection, connection_error):
         """
         Handle when a connection to the database was created successfully
         or not.
         """
         self._is_connecting = False
-        self.sig_database_connected.emit(connection,  connection_error)
+        self.sig_database_connected.emit(connection, connection_error)
 
-    def connect_to_db(self, database, user, password, host, port,
-                      client_encoding):
+    def connect_to_db(self, database, user, password,
+                      host, port, client_encoding):
         """Try to create a new connection with the database"""
         self._is_connecting = True
 
-        self._db_connection_worker.database = database
-        self._db_connection_worker.user = user
-        self._db_connection_worker.password = password
-        self._db_connection_worker.host = host
-        self._db_connection_worker.port = port
-        self._db_connection_worker.client_encoding = client_encoding
+        if database.lower() == 'debug':
+            from sardes.database.accessor_debug import DatabaseAccessorDebug
+            db_accessor = DatabaseAccessorDebug()
+        else:
+            from sardes.database.accessor_pg import DatabaseAccessorPG
+            db_accessor = DatabaseAccessorPG(database, user, password, host,
+                                             port, client_encoding)
 
-        self._db_connection_worker.add_task('connect_to_db')
+        self._db_connection_worker.add_task('connect_to_db', db_accessor)
         self._db_connection_thread.start()
 
     @Slot()
@@ -166,20 +162,20 @@ class DatabaseConnectionManager(QObject):
         self._db_connection_thread.start()
 
     @Slot(list)
-    def _handle_get_locations(self, locations):
+    def _handle_get_observation_wells(self, locations):
         """
-        Handle when the content of the locations table was fetch sucessfully
-        from the database.
+        Handle when the list of observation wells saved in the database
+        was fetched successfully.
         """
         self._locations = locations
-        self.sig_database_locations.emit(self._locations)
+        self.sig_database_observation_wells.emit(self._locations)
 
-    def get_locations(self):
+    def get_observation_wells(self):
         """
-        Get the content of the locations table from the database.
+        Get the list of observation wells that are saved in the database.
 
-        The results are sent through the sig_database_locations signal
-        as a list of named tuples.
+        The results are sent through the sig_database_observation_wells signal
+        as a list of ObservationWell objects.
         """
-        self._db_connection_worker.add_task('get_locations')
+        self._db_connection_worker.add_task('get_observation_wells')
         self._db_connection_thread.start()
