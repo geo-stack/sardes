@@ -9,9 +9,27 @@
 
 # ---- Standard imports
 from time import sleep
+from copy import deepcopy
 
 # ---- Local imports
 from sardes.database.accessor_base import DatabaseAccessorBase, ObservationWell
+
+
+OBS_WELLS = [
+    ObservationWell(
+        no_well='no_well #{}'.format(i),
+        common_name='common_name #{}'.format(i),
+        municipality='municipality #{}'.format(i),
+        aquifer_type='aquifer #{}'.format(i),
+        confinement='confinement #{}'.format(i),
+        aquifer_code=i,
+        in_recharge_zone='zone_rechar #{}'.format(i),
+        is_influenced='influences #{}'.format(i),
+        latitude=45 + i / 10,
+        longitude=-75 + i / 10,
+        is_station_active='station_active #{}'.format(i),
+        note='note #{}'.format(i)
+        ) for i in range(5)]
 
 
 class DatabaseAccessorDebug(DatabaseAccessorBase):
@@ -26,23 +44,7 @@ class DatabaseAccessorDebug(DatabaseAccessorBase):
         super().__init__()
         self._connection = None
         self._connection_error = None
-
-        self._wells = []
-        for i in range(5):
-            self._wells.append(ObservationWell(
-                no_well='no_well #{}'.format(i),
-                common_name='common_name #{}'.format(i),
-                municipality='municipality #{}'.format(i),
-                aquifer_type='aquifer #{}'.format(i),
-                confinement='confinement #{}'.format(i),
-                aquifer_code=i,
-                in_recharge_zone='zone_rechar #{}'.format(i),
-                is_influenced='influences #{}'.format(i),
-                latitude=45 + i / 10,
-                longitude=-75 + i / 10,
-                is_station_active='station_active #{}'.format(i),
-                note='note #{}'.format(i)
-                ))
+        self._wells = deepcopy(OBS_WELLS)
 
     def is_connected(self):
         """
