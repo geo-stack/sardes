@@ -15,6 +15,10 @@ class ObservationWell(object):
     """
     Sardes observation well class.
     """
+    __attrs__ = ['no_well', 'common_name', 'municipality', 'aquifer_type',
+                 'aquifer_code', 'confinement', 'in_recharge_zone',
+                 'is_influenced', 'latitude', 'longitude', 'elevation',
+                 'is_station_active', 'note']
 
     def __init__(self, no_well: str, common_name: str = None,
                  municipality: str = None, aquifer_type: str = None,
@@ -36,6 +40,16 @@ class ObservationWell(object):
         self.elevation = elevation
         self.is_station_active = is_station_active
         self.note = note
+
+    def __eq__(self, other):
+        if not isinstance(other, ObservationWell):
+            # Don't attempt to compare against unrelated types
+            return NotImplemented
+        try:
+            return all([getattr(self, attr) == getattr(other, attr) for
+                        attr in self.__attrs__])
+        except AttributeError:
+            return False
 
 
 class DatabaseAccessorBase(ABC):
