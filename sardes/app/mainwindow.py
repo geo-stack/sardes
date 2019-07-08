@@ -31,7 +31,7 @@ from sardes.config.locale import (_, get_available_translations, get_lang_conf,
                                   LANGUAGE_CODES, set_lang_conf)
 from sardes.database.manager import DatabaseConnectionManager
 from sardes.widgets.databaseconnector import DatabaseConnectionWidget
-from sardes.widgets.locationtable import LocationTableView
+from sardes.widgets.locationtable import ObservationWellTableView
 from sardes.utils.qthelpers import create_action, create_toolbutton
 
 from multiprocessing import freeze_support
@@ -65,8 +65,8 @@ class MainWindow(QMainWindow):
             self.db_connection_manager, self)
         self.db_connection_widget.hide()
 
-        # Setup the database locations view table.
-        self.location_view = LocationTableView(
+        # Setup the observation well view table.
+        self.location_view = ObservationWellTableView(
             self.db_connection_manager, self)
 
         self.setup()
