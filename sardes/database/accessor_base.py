@@ -9,7 +9,6 @@
 
 # ---- Standard imports
 from abc import ABC, abstractmethod
-from time import sleep
 
 
 class ObservationWell(object):
@@ -87,4 +86,3 @@ class DatabaseAccessorBase(ABC):
             related to the observation wells that are saved in the database.
         """
         return []
-
