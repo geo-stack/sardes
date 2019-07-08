@@ -42,6 +42,9 @@ class DatabaseAccessorDebug(DatabaseAccessorBase):
 
     def __init__(self, *args, **kargs):
         super().__init__()
+        print("Instantiating DatabaseAccessorDebug with :")
+        print("args :", args)
+        print("kargs :", kargs)
         self._connection = None
         self._connection_error = None
         self._wells = deepcopy(OBS_WELLS)
