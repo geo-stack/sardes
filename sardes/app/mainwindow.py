@@ -7,6 +7,11 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+# It is often said when developing interfaces that you need to fail fast,
+# and iterate often. When creating a UI, you will make mistakes. Just keep
+# moving forward, and remember to keep your UI out of the way.
+# http://blog.teamtreehouse.com/10-user-interface-design-fundamentals
+
 # ---- Standard imports
 import platform
 import sys
@@ -26,7 +31,7 @@ from sardes.config.locale import (_, get_available_translations, get_lang_conf,
                                   LANGUAGE_CODES, set_lang_conf)
 from sardes.database.manager import DatabaseConnectionManager
 from sardes.widgets.databaseconnector import DatabaseConnectionWidget
-from sardes.widgets.locationtable import LocationTableView
+from sardes.widgets.locationtable import ObservationWellTableView
 from sardes.utils.qthelpers import create_action, create_toolbutton
 
 from multiprocessing import freeze_support
@@ -60,8 +65,8 @@ class MainWindow(QMainWindow):
             self.db_connection_manager, self)
         self.db_connection_widget.hide()
 
-        # Setup the database locations view table.
-        self.location_view = LocationTableView(
+        # Setup the observation well view table.
+        self.location_view = ObservationWellTableView(
             self.db_connection_manager, self)
 
         self.setup()

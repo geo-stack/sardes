@@ -8,11 +8,10 @@
 # -----------------------------------------------------------------------------
 
 """
-Tests for the LocationTableView.
+Tests for the ObservationWellTableView.
 """
 
 # ---- Standard imports
-from collections import namedtuple
 import os.path as osp
 from unittest.mock import Mock
 
@@ -20,9 +19,9 @@ from unittest.mock import Mock
 import pytest
 
 # ---- Local imports
-from sardes.database.manager import DatabaseConnectionManager, DataAccessor
-from sardes.widgets.locationtable import LocationTableView
-from sardes.database.accessor_pg import LOCTABLEATTRS
+from sardes.database.manager import DatabaseConnectionManager
+from sardes.database.accessor_debug import OBS_WELLS
+from sardes.widgets.locationtable import ObservationWellTableView
 
 
 # =============================================================================
@@ -35,68 +34,32 @@ def dbconnmanager():
 
 
 @pytest.fixture
-def locationtableview(qtbot, mocker, dbconnmanager):
-    locationtableview = LocationTableView(dbconnmanager)
-    # qtbot.addWidget(locationtableview)
-    locationtableview.show()
-    qtbot.waitForWindowShown(locationtableview)
-    return locationtableview
-
-
-@pytest.fixture
-def locations():
-    """
-    Return a list named tuple location that mimick the structure of the
-    location table in the database.
-    """
-    Location = namedtuple('Location', ' '.join(LOCTABLEATTRS))
-    locations = []
-    for i in range(3):
-        locations.append(
-            Location(no_piezometre='no_piezometre#{}'.format(i),
-                     nom_communn='nom_communn#{}'.format(i),
-                     municipalite='municipalite#{}'.format(i),
-                     aquifere='aquifere#{}'.format(i),
-                     nappe='nappe#{}'.format(i),
-                     code_aqui=i,
-                     zone_rechar='zone_rechar#{}'.format(i),
-                     influences='influences#{}'.format(i),
-                     latitude_8=45 + i/10,
-                     longitude=-75 + i/10,
-                     station_active='station_active#{}'.format(i),
-                     remarque='remarque#{}'.format(i),
-                     loc_id='loc_id#{}'.format(i),
-                     geom='geom#{}'.format(i),
-                     )
-            )
-    return locations
+def obs_well_tableview(qtbot, mocker, dbconnmanager):
+    obs_well_tableview = ObservationWellTableView(dbconnmanager)
+    # qtbot.addWidget(piezometertableview)
+    obs_well_tableview.show()
+    qtbot.waitForWindowShown(obs_well_tableview)
+    return obs_well_tableview
 
 
 # =============================================================================
-# ---- Tests for LocationTableView
+# ---- Tests for ObservationWellTableView
 # =============================================================================
-def test_locationtableview_init(locationtableview, locations, mocker,
-                                qtbot):
+def test_obs_well_tableview_init(obs_well_tableview, mocker, qtbot):
     """Test that the location table view is initialized correctly."""
-    assert locationtableview
-    assert locationtableview.model().rowCount() == 0
+    assert obs_well_tableview
+    assert obs_well_tableview.model().rowCount() == 0
 
     # Connect to the database. This should trigger in the location table view
     # a query to get and display the content of the database location table.
-
-    mocked_connection = Mock()
-    mocked_connection.closed = False
-    mocker.patch('sqlalchemy.engine.Engine.connect',
-                 return_value=mocked_connection)
-    mocker.patch.object(DataAccessor, 'get_locations', return_value=locations)
-
-    dbconnmanager = locationtableview.db_connection_manager
-    with qtbot.waitSignal(dbconnmanager.sig_database_locations):
-        dbconnmanager.connect_to_db('database', 'user', 'password',
+    dbconnmanager = obs_well_tableview.db_connection_manager
+    with qtbot.waitSignal(dbconnmanager.sig_database_observation_wells,
+                          timeout=3000):
+        dbconnmanager.connect_to_db('debug', 'user', 'password',
                                     'localhost', 256, 'utf8')
 
-    assert locationtableview.location_table_model.locations == locations
-    assert locationtableview.model().rowCount() == len(locations)
+    assert obs_well_tableview.location_table_model.locations == OBS_WELLS
+    assert obs_well_tableview.model().rowCount() == len(OBS_WELLS)
 
 
 if __name__ == "__main__":
