@@ -216,9 +216,9 @@ class DatabaseConnectionWidget(QDialog):
         """
         self.db_connection_manager.connect_to_db(
             database=self.dbname_lineedit.text(),
-            user=self.user_lineedit.text(),
+            username=self.user_lineedit.text(),
             password=self.password_lineedit.text(),
-            host=self.host_lineedit.text(),
+            hostname=self.host_lineedit.text(),
             port=self.port_spinbox.value(),
             client_encoding=self.encoding_lineedit.text())
         self._update_gui()
