@@ -7,6 +7,10 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+"""
+Object-Relational Mapping and Accessor implementation of the RSESQ database.
+"""
+
 # ---- Third party imports
 from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, String, Float
@@ -21,14 +25,14 @@ from sardes.database.accessor_base import ObservationWell
 
 
 # =============================================================================
-# ---- Model
+# ---- Object-Relational Mapping
 # =============================================================================
 Base = declarative_base()
 
 
 class Location(Base):
     """
-    A relational object used to map the 'Localisation'table of the database.
+    An object used to map the 'Localisation' table of the RSESQ database.
     """
     __tablename__ = 'localisation'
     __table_args__ = ({"schema": "rsesq"})
@@ -54,6 +58,10 @@ class Location(Base):
 
 
 class SamplingFeature(Base):
+    """
+    An object used to map the 'elements_caracteristique' table of the
+    RSESQ database.
+    """
     __tablename__ = 'elements_caracteristique'
     __table_args__ = ({"schema": "rsesq"})
 
@@ -89,7 +97,7 @@ class SamplingFeature(Base):
 # =============================================================================
 class DatabaseAccessorRSESQ(object):
     """
-    Manage the connection and requests to a PostgreSQL database.
+    Manage the connection and requests to a RSESQ database.
     """
 
     def __init__(self, database, username, password, hostname, port,
