@@ -75,7 +75,7 @@ class SamplingFeature(Base):
     __mapper_args__ = {
         'include_properties': [
             'sampling_feature_id',
-            'sampling_feature_uuid'
+            'sampling_feature_uuid',
             'sampling_feature_name',
             'sampling_feature_note',
             'loc_id',
