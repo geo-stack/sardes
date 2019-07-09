@@ -140,8 +140,8 @@ class DatabaseConnectionManager(QObject):
             from sardes.database.accessor_debug import DatabaseAccessorDebug
             db_accessor = DatabaseAccessorDebug(database, *args, **kargs)
         else:
-            from sardes.database.accessor_pg import DatabaseAccessorPG
-            db_accessor = DatabaseAccessorPG(database, *args, **kargs)
+            from sardes.database.accessor_rsesq import DatabaseAccessorRSESQ
+            db_accessor = DatabaseAccessorRSESQ(database, *args, **kargs)
 
         self._db_connection_worker.add_task('connect_to_db', db_accessor)
         self._db_connection_thread.start()
