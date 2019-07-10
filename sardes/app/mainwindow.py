@@ -273,7 +273,10 @@ class MainWindow(QMainWindow):
 def except_hook(cls, exception, traceback):
     """
     Used to override the default sys except hook so that this application
-    doesn't exit when an unhandled exception occurs.
+    doesn't automatically exit when an unhandled exception occurs.
+
+    See this StackOverflow answer for more details :
+    https://stackoverflow.com/a/33741755/4481445
     """
 
     sys.__excepthook__(cls, exception, traceback)
