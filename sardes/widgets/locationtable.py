@@ -28,7 +28,7 @@ class ObsWellTableModel(QAbstractTableModel):
     observation wells that are saved in the database.
     """
 
-    COLUMN_LABELS = {'no_well': _('Well ID'),
+    COLUMN_LABELS = {'obs_well_id': _('Well ID'),
                      'common_name': _('Common Name'),
                      'municipality': _('Municipality'),
                      'aquifer_type': _('Aquifer'),

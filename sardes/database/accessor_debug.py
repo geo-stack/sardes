@@ -20,7 +20,7 @@ from sardes.database.accessor_base import DatabaseAccessorBase
 
 OBS_WELLS_DATA = {}
 for i in range(5):
-    OBS_WELLS_DATA['no_well'] = 'no_well #{}'.format(i)
+    OBS_WELLS_DATA['obs_well_id'] = 'obs_well_id #{}'.format(i)
     OBS_WELLS_DATA['common_name'] = 'common_name #{}'.format(i)
     OBS_WELLS_DATA['municipality'] = 'municipality #{}'.format(i)
     OBS_WELLS_DATA['aquifer_type'] = 'aquifer #{}'.format(i)

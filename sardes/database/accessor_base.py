@@ -66,7 +66,7 @@ class DatabaseAccessorBase(ABC):
 
             Required Columns
             ~~~~~~~~~~~~~~~~
-            - no_well: str
+            - obs_well_id: str
                 The unique identifier of the observation well.
             - latitude: float
                 The latitude of the observation well location in decimal
