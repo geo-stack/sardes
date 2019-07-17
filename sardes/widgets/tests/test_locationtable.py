@@ -17,10 +17,11 @@ from unittest.mock import Mock
 
 # ---- Third party imports
 import pytest
+from pandas.testing import assert_frame_equal
 
 # ---- Local imports
 from sardes.database.manager import DatabaseConnectionManager
-from sardes.database.accessor_debug import OBS_WELLS
+from sardes.database.accessor_debug import OBS_WELLS_DF
 from sardes.widgets.locationtable import ObservationWellTableView
 
 
@@ -57,9 +58,9 @@ def test_obs_well_tableview_init(obs_well_tableview, mocker, qtbot):
                           timeout=3000):
         dbconnmanager.connect_to_db('debug', 'user', 'password',
                                     'localhost', 256, 'utf8')
-
-    assert obs_well_tableview.location_table_model.locations == OBS_WELLS
-    assert obs_well_tableview.model().rowCount() == len(OBS_WELLS)
+    assert obs_well_tableview.model().rowCount() == len(OBS_WELLS_DF)
+    assert_frame_equal(obs_well_tableview.obs_well_table_model.obs_wells,
+                       OBS_WELLS_DF)
 
 
 if __name__ == "__main__":
