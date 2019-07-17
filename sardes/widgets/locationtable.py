@@ -39,7 +39,7 @@ class ObsWellTableModel(QAbstractTableModel):
                      'latitude': _('Latitude'),
                      'longitude': _('Longitude'),
                      'is_station_active': _('Active'),
-                     'note': _('Note')
+                     'obs_well_notes': _('Note')
                      }
     COLUMNS = list(COLUMN_LABELS.keys())
 

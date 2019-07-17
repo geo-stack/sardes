@@ -31,7 +31,7 @@ for i in range(5):
     OBS_WELLS_DATA['latitude'] = 45 + i / 10
     OBS_WELLS_DATA['longitude'] = -75 + i / 10
     OBS_WELLS_DATA['is_station_active'] = 'station_active #{}'.format(i)
-    OBS_WELLS_DATA['note'] = 'note #{}'.format(i)
+    OBS_WELLS_DATA['obs_well_notes'] = 'note #{}'.format(i)
 OBS_WELLS_DF = pd.DataFrame(OBS_WELLS_DATA, range(5))
 
 

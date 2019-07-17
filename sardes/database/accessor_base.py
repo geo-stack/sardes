@@ -101,7 +101,7 @@ class DatabaseAccessorBase(ABC):
                 location in meters above sea level.
             - is_station_active: bool
                 Indicates whether the station is still active or not.
-            - note: str
+            - obs_well_notes: str
                 Any notes related to the observation well.
         """
         return pd.DataFrame([])
