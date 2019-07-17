@@ -73,7 +73,7 @@ class DatabaseConnectionWorker(QObject):
         try:
             locations = self.db_accessor.get_observation_wells()
         except AttributeError:
-            locations = []
+            locations = DataFrame([])
         self.sig_database_observation_wells.emit(locations)
 
     def execute_sql_request(self, sql_request, **kwargs):
