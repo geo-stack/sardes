@@ -12,6 +12,7 @@
 import sys
 
 # ---- Third party imports
+import pandas as pd
 from qtpy.QtCore import (QAbstractTableModel, QModelIndex,
                          QSortFilterProxyModel, Qt, QVariant, Slot)
 from qtpy.QtGui import QColor
@@ -83,7 +84,11 @@ class ObsWellTableModel(QAbstractTableModel):
                         self.obs_wells.iloc[index.row()]['is_station_active']
                         else _('No'))
             else:
-                return str(self.obs_wells.iloc[index.row()][column_key])
+                value = self.obs_wells.iloc[index.row()][column_key]
+                if pd.isna(value):
+                    return ''
+                else:
+                    return str(value)
         elif role == Qt.ForegroundRole:
             if (column_key == 'is_station_active' and
                     column_key in self.obs_wells.columns):
