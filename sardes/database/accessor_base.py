@@ -10,46 +10,8 @@
 # ---- Standard imports
 from abc import ABC, abstractmethod
 
-
-class ObservationWell(object):
-    """
-    Sardes observation well class.
-    """
-    __attrs__ = ['no_well', 'common_name', 'municipality', 'aquifer_type',
-                 'aquifer_code', 'confinement', 'in_recharge_zone',
-                 'is_influenced', 'latitude', 'longitude', 'elevation',
-                 'is_station_active', 'note']
-
-    def __init__(self, no_well: str, common_name: str = None,
-                 municipality: str = None, aquifer_type: str = None,
-                 aquifer_code: int = None, confinement: str = None,
-                 in_recharge_zone: bool = None, is_influenced: bool = None,
-                 latitude: float = None, longitude: float = None,
-                 elevation: float = None, is_station_active: bool = None,
-                 note: str = None):
-        self.no_well = no_well
-        self.common_name = common_name
-        self.municipality = municipality
-        self.aquifer_type = aquifer_type
-        self.aquifer_code = aquifer_code
-        self.confinement = confinement
-        self.in_recharge_zone = in_recharge_zone
-        self.is_influenced = is_influenced
-        self.latitude = latitude
-        self.longitude = longitude
-        self.elevation = elevation
-        self.is_station_active = is_station_active
-        self.note = note
-
-    def __eq__(self, other):
-        if not isinstance(other, ObservationWell):
-            # Don't attempt to compare against unrelated types
-            return NotImplemented
-        try:
-            return all([getattr(self, attr) == getattr(other, attr) for
-                        attr in self.__attrs__])
-        except AttributeError:
-            return False
+# ---- Third party imports
+import pandas as pd
 
 
 class DatabaseAccessorBase(ABC):
@@ -90,13 +52,56 @@ class DatabaseAccessorBase(ABC):
 
     def get_observation_wells(self, sort=True):
         """
-        Get a list of ObservationWell objects containing information
-        related to the observation wells that are saved in the database.
+        Return a pandas DataFrame containing the information related
+        to the observation wells that are saved in the database.
 
         Returns
         -------
-        list
-            A list of ObservationWell objects containing information
-            related to the observation wells that are saved in the database.
+        pandas.DataFrame
+            A pandas DataFrame containing the information related
+            to the observation wells that are saved in the database.
+
+            The dataframe must contain at least the required columns and any
+            of the optional columns that are listed below.
+
+            Required Columns
+            ~~~~~~~~~~~~~~~~
+            - no_well: str
+                The unique identifier of the observation well.
+            - latitude: float
+                The latitude of the observation well location in decimal
+                degrees.
+            - longitude: float
+                The longitude of the observation well location in decimal
+                degrees.
+
+            Optional Columns
+            ~~~~~~~~~~~~~~~~
+            - common_name: str
+                The human readable name of the well.
+            - municipality: str
+                The municipality where the well is installed.
+            - aquifer_type: str
+                Indicates if the well is open in the bedrock or in the
+                unconsolidated sediment.
+            - confinement: str
+                Indicates if the confinement at the well location is confined,
+                unconfined or semi-confined,
+            - aquifer_code: int
+                A code that represents the combination of aquifer type and
+                confinement for the well.
+            - in_recharge_zone: bool
+                Indicates whether the observation well is located in or in
+                the proximity a recharge zone.
+            - is_influenced: bool
+                Indicates whether the water levels measured in that well are
+                influenced or not by anthropic phenomenon.
+            - elevation: float
+                The elevation of the ground surface at the observation well
+                location in meters above sea level.
+            - is_station_active: bool
+                Indicates whether the station is still active or not.
+            - note: str
+                Any notes related to the observation well.
         """
-        return []
+        return pd.DataFrame([])
