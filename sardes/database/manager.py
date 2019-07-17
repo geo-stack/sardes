@@ -12,6 +12,7 @@
 import sys
 
 # ---- Third party imports
+from pandas import DataFrame
 from qtpy.QtCore import QObject, QThread, Signal, Slot
 
 
@@ -21,7 +22,7 @@ class DatabaseConnectionWorker(QObject):
     """
     sig_database_connected = Signal(object, object)
     sig_database_disconnected = Signal()
-    sig_database_observation_wells = Signal(list)
+    sig_database_observation_wells = Signal(DataFrame)
 
     def __init__(self, parent=None):
         super(DatabaseConnectionWorker, self).__init__(parent)
@@ -85,7 +86,7 @@ class DatabaseConnectionManager(QObject):
     sig_database_connected = Signal(object, object)
     sig_database_disconnected = Signal()
     sig_database_connection_changed = Signal(bool)
-    sig_database_observation_wells = Signal(list)
+    sig_database_observation_wells = Signal(DataFrame)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -158,7 +159,7 @@ class DatabaseConnectionManager(QObject):
         self._db_connection_worker.add_task('disconnect_from_db')
         self._db_connection_thread.start()
 
-    @Slot(list)
+    @Slot(DataFrame)
     def _handle_get_observation_wells(self, locations):
         """
         Handle when the list of observation wells saved in the database
