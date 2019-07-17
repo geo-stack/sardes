@@ -12,6 +12,7 @@ Object-Relational Mapping and Accessor implementation of the RSESQ database.
 """
 
 # ---- Third party imports
+import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy import ForeignKey
@@ -21,7 +22,7 @@ from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker, relationship
 
 # ---- Local imports
-from sardes.database.accessor_base import ObservationWell
+from sardes.database.utils import map_table_column_names
 
 
 # =============================================================================
@@ -44,7 +45,7 @@ class Location(Base):
     latitude = Column('latitude_8', Float)
     longitude = Column(Float)
     is_station_active = Column('station_active', String)
-    note = Column('remarque', String)
+    loc_notes = Column('remarque', String)
 
     sampling_features = relationship(
         "SamplingFeature", back_populates="location")
@@ -67,19 +68,10 @@ class SamplingFeature(Base):
 
     sampling_feature_id = Column('elemcarac_id', Integer, primary_key=True)
     sampling_feature_uuid = Column('elemcarac_uuid', String)
-    sampling_feature_name = Column('elemcarac_nom', String)
-    sampling_feature_note = Column('elemcarac_note', String)
     interest_id = Column('interet_id', String)
     loc_id = Column(Integer, ForeignKey('rsesq.localisation.loc_id'))
 
-    __mapper_args__ = {
-        'include_properties': [
-            'sampling_feature_id',
-            'sampling_feature_uuid',
-            'sampling_feature_name',
-            'sampling_feature_note',
-            'loc_id',
-            'interest_id']}
+    __mapper_args__ = {'polymorphic_on': interest_id}
 
     location = relationship(
         "Location", back_populates="sampling_features")
@@ -90,6 +82,15 @@ class SamplingFeature(Base):
             returned_value += "{}={} ".format(attr, getattr(self, attr))
         returned_value += ")>"
         return returned_value
+
+
+class ObservationWell(SamplingFeature):
+    """
+    An object used to map the observation wells of the RSESQ.
+    """
+    __mapper_args__ = {'polymorphic_identity': 1}
+    obs_well_id = Column('elemcarac_nom', String)
+    obs_well_notes = Column('elemcarac_note', String)
 
 
 # =============================================================================
@@ -163,35 +164,40 @@ class DatabaseAccessorRSESQ(object):
         Get the list of observations wells that are saved in the database.
         """
         if self.is_connected():
-            sampling_features = (
-                self._session.query(SamplingFeature)
-                .order_by(SamplingFeature.sampling_feature_name)
-                .filter(SamplingFeature.interest_id == 1)
-                .all())
-            obs_wells = []
-            for sampling_feature in sampling_features:
-                notes = (sampling_feature.sampling_feature_note
-                         .replace('NULL', '')
-                         .split('||'))
-                obs_wells.append(ObservationWell(
-                    no_well=sampling_feature.sampling_feature_name,
-                    common_name=notes[0].split(':')[1].strip(),
-                    municipality=(
-                        sampling_feature.location.note.split(':')[1].strip()),
-                    aquifer_type=notes[1].split(':')[1].strip(),
-                    aquifer_code=notes[3].split(':')[1].strip(),
-                    confinement=notes[2].split(':')[1].strip(),
-                    in_recharge_zone=notes[4].split(':')[1].strip(),
-                    is_influenced=notes[5].split(':')[1].strip(),
-                    is_station_active=notes[6].split(':')[1].strip() == 'True',
-                    latitude=sampling_feature.location.latitude,
-                    longitude=sampling_feature.location.longitude,
-                    elevation=None,
-                    note=notes[7].split(':')[1].strip()
-                    ))
+            query = (
+                self._session.query(ObservationWell,
+                                    Location.latitude,
+                                    Location.longitude,
+                                    Location.loc_notes)
+                .filter(Location.loc_id == ObservationWell.loc_id)
+                .order_by(ObservationWell.obs_well_id)
+                ).with_labels()
+            obs_wells = pd.read_sql_query(
+                query.statement, query.session.bind, coerce_float=True)
+
+            # Rename the column names to that expected by the api.
+            columns_map = map_table_column_names(
+                Location, ObservationWell, with_labels=True)
+            obs_wells.rename(columns_map, axis='columns', inplace=True)
+
+            # Reformat notes correctly.
+            keys_in_notes = ['common_name', 'aquifer_type', 'confinement',
+                             'aquifer_code', 'in_recharge_zone',
+                             'is_influenced', 'is_station_active',
+                             'obs_well_notes']
+            split_notes = obs_wells['obs_well_notes'].str.split('\|\|')
+            obs_wells.drop(labels='obs_well_notes', axis=1, inplace=True)
+            for i, key in enumerate(keys_in_notes):
+                obs_wells[key] = (
+                    split_notes.str[i].str.split(':').str[1].str.strip())
+                obs_wells[key] = obs_wells[key][obs_wells[key] != 'NULL']
+
+            obs_wells['municipality'] = (
+                obs_wells['loc_notes'].str.split(':').str[1].str.strip())
+
             return obs_wells
         else:
-            return []
+            return pd.DataFrame([])
 
     def get_observations(self):
         pass
@@ -211,8 +217,7 @@ if __name__ == "__main__":
     dbconfig = get_dbconfig()
     accessor = DatabaseAccessorRSESQ(
         'rsesq', 'rsesq', '((Rsesq2019', '198.73.161.237', 5432)
-    accessor.connect()
-    print(accessor._connection, accessor._connection_error)
 
+    accessor.connect()
     obs_wells = accessor.get_observation_wells()
     accessor.close_connection()

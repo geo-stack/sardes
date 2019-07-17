@@ -11,25 +11,28 @@
 from time import sleep
 from copy import deepcopy
 
+# ---- Third party imports
+import pandas as pd
+
 # ---- Local imports
-from sardes.database.accessor_base import DatabaseAccessorBase, ObservationWell
+from sardes.database.accessor_base import DatabaseAccessorBase
 
 
-OBS_WELLS = [
-    ObservationWell(
-        no_well='no_well #{}'.format(i),
-        common_name='common_name #{}'.format(i),
-        municipality='municipality #{}'.format(i),
-        aquifer_type='aquifer #{}'.format(i),
-        confinement='confinement #{}'.format(i),
-        aquifer_code=i,
-        in_recharge_zone='zone_rechar #{}'.format(i),
-        is_influenced='influences #{}'.format(i),
-        latitude=45 + i / 10,
-        longitude=-75 + i / 10,
-        is_station_active='station_active #{}'.format(i),
-        note='note #{}'.format(i)
-        ) for i in range(5)]
+OBS_WELLS_DATA = {}
+for i in range(5):
+    OBS_WELLS_DATA['obs_well_id'] = 'obs_well_id #{}'.format(i)
+    OBS_WELLS_DATA['common_name'] = 'common_name #{}'.format(i)
+    OBS_WELLS_DATA['municipality'] = 'municipality #{}'.format(i)
+    OBS_WELLS_DATA['aquifer_type'] = 'aquifer #{}'.format(i)
+    OBS_WELLS_DATA['confinement'] = 'confinement #{}'.format(i)
+    OBS_WELLS_DATA['aquifer_code'] = i
+    OBS_WELLS_DATA['in_recharge_zone'] = 'zone_rechar #{}'.format(i)
+    OBS_WELLS_DATA['is_influenced'] = 'influences #{}'.format(i)
+    OBS_WELLS_DATA['latitude'] = 45 + i / 10
+    OBS_WELLS_DATA['longitude'] = -75 + i / 10
+    OBS_WELLS_DATA['is_station_active'] = 'station_active #{}'.format(i)
+    OBS_WELLS_DATA['obs_well_notes'] = 'note #{}'.format(i)
+OBS_WELLS_DF = pd.DataFrame(OBS_WELLS_DATA, range(5))
 
 
 class DatabaseAccessorDebug(DatabaseAccessorBase):
@@ -47,7 +50,7 @@ class DatabaseAccessorDebug(DatabaseAccessorBase):
         print("kargs :", kargs)
         self._connection = None
         self._connection_error = None
-        self._wells = deepcopy(OBS_WELLS)
+        self._wells = deepcopy(OBS_WELLS_DF)
 
     def is_connected(self):
         """
@@ -81,3 +84,9 @@ class DatabaseAccessorDebug(DatabaseAccessorBase):
         sleep(0.5)
         print("done")
         return self._wells if self.is_connected() else []
+
+
+if __name__ == '__main__':
+    accessor = DatabaseAccessorDebug()
+    accessor.connect()
+    obs_wells = accessor.get_observation_wells()
