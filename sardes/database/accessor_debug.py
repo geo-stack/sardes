@@ -15,7 +15,7 @@ from copy import deepcopy
 import pandas as pd
 
 # ---- Local imports
-from sardes.database.accessor_base import DatabaseAccessorBase
+from sardes.api.database_accessor import DatabaseAccessorBase
 
 
 OBS_WELLS_DATA = {}
