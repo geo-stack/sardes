@@ -28,6 +28,10 @@ DEFAULTS = [
          'window/position': (50, 50),
          'window/is_maximized': False
          }
+     ),
+    ('database',
+        {'dbtype_last_selected': 'Sardes Demo'
+         }
      )
 ]
 
