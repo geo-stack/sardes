@@ -96,7 +96,7 @@ class ObservationWell(SamplingFeature):
 # =============================================================================
 # ---- Accessor
 # =============================================================================
-class DatabaseAccessorRSESQ(object):
+class DatabaseAccessorRSESQ(DatabaseAccessorBase):
     """
     Manage the connection and requests to a RSESQ database.
     """
@@ -111,8 +111,6 @@ class DatabaseAccessorRSESQ(object):
         self._client_encoding = client_encoding
 
         # create a SQL Alchemy engine.
-        self._connection = None
-        self._connection_error = None
         self._engine = self._create_engine()
 
         # create a session.
