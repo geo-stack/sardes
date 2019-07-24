@@ -22,7 +22,7 @@ from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker, relationship
 
 # ---- Local imports
-from sardes.database.utils import map_table_column_names
+from sardes.database.utils import map_table_column_names, format_sqlobject_repr
 from sardes.api.database_accessor import DatabaseAccessorBase
 
 
@@ -52,11 +52,7 @@ class Location(Base):
         "SamplingFeature", back_populates="location")
 
     def __repr__(self):
-        returned_value = "<Location("
-        for attr in self.__mapper_args__['include_properties']:
-            returned_value += "{}={} ".format(attr, getattr(self, attr))
-        returned_value += ")>"
-        return returned_value
+        return format_sqlobject_repr(self)
 
 
 class SamplingFeature(Base):
@@ -67,8 +63,7 @@ class SamplingFeature(Base):
     __tablename__ = 'elements_caracteristique'
     __table_args__ = ({"schema": "rsesq"})
 
-    sampling_feature_id = Column('elemcarac_id', Integer, primary_key=True)
-    sampling_feature_uuid = Column('elemcarac_uuid', String)
+    sampling_feature_uuid = Column('elemcarac_uuid', String, primary_key=True)
     interest_id = Column('interet_id', String)
     loc_id = Column(Integer, ForeignKey('rsesq.localisation.loc_id'))
 
@@ -78,11 +73,7 @@ class SamplingFeature(Base):
         "Location", back_populates="sampling_features")
 
     def __repr__(self):
-        returned_value = "<SamplingFeature("
-        for attr in self.__mapper_args__['include_properties']:
-            returned_value += "{}={} ".format(attr, getattr(self, attr))
-        returned_value += ")>"
-        return returned_value
+        return format_sqlobject_repr(self)
 
 
 class ObservationWell(SamplingFeature):
