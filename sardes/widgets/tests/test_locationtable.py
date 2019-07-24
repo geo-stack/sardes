@@ -20,7 +20,7 @@ import pytest
 from pandas.testing import assert_frame_equal
 
 # ---- Local imports
-from sardes.database.manager import DatabaseConnectionManager
+from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.database.accessor_debug import OBS_WELLS_DF
 from sardes.widgets.locationtable import ObservationWellTableView
 
