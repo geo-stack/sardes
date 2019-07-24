@@ -21,8 +21,8 @@ import pytest
 from qtpy.QtCore import Qt
 
 # ---- Local imports
-from sardes.database.manager import DatabaseConnectionManager
-from sardes.widgets.databaseconnector import DatabaseConnectionWidget
+from sardes.database.database_manager import DatabaseConnectionManager
+from sardes.widgets.database_connection import DatabaseConnectionWidget
 from sardes.widgets.statusbar import ProcessStatusBar
 
 
@@ -38,6 +38,7 @@ def dbconnmanager():
 @pytest.fixture
 def dbconnwidget(qtbot, mocker, dbconnmanager):
     dbconnwidget = DatabaseConnectionWidget(dbconnmanager)
+    dbconnwidget.dbtype_combobox.setCurrentIndex(1)
     qtbot.addWidget(dbconnwidget)
     dbconnwidget.show()
     return dbconnwidget
@@ -68,36 +69,34 @@ def test_dbconnwidget_connect(dbconnwidget, qtbot, mocker):
                  side_effect=sqlalchemy_connect_mock)
 
     # Try connecting to the database.
-    with qtbot.waitSignal(dbconnmanager.sig_database_connected):
+    with qtbot.waitSignal(dbconnmanager.sig_database_connected,
+                          timeout=3000):
         qtbot.mouseClick(dbconnwidget.connect_button, Qt.LeftButton)
 
         assert dbconnmanager.is_connecting()
         assert dbconnwidget.status_bar.status == ProcessStatusBar.IN_PROGRESS
-        assert not dbconnwidget.form_groupbox.isEnabled()
+        assert not dbconnwidget.stacked_dialogs.isEnabled()
         assert not dbconnwidget.connect_button.isEnabled()
-        assert not dbconnwidget.reset_button.isEnabled()
-        assert not dbconnwidget.ok_button.isEnabled()
+        assert not dbconnwidget.close_button.isEnabled()
 
     # Assert that a connection to the database was created sucessfully.
     assert dbconnmanager.is_connected() is True
     assert (dbconnwidget.status_bar.status ==
             ProcessStatusBar.PROCESS_SUCCEEDED)
-    assert not dbconnwidget.form_groupbox.isEnabled()
+    assert not dbconnwidget.stacked_dialogs.isEnabled()
     assert dbconnwidget.connect_button.isEnabled()
     assert dbconnwidget.connect_button.text() == 'Disconnect'
-    assert not dbconnwidget.reset_button.isEnabled()
-    assert dbconnwidget.ok_button.isEnabled()
+    assert dbconnwidget.close_button.isEnabled()
 
     # Close the database connection.
     with qtbot.waitSignal(dbconnmanager.sig_database_disconnected):
         qtbot.mouseClick(dbconnwidget.connect_button, Qt.LeftButton)
     assert dbconnmanager.is_connected() is False
     assert dbconnwidget.status_bar.status == ProcessStatusBar.HIDDEN
-    assert dbconnwidget.form_groupbox.isEnabled()
+    assert dbconnwidget.stacked_dialogs.isEnabled()
     assert dbconnwidget.connect_button.isEnabled()
     assert dbconnwidget.connect_button.text() == 'Connect'
-    assert dbconnwidget.reset_button.isEnabled()
-    assert dbconnwidget.ok_button.isEnabled()
+    assert dbconnwidget.close_button.isEnabled()
 
 
 @pytest.mark.parametrize('mode', ['return none', 'raise exception'])
@@ -118,23 +117,22 @@ def test_dbconnwidget_failed_connect(mode, dbconnwidget, qtbot, mocker):
                  side_effect=sqlalchemy_connect_mock)
 
     # Try connecting to the database.
-    with qtbot.waitSignal(dbconnmanager.sig_database_connected):
+    with qtbot.waitSignal(dbconnmanager.sig_database_connected,
+                          timeout=3000):
         qtbot.mouseClick(dbconnwidget.connect_button, Qt.LeftButton)
 
         assert dbconnmanager.is_connecting()
         assert dbconnwidget.status_bar.status == ProcessStatusBar.IN_PROGRESS
-        assert not dbconnwidget.form_groupbox.isEnabled()
+        assert not dbconnwidget.stacked_dialogs.isEnabled()
         assert not dbconnwidget.connect_button.isEnabled()
-        assert not dbconnwidget.reset_button.isEnabled()
-        assert not dbconnwidget.ok_button.isEnabled()
+        assert not dbconnwidget.close_button.isEnabled()
 
     # Assert that the connection to the database failed.
     assert dbconnmanager.is_connected() is False
     assert dbconnwidget.status_bar.status == ProcessStatusBar.PROCESS_FAILED
-    assert dbconnwidget.form_groupbox.isEnabled()
+    assert dbconnwidget.stacked_dialogs.isEnabled()
     assert dbconnwidget.connect_button.isEnabled()
-    assert dbconnwidget.reset_button.isEnabled()
-    assert dbconnwidget.ok_button.isEnabled()
+    assert dbconnwidget.close_button.isEnabled()
 
 
 if __name__ == "__main__":

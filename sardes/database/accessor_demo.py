@@ -15,7 +15,7 @@ from copy import deepcopy
 import pandas as pd
 
 # ---- Local imports
-from sardes.database.accessor_base import DatabaseAccessorBase
+from sardes.api.database_accessor import DatabaseAccessorBase
 
 
 OBS_WELLS_DATA = {}
@@ -35,21 +35,20 @@ for i in range(5):
 OBS_WELLS_DF = pd.DataFrame(OBS_WELLS_DATA, range(5))
 
 
-class DatabaseAccessorDebug(DatabaseAccessorBase):
+class DatabaseAccessorDemo(DatabaseAccessorBase):
     """
     Sardes accessor test and debug class.
 
     This accessor is for testing and debuging purposes and does not depend
     on a database.
     """
+    __database_type_name__ = 'Sardes Demo'
 
     def __init__(self, *args, **kargs):
         super().__init__()
-        print("Instantiating DatabaseAccessorDebug with :")
+        print("Instantiating DatabaseAccessorDemo with :")
         print("args :", args)
         print("kargs :", kargs)
-        self._connection = None
-        self._connection_error = None
         self._wells = deepcopy(OBS_WELLS_DF)
 
     def is_connected(self):
@@ -87,6 +86,6 @@ class DatabaseAccessorDebug(DatabaseAccessorBase):
 
 
 if __name__ == '__main__':
-    accessor = DatabaseAccessorDebug()
+    accessor = DatabaseAccessorDemo()
     accessor.connect()
     obs_wells = accessor.get_observation_wells()

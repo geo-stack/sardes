@@ -32,3 +32,15 @@ def map_table_column_names(*sqlalchemy_tables, with_labels=True):
                     key = column.name
                 columns_map[key] = arg
     return columns_map
+
+
+def format_sqlobject_repr(sqlobject):
+    """
+    Return a formatted string for the sql object.
+    """
+    returned_value = "<" + sqlobject.__class__.__name__ + "("
+    for attr in dir(sqlobject):
+        if isinstance(sqlobject.__mapper__.columns.get(attr, None), Column):
+            returned_value += "{}={} ".format(attr, getattr(sqlobject, attr))
+    returned_value += ">"
+    return returned_value

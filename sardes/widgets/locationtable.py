@@ -161,7 +161,7 @@ class ObservationWellTableView(QTableView):
 
 
 if __name__ == '__main__':
-    from sardes.database.manager import DatabaseConnectionManager
+    from sardes.database.database_manager import DatabaseConnectionManager
     app = QApplication(sys.argv)
 
     manager = DatabaseConnectionManager()

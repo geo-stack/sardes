@@ -24,60 +24,56 @@ try:
 except Exception:
     keyring = None
 
-DB_CONNECTION_KEYS = ['database', 'user', 'host', 'port', 'encoding']
 
-
-def get_dbconfig():
+def get_dbconfig(dbtype_name):
     """
     Get and return the database configuration parameters last saved in the
     config file.
     """
-    dbconfig = {}
-    for key in DB_CONNECTION_KEYS:
-        dbconfig[key] = CONF.get('database', key)
-    dbconfig['password'] = get_password(dbconfig['database'], dbconfig['user'])
+    dbtype_name = dbtype_name.lower().replace(' ', '_')
+    dbconfig = CONF.get('database', 'dbtype/' + dbtype_name, {})
+    dbconfig['password'] = get_password(dbtype_name)
 
     return dbconfig
 
 
-def set_dbconfig(**kargs):
+def set_dbconfig(dbtype_name, dbconfig):
     """
     Set the specified database configuration parameters to the database
     configuration file.
     """
-    dbconfig = get_dbconfig()
-    dbconfig.update(kargs)
+    dbtype_name = dbtype_name.lower().replace(' ', '_')
 
-    store_password(
-        dbconfig['database'], dbconfig['user'], dbconfig['password'])
+    # Store credentials securely for future use if possible.
+    if 'password' in dbconfig:
+        store_password(dbtype_name, dbconfig['password'])
+        del dbconfig['password']
 
     # Save the connection parameters in our configs.
-    for key in DB_CONNECTION_KEYS:
-        CONF.set('database', key, dbconfig[key])
+    CONF.set('database', 'dbtype/' + dbtype_name, dbconfig)
 
 
-def store_password(database, username, password):
+def store_password(dbtype_name, password):
     """Store credentials securely for future use if possible."""
-    if keyring is not None and database and username and password:
+    if keyring is not None and dbtype_name and password:
+        dbtype_name = dbtype_name.lower().replace(' ', '_')
         try:
-            keyring.set_password(
-                __appname__, "{}/{}".format(database, username), password)
+            keyring.set_password(__appname__, dbtype_name, password)
         except Exception as e:
             print(e)
         else:
             print('Password saved successfully.')
 
 
-def get_password(database, username):
+def get_password(dbtype_name):
     """
-    Get pasword saved for that database and username or else return an empty
-    string.
+    Get password saved for that database type or else return an empty string.
     """
     password = ''
-    if keyring is not None and database and username:
+    if keyring is not None and dbtype_name:
+        dbtype_name = dbtype_name.lower().replace(' ', '_')
         try:
-            password = keyring.get_password(
-                __appname__, "{}/{}".format(database, username))
+            password = keyring.get_password(__appname__, dbtype_name)
         except RuntimeError:
             pass
     return password or ''

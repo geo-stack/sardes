@@ -20,8 +20,8 @@ import pytest
 from pandas.testing import assert_frame_equal
 
 # ---- Local imports
-from sardes.database.manager import DatabaseConnectionManager
-from sardes.database.accessor_debug import OBS_WELLS_DF
+from sardes.database.database_manager import DatabaseConnectionManager
+from sardes.database.accessor_demo import OBS_WELLS_DF, DatabaseAccessorDemo
 from sardes.widgets.locationtable import ObservationWellTableView
 
 
@@ -35,18 +35,25 @@ def dbconnmanager():
 
 
 @pytest.fixture
+def dbaccessor():
+    dbaccessor = DatabaseAccessorDemo()
+    return dbaccessor
+
+
+@pytest.fixture
 def obs_well_tableview(qtbot, mocker, dbconnmanager):
     obs_well_tableview = ObservationWellTableView(dbconnmanager)
-    # qtbot.addWidget(piezometertableview)
     obs_well_tableview.show()
     qtbot.waitForWindowShown(obs_well_tableview)
+    qtbot.addWidget(obs_well_tableview)
     return obs_well_tableview
 
 
 # =============================================================================
 # ---- Tests for ObservationWellTableView
 # =============================================================================
-def test_obs_well_tableview_init(obs_well_tableview, mocker, qtbot):
+def test_obs_well_tableview_init(obs_well_tableview, dbaccessor,
+                                 mocker, qtbot):
     """Test that the location table view is initialized correctly."""
     assert obs_well_tableview
     assert obs_well_tableview.model().rowCount() == 0
@@ -54,10 +61,14 @@ def test_obs_well_tableview_init(obs_well_tableview, mocker, qtbot):
     # Connect to the database. This should trigger in the location table view
     # a query to get and display the content of the database location table.
     dbconnmanager = obs_well_tableview.db_connection_manager
-    with qtbot.waitSignal(dbconnmanager.sig_database_observation_wells,
-                          timeout=3000):
-        dbconnmanager.connect_to_db('debug', 'user', 'password',
-                                    'localhost', 256, 'utf8')
+    with qtbot.waitSignal(
+            dbconnmanager.sig_database_observation_wells, timeout=3000):
+        dbconnmanager.connect_to_db(dbaccessor)
+
+    # We need to wait a little to let the time for the data to display in
+    # the table.
+    qtbot.wait(1000)
+
     assert obs_well_tableview.model().rowCount() == len(OBS_WELLS_DF)
     assert_frame_equal(obs_well_tableview.obs_well_table_model.obs_wells,
                        OBS_WELLS_DF)
