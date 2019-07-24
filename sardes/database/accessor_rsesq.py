@@ -23,6 +23,7 @@ from sqlalchemy.orm import sessionmaker, relationship
 
 # ---- Local imports
 from sardes.database.utils import map_table_column_names
+from sardes.api.database_accessor import DatabaseAccessorBase
 
 
 # =============================================================================
