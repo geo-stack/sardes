@@ -18,6 +18,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout, QLabel, QPushButton, QStackedWidget, QVBoxLayout)
 
 # ---- Local imports
+from sardes.config.main import CONF
 from sardes.config.database import get_dbconfig, set_dbconfig
 from sardes.config.gui import RED
 from sardes.config.locale import _
@@ -44,6 +45,10 @@ class DatabaseConnectionWidget(QDialog):
         # Add internal database accessor.
         self.add_database_dialog(DatabaseConnectDialogDemo())
         self.add_database_dialog(DatabaseConnectDialogRSESQ())
+
+        dbtype_index = self.dbtype_combobox.findText(
+            CONF.get('database', 'dbtype_last_selected'))
+        self.dbtype_combobox.setCurrentIndex(max(0, dbtype_index))
 
     def set_database_connection_manager(self, db_connection_manager):
         """
@@ -176,6 +181,8 @@ class DatabaseConnectionWidget(QDialog):
         """
         for dialog in self.database_dialogs:
             set_dbconfig(dialog.dbtype_name, dialog.get_database_kargs())
+        CONF.set('database', 'dbtype_last_selected',
+                 self.current_database_dialog.dbtype_name)
         super().close()
 
     def disconnect(self):
