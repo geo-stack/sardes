@@ -70,6 +70,11 @@ class DatabaseConnectionWorker(QObject):
         self.sig_database_disconnected.emit()
 
     def get_observation_wells(self):
+        """
+        Try get the list of observation wells that are saved in the database
+        and send the results through the sig_database_observation_wells
+        signal.
+        """
         try:
             locations = self.db_accessor.get_observation_wells()
         except AttributeError:
@@ -87,9 +92,12 @@ class DatabaseConnectionManager(QObject):
     sig_database_disconnected = Signal()
     sig_database_connection_changed = Signal(bool)
     sig_database_observation_wells = Signal(DataFrame)
+    sig_new_database_accessor_registered = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        self._db_accessors = {}
 
         self._db_connection_worker = DatabaseConnectionWorker()
         self._db_connection_thread = QThread()
@@ -134,16 +142,12 @@ class DatabaseConnectionManager(QObject):
         self._is_connecting = False
         self.sig_database_connected.emit(connection, connection_error)
 
-    def connect_to_db(self, database, *args, **kargs):
-        """Try to create a new connection with the database"""
+    def connect_to_db(self, db_accessor):
+        """
+        Try to create a new connection with the database using the
+        provided database accessor.
+        """
         self._is_connecting = True
-        if database.lower() == 'debug':
-            from sardes.database.accessor_debug import DatabaseAccessorDebug
-            db_accessor = DatabaseAccessorDebug(database, *args, **kargs)
-        else:
-            from sardes.database.accessor_rsesq import DatabaseAccessorRSESQ
-            db_accessor = DatabaseAccessorRSESQ(database, *args, **kargs)
-
         self._db_connection_worker.add_task('connect_to_db', db_accessor)
         self._db_connection_thread.start()
 
