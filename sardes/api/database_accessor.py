@@ -16,9 +16,10 @@ import pandas as pd
 
 class DatabaseAccessorBase(ABC):
     """
-    Sardes accessor class.
+    Sardes database accessor class.
 
-    All accessors *must* inherit this class and reimplement its interface.
+    All database accessors *must* inherit this class and reimplement
+    its interface.
     """
 
     def __init__(self, *args, **kargs):
