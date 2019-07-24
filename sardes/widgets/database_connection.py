@@ -21,6 +21,8 @@ from qtpy.QtWidgets import (
 from sardes.config.database import get_dbconfig, set_dbconfig
 from sardes.config.gui import RED
 from sardes.config.locale import _
+from sardes.database.dialog_demo import DatabaseConnectDialogDemo
+from sardes.database.dialog_rsesq import DatabaseConnectDialogRSESQ
 from sardes.widgets.statusbar import ProcessStatusBar
 
 
@@ -38,6 +40,10 @@ class DatabaseConnectionWidget(QDialog):
 
         self.setup()
         self.set_database_connection_manager(db_connection_manager)
+
+        # Add internal database accessor.
+        self.add_database_dialog(DatabaseConnectDialogDemo())
+        self.add_database_dialog(DatabaseConnectDialogRSESQ())
 
     def set_database_connection_manager(self, db_connection_manager):
         """
@@ -166,8 +172,7 @@ class DatabaseConnectionWidget(QDialog):
 
     def close(self):
         """
-        Accept user inputs, save them in the configuration file and
-        close the dialog window.
+        Extend Qt method to save user inputs in the configuration file.
         """
         for dialog in self.database_dialogs:
             set_dbconfig(dialog.dbtype_name, dialog.get_database_kargs())
