@@ -23,7 +23,8 @@ class DatabaseAccessorBase(ABC):
     """
 
     def __init__(self, *args, **kargs):
-        pass
+        self._connection = None
+        self._connection_error = None
 
     @abstractmethod
     def is_connected(self):
@@ -51,7 +52,7 @@ class DatabaseAccessorBase(ABC):
         """
         pass
 
-    def get_observation_wells(self, sort=True):
+    def get_observation_wells(self):
         """
         Return a pandas DataFrame containing the information related
         to the observation wells that are saved in the database.
