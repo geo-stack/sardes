@@ -19,8 +19,9 @@ class DatabaseConnectDialogBase(QGroupBox):
 
     This class provides a gui for the Sardes database accessor class.
     All database accessor classes that needs to be added to the Sardes
-    database connection widget needs to inherit this class, create  a
-    gui, and reimplement the get_args and get_kargs methods.
+    database connection widget *must* inherit this class, extent the __init__
+    constructor to add a gui, and reimplement the set_database_kargs and
+    get_database_kargs methods.
     """
     # The concrete database accessor class this dialog is providing an
     # interface to. The accessor is not instantiated here because it is
@@ -54,6 +55,10 @@ class DatabaseConnectDialogBase(QGroupBox):
 
     @property
     def dbtype_name(self):
+        """
+        Return the name given to the type of database this dialog is providing
+        an interface to.
+        """
         if self.__database_type_name__ is None:
             raise NotImplementedError
         else:
@@ -61,6 +66,10 @@ class DatabaseConnectDialogBase(QGroupBox):
 
     @property
     def dbtype_desc(self):
+        """
+        Return a description of the database this dialog is providing an
+        interface to.
+        """
         return self.__database_type_desc__
 
     def database_accessor(self):
@@ -88,12 +97,15 @@ class DatabaseConnectDialogBase(QGroupBox):
 
     def add_stretch(self, stretch):
         """
+        Adds a stretchable space with zero minimum size and stretch factor
+        stretch to the end of this dialog layout.
         """
         self.form_layout.setRowStretch(self.form_layout.rowCount(), stretch)
 
     def set_database_kargs(self, kargs):
         """
-        Setup the dialog form the provided values in the kargs dict.
+        Setup the dialog form widgets with the provided values in the
+        kargs dict.
         """
         pass
 
