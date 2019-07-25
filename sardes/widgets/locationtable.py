@@ -76,31 +76,35 @@ class ObsWellTableModel(QAbstractTableModel):
     def data(self, index, role=Qt.DisplayRole):
         """Qt method override."""
         column_key = self.COLUMNS[index.column()]
+        row = index.row()
+        try:
+            column = self.obs_wells.columns.get_loc(column_key)
+        except ValueError:
+            column = None
+
         if role == Qt.DisplayRole:
-            if column_key not in self.obs_wells.columns:
+            if column is None:
                 return ''
-            if column_key == 'is_station_active':
                 return (_('Yes') if
-                        self.obs_wells.iloc[index.row()]['is_station_active']
+                        self.obs_wells.iloc[row, column] == 'True'
                         else _('No'))
             else:
-                value = self.obs_wells.iloc[index.row()][column_key]
+                value = self.obs_wells.iloc[row, column]
                 if pd.isna(value):
                     return ''
                 else:
                     return str(value)
         elif role == Qt.ForegroundRole:
-            if (column_key == 'is_station_active' and
-                    column_key in self.obs_wells.columns):
+            if column_key == 'is_station_active' and column is not None:
                 color = (GREEN if
-                         self.obs_wells.iloc[index.row()]['is_station_active']
+                         self.obs_wells.iloc[row, column] == 'True'
                          else RED)
                 return QColor(color)
             else:
                 return QVariant()
         elif role == Qt.ToolTipRole:
-            return (QVariant() if column_key not in self.obs_wells.columns
-                    else self.obs_wells.iloc[index.row()][column_key])
+            return (QVariant() if column is None
+                    else self.obs_wells.iloc[row, column])
         else:
             return QVariant()
 
