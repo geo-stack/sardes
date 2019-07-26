@@ -60,14 +60,11 @@ def test_obs_well_tableview_init(obs_well_tableview, dbaccessor,
 
     # Connect to the database. This should trigger in the location table view
     # a query to get and display the content of the database location table.
-    dbconnmanager = obs_well_tableview.db_connection_manager
-    with qtbot.waitSignal(
-            dbconnmanager.sig_database_observation_wells, timeout=3000):
-        dbconnmanager.connect_to_db(dbaccessor)
+    obs_well_tableview.db_connection_manager.connect_to_db(dbaccessor)
 
     # We need to wait a little to let the time for the data to display in
     # the table.
-    qtbot.wait(1000)
+    qtbot.wait(3000)
 
     assert obs_well_tableview.model().rowCount() == len(OBS_WELLS_DF)
     assert_frame_equal(obs_well_tableview.obs_well_table_model.obs_wells,
