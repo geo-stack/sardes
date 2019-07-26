@@ -175,7 +175,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
                              'aquifer_code', 'in_recharge_zone',
                              'is_influenced', 'is_station_active',
                              'obs_well_notes']
-            split_notes = obs_wells['obs_well_notes'].str.split('\|\|')
+            split_notes = obs_wells['obs_well_notes'].str.split(r'\|\|')
             obs_wells.drop(labels='obs_well_notes', axis=1, inplace=True)
             for i, key in enumerate(keys_in_notes):
                 obs_wells[key] = (
