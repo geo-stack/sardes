@@ -28,13 +28,6 @@ class DatabaseConnectionWorker(QObject):
         super(DatabaseConnectionWorker, self).__init__(parent)
         self.db_accessor = None
 
-        self.database = ""
-        self.user = ""
-        self.password = ""
-        self.host = ""
-        self.port = 5432
-        self.client_encoding = 'utf_8'
-
         self._tasks = []
 
     def add_task(self, task, *args, **kargs):
