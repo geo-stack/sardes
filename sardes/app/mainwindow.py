@@ -136,6 +136,11 @@ class MainWindow(QMainWindow):
             self, _('Preferences...'), icon='preferences',
             shortcut='Ctrl+Shift+P', context=Qt.ApplicationShortcut
             )
+
+        # Create the panes and toolbars menus and actions
+        self.panes_menu = QMenu(_("Panes"), self)
+        self.panes_menu.setIcon(get_icon('panes'))
+
         report_action = create_action(
             self, _('Report an issue...'), icon='bug',
             shortcut='Ctrl+Shift+R', context=Qt.ApplicationShortcut,
@@ -149,8 +154,9 @@ class MainWindow(QMainWindow):
             self, _('Exit'), icon='exit', triggered=self.close,
             shortcut='Ctrl+Shift+Q', context=Qt.ApplicationShortcut
             )
-        for item in [lang_menu, preferences_action, None, report_action,
-                     about_action, exit_action]:
+        for item in [self.lang_menu, preferences_action, None,
+                     self.panes_menu, None, report_action, about_action,
+                     exit_action]:
             if item is None:
                 options_menu.addSeparator()
             elif isinstance(item, QMenu):
