@@ -46,7 +46,12 @@ class SardesPluginBase(QObject):
         return []
 
     def lock_pane_and_toolbar(self, state):
+        """
+        Lock or unlock this plugin dockwidget and mainwindow toolbars.
+        """
         if self.dockwidget is not None:
+            self.dockwidget.setFloating(
+                not state and self.dockwidget.isFloating())
             self.dockwidget.setFeatures(
                 self.dockwidget.NoDockWidgetFeatures if state
                 else self.dockwidget.AllDockWidgetFeatures)
