@@ -13,6 +13,8 @@
 # http://blog.teamtreehouse.com/10-user-interface-design-fundamentals
 
 # ---- Standard imports
+import os
+import os.path as osp
 import platform
 import sys
 
