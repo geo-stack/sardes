@@ -14,8 +14,8 @@ from math import pi
 import sys
 
 # ---- Third party imports
-from qtpy.QtCore import QSize, Qt
-from qtpy.QtWidgets import QAction, QToolButton
+from qtpy.QtCore import QByteArray, QSize, Qt
+from qtpy.QtWidgets import QAction, QSizePolicy, QToolBar, QToolButton
 
 # ---- Local imports
 from sardes.config.icons import get_icon
@@ -100,3 +100,13 @@ def create_waitspinner(size=32, n=11, parent=None):
     spinner.setColor(Qt.black)
 
     return spinner
+
+
+def qbytearray_to_hexstate(qba):
+    """Convert QByteArray object to a str hexstate."""
+    return str(bytes(qba.toHex().data()).decode())
+
+
+def hexstate_to_qbytearray(hexstate):
+    """Convert a str hexstate to a QByteArray object."""
+    return QByteArray().fromHex(str(hexstate).encode('utf-8'))
