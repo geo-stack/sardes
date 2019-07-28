@@ -17,6 +17,7 @@ import os
 import os.path as osp
 import platform
 import sys
+import importlib
 
 # ---- Third party imports
 from qtpy.QtCore import QPoint, QSize, Qt, QUrl, Slot
@@ -25,8 +26,7 @@ from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
                             QMessageBox, QSizePolicy, QToolButton, QWidget)
 
 # ---- Local imports
-from sardes import __namever__, __project_url__, __rootdir__
-from sardes.app.plugins import get_sardes_plugin_module_loaders
+from sardes import __namever__, __project_url__
 from sardes.config.main import CONF
 from sardes.config.icons import get_icon
 from sardes.config.gui import (get_iconsize, get_window_settings,
@@ -77,34 +77,25 @@ class MainWindow(QMainWindow):
         """Setup the main window"""
         self.create_topright_corner_toolbar()
         self.set_window_settings(*get_window_settings())
-        self.setup_plugins()
+        self.setup_internal_plugins()
         # Note: The window state must be restored after the setup of this
         #       mainwindow plugins and toolbars.
         self._restore_window_state()
 
-    def setup_plugins(self):
-        """Setup Sardes internal and third party plugins."""
-        installed_user_plugins = []
-        blacklisted_internal_plugins = []
+    def setup_internal_plugins(self):
+        """Setup Sardes internal plugins."""
+        # NOTE: We must import each internal plugin explicitely here or else
+        # we would have to add each of them as hidden import to the pyinstaller
+        # spec file for them to be packaged as part of the Sardes binary.
 
-        # Setup internal plugin path.
         self.internal_plugins = []
-        sardes_plugin_path = osp.join(__rootdir__, 'plugins')
-        module_loaders = get_sardes_plugin_module_loaders(sardes_plugin_path)
-        for module_name, module_loader in module_loaders.items():
-            if (module_name not in blacklisted_internal_plugins and
-                    module_name not in sys.modules):
-                try:
-                    module = module_loader.load_module()
-                    sys.modules[module_name] = module
-                    plugin = module.SARDES_PLUGIN_CLASS(self)
-                    plugin.register_plugin()
-                except Exception as error:
-                    print("%s: %s" % (module, str(error)))
-                else:
-                    self.internal_plugins.append(plugin)
 
-        # Setup user plugins.
+        # Observation Wells plugin.
+        from sardes.plugins.obs_wells_explorer import SARDES_PLUGIN_CLASS
+        plugin = SARDES_PLUGIN_CLASS(self)
+        plugin.register_plugin()
+        self.internal_plugins.append(plugin)
+
         self.thirdparty_plugins = []
         user_plugin_path = osp.join(CONFIG_DIR, 'plugins')
         if not osp.isdir(user_plugin_path):
