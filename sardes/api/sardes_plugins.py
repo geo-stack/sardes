@@ -53,8 +53,9 @@ class SardesPluginBase(QObject):
             self.dockwidget.setFloating(
                 not state and self.dockwidget.isFloating())
             self.dockwidget.setFeatures(
-                self.dockwidget.NoDockWidgetFeatures if state
-                else self.dockwidget.AllDockWidgetFeatures)
+                QDockWidget.NoDockWidgetFeatures |
+                QDockWidget.DockWidgetClosable if state else
+                QDockWidget.AllDockWidgetFeatures)
             self.dockwidget.setTitleBarWidget(QWidget() if state else None)
 
     # ---- Public methods
