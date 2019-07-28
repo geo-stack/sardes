@@ -83,6 +83,9 @@ FA_ICONS = {
     'information': [
         ('mdi.information-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'panes': [
+        ('mdi.view-grid',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'preferences': [
         ('mdi.settings',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],

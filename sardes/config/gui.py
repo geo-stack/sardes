@@ -7,6 +7,10 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+# ---- Third party imports
+from qtpy.QtWidgets import QApplication, QStyle
+
+# ---- Local imports
 from sardes.config.main import CONF
 
 
@@ -39,3 +43,15 @@ def set_window_settings(window_size, window_position, is_maximized):
     CONF.set('main', 'window/size', window_size)
     CONF.set('main', 'window/position', window_position)
     CONF.set('main', 'window/is_maximized', is_maximized)
+
+
+def get_layout_horizontal_spacing():
+    """Return an integer value to use for layout horizontal spacing."""
+    style = QApplication.instance().style()
+    return style.pixelMetric(QStyle.PM_LayoutHorizontalSpacing)
+
+
+def get_toolbar_item_spacing():
+    """Return an integer value to use for toolbar items spacing."""
+    style = QApplication.instance().style()
+    return style.pixelMetric(QStyle.PM_ToolBarItemSpacing)

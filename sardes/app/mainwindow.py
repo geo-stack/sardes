@@ -13,26 +13,32 @@
 # http://blog.teamtreehouse.com/10-user-interface-design-fundamentals
 
 # ---- Standard imports
+import os
+import os.path as osp
 import platform
 import sys
 
 # ---- Third party imports
-from qtpy.QtCore import QPoint, QSize, Qt, QUrl
+from qtpy.QtCore import QPoint, QSize, Qt, QUrl, Slot
 from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
                             QMessageBox, QSizePolicy, QToolButton, QWidget)
 
 # ---- Local imports
-from sardes import __namever__, __project_url__
+from sardes import __namever__, __project_url__, __rootdir__
+from sardes.app.plugins import get_sardes_plugin_module_loaders
+from sardes.config.main import CONF
 from sardes.config.icons import get_icon
 from sardes.config.gui import (get_iconsize, get_window_settings,
                                set_window_settings)
 from sardes.config.locale import (_, get_available_translations, get_lang_conf,
                                   LANGUAGE_CODES, set_lang_conf)
+from sardes.config.main import CONFIG_DIR
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.widgets.database_connection import DatabaseConnectionWidget
-from sardes.widgets.locationtable import ObservationWellTableView
-from sardes.utils.qthelpers import create_action, create_toolbutton
+from sardes.utils.qthelpers import (
+    create_action, create_toolbutton, qbytearray_to_hexstate,
+    hexstate_to_qbytearray)
 
 from multiprocessing import freeze_support
 freeze_support()
@@ -65,18 +71,57 @@ class MainWindow(QMainWindow):
             self.db_connection_manager, self)
         self.db_connection_widget.hide()
 
-        # Setup the observation well view table.
-        self.location_view = ObservationWellTableView(
-            self.db_connection_manager, self)
-
         self.setup()
 
     def setup(self):
         """Setup the main window"""
-        self.setCentralWidget(self.location_view)
         self.create_topright_corner_toolbar()
-
         self.set_window_settings(*get_window_settings())
+        self.setup_plugins()
+        # Note: The window state must be restored after the setup of this
+        #       mainwindow plugins and toolbars.
+        self._restore_window_state()
+
+    def setup_plugins(self):
+        """Setup Sardes internal and third party plugins."""
+        installed_user_plugins = []
+        blacklisted_internal_plugins = []
+
+        # Setup internal plugin path.
+        self.internal_plugins = []
+        sardes_plugin_path = osp.join(__rootdir__, 'plugins')
+        module_loaders = get_sardes_plugin_module_loaders(sardes_plugin_path)
+        for module_name, module_loader in module_loaders.items():
+            if (module_name not in blacklisted_internal_plugins and
+                    module_name not in sys.modules):
+                try:
+                    module = module_loader.load_module()
+                    sys.modules[module_name] = module
+                    plugin = module.SARDES_PLUGIN_CLASS(self)
+                    plugin.register_plugin()
+                except Exception as error:
+                    print("%s: %s" % (module, str(error)))
+                else:
+                    self.internal_plugins.append(plugin)
+
+        # Setup user plugins.
+        self.thirdparty_plugins = []
+        user_plugin_path = osp.join(CONFIG_DIR, 'plugins')
+        if not osp.isdir(user_plugin_path):
+            os.makedirs(user_plugin_path)
+        module_loaders = get_sardes_plugin_module_loaders(user_plugin_path)
+        for module_name, module_loader in module_loaders.items():
+            if (module_name in installed_user_plugins and
+                    module_name not in sys.modules):
+                try:
+                    module = module_loader.load_module()
+                    sys.modules[module_name] = module
+                    plugin = module.SARDES_PLUGIN_CLASS(self)
+                    plugin.register_plugin()
+                except Exception as error:
+                    print("%s: %s" % (module, str(error)))
+                else:
+                    self.thirdparty_plugins.append(plugin)
 
     # ---- Toolbar setup
     def create_topright_corner_toolbar(self):
@@ -109,6 +154,24 @@ class MainWindow(QMainWindow):
         self.options_button = self.create_options_button()
         self.topright_corner_toolbar.addWidget(self.options_button)
 
+    def create_toolbar(self, title, object_name, iconsize=None):
+        """Create and return a toolbar with title and object_name."""
+        toolbar = self.addToolBar(title)
+        toolbar.setObjectName(object_name)
+        iconsize = get_iconsize() if iconsize is None else iconsize
+        toolbar.setIconSize(QSize(iconsize, iconsize))
+        self.toolbarslist.append(toolbar)
+        return toolbar
+
+    @Slot(bool)
+    def toggle_lock_dockwidgets_and_toolbars(self, checked):
+        """
+        Lock or unlock this mainwindow dockwidgets and toolbars.
+        """
+        for plugin in self.internal_plugins + self.thirdparty_plugins:
+            plugin.lock_pane_and_toolbar(checked)
+
+    # ---- Setup options button and menu
     def create_options_button(self):
         """Create and return the options button of this application."""
         options_button = create_toolbutton(
@@ -130,12 +193,38 @@ class MainWindow(QMainWindow):
         """Create and return the options menu of this application."""
         options_menu = QMenu(self)
 
-        lang_menu = self.create_lang_menu()
+        # Create the languages menu.
+        self.lang_menu = QMenu(_('Languages'), self)
+        self.lang_menu.setIcon(get_icon('languages'))
 
+        lang_conf = get_lang_conf()
+        action_group = QActionGroup(self)
+        for lang in get_available_translations():
+            lang_action = create_action(
+                action_group, LANGUAGE_CODES[lang], icon='lang_' + lang,
+                toggled=lambda _, lang=lang: self.set_language(lang))
+            self.lang_menu.addAction(lang_action)
+            if lang == lang_conf:
+                lang_action.setChecked(True)
+
+        # Create the preference action to show the preference dialog window.
         preferences_action = create_action(
             self, _('Preferences...'), icon='preferences',
             shortcut='Ctrl+Shift+P', context=Qt.ApplicationShortcut
             )
+
+        # Create the panes and toolbars menus and actions
+        self.panes_menu = QMenu(_("Panes"), self)
+        self.panes_menu.setIcon(get_icon('panes'))
+
+        lock_dockwidgets_and_toolbars_action = create_action(
+            self, _('Lock panes and toolbars'),
+            shortcut='Ctrl+Shift+F5', context=Qt.ApplicationShortcut,
+            toggled=(lambda checked:
+                     self.toggle_lock_dockwidgets_and_toolbars(checked))
+            )
+
+        # Create help related actions and menus.
         report_action = create_action(
             self, _('Report an issue...'), icon='bug',
             shortcut='Ctrl+Shift+R', context=Qt.ApplicationShortcut,
@@ -149,8 +238,9 @@ class MainWindow(QMainWindow):
             self, _('Exit'), icon='exit', triggered=self.close,
             shortcut='Ctrl+Shift+Q', context=Qt.ApplicationShortcut
             )
-        for item in [lang_menu, preferences_action, None, report_action,
-                     about_action, exit_action]:
+        for item in [self.lang_menu, preferences_action, None,
+                     self.panes_menu, lock_dockwidgets_and_toolbars_action,
+                     None, report_action, about_action, exit_action]:
             if item is None:
                 options_menu.addSeparator()
             elif isinstance(item, QMenu):
@@ -160,32 +250,7 @@ class MainWindow(QMainWindow):
 
         return options_menu
 
-    def create_lang_menu(self):
-        """Create and return the languages menu of this application."""
-        lang_conf = get_lang_conf()
-
-        self.lang_menu = QMenu(_('Languages'), self)
-        self.lang_menu.setIcon(get_icon('languages'))
-
-        action_group = QActionGroup(self)
-        for lang in get_available_translations():
-            lang_action = create_action(
-                action_group, LANGUAGE_CODES[lang], icon='lang_' + lang,
-                toggled=lambda _, lang=lang: self.set_language(lang))
-            self.lang_menu.addAction(lang_action)
-            if lang == lang_conf:
-                lang_action.setChecked(True)
-        return self.lang_menu
-
-    def create_toolbar(self, title, object_name, iconsize=None):
-        """Create and return a toolbar with title and object_name."""
-        toolbar = self.addToolBar(title)
-        toolbar.setObjectName(object_name)
-        iconsize = get_iconsize() if iconsize is None else iconsize
-        toolbar.setIconSize(QSize(iconsize, iconsize))
-        self.toolbarslist.append(toolbar)
-        return toolbar
-
+    # ---- Database toolbar and widget setup.
     def setup_database_button_icon(self):
         """
         Set the icon of the database button to show whether a database is
@@ -196,6 +261,7 @@ class MainWindow(QMainWindow):
                    else 'database_disconnected')
         self.database_button.setIcon(get_icon(db_icon))
 
+    # ---- Language and other locale settings.
     def set_language(self, lang):
         """
         Set the language to be used by this application for its labels,
@@ -249,10 +315,34 @@ class MainWindow(QMainWindow):
         # restoring the window from a maximized state and the layout won't
         # be expanded correctly to the full size of the widget.
 
+    def _restore_window_state(self):
+        """
+        Restore the state of this mainwindow’s toolbars and dockwidgets from
+        the value saved in the config.
+        """
+        hexstate = CONF.get('main', 'window/state', None)
+        if hexstate:
+            hexstate = hexstate_to_qbytearray(hexstate)
+            self.restoreState(hexstate)
+
+    def _save_window_state(self):
+        """
+        Save the state of this mainwindow’s toolbars and dockwidgets to
+        the config.
+        """
+        hexstate = qbytearray_to_hexstate(self.saveState())
+        CONF.set('main', 'window/state', hexstate)
+
     # ---- Main window events
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
         set_window_settings(*self.get_window_settings())
+        self._save_window_state()
+
+        # Close all internal and thirdparty plugins.
+        for plugin in self.internal_plugins + self.thirdparty_plugins:
+            plugin.close_plugin()
+
         event.accept()
 
     def resizeEvent(self, event):
