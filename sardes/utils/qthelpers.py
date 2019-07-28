@@ -49,6 +49,18 @@ def create_action(parent, text, shortcut=None, icon=None, tip=None,
     return action
 
 
+def create_toolbar_separator():
+    """Create and return a toolbar separator widget."""
+    separator = QToolBar()
+    separator.addSeparator()
+    separator.setStyleSheet(
+        "QToolBar {border: 0px; background: transparent}")
+    policy = separator.sizePolicy()
+    policy.setVerticalPolicy(QSizePolicy.Expanding)
+    separator.setSizePolicy(policy)
+    return separator
+
+
 def create_toolbutton(parent, text=None, shortcut=None, icon=None, tip=None,
                       toggled=None, triggered=None,
                       autoraise=True, text_beside_icon=False, iconsize=None):
