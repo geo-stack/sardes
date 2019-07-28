@@ -23,16 +23,20 @@ from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
                             QMessageBox, QSizePolicy, QToolButton, QWidget)
 
 # ---- Local imports
-from sardes import __namever__, __project_url__
+from sardes import __namever__, __project_url__, __rootdir__
+from sardes.app.plugins import get_sardes_plugin_module_loaders
+from sardes.config.main import CONF
 from sardes.config.icons import get_icon
 from sardes.config.gui import (get_iconsize, get_window_settings,
                                set_window_settings)
 from sardes.config.locale import (_, get_available_translations, get_lang_conf,
                                   LANGUAGE_CODES, set_lang_conf)
+from sardes.config.main import CONFIG_DIR
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.widgets.database_connection import DatabaseConnectionWidget
-from sardes.widgets.locationtable import ObservationWellTableView
-from sardes.utils.qthelpers import create_action, create_toolbutton
+from sardes.utils.qthelpers import (
+    create_action, create_toolbutton, qbytearray_to_hexstate,
+    hexstate_to_qbytearray)
 
 from multiprocessing import freeze_support
 freeze_support()
@@ -65,18 +69,57 @@ class MainWindow(QMainWindow):
             self.db_connection_manager, self)
         self.db_connection_widget.hide()
 
-        # Setup the observation well view table.
-        self.location_view = ObservationWellTableView(
-            self.db_connection_manager, self)
-
         self.setup()
 
     def setup(self):
         """Setup the main window"""
-        self.setCentralWidget(self.location_view)
         self.create_topright_corner_toolbar()
-
         self.set_window_settings(*get_window_settings())
+        self.setup_plugins()
+        # Note: The window state must be restored after the setup of this
+        #       mainwindow plugins and toolbars.
+        self._restore_window_state()
+
+    def setup_plugins(self):
+        """Setup sardes internal and third party plugins."""
+        installed_user_plugins = []
+        blacklisted_internal_plugins = []
+
+        # Setup internal plugin path.
+        self.internal_plugins = []
+        sardes_plugin_path = osp.join(__rootdir__, 'plugins')
+        module_loaders = get_sardes_plugin_module_loaders(sardes_plugin_path)
+        for module_name, module_loader in module_loaders.items():
+            if (module_name not in blacklisted_internal_plugins and
+                    module_name not in sys.modules):
+                try:
+                    module = module_loader.load_module()
+                    sys.modules[module_name] = module
+                    plugin = module.SARDES_PLUGIN_CLASS(self)
+                    plugin.register_plugin()
+                except Exception as error:
+                    print("%s: %s" % (module, str(error)))
+                else:
+                    self.internal_plugins.append(plugin)
+
+        # Setup user plugins.
+        self.thirdparty_plugins = []
+        user_plugin_path = osp.join(CONFIG_DIR, 'plugins')
+        if not osp.isdir(user_plugin_path):
+            os.makedirs(user_plugin_path)
+        module_loaders = get_sardes_plugin_module_loaders(user_plugin_path)
+        for module_name, module_loader in module_loaders.items():
+            if (module_name in installed_user_plugins and
+                    module_name not in sys.modules):
+                try:
+                    module = module_loader.load_module()
+                    sys.modules[module_name] = module
+                    plugin = module.SARDES_PLUGIN_CLASS(self)
+                    plugin.register_plugin()
+                except Exception as error:
+                    print("%s: %s" % (module, str(error)))
+                else:
+                    self.thirdparty_plugins.append(plugin)
 
     # ---- Toolbar setup
     def create_topright_corner_toolbar(self):
