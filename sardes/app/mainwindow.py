@@ -255,10 +255,30 @@ class MainWindow(QMainWindow):
         # restoring the window from a maximized state and the layout won't
         # be expanded correctly to the full size of the widget.
 
+    def _restore_window_state(self):
+        """
+        Restore the state of this mainwindow’s toolbars and dockwidgets from
+        the value saved in the config.
+        """
+        hexstate = CONF.get('main', 'window/state', None)
+        if hexstate:
+            hexstate = hexstate_to_qbytearray(hexstate)
+            self.restoreState(hexstate)
+
+    def _save_window_state(self):
+        """
+        Save the state of this mainwindow’s toolbars and dockwidgets to
+        the config.
+        """
+        hexstate = qbytearray_to_hexstate(self.saveState())
+        CONF.set('main', 'window/state', hexstate)
+
     # ---- Main window events
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
         set_window_settings(*self.get_window_settings())
+        self._save_window_state()
+
         event.accept()
 
     def resizeEvent(self, event):
