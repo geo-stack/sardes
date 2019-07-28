@@ -19,7 +19,7 @@ import platform
 import sys
 
 # ---- Third party imports
-from qtpy.QtCore import QPoint, QSize, Qt, QUrl
+from qtpy.QtCore import QPoint, QSize, Qt, QUrl, Slot
 from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
                             QMessageBox, QSizePolicy, QToolButton, QWidget)
@@ -163,6 +163,7 @@ class MainWindow(QMainWindow):
         self.toolbarslist.append(toolbar)
         return toolbar
 
+    @Slot(bool)
     def toggle_lock_dockwidgets_and_toolbars(self, checked):
         """
         Lock or unlock this mainwindow dockwidgets and toolbars.
