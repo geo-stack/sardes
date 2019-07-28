@@ -217,7 +217,7 @@ class MainWindow(QMainWindow):
         self.panes_menu = QMenu(_("Panes"), self)
         self.panes_menu.setIcon(get_icon('panes'))
 
-        lock_dockwidgets_and_toolbars_action = create_action(
+        self.lock_dockwidgets_and_toolbars_action = create_action(
             self, _('Lock panes and toolbars'),
             shortcut='Ctrl+Shift+F5', context=Qt.ApplicationShortcut,
             toggled=(lambda checked:
@@ -238,9 +238,14 @@ class MainWindow(QMainWindow):
             self, _('Exit'), icon='exit', triggered=self.close,
             shortcut='Ctrl+Shift+Q', context=Qt.ApplicationShortcut
             )
-        for item in [self.lang_menu, preferences_action, None,
-                     self.panes_menu, lock_dockwidgets_and_toolbars_action,
-                     None, report_action, about_action, exit_action]:
+
+        # Add the actions and menus to the options menu.
+        options_menu_items = [
+            self.lang_menu, preferences_action, None, self.panes_menu,
+            self.lock_dockwidgets_and_toolbars_action, None, report_action,
+            about_action, exit_action
+            ]
+        for item in options_menu_items:
             if item is None:
                 options_menu.addSeparator()
             elif isinstance(item, QMenu):
@@ -324,6 +329,8 @@ class MainWindow(QMainWindow):
         if hexstate:
             hexstate = hexstate_to_qbytearray(hexstate)
             self.restoreState(hexstate)
+        self.lock_dockwidgets_and_toolbars_action.setChecked(
+            CONF.get('main', 'panes_and_toolbars_locked'))
 
     def _save_window_state(self):
         """
@@ -332,6 +339,8 @@ class MainWindow(QMainWindow):
         """
         hexstate = qbytearray_to_hexstate(self.saveState())
         CONF.set('main', 'window/state', hexstate)
+        CONF.set('main', 'panes_and_toolbars_locked',
+                 self.lock_dockwidgets_and_toolbars_action.isChecked())
 
     # ---- Main window events
     def closeEvent(self, event):
