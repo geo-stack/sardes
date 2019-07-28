@@ -163,6 +163,11 @@ class MainWindow(QMainWindow):
         self.toolbarslist.append(toolbar)
         return toolbar
 
+    def toggle_lock_dockwidgets_and_toolbars(self, checked):
+        for plugin in self.internal_plugins + self.thirdparty_plugins:
+            plugin.lock_pane_and_toolbar(checked)
+
+    # ---- Setup options button and menu
     def create_options_button(self):
         """Create and return the options button of this application."""
         options_button = create_toolbutton(
@@ -208,6 +213,14 @@ class MainWindow(QMainWindow):
         self.panes_menu = QMenu(_("Panes"), self)
         self.panes_menu.setIcon(get_icon('panes'))
 
+        lock_dockwidgets_and_toolbars_action = create_action(
+            self, _('Lock panes and toolbars'),
+            shortcut='Ctrl+Shift+F5', context=Qt.ApplicationShortcut,
+            toggled=(lambda checked:
+                     self.toggle_lock_dockwidgets_and_toolbars(checked))
+            )
+
+        # Create help related actions and menus.
         report_action = create_action(
             self, _('Report an issue...'), icon='bug',
             shortcut='Ctrl+Shift+R', context=Qt.ApplicationShortcut,
@@ -222,8 +235,8 @@ class MainWindow(QMainWindow):
             shortcut='Ctrl+Shift+Q', context=Qt.ApplicationShortcut
             )
         for item in [self.lang_menu, preferences_action, None,
-                     self.panes_menu, None, report_action, about_action,
-                     exit_action]:
+                     self.panes_menu, lock_dockwidgets_and_toolbars_action,
+                     None, report_action, about_action, exit_action]:
             if item is None:
                 options_menu.addSeparator()
             elif isinstance(item, QMenu):
