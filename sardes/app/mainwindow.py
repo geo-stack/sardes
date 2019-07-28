@@ -83,7 +83,7 @@ class MainWindow(QMainWindow):
         self._restore_window_state()
 
     def setup_plugins(self):
-        """Setup sardes internal and third party plugins."""
+        """Setup Sardes internal and third party plugins."""
         installed_user_plugins = []
         blacklisted_internal_plugins = []
 
@@ -164,6 +164,9 @@ class MainWindow(QMainWindow):
         return toolbar
 
     def toggle_lock_dockwidgets_and_toolbars(self, checked):
+        """
+        Lock or unlock this mainwindow dockwidgets and toolbars.
+        """
         for plugin in self.internal_plugins + self.thirdparty_plugins:
             plugin.lock_pane_and_toolbar(checked)
 
