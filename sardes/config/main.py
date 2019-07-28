@@ -26,7 +26,8 @@ DEFAULTS = [
         {'language': 'en',
          'window/size': (900, 450),
          'window/position': (50, 50),
-         'window/is_maximized': False
+         'window/is_maximized': False,
+         'panes_and_toolbars_locked': False
          }
      ),
     ('database',
