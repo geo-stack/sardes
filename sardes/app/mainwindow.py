@@ -154,6 +154,15 @@ class MainWindow(QMainWindow):
         self.options_button = self.create_options_button()
         self.topright_corner_toolbar.addWidget(self.options_button)
 
+    def create_toolbar(self, title, object_name, iconsize=None):
+        """Create and return a toolbar with title and object_name."""
+        toolbar = self.addToolBar(title)
+        toolbar.setObjectName(object_name)
+        iconsize = get_iconsize() if iconsize is None else iconsize
+        toolbar.setIconSize(QSize(iconsize, iconsize))
+        self.toolbarslist.append(toolbar)
+        return toolbar
+
     def create_options_button(self):
         """Create and return the options button of this application."""
         options_button = create_toolbutton(
@@ -175,8 +184,21 @@ class MainWindow(QMainWindow):
         """Create and return the options menu of this application."""
         options_menu = QMenu(self)
 
-        lang_menu = self.create_lang_menu()
+        # Create the languages menu.
+        self.lang_menu = QMenu(_('Languages'), self)
+        self.lang_menu.setIcon(get_icon('languages'))
 
+        lang_conf = get_lang_conf()
+        action_group = QActionGroup(self)
+        for lang in get_available_translations():
+            lang_action = create_action(
+                action_group, LANGUAGE_CODES[lang], icon='lang_' + lang,
+                toggled=lambda _, lang=lang: self.set_language(lang))
+            self.lang_menu.addAction(lang_action)
+            if lang == lang_conf:
+                lang_action.setChecked(True)
+
+        # Create the preference action to show the preference dialog window.
         preferences_action = create_action(
             self, _('Preferences...'), icon='preferences',
             shortcut='Ctrl+Shift+P', context=Qt.ApplicationShortcut
@@ -211,32 +233,7 @@ class MainWindow(QMainWindow):
 
         return options_menu
 
-    def create_lang_menu(self):
-        """Create and return the languages menu of this application."""
-        lang_conf = get_lang_conf()
-
-        self.lang_menu = QMenu(_('Languages'), self)
-        self.lang_menu.setIcon(get_icon('languages'))
-
-        action_group = QActionGroup(self)
-        for lang in get_available_translations():
-            lang_action = create_action(
-                action_group, LANGUAGE_CODES[lang], icon='lang_' + lang,
-                toggled=lambda _, lang=lang: self.set_language(lang))
-            self.lang_menu.addAction(lang_action)
-            if lang == lang_conf:
-                lang_action.setChecked(True)
-        return self.lang_menu
-
-    def create_toolbar(self, title, object_name, iconsize=None):
-        """Create and return a toolbar with title and object_name."""
-        toolbar = self.addToolBar(title)
-        toolbar.setObjectName(object_name)
-        iconsize = get_iconsize() if iconsize is None else iconsize
-        toolbar.setIconSize(QSize(iconsize, iconsize))
-        self.toolbarslist.append(toolbar)
-        return toolbar
-
+    # ---- Database toolbar and widget setup.
     def setup_database_button_icon(self):
         """
         Set the icon of the database button to show whether a database is
@@ -247,6 +244,7 @@ class MainWindow(QMainWindow):
                    else 'database_disconnected')
         self.database_button.setIcon(get_icon(db_icon))
 
+    # ---- Language and other locale settings.
     def set_language(self, lang):
         """
         Set the language to be used by this application for its labels,
