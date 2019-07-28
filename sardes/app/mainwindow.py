@@ -322,6 +322,10 @@ class MainWindow(QMainWindow):
         set_window_settings(*self.get_window_settings())
         self._save_window_state()
 
+        # Close all internal and thirdparty plugins.
+        for plugin in self.internal_plugins + self.thirdparty_plugins:
+            plugin.close_plugin()
+
         event.accept()
 
     def resizeEvent(self, event):
