@@ -12,6 +12,7 @@ from qtpy.QtCore import QEvent, QObject, Qt, Slot
 from qtpy.QtGui import QKeySequence
 from qtpy.QtWidgets import (QGridLayout, QDockWidget, QHBoxLayout,
                             QVBoxLayout, QWidget)
+from appconfigs.user import NoDefault
 
 # ---- Local imports
 from sardes.config.main import CONF
@@ -62,6 +63,24 @@ class SardesPluginBase(QObject):
             Value associated with `option`.
         """
         return CONF.get(self.CONF_SECTION, option, default)
+
+    def set_option(self, option, value):
+        """
+        Set an option in Sardes configuration file.
+
+        Parameters
+        ----------
+        option: str
+            Name of the option (e.g. 'case_sensitive')
+        value: bool, int, str, tuple, list, dict
+            Value to save in configuration file, passed as a Python
+            object.
+
+        Notes
+        -----
+        * CONF_SECTION needs to be defined for this to work.
+        """
+        CONF.set(self.CONF_SECTION, option, value)
 
     def lock_pane_and_toolbar(self, state):
         """
