@@ -14,6 +14,7 @@ from qtpy.QtWidgets import (QGridLayout, QDockWidget, QHBoxLayout,
                             QVBoxLayout, QWidget)
 
 # ---- Local imports
+from sardes.config.main import CONF
 from sardes.config.gui import (get_layout_horizontal_spacing,
                                get_toolbar_item_spacing)
 from sardes.utils.qthelpers import create_action, create_toolbar_separator
@@ -44,6 +45,23 @@ class SardesPluginBase(QObject):
 
     def main_option_actions(self):
         return []
+
+    # ---- Public methods
+    def get_option(self, option, default=NoDefault):
+        """
+        Get an option from Sardes configuration file.
+
+        Parameters
+        ----------
+        option: str
+            Name of the option to get its value from.
+
+        Returns
+        -------
+        bool, int, str, tuple, list, dict
+            Value associated with `option`.
+        """
+        return CONF.get(self.CONF_SECTION, option, default)
 
     def lock_pane_and_toolbar(self, state):
         """
