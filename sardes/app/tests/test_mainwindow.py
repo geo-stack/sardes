@@ -20,6 +20,7 @@ import pytest
 from qtpy.QtCore import QPoint, QSize
 
 # ---- Local imports
+from sardes.config.gui import INIT_MAINWINDOW_SIZE
 from sardes.app.mainwindow import MainWindow, QMessageBox
 
 
@@ -53,22 +54,18 @@ def test_mainwindow_settings(qtbot, mocker):
     qtbot.waitForWindowShown(mainwindow1)
 
     # Assert the default values.
-    assert mainwindow1.size() == QSize(900, 450)
-    assert mainwindow1.pos() == QPoint(50, 50)
+    assert mainwindow1.size() == QSize(*INIT_MAINWINDOW_SIZE)
     assert not mainwindow1.isMaximized()
-    assert mainwindow1.get_window_settings() == ((900, 450), (50, 50), False)
 
     # Resize and move the window to some expected size and position value.
     expected_normal_window_size = (650, 400)
-    expected_normal_window_pos = (100, 100)
+    expected_normal_window_pos = (mainwindow1.x() + 25, mainwindow1.y() + 25)
     mainwindow1.resize(*expected_normal_window_size)
     mainwindow1.move(*expected_normal_window_pos)
 
     assert mainwindow1.size() == QSize(*expected_normal_window_size)
     assert mainwindow1.pos() == QPoint(*expected_normal_window_pos)
     assert not mainwindow1.isMaximized()
-    assert mainwindow1.get_window_settings() == (
-        expected_normal_window_size, expected_normal_window_pos, False)
 
     # Maximize the window.
     mainwindow1.showMaximized()
@@ -77,24 +74,23 @@ def test_mainwindow_settings(qtbot, mocker):
     assert mainwindow1.size() != QSize(*expected_normal_window_size)
     assert mainwindow1.pos() != QPoint(*expected_normal_window_pos)
     assert mainwindow1.isMaximized()
-    assert mainwindow1.get_window_settings() == (
-        expected_normal_window_size, expected_normal_window_pos, True)
 
     # Close and delete the window.
     with qtbot.waitSignal(mainwindow1.destroyed):
         mainwindow1.close()
         mainwindow1.deleteLater()
 
-    # Create a new instance of the main window.
+    # Create a new instance of the main window and assert that the size,
+    # position and maximized state were restored from the previous
+    # mainwindow that was closed.
     mainwindow2 = MainWindow()
+    qtbot.addWidget(mainwindow2)
     mainwindow2.show()
     qtbot.waitForWindowShown(mainwindow2)
 
     assert mainwindow2.size() != QSize(*expected_normal_window_size)
     assert mainwindow2.pos() != QPoint(*expected_normal_window_pos)
     assert mainwindow2.isMaximized()
-    assert mainwindow2.get_window_settings() == (
-        expected_normal_window_size, expected_normal_window_pos, True)
 
 
 def test_mainwindow_lang_change(mainwindow, qtbot, mocker):
