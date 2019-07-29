@@ -219,11 +219,11 @@ class SardesPaneWidget(QWidget):
 
     # ---- Setup
     def _setup_upper_toolbar(self):
-        self._upper_toolbar = SardesToolbarWidget()
+        self._upper_toolbar = SardesPaneToolbar()
         self.layout().addWidget(self._upper_toolbar, 0, 0)
 
     def _setup_lower_toolbar(self):
-        self._lower_toolbar = SardesToolbarWidget()
+        self._lower_toolbar = SardesPaneToolbar()
         self.layout().addWidget(self._lower_toolbar, 2, 0)
 
     def _setup_main_widget(self):
@@ -249,7 +249,7 @@ class SardesPaneWidget(QWidget):
         return self._lower_toolbar
 
 
-class SardesToolbarWidget(QWidget):
+class SardesPaneToolbar(QWidget):
     """
     Sardes toolbar widget class.
 
