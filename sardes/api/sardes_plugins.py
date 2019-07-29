@@ -95,7 +95,7 @@ class SardesPluginBase(QObject):
                 QDockWidget.AllDockWidgetFeatures)
             self.dockwidget.setTitleBarWidget(QWidget() if state else None)
 
-    # ---- Public methods
+    # ---- Private internal methods
     def _setup_dockwidget(self):
         self.pane_widget = self.get_pane_widget()
         if self.main is not None and self.pane_widget is not None:
@@ -111,9 +111,7 @@ class SardesPluginBase(QObject):
 
             # Add a toggle view action for this plugin's dockwidget to the
             # panes menu of the mainwindow's options menu.
-            self._dockwidget_toggle_view_action = (
-                self.dockwidget.toggleViewAction())
-            self.main.panes_menu.addAction(self._dockwidget_toggle_view_action)
+            self.main.panes_menu.addAction(self.dockwidget.toggleViewAction())
 
     def _setup_plugin(self):
         """
@@ -167,7 +165,13 @@ class SardesPlugin(SardesPluginBase):
         """
         raise NotImplementedError
 
-    def get_pane_widget(self):
+    def setup_plugin(self):
+        pass
+
+    def create_mainwindow_toolbars(self):
+        return []
+
+    def create_pane_widget(self):
         return None
 
     def register_plugin(self):
@@ -176,6 +180,7 @@ class SardesPlugin(SardesPluginBase):
         plugins.
         """
         self._setup_dockwidget()
+        self._setup_mainwindow_toolbars()
 
     def close_plugin(self):
         """
