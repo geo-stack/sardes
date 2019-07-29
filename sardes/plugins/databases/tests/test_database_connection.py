@@ -24,6 +24,8 @@ from qtpy.QtCore import Qt
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.plugins.databases.widgets import DatabaseConnectionWidget
 from sardes.widgets.statusbar import ProcessStatusBar
+from sardes.database.dialog_rsesq import (
+    DatabaseConnectDialogRSESQ as DatabaseConnectDialog)
 
 
 # =============================================================================
@@ -38,7 +40,11 @@ def dbconnmanager():
 @pytest.fixture
 def dbconnwidget(qtbot, mocker, dbconnmanager):
     dbconnwidget = DatabaseConnectionWidget(dbconnmanager)
-    dbconnwidget.dbtype_combobox.setCurrentIndex(1)
+
+    # Add a database connection dialog to the database connection widget.
+    database_dialog = DatabaseConnectDialog()
+    dbconnwidget.add_database_dialog(database_dialog)
+
     qtbot.addWidget(dbconnwidget)
     dbconnwidget.show()
     return dbconnwidget
