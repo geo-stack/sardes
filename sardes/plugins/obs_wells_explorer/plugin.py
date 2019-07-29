@@ -25,6 +25,10 @@ class ObsWellsExplorer(SardesPlugin):
         return _('Observation Wells')
 
     def get_pane_widget(self):
+        """
+        Create and return the pane widget to use in this
+        plugin's dockwidget.
+        """
         main_widget = ObservationWellTableView(self.main.db_connection_manager)
         pane_widget = SardesPaneWidget(parent=self.main)
         pane_widget.set_main_widget(main_widget)
