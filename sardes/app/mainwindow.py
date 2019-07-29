@@ -20,7 +20,7 @@ import sys
 import importlib
 
 # ---- Third party imports
-from qtpy.QtCore import QPoint, QSize, Qt, QUrl, Slot
+from qtpy.QtCore import Qt, QUrl, Slot
 from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
                             QMessageBox, QSizePolicy, QToolButton, QWidget)
@@ -29,15 +29,13 @@ from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
 from sardes import __namever__, __project_url__
 from sardes.config.main import CONF
 from sardes.config.icons import get_icon
-from sardes.config.gui import get_iconsize
 from sardes.config.locale import (_, get_available_translations, get_lang_conf,
                                   LANGUAGE_CODES, set_lang_conf)
 from sardes.config.main import CONFIG_DIR
 from sardes.database.database_manager import DatabaseConnectionManager
-from sardes.widgets.database_connection import DatabaseConnectionWidget
 from sardes.utils.qthelpers import (
-    create_action, create_toolbutton, qbytearray_to_hexstate,
-    hexstate_to_qbytearray)
+    create_action, create_mainwindow_toolbar, create_toolbutton,
+    qbytearray_to_hexstate, hexstate_to_qbytearray)
 
 from multiprocessing import freeze_support
 freeze_support()
@@ -55,23 +53,20 @@ class MainWindow(QMainWindow):
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
                 __namever__)
 
-        # Toolbars
+        # Toolbars and plugins
         self.visible_toolbars = []
-        self.toolbarslist = []
+        self.toolbars = []
+        self.thirdparty_plugins = []
+        self.internal_plugins = []
 
         # Setup the database connection manager.
         self.db_connection_manager = DatabaseConnectionManager()
-
-        # Setup the database connection widget.
-        self.db_connection_widget = DatabaseConnectionWidget(
-            self.db_connection_manager, self)
-        self.db_connection_widget.hide()
 
         self.setup()
 
     def setup(self):
         """Setup the main window"""
-        self.create_topright_corner_toolbar()
+        self._setup_options_menu_toolbar()
         self._restore_window_geometry()
         self.setup_internal_plugins()
         self.setup_thirdparty_plugins()
@@ -85,10 +80,14 @@ class MainWindow(QMainWindow):
         # we would have to add each of them as hidden import to the pyinstaller
         # spec file for them to be packaged as part of the Sardes binary.
 
-        self.internal_plugins = []
-
         # Observation Wells plugin.
         from sardes.plugins.obs_wells_explorer import SARDES_PLUGIN_CLASS
+        plugin = SARDES_PLUGIN_CLASS(self)
+        plugin.register_plugin()
+        self.internal_plugins.append(plugin)
+
+        # Database plugin.
+        from sardes.plugins.databases import SARDES_PLUGIN_CLASS
         plugin = SARDES_PLUGIN_CLASS(self)
         plugin.register_plugin()
         self.internal_plugins.append(plugin)
@@ -96,7 +95,6 @@ class MainWindow(QMainWindow):
     def setup_thirdparty_plugins(self):
         """Setup Sardes third party plugins."""
         installed_thirdparty_plugins = []
-        self.thirdparty_plugins = []
 
         user_plugin_path = osp.join(CONFIG_DIR, 'plugins')
         if not osp.isdir(user_plugin_path):
@@ -120,45 +118,6 @@ class MainWindow(QMainWindow):
                     "{}: This module is already loaded.".format(module_name))
 
     # ---- Toolbar setup
-    def create_topright_corner_toolbar(self):
-        """
-        Create and add a toolbar to the top right corner of this
-        application.
-        """
-        self.topright_corner_toolbar = self.create_toolbar(
-            "Options toolbar", "option_toolbar")
-        self.topright_corner_toolbar.setMovable(False)
-
-        # Add a spacer item.
-        spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.topright_corner_toolbar.addWidget(spacer)
-
-        # Add the database connection manager button.
-        self.database_button = create_toolbutton(
-            self, triggered=self.db_connection_widget.show,
-            text=_("Database connection"),
-            tip=_("Open a dialog window to manage the "
-                  "connection to the database."),
-            shortcut='Ctrl+Shift+D')
-        self.setup_database_button_icon()
-        self.db_connection_manager.sig_database_connection_changed.connect(
-            self.setup_database_button_icon)
-        self.topright_corner_toolbar.addWidget(self.database_button)
-
-        # Add the tools and options button.
-        self.options_button = self.create_options_button()
-        self.topright_corner_toolbar.addWidget(self.options_button)
-
-    def create_toolbar(self, title, object_name, iconsize=None):
-        """Create and return a toolbar with title and object_name."""
-        toolbar = self.addToolBar(title)
-        toolbar.setObjectName(object_name)
-        iconsize = get_iconsize() if iconsize is None else iconsize
-        toolbar.setIconSize(QSize(iconsize, iconsize))
-        self.toolbarslist.append(toolbar)
-        return toolbar
-
     @Slot(bool)
     def toggle_lock_dockwidgets_and_toolbars(self, checked):
         """
@@ -166,26 +125,47 @@ class MainWindow(QMainWindow):
         """
         for plugin in self.internal_plugins + self.thirdparty_plugins:
             plugin.lock_pane_and_toolbar(checked)
+        for toolbar in self.toolbars:
+            toolbar.setMovable(not checked)
 
     # ---- Setup options button and menu
-    def create_options_button(self):
+    def _setup_options_menu_toolbar(self):
+        """
+        Setup a the options menu toolbutton (hamburger menu) and add it
+        to a toolbar.
+        """
+        self.options_menu_toolbar = create_mainwindow_toolbar(
+            "Options toolbar")
+
+        # Add a stretcher item.
+        stretcher = QWidget()
+        stretcher.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.options_menu_toolbar.addWidget(stretcher)
+
+        # Add the tools and options button.
+        self.options_menu_button = self._create_options_menu_button()
+        self.options_menu_toolbar.addWidget(self.options_menu_button)
+
+        self.toolbars.append(self.options_menu_toolbar)
+        self.addToolBar(self.options_menu_toolbar)
+
+    def _create_options_menu_button(self):
         """Create and return the options button of this application."""
-        options_button = create_toolbutton(
+        options_menu_button = create_toolbutton(
             self, icon='tooloptions',
             text=_("Tools and options"),
             tip=_("Open the tools and options menu."),
             shortcut='Ctrl+Shift+T')
-        options_button.setStyleSheet(
+        options_menu_button.setStyleSheet(
             "QToolButton::menu-indicator{image: none;}")
-        options_button.setPopupMode(QToolButton.InstantPopup)
+        options_menu_button.setPopupMode(QToolButton.InstantPopup)
 
         # Create the tools and options menu.
-        options_menu = self.create_options_menu()
-        options_button.setMenu(options_menu)
+        options_menu_button.setMenu(self._create_options_menu())
 
-        return options_button
+        return options_menu_button
 
-    def create_options_menu(self):
+    def _create_options_menu(self):
         """Create and return the options menu of this application."""
         options_menu = QMenu(self)
 
@@ -213,6 +193,9 @@ class MainWindow(QMainWindow):
         self.panes_menu = QMenu(_("Panes"), self)
         self.panes_menu.setIcon(get_icon('panes'))
 
+        self.toolbars_menu = QMenu(_("Toolbars"), self)
+        self.toolbars_menu.setIcon(get_icon('toolbars'))
+
         self.lock_dockwidgets_and_toolbars_action = create_action(
             self, _('Lock panes and toolbars'),
             shortcut='Ctrl+Shift+F5', context=Qt.ApplicationShortcut,
@@ -238,8 +221,8 @@ class MainWindow(QMainWindow):
         # Add the actions and menus to the options menu.
         options_menu_items = [
             self.lang_menu, preferences_action, None, self.panes_menu,
-            self.lock_dockwidgets_and_toolbars_action, None, report_action,
-            about_action, exit_action
+            self.toolbars_menu, self.lock_dockwidgets_and_toolbars_action,
+            None, report_action, about_action, exit_action
             ]
         for item in options_menu_items:
             if item is None:
@@ -250,17 +233,6 @@ class MainWindow(QMainWindow):
                 options_menu.addAction(item)
 
         return options_menu
-
-    # ---- Database toolbar and widget setup.
-    def setup_database_button_icon(self):
-        """
-        Set the icon of the database button to show whether a database is
-        currently connected or not.
-        """
-        db_icon = ('database_connected' if
-                   self.db_connection_manager.is_connected()
-                   else 'database_disconnected')
-        self.database_button.setIcon(get_icon(db_icon))
 
     # ---- Language and other locale settings.
     def set_language(self, lang):
@@ -319,7 +291,7 @@ class MainWindow(QMainWindow):
         CONF.set('main', 'panes_and_toolbars_locked',
                  self.lock_dockwidgets_and_toolbars_action.isChecked())
 
-    # ---- Main window events
+    # ---- Qt method override/extension
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
         self._save_window_geometry()
@@ -330,6 +302,15 @@ class MainWindow(QMainWindow):
             plugin.close_plugin()
 
         event.accept()
+
+    def createPopupMenu(self):
+        """
+        Override Qt method to remove the options menu toolbar from the
+        popup menu so that it remains always visible.
+        """
+        filteredMenu = super().createPopupMenu()
+        filteredMenu.removeAction(self.options_menu_toolbar.toggleViewAction())
+        return filteredMenu
 
 
 def except_hook(cls, exception, traceback):
