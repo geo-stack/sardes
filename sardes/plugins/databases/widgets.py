@@ -18,12 +18,8 @@ from qtpy.QtWidgets import (
     QHBoxLayout, QLabel, QPushButton, QStackedWidget, QVBoxLayout)
 
 # ---- Local imports
-from sardes.config.main import CONF
-from sardes.config.database import get_dbconfig, set_dbconfig
 from sardes.config.gui import RED
 from sardes.config.locale import _
-from sardes.database.dialog_demo import DatabaseConnectDialogDemo
-from sardes.database.dialog_rsesq import DatabaseConnectDialogRSESQ
 from sardes.widgets.statusbar import ProcessStatusBar
 
 
@@ -41,14 +37,6 @@ class DatabaseConnectionWidget(QDialog):
 
         self.setup()
         self.set_database_connection_manager(db_connection_manager)
-
-        # Add internal database accessor.
-        self.add_database_dialog(DatabaseConnectDialogDemo())
-        self.add_database_dialog(DatabaseConnectDialogRSESQ())
-
-        dbtype_index = self.dbtype_combobox.findText(
-            CONF.get('database', 'dbtype_last_selected'))
-        self.dbtype_combobox.setCurrentIndex(max(0, dbtype_index))
 
     def set_database_connection_manager(self, db_connection_manager):
         """
@@ -108,12 +96,16 @@ class DatabaseConnectionWidget(QDialog):
         self.stacked_dialogs.addWidget(database_dialog)
         self.dbtype_combobox.addItem(database_dialog.dbtype_name)
 
-        database_dialog.set_database_kargs(
-            get_dbconfig(database_dialog.dbtype_name))
-
     @property
     def current_database_dialog(self):
         return self.stacked_dialogs.currentWidget()
+
+    def set_current_database_dialog(self, dialog_name):
+        """
+        Set the current database dialog to that of dialog_name.
+        """
+        dbtype_index = self.dbtype_combobox.findText(dialog_name)
+        self.dbtype_combobox.setCurrentIndex(max(0, dbtype_index))
 
     @property
     def database_dialogs(self):
@@ -165,6 +157,7 @@ class DatabaseConnectionWidget(QDialog):
         else:
             message = _("Connected to the database.")
             self.status_bar.show_sucess_icon(message)
+            self.close()
         self._update_gui()
 
     @Slot()
@@ -174,16 +167,6 @@ class DatabaseConnectionWidget(QDialog):
         """
         self.status_bar.hide()
         self._update_gui()
-
-    def close(self):
-        """
-        Extend Qt method to save user inputs in the configuration file.
-        """
-        for dialog in self.database_dialogs:
-            set_dbconfig(dialog.dbtype_name, dialog.get_database_kargs())
-        CONF.set('database', 'dbtype_last_selected',
-                 self.current_database_dialog.dbtype_name)
-        super().close()
 
     def disconnect(self):
         """

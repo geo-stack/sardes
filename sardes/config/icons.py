@@ -49,11 +49,11 @@ FA_ICONS = {
     'commit_changes': [
         ('mdi.check-circle-outline',),
         {'color': GREEN, 'scale_factor': 1.3}],
-    'database_connected': [
-        ('mdi.database-check',),
+    'database_connect': [
+        ('mdi.power-plug',),
         {'color': GREEN, 'scale_factor': 1.3}],
-    'database_disconnected': [
-        ('mdi.database',),
+    'database_disconnect': [
+        ('mdi.power-plug-off',),
         {'color': RED, 'scale_factor': 1.3}],
     'failed': [
         ('mdi.alert-circle-outline',),
@@ -94,6 +94,9 @@ FA_ICONS = {
         {'color': GREEN, 'scale_factor': 1.3}],
     'tooloptions': [
         ('fa.bars',),
+        {'color': ICON_COLOR}],
+    'toolbars': [
+        ('mdi.wrench',),
         {'color': ICON_COLOR}],
     'warning': [
         ('mdi.alert-circle-outline',),

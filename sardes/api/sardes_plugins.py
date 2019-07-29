@@ -8,15 +8,15 @@
 # -----------------------------------------------------------------------------
 
 # ---- Third party imports
-from qtpy.QtCore import QEvent, QObject, Qt, Slot
-from qtpy.QtGui import QKeySequence
-from qtpy.QtWidgets import (QGridLayout, QDockWidget, QHBoxLayout,
-                            QVBoxLayout, QWidget)
+from appconfigs.user import NoDefault
+from qtpy.QtCore import QObject, Qt, Slot
+from qtpy.QtWidgets import QGridLayout, QDockWidget, QHBoxLayout, QWidget
 
 # ---- Local imports
+from sardes.config.main import CONF
 from sardes.config.gui import (get_layout_horizontal_spacing,
                                get_toolbar_item_spacing)
-from sardes.utils.qthelpers import create_action, create_toolbar_separator
+from sardes.utils.qthelpers import create_toolbar_separator
 
 
 class SardesPluginBase(QObject):
@@ -31,19 +31,55 @@ class SardesPluginBase(QObject):
 
         # This is the plugin parent, which corresponds to the main window.
         self.main = parent
+
         # This is the dock widget for the plugin, i.e. the pane that's going
         # to be displayed in Sardes main window for this plugin.
         self.dockwidget = None
-        self.pane_widget = None
+
+        self.setup_plugin()
+        self.pane_widget = self.create_pane_widget()
+        self.mainwindow_toolbars = self.create_mainwindow_toolbars()
 
         self._toggle_dockwidget_view_shortcut = None
         self._toggle_dockwidget_view_action = None
 
-    def main_toolbars(self):
-        return []
-
     def main_option_actions(self):
         return []
+
+    # ---- Public methods
+    def get_option(self, option, default=NoDefault):
+        """
+        Get an option from Sardes configuration file.
+
+        Parameters
+        ----------
+        option: str
+            Name of the option to get its value from.
+
+        Returns
+        -------
+        bool, int, str, tuple, list, dict
+            Value associated with `option`.
+        """
+        return CONF.get(self.CONF_SECTION, option, default)
+
+    def set_option(self, option, value):
+        """
+        Set an option in Sardes configuration file.
+
+        Parameters
+        ----------
+        option: str
+            Name of the option (e.g. 'case_sensitive')
+        value: bool, int, str, tuple, list, dict
+            Value to save in configuration file, passed as a Python
+            object.
+
+        Notes
+        -----
+        * CONF_SECTION needs to be defined for this to work.
+        """
+        CONF.set(self.CONF_SECTION, option, value)
 
     def lock_pane_and_toolbar(self, state):
         """
@@ -57,10 +93,11 @@ class SardesPluginBase(QObject):
                 QDockWidget.DockWidgetClosable if state else
                 QDockWidget.AllDockWidgetFeatures)
             self.dockwidget.setTitleBarWidget(QWidget() if state else None)
+        for toolbar in self.mainwindow_toolbars:
+            toolbar.setMovable(not state)
 
-    # ---- Public methods
+    # ---- Private internal methods
     def _setup_dockwidget(self):
-        self.pane_widget = self.get_pane_widget()
         if self.main is not None and self.pane_widget is not None:
             self.dockwidget = QDockWidget()
             self.dockwidget.setObjectName(
@@ -74,9 +111,15 @@ class SardesPluginBase(QObject):
 
             # Add a toggle view action for this plugin's dockwidget to the
             # panes menu of the mainwindow's options menu.
-            self._dockwidget_toggle_view_action = (
-                self.dockwidget.toggleViewAction())
-            self.main.panes_menu.addAction(self._dockwidget_toggle_view_action)
+            self.main.panes_menu.addAction(self.dockwidget.toggleViewAction())
+
+    def _setup_mainwindow_toolbars(self):
+        for toolbar in self.mainwindow_toolbars:
+            self.main.insertToolBar(self.main.options_menu_toolbar, toolbar)
+
+            # Add a toggle view action for this toolbar to the
+            # toolbars menu of the mainwindow's options menu.
+            self.main.toolbars_menu.addAction(toolbar.toggleViewAction())
 
     def _setup_plugin(self):
         """
@@ -130,7 +173,13 @@ class SardesPlugin(SardesPluginBase):
         """
         raise NotImplementedError
 
-    def get_pane_widget(self):
+    def setup_plugin(self):
+        pass
+
+    def create_mainwindow_toolbars(self):
+        return []
+
+    def create_pane_widget(self):
         return None
 
     def register_plugin(self):
@@ -139,6 +188,7 @@ class SardesPlugin(SardesPluginBase):
         plugins.
         """
         self._setup_dockwidget()
+        self._setup_mainwindow_toolbars()
 
     def close_plugin(self):
         """
@@ -169,11 +219,11 @@ class SardesPaneWidget(QWidget):
 
     # ---- Setup
     def _setup_upper_toolbar(self):
-        self._upper_toolbar = SardesToolbarWidget()
+        self._upper_toolbar = SardesPaneToolbar()
         self.layout().addWidget(self._upper_toolbar, 0, 0)
 
     def _setup_lower_toolbar(self):
-        self._lower_toolbar = SardesToolbarWidget()
+        self._lower_toolbar = SardesPaneToolbar()
         self.layout().addWidget(self._lower_toolbar, 2, 0)
 
     def _setup_main_widget(self):
@@ -199,7 +249,7 @@ class SardesPaneWidget(QWidget):
         return self._lower_toolbar
 
 
-class SardesToolbarWidget(QWidget):
+class SardesPaneToolbar(QWidget):
     """
     Sardes toolbar widget class.
 

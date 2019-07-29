@@ -24,7 +24,7 @@ class ObsWellsExplorer(SardesPlugin):
         """Return widget title"""
         return _('Observation Wells')
 
-    def get_pane_widget(self):
+    def create_pane_widget(self):
         """
         Create and return the pane widget to use in this
         plugin's dockwidget.
