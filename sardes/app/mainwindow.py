@@ -29,8 +29,7 @@ from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
 from sardes import __namever__, __project_url__
 from sardes.config.main import CONF
 from sardes.config.icons import get_icon
-from sardes.config.gui import (get_iconsize, get_window_settings,
-                               set_window_settings)
+from sardes.config.gui import get_iconsize
 from sardes.config.locale import (_, get_available_translations, get_lang_conf,
                                   LANGUAGE_CODES, set_lang_conf)
 from sardes.config.main import CONFIG_DIR
@@ -49,9 +48,6 @@ GITHUB_ISSUES_URL = __project_url__ + "/issues"
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self._window_normal_size = [self.size()] * 2
-        self._window_normal_pos = [self.pos()] * 2
-
         self.setWindowIcon(get_icon('master'))
         self.setWindowTitle(__namever__)
         if platform.system() == 'Windows':
@@ -76,7 +72,7 @@ class MainWindow(QMainWindow):
     def setup(self):
         """Setup the main window"""
         self.create_topright_corner_toolbar()
-        self.set_window_settings(*get_window_settings())
+        self._restore_window_geometry()
         self.setup_internal_plugins()
         self.setup_thirdparty_plugins()
         # Note: The window state must be restored after the setup of this
@@ -281,44 +277,25 @@ class MainWindow(QMainWindow):
                   "apply this change.").format(LANGUAGE_CODES[lang]))
 
     # ---- Main window settings
-    def get_window_settings(self):
-        """Return current window settings."""
-        is_maximized = self.isMaximized()
+    def _restore_window_geometry(self):
+        """
+        Restore the geometry of this mainwindow from the value saved
+        in the config.
+        """
+        hexstate = CONF.get('main', 'window/geometry', None)
+        if hexstate:
+            hexstate = hexstate_to_qbytearray(hexstate)
+            self.restoreGeometry(hexstate)
+        else:
+            self.resize(QSize(900, 450))
+            self.move(QPoint(50, 50))
 
-        # NOTE: The isMaximized() method does not work as expected when used
-        # in the resizeEvent() and moveEvent() that are caused by the window
-        # maximization. It seems as if the state returned by isMaximized()
-        # is set AFTER the resizeEvent() and moveEvent() were executed.
-        # See this Qt bug https://bugreports.qt.io/browse/QTBUG-30085
-        # for more information.
-        # As a workaround, we store the last and second to last value of
-        # the window size and position in the resizeEvent() and moveEvent()
-        # regardless of the state of the window. We check for the
-        # isMaximized() state here instead and return the right values
-        # for the normal window size and position accordingly.
-        index = 0 if is_maximized else 1
-        window_size = (self._window_normal_size[index].width(),
-                       self._window_normal_size[index].height())
-        window_position = (self._window_normal_pos[index].x(),
-                           self._window_normal_pos[index].y())
-        return (window_size, window_position, is_maximized)
-
-    def set_window_settings(self, window_size, window_position, is_maximized):
-        """Set window settings"""
-        self._window_normal_size = [QSize(*window_size)] * 2
-        self._window_normal_pos = [QPoint(*window_position)] * 2
-
-        self.resize(*window_size)
-        self.move(*window_position)
-
-        self.setWindowState(Qt.WindowNoState)
-        if is_maximized:
-            self.setWindowState(self.windowState() ^ Qt.WindowMaximized)
-        self.setAttribute(Qt.WA_Resized, True)
-        # NOTE: Setting the Qt.WA_Resized attribute to True is required or
-        # else the size of the wigdet will not be updated correctly when
-        # restoring the window from a maximized state and the layout won't
-        # be expanded correctly to the full size of the widget.
+    def _save_window_geometry(self):
+        """
+        Save the geometry of this mainwindow to the config.
+        """
+        hexstate = qbytearray_to_hexstate(self.saveGeometry())
+        CONF.set('main', 'window/geometry', hexstate)
 
     def _restore_window_state(self):
         """
@@ -345,7 +322,7 @@ class MainWindow(QMainWindow):
     # ---- Main window events
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
-        set_window_settings(*self.get_window_settings())
+        self._save_window_geometry()
         self._save_window_state()
 
         # Close all internal and thirdparty plugins.
@@ -353,20 +330,6 @@ class MainWindow(QMainWindow):
             plugin.close_plugin()
 
         event.accept()
-
-    def resizeEvent(self, event):
-        """Reimplement Qt method."""
-        if self.size() != self._window_normal_size[1]:
-            self._window_normal_size[0] = self._window_normal_size[1]
-            self._window_normal_size[1] = self.size()
-        super().resizeEvent(event)
-
-    def moveEvent(self, event):
-        """Reimplement Qt method."""
-        if self.pos() != self._window_normal_pos[1]:
-            self._window_normal_pos[0] = self._window_normal_pos[1]
-            self._window_normal_pos[1] = self.pos()
-        super().moveEvent(event)
 
 
 def except_hook(cls, exception, traceback):
