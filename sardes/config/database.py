@@ -61,8 +61,6 @@ def store_password(dbtype_name, password):
             keyring.set_password(__appname__, dbtype_name, password)
         except Exception as e:
             print(e)
-        else:
-            print('Password saved successfully.')
 
 
 def get_password(dbtype_name):
