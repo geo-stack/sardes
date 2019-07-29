@@ -22,7 +22,7 @@ def main():
     Run pytest tests.
     """
     errno = pytest.main(['-x', 'sardes', '-v', '-rw', '--durations=10',
-                         '--cov=sardes', '-s'])
+                         '--cov=sardes'])
     if errno != 0:
         raise SystemExit(errno)
 
