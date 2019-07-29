@@ -22,7 +22,7 @@ from qtpy.QtCore import Qt
 
 # ---- Local imports
 from sardes.database.database_manager import DatabaseConnectionManager
-from sardes.widgets.database_connection import DatabaseConnectionWidget
+from sardes.plugins.databases.widgets import DatabaseConnectionWidget
 from sardes.widgets.statusbar import ProcessStatusBar
 
 
