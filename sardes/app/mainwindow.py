@@ -287,8 +287,8 @@ class MainWindow(QMainWindow):
             hexstate = hexstate_to_qbytearray(hexstate)
             self.restoreGeometry(hexstate)
         else:
-            self.resize(QSize(900, 450))
-            self.move(QPoint(50, 50))
+            from sardes.config.gui import INIT_MAINWINDOW_SIZE
+            self.resize(*INIT_MAINWINDOW_SIZE)
 
     def _save_window_geometry(self):
         """

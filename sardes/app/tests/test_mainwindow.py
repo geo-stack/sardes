@@ -20,6 +20,7 @@ import pytest
 from qtpy.QtCore import QPoint, QSize
 
 # ---- Local imports
+from sardes.config.gui import INIT_MAINWINDOW_SIZE
 from sardes.app.mainwindow import MainWindow, QMessageBox
 
 
@@ -53,15 +54,12 @@ def test_mainwindow_settings(qtbot, mocker):
     qtbot.waitForWindowShown(mainwindow1)
 
     # Assert the default values.
-    assert mainwindow1.size() == QSize(900, 450)
-    assert mainwindow1.pos() == QPoint(50, 50)
+    assert mainwindow1.size() == QSize(*INIT_MAINWINDOW_SIZE)
     assert not mainwindow1.isMaximized()
-    assert mainwindow1.size() == QSize(900, 450)
-    assert mainwindow1.pos() == QPoint(50, 50)
 
     # Resize and move the window to some expected size and position value.
     expected_normal_window_size = (650, 400)
-    expected_normal_window_pos = (100, 100)
+    expected_normal_window_pos = (mainwindow1.x() + 25, mainwindow1.y() + 25)
     mainwindow1.resize(*expected_normal_window_size)
     mainwindow1.move(*expected_normal_window_pos)
 
