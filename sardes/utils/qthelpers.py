@@ -18,6 +18,7 @@ from qtpy.QtCore import QByteArray, QSize, Qt
 from qtpy.QtWidgets import QAction, QSizePolicy, QToolBar, QToolButton
 
 # ---- Local imports
+from sardes.config.gui import get_iconsize
 from sardes.config.icons import get_icon
 from sardes.widgets.waitingspinner import WaitingSpinner
 
@@ -47,6 +48,19 @@ def create_action(parent, text, shortcut=None, icon=None, tip=None,
     action.setShortcutContext(context)
 
     return action
+
+
+def create_mainwindow_toolbar(title, iconsize=None):
+    """Create and return a toolbar with title and object_name."""
+    toolbar = QToolBar(title)
+    toolbar.setObjectName(title.lower().replace(' ', '_'))
+    toolbar.setFloatable(False)
+    toolbar.setAllowedAreas(Qt.TopToolBarArea)
+
+    iconsize = get_iconsize() if iconsize is None else iconsize
+    toolbar.setIconSize(QSize(iconsize, iconsize))
+
+    return toolbar
 
 
 def create_toolbar_separator():
