@@ -113,6 +113,16 @@ class DatabaseConnectionWidget(QDialog):
         dbtype_index = self.dbtype_combobox.findText(dialog_name)
         self.dbtype_combobox.setCurrentIndex(max(0, dbtype_index))
 
+    def get_current_database_accessor(self):
+        """
+        Return the database accessor of the currently selected database
+        dialog if any.
+        """
+        if self.get_current_database_dialog():
+            return self.get_current_database_dialog().database_accessor()
+        else:
+            return None
+
     @property
     def database_dialogs(self):
         return [self.stacked_dialogs.widget(i) for
