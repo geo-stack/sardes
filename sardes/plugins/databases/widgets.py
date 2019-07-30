@@ -199,8 +199,12 @@ class DatabaseConnectionWidget(QDialog):
         self.status_bar.hide()
         self._update_gui()
 
+    @Slot()
+    def _handle_database_is_connecting(self):
         """
+        Handle when the connection to the database is in progress.
         """
+        self._update_gui(is_connecting=True, is_connected=False)
         self.status_bar.show()
         self.status_bar.set_label(_("Connecting to database..."))
 
