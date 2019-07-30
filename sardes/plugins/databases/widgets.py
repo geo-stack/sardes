@@ -135,6 +135,14 @@ class DatabaseConnectionWidget(QDialog):
         """
         self.db_connection_manager.disconnect_from_db()
 
+    def connect(self):
+        """
+        Try to connect to the database using the connection parameters
+        provided by the user in the gui.
+        """
+        self.db_connection_manager.connect_to_db(
+            self.get_current_database_accessor())
+
     # ---- GUI update.
     def _update_gui(self):
         """
@@ -191,14 +199,8 @@ class DatabaseConnectionWidget(QDialog):
         self.status_bar.hide()
         self._update_gui()
 
-    def connect(self):
         """
-        Try to connect to the database using the connection parameters
-        provided by the user in the gui.
         """
-        self.db_connection_manager.connect_to_db(
-            self.current_database_dialog.database_accessor())
-        self._update_gui()
         self.status_bar.show()
         self.status_bar.set_label(_("Connecting to database..."))
 
