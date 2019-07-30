@@ -14,8 +14,9 @@ import sys
 # ---- Third party imports
 from qtpy.QtCore import Qt, Slot
 from qtpy.QtWidgets import (
-    QApplication, QAbstractButton, QComboBox, QDialog, QDialogButtonBox,
-    QHBoxLayout, QLabel, QPushButton, QStackedWidget, QVBoxLayout)
+    QApplication, QAbstractButton, QCheckBox, QComboBox, QDialog,
+    QDialogButtonBox, QHBoxLayout, QLabel, QPushButton, QStackedWidget,
+    QVBoxLayout)
 
 # ---- Local imports
 from sardes.config.gui import RED
@@ -35,7 +36,6 @@ class DatabaseConnectionWidget(QDialog):
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setModal(True)
 
-        self.setup()
         self.set_database_connection_manager(db_connection_manager)
 
     def set_database_connection_manager(self, db_connection_manager):
@@ -48,7 +48,7 @@ class DatabaseConnectionWidget(QDialog):
         self.db_connection_manager.sig_database_disconnected.connect(
             self._handle_database_disconnected)
 
-    def setup(self):
+    def setup(self, auto_connect_to_database=False):
         """
         Setup the dialog with the provided settings.
         """
@@ -76,6 +76,12 @@ class DatabaseConnectionWidget(QDialog):
         self.close_button.setDefault(False)
         self.close_button.setAutoDefault(False)
 
+        # Setup the auto connect to database checkbox.
+        self.auto_connect_to_database_checkbox = QCheckBox(
+            _('Connect automatically to database when starting Sardes'))
+        self.auto_connect_to_database_checkbox.setChecked(
+            auto_connect_to_database)
+
         button_box = QDialogButtonBox()
         button_box.addButton(self.connect_button, button_box.ApplyRole)
         button_box.addButton(self.close_button, button_box.RejectRole)
@@ -86,6 +92,7 @@ class DatabaseConnectionWidget(QDialog):
         main_layout = QVBoxLayout(self)
         main_layout.addLayout(dbtype_layout)
         main_layout.addWidget(self.stacked_dialogs)
+        main_layout.addWidget(self.auto_connect_to_database_checkbox)
         main_layout.addWidget(self.status_bar)
         main_layout.addWidget(button_box)
         main_layout.setStretch(0, 1)
