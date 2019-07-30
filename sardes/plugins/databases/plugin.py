@@ -76,7 +76,8 @@ class Databases(SardesPlugin):
         database_toolbar.addWidget(self.database_connect_button)
 
         self.database_disconnect_button = create_toolbutton(
-            self.main, triggered=self.db_connection_widget.disconnect,
+            self.main,
+            triggered=self.main.db_connection_manager.disconnect_from_db,
             text=_("Disconnect database"),
             tip=_("Close the connection with the database."),
             shortcut='Ctrl+Shift+C',
