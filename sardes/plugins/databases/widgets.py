@@ -103,8 +103,7 @@ class DatabaseConnectionWidget(QDialog):
         self.stacked_dialogs.addWidget(database_dialog)
         self.dbtype_combobox.addItem(database_dialog.dbtype_name)
 
-    @property
-    def current_database_dialog(self):
+    def get_current_database_dialog(self):
         return self.stacked_dialogs.currentWidget()
 
     def set_current_database_dialog(self, dialog_name):
