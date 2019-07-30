@@ -34,6 +34,8 @@ class Databases(SardesPlugin):
         # Setup the database connection widget.
         self.db_connection_widget = DatabaseConnectionWidget(
             self.main.db_connection_manager, self.main)
+        self.db_connection_widget.setup(
+            self.get_option('auto_connect_to_database'))
         self.db_connection_widget.hide()
 
         self.setup_internal_database_dialogs()
@@ -119,3 +121,9 @@ class Databases(SardesPlugin):
         self.set_option(
             'dbtype_last_selected',
             self.db_connection_widget.current_database_dialog.dbtype_name)
+
+        # Save the auto connect to database option,
+        value = (self.db_connection_widget
+                 .auto_connect_to_database_checkbox
+                 .isChecked())
+        self.set_option('auto_connect_to_database', value)
