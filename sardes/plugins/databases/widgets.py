@@ -38,15 +38,17 @@ class DatabaseConnectionWidget(QDialog):
 
         self.set_database_connection_manager(db_connection_manager)
 
-    def set_database_connection_manager(self, db_connection_manager):
+    def _register_database_connection_manager(self, db_connection_manager):
         """
-        Setup the database connection manager for this widget.
+        Connect this widget with the database connection manager.
         """
         self.db_connection_manager = db_connection_manager
-        self.db_connection_manager.sig_database_connected.connect(
+        db_connection_manager.sig_database_connected.connect(
             self._handle_database_connected)
-        self.db_connection_manager.sig_database_disconnected.connect(
+        db_connection_manager.sig_database_disconnected.connect(
             self._handle_database_disconnected)
+        db_connection_manager.sig_database_is_connecting.connect(
+            self._handle_database_is_connecting)
 
     def setup(self, auto_connect_to_database=False):
         """
