@@ -1,0 +1,174 @@
+# Copyright © SARDES Project Contributors
+# https://github.com/cgq-qgc/sardes
+#
+# This file is part of SARDES.
+# Licensed under the terms of the GNU General Public License.
+# -----------------------------------------------------------------------------
+#
+# Sardes' French gettext translation file
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0.1.0\n"
+"POT-Creation-Date: 2019-06-28 10:28-0400\n"
+"PO-Revision-Date: 2019-06-28 10:30-0400\n"
+"Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs."
+"ca.com>\n"
+"Language-Team: Python\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.2.3\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: ..\sardes\app\mainwindow.py:94
+msgid "Database connection"
+msgstr ""
+
+#: ..\sardes\app\mainwindow.py:95
+msgid "Open a dialog window to manage the connection to the database."
+msgstr ""
+
+#: ..\sardes\app\mainwindow.py:111
+msgid "Tools and options"
+msgstr ""
+
+#: ..\sardes\app\mainwindow.py:112
+msgid "Open the tools and options menu."
+msgstr ""
+
+#: ..\sardes\app\mainwindow.py:131
+msgid "Preferences..."
+msgstr ""
+
+#: ..\sardes\app\mainwindow.py:135
+msgid "Report an issue..."
+msgstr ""
+
+#: ..\sardes\app\mainwindow.py:140
+msgid "About Sardes..."
+msgstr ""
+
+#: ..\sardes\app\mainwindow.py:144
+msgid "Exit"
+msgstr ""
+
+#: ..\sardes\app\mainwindow.py:162
+msgid "Languages"
+msgstr "Langues"
+
+#: ..\sardes\app\mainwindow.py:203
+msgid "Language change"
+msgstr ""
+
+#: ..\sardes\app\mainwindow.py:204
+msgid ""
+"The language has been set to <i>{}</i>. Restart Sardes to apply this change."
+msgstr ""
+
+#: ..\sardes\widgets\databaseconnector.py:35
+msgid "Database connection manager"
+msgstr ""
+
+#: ..\sardes\widgets\databaseconnector.py:85
+msgid "Database :"
+msgstr ""
+
+#: ..\sardes\widgets\databaseconnector.py:87
+msgid "Username :"
+msgstr ""
+
+#: ..\sardes\widgets\databaseconnector.py:89
+msgid "Hostname :"
+msgstr ""
+
+#: ..\sardes\widgets\databaseconnector.py:91
+msgid "Port :"
+msgstr ""
+
+#: ..\sardes\widgets\databaseconnector.py:93
+msgid "Password :"
+msgstr ""
+
+#: ..\sardes\widgets\databaseconnector.py:95
+msgid "Encoding :"
+msgstr ""
+
+#: ..\sardes\widgets\databaseconnector.py:100
+#: ..\sardes\widgets\databaseconnector.py:131
+msgid "Connect"
+msgstr ""
+
+#: ..\sardes\widgets\databaseconnector.py:101
+msgid "Reset"
+msgstr ""
+
+#: ..\sardes\widgets\databaseconnector.py:102
+msgid "Ok"
+msgstr ""
+
+#: ..\sardes\widgets\databaseconnector.py:131
+msgid "Disconnect"
+msgstr ""
+
+#: ..\sardes\widgets\databaseconnector.py:176
+msgid "The connection to database <i>{}</i> failed."
+msgstr ""
+
+#: ..\sardes\widgets\databaseconnector.py:180
+msgid "Connected to database <i>{}</i>."
+msgstr ""
+
+#: ..\sardes\widgets\databaseconnector.py:227
+msgid "Connecting to database <i>{}</i>..."
+msgstr ""
+
+#: ..\sardes\widgets\locationtable.py:35
+msgid "Piezometer ID"
+msgstr "Piézomètre ID"
+
+#: ..\sardes\widgets\locationtable.py:36
+msgid "Common Name"
+msgstr "Nom Commun"
+
+#: ..\sardes\widgets\locationtable.py:37
+msgid "Municipality"
+msgstr "Municipalité"
+
+#: ..\sardes\widgets\locationtable.py:38
+msgid "Aquifer"
+msgstr "Aquifère"
+
+#: ..\sardes\widgets\locationtable.py:39
+msgid "Confinement"
+msgstr "Confinement"
+
+#: ..\sardes\widgets\locationtable.py:40
+msgid "Aquifer Code"
+msgstr "Code aquifère"
+
+#: ..\sardes\widgets\locationtable.py:41
+msgid "Recharge Zone"
+msgstr "Zone de recharge"
+
+#: ..\sardes\widgets\locationtable.py:42
+msgid "Influenced"
+msgstr "Influencé"
+
+#: ..\sardes\widgets\locationtable.py:43
+msgid "Latitude"
+msgstr "Latitude"
+
+#: ..\sardes\widgets\locationtable.py:44
+msgid "Longitude"
+msgstr "Longitude"
+
+#: ..\sardes\widgets\locationtable.py:45
+msgid "Active"
+msgstr "Active"
+
+#: ..\sardes\widgets\locationtable.py:46
+msgid "Note"
+msgstr "Note"

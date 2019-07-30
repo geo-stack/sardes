@@ -1,0 +1,9 @@
+appconfigs
+keyring
+numpy == 1.16.*
+pandas
+psycopg2
+pyqt5 <=5.12.2
+qtawesome
+qtpy
+sqlalchemy 
