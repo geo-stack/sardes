@@ -210,8 +210,13 @@ class DatabaseConnectionWidget(QDialog):
 
 if __name__ == '__main__':
     from sardes.database.database_manager import DatabaseConnectionManager
+    from sardes.database.dialog_demo import DatabaseConnectDialogDemo
+
     app = QApplication(sys.argv)
-    manager = DatabaseConnectionManager()
-    connection_widget = DatabaseConnectionWidget(manager)
+
+    connection_widget = DatabaseConnectionWidget(
+        DatabaseConnectionManager())
+    connection_widget.add_database_dialog(
+        DatabaseConnectDialogDemo())
     connection_widget.show()
     sys.exit(app.exec_())
