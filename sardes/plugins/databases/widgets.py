@@ -119,6 +119,13 @@ class DatabaseConnectionWidget(QDialog):
         return [self.stacked_dialogs.widget(i) for
                 i in range(self.stacked_dialogs.count())]
 
+    # ---- Database public actors
+    def disconnect(self):
+        """
+        Close the connection with the database.
+        """
+        self.db_connection_manager.disconnect_from_db()
+
     # ---- GUI update.
     def _update_gui(self):
         """
@@ -174,12 +181,6 @@ class DatabaseConnectionWidget(QDialog):
         """
         self.status_bar.hide()
         self._update_gui()
-
-    def disconnect(self):
-        """
-        Close the connection with the database.
-        """
-        self.db_connection_manager.disconnect_from_db()
 
     def connect(self):
         """
