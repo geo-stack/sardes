@@ -80,6 +80,7 @@ class DatabaseConnectionWorker(QObject):
 class DatabaseConnectionManager(QObject):
     sig_database_connected = Signal(object, object)
     sig_database_disconnected = Signal()
+    sig_database_is_connecting = Signal()
     sig_database_connection_changed = Signal(bool)
 
     def __init__(self, parent=None):
