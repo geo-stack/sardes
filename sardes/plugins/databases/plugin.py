@@ -101,6 +101,13 @@ class Databases(SardesPlugin):
         self.database_disconnect_button.setEnabled(
             self.main.db_connection_manager.is_connected())
 
+    def connect_to_database(self):
+        """
+        Try connecting to the database whose parameters are specified in the
+        database connection widget.
+        """
+        self.db_connection_widget.connect()
+
     def close_plugin(self):
         """
         Extend Sardes plugin method to save user inputs in the
