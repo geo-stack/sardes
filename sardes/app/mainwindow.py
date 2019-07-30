@@ -88,9 +88,9 @@ class MainWindow(QMainWindow):
 
         # Database plugin.
         from sardes.plugins.databases import SARDES_PLUGIN_CLASS
-        plugin = SARDES_PLUGIN_CLASS(self)
-        plugin.register_plugin()
-        self.internal_plugins.append(plugin)
+        self.databases_plugin = SARDES_PLUGIN_CLASS(self)
+        self.databases_plugin.register_plugin()
+        self.internal_plugins.append(self.databases_plugin)
 
     def setup_thirdparty_plugins(self):
         """Setup Sardes third party plugins."""
@@ -292,6 +292,18 @@ class MainWindow(QMainWindow):
                  self.lock_dockwidgets_and_toolbars_action.isChecked())
 
     # ---- Qt method override/extension
+    def show(self):
+        """Extend Qt show to connect to database automatically."""
+        super().show()
+
+        # Connect to database if options is True.
+        # NOTE: This must be done after all internal and thirdparty plugins
+        # have been registered in case they are connected to the database
+        # manager connection signals.
+        if self.databases_plugin.get_option('auto_connect_to_database'):
+            self.db_connection_manager.connect_to_db(
+                self.databases_plugin.connect_to_database())
+
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
         self._save_window_geometry()
