@@ -116,10 +116,12 @@ class DatabaseConnectionManager(QObject):
         Try to create a new connection with the database using the
         provided database accessor.
         """
-        self._is_connecting = True
-        self._add_task(
-            'connect_to_db', self._handle_connect_to_db, db_accessor)
-        self._db_connection_thread.start()
+        if db_accessor is not None:
+            self._is_connecting = True
+            self.sig_database_is_connecting.emit()
+            self._add_task(
+                'connect_to_db', self._handle_connect_to_db, db_accessor)
+            self._db_connection_thread.start()
 
     def disconnect_from_db(self):
         """Close the connection with the database"""
