@@ -144,13 +144,11 @@ class DatabaseConnectionWidget(QDialog):
             self.get_current_database_accessor())
 
     # ---- GUI update.
-    def _update_gui(self):
+    def _update_gui(self, is_connecting, is_connected):
         """
         Update the visibility and state of the gui based on the connection
         status with the database.
         """
-        is_connecting = self.db_connection_manager.is_connecting()
-        is_connected = self.db_connection_manager.is_connected()
         self.stacked_dialogs.setEnabled(not is_connected and not is_connecting)
         self.dbtype_combobox.setEnabled(not is_connected and not is_connecting)
         self.close_button.setEnabled(not is_connecting)
@@ -189,7 +187,8 @@ class DatabaseConnectionWidget(QDialog):
             message = _("Connected to the database.")
             self.status_bar.show_sucess_icon(message)
             self.close()
-        self._update_gui()
+        self._update_gui(is_connecting=False,
+                         is_connected=db_connection is not None)
 
     @Slot()
     def _handle_database_disconnected(self):
@@ -197,7 +196,7 @@ class DatabaseConnectionWidget(QDialog):
         Handle when the connection to the database was sucessfully closed.
         """
         self.status_bar.hide()
-        self._update_gui()
+        self._update_gui(is_connecting=False, is_connected=False)
 
     @Slot()
     def _handle_database_is_connecting(self):
