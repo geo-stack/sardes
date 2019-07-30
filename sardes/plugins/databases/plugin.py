@@ -116,7 +116,7 @@ class Databases(SardesPlugin):
         super().close_plugin()
 
         # Close the connection with the database if any.
-        self.db_connection_widget.disconnect()
+        self.main.db_connection_manager.disconnect_from_db()
 
         # Save to th config the values displayed in each database
         # connection dialog.
@@ -125,9 +125,10 @@ class Databases(SardesPlugin):
 
         # Save to the config the name of the currently selected database
         # connection dialog.
-        self.set_option(
-            'dbtype_last_selected',
-            self.db_connection_widget.current_database_dialog.dbtype_name)
+        value = (self.db_connection_widget
+                 .get_current_database_dialog()
+                 .dbtype_name)
+        self.set_option('dbtype_last_selected', value)
 
         # Save the auto connect to database option,
         value = (self.db_connection_widget
