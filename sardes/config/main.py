@@ -28,7 +28,8 @@ DEFAULTS = [
          }
      ),
     ('database',
-        {'dbtype_last_selected': 'Sardes Demo'
+        {'dbtype_last_selected': 'Sardes Demo',
+         'auto_connect_to_database': False,
          }
      )
 ]

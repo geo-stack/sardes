@@ -14,8 +14,9 @@ import sys
 # ---- Third party imports
 from qtpy.QtCore import Qt, Slot
 from qtpy.QtWidgets import (
-    QApplication, QAbstractButton, QComboBox, QDialog, QDialogButtonBox,
-    QHBoxLayout, QLabel, QPushButton, QStackedWidget, QVBoxLayout)
+    QApplication, QAbstractButton, QCheckBox, QComboBox, QDialog,
+    QDialogButtonBox, QHBoxLayout, QLabel, QPushButton, QStackedWidget,
+    QVBoxLayout)
 
 # ---- Local imports
 from sardes.config.gui import RED
@@ -28,27 +29,30 @@ class DatabaseConnectionWidget(QDialog):
     A dialog window to manage the connection to the database.
     """
 
-    def __init__(self, db_connection_manager, parent=None):
+    def __init__(self, db_connection_manager, auto_connect_to_database=False,
+                 parent=None):
         super(DatabaseConnectionWidget, self).__init__(parent)
         self.setWindowTitle(_('Database connection manager'))
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setModal(True)
 
-        self.setup()
-        self.set_database_connection_manager(db_connection_manager)
+        self._setup(auto_connect_to_database)
+        self._register_database_connection_manager(db_connection_manager)
 
-    def set_database_connection_manager(self, db_connection_manager):
+    def _register_database_connection_manager(self, db_connection_manager):
         """
-        Setup the database connection manager for this widget.
+        Connect this widget with the database connection manager.
         """
         self.db_connection_manager = db_connection_manager
-        self.db_connection_manager.sig_database_connected.connect(
+        db_connection_manager.sig_database_connected.connect(
             self._handle_database_connected)
-        self.db_connection_manager.sig_database_disconnected.connect(
+        db_connection_manager.sig_database_disconnected.connect(
             self._handle_database_disconnected)
+        db_connection_manager.sig_database_is_connecting.connect(
+            self._handle_database_is_connecting)
 
-    def setup(self):
+    def _setup(self, auto_connect_to_database):
         """
         Setup the dialog with the provided settings.
         """
@@ -76,6 +80,12 @@ class DatabaseConnectionWidget(QDialog):
         self.close_button.setDefault(False)
         self.close_button.setAutoDefault(False)
 
+        # Setup the auto connect to database checkbox.
+        self.auto_connect_to_database_checkbox = QCheckBox(
+            _('Connect automatically to database when starting Sardes'))
+        self.auto_connect_to_database_checkbox.setChecked(
+            auto_connect_to_database)
+
         button_box = QDialogButtonBox()
         button_box.addButton(self.connect_button, button_box.ApplyRole)
         button_box.addButton(self.close_button, button_box.RejectRole)
@@ -86,6 +96,7 @@ class DatabaseConnectionWidget(QDialog):
         main_layout = QVBoxLayout(self)
         main_layout.addLayout(dbtype_layout)
         main_layout.addWidget(self.stacked_dialogs)
+        main_layout.addWidget(self.auto_connect_to_database_checkbox)
         main_layout.addWidget(self.status_bar)
         main_layout.addWidget(button_box)
         main_layout.setStretch(0, 1)
@@ -96,8 +107,7 @@ class DatabaseConnectionWidget(QDialog):
         self.stacked_dialogs.addWidget(database_dialog)
         self.dbtype_combobox.addItem(database_dialog.dbtype_name)
 
-    @property
-    def current_database_dialog(self):
+    def get_current_database_dialog(self):
         return self.stacked_dialogs.currentWidget()
 
     def set_current_database_dialog(self, dialog_name):
@@ -107,19 +117,42 @@ class DatabaseConnectionWidget(QDialog):
         dbtype_index = self.dbtype_combobox.findText(dialog_name)
         self.dbtype_combobox.setCurrentIndex(max(0, dbtype_index))
 
+    def get_current_database_accessor(self):
+        """
+        Return the database accessor of the currently selected database
+        dialog if any.
+        """
+        if self.get_current_database_dialog():
+            return self.get_current_database_dialog().database_accessor()
+        else:
+            return None
+
     @property
     def database_dialogs(self):
         return [self.stacked_dialogs.widget(i) for
                 i in range(self.stacked_dialogs.count())]
 
+    # ---- Database public actors
+    def disconnect(self):
+        """
+        Close the connection with the database.
+        """
+        self.db_connection_manager.disconnect_from_db()
+
+    def connect(self):
+        """
+        Try to connect to the database using the connection parameters
+        provided by the user in the gui.
+        """
+        self.db_connection_manager.connect_to_db(
+            self.get_current_database_accessor())
+
     # ---- GUI update.
-    def _update_gui(self):
+    def _update_gui(self, is_connecting, is_connected):
         """
         Update the visibility and state of the gui based on the connection
         status with the database.
         """
-        is_connecting = self.db_connection_manager.is_connecting()
-        is_connected = self.db_connection_manager.is_connected()
         self.stacked_dialogs.setEnabled(not is_connected and not is_connecting)
         self.dbtype_combobox.setEnabled(not is_connected and not is_connecting)
         self.close_button.setEnabled(not is_connecting)
@@ -158,7 +191,8 @@ class DatabaseConnectionWidget(QDialog):
             message = _("Connected to the database.")
             self.status_bar.show_sucess_icon(message)
             self.close()
-        self._update_gui()
+        self._update_gui(is_connecting=False,
+                         is_connected=db_connection is not None)
 
     @Slot()
     def _handle_database_disconnected(self):
@@ -166,30 +200,27 @@ class DatabaseConnectionWidget(QDialog):
         Handle when the connection to the database was sucessfully closed.
         """
         self.status_bar.hide()
-        self._update_gui()
+        self._update_gui(is_connecting=False, is_connected=False)
 
-    def disconnect(self):
+    @Slot()
+    def _handle_database_is_connecting(self):
         """
-        Close the connection with the database.
+        Handle when the connection to the database is in progress.
         """
-        self.db_connection_manager.disconnect_from_db()
-
-    def connect(self):
-        """
-        Try to connect to the database using the connection parameters
-        provided by the user in the gui.
-        """
-        self.db_connection_manager.connect_to_db(
-            self.current_database_dialog.database_accessor())
-        self._update_gui()
+        self._update_gui(is_connecting=True, is_connected=False)
         self.status_bar.show()
         self.status_bar.set_label(_("Connecting to database..."))
 
 
 if __name__ == '__main__':
     from sardes.database.database_manager import DatabaseConnectionManager
+    from sardes.database.dialog_demo import DatabaseConnectDialogDemo
+
     app = QApplication(sys.argv)
-    manager = DatabaseConnectionManager()
-    connection_widget = DatabaseConnectionWidget(manager)
+
+    connection_widget = DatabaseConnectionWidget(
+        DatabaseConnectionManager())
+    connection_widget.add_database_dialog(
+        DatabaseConnectDialogDemo())
     connection_widget.show()
     sys.exit(app.exec_())

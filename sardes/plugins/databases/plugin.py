@@ -31,9 +31,15 @@ class Databases(SardesPlugin):
         return _('Database Connector')
 
     def setup_plugin(self):
+        """Setup this plugin."""
         # Setup the database connection widget.
+        db_connection_manager = self.main.db_connection_manager
+        auto_connect_to_database = self.get_option('auto_connect_to_database')
+
         self.db_connection_widget = DatabaseConnectionWidget(
-            self.main.db_connection_manager, self.main)
+            db_connection_manager,
+            auto_connect_to_database,
+            parent=self.main)
         self.db_connection_widget.hide()
 
         self.setup_internal_database_dialogs()
@@ -74,7 +80,8 @@ class Databases(SardesPlugin):
         database_toolbar.addWidget(self.database_connect_button)
 
         self.database_disconnect_button = create_toolbutton(
-            self.main, triggered=self.db_connection_widget.disconnect,
+            self.main,
+            triggered=self.main.db_connection_manager.disconnect_from_db,
             text=_("Disconnect database"),
             tip=_("Close the connection with the database."),
             shortcut='Ctrl+Shift+C',
@@ -99,6 +106,13 @@ class Databases(SardesPlugin):
         self.database_disconnect_button.setEnabled(
             self.main.db_connection_manager.is_connected())
 
+    def connect_to_database(self):
+        """
+        Try connecting to the database whose parameters are specified in the
+        database connection widget.
+        """
+        self.db_connection_widget.connect()
+
     def close_plugin(self):
         """
         Extend Sardes plugin method to save user inputs in the
@@ -107,7 +121,7 @@ class Databases(SardesPlugin):
         super().close_plugin()
 
         # Close the connection with the database if any.
-        self.db_connection_widget.disconnect()
+        self.main.db_connection_manager.disconnect_from_db()
 
         # Save to th config the values displayed in each database
         # connection dialog.
@@ -116,6 +130,13 @@ class Databases(SardesPlugin):
 
         # Save to the config the name of the currently selected database
         # connection dialog.
-        self.set_option(
-            'dbtype_last_selected',
-            self.db_connection_widget.current_database_dialog.dbtype_name)
+        value = (self.db_connection_widget
+                 .get_current_database_dialog()
+                 .dbtype_name)
+        self.set_option('dbtype_last_selected', value)
+
+        # Save the auto connect to database option,
+        value = (self.db_connection_widget
+                 .auto_connect_to_database_checkbox
+                 .isChecked())
+        self.set_option('auto_connect_to_database', value)

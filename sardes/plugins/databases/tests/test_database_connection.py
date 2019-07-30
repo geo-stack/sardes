@@ -93,6 +93,10 @@ def test_dbconnwidget_connect(dbconnwidget, qtbot, mocker):
     assert dbconnwidget.connect_button.isEnabled()
     assert dbconnwidget.connect_button.text() == 'Disconnect'
     assert dbconnwidget.close_button.isEnabled()
+    assert not dbconnwidget.isVisible()
+
+    dbconnwidget.show()
+    qtbot.waitForWindowShown(dbconnwidget)
 
     # Close the database connection.
     with qtbot.waitSignal(dbconnmanager.sig_database_disconnected):
@@ -139,6 +143,7 @@ def test_dbconnwidget_failed_connect(mode, dbconnwidget, qtbot, mocker):
     assert dbconnwidget.stacked_dialogs.isEnabled()
     assert dbconnwidget.connect_button.isEnabled()
     assert dbconnwidget.close_button.isEnabled()
+    assert dbconnwidget.isVisible()
 
 
 if __name__ == "__main__":
