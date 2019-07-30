@@ -29,14 +29,16 @@ class DatabaseConnectionWidget(QDialog):
     A dialog window to manage the connection to the database.
     """
 
-    def __init__(self, db_connection_manager, parent=None):
+    def __init__(self, db_connection_manager, auto_connect_to_database=False,
+                 parent=None):
         super(DatabaseConnectionWidget, self).__init__(parent)
         self.setWindowTitle(_('Database connection manager'))
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setModal(True)
 
-        self.set_database_connection_manager(db_connection_manager)
+        self._setup(auto_connect_to_database)
+        self._register_database_connection_manager(db_connection_manager)
 
     def _register_database_connection_manager(self, db_connection_manager):
         """
@@ -50,7 +52,7 @@ class DatabaseConnectionWidget(QDialog):
         db_connection_manager.sig_database_is_connecting.connect(
             self._handle_database_is_connecting)
 
-    def setup(self, auto_connect_to_database=False):
+    def _setup(self, auto_connect_to_database):
         """
         Setup the dialog with the provided settings.
         """
