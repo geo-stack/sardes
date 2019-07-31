@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Local imports
-from sardes.api.sardes_plugins import SardesPlugin
+from sardes.api.plugins import SardesPlugin
 from sardes.config.database import get_dbconfig, set_dbconfig
 from sardes.config.locale import _
 from sardes.utils.qthelpers import (create_mainwindow_toolbar,
