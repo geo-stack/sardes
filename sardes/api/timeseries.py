@@ -20,6 +20,11 @@ import numpy as np
 class TimeSeries(Mapping):
     """
     Sardes time series class.
+
+    Attributes
+    ----------
+    data
+        A pandas Series with datetime indexes.
     """
 
     def __init__(self, data, *args, **kwargs):
