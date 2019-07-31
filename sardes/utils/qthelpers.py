@@ -14,6 +14,7 @@ from math import pi
 import sys
 
 # ---- Third party imports
+from qtpy.QtGui import QFont, QKeySequence
 from qtpy.QtCore import QByteArray, QPoint, QSize, Qt
 from qtpy.QtWidgets import QAction, QSizePolicy, QToolBar, QToolButton
 
@@ -74,10 +75,8 @@ def create_toolbutton(parent, text=None, shortcut=None, icon=None, tip=None,
     if icon is not None:
         icon = get_icon(icon) if isinstance(icon, str) else icon
         button.setIcon(icon)
-    if text is not None or tip is not None:
-        ttip = ("<p style='white-space:pre'><b>{} ({})</b></p>"
-                "<p>{}</p>").format(text or '', shortcut or '', tip or '')
-        button.setToolTip(ttip)
+    if any((text, tip, shortcut)):
+        button.setToolTip(format_tooltip(text, tip, shortcut))
     if text_beside_icon:
         button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
     button.setAutoRaise(autoraise)
@@ -91,6 +90,25 @@ def create_toolbutton(parent, text=None, shortcut=None, icon=None, tip=None,
     if iconsize is not None:
         button.setIconSize(QSize(iconsize, iconsize))
     return button
+
+
+def format_tooltip(text, tip, shortcut):
+    """
+    Format text, tip and shortcut into a single str to be set
+    as a widget's tooltip.
+    """
+    keystr = QKeySequence(shortcut).toString(QKeySequence.NativeText)
+    ttip = ""
+    if text or keystr:
+        ttip += "<p style='white-space:pre'><b>"
+        if text:
+            ttip += "{}".format(text) + (" " if keystr else "")
+        if keystr:
+            ttip += "({})".format(keystr)
+        ttip += "</b></p>"
+    if tip:
+        ttip += "<p>{}</p>".format(tip or '')
+    return ttip
 
 
 def create_waitspinner(size=32, n=11, parent=None):
