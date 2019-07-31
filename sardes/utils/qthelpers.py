@@ -14,11 +14,11 @@ from math import pi
 import sys
 
 # ---- Third party imports
-from qtpy.QtCore import QByteArray, QSize, Qt
+from qtpy.QtCore import QByteArray, QPoint, QSize, Qt
 from qtpy.QtWidgets import QAction, QSizePolicy, QToolBar, QToolButton
 
 # ---- Local imports
-from sardes.config.gui import get_iconsize
+from sardes.config.gui import (get_iconsize, get_toolbar_item_spacing)
 from sardes.config.icons import get_icon
 from sardes.widgets.waitingspinner import WaitingSpinner
 
@@ -50,14 +50,16 @@ def create_action(parent, text, shortcut=None, icon=None, tip=None,
     return action
 
 
-def create_mainwindow_toolbar(title, iconsize=None):
+def create_mainwindow_toolbar(title, iconsize=None, areas=None, spacing=None,
+                              movable=False, floatable=False):
     """Create and return a toolbar with title and object_name."""
     toolbar = QToolBar(title)
     toolbar.setObjectName(title.lower().replace(' ', '_'))
-    toolbar.setFloatable(False)
-    toolbar.setAllowedAreas(Qt.TopToolBarArea)
-
-    iconsize = get_iconsize() if iconsize is None else iconsize
+    toolbar.setFloatable(floatable)
+    toolbar.setMovable(movable)
+    toolbar.setAllowedAreas(areas or Qt.TopToolBarArea)
+    toolbar.setSpacing(spacing or get_toolbar_item_spacing())
+    iconsize = iconsize or get_iconsize()
     toolbar.setIconSize(QSize(iconsize, iconsize))
 
     return toolbar
