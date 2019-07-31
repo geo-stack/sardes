@@ -23,6 +23,16 @@ from sardes.config.icons import get_icon
 from sardes.widgets.waitingspinner import WaitingSpinner
 
 
+def center_widget_to_another(widget, other_widget):
+    """Center widget position to another widget's geometry."""
+    q1 = widget.frameGeometry()
+    w2 = other_widget.frameGeometry().width()
+    h2 = other_widget.frameGeometry().height()
+    c2 = other_widget.mapToGlobal(QPoint(w2 / 2, h2 / 2))
+    q1.moveCenter(c2)
+    widget.move(q1.topLeft())
+
+
 def create_action(parent, text, shortcut=None, icon=None, tip=None,
                   toggled=None, triggered=None, data=None, menurole=None,
                   context=Qt.WindowShortcut):
