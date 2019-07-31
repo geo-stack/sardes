@@ -58,10 +58,9 @@ def create_mainwindow_toolbar(title, iconsize=None, areas=None, spacing=None,
     toolbar.setFloatable(floatable)
     toolbar.setMovable(movable)
     toolbar.setAllowedAreas(areas or Qt.TopToolBarArea)
-    toolbar.setSpacing(spacing or get_toolbar_item_spacing())
+    toolbar.layout().setSpacing(spacing or get_toolbar_item_spacing())
     iconsize = iconsize or get_iconsize()
     toolbar.setIconSize(QSize(iconsize, iconsize))
-
     return toolbar
 
 
