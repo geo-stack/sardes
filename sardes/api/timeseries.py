@@ -65,6 +65,12 @@ class TimeSeries(Mapping):
     # ---- Data Selection
     def select_data(self, xrange=None, yrange=None):
         colname = self._data.columns[0]
+        if xrange is not None and self._data.index.tzinfo is None:
+            # Make sure the datetime objects or the specified period
+            # use the same timezone info as that of the timeseries.
+            xrange = (xrange[0].replace(tzinfo=self._data.index.tzinfo),
+                      xrange[1].replace(tzinfo=self._data.index.tzinfo))
+
         if xrange and yrange:
             indexes = (
                 self._data[(self._data.index >= xrange[0]) &
