@@ -8,7 +8,8 @@
 # -----------------------------------------------------------------------------
 
 # ---- Local imports
-from sardes.api.sardes_plugins import SardesPlugin, SardesPaneWidget
+from sardes.api.plugins import SardesPlugin
+from sardes.api.panes import SardesPaneWidget
 from sardes.config.locale import _
 from sardes.widgets.locationtable import ObservationWellTableView
 
@@ -29,7 +30,7 @@ class ObsWellsExplorer(SardesPlugin):
         Create and return the pane widget to use in this
         plugin's dockwidget.
         """
-        main_widget = ObservationWellTableView(self.main.db_connection_manager)
         pane_widget = SardesPaneWidget(parent=self.main)
-        pane_widget.set_main_widget(main_widget)
+        pane_widget.set_central_widget(
+            ObservationWellTableView(self.main.db_connection_manager))
         return pane_widget
