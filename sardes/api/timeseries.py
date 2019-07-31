@@ -29,8 +29,9 @@ class TimeSeries(Mapping):
 
     def __init__(self, data, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._undo_stack = []
         self._data = data
+
+        self._undo_stack = []
         self._selected_data_indexes = DatetimeIndex([])
 
     def __len__(self, key):
@@ -55,11 +56,11 @@ class TimeSeries(Mapping):
 
     @property
     def dates(self):
-        return self.data.index.values
+        return self._data.index.values
 
     @property
     def strftime(self):
-        return self.data.index.strftime("%Y-%m-%dT%H:%M:%S").values.tolist()
+        return self._data.index.strftime("%Y-%m-%dT%H:%M:%S").values.tolist()
 
     # ---- Data Selection
     def select_data(self, xrange=None, yrange=None):
