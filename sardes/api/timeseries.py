@@ -11,7 +11,7 @@
 from collections.abc import Mapping
 
 # ---- Third party imports
-from pandas import DatetimeIndex
+from pandas import DatetimeIndex, Series
 import numpy as np
 
 # ---- Local imports
@@ -64,7 +64,31 @@ class TimeSeries(Mapping):
 
     # ---- Data Selection
     def select_data(self, xrange=None, yrange=None):
-        colname = self._data.columns[0]
+        """
+        Select data for a given period and range of values.
+
+        Return a pandas DatetimeIndex containing the datetime indexes
+        of the timeseries corresponding to the data in the specified
+        period and range of values.
+
+        The resulting datetime indexes are also added to a list of
+        already selected indexes, whose corresponding data can be obtained
+        with the get_selected_data method.
+
+        Parameters
+        ----------
+        xrange: tuple of datetime
+            A tuple of 2-datetime objects specifying the start and end of
+            a period.
+        yrange: tuple of float
+            A tuple of 2-floats specifying a range of values.
+
+        Returns
+        -------
+        pandas.DatetimeIndex
+            A pandas datetime index corresponding to the data in the
+            specified period and range of values.
+        """
         if xrange is not None and self._data.index.tzinfo is None:
             # Make sure the datetime objects or the specified period
             # use the same timezone info as that of the timeseries.
@@ -75,8 +99,8 @@ class TimeSeries(Mapping):
             indexes = (
                 self._data[(self._data.index >= xrange[0]) &
                            (self._data.index <= xrange[1]) &
-                           (self._data[colname] >= yrange[0]) &
-                           (self._data[colname] <= yrange[1])
+                           (self._data >= yrange[0]) &
+                           (self._data <= yrange[1])
                            ]).index
         elif xrange:
             indexes = (
@@ -85,14 +109,16 @@ class TimeSeries(Mapping):
                            ]).index
         elif yrange:
             indexes = (
-                self._data[(self._data[colname] >= yrange[0]) &
-                           (self._data[colname] <= yrange[1])
+                self._data[(self._data >= yrange[0]) &
+                           (self._data <= yrange[1])
                            ]).index
         else:
             indexes = DatetimeIndex([])
 
         self._selected_data_indexes = (
             self._selected_data_indexes.append(indexes))
+
+        return indexes
 
     def get_selected_data(self):
         return self._data.loc[self._selected_data_indexes]
