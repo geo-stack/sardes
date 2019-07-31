@@ -11,7 +11,7 @@
 from collections.abc import Mapping
 
 # ---- Third party imports
-from pandas import DatetimeIndex, Series
+from pandas import DatetimeIndex
 import numpy as np
 
 # ---- Local imports
