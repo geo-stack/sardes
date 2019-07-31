@@ -97,14 +97,14 @@ def format_tooltip(text, tip, shortcut):
     Format text, tip and shortcut into a single str to be set
     as a widget's tooltip.
     """
+    keystr = QKeySequence(shortcut).toString(QKeySequence.NativeText)
     ttip = ""
-    if text or shortcut:
+    if text or keystr:
         ttip += "<p style='white-space:pre'><b>"
         if text:
-            ttip += "{}".format(text) + (" " if shortcut else "")
-        if shortcut:
-            ttip += "({})".format(
-                QKeySequence(shortcut).toString(QKeySequence.NativeText))
+            ttip += "{}".format(text) + (" " if keystr else "")
+        if keystr:
+            ttip += "({})".format(keystr)
         ttip += "</b></p>"
     if tip:
         ttip += "<p>{}</p>".format(tip or '')
