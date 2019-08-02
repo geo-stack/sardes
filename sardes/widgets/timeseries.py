@@ -14,16 +14,22 @@ import sys
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from matplotlib.figure import Figure as MplFigure
+from matplotlib.axes import Axes as MplAxes
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from matplotlib.dates import num2date
 from qtpy.QtCore import Qt, Slot
-from qtpy.QtWidgets import (QAbstractButton, QApplication, QMainWindow)
+from qtpy.QtWidgets import (QAbstractButton, QApplication, QComboBox,
+                            QMainWindow, QMenu, QRadioButton)
 
 # ---- Local imports
 from sardes.config.locale import _
+from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
 from sardes.utils.qthelpers import (
-    center_widget_to_another, create_mainwindow_toolbar, create_toolbutton)
+    center_widget_to_another, create_mainwindow_toolbar, create_toolbutton,
+    create_action)
+
+
 class TimeSeriesAxes(MplAxes):
     # https://matplotlib.org/3.1.1/api/axes_api.html
 
