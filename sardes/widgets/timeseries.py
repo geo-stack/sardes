@@ -24,6 +24,148 @@ from sardes.config.locale import _
 from sardes.config.gui import get_iconsize
 from sardes.utils.qthelpers import (
     center_widget_to_another, create_mainwindow_toolbar, create_toolbutton)
+class TimeSeriesAxes(MplAxes):
+    # https://matplotlib.org/3.1.1/api/axes_api.html
+
+    def __init__(self, tseries_figure, ylabel=None, where='left'):
+        super().__init__(tseries_figure,
+                         tseries_figure.base_axes.get_position(),
+                         facecolor=None,
+                         frameon=False,
+                         sharex=tseries_figure.base_axes)
+        self.figure.add_tseries_axes(self)
+        self.patch.set_visible(False)
+
+        # Init class attributes.
+        self.tseries_list = []
+        self._rect_selector = None
+        self._hspan_selector = None
+        self._vspan_selector = None
+        self._mpl_artist_handles = {
+            'data': {},
+            'selected_data': {}}
+
+        # Make sure the xticks and xticks labels are not shown for this
+        # axe, because this is provided by the base axe.
+        self.tick_params(labelsize=self.figure.canvas.font().pointSize(),
+                         top=False, bottom=False,
+                         labeltop=False, labelbottom=False)
+
+        # Setup the new axe yaxis position and parameters.
+        if where == 'right':
+            self.yaxis.tick_right()
+            self.yaxis.set_label_position('right')
+        else:
+            self.yaxis.tick_left()
+            self.yaxis.set_label_position('left')
+        self.tick_params(labelsize=self.figure.canvas.font().pointSize())
+
+        # Setup the ylabel of the axe.
+        if ylabel is not None:
+            self.set_ylabel(ylabel, labelpad=10)
+
+        self.figure.tight_layout(force=True)
+        self.figure.canvas.draw()
+
+    @property
+    def rect_selector(self):
+        if self._rect_selector is None:
+            # Setup a new data rectangular selector for this axe.
+                self._rect_selector = RectangleSelector(
+                    self,
+                    self._handle_drag_select_data,
+                    drawtype='box',
+                    useblit=True,
+                    button=[1],
+                    interactive=False,
+                    rectprops=dict(facecolor='red', edgecolor='black',
+                                   alpha=0.2, fill=True, linestyle=':')
+                    )
+        return self._rect_selector
+
+    @property
+    def hspan_selector(self):
+        if self._hspan_selector is None:
+            # Setup a new data horizontal span selector for this axe
+            self._hspan_selector = SpanSelector(
+                self,
+                self._handle_hspan_select_data,
+                'horizontal',
+                useblit=True,
+                rectprops=dict(facecolor='red', edgecolor='black',
+                               alpha=0.2, linestyle=':')
+                )
+        return self._hspan_selector
+
+    @property
+    def vspan_selector(self):
+        if self._vspan_selector is None:
+            # Setup a new data vertical span selector for this timeseries.
+            self._vspan_selector = SpanSelector(
+                self,
+                self._handle_vspan_select_data,
+                'vertical',
+                useblit=True,
+                rectprops=dict(facecolor='red', edgecolor='black',
+                               alpha=0.2, linestyle=':')
+                )
+        return self._vspan_selector
+
+    def add_timeseries(self, tseries):
+        self.tseries_list.append(tseries)
+
+        # Plot the data of the timeseries and init selected data artist.
+        self._mpl_artist_handles['data'][tseries.id], = (
+            self.plot(tseries.data, color=tseries.color))
+        self._mpl_artist_handles['selected_data'][tseries.id], = (
+            self.plot(tseries.get_selected_data(), '.', color='orange'))
+
+        self.figure.canvas.draw()
+
+    def set_current(self):
+        self.figure.set_current_tseries_axes(self)
+
+    def clear_selected_data(self):
+        for tseries in self.tseries_list:
+            tseries.clear_selected_data()
+        self._draw_selected_data()
+
+    # ---- Drawing methods
+    def _draw_selected_data(self, draw=True):
+        for tseries in self.tseries_list:
+            if self.figure.gca() != self:
+                (self._mpl_artist_handles['selected_data'][tseries.id]
+                 .set_visible(False))
+            else:
+
+                selected_data = tseries.get_selected_data()
+                # Update the selected data plot for the current axe.
+                (self._mpl_artist_handles['selected_data'][tseries.id]
+                 .set_data(selected_data.index.values, selected_data.values))
+
+        if draw:
+            self.figure.canvas.draw()
+
+    # ----Data selection handlers
+    def _handle_drag_select_data(self, eclick, erelease):
+        """
+        Handle when a rectangular area to select data has been selected.
+        """
+        xmin, xmax, ymin, ymax = self._rect_selector.extents
+        for tseries in self.tseries_list:
+            tseries.select_data(xrange=(num2date(xmin), num2date(xmax)),
+                                yrange=(ymin, ymax))
+        self._draw_selected_data()
+
+    def _handle_hspan_select_data(self, xmin, xmax):
+        for tseries in self.tseries_list:
+            tseries.select_data(xrange=(num2date(xmin), num2date(xmax)))
+        self._draw_selected_data()
+
+    def _handle_vspan_select_data(self, ymin, ymax):
+        for tseries in self.tseries_list:
+            tseries.select_data(yrange=(ymin, ymax))
+        self._draw_selected_data()
 
 
 class TimeSeriesFigure(MplFigure):
