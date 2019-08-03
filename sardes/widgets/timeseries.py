@@ -40,7 +40,6 @@ class TimeSeriesAxes(MplAxes):
                          frameon=False,
                          sharex=tseries_figure.base_axes)
         self.figure.add_tseries_axes(self)
-        self.patch.set_visible(False)
 
         # Init class attributes.
         self.tseries_list = []
@@ -53,9 +52,9 @@ class TimeSeriesAxes(MplAxes):
 
         # Make sure the xticks and xticks labels are not shown for this
         # axe, because this is provided by the base axe.
-        self.tick_params(labelsize=self.figure.canvas.font().pointSize(),
-                         top=False, bottom=False,
-                         labeltop=False, labelbottom=False)
+        self.xaxis.set_visible(False)
+        self.patch.set_visible(False)
+        self.tick_params(labelsize=self.figure.canvas.font().pointSize())
 
         # Setup the new axe yaxis position and parameters.
         if where == 'right':
@@ -119,7 +118,6 @@ class TimeSeriesAxes(MplAxes):
 
     def add_timeseries(self, tseries):
         self.tseries_list.append(tseries)
-
         # Plot the data of the timeseries and init selected data artist.
         self._mpl_artist_handles['data'][tseries.id], = (
             self.plot(tseries.data, color=tseries.color))
