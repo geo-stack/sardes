@@ -378,7 +378,6 @@ class TimeSeriesViewer(QMainWindow):
         """Setup the main toolbar of this time series viewer."""
         # ---- Navigate data.
         toolbar = create_mainwindow_toolbar("TimeSeries toolbar")
-        toolbar.setMovable(False)
         self.addToolBar(toolbar)
 
         self._navig_and_select_buttongroup = SemiExclusiveButtonGroup()
@@ -504,24 +503,39 @@ class TimeSeriesViewer(QMainWindow):
             ylabel=axe_name + ' (\u00B0C)', where='right')
         self.selected_axe_cbox.addItem(axe_name, self.axes['wtemp'])
 
+        self.selected_axe_cbox.setCurrentIndex(0)
         self.axes['wlevel'].set_current()
 
     def set_timeseries(self, tseries_list):
         self.axes['wlevel'].add_timeseries(tseries_list[0])
         self.axes['wtemp'].add_timeseries(tseries_list[1])
 
+        # Setup the main axes.
+        for tseries in tseries_list:
+            action = create_action(
+                self.visible_tseries_button,
+                tseries.name or tseries.id,
+                icon='eye_on',
+                toggled=self._handle_visible_tseries_changed)
+            action.setChecked(True)
+            self.visible_tseries_button.menu().addAction(action)
+
     def _handle_selected_axe_changed(self, index):
         selected_axe = self.selected_axe_cbox.itemData(index)
         if selected_axe:
             selected_axe.set_current()
 
+    def _handle_visible_tseries_changed(self, toggle):
+        for action in self.visible_tseries_button.menu().actions():
+            action.setIcon(get_icon(
+                'eye_on' if action.isChecked() else 'eye_off'))
 
     def show(self):
         """
         Extend Qt show method to center this mainwindow to its parent's
         geometry.
         """
-        self.resize(850, 500)
+        self.resize(1200, 600)
         if self.parent():
             self.setAttribute(Qt.WA_DontShowOnScreen, True)
             super().show()
