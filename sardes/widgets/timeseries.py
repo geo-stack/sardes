@@ -175,14 +175,53 @@ class TimeSeriesAxes(MplAxes):
 
 
 class TimeSeriesFigure(MplFigure):
+    CURRENT_AXE_ZORDER = 200
+    SEC_AXE_ZORDER = 100
+
     def __init__(self, *args, **kargs):
         super().__init__(*args, **kargs)
-        self.set_tight_layout(True)
+        self.set_tight_layout(False)
         self._last_fsize = (self.bbox_inches.width, self.bbox_inches.height)
 
-    # def set_size_inches(self, *args, **kargs):
-    #     super().set_size_inches(*args, **kargs)
-    #     self.tight_layout()
+        self.base_axes = None
+        self.tseries_axes_list = []
+
+    def setup_base_axes(self):
+        self.base_axes = self.add_subplot(1, 1, 1)
+        self.base_axes.set_zorder(0)
+        self.base_axes.set_yticks([])
+        self.base_axes.tick_params(labelsize=self.canvas.font().pointSize(),
+                                   left=False, right=False,
+                                   labelleft=False, labelright=False)
+        self.base_axes.set_visible(False)
+        self.canvas.draw()
+
+    def add_tseries_axes(self, tseries_axes):
+        self.base_axes.set_visible(True)
+        self.tseries_axes_list.append(tseries_axes)
+        self.add_axes(tseries_axes)
+
+    def set_current_tseries_axes(self, current_tseries_axes):
+        for tseries_axes in self.tseries_axes_list:
+            if tseries_axes == current_tseries_axes:
+                self.sca(tseries_axes)
+                tseries_axes.set_zorder(self.CURRENT_AXE_ZORDER)
+            else:
+                tseries_axes.set_zorder(self.SEC_AXE_ZORDER)
+            tseries_axes.set_navigate(tseries_axes == current_tseries_axes)
+            tseries_axes._draw_selected_data()
+
+    def set_size_inches(self, *args, **kargs):
+        super().set_size_inches(*args, **kargs)
+        self.tight_layout()
+
+    def clear_selected_data(self):
+        "Clear the selected data for the currently selected axe."
+        current_axe = self.gca()
+        try:
+            current_axe.clear_selected_data()
+        except AttributeError:
+            pass
 
     # def set_axe_margins_inches(left, right, top, bottom):
     #     pass
@@ -201,7 +240,7 @@ class TimeSeriesFigure(MplFigure):
 
             left_margin = 1 / fwidth
             right_margin = 1 / fwidth
-            bottom_margin = 0.75 / fheight
+            bottom_margin = 0.5 / fheight
             top_margin = 0.2 / fheight
 
             x0 = left_margin
@@ -217,16 +256,9 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
 
     def __init__(self, figure):
         super().__init__(figure)
-        self._timeseries = {}
-        self._rect_selectors = {}
-        self._hspan_selectors = {}
-        self._vspan_selectors = {}
-        self._mpl_artist_handles = {
-            'data': {},
-            'selected_data': {}}
+        figure.setup_base_axes()
 
         self.waterlevels = None
-        self.draw()
 
         # Setup a matplotlib navigation toolbar, but hide it.
         toolbar = NavigationToolbar2QT(self, self)
@@ -247,75 +279,11 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
         default_filename = default_basename + '.' + default_filetype
         return default_filename
 
-    def add_timeseries(self, timeseries):
-        """
-        Add a new timeseries to plot on the figure of this canvas.
-        """
-        # Setup a new axe to plot this timeseries.
-        if len(self.figure.axes) == 0:
-            axe = self.figure.add_subplot(1, 1, 1)
-        else:
-            axe = self.figure.axes[0].twinx()
-        axe.patch.set_visible(False)
-        self.figure.tight_layout(force=True)
-
-        # Plot the data of the timeseries and init selected data artist.
-        self._mpl_artist_handles['data'][axe], = (
-            axe.plot(timeseries.data))
-        self._mpl_artist_handles['selected_data'][axe], = (
-            axe.plot(timeseries.get_selected_data(), '.', color='orange'))
-
-        # Setup a new data rectangular selector for this timeseries.
-        rect_selector = RectangleSelector(
-            axe,
-            self._handle_drag_select_data,
-            drawtype='box',
-            useblit=True,
-            button=[1],
-            spancoords='data',
-            interactive=False,
-            rectprops=dict(facecolor='red',
-                           edgecolor='black',
-                           alpha=0.2,
-                           fill=True,
-                           linestyle=':')
-            )
-        rect_selector.set_active(False)
-
-        # Setup a new data horizontal span selector for this timeseries.
-        hspan_selector = SpanSelector(
-            axe,
-            self._handle_hspan_select_data,
-            'horizontal',
-            useblit=True,
-            rectprops=dict(alpha=0.2,
-                           facecolor='red',
-                           edgecolor='black',
-                           linestyle=':')
-            )
-        hspan_selector.set_active(False)
-
-        # Setup a new data vertical span selector for this timeseries.
-        vspan_selector = SpanSelector(
-            axe,
-            self._handle_vspan_select_data,
-            'vertical',
-            useblit=True,
-            rectprops=dict(alpha=0.2,
-                           facecolor='red',
-                           edgecolor='black',
-                           linestyle=':')
-            )
-        vspan_selector.set_active(False)
-
-        self.figure.sca(axe)
-        self._timeseries[axe] = timeseries
-        self._rect_selectors[axe] = rect_selector
-        self._hspan_selectors[axe] = hspan_selector
-        self._vspan_selectors[axe] = vspan_selector
-
-    def add_waterlevels(self, waterlevels):
-        self.add_timeseries(waterlevels)
+    def create_axe(self, ylabel='', where='left'):
+        # Create the new axe from the base axe so that they share the same
+        # xaxis.
+        axe = TimeSeriesAxes(self.figure, ylabel, where)
+        return axe
 
     # ---- Navigation and Selection tools
     def home(self):
@@ -344,67 +312,31 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
 
     def drag_select_data(self, toggle):
         """Toggle data mouse drag selection over a rectangle region."""
-        if len(self.figure.axes):
-            self._rect_selectors[self.figure.gca()].set_active(toggle)
+        for axe in self.figure.tseries_axes_list:
+            axe.rect_selector.set_active(toggle)
 
     def hspan_select_data(self, toggle):
         """Toggle data mouse drag selection over an horizontal span."""
-        if len(self.figure.axes):
-            self._hspan_selectors[self.figure.gca()].set_active(toggle)
+        for axe in self.figure.tseries_axes_list:
+            axe.hspan_selector.set_active(toggle)
 
     def vspan_select_data(self, toggle):
         """Toggle data mouse drag selection over a vertical span."""
-        if len(self.figure.axes):
-            self._vspan_selectors[self.figure.gca()].set_active(toggle)
+        for axe in self.figure.tseries_axes_list:
+            axe.vspan_selector.set_active(toggle)
 
-    def clear_selected_data(self):
-        "Clear the selected data for all registered timeseries."
-        for axe in self.figure.axes:
-            self._timeseries[axe].clear_selected_data()
-        self._draw_selected_data()
 
-    # ---- Handlers
-    def _handle_drag_select_data(self, eclick, erelease):
+class ChecklistMenu(QMenu):
+
+    def mouseReleaseEvent(self, event):
         """
-        Handle when a rectangular area to select data has been selected.
+        Override Qt method to prevent menu from closing when an action
+        is toggled.
         """
-        current_axe = self.figure.gca()
-        xmin, xmax, ymin, ymax = self._rect_selectors[current_axe].extents
-
-        timeseries = self._timeseries[current_axe]
-        timeseries.select_data(xrange=(num2date(xmin), num2date(xmax)),
-                               yrange=(ymin, ymax))
-
-        self._draw_selected_data()
-
-    def _handle_hspan_select_data(self, xmin, xmax):
-        current_axe = self.figure.gca()
-        timeseries = self._timeseries[current_axe]
-        timeseries.select_data(xrange=(num2date(xmin), num2date(xmax)))
-
-        self._draw_selected_data()
-
-    def _handle_vspan_select_data(self, ymin, ymax):
-        current_axe = self.figure.gca()
-        timeseries = self._timeseries[current_axe]
-        timeseries.select_data(yrange=(ymin, ymax))
-
-        self._draw_selected_data()
-
-    # ---- Drawing methods
-    def _draw_selected_data(self):
-        current_axe = self.figure.gca()
-        selected_data = self._timeseries[current_axe].get_selected_data()
-
-        # Hide the selected data artist for all axes but the current one.
-        for axe in self.figure.axes:
-            self._mpl_artist_handles['selected_data'][axe].set_visible(
-                axe == axe)
-
-        # Update the selected data plot for the current axe.
-        self._mpl_artist_handles['selected_data'][current_axe].set_data(
-            selected_data.index.values, selected_data.values)
-        self.draw()
+        action = self.activeAction()
+        if action:
+            action.setChecked(not action.isChecked())
+        event.accept()
 
 
 class SemiExclusiveButtonGroup(object):
