@@ -367,9 +367,12 @@ class TimeSeriesViewer(QMainWindow):
 
         self.figure = TimeSeriesFigure(facecolor='white')
         self.canvas = TimeSeriesCanvas(self.figure)
+        self.timeseries = []
+        self.axes = {}
 
         self.setCentralWidget(self.canvas)
         self._setup_toolbar()
+        self._setup_axes()
 
     def _setup_toolbar(self):
         """Setup the main toolbar of this time series viewer."""
@@ -451,7 +454,7 @@ class TimeSeriesViewer(QMainWindow):
             self, icon='clear_selected_data',
             text=_("Clear"),
             tip=_('Clear all selected data'),
-            triggered=self.canvas.clear_selected_data,
+            triggered=self.canvas.figure.clear_selected_data,
             iconsize=get_iconsize())
         toolbar.addWidget(self.clear_selected_data_button)
 
@@ -467,9 +470,51 @@ class TimeSeriesViewer(QMainWindow):
             iconsize=get_iconsize())
         toolbar.addWidget(self.save_figure_button)
 
-    def add_waterlevels(self, waterlevels):
-        self.canvas.add_waterlevels(waterlevels)
-        self.canvas.draw()
+        # ---- Timeseries selection.
+        axis_toolbar = create_mainwindow_toolbar("Axis toolbar")
+        axis_toolbar.layout().setSpacing(3)
+        self.addToolBarBreak(Qt.TopToolBarArea)
+        self.addToolBar(axis_toolbar)
+
+        self.selected_axe_cbox = QComboBox()
+        self.selected_axe_cbox.currentIndexChanged.connect(
+            self._handle_selected_axe_changed)
+        axis_toolbar.addWidget(self.selected_axe_cbox)
+
+        self.visible_tseries_button = create_toolbutton(
+            self, icon='checklist',
+            text=_("Tools and options"),
+            tip=_("Open the tools and options menu."),
+            shortcut='Ctrl+Shift+T')
+        self.visible_tseries_button.setStyleSheet(
+            "QToolButton::menu-indicator{image: none;}")
+        self.visible_tseries_button.setPopupMode(
+            self.visible_tseries_button.InstantPopup)
+        self.visible_tseries_button.setMenu(ChecklistMenu())
+        axis_toolbar.addWidget(self.visible_tseries_button)
+
+    def _setup_axes(self):
+        axe_name = _('Water level')
+        self.axes['wlevel'] = self.canvas.create_axe(
+            ylabel=axe_name + ' (m)', where='left')
+        self.selected_axe_cbox.addItem(axe_name, self.axes['wlevel'])
+
+        axe_name = _('Water temperature')
+        self.axes['wtemp'] = self.canvas.create_axe(
+            ylabel=axe_name + ' (\u00B0C)', where='right')
+        self.selected_axe_cbox.addItem(axe_name, self.axes['wtemp'])
+
+        self.axes['wlevel'].set_current()
+
+    def set_timeseries(self, tseries_list):
+        self.axes['wlevel'].add_timeseries(tseries_list[0])
+        self.axes['wtemp'].add_timeseries(tseries_list[1])
+
+    def _handle_selected_axe_changed(self, index):
+        selected_axe = self.selected_axe_cbox.itemData(index)
+        if selected_axe:
+            selected_axe.set_current()
+
 
     def show(self):
         """
