@@ -29,6 +29,9 @@ FA_ICONS = {
     'bug': [
         ('mdi.bug',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'checklist': [
+        ('mdi.format-list-checkbox',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'clear_selected_data': [
         ('mdi.close-box-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
@@ -45,6 +48,12 @@ FA_ICONS = {
                       'color': ICON_COLOR}]}],
     'erase_data': [
         ('mdi.eraser',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'eye_on': [
+        ('mdi.eye',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'eye_off': [
+        ('mdi.eye-off',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'delete_data': [
         ('mdi.delete-forever',),
