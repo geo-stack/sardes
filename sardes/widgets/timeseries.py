@@ -356,7 +356,7 @@ class SemiExclusiveButtonGroup(object):
                     button.setChecked(False)
 
 
-class TimeSeriesViewer(QMainWindow):
+class TimeSeriesPlotViewer(QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -546,7 +546,7 @@ class TimeSeriesViewer(QMainWindow):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
-    viewer = TimeSeriesViewer()
+    viewer = TimeSeriesPlotViewer()
     viewer.show()
 
     sys.exit(app.exec_())
