@@ -11,7 +11,8 @@
 from abc import ABC, abstractmethod
 
 # ---- Third party imports
-import pandas as pd
+from pandas import Series, DataFrame
+
 
 
 class DatabaseAccessorBase(ABC):
@@ -26,6 +27,7 @@ class DatabaseAccessorBase(ABC):
         self._connection = None
         self._connection_error = None
 
+    # ---- Database connection
     @abstractmethod
     def is_connected(self):
         """
@@ -52,6 +54,7 @@ class DatabaseAccessorBase(ABC):
         """
         pass
 
+    # ---- Observation wells
     def get_observation_wells(self):
         """
         Return a pandas DataFrame containing the information related
@@ -106,4 +109,4 @@ class DatabaseAccessorBase(ABC):
             - obs_well_notes: str
                 Any notes related to the observation well.
         """
-        return pd.DataFrame([])
+        return DataFrame([])
