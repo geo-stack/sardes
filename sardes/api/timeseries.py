@@ -27,9 +27,14 @@ class TimeSeries(Mapping):
         A pandas Series with datetime indexes.
     """
 
-    def __init__(self, data, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, data, tseries_id, tseries_name=None,
+                 tseries_units=None, tseries_color=None):
+        super().__init__()
         self._data = data
+        self.name = tseries_name
+        self.id = tseries_id
+        self.units = tseries_units
+        self.color = tseries_color
 
         self._undo_stack = []
         self._selected_data_indexes = DatetimeIndex([])
