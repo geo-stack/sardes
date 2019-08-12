@@ -120,9 +120,10 @@ class TimeSeriesAxes(MplAxes):
         self.tseries_list.append(tseries)
         # Plot the data of the timeseries and init selected data artist.
         self._mpl_artist_handles['data'][tseries.id], = (
-            self.plot(tseries.data, color=tseries.color))
+            self.plot(tseries.data, color=tseries.color, clip_on=True))
         self._mpl_artist_handles['selected_data'][tseries.id], = (
-            self.plot(tseries.get_selected_data(), '.', color='orange'))
+            self.plot(tseries.get_selected_data(), '.', color='orange',
+                      clip_on=True))
 
         self.figure.canvas.draw()
 
@@ -141,7 +142,6 @@ class TimeSeriesAxes(MplAxes):
                 (self._mpl_artist_handles['selected_data'][tseries.id]
                  .set_visible(False))
             else:
-
                 selected_data = tseries.get_selected_data()
                 # Update the selected data plot for the current axe.
                 (self._mpl_artist_handles['selected_data'][tseries.id]
