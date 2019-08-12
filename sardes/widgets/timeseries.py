@@ -138,15 +138,13 @@ class TimeSeriesAxes(MplAxes):
     # ---- Drawing methods
     def _draw_selected_data(self, draw=True):
         for tseries in self.tseries_list:
-            if self.figure.gca() != self:
-                (self._mpl_artist_handles['selected_data'][tseries.id]
-                 .set_visible(False))
-            else:
-                selected_data = tseries.get_selected_data()
+            handle = self._mpl_artist_handles['selected_data'][tseries.id]
+            handle.set_visible(self.figure.gca() == self)
+            if self.figure.gca() == self:
                 # Update the selected data plot for the current axe.
-                (self._mpl_artist_handles['selected_data'][tseries.id]
-                 .set_data(selected_data.index.values, selected_data.values))
-
+                selected_data = tseries.get_selected_data()
+                handle.set_data(selected_data.index.values,
+                                selected_data.values)
         if draw:
             self.figure.canvas.draw()
 
@@ -200,12 +198,12 @@ class TimeSeriesFigure(MplFigure):
         self.add_axes(tseries_axes)
 
     def set_current_tseries_axes(self, current_tseries_axes):
+        self.sca(current_tseries_axes)
         for tseries_axes in self.tseries_axes_list:
-            if tseries_axes == current_tseries_axes:
-                self.sca(tseries_axes)
-                tseries_axes.set_zorder(self.CURRENT_AXE_ZORDER)
-            else:
-                tseries_axes.set_zorder(self.SEC_AXE_ZORDER)
+            tseries_axes.set_zorder(
+                self.CURRENT_AXE_ZORDER if
+                tseries_axes == current_tseries_axes else
+                self.SEC_AXE_ZORDER)
             tseries_axes.set_navigate(tseries_axes == current_tseries_axes)
             tseries_axes._draw_selected_data()
 
@@ -365,12 +363,9 @@ class TimeSeriesPlotViewer(QMainWindow):
 
         self.figure = TimeSeriesFigure(facecolor='white')
         self.canvas = TimeSeriesCanvas(self.figure)
-        self.timeseries = []
-        self.axes = {}
 
         self.setCentralWidget(self.canvas)
         self._setup_toolbar()
-        self._setup_axes()
 
     def _setup_toolbar(self):
         """Setup the main toolbar of this time series viewer."""
@@ -490,33 +485,15 @@ class TimeSeriesPlotViewer(QMainWindow):
         self.visible_tseries_button.setMenu(ChecklistMenu())
         axis_toolbar.addWidget(self.visible_tseries_button)
 
-    def _setup_axes(self):
-        axe_name = _('Water level')
-        self.axes['wlevel'] = self.canvas.create_axe(
-            ylabel=axe_name + ' (m)', where='left')
-        self.selected_axe_cbox.addItem(axe_name, self.axes['wlevel'])
+    def create_axe(self, name, where='left'):
+        axe = self.canvas.create_axe(name, where)
+        self.selected_axe_cbox.addItem(name, axe)
 
-        axe_name = _('Water temperature')
-        self.axes['wtemp'] = self.canvas.create_axe(
-            ylabel=axe_name + ' (\u00B0C)', where='right')
-        self.selected_axe_cbox.addItem(axe_name, self.axes['wtemp'])
-
-        self.selected_axe_cbox.setCurrentIndex(0)
-        self.axes['wlevel'].set_current()
-
-    def set_timeseries(self, tseries_list):
-        self.axes['wlevel'].add_timeseries(tseries_list[0])
-        self.axes['wtemp'].add_timeseries(tseries_list[1])
-
-        # Setup the main axes.
-        for tseries in tseries_list:
-            action = create_action(
-                self.visible_tseries_button,
-                tseries.name or tseries.id,
-                icon='eye_on',
-                toggled=self._handle_visible_tseries_changed)
-            action.setChecked(True)
-            self.visible_tseries_button.menu().addAction(action)
+        # Set last created axe as current.
+        self.selected_axe_cbox.setCurrentIndex(
+            self.selected_axe_cbox.count() - 1)
+        axe.set_current()
+        return axe
 
     def _handle_selected_axe_changed(self, index):
         selected_axe = self.selected_axe_cbox.itemData(index)

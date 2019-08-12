@@ -21,6 +21,7 @@ from qtpy.QtWidgets import QApplication, QHeaderView, QTableView
 # ---- Local imports
 from sardes.config.gui import RED, GREEN
 from sardes.config.locale import _
+from sardes.widgets.timeseries import TimeSeriesPlotViewer
 
 
 class ObsWellTableModel(QAbstractTableModel):
@@ -156,8 +157,27 @@ class ObservationWellTableView(QTableView):
 
     def _handle_double_clicked(self, proxy_index):
         model_index = self.obs_well_proxy_model.mapToSource(proxy_index)
-        print(self.obs_well_table_model.obs_wells.iloc[model_index.row()])
-        print('')
+        obs_well_id = (self.obs_well_table_model.obs_wells
+                        .iloc[model_index.row()]['obs_well_id']
+                        )
+        # self.db_connection_manager.get_waterlevels_for_obs_well(
+        #     obs_well_id, self._show_waterlevels)
+        tseries_ids = self.db_connection_manager.get_timeseries_ids()
+        self.db_connection_manager.get_timeseries_for_obs_well(
+            obs_well_id, tseries_ids, self._show_timeseries)
+
+    def _show_timeseries(self, tseries_list):
+        viewer = TimeSeriesPlotViewer(self)
+
+        # Setup the water level axe.
+        axe = viewer.create_axe(_('Water level (m)'), 'left')
+        axe.add_timeseries(tseries_list[0])
+
+        # Setup the water temperature axe.
+        axe = viewer.create_axe(_('Water temperature (\u00B0C)'), 'right')
+        axe.add_timeseries(tseries_list[1])
+
+        viewer.show()
 
 
 if __name__ == '__main__':
