@@ -17,9 +17,11 @@ from matplotlib.figure import Figure as MplFigure
 from matplotlib.axes import Axes as MplAxes
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from matplotlib.dates import num2date
-from qtpy.QtCore import Qt, Slot
-from qtpy.QtWidgets import (QAbstractButton, QApplication, QComboBox,
-                            QMainWindow, QMenu, QRadioButton)
+from qtpy.QtCore import Qt, QEvent, QSize, Slot
+from qtpy.QtGui import QIcon
+from qtpy.QtWidgets import (
+    QAbstractButton, QActionGroup, QApplication, QMainWindow, QMenu,
+    QSizePolicy, QStyle, QStyleOptionToolButton, QStylePainter, QToolButton)
 
 # ---- Local imports
 from sardes.config.locale import _
