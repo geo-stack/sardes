@@ -407,15 +407,31 @@ class SemiExclusiveButtonGroup(object):
     def __init__(self):
         super().__init__()
         self.buttons = []
+        self._last_toggled_button = None
+        self._is_enabled = True
 
     def add_button(self, button):
         self.buttons.append(button)
         button.toggled.connect(
             lambda checked: self._handle_button_toggled(button, checked))
 
+    def set_enabled(self, state):
+        self._is_enabled = state
+        for button in self.buttons:
+            button.setEnabled(state)
+
+    def toggle_off(self):
+        for button in self.buttons:
+            button.setChecked(False)
+
+    def restore_last_toggled(self):
+        if self._last_toggled_button is not None and self._is_enabled:
+            self._last_toggled_button.setChecked(True)
+
     @Slot(QAbstractButton, bool)
     def _handle_button_toggled(self, toggled_button, checked):
         if checked is True:
+            self._last_toggled_button = toggled_button
             for button in self.buttons:
                 if button != toggled_button:
                     button.setChecked(False)
