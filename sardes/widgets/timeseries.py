@@ -324,17 +324,82 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
             axe.vspan_selector.set_active(toggle)
 
 
-class ChecklistMenu(QMenu):
+class LeftTextAlignedToolButton(QToolButton):
 
-    def mouseReleaseEvent(self, event):
+    def __init__(self, icon, iconsize, parent=None):
+        super().__init__(parent)
+        self.setIcon(get_icon(icon))
+        self.setIconSize(QSize(iconsize, iconsize))
+        self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+
+        self.setMenu(QMenu(self))
+        self.setPopupMode(self.InstantPopup)
+        self.menu().installEventFilter(self)
+
+        policy = self.sizePolicy()
+        policy.setVerticalPolicy(QSizePolicy.Expanding)
+        self.setSizePolicy(policy)
+
+        self._action_group = QActionGroup(self)
+
+    def eventFilter(self, widget, event):
+        if event.type() == QEvent.MouseButtonRelease and widget == self.menu():
+            clicked_action = widget.actionAt(event.pos())
+            if clicked_action is not None:
+                clicked_action.setChecked(True)
+                self.menu().close()
+                event.accept()
+        return super().eventFilter(widget, event)
+
+    def action_group(self):
+        return self._action_group
+
+    def checked_action(self):
+        return self._action_group.checkedAction()
+
+    def wheelEvent(self, event):
+        checked_action = self.checked_action()
+        actions = self.menu().actions()
+        for index, action in enumerate(actions):
+            if action == checked_action:
+                break
+        if event.angleDelta().y() < 0:
+            index = index - 1 if index > 0 else (len(actions) - 1)
+        else:
+            index = index + 1 if index < (len(actions) - 1) else 0
+        actions[index].setChecked(True)
+        return super().wheelEvent(event)
+
+    def paintEvent(self, event):
         """
-        Override Qt method to prevent menu from closing when an action
-        is toggled.
+        Override Qt method to align the icon and text to the left.
         """
-        action = self.activeAction()
-        if action:
-            action.setChecked(not action.isChecked())
-        event.accept()
+        sp = QStylePainter(self)
+        opt = QStyleOptionToolButton()
+        self.initStyleOption(opt)
+
+        # Draw background.
+        opt.text = ''
+        opt.icon = QIcon()
+        sp.drawComplexControl(QStyle.CC_ToolButton, opt)
+
+        # Draw icon.
+        sp.drawItemPixmap(opt.rect,
+                          Qt.AlignLeft | Qt.AlignVCenter,
+                          self.icon().pixmap(self.iconSize()))
+
+        # # Draw text.
+        # palette = QPalette()
+        # if not self.checked_action().data().get_visible():
+        #     palette.setColor(palette.ButtonText, QColor(200, 200, 200))
+        # self.setPalette(palette)
+
+        opt.rect.translate(self.iconSize().width() + 3, 0)
+        sp.drawItemText(opt.rect,
+                        Qt.AlignLeft | Qt.AlignVCenter,
+                        self.palette(),
+                        True,
+                        self.text())
 
 
 class SemiExclusiveButtonGroup(object):
