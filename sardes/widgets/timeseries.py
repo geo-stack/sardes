@@ -120,13 +120,13 @@ class TimeSeriesAxes(MplAxes):
 
     def add_timeseries(self, tseries):
         self.tseries_list.append(tseries)
+
         # Plot the data of the timeseries and init selected data artist.
         self._mpl_artist_handles['data'][tseries.id], = (
             self.plot(tseries.data, color=tseries.color, clip_on=True))
         self._mpl_artist_handles['selected_data'][tseries.id], = (
             self.plot(tseries.get_selected_data(), '.', color='orange',
                       clip_on=True))
-
         self.figure.canvas.draw()
 
     def set_current(self):
@@ -547,46 +547,70 @@ class TimeSeriesPlotViewer(QMainWindow):
 
         # ---- Timeseries selection.
         axis_toolbar = create_mainwindow_toolbar("Axis toolbar")
-        axis_toolbar.layout().setSpacing(3)
         self.addToolBarBreak(Qt.TopToolBarArea)
         self.addToolBar(axis_toolbar)
 
-        self.selected_axe_cbox = QComboBox()
-        self.selected_axe_cbox.currentIndexChanged.connect(
-            self._handle_selected_axe_changed)
-        axis_toolbar.addWidget(self.selected_axe_cbox)
+        # Axes visibility.
+        self.visible_axes_button = create_toolbutton(
+            self, icon='eye_on',
+            text=_("Toggle axe visibility"),
+            tip=_('Select data by clicking with the mouse and dragging'
+                  ' the cursor vertically over a given span of the data on'
+                  ' the graph.'),
+            toggled=self._handle_axe_visibility_changed,
+            iconsize=get_iconsize())
+        axis_toolbar.addWidget(self.visible_axes_button)
 
-        self.visible_tseries_button = create_toolbutton(
-            self, icon='checklist',
-            text=_("Tools and options"),
-            tip=_("Open the tools and options menu."),
-            shortcut='Ctrl+Shift+T')
-        self.visible_tseries_button.setStyleSheet(
-            "QToolButton::menu-indicator{image: none;}")
-        self.visible_tseries_button.setPopupMode(
-            self.visible_tseries_button.InstantPopup)
-        self.visible_tseries_button.setMenu(ChecklistMenu())
-        axis_toolbar.addWidget(self.visible_tseries_button)
+        # Current axe selection.
+        self.current_axe_button = LeftTextAlignedToolButton(
+            'checklist', get_iconsize(), self)
+        axis_toolbar.addWidget(self.current_axe_button)
 
     def create_axe(self, name, where='left'):
         axe = self.canvas.create_axe(name, where)
-        self.selected_axe_cbox.addItem(name, axe)
 
-        # Set last created axe as current.
-        self.selected_axe_cbox.setCurrentIndex(
-            self.selected_axe_cbox.count() - 1)
-        axe.set_current()
+        # Add axe to selection menu.
+        # Note that checking the action will cause the corresponding axe
+        # to become current.
+        action = create_action(
+            self.current_axe_button.action_group(),
+            name,
+            toggled=self._handle_selected_axe_changed,
+            data=axe)
+        self.current_axe_button.menu().addAction(action)
+        action.setChecked(True)
+
         return axe
 
-    def _handle_selected_axe_changed(self, index):
-        selected_axe = self.selected_axe_cbox.itemData(index)
-        if selected_axe:
+    def _handle_selected_axe_changed(self, toggle):
+        checked_action = self.current_axe_button.checked_action()
+        if checked_action:
+            self.current_axe_button.setText(checked_action.text())
+            selected_axe = checked_action.data()
             selected_axe.set_current()
+            self.visible_axes_button.setChecked(not selected_axe.get_visible())
 
-    def _handle_visible_tseries_changed(self, toggle):
-        for action in self.visible_tseries_button.menu().actions():
-            action.setIcon(get_icon(
-                'eye_on' if action.isChecked() else 'eye_off'))
+    def _handle_axe_visibility_changed(self, toggle):
+        checked_action = self.current_axe_button.checked_action()
+        selected_axe = checked_action.data()
+        selected_axe.set_visible(not toggle)
+        self.visible_axes_button.setIcon(
+            get_icon('eye_on' if not toggle else 'eye_off'))
+
+        # Update the navigation and selection tools state.
+        self._navig_and_select_buttongroup.set_enabled(not toggle)
+        if toggle is True:
+            self._navig_and_select_buttongroup.toggle_off()
+        else:
+            self._navig_and_select_buttongroup.restore_last_toggled()
+        self.canvas.draw()
+        self.current_axe_button.repaint()
+        self._update_selected_axe_cbox_colors()
+
+    def _update_selected_axe_cbox_colors(self):
+        menu = self.current_axe_button.menu()
+        for index, action in enumerate(menu.actions()):
+            action.setEnabled(action.data().get_visible())
 
     def show(self):
         """
