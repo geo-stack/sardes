@@ -31,7 +31,7 @@ FA_ICONS = {
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'checklist': [
         ('mdi.format-list-checkbox',),
-        {'color': ICON_COLOR, 'scale_factor': 1.3}],
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'clear_selected_data': [
         ('mdi.close-box-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
@@ -51,10 +51,10 @@ FA_ICONS = {
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'eye_on': [
         ('mdi.eye',),
-        {'color': ICON_COLOR, 'scale_factor': 1.3}],
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'eye_off': [
         ('mdi.eye-off',),
-        {'color': ICON_COLOR, 'scale_factor': 1.3}],
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'delete_data': [
         ('mdi.delete-forever',),
         {'color': ICON_COLOR, 'scale_factor': 1.4}],
