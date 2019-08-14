@@ -158,8 +158,8 @@ class ObservationWellTableView(QTableView):
     def _handle_double_clicked(self, proxy_index):
         model_index = self.obs_well_proxy_model.mapToSource(proxy_index)
         obs_well_id = (self.obs_well_table_model.obs_wells
-                        .iloc[model_index.row()]['obs_well_id']
-                        )
+                       .iloc[model_index.row()]['obs_well_id']
+                       )
         # self.db_connection_manager.get_waterlevels_for_obs_well(
         #     obs_well_id, self._show_waterlevels)
         tseries_ids = self.db_connection_manager.get_timeseries_ids()
