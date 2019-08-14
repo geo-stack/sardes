@@ -25,6 +25,14 @@ class TimeSeries(Mapping):
     ----------
     data
         A pandas Series with datetime indexes.
+    tseries_id
+        A unique ID used to reference this time series between Sardes GUI and
+        the database accessor.
+    tseries_name
+        A common human readable name used to reference this time series in the
+        GUI and the graphs.
+    tseries_units
+        The units of the data this timeseries is referencing to.
     """
 
     def __init__(self, data, tseries_id, tseries_name=None,
