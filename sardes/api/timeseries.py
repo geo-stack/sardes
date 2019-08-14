@@ -134,9 +134,21 @@ class TimeSeries(Mapping):
         return indexes
 
     def get_selected_data(self):
+        """
+        Get the previously selected data of this timeseries.
+
+        Return a pandas Series containing the data of this timeseries that
+        were previously selected by the user.
+        """
         return self._data.loc[self._selected_data_indexes]
 
     def clear_selected_data(self):
+        """
+        Clear the previously selected data of this timeseries.
+
+        Clear the data of this timeseries that were previously selected
+        by the user.
+        """
         self._selected_data_indexes = DatetimeIndex([])
 
     # ---- Versionning
