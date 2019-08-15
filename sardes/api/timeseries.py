@@ -27,7 +27,7 @@ class TimeSeries(Mapping):
         A pandas Series with datetime indexes.
     tseries_id
         A unique ID used to reference this time series between Sardes GUI and
-        the database accessor.
+        the database by the database accessor.
     tseries_name
         A common human readable name used to reference this time series in the
         GUI and the graphs.
