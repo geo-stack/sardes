@@ -402,7 +402,11 @@ if __name__ == "__main__":
         print(accessor.get_monitored_property_name(monitored_propery))
         print(accessor.get_monitored_property_units(monitored_propery))
 
-    wldata = accessor.get_timeseries_for_obs_well('02000004', 'NIV_EAU')
-    print(wldata)
-
+    from time import time
+    for i in range(5):
+        t1 = time()
+        print(str(i + 1) + '/10', end='')
+        wldata = accessor.get_timeseries_for_obs_well('01370001', 'NIV_EAU')
+        t2 = time()
+        print(": %0.5f sec" % (t2 - t1))
     accessor.close_connection()
