@@ -57,6 +57,21 @@ class DatabaseAccessorBase(ABC):
         pass
 
     # ---- Observation wells
+    @property
+    @abstractmethod
+    def observation_wells(self):
+        """
+        Return the list of observation wells that are saved in the
+        database.
+
+        Returns
+        -------
+        list of str
+            A list of strings corresponding to the name given to the
+            observation wells that are saved in the database.
+        """
+        pass
+
     def get_observation_wells(self):
         """
         Return a pandas DataFrame containing the information related
