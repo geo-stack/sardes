@@ -110,3 +110,48 @@ class DatabaseAccessorBase(ABC):
                 Any notes related to the observation well.
         """
         return DataFrame([])
+
+    # ---- Monitored properties
+    @property
+    @abstractmethod
+    def monitored_properties(self):
+        """
+        Returns the list of properties for which time data is stored in the
+        database.
+
+        Returns
+        -------
+        list of str
+            A list of strings corresponding to the properties for which time
+            data is stored in the database.
+        """
+        pass
+
+    @abstractmethod
+    def get_monitored_property_name(self, monitored_property):
+        """
+        Return the common human readable name for the corresponding
+        monitored property.
+
+        Returns
+        -------
+        str
+            A string corresponding to the common human readable name used to
+            reference this monitored property in the GUI and the graphs.
+        """
+        pass
+
+    @abstractmethod
+    def get_monitored_property_units(self, monitored_property):
+        """
+        Return the units in which the time data for this monitored property
+        are saved in the database.
+
+        Returns
+        -------
+        str
+            A string corresponding to the units in which the time data for
+            this monitored property are saved in the database.
+        """
+        pass
+
