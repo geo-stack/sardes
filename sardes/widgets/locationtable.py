@@ -156,27 +156,34 @@ class ObservationWellTableView(QTableView):
                 self._trigger_obs_well_table_update)
 
     def _handle_double_clicked(self, proxy_index):
+        QApplication.setOverrideCursor(Qt.WaitCursor)
         model_index = self.obs_well_proxy_model.mapToSource(proxy_index)
         obs_well_id = (self.obs_well_table_model.obs_wells
                        .iloc[model_index.row()]['obs_well_id']
                        )
-        # self.db_connection_manager.get_waterlevels_for_obs_well(
-        #     obs_well_id, self._show_waterlevels)
-        tseries_ids = self.db_connection_manager.get_timeseries_ids()
-        self.db_connection_manager.get_timeseries_for_obs_well(
-            obs_well_id, tseries_ids, self._show_timeseries)
 
-    def _show_timeseries(self, tseries_list):
+        # Get the timeseries data for that observation well.
+        self.db_connection_manager.get_timeseries_for_obs_well(
+            obs_well_id, ['NIV_EAU', 'TEMP'], self._show_timeseries)
+
+    def _show_timeseries(self, tseries_dict):
+        """
+        Create and show a timeseries plot viewer to visualize interactively
+        the timeseries data contained in tseries_list.
+        """
         viewer = TimeSeriesPlotViewer(self)
 
         # Setup the water level axe.
         axe = viewer.create_axe(_('Water level (m)'), 'left')
-        axe.add_timeseries(tseries_list[0])
+        for tseries in tseries_dict['NIV_EAU']:
+            axe.add_timeseries(tseries)
 
         # Setup the water temperature axe.
         axe = viewer.create_axe(_('Water temperature (\u00B0C)'), 'right')
-        axe.add_timeseries(tseries_list[1])
+        for tseries in tseries_dict['TEMP']:
+            axe.add_timeseries(tseries)
 
+        QApplication.restoreOverrideCursor()
         viewer.show()
 
 
