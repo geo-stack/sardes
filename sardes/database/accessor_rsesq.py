@@ -389,10 +389,20 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
 
 if __name__ == "__main__":
     from sardes.config.database import get_dbconfig
-    dbconfig = get_dbconfig()
-    accessor = DatabaseAccessorRSESQ(
-        'rsesq', 'rsesq', '((Rsesq2019', '198.73.161.237', 5432)
+
+    dbconfig = get_dbconfig('rsesq_postgresql')
+    accessor = DatabaseAccessorRSESQ(**dbconfig)
 
     accessor.connect()
     obs_wells = accessor.get_observation_wells()
+
+    print(accessor.observation_wells)
+    print(accessor.monitored_properties)
+    for monitored_propery in accessor.monitored_properties:
+        print(accessor.get_monitored_property_name(monitored_propery))
+        print(accessor.get_monitored_property_units(monitored_propery))
+
+    wldata = accessor.get_timeseries_for_obs_well('02000004', 'NIV_EAU')
+    print(wldata)
+
     accessor.close_connection()
