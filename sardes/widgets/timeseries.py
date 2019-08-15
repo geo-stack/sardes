@@ -173,6 +173,7 @@ class TimeSeriesAxes(MplAxes):
 
 
 class TimeSeriesFigure(MplFigure):
+    # https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.figure.Figure.html
     CURRENT_AXE_ZORDER = 200
     SEC_AXE_ZORDER = 100
 
