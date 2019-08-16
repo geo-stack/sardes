@@ -20,25 +20,42 @@ from pandas import Series
 from sardes.api.database_accessor import DatabaseAccessorBase
 from sardes.api.timeseries import TimeSeries
 
+
+# =============================================================================
+# Module variable definition
+# =============================================================================
 OBS_WELLS_COLUMNS = ['obs_well_id', 'common_name', 'municipality',
                      'aquifer_type', 'confinement', 'aquifer_code',
                      'in_recharge_zone', 'is_influenced', 'latitude',
                      'longitude', 'is_station_active', 'obs_well_notes']
+
 OBS_WELLS_DATA = []
 for i in range(5):
+    OBS_WELL_ID = '0'
+    for _ in range(6):
+        OBS_WELL_ID += str(int(np.random.rand(1) * 9))
+    AQUIFER_CODE = int(np.random.rand(1) * 5)
+    AQUIFER_TYPE, AQUIFER_CONFINEMENT = [
+        ('Confined', 'Rock'),
+        ('Confined', 'Sediments'),
+        ('Semi-Confined', 'Rock'),
+        ('Semi-Confined', 'Sediments'),
+        ('Unconfined', 'Rock'),
+        ('Unconfined', 'Sediments')][AQUIFER_CODE]
+
     OBS_WELLS_DATA.append([
-        'obs_well_id #{}'.format(i),
-        'common_name #{}'.format(i),
+        OBS_WELL_ID,
+        'PO{:01d}'.format(i),
         'municipality #{}'.format(i),
-        'aquifer #{}'.format(i),
-        'confinement #{}'.format(i),
-        i,
-        'zone_rechar #{}'.format(i),
-        'influences #{}'.format(i),
+        AQUIFER_TYPE,
+        AQUIFER_CONFINEMENT,
+        AQUIFER_CODE,
+        str(bool(np.floor(np.random.rand(1) * 2))),
+        str(bool(np.floor(np.random.rand(1) * 2))),
         45 + i / 10,
         -75 + i / 10,
-        'station_active #{}'.format(i),
-        'note #{}'.format(i)])
+        str(bool(np.floor(np.random.rand(1) * 2))),
+        'Notes for observation well #{}'.format(OBS_WELL_ID)])
 OBS_WELLS_DF = pd.DataFrame(OBS_WELLS_DATA, columns=OBS_WELLS_COLUMNS)
 
 MONITORED_PROPERTIES = ['COND_ELEC', 'NIV_EAU', 'TEMP']
@@ -47,7 +64,28 @@ MONITORED_PROPERTY_NAMES = {
     'NIV_EAU': "Water level",
     'TEMP': "Water level temperature"}
 
+DATE_RANGE = pd.date_range(start='1/1/2015', end='1/1/2019')
+NYEAR = DATE_RANGE[-1].year - DATE_RANGE[0].year + 1
+YEARLY_RADS = np.linspace(0, 2 * NYEAR * np.pi, len(DATE_RANGE))
 
+TSERIES = {}
+TSERIES_VALUES = 25 * np.sin(YEARLY_RADS) + 5
+TSERIES_VALUES += 3 * np.random.rand(len(TSERIES_VALUES))
+TSERIES['TEMP'] = Series(TSERIES_VALUES, index=DATE_RANGE)
+
+TSERIES_VALUES = np.hstack((np.linspace(100, 95, len(YEARLY_RADS) / 2),
+                            np.linspace(95, 98, len(YEARLY_RADS) / 2)))
+TSERIES_VALUES += 1 * np.sin(YEARLY_RADS)
+TSERIES_VALUES += 2 * np.sin(YEARLY_RADS * 2)
+TSERIES_VALUES += 1 * np.sin(YEARLY_RADS * 4)
+TSERIES_VALUES += 0.5 * np.sin(YEARLY_RADS * 8)
+TSERIES_VALUES += 0.25 * np.random.rand(len(TSERIES_VALUES))
+TSERIES['NIV_EAU'] = Series(TSERIES_VALUES, index=DATE_RANGE)
+
+
+# =============================================================================
+# Database accessor implementation
+# =============================================================================
 class DatabaseAccessorDemo(DatabaseAccessorBase):
     """
     Sardes accessor test and debug class.
@@ -141,27 +179,8 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         containing the data acquired in the observation well for the
         specified monitored property.
         """
-        DATE_RANGE = pd.date_range(start='1/1/2015', end='1/1/2019')
-        NYEAR = DATE_RANGE[-1].year - DATE_RANGE[0].year + 1
-        YEARLY_RADS = np.arange(
-            0, 2 * NYEAR * np.pi, 2 * NYEAR * np.pi / len(DATE_RANGE))
-        if monitored_property == 'TEMP':
-            TSERIES_VALUES = 25 * np.sin(YEARLY_RADS) + 5
-            TSERIES_VALUES += 3 * np.random.rand(len(TSERIES_VALUES))
-        elif monitored_property == 'NIV_EAU':
-            TSERIES_VALUES = np.hstack((
-                np.linspace(100, 95, len(YEARLY_RADS) / 2),
-                np.linspace(95, 98, len(YEARLY_RADS) / 2)))
-            TSERIES_VALUES += 1 * np.sin(YEARLY_RADS)
-            TSERIES_VALUES += 2 * np.sin(YEARLY_RADS * 2)
-            TSERIES_VALUES += 1 * np.sin(YEARLY_RADS * 4)
-            TSERIES_VALUES += 0.5 * np.sin(YEARLY_RADS * 8)
-            TSERIES_VALUES += 0.25 * np.random.rand(len(TSERIES_VALUES))
-        else:
-            TSERIES_VALUES = []
-
         tseries = TimeSeries(
-            Series(TSERIES_VALUES, index=DATE_RANGE),
+            TSERIES[monitored_property],
             tseries_id="CHANNEL_UUID",
             tseries_name=(
                 self.get_monitored_property_name(monitored_property)),
