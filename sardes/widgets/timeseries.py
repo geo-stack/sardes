@@ -555,9 +555,7 @@ class TimeSeriesPlotViewer(QMainWindow):
         self.visible_axes_button = create_toolbutton(
             self, icon='eye_on',
             text=_("Toggle axe visibility"),
-            tip=_('Select data by clicking with the mouse and dragging'
-                  ' the cursor vertically over a given span of the data on'
-                  ' the graph.'),
+            tip=_('Toggle currently selected axe visibility.'),
             toggled=self._handle_axe_visibility_changed,
             iconsize=get_iconsize())
         axis_toolbar.addWidget(self.visible_axes_button)
