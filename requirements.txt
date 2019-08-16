@@ -1,5 +1,6 @@
 appconfigs
 keyring
+matplotlib
 numpy == 1.16.*
 pandas
 psycopg2
