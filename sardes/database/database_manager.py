@@ -100,8 +100,9 @@ class DatabaseConnectionWorker(QObject):
                     self.db_accessor.get_timeseries_for_obs_well(
                         obs_well_id, monitored_property)
                     )
-        except AttributeError:
-            pass
+        except AttributeError as error:
+            print(type(error).__name__, end=': ')
+            print(error)
         return tseries_dict,
 
 
