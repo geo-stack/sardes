@@ -156,6 +156,9 @@ class ObservationWellTableView(QTableView):
                 self._trigger_obs_well_table_update)
 
     def _handle_double_clicked(self, proxy_index):
+        """
+        Handle when a row is double-clicked in the table.
+        """
         QApplication.setOverrideCursor(Qt.WaitCursor)
         model_index = self.obs_well_proxy_model.mapToSource(proxy_index)
         obs_well_id = (self.obs_well_table_model.obs_wells
