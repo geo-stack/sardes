@@ -11,10 +11,10 @@
 import sys
 
 # ---- Third party imports
-from qtpy.QtCore import Qt, QEvent, QSize
+from qtpy.QtCore import Qt, QEvent, QSize, Signal
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
-    QActionGroup, QApplication, QMenu, QSizePolicy, QStyle,
+    QAction, QActionGroup, QApplication, QMenu, QSizePolicy, QStyle,
     QStyleOptionToolButton, QStylePainter, QToolBar, QToolButton)
 
 # ---- Local imports
@@ -28,6 +28,7 @@ class DropdownToolButton(QToolButton):
     A toolbutton with a dropdown menu that acts like a combobox, but keeps the
     style of a toolbutton.
     """
+    sig_checked_action_changed = Signal(QAction)
 
     def __init__(self, icon, iconsize, parent=None):
         super().__init__(parent)
@@ -57,15 +58,14 @@ class DropdownToolButton(QToolButton):
                 event.accept()
         return super().eventFilter(widget, event)
 
-    def create_action(self, name, toggled, data):
+    def create_action(self, name, data):
         """
         Create and add a new action to this button's menu.
         """
         action = create_action(self.action_group(),
                                name,
-                               toggled=toggled,
+                               toggled=self._handle_checked_action_changed,
                                data=data)
-        action.toggled.connect(self._handle_checked_action_changed)
         self.menu().addAction(action)
         action.setChecked(True)
         return action
@@ -106,6 +106,7 @@ class DropdownToolButton(QToolButton):
         if toggle:
             self.setText(self.checked_action().text() if
                          self.checked_action() else '')
+            self.sig_checked_action_changed.emit(self.checked_action())
 
     def paintEvent(self, event):
         """
@@ -139,10 +140,12 @@ if __name__ == '__main__':
 
     button = DropdownToolButton('checklist', get_iconsize())
     for i in range(3):
-        button.create_action(
-            'Action #{}'.format(i),
-            lambda _, i=i: print('Action #{} toggled'.format(i)),
-            'Data of Action #{}'.format(i))
+        button.create_action('Action #{}'.format(i),
+                             'Data of Action #{}'.format(i))
+
+    button.sig_checked_action_changed.connect(
+        lambda action: print('{} toggled'.format(action.text()))
+        )
 
     toolbar = QToolBar()
     toolbar.addWidget(button)

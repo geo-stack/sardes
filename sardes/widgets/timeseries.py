@@ -18,15 +18,14 @@ from matplotlib.axes import Axes as MplAxes
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from matplotlib.dates import num2date
 from qtpy.QtCore import Qt, Slot
-from qtpy.QtWidgets import QAbstractButton, QApplication, QMainWindow
+from qtpy.QtWidgets import QAction, QAbstractButton, QApplication, QMainWindow
 
 # ---- Local imports
 from sardes.config.locale import _
 from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
 from sardes.utils.qthelpers import (
-    center_widget_to_another, create_mainwindow_toolbar, create_toolbutton,
-    create_action)
+    center_widget_to_another, create_mainwindow_toolbar, create_toolbutton)
 from sardes.widgets.buttons import DropdownToolButton
 
 
@@ -483,25 +482,26 @@ class TimeSeriesPlotViewer(QMainWindow):
         # Current axe selection.
         self.current_axe_button = DropdownToolButton(
             'checklist', get_iconsize(), self)
+        self.current_axe_button.sig_checked_action_changed.connect(
+            self._handle_selected_axe_changed)
         axis_toolbar.addWidget(self.current_axe_button)
 
     def create_axe(self, name, where='left'):
         axe = self.canvas.create_axe(name, where)
 
         # Add axe to selection menu.
-        # Note that the corresponding axe will become current.
-        self.current_axe_button.create_action(
-            name,
-            toggled=self._handle_selected_axe_changed,
-            data=axe)
+        # Note that this will make the corresponding axe to become current.
+        self.current_axe_button.create_action(name, data=axe)
         return axe
 
-    def _handle_selected_axe_changed(self, toggle):
-        checked_action = self.current_axe_button.checked_action()
-        if checked_action:
-            selected_axe = checked_action.data()
-            selected_axe.set_current()
-            self.visible_axes_button.setChecked(not selected_axe.get_visible())
+    @Slot(QAction)
+    def _handle_selected_axe_changed(self, checked_action):
+        """
+        Handle when the current axe is changed by the user.
+        """
+        selected_axe = checked_action.data()
+        selected_axe.set_current()
+        self.visible_axes_button.setChecked(not selected_axe.get_visible())
 
     def _handle_axe_visibility_changed(self, toggle):
         checked_action = self.current_axe_button.checked_action()
@@ -518,9 +518,9 @@ class TimeSeriesPlotViewer(QMainWindow):
             self._navig_and_select_buttongroup.restore_last_toggled()
         self.canvas.draw()
         self.current_axe_button.repaint()
-        self._update_selected_axe_cbox_colors()
+        self._update_selected_axe_cbox_state()
 
-    def _update_selected_axe_cbox_colors(self):
+    def _update_selected_axe_cbox_state(self):
         menu = self.current_axe_button.menu()
         for index, action in enumerate(menu.actions()):
             action.setEnabled(action.data().get_visible())
