@@ -73,8 +73,8 @@ TSERIES_VALUES = 25 * np.sin(YEARLY_RADS) + 5
 TSERIES_VALUES += 3 * np.random.rand(len(TSERIES_VALUES))
 TSERIES['TEMP'] = Series(TSERIES_VALUES, index=DATE_RANGE)
 
-TSERIES_VALUES = np.hstack((np.linspace(100, 95, len(YEARLY_RADS) / 2),
-                            np.linspace(95, 98, len(YEARLY_RADS) / 2)))
+TSERIES_VALUES = np.hstack((np.linspace(100, 95, len(YEARLY_RADS) // 2),
+                            np.linspace(95, 98, len(YEARLY_RADS) // 2)))
 TSERIES_VALUES += 1 * np.sin(YEARLY_RADS)
 TSERIES_VALUES += 2 * np.sin(YEARLY_RADS * 2)
 TSERIES_VALUES += 1 * np.sin(YEARLY_RADS * 4)
