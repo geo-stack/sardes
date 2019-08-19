@@ -17,11 +17,8 @@ from matplotlib.figure import Figure as MplFigure
 from matplotlib.axes import Axes as MplAxes
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from matplotlib.dates import num2date
-from qtpy.QtCore import Qt, QEvent, QSize, Slot
-from qtpy.QtGui import QIcon
-from qtpy.QtWidgets import (
-    QAbstractButton, QActionGroup, QApplication, QMainWindow, QMenu,
-    QSizePolicy, QStyle, QStyleOptionToolButton, QStylePainter, QToolButton)
+from qtpy.QtCore import Qt, Slot
+from qtpy.QtWidgets import QAbstractButton, QApplication, QMainWindow
 
 # ---- Local imports
 from sardes.config.locale import _
@@ -30,6 +27,7 @@ from sardes.config.gui import get_iconsize
 from sardes.utils.qthelpers import (
     center_widget_to_another, create_mainwindow_toolbar, create_toolbutton,
     create_action)
+from sardes.widgets.buttons import DropdownToolButton
 
 
 class TimeSeriesAxes(MplAxes):
@@ -325,84 +323,6 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
             axe.vspan_selector.set_active(toggle)
 
 
-class LeftTextAlignedToolButton(QToolButton):
-
-    def __init__(self, icon, iconsize, parent=None):
-        super().__init__(parent)
-        self.setIcon(get_icon(icon))
-        self.setIconSize(QSize(iconsize, iconsize))
-        self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-
-        self.setMenu(QMenu(self))
-        self.setPopupMode(self.InstantPopup)
-        self.menu().installEventFilter(self)
-
-        policy = self.sizePolicy()
-        policy.setVerticalPolicy(QSizePolicy.Expanding)
-        self.setSizePolicy(policy)
-
-        self._action_group = QActionGroup(self)
-
-    def eventFilter(self, widget, event):
-        if event.type() == QEvent.MouseButtonRelease and widget == self.menu():
-            clicked_action = widget.actionAt(event.pos())
-            if clicked_action is not None:
-                clicked_action.setChecked(True)
-                self.menu().close()
-                event.accept()
-        return super().eventFilter(widget, event)
-
-    def action_group(self):
-        return self._action_group
-
-    def checked_action(self):
-        return self._action_group.checkedAction()
-
-    def wheelEvent(self, event):
-        checked_action = self.checked_action()
-        actions = self.menu().actions()
-        for index, action in enumerate(actions):
-            if action == checked_action:
-                break
-        if event.angleDelta().y() < 0:
-            index = index - 1 if index > 0 else (len(actions) - 1)
-        else:
-            index = index + 1 if index < (len(actions) - 1) else 0
-        actions[index].setChecked(True)
-        return super().wheelEvent(event)
-
-    def paintEvent(self, event):
-        """
-        Override Qt method to align the icon and text to the left.
-        """
-        sp = QStylePainter(self)
-        opt = QStyleOptionToolButton()
-        self.initStyleOption(opt)
-
-        # Draw background.
-        opt.text = ''
-        opt.icon = QIcon()
-        sp.drawComplexControl(QStyle.CC_ToolButton, opt)
-
-        # Draw icon.
-        sp.drawItemPixmap(opt.rect,
-                          Qt.AlignLeft | Qt.AlignVCenter,
-                          self.icon().pixmap(self.iconSize()))
-
-        # # Draw text.
-        # palette = QPalette()
-        # if not self.checked_action().data().get_visible():
-        #     palette.setColor(palette.ButtonText, QColor(200, 200, 200))
-        # self.setPalette(palette)
-
-        opt.rect.translate(self.iconSize().width() + 3, 0)
-        sp.drawItemText(opt.rect,
-                        Qt.AlignLeft | Qt.AlignVCenter,
-                        self.palette(),
-                        True,
-                        self.text())
-
-
 class SemiExclusiveButtonGroup(object):
 
     def __init__(self):
@@ -561,7 +481,7 @@ class TimeSeriesPlotViewer(QMainWindow):
         axis_toolbar.addWidget(self.visible_axes_button)
 
         # Current axe selection.
-        self.current_axe_button = LeftTextAlignedToolButton(
+        self.current_axe_button = DropdownToolButton(
             'checklist', get_iconsize(), self)
         axis_toolbar.addWidget(self.current_axe_button)
 
@@ -569,22 +489,16 @@ class TimeSeriesPlotViewer(QMainWindow):
         axe = self.canvas.create_axe(name, where)
 
         # Add axe to selection menu.
-        # Note that checking the action will cause the corresponding axe
-        # to become current.
-        action = create_action(
-            self.current_axe_button.action_group(),
+        # Note that the corresponding axe will become current.
+        self.current_axe_button.create_action(
             name,
             toggled=self._handle_selected_axe_changed,
             data=axe)
-        self.current_axe_button.menu().addAction(action)
-        action.setChecked(True)
-
         return axe
 
     def _handle_selected_axe_changed(self, toggle):
         checked_action = self.current_axe_button.checked_action()
         if checked_action:
-            self.current_axe_button.setText(checked_action.text())
             selected_axe = checked_action.data()
             selected_axe.set_current()
             self.visible_axes_button.setChecked(not selected_axe.get_visible())
