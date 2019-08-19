@@ -81,6 +81,10 @@ def test_dropdown_button_mousewheel(dropdownbutton, qtbot):
 
 
 def test_mouseclick_disabled_action(dropdownbutton, qtbot):
+    """
+    Test that clicking on a disabled action with the mouse make this action
+    the new currently checked action.
+    """
     # Disable the second action of the menu.
     actions_index = 1
     assert actions_index != len(ACTIONS) - 1
