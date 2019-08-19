@@ -13,19 +13,18 @@ Tests for the ObservationWellTableView.
 
 # ---- Standard imports
 import os.path as osp
-from unittest.mock import Mock
 
 # ---- Third party imports
 import pytest
 from qtpy.QtGui import QWheelEvent
-from qtpy.QtCore import Qt, QEvent, QSize, QPoint, QPointF
+from qtpy.QtCore import Qt, QSize, QPoint, QPointF
 
 # ---- Local imports
-from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
 from sardes.widgets.buttons import DropdownToolButton
 
 ACTIONS = ['Action #{}'.format(i) for i in range(3)]
+ACTION_STATES = [True, False, False]
 
 
 # =============================================================================
@@ -34,8 +33,9 @@ ACTIONS = ['Action #{}'.format(i) for i in range(3)]
 @pytest.fixture
 def dropdownbutton(qtbot):
     button = DropdownToolButton('checklist', get_iconsize())
-    for action in ACTIONS:
-        button.create_action(action, 'Data of {}'.format(action))
+    for action, state in zip(ACTIONS, ACTION_STATES):
+        action = button.create_action(action, 'Data of {}'.format(action))
+        action.setEnabled(state)
     qtbot.addWidget(button)
     button.show()
     return button
