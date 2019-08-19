@@ -14,8 +14,10 @@ from qtpy.QtWidgets import QApplication
 # ---- Local imports
 from sardes.api.plugins import SardesPlugin
 from sardes.api.panes import SardesPaneWidget
+from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
 from sardes.widgets.locationtable import ObservationWellTableView
+from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
 
 """Observation well explorer plugin"""
@@ -43,12 +45,30 @@ class ObsWellsExplorer(SardesPlugin):
         pane_widget = SardesPaneWidget(parent=self.main)
         pane_widget.set_central_widget(self.obs_well_tableview)
 
+        upper_toolbar = pane_widget.get_upper_toolbar()
+
+        show_plot_button = create_toolbutton(
+            pane_widget,
+            icon='show_plot',
+            text=_("Show data"),
+            tip=_('Show the data of the timeseries acquired in the currently '
+                  'selected observation well in an interactive '
+                  'plot viewer.'),
+            shortcut='Ctrl+P',
+            triggered=lambda _: self._handle_table_double_clicked(),
+            iconsize=get_iconsize()
+            )
+        upper_toolbar.addWidget(show_plot_button)
+
         return pane_widget
 
-    def _handle_table_double_clicked(self, proxy_index):
+    def _handle_table_double_clicked(self, *args, **kargs):
         """
         Handle when a row is double-clicked in the table.
         """
+        proxy_index = (
+            self.obs_well_tableview.selectionModel().selectedIndexes()[0])
+
         QApplication.setOverrideCursor(Qt.WaitCursor)
         model_index = (self.obs_well_tableview
                        .obs_well_proxy_model

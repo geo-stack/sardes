@@ -120,6 +120,9 @@ FA_ICONS = {
     'save': [
         ('fa.save',),
         {'color': ICON_COLOR}],
+    'show_plot': [
+        ('mdi.chart-line',),
+        {'color': ICON_COLOR}],
     'succes': [
         ('mdi.check-circle-outline',),
         {'color': GREEN, 'scale_factor': 1.3}],
