@@ -84,16 +84,11 @@ class ObsWellTableModel(QAbstractTableModel):
 
         if role == Qt.DisplayRole:
             if column is None:
-                return ''
-                return (_('Yes') if
-                        self.obs_wells.iloc[row, column] == 'True'
-                        else _('No'))
+                value = ''
             else:
                 value = self.obs_wells.iloc[row, column]
-                if pd.isna(value):
-                    return ''
-                else:
-                    return str(value)
+                value = '' if pd.isna(value) else value
+            return str(value)
         elif role == Qt.ForegroundRole:
             if column_key == 'is_station_active' and column is not None:
                 color = (GREEN if

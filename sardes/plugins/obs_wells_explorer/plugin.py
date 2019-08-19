@@ -78,6 +78,7 @@ class ObsWellsExplorer(SardesPlugin):
                        .iloc[model_index.row()]['obs_well_id'])
         return obs_well_id
 
+    # ---- Timeseries
     def _handle_table_double_clicked(self, *args, **kargs):
         """
         Handle when a row is double-clicked in the table.
