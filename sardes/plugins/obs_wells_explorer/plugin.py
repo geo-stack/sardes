@@ -62,24 +62,32 @@ class ObsWellsExplorer(SardesPlugin):
 
         return pane_widget
 
-    def _handle_table_double_clicked(self, *args, **kargs):
+    def get_current_obs_well(self):
         """
-        Handle when a row is double-clicked in the table.
+        Return the observation well id relative to the currently selected
+        row in the table.
         """
-        proxy_index = (
-            self.obs_well_tableview.selectionModel().selectedIndexes()[0])
-
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        proxy_index = (self.obs_well_tableview
+                       .selectionModel()
+                       .selectedIndexes()[0])
         model_index = (self.obs_well_tableview
                        .obs_well_proxy_model
                        .mapToSource(proxy_index))
         obs_well_id = (self.obs_well_tableview
                        .obs_well_table_model.obs_wells
                        .iloc[model_index.row()]['obs_well_id'])
+        return obs_well_id
 
+    def _handle_table_double_clicked(self, *args, **kargs):
+        """
+        Handle when a row is double-clicked in the table.
+        """
+        QApplication.setOverrideCursor(Qt.WaitCursor)
         # Get the timeseries data for that observation well.
         self.main.db_connection_manager.get_timeseries_for_obs_well(
-            obs_well_id, ['NIV_EAU', 'TEMP'], self._show_timeseries)
+            self.get_current_obs_well(),
+            ['NIV_EAU', 'TEMP'],
+            self._show_timeseries)
 
     def _show_timeseries(self, tseries_dict):
         """
@@ -87,6 +95,10 @@ class ObsWellsExplorer(SardesPlugin):
         the timeseries data contained in tseries_list.
         """
         viewer = TimeSeriesPlotViewer(self.obs_well_tableview)
+
+        # Set the title of the window.
+        viewer.setWindowTitle(_("Observation well {}")
+                              .format(self.get_current_obs_well()))
 
         # Setup the water level axe.
         axe = viewer.create_axe(_('Water level (m)'), 'left')
