@@ -24,7 +24,6 @@ from sardes.config.gui import get_iconsize
 from sardes.widgets.buttons import DropdownToolButton
 
 ACTIONS = ['Action #{}'.format(i) for i in range(3)]
-ACTION_STATES = [True, False, False]
 
 
 # =============================================================================
@@ -33,9 +32,8 @@ ACTION_STATES = [True, False, False]
 @pytest.fixture
 def dropdownbutton(qtbot):
     button = DropdownToolButton('checklist', get_iconsize())
-    for action, state in zip(ACTIONS, ACTION_STATES):
+    for action in ACTIONS:
         action = button.create_action(action, 'Data of {}'.format(action))
-        action.setEnabled(state)
     qtbot.addWidget(button)
     button.show()
     return button
@@ -80,6 +78,29 @@ def test_dropdown_button_mousewheel(dropdownbutton, qtbot):
         actions_index = (
             (len(ACTIONS) - 1) if actions_index < 0 else actions_index)
         assert dropdownbutton.checked_action().text() == ACTIONS[actions_index]
+
+
+def test_mouseclick_disabled_action(dropdownbutton, qtbot):
+    # Disable the second action of the menu.
+    actions_index = 1
+    assert actions_index != len(ACTIONS) - 1
+
+    # Assert the checked action is still the last action added to the menu.
+    dropdownbutton.menu().actions()[actions_index].setEnabled(False)
+    assert dropdownbutton.checked_action().text() == ACTIONS[len(ACTIONS) - 1]
+
+    # Click on the action that was just disabled and assert that this action
+    # becomes the checked action afterwards.
+    menu = dropdownbutton.menu()
+    menu.show()
+
+    action = menu.actions()[actions_index]
+    with qtbot.waitSignal(dropdownbutton.sig_checked_action_changed):
+        qtbot.mouseClick(
+            menu,
+            Qt.LeftButton,
+            pos=menu.actionGeometry(action).center())
+    assert dropdownbutton.checked_action().text() == ACTIONS[actions_index]
 
 
 if __name__ == "__main__":
