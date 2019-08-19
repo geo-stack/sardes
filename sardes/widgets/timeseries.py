@@ -30,6 +30,10 @@ from sardes.widgets.buttons import DropdownToolButton
 
 
 class TimeSeriesAxes(MplAxes):
+    """
+    A matplotlib Axes object where one or more timeseries of the same
+    quantity can be plotted at the same time.
+    """
     # https://matplotlib.org/3.1.1/api/axes_api.html
 
     def __init__(self, tseries_figure, ylabel=None, where='left'):
