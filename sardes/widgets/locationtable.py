@@ -21,7 +21,6 @@ from qtpy.QtWidgets import QApplication, QHeaderView, QTableView
 # ---- Local imports
 from sardes.config.gui import RED, GREEN
 from sardes.config.locale import _
-from sardes.widgets.timeseries import TimeSeriesPlotViewer
 
 
 class ObsWellTableModel(QAbstractTableModel):
@@ -137,8 +136,6 @@ class ObservationWellTableView(QTableView):
         self.horizontalHeader().setSectionResizeMode(
             self.obs_well_table_model.columnCount() - 1, QHeaderView.Stretch)
 
-        self.doubleClicked.connect(self._handle_double_clicked)
-
     @Slot(bool)
     def _trigger_obs_well_table_update(self, connection_state):
         """
@@ -154,40 +151,6 @@ class ObservationWellTableView(QTableView):
         if db_connection_manager is not None:
             self.db_connection_manager.sig_database_connection_changed.connect(
                 self._trigger_obs_well_table_update)
-
-    def _handle_double_clicked(self, proxy_index):
-        """
-        Handle when a row is double-clicked in the table.
-        """
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        model_index = self.obs_well_proxy_model.mapToSource(proxy_index)
-        obs_well_id = (self.obs_well_table_model.obs_wells
-                       .iloc[model_index.row()]['obs_well_id']
-                       )
-
-        # Get the timeseries data for that observation well.
-        self.db_connection_manager.get_timeseries_for_obs_well(
-            obs_well_id, ['NIV_EAU', 'TEMP'], self._show_timeseries)
-
-    def _show_timeseries(self, tseries_dict):
-        """
-        Create and show a timeseries plot viewer to visualize interactively
-        the timeseries data contained in tseries_list.
-        """
-        viewer = TimeSeriesPlotViewer(self)
-
-        # Setup the water level axe.
-        axe = viewer.create_axe(_('Water level (m)'), 'left')
-        for tseries in tseries_dict['NIV_EAU']:
-            axe.add_timeseries(tseries)
-
-        # Setup the water temperature axe.
-        axe = viewer.create_axe(_('Water temperature (\u00B0C)'), 'right')
-        for tseries in tseries_dict['TEMP']:
-            axe.add_timeseries(tseries)
-
-        QApplication.restoreOverrideCursor()
-        viewer.show()
 
 
 if __name__ == '__main__':
