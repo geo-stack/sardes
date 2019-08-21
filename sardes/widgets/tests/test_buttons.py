@@ -187,5 +187,23 @@ def test_semiexclusive_buttongroup_utils(semiexclusive_buttongroup, qtbot):
             semiexclusive_buttongroup.buttons[0])
 
 
+def test_semiexclusive_buttongroup_enabled(semiexclusive_buttongroup, qtbot):
+    """
+    Test that the utility method `set_enable` of the semi-exclusive button
+    group works as expected.
+    """
+    assert semiexclusive_buttongroup._is_enabled
+    for button in semiexclusive_buttongroup.buttons:
+        assert button.isEnabled()
+
+    # Disable and enable consecutively the buttons of the semi-exclusive
+    # button group.
+    for state in [False, True]:
+        semiexclusive_buttongroup.set_enabled(state)
+        assert semiexclusive_buttongroup._is_enabled is state
+        for button in semiexclusive_buttongroup.buttons:
+            assert button.isEnabled() is state
+
+
 if __name__ == "__main__":
     pytest.main(['-x', osp.basename(__file__), '-v', '-rw', '-s'])
