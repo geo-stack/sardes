@@ -63,6 +63,10 @@ MONITORED_PROPERTY_NAMES = {
     'COND_ELEC': "Water electrical conductivity",
     'NIV_EAU': "Water level",
     'TEMP': "Water level temperature"}
+MONITORED_PROPERTY_UNITS = {
+    'COND_ELEC': "",
+    'NIV_EAU': "m",
+    'TEMP': "\u00B0C"}
 
 DATE_RANGE = pd.date_range(start='1/1/2015', end='1/1/2019')
 NYEAR = DATE_RANGE[-1].year - DATE_RANGE[0].year + 1
@@ -165,7 +169,7 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         Return the units in which the time data for this monitored property
         are saved in the database.
         """
-        return "UNITS"
+        return MONITORED_PROPERTY_UNITS[monitored_property]
 
     def get_monitored_property_color(self, monitored_property):
         return {'NIV_EAU': 'blue',
