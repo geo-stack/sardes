@@ -17,11 +17,12 @@ import os.path as osp
 # ---- Third party imports
 import pytest
 from qtpy.QtGui import QWheelEvent
-from qtpy.QtCore import Qt, QSize, QPoint, QPointF
+from qtpy.QtCore import Qt, QSize, QPoint
+from qtpy.QtWidgets import QToolBar, QToolButton
 
 # ---- Local imports
 from sardes.config.gui import get_iconsize
-from sardes.widgets.buttons import DropdownToolButton
+from sardes.widgets.buttons import DropdownToolButton, SemiExclusiveButtonGroup
 
 ACTIONS = ['Action #{}'.format(i) for i in range(3)]
 
@@ -37,6 +38,33 @@ def dropdownbutton(qtbot):
     qtbot.addWidget(button)
     button.show()
     return button
+
+
+@pytest.fixture
+def semiexclusive_buttongroup(qtbot):
+    button1 = QToolButton()
+    button1.setCheckable(True)
+    button1.setObjectName('Button#1')
+
+    button2 = QToolButton()
+    button2.setCheckable(True)
+    button2.setObjectName('Button#2')
+
+    toolbar = QToolBar()
+    toolbar.addWidget(button1)
+    toolbar.addWidget(button2)
+    qtbot.addWidget(toolbar)
+    toolbar.show()
+
+    button_group = SemiExclusiveButtonGroup()
+    button_group.add_button(button1)
+    button_group.add_button(button2)
+
+    # We need to keep a reference to the toolbar or else it is garbage
+    # collected.
+    button_group.toolbar = toolbar
+
+    return button_group
 
 
 # =============================================================================
@@ -61,8 +89,8 @@ def test_dropdown_button_mousewheel(dropdownbutton, qtbot):
     assert dropdownbutton.checked_action().text() == ACTIONS[actions_index]
     for delta in [1, -1, -1, 1, 1, 1]:
         wheel_event = QWheelEvent(
-            QPointF(dropdownbutton.pos()),
-            QPointF(dropdownbutton.mapToGlobal(dropdownbutton.pos())),
+            dropdownbutton.pos(),
+            dropdownbutton.mapToGlobal(dropdownbutton.pos()),
             QPoint(0, delta),
             QPoint(0, delta),
             delta,
@@ -105,6 +133,58 @@ def test_mouseclick_disabled_action(dropdownbutton, qtbot):
             Qt.LeftButton,
             pos=menu.actionGeometry(action).center())
     assert dropdownbutton.checked_action().text() == ACTIONS[actions_index]
+
+
+# =============================================================================
+# ---- Tests for the SemiExclusiveButtonGroup
+# =============================================================================
+def test_semiexclusive_buttongroup_init(semiexclusive_buttongroup):
+    """
+    Test that the semi-exclusive abstract button group is
+    initialized correctly.
+    """
+    assert semiexclusive_buttongroup.get_checked_button() is None
+    assert semiexclusive_buttongroup._last_toggled_button is None
+    assert len(semiexclusive_buttongroup.buttons) == 2
+
+
+def test_semiexclusive_buttongroup_click(semiexclusive_buttongroup, qtbot):
+
+    # Click the first, then second button of the group.
+    for i in range(2):
+        qtbot.mouseClick(semiexclusive_buttongroup.buttons[i], Qt.LeftButton)
+        assert semiexclusive_buttongroup.buttons[i].isChecked()
+        assert (semiexclusive_buttongroup.get_checked_button() ==
+                semiexclusive_buttongroup.buttons[i])
+        assert (semiexclusive_buttongroup._last_toggled_button ==
+                semiexclusive_buttongroup.buttons[i])
+
+    # Click again the currently checked button.
+    qtbot.mouseClick(semiexclusive_buttongroup.buttons[i], Qt.LeftButton)
+    assert not semiexclusive_buttongroup.buttons[i].isChecked()
+    assert semiexclusive_buttongroup.get_checked_button() is None
+    assert (semiexclusive_buttongroup._last_toggled_button ==
+            semiexclusive_buttongroup.buttons[i])
+
+
+def test_semiexclusive_buttongroup_utils(semiexclusive_buttongroup, qtbot):
+    """
+    Test that the utility methods `toggle_off` and `restore_last_toggled` of
+    the semi-exclusive button group work as expected.
+    """
+    # Click the first button of the group.
+    qtbot.mouseClick(semiexclusive_buttongroup.buttons[0], Qt.LeftButton)
+    assert (semiexclusive_buttongroup.get_checked_button() ==
+            semiexclusive_buttongroup.buttons[0])
+
+    # Toggle off the buttons.
+    semiexclusive_buttongroup.toggle_off()
+    assert semiexclusive_buttongroup.get_checked_button() is None
+
+    # Toggle back the last button that was toggled.
+    semiexclusive_buttongroup.restore_last_toggled()
+    assert (semiexclusive_buttongroup.get_checked_button() ==
+            semiexclusive_buttongroup.buttons[0])
 
 
 if __name__ == "__main__":

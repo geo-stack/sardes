@@ -183,6 +183,17 @@ class SemiExclusiveButtonGroup(QObject):
         for button in self.buttons:
             button.setEnabled(state)
 
+    def get_checked_button(self):
+        """
+        Return the button from this group that is currently checked or return
+        None if no button is currently checked.
+        """
+        for button in self.buttons:
+            if button.isChecked():
+                return button
+        else:
+            return None
+
     def toggle_off(self):
         """
         Toggle off all buttons of this group.
