@@ -18,7 +18,7 @@ from matplotlib.axes import Axes as MplAxes
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from matplotlib.dates import num2date
 from qtpy.QtCore import Qt, Slot
-from qtpy.QtWidgets import QAction, QAbstractButton, QApplication, QMainWindow
+from qtpy.QtWidgets import QAction, QApplication, QMainWindow
 
 # ---- Local imports
 from sardes.config.locale import _
@@ -26,7 +26,7 @@ from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
 from sardes.utils.qthelpers import (
     center_widget_to_another, create_mainwindow_toolbar, create_toolbutton)
-from sardes.widgets.buttons import DropdownToolButton
+from sardes.widgets.buttons import DropdownToolButton, SemiExclusiveButtonGroup
 
 
 class TimeSeriesAxes(MplAxes):
@@ -324,41 +324,6 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
         """Toggle data mouse drag selection over a vertical span."""
         for axe in self.figure.tseries_axes_list:
             axe.vspan_selector.set_active(toggle)
-
-
-class SemiExclusiveButtonGroup(object):
-
-    def __init__(self):
-        super().__init__()
-        self.buttons = []
-        self._last_toggled_button = None
-        self._is_enabled = True
-
-    def add_button(self, button):
-        self.buttons.append(button)
-        button.toggled.connect(
-            lambda checked: self._handle_button_toggled(button, checked))
-
-    def set_enabled(self, state):
-        self._is_enabled = state
-        for button in self.buttons:
-            button.setEnabled(state)
-
-    def toggle_off(self):
-        for button in self.buttons:
-            button.setChecked(False)
-
-    def restore_last_toggled(self):
-        if self._last_toggled_button is not None and self._is_enabled:
-            self._last_toggled_button.setChecked(True)
-
-    @Slot(QAbstractButton, bool)
-    def _handle_button_toggled(self, toggled_button, checked):
-        if checked is True:
-            self._last_toggled_button = toggled_button
-            for button in self.buttons:
-                if button != toggled_button:
-                    button.setChecked(False)
 
 
 class TimeSeriesPlotViewer(QMainWindow):

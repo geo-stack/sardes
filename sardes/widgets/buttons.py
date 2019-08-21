@@ -11,11 +11,11 @@
 import sys
 
 # ---- Third party imports
-from qtpy.QtCore import Qt, QEvent, QSize, Signal
+from qtpy.QtCore import Qt, QEvent, QObject, QSize, Signal, Slot
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
-    QAction, QActionGroup, QApplication, QMenu, QSizePolicy, QStyle,
-    QStyleOptionToolButton, QStylePainter, QToolBar, QToolButton)
+    QAbstractButton, QAction, QActionGroup, QApplication, QMenu, QSizePolicy,
+    QStyle, QStyleOptionToolButton, QStylePainter, QToolBar, QToolButton)
 
 # ---- Local imports
 from sardes.config.icons import get_icon
@@ -133,6 +133,82 @@ class DropdownToolButton(QToolButton):
                         self.palette(),
                         True,
                         self.text())
+
+
+class SemiExclusiveButtonGroup(QObject):
+    """
+    The SemiExclusiveButtonGroup class provides an abstract  container to
+    organize groups of button widgets. It does not provide a visual
+    representation of this container, but instead manages the states of
+    each of the buttons in the group.
+
+    A SemiExclusiveButtonGroup button group switches off all checkable (toggle)
+    buttons except the one that was clicked. Unlike the stock QButtonGroup of
+    the Qt framework, the SemiExclusiveButtonGroup button group allow
+    switching off the checked button by clicking on it.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.buttons = []
+
+        # A reference to the last button that was toggled by the user, so that
+        # its state can be restore programatically afterwards.
+        self._last_toggled_button = None
+
+        # A flag to indicate whether the buttons of this group are enabled
+        # or not.
+        self._is_enabled = True
+
+    def add_button(self, button):
+        """
+        Add a new checkable button to this group.
+        """
+        self.buttons.append(button)
+        button.toggled.connect(
+            lambda checked: self._handle_button_toggled(button, checked))
+
+    def set_enabled(self, state):
+        """
+        Enabled or disabled all the buttons of this group following the value
+        of state.
+
+        Parameters
+        ----------
+        state: bool
+            A state value that indicates whether to enable or disable
+            the buttons of this group.
+        """
+        self._is_enabled = state
+        for button in self.buttons:
+            button.setEnabled(state)
+
+    def toggle_off(self):
+        """
+        Toggle off all buttons of this group.
+        """
+        for button in self.buttons:
+            button.setChecked(False)
+
+    def restore_last_toggled(self):
+        """
+        Check back the last button that was toggled by the user.
+        """
+        if self._last_toggled_button is not None and self._is_enabled:
+            self._last_toggled_button.setChecked(True)
+
+    @Slot(QAbstractButton, bool)
+    def _handle_button_toggled(self, toggled_button, checked):
+        """
+        Handle when a button is toggled by switching off all checkable button
+        but the one that was clicked. This button is toggle off if it was
+        already checked.
+        """
+        if checked is True:
+            self._last_toggled_button = toggled_button
+            for button in self.buttons:
+                if button != toggled_button:
+                    button.setChecked(False)
 
 
 if __name__ == '__main__':
