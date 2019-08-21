@@ -91,19 +91,19 @@ class DatabaseConnectionWorker(QObject):
     def _get_timeseries_for_obs_well(self, obs_well_id, monitored_properties):
         """
         Get the time data acquired in the observation well for each
-        monitored property in the list.
+        monitored property listed in monitored_properties.
         """
-        tseries_dict = {}
+        mprop_list = []
         try:
             for monitored_property in monitored_properties:
-                tseries_dict[monitored_property] = (
+                mprop_list.append(
                     self.db_accessor.get_timeseries_for_obs_well(
                         obs_well_id, monitored_property)
                     )
         except AttributeError as error:
             print(type(error).__name__, end=': ')
             print(error)
-        return tseries_dict,
+        return mprop_list,
 
 
 class DatabaseConnectionManager(QObject):

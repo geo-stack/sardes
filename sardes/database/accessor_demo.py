@@ -18,7 +18,7 @@ from pandas import Series
 
 # ---- Local imports
 from sardes.api.database_accessor import DatabaseAccessorBase
-from sardes.api.timeseries import TimeSeries
+from sardes.api.timeseries import MonitoredProperty, TimeSeries
 
 
 # =============================================================================
@@ -58,7 +58,7 @@ for i in range(5):
         'Notes for observation well #{}'.format(OBS_WELL_ID)])
 OBS_WELLS_DF = pd.DataFrame(OBS_WELLS_DATA, columns=OBS_WELLS_COLUMNS)
 
-MONITORED_PROPERTIES = ['COND_ELEC', 'NIV_EAU', 'TEMP']
+MONITORED_PROPERTIES = ['NIV_EAU', 'TEMP', 'COND_ELEC']
 MONITORED_PROPERTY_NAMES = {
     'COND_ELEC': "Water electrical conductivity",
     'NIV_EAU': "Water level",
@@ -175,11 +175,16 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
 
     def get_timeseries_for_obs_well(self, obs_well_id, monitored_property):
         """
-        Return a list of :class:`TimeSeries` objects
-        containing the data acquired in the observation well for the
-        specified monitored property.
+        Return a :class:`MonitoredProperty` object containing the
+        :class:`TimeSeries` objects holding the data acquired in the
+        observation well for the specified monitored property.
         """
-        tseries = TimeSeries(
+        mprop = MonitoredProperty(
+            prop_id=monitored_property,
+            prop_name=self.get_monitored_property_name(monitored_property),
+            prop_units=self.get_monitored_property_units(monitored_property)
+            )
+        mprop.add_timeseries(TimeSeries(
             TSERIES[monitored_property],
             tseries_id="CHANNEL_UUID",
             tseries_name=(
@@ -188,8 +193,8 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
                 self.get_monitored_property_units(monitored_property)),
             tseries_color=(
                 self.get_monitored_property_color(monitored_property))
-            )
-        return [tseries]
+            ))
+        return mprop
 
 
 if __name__ == '__main__':

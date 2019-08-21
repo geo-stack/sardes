@@ -90,7 +90,7 @@ class ObsWellsExplorer(SardesPlugin):
             ['NIV_EAU', 'TEMP'],
             self._show_timeseries)
 
-    def _show_timeseries(self, tseries_dict):
+    def _show_timeseries(self, monitored_properties):
         """
         Create and show a timeseries plot viewer to visualize interactively
         the timeseries data contained in tseries_list.
@@ -98,18 +98,22 @@ class ObsWellsExplorer(SardesPlugin):
         viewer = TimeSeriesPlotViewer(self.obs_well_tableview)
 
         # Set the title of the window.
-        viewer.setWindowTitle(_("Observation well {}")
-                              .format(self.get_current_obs_well()))
+        viewer.setWindowTitle(
+            _("Observation well {}").format(self.get_current_obs_well()))
 
         # Setup the water level axe.
-        axe = viewer.create_axe(_('Water level (m)'), 'left')
-        for tseries in tseries_dict['NIV_EAU']:
-            axe.add_timeseries(tseries)
+        where = 'left'
+        for monitored_property in monitored_properties:
+            # Create a new axe to hold the monitored property's timeseries.
+            axe_ylabel = monitored_property.prop_name
+            if monitored_property.prop_units:
+                axe_ylabel += ' ({})'.format(monitored_property.prop_units)
+            axe = viewer.create_axe(axe_ylabel, where)
 
-        # Setup the water temperature axe.
-        axe = viewer.create_axe(_('Water temperature (\u00B0C)'), 'right')
-        for tseries in tseries_dict['TEMP']:
-            axe.add_timeseries(tseries)
+            # Add each timeseries to the axe.
+            for tseries in monitored_property.timeseries:
+                axe.add_timeseries(tseries)
+            where = 'right'
 
         QApplication.restoreOverrideCursor()
         viewer.show()
