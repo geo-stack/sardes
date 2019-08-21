@@ -17,6 +17,48 @@ import numpy as np
 # ---- Local imports
 
 
+class MonitoredProperty(Mapping):
+    """
+    Sardes monitored property class.
+
+    The MonitoredProperty class provides an abstract container to
+    manage sardes TimeSeries.
+    """
+
+    def __init__(self, prop_id, prop_name, prop_units):
+        self._tseries = []
+        self.prop_id = prop_id
+        self.prop_name = prop_name
+        self.prop_units = prop_units
+
+    def __len__(self, key):
+        return len(self._tseries)
+
+    def __setitem__(self, key, value):
+        return NotImplementedError
+
+    def __getitem__(self, key):
+        return NotImplementedError
+
+    def __iter__(self):
+        for tseries in self._tseries:
+            yield tseries
+
+    # ---- Timeseries
+    @property
+    def timeseries(self):
+        """
+        Return a list of timeseries associated with this monitored property.
+        """
+        return self._tseries
+
+    def add_timeseries(self, tseries):
+        """
+        Add a new timeseries to this monitored property.
+        """
+        self._tseries.append(tseries)
+
+
 class TimeSeries(Mapping):
     """
     Sardes time series class.
