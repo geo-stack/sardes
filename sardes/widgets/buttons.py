@@ -137,7 +137,7 @@ class DropdownToolButton(QToolButton):
 
 class SemiExclusiveButtonGroup(QObject):
     """
-    The SemiExclusiveButtonGroup class provides an abstract  container to
+    The SemiExclusiveButtonGroup class provides an abstract container to
     organize groups of button widgets. It does not provide a visual
     representation of this container, but instead manages the states of
     each of the buttons in the group.
