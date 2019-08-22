@@ -36,7 +36,7 @@ class TimeSeriesAxes(MplAxes):
     """
     # https://matplotlib.org/3.1.1/api/axes_api.html
 
-    def __init__(self, tseries_figure, ylabel=None, where='left'):
+    def __init__(self, tseries_figure, tseries_group, where=None):
         super().__init__(tseries_figure,
                          tseries_figure.base_axes.get_position(),
                          facecolor=None,
@@ -45,13 +45,13 @@ class TimeSeriesAxes(MplAxes):
         self.figure.add_tseries_axes(self)
 
         # Init class attributes.
-        self.tseries_list = []
         self._rect_selector = None
         self._hspan_selector = None
         self._vspan_selector = None
         self._mpl_artist_handles = {
             'data': {},
             'selected_data': {}}
+        self.set_timeseries_group(tseries_group)
 
         # Make sure the xticks and xticks labels are not shown for this
         # axe, because this is provided by the base axe.
@@ -60,6 +60,9 @@ class TimeSeriesAxes(MplAxes):
         self.tick_params(labelsize=self.figure.canvas.font().pointSize())
 
         # Setup the new axe yaxis position and parameters.
+        if where is None:
+            where = ('left' if len(self.figure.tseries_axes_list) == 1
+                     else 'right')
         if where == 'right':
             self.yaxis.tick_right()
             self.yaxis.set_label_position('right')
@@ -68,12 +71,7 @@ class TimeSeriesAxes(MplAxes):
             self.yaxis.set_label_position('left')
         self.tick_params(labelsize=self.figure.canvas.font().pointSize())
 
-        # Setup the ylabel of the axe.
-        if ylabel is not None:
-            self.set_ylabel(ylabel, labelpad=10)
-
         self.figure.tight_layout(force=True)
-        self.figure.canvas.draw()
 
     @property
     def rect_selector(self):
@@ -119,28 +117,39 @@ class TimeSeriesAxes(MplAxes):
                 )
         return self._vspan_selector
 
-    def add_timeseries(self, tseries):
-        self.tseries_list.append(tseries)
+    def set_timeseries_group(self, tseries_group):
+        self.tseries_group = tseries_group
 
+        # Setup the ylabel of the axe.
+        ylabel = tseries_group.prop_name
+        if tseries_group.prop_units:
+            ylabel += ' ({})'.format(tseries_group.prop_units)
+        self.set_ylabel(ylabel, labelpad=10)
+
+        # Add each timeseries of the monitored property object to this axe.
+        for tseries in self.tseries_group:
+            self._add_timeseries(tseries)
+
+        self.figure.canvas.draw()
+
+    def _add_timeseries(self, tseries):
         # Plot the data of the timeseries and init selected data artist.
         self._mpl_artist_handles['data'][tseries.id], = (
             self.plot(tseries.data, color=tseries.color, clip_on=True))
         self._mpl_artist_handles['selected_data'][tseries.id], = (
             self.plot(tseries.get_selected_data(), '.', color='orange',
                       clip_on=True))
-        self.figure.canvas.draw()
 
     def set_current(self):
         self.figure.set_current_tseries_axes(self)
 
     def clear_selected_data(self):
-        for tseries in self.tseries_list:
-            tseries.clear_selected_data()
+        self.tseries_group.clear_selected_data()
         self._draw_selected_data()
 
     # ---- Drawing methods
     def _draw_selected_data(self, draw=True):
-        for tseries in self.tseries_list:
+        for tseries in self.tseries_group:
             handle = self._mpl_artist_handles['selected_data'][tseries.id]
             handle.set_visible(self.figure.gca() == self)
             if self.figure.gca() == self:
@@ -157,19 +166,16 @@ class TimeSeriesAxes(MplAxes):
         Handle when a rectangular area to select data has been selected.
         """
         xmin, xmax, ymin, ymax = self._rect_selector.extents
-        for tseries in self.tseries_list:
-            tseries.select_data(xrange=(num2date(xmin), num2date(xmax)),
-                                yrange=(ymin, ymax))
+        self.tseries_group.select_data(xrange=(num2date(xmin), num2date(xmax)),
+                                       yrange=(ymin, ymax))
         self._draw_selected_data()
 
     def _handle_hspan_select_data(self, xmin, xmax):
-        for tseries in self.tseries_list:
-            tseries.select_data(xrange=(num2date(xmin), num2date(xmax)))
+        self.tseries_group.select_data(xrange=(num2date(xmin), num2date(xmax)))
         self._draw_selected_data()
 
     def _handle_vspan_select_data(self, ymin, ymax):
-        for tseries in self.tseries_list:
-            tseries.select_data(yrange=(ymin, ymax))
+        self.tseries_group.select_data(yrange=(ymin, ymax))
         self._draw_selected_data()
 
 
@@ -279,10 +285,10 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
         default_filename = default_basename + '.' + default_filetype
         return default_filename
 
-    def create_axe(self, ylabel='', where='left'):
+    def create_axe(self, tseries_group, where):
         # Create the new axe from the base axe so that they share the same
         # xaxis.
-        axe = TimeSeriesAxes(self.figure, ylabel, where)
+        axe = TimeSeriesAxes(self.figure, tseries_group, where)
         return axe
 
     # ---- Navigation and Selection tools
@@ -455,12 +461,13 @@ class TimeSeriesPlotViewer(QMainWindow):
             self._handle_selected_axe_changed)
         axis_toolbar.addWidget(self.current_axe_button)
 
-    def create_axe(self, name, where='left'):
-        axe = self.canvas.create_axe(name, where)
+    def create_axe(self, tseries_group, where=None):
+        axe = self.canvas.create_axe(tseries_group, where)
 
         # Add axe to selection menu.
         # Note that this will make the corresponding axe to become current.
-        self.current_axe_button.create_action(name, data=axe)
+        self.current_axe_button.create_action(tseries_group.prop_name,
+                                              data=axe)
         return axe
 
     @Slot(QAction)

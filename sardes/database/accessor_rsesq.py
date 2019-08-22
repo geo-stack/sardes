@@ -24,7 +24,7 @@ from sqlalchemy.orm import sessionmaker, relationship
 # ---- Local imports
 from sardes.api.database_accessor import DatabaseAccessorBase
 from sardes.database.utils import map_table_column_names, format_sqlobject_repr
-from sardes.api.timeseries import MonitoredProperty, TimeSeries
+from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
 
 
 # =============================================================================
@@ -363,14 +363,14 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
 
         # For each channel, store the data in a time series object and
         # add it to the monitored property object.
-        mprop = MonitoredProperty(
-            prop_id=monitored_property,
-            prop_name=self.get_monitored_property_name(monitored_property),
-            prop_units=self.get_monitored_property_units(monitored_property)
+        tseries_group = TimeSeriesGroup(
+            monitored_property,
+            self.get_monitored_property_name(monitored_property),
+            self.get_monitored_property_units(monitored_property)
             )
         for channel_uuid in data['channel_uuid'].unique():
             channel_data = data[data['channel_uuid'] == channel_uuid]
-            mprop.add_timeseries(TimeSeries(
+            tseries_group.add_timeseries(TimeSeries(
                 pd.Series(channel_data['value'], index=channel_data.index),
                 tseries_id=channel_uuid,
                 tseries_name=(
@@ -380,7 +380,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
                 tseries_color=(
                     self.get_monitored_property_color(monitored_property))
                 ))
-        return mprop
+        return tseries_group
 
     def execute(self, sql_request, **kwargs):
         """Execute a SQL statement construct and return a ResultProxy."""

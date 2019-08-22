@@ -18,7 +18,7 @@ from pandas import Series
 
 # ---- Local imports
 from sardes.api.database_accessor import DatabaseAccessorBase
-from sardes.api.timeseries import MonitoredProperty, TimeSeries
+from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
 
 
 # =============================================================================
@@ -183,12 +183,12 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         :class:`TimeSeries` objects holding the data acquired in the
         observation well for the specified monitored property.
         """
-        mprop = MonitoredProperty(
-            prop_id=monitored_property,
-            prop_name=self.get_monitored_property_name(monitored_property),
-            prop_units=self.get_monitored_property_units(monitored_property)
+        tseries_group = TimeSeriesGroup(
+            monitored_property,
+            self.get_monitored_property_name(monitored_property),
+            self.get_monitored_property_units(monitored_property)
             )
-        mprop.add_timeseries(TimeSeries(
+        tseries_group.add_timeseries(TimeSeries(
             TSERIES[monitored_property],
             tseries_id="CHANNEL_UUID",
             tseries_name=(
@@ -198,7 +198,7 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
             tseries_color=(
                 self.get_monitored_property_color(monitored_property))
             ))
-        return mprop
+        return tseries_group
 
 
 if __name__ == '__main__':

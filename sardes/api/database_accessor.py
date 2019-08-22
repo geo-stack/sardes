@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from pandas import Series, DataFrame
 
 # ---- Local imports
-from sardes.api.timeseries import MonitoredProperty, TimeSeries
+from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
 
 
 class DatabaseAccessorBase(ABC):
@@ -176,15 +176,15 @@ class DatabaseAccessorBase(ABC):
     @abstractmethod
     def get_timeseries_for_obs_well(self, obs_well_id, monitored_property):
         """
-        Return a :class:`MonitoredProperty` object containing the
-        :class:`TimeSeries` objects holding the data acquired in the
-        observation well for the specified monitored property.
+        Return a :class:`TimeSeriesGroup` containing the :class:`TimeSeries`
+        holding the data acquired in the observation well for the
+        specified monitored property.
 
         Returns
         -------
-        :class:`MonitoredProperty`
-            A :class:`MonitoredProperty` object containing the
-            :class:`TimeSeries` objects holding the data acquired in the
-            observation well for the specified monitored property.
+        :class:`TimeSeriesGroup`
+            A :class:`TimeSeriesGroup` containing the :class:`TimeSeries`
+            holding the data acquired in the observation well for the
+            specified monitored property.
         """
         pass

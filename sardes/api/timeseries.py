@@ -17,16 +17,17 @@ import numpy as np
 # ---- Local imports
 
 
-class MonitoredProperty(Mapping):
+class TimeSeriesGroup(Mapping):
     """
-    Sardes monitored property class.
+    Sardes time series group class.
 
-    The MonitoredProperty class provides an abstract container to
-    manage sardes TimeSeries.
+    The :class:`TimeSeriesGroup` class provides an abstract container to
+    manage sardes :class:`TimeSeries` that belongs to the same monitored
+    property.
     """
 
     def __init__(self, prop_id, prop_name, prop_units):
-        self._tseries = []
+        self._timeseries = []
         self.prop_id = prop_id
         self.prop_name = prop_name
         self.prop_units = prop_units
@@ -41,7 +42,7 @@ class MonitoredProperty(Mapping):
         return NotImplementedError
 
     def __iter__(self):
-        for tseries in self._tseries:
+        for tseries in self._timeseries:
             yield tseries
 
     # ---- Timeseries
@@ -50,13 +51,29 @@ class MonitoredProperty(Mapping):
         """
         Return a list of timeseries associated with this monitored property.
         """
-        return self._tseries
+        return self._timeseries
 
     def add_timeseries(self, tseries):
         """
         Add a new timeseries to this monitored property.
         """
-        self._tseries.append(tseries)
+        self._timeseries.append(tseries)
+
+    # ---- Utilities
+    def clear_selected_data(self):
+        """
+        Clear all selected data in the timeseries of this timeseries group.
+        """
+        for tseries in self._timeseries:
+            tseries.clear_selected_data()
+
+    def select_data(self, *args, **kargs):
+        """
+        This is a convenience method to select data in the timeseries of this
+        group for a given period and range of values.
+        """
+        for tseries in self._timeseries:
+            tseries.select_data(*args, **kargs)
 
 
 class TimeSeries(Mapping):
