@@ -219,7 +219,12 @@ class TimeSeriesAxes(MplAxes):
 
 
 class TimeSeriesFigure(MplFigure):
+    """
+    A matplotlib Figure object that hold a base axe and one or more axes to
+    plot timeseries data.
+    """
     # https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.figure.Figure.html
+
     CURRENT_AXE_ZORDER = 200
     SEC_AXE_ZORDER = 100
 
@@ -232,6 +237,9 @@ class TimeSeriesFigure(MplFigure):
         self.tseries_axes_list = []
 
     def setup_base_axes(self):
+        """
+        Setup a base axes with which all other axes will share their xaxis.
+        """
         self.base_axes = self.add_subplot(1, 1, 1)
         self.base_axes.set_zorder(0)
         self.base_axes.set_yticks([])
@@ -242,11 +250,17 @@ class TimeSeriesFigure(MplFigure):
         self.canvas.draw()
 
     def add_tseries_axes(self, tseries_axes):
+        """
+        Add the new axes used to plot timeseries data to this figure.
+        """
         self.base_axes.set_visible(True)
         self.tseries_axes_list.append(tseries_axes)
         self.add_axes(tseries_axes)
 
     def set_current_tseries_axes(self, current_tseries_axes):
+        """
+        Set the current axe of this figure to that specified in the arguments.
+        """
         self.sca(current_tseries_axes)
         for tseries_axes in self.tseries_axes_list:
             tseries_axes.set_zorder(
@@ -257,6 +271,11 @@ class TimeSeriesFigure(MplFigure):
             tseries_axes._draw_selected_data()
 
     def set_size_inches(self, *args, **kargs):
+        """
+        Override matplotlib method to force a call to tight_layout when
+        set_size_inches is called. This allow to keep the size of the margins
+        fixed when the canvas of this figure is resized.
+        """
         super().set_size_inches(*args, **kargs)
         self.tight_layout()
 
