@@ -149,7 +149,10 @@ def test_semiexclusive_buttongroup_init(semiexclusive_buttongroup):
 
 
 def test_semiexclusive_buttongroup_click(semiexclusive_buttongroup, qtbot):
-
+    """
+    Test that toggling on and off buttons in the group is working as
+    expected.
+    """
     # Click the first, then second button of the group.
     for i in range(2):
         qtbot.mouseClick(semiexclusive_buttongroup.buttons[i], Qt.LeftButton)
