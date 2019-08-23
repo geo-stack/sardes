@@ -386,6 +386,9 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
 
 
 class TimeSeriesPlotViewer(QMainWindow):
+    """
+    A widget to plot, explore and manipulate interactively timeseries data.
+    """
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -537,6 +540,10 @@ class TimeSeriesPlotViewer(QMainWindow):
         self.visible_axes_button.setChecked(not selected_axe.get_visible())
 
     def _handle_axe_visibility_changed(self, toggle):
+        """
+        Toggle on or off the visibility of the current matplotlib axe and
+        enable or disable items in the gui accordingly.
+        """
         checked_action = self.current_axe_button.checked_action()
         if checked_action is not None:
             selected_axe = checked_action.data()
@@ -555,6 +562,10 @@ class TimeSeriesPlotViewer(QMainWindow):
             self._update_selected_axe_cbox_state()
 
     def _update_selected_axe_cbox_state(self):
+        """
+        Enable or disable the actions of the current axe button's menu
+        depending on the visibility of their corresponding matplotlib axe.
+        """
         menu = self.current_axe_button.menu()
         for index, action in enumerate(menu.actions()):
             action.setEnabled(action.data().get_visible())
