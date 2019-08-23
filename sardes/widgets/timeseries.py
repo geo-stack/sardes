@@ -51,6 +51,8 @@ class TimeSeriesAxes(MplAxes):
         self._mpl_artist_handles = {
             'data': {},
             'selected_data': {}}
+
+        # Set and plot the timeseries for this axe.
         self.set_timeseries_group(tseries_group)
 
         # Make sure the xticks and xticks labels are not shown for this
@@ -229,9 +231,6 @@ class TimeSeriesFigure(MplFigure):
         except AttributeError:
             pass
 
-    # def set_axe_margins_inches(left, right, top, bottom):
-    #     pass
-
     def tight_layout(self, *args, **kargs):
         """
         Override matplotlib method to setup the margins of the axes
@@ -264,15 +263,9 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
         super().__init__(figure)
         figure.setup_base_axes()
 
-        self.waterlevels = None
-
         # Setup a matplotlib navigation toolbar, but hide it.
         toolbar = NavigationToolbar2QT(self, self)
         toolbar.hide()
-
-        self._pan_axes_is_active = False
-        self._zoom_to_rect_is_active = False
-        self._drag_select_data_is_active = False
 
     def get_default_filename(self):
         """
@@ -308,7 +301,6 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
 
     def pan_axes(self, toggle):
         """Toggle axe panning in the canvas."""
-        self._pan_axes_is_active = toggle
         if toggle is True:
             if self.toolbar._active != 'PAN':
                 self.toolbar.pan()
