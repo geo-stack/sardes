@@ -67,15 +67,19 @@ class ObsWellsExplorer(SardesPlugin):
         Return the observation well id relative to the currently selected
         row in the table.
         """
-        proxy_index = (self.obs_well_tableview
-                       .selectionModel()
-                       .selectedIndexes()[0])
-        model_index = (self.obs_well_tableview
-                       .obs_well_proxy_model
-                       .mapToSource(proxy_index))
-        obs_well_id = (self.obs_well_tableview
-                       .obs_well_table_model.obs_wells
-                       .iloc[model_index.row()]['obs_well_id'])
+        try:
+            proxy_index = (self.obs_well_tableview
+                           .selectionModel()
+                           .selectedIndexes()[0])
+            model_index = (self.obs_well_tableview
+                           .obs_well_proxy_model
+                           .mapToSource(proxy_index))
+            obs_well_id = (self.obs_well_tableview
+                           .obs_well_table_model.obs_wells
+                           .iloc[model_index.row()]['obs_well_id'])
+        except IndexError:
+            # This means that no row is currently selected in the table.
+            obs_well_id = None
         return obs_well_id
 
     # ---- Timeseries
@@ -83,12 +87,13 @@ class ObsWellsExplorer(SardesPlugin):
         """
         Handle when a row is double-clicked in the table.
         """
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        # Get the timeseries data for that observation well.
-        self.main.db_connection_manager.get_timeseries_for_obs_well(
-            self.get_current_obs_well(),
-            ['NIV_EAU', 'TEMP'],
-            self._show_timeseries)
+        current_obs_well = self.get_current_obs_well()
+        if current_obs_well is not None:
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+
+            # Get the timeseries data for that observation well.
+            self.main.db_connection_manager.get_timeseries_for_obs_well(
+                current_obs_well, ['NIV_EAU', 'TEMP'], self._show_timeseries)
 
     def _show_timeseries(self, tseries_groups):
         """
