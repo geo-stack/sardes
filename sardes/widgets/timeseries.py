@@ -47,6 +47,8 @@ class TimeSeriesAxes(MplAxes):
                          frameon=False,
                          sharex=tseries_figure.base_axes)
         self.figure.add_tseries_axes(self)
+        # Note that this axe is created so that its xaxis is shared with
+        # the base axe of the figure.
 
         # Init class attributes.
         self._rect_selector = None
@@ -79,26 +81,35 @@ class TimeSeriesAxes(MplAxes):
 
         self.figure.tight_layout(force=True)
 
+    def set_current(self):
+        """Set this axe as current."""
+        self.figure.set_current_tseries_axes(self)
+
+    # ---- Selectors
     @property
     def rect_selector(self):
+        """
+        Return a rectangular data selector for this axe.
+        """
         if self._rect_selector is None:
-            # Setup a new data rectangular selector for this axe.
-                self._rect_selector = RectangleSelector(
-                    self,
-                    self._handle_drag_select_data,
-                    drawtype='box',
-                    useblit=True,
-                    button=[1],
-                    interactive=False,
-                    rectprops=dict(facecolor='red', edgecolor='black',
-                                   alpha=0.2, fill=True, linestyle=':')
-                    )
+            self._rect_selector = RectangleSelector(
+                self,
+                self._handle_drag_select_data,
+                drawtype='box',
+                useblit=True,
+                button=[1],
+                interactive=False,
+                rectprops=dict(facecolor='red', edgecolor='black',
+                               alpha=0.2, fill=True, linestyle=':')
+                )
         return self._rect_selector
 
     @property
     def hspan_selector(self):
+        """
+        Return a horizontal span data selector for this axe.
+        """
         if self._hspan_selector is None:
-            # Setup a new data horizontal span selector for this axe
             self._hspan_selector = SpanSelector(
                 self,
                 self._handle_hspan_select_data,
@@ -111,6 +122,9 @@ class TimeSeriesAxes(MplAxes):
 
     @property
     def vspan_selector(self):
+        """
+        Return a vertical span data selector for this axe.
+        """
         if self._vspan_selector is None:
             # Setup a new data vertical span selector for this timeseries.
             self._vspan_selector = SpanSelector(
@@ -123,7 +137,12 @@ class TimeSeriesAxes(MplAxes):
                 )
         return self._vspan_selector
 
+    # ---- Timeseries
     def set_timeseries_group(self, tseries_group):
+        """
+        Set the namespace of the timeseries group for this axe, setup the
+        label of the yaxis and plot the data.
+        """
         self.tseries_group = tseries_group
 
         # Setup the ylabel of the axe.
@@ -139,22 +158,28 @@ class TimeSeriesAxes(MplAxes):
         self.figure.canvas.draw()
 
     def _add_timeseries(self, tseries):
-        # Plot the data of the timeseries and init selected data artist.
+        """
+        Plot the data of the timeseries and init selected data artist.
+        """
         self._mpl_artist_handles['data'][tseries.id], = (
             self.plot(tseries.data, color=tseries.color, clip_on=True))
         self._mpl_artist_handles['selected_data'][tseries.id], = (
             self.plot(tseries.get_selected_data(), '.', color='orange',
                       clip_on=True))
 
-    def set_current(self):
-        self.figure.set_current_tseries_axes(self)
-
     def clear_selected_data(self):
+        """
+        Clear all selected data in the timeseries associated with this axe.
+        """
         self.tseries_group.clear_selected_data()
         self._draw_selected_data()
 
     # ---- Drawing methods
     def _draw_selected_data(self, draw=True):
+        """
+        If this axe is current, draw the selected data of the timeseries
+        associated with this axe.
+        """
         for tseries in self.tseries_group:
             handle = self._mpl_artist_handles['selected_data'][tseries.id]
             handle.set_visible(self.figure.gca() == self)
@@ -177,10 +202,18 @@ class TimeSeriesAxes(MplAxes):
         self._draw_selected_data()
 
     def _handle_hspan_select_data(self, xmin, xmax):
+        """
+        Handle when an horizontal span has been selected by the user to
+        select data.
+        """
         self.tseries_group.select_data(xrange=(num2date(xmin), num2date(xmax)))
         self._draw_selected_data()
 
     def _handle_vspan_select_data(self, ymin, ymax):
+        """
+        Handle when a vertical span has been selected by the user to
+        select data.
+        """
         self.tseries_group.select_data(yrange=(ymin, ymax))
         self._draw_selected_data()
 
