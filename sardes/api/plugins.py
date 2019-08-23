@@ -159,7 +159,8 @@ class SardesPlugin(SardesPluginBase):
     # Status: Optional
     CONFIGWIDGET_CLASS = None
 
-    def get_plugin_title(self):
+    @classmethod
+    def get_plugin_title(cls):
         """
         Get plugin's title.
 
