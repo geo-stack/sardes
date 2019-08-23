@@ -314,6 +314,9 @@ class TimeSeriesFigure(MplFigure):
 
 
 class TimeSeriesCanvas(FigureCanvasQTAgg):
+    """
+    A matplotlib canvas where the figure is drawn.
+    """
 
     def __init__(self, figure):
         super().__init__(figure)
@@ -335,8 +338,10 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
         return default_filename
 
     def create_axe(self, tseries_group, where):
-        # Create the new axe from the base axe so that they share the same
-        # xaxis.
+        """
+        Create a new axe to plot the timeseries data of a given monitored
+        property and add it to this canvas' figure.
+        """
         axe = TimeSeriesAxes(self.figure, tseries_group, where)
         return axe
 
@@ -510,6 +515,10 @@ class TimeSeriesPlotViewer(QMainWindow):
         axis_toolbar.addWidget(self.current_axe_button)
 
     def create_axe(self, tseries_group, where=None):
+        """
+        Create and add a new axe to the figure where to plot the data
+        contained in the timeseries group.
+        """
         axe = self.canvas.create_axe(tseries_group, where)
 
         # Add axe to selection menu.
