@@ -79,6 +79,7 @@ class MainWindow(QMainWindow):
         self.db_connection_manager = DatabaseConnectionManager()
 
         self.setup()
+        splash.finish(self)
 
     def setup(self):
         """Setup the main window"""
@@ -363,6 +364,5 @@ def except_hook(cls, exception, traceback):
 if __name__ == '__main__':
     sys.excepthook = except_hook
     main = MainWindow()
-    splash.finish(main)
     main.show()
     sys.exit(app.exec_())
