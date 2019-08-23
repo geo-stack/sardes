@@ -26,7 +26,8 @@ class Databases(SardesPlugin):
     def __init__(self, parent):
         super().__init__(parent)
 
-    def get_plugin_title(self):
+    @classmethod
+    def get_plugin_title(cls):
         """Return widget title"""
         return _('Database Connector')
 
