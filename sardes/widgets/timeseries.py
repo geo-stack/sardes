@@ -473,20 +473,21 @@ class TimeSeriesPlotViewer(QMainWindow):
 
     def _handle_axe_visibility_changed(self, toggle):
         checked_action = self.current_axe_button.checked_action()
-        selected_axe = checked_action.data()
-        selected_axe.set_visible(not toggle)
-        self.visible_axes_button.setIcon(
-            get_icon('eye_on' if not toggle else 'eye_off'))
+        if checked_action is not None:
+            selected_axe = checked_action.data()
+            selected_axe.set_visible(not toggle)
+            self.visible_axes_button.setIcon(
+                get_icon('eye_on' if not toggle else 'eye_off'))
 
-        # Update the navigation and selection tools state.
-        self._navig_and_select_buttongroup.set_enabled(not toggle)
-        if toggle is True:
-            self._navig_and_select_buttongroup.toggle_off()
-        else:
-            self._navig_and_select_buttongroup.restore_last_toggled()
-        self.canvas.draw()
-        self.current_axe_button.repaint()
-        self._update_selected_axe_cbox_state()
+            # Update the navigation and selection tools state.
+            self._navig_and_select_buttongroup.set_enabled(not toggle)
+            if toggle is True:
+                self._navig_and_select_buttongroup.toggle_off()
+            else:
+                self._navig_and_select_buttongroup.restore_last_toggled()
+            self.canvas.draw()
+            self.current_axe_button.repaint()
+            self._update_selected_axe_cbox_state()
 
     def _update_selected_axe_cbox_state(self):
         menu = self.current_axe_button.menu()
