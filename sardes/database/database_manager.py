@@ -63,6 +63,7 @@ class DatabaseConnectionWorker(QObject):
             self.db_accessor.close_connection()
         return None,
 
+    # ---- Observation wells
     def _get_observation_wells(self):
         """
         Try get the list of observation wells that are saved in the database
@@ -75,6 +76,34 @@ class DatabaseConnectionWorker(QObject):
             obs_wells = DataFrame([])
         return obs_wells,
 
+    # ---- Monitored properties
+    def get_monitored_properties(self):
+        """
+        Return the list of of properties for which time data is stored in the
+        database.
+        """
+        try:
+            monitored_properties = self.db_accessor.monitored_properties
+        except AttributeError:
+            monitored_properties = []
+        return monitored_properties,
+
+    def _get_timeseries_for_obs_well(self, obs_well_id, monitored_properties):
+        """
+        Get the time data acquired in the observation well for each
+        monitored property listed in monitored_properties.
+        """
+        mprop_list = []
+        try:
+            for monitored_property in monitored_properties:
+                mprop_list.append(
+                    self.db_accessor.get_timeseries_for_obs_well(
+                        obs_well_id, monitored_property)
+                    )
+        except AttributeError as error:
+            print(type(error).__name__, end=': ')
+            print(error)
+        return mprop_list,
 
 
 class DatabaseConnectionManager(QObject):
@@ -128,6 +157,7 @@ class DatabaseConnectionManager(QObject):
         self._add_task('disconnect_from_db', self._handle_disconnect_from_db)
         self._db_connection_thread.start()
 
+    # ---- Observation wells
     def get_observation_wells(self, callback):
         """
         Get the list of observation wells that are saved in the database.
@@ -136,6 +166,30 @@ class DatabaseConnectionManager(QObject):
         as a list of ObservationWell objects.
         """
         self._add_task('get_observation_wells', callback)
+        self._db_connection_thread.start()
+
+    # ---- Monitored properties
+    def get_monitored_properties(self, callback=None):
+        """
+        Get the list of of properties for which time data is stored in the
+        database.
+        """
+        monitored_properties = (
+            self._db_connection_worker.get_monitored_properties())
+        if callback is not None:
+            callback(monitored_properties)
+        return monitored_properties
+
+    def get_timeseries_for_obs_well(self, obs_well_id, monitored_properties,
+                                    callback):
+        """
+        Get the time data acquired in the observation well for each
+        monitored property in the list.
+        """
+        if isinstance(monitored_properties, str):
+            monitored_properties = [monitored_properties, ]
+        self._add_task('get_timeseries_for_obs_well', callback,
+                       obs_well_id, monitored_properties)
         self._db_connection_thread.start()
 
     # ---- Handlers

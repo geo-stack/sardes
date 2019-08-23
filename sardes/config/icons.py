@@ -29,6 +29,12 @@ FA_ICONS = {
     'bug': [
         ('mdi.bug',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'checklist': [
+        ('mdi.format-list-checkbox',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
+    'clear_selected_data': [
+        ('mdi.close-box-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'close_all': [
         ('fa.close', 'fa.close', 'fa.close'),
         {'options': [{'scale_factor': 0.6,
@@ -43,6 +49,12 @@ FA_ICONS = {
     'erase_data': [
         ('mdi.eraser',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'eye_on': [
+        ('mdi.eye',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
+    'eye_off': [
+        ('mdi.eye-off',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'delete_data': [
         ('mdi.delete-forever',),
         {'color': ICON_COLOR, 'scale_factor': 1.4}],
@@ -58,6 +70,9 @@ FA_ICONS = {
     'failed': [
         ('mdi.alert-circle-outline',),
         {'color': RED, 'scale_factor': 1.3}],
+    'home': [
+        ('mdi.home',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'exit': [
         ('fa.power-off',),
         {'color': ICON_COLOR}],
@@ -83,12 +98,31 @@ FA_ICONS = {
     'information': [
         ('mdi.information-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'pan': [
+        ('mdi.pan',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'panes': [
         ('mdi.view-grid',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'preferences': [
         ('mdi.settings',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'drag_select': [
+        ('mdi.shape-square-plus',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'hspan_select': [
+        ('mdi.arrow-expand-horizontal',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'vspan_select': [
+        ('mdi.arrow-expand-vertical',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1,
+         'hflip': True}],
+    'save': [
+        ('fa.save',),
+        {'color': ICON_COLOR}],
+    'show_plot': [
+        ('mdi.chart-line',),
+        {'color': ICON_COLOR}],
     'succes': [
         ('mdi.check-circle-outline',),
         {'color': GREEN, 'scale_factor': 1.3}],
@@ -101,6 +135,9 @@ FA_ICONS = {
     'warning': [
         ('mdi.alert-circle-outline',),
         {'color': RED, 'scale_factor': 1.3}],
+    'zoom_to_rect': [
+        ('mdi.magnify-plus-cursor',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     }
 
 ICON_SIZES = {'large': (32, 32),

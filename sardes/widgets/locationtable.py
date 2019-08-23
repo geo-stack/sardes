@@ -84,16 +84,11 @@ class ObsWellTableModel(QAbstractTableModel):
 
         if role == Qt.DisplayRole:
             if column is None:
-                return ''
-                return (_('Yes') if
-                        self.obs_wells.iloc[row, column] == 'True'
-                        else _('No'))
+                value = ''
             else:
                 value = self.obs_wells.iloc[row, column]
-                if pd.isna(value):
-                    return ''
-                else:
-                    return str(value)
+                value = '' if pd.isna(value) else value
+            return str(value)
         elif role == Qt.ForegroundRole:
             if column_key == 'is_station_active' and column is not None:
                 color = (GREEN if
@@ -136,8 +131,6 @@ class ObservationWellTableView(QTableView):
         self.horizontalHeader().setSectionResizeMode(
             self.obs_well_table_model.columnCount() - 1, QHeaderView.Stretch)
 
-        self.doubleClicked.connect(self._handle_double_clicked)
-
     @Slot(bool)
     def _trigger_obs_well_table_update(self, connection_state):
         """
@@ -153,11 +146,6 @@ class ObservationWellTableView(QTableView):
         if db_connection_manager is not None:
             self.db_connection_manager.sig_database_connection_changed.connect(
                 self._trigger_obs_well_table_update)
-
-    def _handle_double_clicked(self, proxy_index):
-        model_index = self.obs_well_proxy_model.mapToSource(proxy_index)
-        print(self.obs_well_table_model.obs_wells.iloc[model_index.row()])
-        print('')
 
 
 if __name__ == '__main__':

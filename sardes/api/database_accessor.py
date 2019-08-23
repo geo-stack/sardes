@@ -11,7 +11,10 @@
 from abc import ABC, abstractmethod
 
 # ---- Third party imports
-import pandas as pd
+from pandas import Series, DataFrame
+
+# ---- Local imports
+from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
 
 
 class DatabaseAccessorBase(ABC):
@@ -26,6 +29,7 @@ class DatabaseAccessorBase(ABC):
         self._connection = None
         self._connection_error = None
 
+    # ---- Database connection
     @abstractmethod
     def is_connected(self):
         """
@@ -49,6 +53,22 @@ class DatabaseAccessorBase(ABC):
     def close_connection(self):
         """
         Close the currently active connection with the database.
+        """
+        pass
+
+    # ---- Observation wells
+    @property
+    @abstractmethod
+    def observation_wells(self):
+        """
+        Return the list of observation wells that are saved in the
+        database.
+
+        Returns
+        -------
+        list of str
+            A list of strings corresponding to the name given to the
+            observation wells that are saved in the database.
         """
         pass
 
@@ -106,4 +126,65 @@ class DatabaseAccessorBase(ABC):
             - obs_well_notes: str
                 Any notes related to the observation well.
         """
-        return pd.DataFrame([])
+        return DataFrame([])
+
+    # ---- Monitored properties
+    @property
+    @abstractmethod
+    def monitored_properties(self):
+        """
+        Returns the list of properties for which time data is stored in the
+        database.
+
+        Returns
+        -------
+        list of str
+            A list of strings corresponding to the properties for which time
+            data is stored in the database.
+        """
+        pass
+
+    @abstractmethod
+    def get_monitored_property_name(self, monitored_property):
+        """
+        Return the common human readable name for the corresponding
+        monitored property.
+
+        Returns
+        -------
+        str
+            A string corresponding to the common human readable name used to
+            reference this monitored property in the GUI and the graphs.
+        """
+        pass
+
+    @abstractmethod
+    def get_monitored_property_units(self, monitored_property):
+        """
+        Return the units in which the time data for this monitored property
+        are saved in the database.
+
+        Returns
+        -------
+        str
+            A string corresponding to the units in which the time data for
+            this monitored property are saved in the database.
+        """
+        pass
+
+    # ---- Timeseries
+    @abstractmethod
+    def get_timeseries_for_obs_well(self, obs_well_id, monitored_property):
+        """
+        Return a :class:`TimeSeriesGroup` containing the :class:`TimeSeries`
+        holding the data acquired in the observation well for the
+        specified monitored property.
+
+        Returns
+        -------
+        :class:`TimeSeriesGroup`
+            A :class:`TimeSeriesGroup` containing the :class:`TimeSeries`
+            holding the data acquired in the observation well for the
+            specified monitored property.
+        """
+        pass
