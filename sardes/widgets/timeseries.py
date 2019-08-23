@@ -19,6 +19,7 @@ from matplotlib.widgets import RectangleSelector, SpanSelector
 from matplotlib.dates import num2date
 from qtpy.QtCore import Qt, Slot
 from qtpy.QtWidgets import QAction, QApplication, QMainWindow
+from pandas.plotting import register_matplotlib_converters
 
 # ---- Local imports
 from sardes.config.locale import _
@@ -27,6 +28,9 @@ from sardes.config.gui import get_iconsize
 from sardes.utils.qthelpers import (
     center_widget_to_another, create_mainwindow_toolbar, create_toolbutton)
 from sardes.widgets.buttons import DropdownToolButton, SemiExclusiveButtonGroup
+
+
+register_matplotlib_converters()
 
 
 class TimeSeriesAxes(MplAxes):
