@@ -157,6 +157,10 @@ class ObservationWellTableView(QTableView):
                 self._trigger_obs_well_table_update)
 
     # ---- Column options
+    def column_count(self):
+        """Return this table number of visible and hidden columns."""
+        return self.horizontalHeader().count()
+
     def get_horiz_header_state(self):
         """
         Return the current state of this table horizontal header.
