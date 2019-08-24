@@ -16,11 +16,13 @@ import pandas as pd
 from qtpy.QtCore import (QAbstractTableModel, QModelIndex,
                          QSortFilterProxyModel, Qt, QVariant, Slot)
 from qtpy.QtGui import QColor
-from qtpy.QtWidgets import QApplication, QHeaderView, QTableView
+from qtpy.QtWidgets import QApplication, QHeaderView, QMenu, QTableView
 
 # ---- Local imports
 from sardes.config.gui import RED, GREEN
 from sardes.config.locale import _
+from sardes.config.gui import get_iconsize
+from sardes.utils.qthelpers import create_action, create_toolbutton
 
 
 class ObsWellTableModel(QAbstractTableModel):
@@ -120,6 +122,7 @@ class ObservationWellTableView(QTableView):
         super().__init__(parent)
         self.setSortingEnabled(True)
         self.setAlternatingRowColors(True)
+        self.setCornerButtonEnabled(False)
 
         self.obs_well_table_model = ObsWellTableModel()
         self.obs_well_proxy_model = ObsWellSortFilterProxyModel(
@@ -130,6 +133,9 @@ class ObservationWellTableView(QTableView):
 
         self.horizontalHeader().setSectionResizeMode(
             self.obs_well_table_model.columnCount() - 1, QHeaderView.Stretch)
+        self.horizontalHeader().setSectionsMovable(True)
+
+        self._columns_options_button = None
 
     @Slot(bool)
     def _trigger_obs_well_table_update(self, connection_state):
@@ -146,6 +152,51 @@ class ObservationWellTableView(QTableView):
         if db_connection_manager is not None:
             self.db_connection_manager.sig_database_connection_changed.connect(
                 self._trigger_obs_well_table_update)
+
+    # ---- Column options
+    def get_column_options_button(self):
+        """
+        Return a toolbutton with a menu that contains actions to toggle the
+        visibility of the available columns of this table.
+        """
+        if self._columns_options_button is None:
+            self._create_columns_options_button()
+        return self._columns_options_button
+
+    def _create_columns_options_button(self):
+        """
+        Create and return a toolbutton with a menu that contains actions
+        to toggle the visibility of the available columns of this table.
+        """
+        # Create the column options button.
+        self._columns_options_button = create_toolbutton(
+            self,
+            icon='table_columns',
+            text=_("Column options"),
+            tip=_("Open this table's column options menu."),
+            iconsize=get_iconsize()
+            )
+        self._columns_options_button.setPopupMode(
+            self._columns_options_button.InstantPopup)
+
+        # Create the column options menu.
+        columns_options_menu = QMenu()
+        self._columns_options_button.setMenu(columns_options_menu)
+
+        # Add an action to toggle the visibility for each available
+        # column of this table.
+        columns = self.obs_well_table_model.COLUMNS
+        columns_labels = self.obs_well_table_model.COLUMN_LABELS
+        for i, column in enumerate(columns):
+            action = create_action(
+                self, columns_labels[column],
+                toggled=(lambda toggle,
+                         logical_index=i:
+                         self.horizontalHeader().setSectionHidden(
+                             logical_index, not toggle)
+                         ))
+            columns_options_menu.addAction(action)
+            action.setChecked(not self.horizontalHeader().isSectionHidden(i))
 
 
 if __name__ == '__main__':
