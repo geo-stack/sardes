@@ -19,11 +19,14 @@ from sardes.config.locale import _
 from sardes.widgets.locationtable import ObservationWellTableView
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
+from sardes.utils.qthelpers import create_toolbar_stretcher
 
 """Observation well explorer plugin"""
 
 
 class ObsWellsExplorer(SardesPlugin):
+
+    CONF_SECTION = 'obs_wells_explorer'
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -38,14 +41,21 @@ class ObsWellsExplorer(SardesPlugin):
         Create and return the pane widget to use in this
         plugin's dockwidget.
         """
+        # ---- Setup Observation Well table view
         self.obs_well_tableview = ObservationWellTableView(
             self.main.db_connection_manager)
         self.obs_well_tableview.doubleClicked.connect(
             self._handle_table_double_clicked)
 
+        # Restore the state of the observation wells table horizontal header
+        # from the configs.
+        self.obs_well_tableview.restore_horiz_header_state(
+            self.get_option('horiz_header/state', None))
+
         pane_widget = SardesPaneWidget(parent=self.main)
         pane_widget.set_central_widget(self.obs_well_tableview)
 
+        # ---- Setup upper toolbar.
         upper_toolbar = pane_widget.get_upper_toolbar()
 
         show_plot_button = create_toolbutton(
@@ -116,3 +126,15 @@ class ObsWellsExplorer(SardesPlugin):
 
         QApplication.restoreOverrideCursor()
         viewer.show()
+
+    def close_plugin(self):
+        """
+        Extend Sardes plugin method to save user inputs in the
+        configuration file.
+        """
+        super().close_plugin()
+
+        # Save in the configs the state of the observation wells table
+        # horizontal header.
+        self.set_option('horiz_header/state',
+                        self.obs_well_tableview.get_horiz_header_state())
