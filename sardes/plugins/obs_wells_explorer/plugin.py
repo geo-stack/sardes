@@ -71,6 +71,11 @@ class ObsWellsExplorer(SardesPlugin):
             )
         upper_toolbar.addWidget(show_plot_button)
 
+
+        upper_toolbar.addWidget(create_toolbar_stretcher())
+        upper_toolbar.addWidget(
+            self.obs_well_tableview.get_column_options_button())
+
         return pane_widget
 
     def get_current_obs_well(self):
