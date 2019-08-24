@@ -209,7 +209,8 @@ class ObservationWellTableView(QTableView):
             self,
             icon='table_columns',
             text=_("Column options"),
-            tip=_("Open this table's column options menu."),
+            tip=_("Open a menu to select the columns to "
+                  "display in this table."),
             iconsize=get_iconsize()
             )
         self._columns_options_button.setPopupMode(
