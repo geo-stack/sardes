@@ -22,7 +22,9 @@ from qtpy.QtWidgets import QApplication, QHeaderView, QMenu, QTableView
 from sardes.config.gui import RED, GREEN
 from sardes.config.locale import _
 from sardes.config.gui import get_iconsize
-from sardes.utils.qthelpers import create_action, create_toolbutton
+from sardes.utils.qthelpers import (
+    create_action, create_toolbutton, qbytearray_to_hexstate,
+    hexstate_to_qbytearray)
 
 
 class ObsWellTableModel(QAbstractTableModel):
@@ -154,6 +156,20 @@ class ObservationWellTableView(QTableView):
                 self._trigger_obs_well_table_update)
 
     # ---- Column options
+    def get_horiz_header_state(self):
+        """
+        Return the current state of this table horizontal header.
+        """
+        return qbytearray_to_hexstate(self.horizontalHeader().saveState())
+
+    def restore_horiz_header_state(self, hexstate):
+        """
+        Restore the state of this table horizontal header from hexstate.
+        """
+        if hexstate is not None:
+            self.horizontalHeader().restoreState(
+                hexstate_to_qbytearray(hexstate))
+
     def get_column_options_button(self):
         """
         Return a toolbutton with a menu that contains actions to toggle the
