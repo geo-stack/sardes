@@ -138,6 +138,7 @@ class ObservationWellTableView(QTableView):
         self.horizontalHeader().setSectionsMovable(True)
 
         self._columns_options_button = None
+        self._toggle_column_visibility_actions = []
 
     @Slot(bool)
     def _trigger_obs_well_table_update(self, connection_state):
@@ -170,6 +171,25 @@ class ObservationWellTableView(QTableView):
             self.horizontalHeader().restoreState(
                 hexstate_to_qbytearray(hexstate))
 
+    def show_all_available_columns(self):
+        """
+        Set the visibility of all available columns of this table to true.
+        """
+        for action in self._toggle_column_visibility_actions:
+            action.setChecked(True)
+
+    def restore_horiz_header_to_defaults(self):
+        """
+        Restore the visibility and order of this table columns to the
+        default values.
+        """
+        self.show_all_available_columns()
+        for logical_index, column in enumerate(
+                self.obs_well_table_model.COLUMNS):
+            self.horizontalHeader().moveSection(
+                self.horizontalHeader().visualIndex(logical_index),
+                logical_index)
+
     def get_column_options_button(self):
         """
         Return a toolbutton with a menu that contains actions to toggle the
@@ -199,10 +219,20 @@ class ObservationWellTableView(QTableView):
         columns_options_menu = QMenu()
         self._columns_options_button.setMenu(columns_options_menu)
 
+        # Add a show all column and restore to defaults action.
+        columns_options_menu.addAction(create_action(
+            self, _('Restore to defaults'),
+            triggered=self.restore_horiz_header_to_defaults))
+        columns_options_menu.addAction(create_action(
+            self, _('Show all'),
+            triggered=self.show_all_available_columns))
+        columns_options_menu.addSeparator()
+
         # Add an action to toggle the visibility for each available
         # column of this table.
         columns = self.obs_well_table_model.COLUMNS
         columns_labels = self.obs_well_table_model.COLUMN_LABELS
+        self._toggle_column_visibility_actions = []
         for i, column in enumerate(columns):
             action = create_action(
                 self, columns_labels[column],
@@ -211,6 +241,7 @@ class ObservationWellTableView(QTableView):
                          self.horizontalHeader().setSectionHidden(
                              logical_index, not toggle)
                          ))
+            self._toggle_column_visibility_actions.append(action)
             columns_options_menu.addAction(action)
             action.setChecked(not self.horizontalHeader().isSectionHidden(i))
 
