@@ -16,7 +16,7 @@ import sys
 # ---- Third party imports
 from qtpy.QtGui import QFont, QKeySequence
 from qtpy.QtCore import QByteArray, QPoint, QSize, Qt
-from qtpy.QtWidgets import QAction, QSizePolicy, QToolBar, QToolButton
+from qtpy.QtWidgets import QAction, QSizePolicy, QToolBar, QToolButton, QWidget
 
 # ---- Local imports
 from sardes.config.gui import (get_iconsize, get_toolbar_item_spacing)
@@ -73,6 +73,13 @@ def create_mainwindow_toolbar(title, iconsize=None, areas=None, spacing=None,
     iconsize = iconsize or get_iconsize()
     toolbar.setIconSize(QSize(iconsize, iconsize))
     return toolbar
+
+
+def create_toolbar_stretcher():
+    """Create a stretcher to be used in a toolbar """
+    stretcher = QWidget()
+    stretcher.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+    return stretcher
 
 
 def create_toolbutton(parent, text=None, shortcut=None, icon=None, tip=None,

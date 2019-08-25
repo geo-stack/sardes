@@ -16,11 +16,15 @@ import pandas as pd
 from qtpy.QtCore import (QAbstractTableModel, QModelIndex,
                          QSortFilterProxyModel, Qt, QVariant, Slot)
 from qtpy.QtGui import QColor
-from qtpy.QtWidgets import QApplication, QHeaderView, QTableView
+from qtpy.QtWidgets import QApplication, QHeaderView, QMenu, QTableView
 
 # ---- Local imports
 from sardes.config.gui import RED, GREEN
 from sardes.config.locale import _
+from sardes.config.gui import get_iconsize
+from sardes.utils.qthelpers import (
+    create_action, create_toolbutton, qbytearray_to_hexstate,
+    hexstate_to_qbytearray)
 
 
 class ObsWellTableModel(QAbstractTableModel):
@@ -120,6 +124,7 @@ class ObservationWellTableView(QTableView):
         super().__init__(parent)
         self.setSortingEnabled(True)
         self.setAlternatingRowColors(True)
+        self.setCornerButtonEnabled(False)
 
         self.obs_well_table_model = ObsWellTableModel()
         self.obs_well_proxy_model = ObsWellSortFilterProxyModel(
@@ -130,6 +135,10 @@ class ObservationWellTableView(QTableView):
 
         self.horizontalHeader().setSectionResizeMode(
             self.obs_well_table_model.columnCount() - 1, QHeaderView.Stretch)
+        self.horizontalHeader().setSectionsMovable(True)
+
+        self._columns_options_button = None
+        self._toggle_column_visibility_actions = []
 
     @Slot(bool)
     def _trigger_obs_well_table_update(self, connection_state):
@@ -146,6 +155,100 @@ class ObservationWellTableView(QTableView):
         if db_connection_manager is not None:
             self.db_connection_manager.sig_database_connection_changed.connect(
                 self._trigger_obs_well_table_update)
+
+    # ---- Column options
+    def column_count(self):
+        """Return this table number of visible and hidden columns."""
+        return self.horizontalHeader().count()
+
+    def get_horiz_header_state(self):
+        """
+        Return the current state of this table horizontal header.
+        """
+        return qbytearray_to_hexstate(self.horizontalHeader().saveState())
+
+    def restore_horiz_header_state(self, hexstate):
+        """
+        Restore the state of this table horizontal header from hexstate.
+        """
+        if hexstate is not None:
+            self.horizontalHeader().restoreState(
+                hexstate_to_qbytearray(hexstate))
+
+    def show_all_available_columns(self):
+        """
+        Set the visibility of all available columns of this table to true.
+        """
+        for action in self._toggle_column_visibility_actions:
+            action.setChecked(True)
+
+    def restore_horiz_header_to_defaults(self):
+        """
+        Restore the visibility and order of this table columns to the
+        default values.
+        """
+        self.show_all_available_columns()
+        for logical_index, column in enumerate(
+                self.obs_well_table_model.COLUMNS):
+            self.horizontalHeader().moveSection(
+                self.horizontalHeader().visualIndex(logical_index),
+                logical_index)
+
+    def get_column_options_button(self):
+        """
+        Return a toolbutton with a menu that contains actions to toggle the
+        visibility of the available columns of this table.
+        """
+        if self._columns_options_button is None:
+            self._create_columns_options_button()
+        return self._columns_options_button
+
+    def _create_columns_options_button(self):
+        """
+        Create and return a toolbutton with a menu that contains actions
+        to toggle the visibility of the available columns of this table.
+        """
+        # Create the column options button.
+        self._columns_options_button = create_toolbutton(
+            self,
+            icon='table_columns',
+            text=_("Column options"),
+            tip=_("Open a menu to select the columns to "
+                  "display in this table."),
+            iconsize=get_iconsize()
+            )
+        self._columns_options_button.setPopupMode(
+            self._columns_options_button.InstantPopup)
+
+        # Create the column options menu.
+        columns_options_menu = QMenu()
+        self._columns_options_button.setMenu(columns_options_menu)
+
+        # Add a show all column and restore to defaults action.
+        columns_options_menu.addAction(create_action(
+            self, _('Restore to defaults'),
+            triggered=self.restore_horiz_header_to_defaults))
+        columns_options_menu.addAction(create_action(
+            self, _('Show all'),
+            triggered=self.show_all_available_columns))
+        columns_options_menu.addSeparator()
+
+        # Add an action to toggle the visibility for each available
+        # column of this table.
+        columns = self.obs_well_table_model.COLUMNS
+        columns_labels = self.obs_well_table_model.COLUMN_LABELS
+        self._toggle_column_visibility_actions = []
+        for i, column in enumerate(columns):
+            action = create_action(
+                self, columns_labels[column],
+                toggled=(lambda toggle,
+                         logical_index=i:
+                         self.horizontalHeader().setSectionHidden(
+                             logical_index, not toggle)
+                         ))
+            self._toggle_column_visibility_actions.append(action)
+            columns_options_menu.addAction(action)
+            action.setChecked(not self.horizontalHeader().isSectionHidden(i))
 
 
 if __name__ == '__main__':

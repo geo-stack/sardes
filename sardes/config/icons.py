@@ -120,6 +120,9 @@ FA_ICONS = {
     'save': [
         ('fa.save',),
         {'color': ICON_COLOR}],
+    'table_columns': [
+        ('fa.columns',),
+        {'color': ICON_COLOR, 'scale_factor': 0.9, 'offset': (0, -0.1)}],
     'show_plot': [
         ('mdi.chart-line',),
         {'color': ICON_COLOR}],

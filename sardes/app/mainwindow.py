@@ -49,8 +49,8 @@ from sardes.config.locale import (get_available_translations, get_lang_conf,
 from sardes.config.main import CONFIG_DIR
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.utils.qthelpers import (
-    create_action, create_mainwindow_toolbar, create_toolbutton,
-    qbytearray_to_hexstate, hexstate_to_qbytearray)
+    create_action, create_mainwindow_toolbar, create_toolbar_stretcher,
+    create_toolbutton, qbytearray_to_hexstate, hexstate_to_qbytearray)
 
 from multiprocessing import freeze_support
 freeze_support()
@@ -161,10 +161,8 @@ class MainWindow(QMainWindow):
         self.options_menu_toolbar = create_mainwindow_toolbar(
             "Options toolbar")
 
-        # Add a stretcher item.
-        stretcher = QWidget()
-        stretcher.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.options_menu_toolbar.addWidget(stretcher)
+        # Add a stretcher to the toolbar.
+        self.options_menu_toolbar.addWidget(create_toolbar_stretcher())
 
         # Add the tools and options button.
         self.options_menu_button = self._create_options_menu_button()
