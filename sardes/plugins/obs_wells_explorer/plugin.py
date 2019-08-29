@@ -16,7 +16,7 @@ from sardes.api.plugins import SardesPlugin
 from sardes.api.panes import SardesPaneWidget
 from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
-from sardes.widgets.locationtable import ObservationWellTableView
+from sardes.widgets.tableviews import ObservationWellTableView
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
 from sardes.utils.qthelpers import create_toolbar_stretcher

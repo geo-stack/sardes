@@ -23,7 +23,7 @@ from qtpy.QtCore import Qt
 # ---- Local imports
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.database.accessor_demo import OBS_WELLS_DF, DatabaseAccessorDemo
-from sardes.widgets.locationtable import ObservationWellTableView
+from sardes.widgets.tableviews import ObservationWellTableView
 
 
 # =============================================================================
