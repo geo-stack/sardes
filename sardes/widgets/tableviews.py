@@ -52,10 +52,15 @@ class SardesTableModel(QAbstractTableModel):
         super().__init__()
         self.dataf = pd.DataFrame([])
 
-    def update_obs_well_table(self, obs_wells):
+    def update_table_data(self, dataf):
         """
-        Update the content of this table model with the provided list of
-        observation wells.
+        Update the content of this table model with the data
+        contained in dataf.
+
+        Parameters
+        ----------
+        dataf: :class:`pd.DataFrame`
+            A pandas dataframe containing the data of this table model.
         """
         self.dataf = dataf
         self.modelReset.emit()
@@ -147,7 +152,7 @@ class ObservationWellTableView(QTableView):
         update the content of this table view.
         """
         self.db_connection_manager.get_observation_wells_data(
-            callback=self.obs_well_table_model.update_obs_well_table)
+            callback=self.obs_well_table_model.update_table_data)
 
     def set_database_connection_manager(self, db_connection_manager):
         """Setup the database connection manager for this table view."""
