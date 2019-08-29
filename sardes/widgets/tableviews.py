@@ -50,19 +50,19 @@ class SardesTableModel(QAbstractTableModel):
 
     def __init__(self):
         super().__init__()
-        self.obs_wells = []
+        self.dataf = pd.DataFrame([])
 
     def update_obs_well_table(self, obs_wells):
         """
         Update the content of this table model with the provided list of
         observation wells.
         """
-        self.obs_wells = obs_wells
+        self.dataf = dataf
         self.modelReset.emit()
 
     def rowCount(self, parent=QModelIndex()):
         """Qt method override. Return the number of row of the table."""
-        return len(self.obs_wells)
+        return len(self.dataf)
 
     def columnCount(self, parent=QModelIndex()):
         """Qt method override. Return the number of column of the table."""
@@ -82,7 +82,7 @@ class SardesTableModel(QAbstractTableModel):
         column_key = self.COLUMNS[index.column()]
         row = index.row()
         try:
-            column = self.obs_wells.columns.get_loc(column_key)
+            column = self.dataf.columns.get_loc(column_key)
         except ValueError:
             column = None
 
@@ -90,20 +90,20 @@ class SardesTableModel(QAbstractTableModel):
             if column is None:
                 value = ''
             else:
-                value = self.obs_wells.iloc[row, column]
+                value = self.dataf.iloc[row, column]
                 value = '' if pd.isna(value) else value
             return str(value)
         elif role == Qt.ForegroundRole:
             if column_key == 'is_station_active' and column is not None:
                 color = (GREEN if
-                         self.obs_wells.iloc[row, column] == 'True'
+                         self.dataf.iloc[row, column] == 'True'
                          else RED)
                 return QColor(color)
             else:
                 return QVariant()
         elif role == Qt.ToolTipRole:
             return (QVariant() if column is None
-                    else self.obs_wells.iloc[row, column])
+                    else self.dataf.iloc[row, column])
         else:
             return QVariant()
 
