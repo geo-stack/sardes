@@ -146,7 +146,7 @@ class ObservationWellTableView(QTableView):
         Get the list of observation wells that are saved in the database and
         update the content of this table view.
         """
-        self.db_connection_manager.get_observation_wells(
+        self.db_connection_manager.get_observation_wells_data(
             callback=self.obs_well_table_model.update_obs_well_table)
 
     def set_database_connection_manager(self, db_connection_manager):
