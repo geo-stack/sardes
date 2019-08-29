@@ -113,7 +113,7 @@ class SardesTableModel(QAbstractTableModel):
             return QVariant()
 
 
-class ObsWellSortFilterProxyModel(QSortFilterProxyModel):
+class SardesSortFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, source_model, date_span=None):
         super().__init__()
         self.setSourceModel(source_model)
@@ -132,7 +132,7 @@ class ObservationWellTableView(QTableView):
         self.setCornerButtonEnabled(False)
 
         self.obs_well_table_model = SardesTableModel()
-        self.obs_well_proxy_model = ObsWellSortFilterProxyModel(
+        self.obs_well_proxy_model = SardesSortFilterProxyModel(
             self.obs_well_table_model)
 
         self.setModel(self.obs_well_proxy_model)
