@@ -27,7 +27,7 @@ from sardes.utils.qthelpers import (
     hexstate_to_qbytearray)
 
 
-class ObsWellTableModel(QAbstractTableModel):
+class SardesTableModel(QAbstractTableModel):
     """
     An abstract table model to be used in a table view to display the list of
     observation wells that are saved in the database.
@@ -126,7 +126,7 @@ class ObservationWellTableView(QTableView):
         self.setAlternatingRowColors(True)
         self.setCornerButtonEnabled(False)
 
-        self.obs_well_table_model = ObsWellTableModel()
+        self.obs_well_table_model = SardesTableModel()
         self.obs_well_proxy_model = ObsWellSortFilterProxyModel(
             self.obs_well_table_model)
 
