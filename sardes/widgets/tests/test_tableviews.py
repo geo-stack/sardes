@@ -26,20 +26,20 @@ from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.widgets.tableviews import SardesTableView, SardesTableModel
 
 
+NCOL = 5
 TABLE_DATAF = pd.DataFrame(
     [['str1', True, 1.111, 1],
      ['str2', False, 2.222, 2],
      ['str3', True, 3.333, 3]],
-    columns=['col1', 'col2', 'col3', 'col4']
+    columns=['col{}'.format(i) for i in range(NCOL - 1)]
     )
+# Note that the fifth column mapped in the table model is
+# missing in the dataframe.
 
 
 class MockSardesTableModel(SardesTableModel):
     __data_columns_mapper__ = [
-        ('col1', _('Column #1')),
-        ('col2', _('Column #2')),
-        ('col3', _('Column #3')),
-        ('col4', _('Column #4')),
+        ('col{}'.format(i), _('Column #{}').format(i)) for i in range(NCOL)
         ]
     __get_data_method__ = 'get_data'
 
@@ -79,7 +79,7 @@ def test_tableview_init(tableview, dbconnmanager, qtbot):
     """Test that the location table view is initialized correctly."""
     assert tableview
     assert tableview.model().rowCount() == 0
-    assert tableview.model().columnCount() == len(TABLE_DATAF.columns)
+    assert tableview.model().columnCount() == NCOL
 
     # Connect to the database. This should trigger in the location table view
     # a query to get and display the content of the database location table.
@@ -119,8 +119,8 @@ def test_tableview_row_selection(tableview, dbconnmanager, qtbot):
 def test_toggle_column_visibility(tableview, qtbot):
     """Test toggling on and off the visibility of the columns."""
     horiz_header = tableview.horizontalHeader()
-    assert tableview.column_count() == len(TABLE_DATAF.columns)
-    assert tableview.visible_column_count() == len(TABLE_DATAF.columns)
+    assert tableview.column_count() == NCOL
+    assert tableview.visible_column_count() == NCOL
     assert tableview.hidden_column_count() == 0
 
     # Hide the second, third, and fourth columns of the table.
@@ -131,7 +131,7 @@ def test_toggle_column_visibility(tableview, qtbot):
         assert not action.isChecked()
         assert horiz_header.isSectionHidden(logical_index)
     assert tableview.hidden_column_count() == 3
-    assert tableview.visible_column_count() == len(TABLE_DATAF.columns) - 3
+    assert tableview.visible_column_count() == NCOL - 3
 
     # Toggle back the visibility of the second column.
     action = tableview._toggle_column_visibility_actions[1]
@@ -139,7 +139,7 @@ def test_toggle_column_visibility(tableview, qtbot):
     assert action.isChecked()
     assert not horiz_header.isSectionHidden(1)
     assert tableview.hidden_column_count() == 2
-    assert tableview.visible_column_count() == len(TABLE_DATAF.columns) - 2
+    assert tableview.visible_column_count() == NCOL - 2
 
     # Restore column visibility with action 'Show all'.
     menu = tableview.get_column_options_button().menu()
@@ -148,7 +148,7 @@ def test_toggle_column_visibility(tableview, qtbot):
         assert action.isChecked()
     for logical_index in range(tableview.column_count()):
         assert not horiz_header.isSectionHidden(logical_index)
-    assert tableview.visible_column_count() == len(TABLE_DATAF.columns)
+    assert tableview.visible_column_count() == NCOL
     assert tableview.hidden_column_count() == 0
 
 
@@ -167,7 +167,7 @@ def test_restore_columns_to_defaults(tableview, qtbot):
     action.toggle()
     assert not action.isChecked()
     assert horiz_header.isSectionHidden(logical_index)
-    assert tableview.visible_column_count() == len(TABLE_DATAF.columns) - 1
+    assert tableview.visible_column_count() == NCOL - 1
     assert tableview.hidden_column_count() == 1
 
     # Restore columns to defaults with action 'Restore to defaults'.
@@ -177,7 +177,7 @@ def test_restore_columns_to_defaults(tableview, qtbot):
     assert horiz_header.logicalIndex(2) == 2
     assert action.isChecked()
     assert not horiz_header.isSectionHidden(logical_index)
-    assert tableview.visible_column_count() == len(TABLE_DATAF.columns)
+    assert tableview.visible_column_count() == NCOL
     assert tableview.hidden_column_count() == 0
 
 
