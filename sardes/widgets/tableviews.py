@@ -15,11 +15,9 @@ import sys
 import pandas as pd
 from qtpy.QtCore import (QAbstractTableModel, QModelIndex,
                          QSortFilterProxyModel, Qt, QVariant, Slot)
-from qtpy.QtGui import QColor
 from qtpy.QtWidgets import QApplication, QHeaderView, QMenu, QTableView
 
 # ---- Local imports
-from sardes.config.gui import RED, GREEN
 from sardes.config.locale import _
 from sardes.config.gui import get_iconsize
 from sardes.utils.qthelpers import (
@@ -117,13 +115,7 @@ class SardesTableModel(QAbstractTableModel):
                 value = '' if pd.isna(value) else value
             return str(value)
         elif role == Qt.ForegroundRole:
-            if column_key == 'is_station_active' and column is not None:
-                color = (GREEN if
-                         self.dataf.iloc[row, column] == 'True'
-                         else RED)
-                return QColor(color)
-            else:
-                return QVariant()
+            return QVariant()
         elif role == Qt.ToolTipRole:
             return (QVariant() if column is None
                     else self.dataf.iloc[row, column])
