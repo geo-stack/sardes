@@ -16,7 +16,7 @@ from sardes.api.plugins import SardesPlugin
 from sardes.api.panes import SardesPaneWidget
 from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
-from sardes.widgets.tableviews import ObservationWellTableView
+from sardes.widgets.tableviews import SardesTableView
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
 from sardes.utils.qthelpers import create_toolbar_stretcher
@@ -42,7 +42,7 @@ class ObsWellsExplorer(SardesPlugin):
         plugin's dockwidget.
         """
         # ---- Setup Observation Well table view
-        self.obs_well_tableview = ObservationWellTableView(
+        self.obs_well_tableview = SardesTableView(
             self.main.db_connection_manager)
         self.obs_well_tableview.doubleClicked.connect(
             self._handle_table_double_clicked)
@@ -85,18 +85,15 @@ class ObsWellsExplorer(SardesPlugin):
         """
         try:
             proxy_index = (self.obs_well_tableview
-                           .selectionModel()
-                           .selectedIndexes()[0])
+                           .selectionModel().selectedIndexes()[0])
             model_index = (self.obs_well_tableview
-                           .obs_well_proxy_model
-                           .mapToSource(proxy_index))
-            obs_well_id = (self.obs_well_tableview
-                           .obs_well_table_model.obs_wells
-                           .iloc[model_index.row()]['obs_well_id'])
+                           .proxy_model.mapToSource(proxy_index))
+            obs_well = (self.obs_well_tableview
+                        .model.dataf.iloc[model_index.row()])
         except IndexError:
             # This means that no row is currently selected in the table.
-            obs_well_id = None
-        return obs_well_id
+            obs_well = None
+        return obs_well
 
     # ---- Timeseries
     def _handle_table_double_clicked(self, *args, **kargs):
@@ -109,7 +106,9 @@ class ObsWellsExplorer(SardesPlugin):
 
             # Get the timeseries data for that observation well.
             self.main.db_connection_manager.get_timeseries_for_obs_well(
-                current_obs_well, ['NIV_EAU', 'TEMP'], self._show_timeseries)
+                current_obs_well['obs_well_id'],
+                ['NIV_EAU', 'TEMP'],
+                self._show_timeseries)
 
     def _show_timeseries(self, tseries_groups):
         """
@@ -119,8 +118,8 @@ class ObsWellsExplorer(SardesPlugin):
         viewer = TimeSeriesPlotViewer(self.obs_well_tableview)
 
         # Set the title of the window.
-        viewer.setWindowTitle(
-            _("Observation well {}").format(self.get_current_obs_well()))
+        viewer.setWindowTitle(_("Observation well {}").format(
+                              self.get_current_obs_well()['obs_well_id']))
 
         # Setup the water level axe.
         # where = 'left'
