@@ -16,7 +16,7 @@ from collections import OrderedDict
 import pandas as pd
 from qtpy.QtCore import (QAbstractTableModel, QModelIndex,
                          QSortFilterProxyModel, Qt, QVariant, Slot)
-from qtpy.QtWidgets import QApplication, QHeaderView, QMenu, QTableView
+from qtpy.QtWidgets import QApplication, QMenu, QTableView
 
 # ---- Local imports
 from sardes.config.locale import _
@@ -160,10 +160,10 @@ class SardesTableView(QTableView):
         self._columns_options_button = None
         self._toggle_column_visibility_actions = []
 
-    def set_table_model(self, model):
+    def set_table_model(self, source_model):
         """Setup the data model for this table view."""
-        self.model = model
-        self.proxy_model = SardesSortFilterProxyModel(self.model)
+        self.source_model = source_model
+        self.proxy_model = SardesSortFilterProxyModel(source_model)
         self.setModel(self.proxy_model)
 
     # ---- Utilities
@@ -174,7 +174,7 @@ class SardesTableView(QTableView):
         try:
             proxy_index = self.selectionModel().selectedIndexes()[0]
             model_index = self.proxy_model.mapToSource(proxy_index)
-            row_data = self.model.dataf.iloc[model_index.row()]
+            row_data = self.source_model.dataf.iloc[model_index.row()]
         except IndexError:
             # This means that no row is currently selected in this table.
             row_data = None
@@ -212,7 +212,7 @@ class SardesTableView(QTableView):
         default values.
         """
         self.show_all_available_columns()
-        for logical_index, column in enumerate(self.model.columns):
+        for logical_index, column in enumerate(self.source_model.columns):
             self.horizontalHeader().moveSection(
                 self.horizontalHeader().visualIndex(logical_index),
                 logical_index)
@@ -260,7 +260,7 @@ class SardesTableView(QTableView):
         # Add an action to toggle the visibility for each available
         # column of this table.
         self._toggle_column_visibility_actions = []
-        for i, label in enumerate(self.model.horizontal_header_labels):
+        for i, label in enumerate(self.source_model.horizontal_header_labels):
             action = create_action(
                 self, label,
                 toggled=(lambda toggle,
