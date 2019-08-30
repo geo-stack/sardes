@@ -31,29 +31,18 @@ class SardesTableModel(QAbstractTableModel):
     An abstract table model to be used in a table view to display the list of
     observation wells that are saved in the database.
     """
-    # A dicionary to map the keys of the columns dataframe with their
+    # A list of tuple that maps the keys of the columns dataframe with their
     # corresponding human readable label to use in the GUI.
-    __data_columns_mapper__ = OrderedDict([
-        ('obs_well_id', _('Well ID')),
-        ('common_name', _('Common Name')),
-        ('municipality', _('Municipality')),
-        ('aquifer_type', _('Aquifer')),
-        ('aquifer_code', _('Aquifer Code')),
-        ('confinement', _('Confinement')),
-        ('in_recharge_zone', _('Recharge Zone')),
-        ('is_influenced', _('Influenced')),
-        ('latitude', _('Latitude')),
-        ('longitude', _('Longitude')),
-        ('is_station_active', _('Active')),
-        ('obs_well_notes', _('Note'))
-        ])
+    __data_columns_mapper__ = []
 
     # The method to call on the database connection manager to retrieve the
     # data for this model.
-    __get_data_method__ = 'get_observation_wells_data'
+    __get_data_method__ = None
 
     def __init__(self, db_connection_manager=None):
         super().__init__()
+        self.__data_columns_mapper__ = OrderedDict(
+            self.__data_columns_mapper__)
         self.dataf = pd.DataFrame([])
         self.set_database_connection_manager(db_connection_manager)
 
@@ -160,20 +149,22 @@ class SardesTableView(QTableView):
     that are saved in the database.
     """
 
-    def __init__(self, db_connection_manager=None, parent=None):
+    def __init__(self, model, parent=None):
         super().__init__(parent)
         self.setSortingEnabled(True)
         self.setAlternatingRowColors(True)
         self.setCornerButtonEnabled(False)
-
-        self.model = SardesTableModel(db_connection_manager)
-        self.proxy_model = SardesSortFilterProxyModel(self.model)
-        self.setModel(self.proxy_model)
-
         self.horizontalHeader().setSectionsMovable(True)
 
+        self.set_table_model(model)
         self._columns_options_button = None
         self._toggle_column_visibility_actions = []
+
+    def set_table_model(self, model):
+        """Setup the data model for this table view."""
+        self.model = model
+        self.proxy_model = SardesSortFilterProxyModel(self.model)
+        self.setModel(self.proxy_model)
 
     # ---- Utilities
     def get_selected_row_data(self):
