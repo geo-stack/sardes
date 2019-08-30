@@ -175,6 +175,20 @@ class SardesTableView(QTableView):
         self._columns_options_button = None
         self._toggle_column_visibility_actions = []
 
+    # ---- Utilities
+    def get_selected_row_data(self):
+        """
+        Return the data relative to the currently selected row in this table.
+        """
+        try:
+            proxy_index = self.selectionModel().selectedIndexes()[0]
+            model_index = self.proxy_model.mapToSource(proxy_index)
+            row_data = self.model.dataf.iloc[model_index.row()]
+        except IndexError:
+            # This means that no row is currently selected in this table.
+            row_data = None
+        return row_data
+
     # ---- Column options
     def column_count(self):
         """Return this table number of visible and hidden columns."""

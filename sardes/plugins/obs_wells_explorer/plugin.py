@@ -78,29 +78,19 @@ class ObsWellsExplorer(SardesPlugin):
 
         return pane_widget
 
-    def get_current_obs_well(self):
+    def get_current_obs_well_data(self):
         """
-        Return the observation well id relative to the currently selected
+        Return the observation well data relative to the currently selected
         row in the table.
         """
-        try:
-            proxy_index = (self.obs_well_tableview
-                           .selectionModel().selectedIndexes()[0])
-            model_index = (self.obs_well_tableview
-                           .proxy_model.mapToSource(proxy_index))
-            obs_well = (self.obs_well_tableview
-                        .model.dataf.iloc[model_index.row()])
-        except IndexError:
-            # This means that no row is currently selected in the table.
-            obs_well = None
-        return obs_well
+        return self.obs_well_tableview.get_selected_row_data()
 
     # ---- Timeseries
     def _handle_table_double_clicked(self, *args, **kargs):
         """
         Handle when a row is double-clicked in the table.
         """
-        current_obs_well = self.get_current_obs_well()
+        current_obs_well = self.get_current_obs_well_data()
         if current_obs_well is not None:
             QApplication.setOverrideCursor(Qt.WaitCursor)
 
@@ -119,7 +109,7 @@ class ObsWellsExplorer(SardesPlugin):
 
         # Set the title of the window.
         viewer.setWindowTitle(_("Observation well {}").format(
-                              self.get_current_obs_well()['obs_well_id']))
+                              self.get_current_obs_well_data()['obs_well_id']))
 
         # Setup the water level axe.
         # where = 'left'
