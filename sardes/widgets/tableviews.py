@@ -10,6 +10,7 @@
 
 # ---- Standard imports
 import sys
+from collections import OrderedDict
 
 # ---- Third party imports
 import pandas as pd
@@ -30,27 +31,70 @@ class SardesTableModel(QAbstractTableModel):
     An abstract table model to be used in a table view to display the list of
     observation wells that are saved in the database.
     """
-    COLUMNS_LABELS = {'obs_well_id': _('Well ID'),
-                      'common_name': _('Common Name'),
-                      'municipality': _('Municipality'),
-                      'aquifer_type': _('Aquifer'),
-                      'aquifer_code': _('Aquifer Code'),
-                      'confinement': _('Confinement'),
-                      'in_recharge_zone': _('Recharge Zone'),
-                      'is_influenced': _('Influenced'),
-                      'latitude': _('Latitude'),
-                      'longitude': _('Longitude'),
-                      'is_station_active': _('Active'),
-                      'obs_well_notes': _('Note')
-                      }
-    COLUMNS = list(COLUMNS_LABELS.keys())
+    # A dicionary to map the keys of the columns dataframe with their
+    # corresponding human readable label to use in the GUI.
+    __data_columns_mapper__ = OrderedDict([
+        ('obs_well_id', _('Well ID')),
+        ('common_name', _('Common Name')),
+        ('municipality', _('Municipality')),
+        ('aquifer_type', _('Aquifer')),
+        ('aquifer_code', _('Aquifer Code')),
+        ('confinement', _('Confinement')),
+        ('in_recharge_zone', _('Recharge Zone')),
+        ('is_influenced', _('Influenced')),
+        ('latitude', _('Latitude')),
+        ('longitude', _('Longitude')),
+        ('is_station_active', _('Active')),
+        ('obs_well_notes', _('Note'))
+        ])
+
+    # The method to call on the database connection manager to retrieve the
+    # data for this model.
+    __get_data_method__ = 'get_observation_wells_data'
 
     def __init__(self, db_connection_manager=None):
         super().__init__()
         self.dataf = pd.DataFrame([])
         self.set_database_connection_manager(db_connection_manager)
 
-    def update_data(self, dataf):
+    def set_database_connection_manager(self, db_connection_manager):
+        """Setup the database connection manager for this table model."""
+        self.db_connection_manager = db_connection_manager
+        if db_connection_manager is not None:
+            self.db_connection_manager.sig_database_connection_changed.connect(
+                self._trigger_data_update)
+
+    # ---- Columns
+    @property
+    def columns(self):
+        return list(self.__data_columns_mapper__.keys())
+
+    def columnCount(self, parent=QModelIndex()):
+        """Qt method override. Return the number of column of the table."""
+        return len(self.columns)
+
+    # ---- Horizontal Headers
+    @property
+    def horizontal_header_labels(self):
+        return list(self.__data_columns_mapper__.values())
+
+    def get_horizontal_header_label_at(self, column_or_index):
+        return self.__data_columns_mapper__[
+            column_or_index if isinstance(column_or_index, str) else
+            self.columns[column_or_index]
+            ]
+
+    def headerData(self, section, orientation, role):
+        """Qt method override."""
+        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+            return self.get_horizontal_header_label_at(section)
+        if role == Qt.DisplayRole and orientation == Qt.Vertical:
+            return section
+        else:
+            return QVariant()
+
+    # ---- Table data
+    def _update_data(self, dataf):
         """
         Update the content of this table model with the data
         contained in dataf.
@@ -59,8 +103,8 @@ class SardesTableModel(QAbstractTableModel):
         ----------
         dataf: :class:`pd.DataFrame`
             A pandas dataframe containing the data of this table model. The
-            column labels of the dataframe must match the values that were
-            maps in COLUMNS_LABELS.
+            column labels of the dataframe must match the values that are
+            mapped in HORIZONTAL_HEADER_LABELS.
         """
         self.dataf = dataf
         self.modelReset.emit()
@@ -71,36 +115,17 @@ class SardesTableModel(QAbstractTableModel):
         Get the list of observation wells that are saved in the database and
         update the content of this table view.
         """
-        self.db_connection_manager.get_observation_wells_data(
-            callback=self.update_data)
-
-    def set_database_connection_manager(self, db_connection_manager):
-        """Setup the database connection manager for this table model."""
-        self.db_connection_manager = db_connection_manager
-        if db_connection_manager is not None:
-            self.db_connection_manager.sig_database_connection_changed.connect(
-                self._trigger_data_update)
+        get_data_method = getattr(
+            self.db_connection_manager, self.__get_data_method__)
+        get_data_method(callback=self._update_data)
 
     def rowCount(self, parent=QModelIndex()):
         """Qt method override. Return the number of row of the table."""
         return len(self.dataf)
 
-    def columnCount(self, parent=QModelIndex()):
-        """Qt method override. Return the number of column of the table."""
-        return len(self.COLUMNS)
-
-    def headerData(self, section, orientation, role):
-        """Qt method override."""
-        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            return self.COLUMNS_LABELS[self.COLUMNS[section]]
-        if role == Qt.DisplayRole and orientation == Qt.Vertical:
-            return section
-        else:
-            return QVariant()
-
     def data(self, index, role=Qt.DisplayRole):
         """Qt method override."""
-        column_key = self.COLUMNS[index.column()]
+        column_key = self.columns[index.column()]
         row = index.row()
         try:
             column = self.dataf.columns.get_loc(column_key)
@@ -145,8 +170,6 @@ class SardesTableView(QTableView):
         self.proxy_model = SardesSortFilterProxyModel(self.model)
         self.setModel(self.proxy_model)
 
-        self.horizontalHeader().setSectionResizeMode(
-            self.model.columnCount() - 1, QHeaderView.Stretch)
         self.horizontalHeader().setSectionsMovable(True)
 
         self._columns_options_button = None
@@ -184,10 +207,11 @@ class SardesTableView(QTableView):
         default values.
         """
         self.show_all_available_columns()
-        for logical_index, column in enumerate(self.model.COLUMNS):
+        for logical_index, column in enumerate(self.model.columns):
             self.horizontalHeader().moveSection(
                 self.horizontalHeader().visualIndex(logical_index),
                 logical_index)
+        self.resizeColumnsToContents()
 
     def get_column_options_button(self):
         """
@@ -231,9 +255,9 @@ class SardesTableView(QTableView):
         # Add an action to toggle the visibility for each available
         # column of this table.
         self._toggle_column_visibility_actions = []
-        for i, column in enumerate(self.model.COLUMNS):
+        for i, label in enumerate(self.model.horizontal_header_labels):
             action = create_action(
-                self, self.model.COLUMNS_LABELS[column],
+                self, label,
                 toggled=(lambda toggle,
                          logical_index=i:
                          self.horizontalHeader().setSectionHidden(
