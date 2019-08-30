@@ -18,6 +18,7 @@ import os.path as osp
 import pytest
 import pandas as pd
 from pandas.testing import assert_frame_equal
+from qtpy.QtCore import Qt
 
 # ---- Local imports
 from sardes.config.locale import _
@@ -74,7 +75,7 @@ def tableview(qtbot, mocker, dbconnmanager):
 # =============================================================================
 # ---- Tests for ObservationWellTableView
 # =============================================================================
-def test_tableview_init(tableview, dbconnmanager, mocker, qtbot):
+def test_tableview_init(tableview, dbconnmanager, qtbot):
     """Test that the location table view is initialized correctly."""
     assert tableview
     assert tableview.model().rowCount() == 0
@@ -86,7 +87,7 @@ def test_tableview_init(tableview, dbconnmanager, mocker, qtbot):
 
     # We need to wait a little to let the time for the data to display in
     # the table.
-    qtbot.wait(1000)
+    qtbot.wait(500)
     assert_frame_equal(tableview.source_model.dataf, TABLE_DATAF)
 
     # Assert that all columns are visible.
@@ -94,6 +95,25 @@ def test_tableview_init(tableview, dbconnmanager, mocker, qtbot):
         assert action.isChecked()
     for logical_index in range(tableview.column_count()):
         assert not tableview.horizontalHeader().isSectionHidden(logical_index)
+
+
+def test_tableview_row_selection(tableview, dbconnmanager, qtbot):
+    """
+    Test the data returned for the currently selected row.
+    """
+    dbconnmanager.sig_database_connection_changed.emit(True)
+    qtbot.wait(500)
+    assert tableview.get_selected_row_data() is None
+
+    # Select the rows of table one after the other.
+    for row in range(tableview.model().rowCount() == 0):
+        index = tableview.proxy_model.index(row, 0)
+        visual_rect = tableview.visualRect(index)
+        qtbot.mouseClick(
+            tableview.viewport(), Qt.LeftButton, pos=visual_rect.center())
+
+        assert_frame_equal(tableview.get_selected_row_data(),
+                           TABLE_DATAF.iloc([row]))
 
 
 def test_toggle_column_visibility(tableview, qtbot):

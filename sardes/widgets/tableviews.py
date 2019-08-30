@@ -174,7 +174,7 @@ class SardesTableView(QTableView):
         try:
             proxy_index = self.selectionModel().selectedIndexes()[0]
             model_index = self.proxy_model.mapToSource(proxy_index)
-            row_data = self.source_model.dataf.iloc[model_index.row()]
+            row_data = self.source_model.dataf.iloc[[model_index.row()]]
         except IndexError:
             # This means that no row is currently selected in this table.
             row_data = None
