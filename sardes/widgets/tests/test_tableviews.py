@@ -73,8 +73,7 @@ def test_obs_well_tableview_init(obs_well_tableview, dbaccessor,
     qtbot.wait(3000)
 
     assert obs_well_tableview.model().rowCount() == len(OBS_WELLS_DF)
-    assert_frame_equal(obs_well_tableview.obs_well_table_model.dataf,
-                       OBS_WELLS_DF)
+    assert_frame_equal(obs_well_tableview.model.dataf, OBS_WELLS_DF)
 
     # Assert that all columns are visible.
     for action in obs_well_tableview._toggle_column_visibility_actions:

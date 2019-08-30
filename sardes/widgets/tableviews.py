@@ -32,27 +32,27 @@ class SardesTableModel(QAbstractTableModel):
     An abstract table model to be used in a table view to display the list of
     observation wells that are saved in the database.
     """
-
-    COLUMN_LABELS = {'obs_well_id': _('Well ID'),
-                     'common_name': _('Common Name'),
-                     'municipality': _('Municipality'),
-                     'aquifer_type': _('Aquifer'),
-                     'aquifer_code': _('Aquifer Code'),
-                     'confinement': _('Confinement'),
-                     'in_recharge_zone': _('Recharge Zone'),
-                     'is_influenced': _('Influenced'),
-                     'latitude': _('Latitude'),
-                     'longitude': _('Longitude'),
-                     'is_station_active': _('Active'),
-                     'obs_well_notes': _('Note')
-                     }
-    COLUMNS = list(COLUMN_LABELS.keys())
-
     def __init__(self):
+    COLUMNS_LABELS = {'obs_well_id': _('Well ID'),
+                      'common_name': _('Common Name'),
+                      'municipality': _('Municipality'),
+                      'aquifer_type': _('Aquifer'),
+                      'aquifer_code': _('Aquifer Code'),
+                      'confinement': _('Confinement'),
+                      'in_recharge_zone': _('Recharge Zone'),
+                      'is_influenced': _('Influenced'),
+                      'latitude': _('Latitude'),
+                      'longitude': _('Longitude'),
+                      'is_station_active': _('Active'),
+                      'obs_well_notes': _('Note')
+                      }
+    COLUMNS = list(COLUMNS_LABELS.keys())
+
         super().__init__()
         self.dataf = pd.DataFrame([])
+        self.set_database_connection_manager(db_connection_manager)
 
-    def update_table_data(self, dataf):
+    def update_data(self, dataf):
         """
         Update the content of this table model with the data
         contained in dataf.
@@ -60,7 +60,9 @@ class SardesTableModel(QAbstractTableModel):
         Parameters
         ----------
         dataf: :class:`pd.DataFrame`
-            A pandas dataframe containing the data of this table model.
+            A pandas dataframe containing the data of this table model. The
+            column labels of the dataframe must match the values that were
+            maps in COLUMNS_LABELS.
         """
         self.dataf = dataf
         self.modelReset.emit()
@@ -76,7 +78,7 @@ class SardesTableModel(QAbstractTableModel):
     def headerData(self, section, orientation, role):
         """Qt method override."""
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            return self.COLUMN_LABELS[self.COLUMNS[section]]
+            return self.COLUMNS_LABELS[self.COLUMNS[section]]
         if role == Qt.DisplayRole and orientation == Qt.Vertical:
             return section
         else:
@@ -119,7 +121,7 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
         self.setSourceModel(source_model)
 
 
-class ObservationWellTableView(QTableView):
+class SardesTableView(QTableView):
     """
     A single table view that displays the list of observation wells
     that are saved in the database.
@@ -131,15 +133,12 @@ class ObservationWellTableView(QTableView):
         self.setAlternatingRowColors(True)
         self.setCornerButtonEnabled(False)
 
-        self.obs_well_table_model = SardesTableModel()
-        self.obs_well_proxy_model = SardesSortFilterProxyModel(
-            self.obs_well_table_model)
-
-        self.setModel(self.obs_well_proxy_model)
-        self.set_database_connection_manager(db_connection_manager)
+        self.model = SardesTableModel(db_connection_manager)
+        self.proxy_model = SardesSortFilterProxyModel(self.model)
+        self.setModel(self.proxy_model)
 
         self.horizontalHeader().setSectionResizeMode(
-            self.obs_well_table_model.columnCount() - 1, QHeaderView.Stretch)
+            self.model.columnCount() - 1, QHeaderView.Stretch)
         self.horizontalHeader().setSectionsMovable(True)
 
         self._columns_options_button = None
@@ -193,8 +192,7 @@ class ObservationWellTableView(QTableView):
         default values.
         """
         self.show_all_available_columns()
-        for logical_index, column in enumerate(
-                self.obs_well_table_model.COLUMNS):
+        for logical_index, column in enumerate(self.model.COLUMNS):
             self.horizontalHeader().moveSection(
                 self.horizontalHeader().visualIndex(logical_index),
                 logical_index)
@@ -240,12 +238,10 @@ class ObservationWellTableView(QTableView):
 
         # Add an action to toggle the visibility for each available
         # column of this table.
-        columns = self.obs_well_table_model.COLUMNS
-        columns_labels = self.obs_well_table_model.COLUMN_LABELS
         self._toggle_column_visibility_actions = []
-        for i, column in enumerate(columns):
+        for i, column in enumerate(self.model.COLUMNS):
             action = create_action(
-                self, columns_labels[column],
+                self, self.model.COLUMNS_LABELS[column],
                 toggled=(lambda toggle,
                          logical_index=i:
                          self.horizontalHeader().setSectionHidden(
@@ -261,7 +257,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
 
     manager = DatabaseConnectionManager()
-    table_view = ObservationWellTableView(manager)
+    table_view = SardesTableView(manager)
     table_view.show()
     manager.connect_to_db('debug')
 
