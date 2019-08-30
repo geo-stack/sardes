@@ -185,6 +185,14 @@ class SardesTableView(QTableView):
         """Return this table number of visible and hidden columns."""
         return self.horizontalHeader().count()
 
+    def hidden_column_count(self):
+        """Return this table number of hidden columns."""
+        return self.horizontalHeader().hiddenSectionCount()
+
+    def visible_column_count(self):
+        """Return this table number of visible columns."""
+        return self.column_count() - self.hidden_column_count()
+
     def get_horiz_header_state(self):
         """
         Return the current state of this table horizontal header.
