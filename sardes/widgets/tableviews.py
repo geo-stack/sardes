@@ -32,7 +32,6 @@ class SardesTableModel(QAbstractTableModel):
     An abstract table model to be used in a table view to display the list of
     observation wells that are saved in the database.
     """
-    def __init__(self):
     COLUMNS_LABELS = {'obs_well_id': _('Well ID'),
                       'common_name': _('Common Name'),
                       'municipality': _('Municipality'),
@@ -48,6 +47,7 @@ class SardesTableModel(QAbstractTableModel):
                       }
     COLUMNS = list(COLUMNS_LABELS.keys())
 
+    def __init__(self, db_connection_manager=None):
         super().__init__()
         self.dataf = pd.DataFrame([])
         self.set_database_connection_manager(db_connection_manager)
@@ -66,6 +66,22 @@ class SardesTableModel(QAbstractTableModel):
         """
         self.dataf = dataf
         self.modelReset.emit()
+
+    @Slot(bool)
+    def _trigger_data_update(self, connection_state):
+        """
+        Get the list of observation wells that are saved in the database and
+        update the content of this table view.
+        """
+        self.db_connection_manager.get_observation_wells_data(
+            callback=self.update_data)
+
+    def set_database_connection_manager(self, db_connection_manager):
+        """Setup the database connection manager for this table model."""
+        self.db_connection_manager = db_connection_manager
+        if db_connection_manager is not None:
+            self.db_connection_manager.sig_database_connection_changed.connect(
+                self._trigger_data_update)
 
     def rowCount(self, parent=QModelIndex()):
         """Qt method override. Return the number of row of the table."""
@@ -143,22 +159,6 @@ class SardesTableView(QTableView):
 
         self._columns_options_button = None
         self._toggle_column_visibility_actions = []
-
-    @Slot(bool)
-    def _trigger_obs_well_table_update(self, connection_state):
-        """
-        Get the list of observation wells that are saved in the database and
-        update the content of this table view.
-        """
-        self.db_connection_manager.get_observation_wells_data(
-            callback=self.obs_well_table_model.update_table_data)
-
-    def set_database_connection_manager(self, db_connection_manager):
-        """Setup the database connection manager for this table view."""
-        self.db_connection_manager = db_connection_manager
-        if db_connection_manager is not None:
-            self.db_connection_manager.sig_database_connection_changed.connect(
-                self._trigger_obs_well_table_update)
 
     # ---- Column options
     def column_count(self):
