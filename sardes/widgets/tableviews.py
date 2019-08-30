@@ -138,7 +138,7 @@ class SardesTableModel(QAbstractTableModel):
 
 
 class SardesSortFilterProxyModel(QSortFilterProxyModel):
-    def __init__(self, source_model, date_span=None):
+    def __init__(self, source_model):
         super().__init__()
         self.setSourceModel(source_model)
 
