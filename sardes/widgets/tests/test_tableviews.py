@@ -27,12 +27,14 @@ from sardes.widgets.tableviews import SardesTableView, SardesTableModel
 
 
 NCOL = 5
+COLUMNS = ['col{}'.format(i) for i in range(NCOL)]
+HEADERS = [_('Column #{}').format(i) for i in range(NCOL)]
 TABLE_DATAF = pd.DataFrame(
     [['str1', True, 1.111, 1],
      ['str2', False, 2.222, 2],
      ['str3', True, 3.333, 3]
      ],
-    columns=['col{}'.format(i) for i in range(NCOL - 1)]
+    columns=COLUMNS[:-1]
     )
 # Note that the fifth column mapped in the table model is
 # missing in the dataframe.
@@ -40,7 +42,7 @@ TABLE_DATAF = pd.DataFrame(
 
 class MockSardesTableModel(SardesTableModel):
     __data_columns_mapper__ = [
-        ('col{}'.format(i), _('Column #{}').format(i)) for i in range(NCOL)
+        (col, header) for col, header in zip(COLUMNS, HEADERS)
         ]
     __get_data_method__ = 'get_data'
 
@@ -103,6 +105,14 @@ def test_tableview_init(tableview, dbconnmanager, qtbot):
         assert action.isChecked()
     for logical_index in range(tableview.column_count()):
         assert not tableview.horizontalHeader().isSectionHidden(logical_index)
+
+
+def test_tableview_headers(tableview, dbconnmanager, qtbot):
+    """
+    Test the labels of the table horizontal header.
+    """
+    for i, header in enumerate(HEADERS[:-1]):
+        assert header == tableview.model().headerData(i, Qt.Horizontal)
 
 
 def test_tableview_row_selection(tableview, dbconnmanager, qtbot):
