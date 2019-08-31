@@ -30,7 +30,8 @@ NCOL = 5
 TABLE_DATAF = pd.DataFrame(
     [['str1', True, 1.111, 1],
      ['str2', False, 2.222, 2],
-     ['str3', True, 3.333, 3]],
+     ['str3', True, 3.333, 3]
+     ],
     columns=['col{}'.format(i) for i in range(NCOL - 1)]
     )
 # Note that the fifth column mapped in the table model is
@@ -113,14 +114,14 @@ def test_tableview_row_selection(tableview, dbconnmanager, qtbot):
     assert tableview.get_selected_row_data() is None
 
     # Select the rows of table one after the other.
-    for row in range(tableview.model().rowCount() == 0):
+    for row in range(len(TABLE_DATAF)):
         index = tableview.proxy_model.index(row, 0)
         visual_rect = tableview.visualRect(index)
         qtbot.mouseClick(
             tableview.viewport(), Qt.LeftButton, pos=visual_rect.center())
 
         assert_frame_equal(tableview.get_selected_row_data(),
-                           TABLE_DATAF.iloc([row]))
+                           TABLE_DATAF.iloc[[row]])
 
 
 def test_toggle_column_visibility(tableview, qtbot):
