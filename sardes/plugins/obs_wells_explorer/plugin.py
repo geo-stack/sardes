@@ -16,10 +16,11 @@ from sardes.api.plugins import SardesPlugin
 from sardes.api.panes import SardesPaneWidget
 from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
-from sardes.widgets.locationtable import ObservationWellTableView
-from sardes.utils.qthelpers import create_toolbutton
+from sardes.plugins.obs_wells_explorer.table import ObsWellsTableModel
+from sardes.utils.qthelpers import (create_toolbutton,
+                                    create_toolbar_stretcher)
+from sardes.widgets.tableviews import SardesTableView
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
-from sardes.utils.qthelpers import create_toolbar_stretcher
 
 """Observation well explorer plugin"""
 
@@ -41,9 +42,9 @@ class ObsWellsExplorer(SardesPlugin):
         Create and return the pane widget to use in this
         plugin's dockwidget.
         """
-        # ---- Setup Observation Well table view
-        self.obs_well_tableview = ObservationWellTableView(
-            self.main.db_connection_manager)
+        # ---- Setup the Observation Well table view
+        self.obs_well_tableview = SardesTableView(
+            ObsWellsTableModel(self.main.db_connection_manager))
         self.obs_well_tableview.doubleClicked.connect(
             self._handle_table_double_clicked)
 
@@ -78,38 +79,27 @@ class ObsWellsExplorer(SardesPlugin):
 
         return pane_widget
 
-    def get_current_obs_well(self):
+    def get_current_obs_well_data(self):
         """
-        Return the observation well id relative to the currently selected
+        Return the observation well data relative to the currently selected
         row in the table.
         """
-        try:
-            proxy_index = (self.obs_well_tableview
-                           .selectionModel()
-                           .selectedIndexes()[0])
-            model_index = (self.obs_well_tableview
-                           .obs_well_proxy_model
-                           .mapToSource(proxy_index))
-            obs_well_id = (self.obs_well_tableview
-                           .obs_well_table_model.obs_wells
-                           .iloc[model_index.row()]['obs_well_id'])
-        except IndexError:
-            # This means that no row is currently selected in the table.
-            obs_well_id = None
-        return obs_well_id
+        return self.obs_well_tableview.get_selected_row_data()
 
     # ---- Timeseries
     def _handle_table_double_clicked(self, *args, **kargs):
         """
         Handle when a row is double-clicked in the table.
         """
-        current_obs_well = self.get_current_obs_well()
+        current_obs_well = self.get_current_obs_well_data()
         if current_obs_well is not None:
             QApplication.setOverrideCursor(Qt.WaitCursor)
 
             # Get the timeseries data for that observation well.
             self.main.db_connection_manager.get_timeseries_for_obs_well(
-                current_obs_well, ['NIV_EAU', 'TEMP'], self._show_timeseries)
+                current_obs_well['obs_well_id'],
+                ['NIV_EAU', 'TEMP'],
+                self._show_timeseries)
 
     def _show_timeseries(self, tseries_groups):
         """
@@ -119,8 +109,8 @@ class ObsWellsExplorer(SardesPlugin):
         viewer = TimeSeriesPlotViewer(self.obs_well_tableview)
 
         # Set the title of the window.
-        viewer.setWindowTitle(
-            _("Observation well {}").format(self.get_current_obs_well()))
+        viewer.setWindowTitle(_("Observation well {}").format(
+                              self.get_current_obs_well_data()['obs_well_id']))
 
         # Setup the water level axe.
         # where = 'left'

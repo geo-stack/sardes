@@ -64,14 +64,14 @@ class DatabaseConnectionWorker(QObject):
         return None,
 
     # ---- Observation wells
-    def _get_observation_wells(self):
+    def _get_observation_wells_data(self):
         """
         Try get the list of observation wells that are saved in the database
         and send the results through the sig_observation_wells_fetched
         signal.
         """
         try:
-            obs_wells = self.db_accessor.get_observation_wells()
+            obs_wells = self.db_accessor.get_observation_wells_data()
         except AttributeError:
             obs_wells = DataFrame([])
         return obs_wells,
@@ -158,14 +158,14 @@ class DatabaseConnectionManager(QObject):
         self._db_connection_thread.start()
 
     # ---- Observation wells
-    def get_observation_wells(self, callback):
+    def get_observation_wells_data(self, callback):
         """
         Get the list of observation wells that are saved in the database.
 
         The results are sent through the sig_database_observation_wells signal
         as a list of ObservationWell objects.
         """
-        self._add_task('get_observation_wells', callback)
+        self._add_task('get_observation_wells_data', callback)
         self._db_connection_thread.start()
 
     # ---- Monitored properties

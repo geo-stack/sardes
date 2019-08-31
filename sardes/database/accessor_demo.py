@@ -138,7 +138,7 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         """
         return OBS_WELLS_DF['obs_well_id'].values
 
-    def get_observation_wells(self):
+    def get_observation_wells_data(self):
         """
         Get a list of ObservationWell objects containing information related
         to the observation wells that are saved in the database.
@@ -204,7 +204,7 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
 if __name__ == '__main__':
     accessor = DatabaseAccessorDemo()
     accessor.connect()
-    obs_wells = accessor.get_observation_wells()
+    obs_wells = accessor.get_observation_wells_data()
     wlevel = accessor.get_timeseries_for_obs_well('dfsdf', 'NIV_EAU')
     print(wlevel[0])
     print(accessor.observation_wells)

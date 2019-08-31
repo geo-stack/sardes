@@ -222,7 +222,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             )
         return [obj.obs_well_id for obj in obs_well_ids]
 
-    def get_observation_wells(self):
+    def get_observation_wells_data(self):
         """
         Return a pandas DataFrame containing the information related
         to the observation wells that are saved in the database.
@@ -398,7 +398,7 @@ if __name__ == "__main__":
     accessor = DatabaseAccessorRSESQ(**dbconfig)
 
     accessor.connect()
-    obs_wells = accessor.get_observation_wells()
+    obs_wells = accessor.get_observation_wells_data()
 
     print(accessor.observation_wells)
     print(accessor.monitored_properties)

@@ -72,7 +72,7 @@ class DatabaseAccessorBase(ABC):
         """
         pass
 
-    def get_observation_wells(self):
+    def get_observation_wells_data(self):
         """
         Return a pandas DataFrame containing the information related
         to the observation wells that are saved in the database.
