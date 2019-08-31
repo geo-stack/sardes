@@ -61,6 +61,13 @@ def dbconnmanager():
 @pytest.fixture
 def tableview(qtbot, mocker, dbconnmanager):
     tableview = SardesTableView(MockSardesTableModel(dbconnmanager))
+
+    # Setup the width of the table so that all columns are shown.
+    width = 0
+    for i in range(tableview.column_count()):
+        width += tableview.horizontalHeader().sectionSize(i)
+    tableview.setMinimumWidth(width + 25)
+
     tableview.show()
     qtbot.waitForWindowShown(tableview)
     qtbot.addWidget(tableview)

@@ -118,7 +118,7 @@ class SardesTableModel(QAbstractTableModel):
         row = index.row()
         try:
             column = self.dataf.columns.get_loc(column_key)
-        except ValueError:
+        except KeyError:
             column = None
 
         if role == Qt.DisplayRole:
