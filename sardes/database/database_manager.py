@@ -163,7 +163,7 @@ class DatabaseConnectionManager(QObject):
         Get the list of observation wells that are saved in the database.
 
         The results are sent through the sig_database_observation_wells signal
-        as a list of ObservationWell objects.
+        as a pandas DataFrame.
         """
         self._add_task('get_observation_wells_data', callback)
         self._db_connection_thread.start()

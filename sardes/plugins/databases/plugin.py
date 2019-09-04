@@ -124,7 +124,7 @@ class Databases(SardesPlugin):
         # Close the connection with the database if any.
         self.main.db_connection_manager.disconnect_from_db()
 
-        # Save to th config the values displayed in each database
+        # Save to the configs the values displayed in each database
         # connection dialog.
         for dialog in self.internal_database_dialogs:
             set_dbconfig(dialog.dbtype_name, dialog.get_database_kargs())

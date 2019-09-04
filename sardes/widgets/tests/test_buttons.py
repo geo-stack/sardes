@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 """
-Tests for the ObservationWellTableView.
+Tests for the buttons.py module.
 """
 
 # ---- Standard imports
