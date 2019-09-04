@@ -37,7 +37,7 @@ splash.showMessage(_("Importing third party Python modules..."))
 from qtpy.QtCore import Qt, QUrl, Slot
 from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
-                            QMessageBox, QSizePolicy, QToolButton, QWidget)
+                            QMessageBox, QToolButton)
 
 # ---- Local imports
 splash.showMessage(_("Importing local Python modules..."))
