@@ -145,7 +145,7 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
 
 class SardesTableView(QTableView):
     """
-    A single table view that displays the list of observation wells
+    A single table widget that displays data for a list of items
     that are saved in the database.
     """
 
