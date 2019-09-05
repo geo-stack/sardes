@@ -109,8 +109,11 @@ class ObsWellsExplorer(SardesPlugin):
         viewer = TimeSeriesPlotViewer(self.obs_well_tableview)
 
         # Set the title of the window.
-        viewer.setWindowTitle(_("Observation well {}").format(
-                              self.get_current_obs_well_data()['obs_well_id']))
+        current_obs_well_data = self.get_current_obs_well_data().iloc[0]
+        viewer.setWindowTitle(_("Observation well {} ({})").format(
+            current_obs_well_data['obs_well_id'],
+            current_obs_well_data['municipality'])
+            )
 
         # Setup the water level axe.
         # where = 'left'
