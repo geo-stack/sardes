@@ -183,7 +183,7 @@ class SardesTableView(QTableView):
         """
         selected_data = self.get_selected_rows_data()
         if len(selected_data) > 0:
-            row_data = selected_data.iloc[0]
+            row_data = selected_data.iloc[[0]]
         else:
             row_data = None
         return row_data

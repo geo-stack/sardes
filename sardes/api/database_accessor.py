@@ -74,14 +74,22 @@ class DatabaseAccessorBase(ABC):
 
     def get_observation_wells_data(self):
         """
-        Return a pandas DataFrame containing the information related
+        Return a :class:`pandas.DataFrame` containing the information related
         to the observation wells that are saved in the database.
 
         Returns
         -------
-        pandas.DataFrame
-            A pandas DataFrame containing the information related
+        :class:`pandas.DataFrame`
+            A :class:`pandas.DataFrame` containing the information related
             to the observation wells that are saved in the database.
+
+            The row indexes of the dataframe must correspond to the
+            sampling feature UIDs, which are unique identifiers used to
+            reference the wells in the database. Note that the sampling
+            feature UIDs can differ from the IDs used to reference the wells
+            within the monitoring network. This allow to store observation
+            wells in the database along other sampling features (such as
+            weather stations) in a same table.
 
             The dataframe must contain at least the required columns and any
             of the optional columns that are listed below.
@@ -174,11 +182,22 @@ class DatabaseAccessorBase(ABC):
 
     # ---- Timeseries
     @abstractmethod
-    def get_timeseries_for_obs_well(self, obs_well_id, monitored_property):
+    def get_timeseries_for_obs_well(self, sampling_feature_uid,
+                                    monitored_property):
         """
         Return a :class:`TimeSeriesGroup` containing the :class:`TimeSeries`
         holding the data acquired in the observation well for the
         specified monitored property.
+
+        Parameters
+        ----------
+        sampling_feature_uid: object
+            A unique identifier that is used to reference the observation well
+            in the database. Note that the sampling feature ID can differ from
+            the ID used to reference the well within the monitoring network.
+        monitored_property: object
+            The identifier used to reference the property for which we want
+            to extract the time data from the database.
 
         Returns
         -------

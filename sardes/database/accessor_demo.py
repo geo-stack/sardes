@@ -140,7 +140,7 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
 
     def get_observation_wells_data(self):
         """
-        Get a list of ObservationWell objects containing information related
+        Return a :class:`pandas.DataFrame` containing the information related
         to the observation wells that are saved in the database.
         """
         print("Fetching observation wells from the database...", end='')
@@ -177,7 +177,8 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
                 'COND_ELEC': 'cyan'
                 }[monitored_property]
 
-    def get_timeseries_for_obs_well(self, obs_well_id, monitored_property):
+    def get_timeseries_for_obs_well(self, sampling_feature_uid,
+                                    monitored_property):
         """
         Return a :class:`MonitoredProperty` object containing the
         :class:`TimeSeries` objects holding the data acquired in the

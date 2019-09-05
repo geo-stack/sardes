@@ -15,6 +15,7 @@ Object-Relational Mapping and Accessor implementation of the RSESQ database.
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import ForeignKey
 from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
@@ -64,14 +65,14 @@ class SamplingFeature(Base):
     __tablename__ = 'elements_caracteristique'
     __table_args__ = ({"schema": "rsesq"})
 
-    sampling_feature_uuid = Column('elemcarac_uuid', String, primary_key=True)
+    sampling_feature_uuid = Column(
+        'elemcarac_uuid', UUID(as_uuid=True), primary_key=True)
     interest_id = Column('interet_id', String)
     loc_id = Column(Integer, ForeignKey('rsesq.localisation.loc_id'))
 
     __mapper_args__ = {'polymorphic_on': interest_id}
 
-    location = relationship(
-        "Location", back_populates="sampling_features")
+    location = relationship("Location", back_populates="sampling_features")
 
     def __repr__(self):
         return format_sqlobject_repr(self)
@@ -224,7 +225,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
 
     def get_observation_wells_data(self):
         """
-        Return a pandas DataFrame containing the information related
+        Return a :class:`pandas.DataFrame` containing the information related
         to the observation wells that are saved in the database.
         """
         if self.is_connected():
@@ -259,9 +260,12 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             obs_wells['municipality'] = (
                 obs_wells['loc_notes'].str.split(':').str[1].str.strip())
 
-            return obs_wells
+            # Set the index to the primary key of the sampling features table.
+            obs_wells.set_index('sampling_feature_uuid', inplace=True)
         else:
-            return pd.DataFrame([])
+            obs_wells = pd.DataFrame([])
+
+        return obs_wells
 
     # ---- Monitored properties
     @property
@@ -309,21 +313,13 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
                 }[monitored_property]
 
     # ---- Timeseries
-    def get_timeseries_for_obs_well(self, obs_well_id, monitored_property):
+    def get_timeseries_for_obs_well(self, sampling_feature_uid,
+                                    monitored_property):
         """
         Return a :class:`MonitoredProperty` object containing the
         :class:`TimeSeries` objects holding the data acquired in the
         observation well for the specified monitored property.
         """
-        # Get the sampling feature uuid that is used to reference in the
-        # database the corresponding observation well.
-        sampling_feature_uuid = (
-            self._session.query(ObservationWell)
-            .filter(ObservationWell.obs_well_id == obs_well_id)
-            .one()
-            .sampling_feature_uuid
-            )
-
         # Get the observation property id that is used to reference in the
         # database the corresponding monitored property.
         obs_property_id = (
@@ -340,7 +336,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
                                 TimeSeriesRaw.datetime,
                                 TimeSeriesRaw.channel_uuid)
             .filter(Observation.sampling_feature_uuid ==
-                    sampling_feature_uuid)
+                    sampling_feature_uid)
             .filter(Observation.observation_uuid ==
                     TimeSeriesChannels.observation_uuid)
             .filter(TimeSeriesChannels.obs_property_id == obs_property_id)

@@ -130,8 +130,8 @@ def test_tableview_row_selection(tableview, dbconnmanager, qtbot):
         qtbot.mouseClick(
             tableview.viewport(), Qt.LeftButton, pos=visual_rect.center())
 
-        assert_series_equal(tableview.get_selected_row_data(),
-                            TABLE_DATAF.iloc[row])
+        assert_frame_equal(tableview.get_selected_row_data(),
+                           TABLE_DATAF.iloc[[row]])
 
 
 def test_toggle_column_visibility(tableview, qtbot):
