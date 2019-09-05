@@ -172,7 +172,9 @@ class SardesTableView(QTableView):
         Return the data relative to the currently selected rows in this table.
         """
         proxy_indexes = self.selectionModel().selectedIndexes()
-        rows = [self.proxy_model.mapToSource(i).row() for i in proxy_indexes]
+        rows = sorted(list(set(
+            [(self.proxy_model.mapToSource(i).row()) for i in proxy_indexes]
+            )))
         return self.source_model.dataf.iloc[rows]
 
     def get_selected_row_data(self):
