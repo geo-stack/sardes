@@ -97,7 +97,7 @@ class ObsWellsExplorer(SardesPlugin):
 
             # Get the timeseries data for that observation well.
             self.main.db_connection_manager.get_timeseries_for_obs_well(
-                current_obs_well['obs_well_id'],
+                current_obs_well.index.values[0],
                 ['NIV_EAU', 'TEMP'],
                 self._show_timeseries)
 
