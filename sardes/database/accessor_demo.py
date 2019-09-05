@@ -50,11 +50,11 @@ for i in range(5):
         AQUIFER_TYPE,
         AQUIFER_CONFINEMENT,
         AQUIFER_CODE,
-        str(bool(np.floor(np.random.rand(1) * 2))),
-        str(bool(np.floor(np.random.rand(1) * 2))),
+        bool(np.floor(np.random.rand(1) * 2)),
+        bool(np.floor(np.random.rand(1) * 2)),
         round(45 + np.random.rand(1)[0] * 2, 6),
         round(-75 + np.random.rand(1)[0] * 2, 6),
-        str(bool(np.floor(np.random.rand(1) * 2))),
+        bool(np.floor(np.random.rand(1) * 2)),
         'Notes for observation well #{}'.format(OBS_WELL_ID)])
 OBS_WELLS_DF = pd.DataFrame(OBS_WELLS_DATA, columns=OBS_WELLS_COLUMNS)
 

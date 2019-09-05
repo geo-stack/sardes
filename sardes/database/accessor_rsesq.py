@@ -257,6 +257,11 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
                     split_notes.str[i].str.split(':').str[1].str.strip())
                 obs_wells[key] = obs_wells[key][obs_wells[key] != 'NULL']
 
+            # Convert to bool.
+            obs_wells['is_station_active'] = (
+                obs_wells['is_station_active']
+                .map({'True': True, 'False': False}))
+
             obs_wells['municipality'] = (
                 obs_wells['loc_notes'].str.split(':').str[1].str.strip())
 
