@@ -17,7 +17,7 @@ import os.path as osp
 # ---- Third party imports
 import pytest
 import pandas as pd
-from pandas.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 from qtpy.QtCore import Qt
 
 # ---- Local imports
@@ -130,8 +130,8 @@ def test_tableview_row_selection(tableview, dbconnmanager, qtbot):
         qtbot.mouseClick(
             tableview.viewport(), Qt.LeftButton, pos=visual_rect.center())
 
-        assert_frame_equal(tableview.get_selected_row_data(),
-                           TABLE_DATAF.iloc[[row]])
+        assert_series_equal(tableview.get_selected_row_data(),
+                            TABLE_DATAF.iloc[row])
 
 
 def test_toggle_column_visibility(tableview, qtbot):
