@@ -167,16 +167,24 @@ class SardesTableView(QTableView):
         self.setModel(self.proxy_model)
 
     # ---- Utilities
+    def get_selected_rows_data(self):
+        """
+        Return the data relative to the currently selected rows in this table.
+        """
+        proxy_indexes = self.selectionModel().selectedIndexes()
+        rows = [self.proxy_model.mapToSource(i).row() for i in proxy_indexes]
+        return self.source_model.dataf.iloc[rows]
+
     def get_selected_row_data(self):
         """
         Return the data relative to the currently selected row in this table.
+        If more than one row is selected, the data from the first row of the
+        selection is returned.
         """
-        try:
-            proxy_index = self.selectionModel().selectedIndexes()[0]
-            model_index = self.proxy_model.mapToSource(proxy_index)
-            row_data = self.source_model.dataf.iloc[[model_index.row()]]
-        except IndexError:
-            # This means that no row is currently selected in this table.
+        selected_data = self.get_selected_rows_data()
+        if len(selected_data) > 0:
+            row_data = selected_data.iloc[0]
+        else:
             row_data = None
         return row_data
 
