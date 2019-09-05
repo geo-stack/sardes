@@ -325,7 +325,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             )
 
         # Get the observation property id that is used to reference in the
-        # database the corresponding onitored property.
+        # database the corresponding monitored property.
         obs_property_id = (
             self._session.query(ObservationProperty.obs_property_id)
             .filter(ObservationProperty.obs_property_name ==
