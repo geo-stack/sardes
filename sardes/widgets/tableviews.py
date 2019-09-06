@@ -162,6 +162,8 @@ class SardesTableView(QTableView):
         self.setAlternatingRowColors(True)
         self.setCornerButtonEnabled(False)
         self.horizontalHeader().setSectionsMovable(True)
+        self.setMouseTracking(True)
+        self.setSelectionBehavior(self.SelectRows)
 
         self.set_table_model(model)
         self._columns_options_button = None
