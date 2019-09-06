@@ -67,6 +67,9 @@ FA_ICONS = {
     'database_disconnect': [
         ('mdi.power-plug-off',),
         {'color': RED, 'scale_factor': 1.3}],
+    'edit_database_item': [
+        ('mdi.square-edit-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'failed': [
         ('mdi.alert-circle-outline',),
         {'color': RED, 'scale_factor': 1.3}],

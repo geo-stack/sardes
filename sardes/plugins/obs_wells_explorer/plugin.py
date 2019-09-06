@@ -72,6 +72,16 @@ class ObsWellsExplorer(SardesPlugin):
             )
         upper_toolbar.addWidget(show_plot_button)
 
+        edit_obs_well_button = create_toolbutton(
+            pane_widget,
+            icon='edit_database_item',
+            text=_("Edit observation well"),
+            tip=_('Edit the currently selected observation well.'),
+            shortcut='Ctrl+E',
+            triggered=self._handle_edit_obs_well,
+            iconsize=get_iconsize()
+            )
+        upper_toolbar.addWidget(edit_obs_well_button)
 
         upper_toolbar.addWidget(create_toolbar_stretcher())
         upper_toolbar.addWidget(
@@ -87,6 +97,9 @@ class ObsWellsExplorer(SardesPlugin):
         return self.obs_well_tableview.get_selected_row_data()
 
     # ---- Timeseries
+    def _handle_edit_obs_well(self, *args, **kargs):
+        print(self.get_current_obs_well_data())
+
     def _handle_table_double_clicked(self, *args, **kargs):
         """
         Handle when a row is double-clicked in the table.
