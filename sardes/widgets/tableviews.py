@@ -41,9 +41,16 @@ class SardesTableModel(QAbstractTableModel):
 
     def __init__(self, db_connection_manager=None):
         super().__init__()
+
+        # Convert the data columns mapper from a list of tuples to an
+        # ordered dictionary.
         self.__data_columns_mapper__ = OrderedDict(
             self.__data_columns_mapper__)
+
+        # A pandas dataframe containing the data that are shown in the
+        # database.
         self.dataf = pd.DataFrame([])
+
         self.set_database_connection_manager(db_connection_manager)
 
     def set_database_connection_manager(self, db_connection_manager):
