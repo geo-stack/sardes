@@ -32,6 +32,9 @@ FA_ICONS = {
     'checklist': [
         ('mdi.format-list-checkbox',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
+    'cancel_changes': [
+        ('mdi.close-circle-outline',),
+        {'color': RED, 'scale_factor': 1.2}],
     'clear_selected_data': [
         ('mdi.close-box-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
@@ -46,6 +49,9 @@ FA_ICONS = {
                      {'scale_factor': 0.6,
                       'offset': (0.3, 0.3),
                       'color': ICON_COLOR}]}],
+    'commit_changes': [
+        ('mdi.check-circle-outline',),
+        {'color': GREEN, 'scale_factor': 1.2}],
     'erase_data': [
         ('mdi.eraser',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
@@ -58,9 +64,6 @@ FA_ICONS = {
     'delete_data': [
         ('mdi.delete-forever',),
         {'color': ICON_COLOR, 'scale_factor': 1.4}],
-    'commit_changes': [
-        ('mdi.check-circle-outline',),
-        {'color': GREEN, 'scale_factor': 1.3}],
     'database_connect': [
         ('mdi.power-plug',),
         {'color': GREEN, 'scale_factor': 1.3}],
