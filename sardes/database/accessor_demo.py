@@ -177,8 +177,7 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
                 'COND_ELEC': 'cyan'
                 }[monitored_property]
 
-    def get_timeseries_for_obs_well(self, sampling_feature_uid,
-                                    monitored_property):
+    def get_timeseries_for_obs_well(self, obs_well_id, monitored_property):
         """
         Return a :class:`MonitoredProperty` object containing the
         :class:`TimeSeries` objects holding the data acquired in the

@@ -223,6 +223,15 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             )
         return [obj.obs_well_id for obj in obs_well_ids]
 
+    def _get_sampling_feature_uuid(self, obs_well_id):
+        sampling_feature_uuid = (
+            self._session.query(ObservationWell.sampling_feature_uuid)
+            .filter(ObservationWell.obs_well_id == obs_well_id)
+            .one()
+            .sampling_feature_uuid
+            )
+        return sampling_feature_uuid
+
     def get_observation_wells_data(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -265,8 +274,8 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             obs_wells['municipality'] = (
                 obs_wells['loc_notes'].str.split(':').str[1].str.strip())
 
-            # Set the index to the primary key of the sampling features table.
-            obs_wells.set_index('sampling_feature_uuid', inplace=True)
+            # Set the index to the observation well ids.
+            obs_wells.set_index('obs_well_id', inplace=True, drop=False)
         else:
             obs_wells = pd.DataFrame([])
 
@@ -318,8 +327,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
                 }[monitored_property]
 
     # ---- Timeseries
-    def get_timeseries_for_obs_well(self, sampling_feature_uid,
-                                    monitored_property):
+    def get_timeseries_for_obs_well(self, obs_well_id, monitored_property):
         """
         Return a :class:`MonitoredProperty` object containing the
         :class:`TimeSeries` objects holding the data acquired in the
@@ -335,13 +343,15 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             .obs_property_id
             )
 
+        # Get the sampling feature uuid corresponding to the observation well.
+        sampling_feature_uuid = self._get_sampling_feature_uuid(obs_well_id)
+
         # Define a query to fetch the timseries data from the database.
         query = (
             self._session.query(TimeSeriesRaw.value,
                                 TimeSeriesRaw.datetime,
                                 TimeSeriesRaw.channel_uuid)
-            .filter(Observation.sampling_feature_uuid ==
-                    sampling_feature_uid)
+            .filter(Observation.sampling_feature_uuid == sampling_feature_uuid)
             .filter(Observation.observation_uuid ==
                     TimeSeriesChannels.observation_uuid)
             .filter(TimeSeriesChannels.obs_property_id == obs_property_id)
@@ -381,6 +391,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
                 tseries_color=(
                     self.get_monitored_property_color(monitored_property))
                 ))
+
         return tseries_group
 
     def execute(self, sql_request, **kwargs):
