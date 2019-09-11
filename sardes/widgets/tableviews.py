@@ -142,6 +142,13 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
         super().__init__()
         self.setSourceModel(source_model)
 
+    def headerData(self, section, orientation, role):
+        """
+        Override Qt method so that the visual indexes of the rows are shown in
+        the vertical header of the table instead of their logical indexes.
+        """
+        return self.sourceModel().headerData(section, orientation, role)
+
 
 class SardesTableView(QTableView):
     """
