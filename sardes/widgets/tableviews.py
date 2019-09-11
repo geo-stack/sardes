@@ -195,6 +195,10 @@ class SardesTableView(QTableView):
             row_data = None
         return row_data
 
+    def visible_row_count(self):
+        """Return this table number of visible rows."""
+        return self.source_model.rowCount()
+
     # ---- Column options
     def column_count(self):
         """Return this table number of visible and hidden columns."""
