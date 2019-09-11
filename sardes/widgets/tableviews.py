@@ -78,7 +78,7 @@ class SardesTableModel(QAbstractTableModel):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             return self.get_horizontal_header_label_at(section)
         if role == Qt.DisplayRole and orientation == Qt.Vertical:
-            return section
+            return section + 1
         else:
             return QVariant()
 
