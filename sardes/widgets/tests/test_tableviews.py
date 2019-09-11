@@ -90,6 +90,7 @@ def test_tableview_init(tableview, dbconnmanager, qtbot):
     assert tableview
     assert tableview.model().rowCount() == 0
     assert tableview.model().columnCount() == NCOL
+    assert tableview.visible_row_count() == 0
 
     # Connect to the database. This should trigger in the location table view
     # a query to get and display the content of the database location table.
@@ -99,6 +100,7 @@ def test_tableview_init(tableview, dbconnmanager, qtbot):
     # the table.
     qtbot.wait(500)
     assert_frame_equal(tableview.source_model.dataf, TABLE_DATAF)
+    assert tableview.visible_row_count() == len(TABLE_DATAF)
 
     # Assert that all columns are visible.
     for action in tableview._toggle_column_visibility_actions:
@@ -107,13 +109,33 @@ def test_tableview_init(tableview, dbconnmanager, qtbot):
         assert not tableview.horizontalHeader().isSectionHidden(logical_index)
 
 
-def test_tableview_headers(tableview, dbconnmanager, qtbot):
+def test_tableview_horiz_headers(tableview):
     """
     Test the labels of the table horizontal header.
     """
     for i, header in enumerate(HEADERS[:-1]):
         assert header == tableview.model().headerData(i, Qt.Horizontal)
 
+
+def test_tableview_vert_headers(tableview, dbconnmanager, qtbot):
+    """
+    Test the labels of the table horizontal header.
+    """
+    dbconnmanager.sig_database_connection_changed.emit(True)
+    qtbot.wait(500)
+
+    assert tableview.visible_row_count() == len(TABLE_DATAF)
+    for i in range(tableview.visible_row_count()):
+        assert i + 1 == tableview.model().headerData(i, Qt.Vertical)
+        assert (tableview.model().data(tableview.model().index(i, 0)) ==
+                TABLE_DATAF.iloc[i, 0])
+
+    # Sort rows along the first column.
+    tableview.sortByColumn(0, Qt.DescendingOrder)
+    for i in range(tableview.visible_row_count()):
+        assert i + 1 == tableview.model().headerData(i, Qt.Vertical)
+        assert (tableview.model().data(tableview.model().index(i, 0)) ==
+                TABLE_DATAF.iloc[-1 - i, 0])
 
 def test_tableview_row_selection(tableview, dbconnmanager, qtbot):
     """
