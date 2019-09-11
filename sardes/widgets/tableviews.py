@@ -31,6 +31,8 @@ class SardesTableModel(QAbstractTableModel):
     An abstract table model to be used in a table view to display the list of
     observation wells that are saved in the database.
     """
+    sig_data_edited = Signal(bool)
+
     # A list of tuple that maps the keys of the columns dataframe with their
     # corresponding human readable label to use in the GUI.
     __data_columns_mapper__ = []
@@ -50,6 +52,10 @@ class SardesTableModel(QAbstractTableModel):
         # A pandas dataframe containing the data that are shown in the
         # database.
         self.dataf = pd.DataFrame([])
+
+        # A dictionary containing the edits made by the user to the
+        # content of this table's model data.
+        self._dataf_edits = {}
 
         self.set_database_connection_manager(db_connection_manager)
 
