@@ -223,7 +223,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             )
         return [obj.obs_well_id for obj in obs_well_ids]
 
-    def _get_sampling_feature_uuid(self, obs_well_id):
+    def _get_obs_well_sampling_feature_uuid(self, obs_well_id):
         sampling_feature_uuid = (
             self._session.query(ObservationWell.sampling_feature_uuid)
             .filter(ObservationWell.obs_well_id == obs_well_id)
@@ -344,7 +344,8 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             )
 
         # Get the sampling feature uuid corresponding to the observation well.
-        sampling_feature_uuid = self._get_sampling_feature_uuid(obs_well_id)
+        sampling_feature_uuid = (
+            self._get_obs_well_sampling_feature_uuid(obs_well_id))
 
         # Define a query to fetch the timseries data from the database.
         query = (
