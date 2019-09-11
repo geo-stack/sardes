@@ -149,11 +149,36 @@ class SardesTableModel(QAbstractTableModel):
         else:
             return QVariant()
 
+    def get_data_at(self, model_index):
+        """
+        Return the value of the model's data at the specified model index.
+        """
+        # First we check if the data was edited by the user.
+        value = self.get_data_change_at(model_index)
+        if isinstance(value, NoDataChange):
+            # This means that the value was not edited by the user, so we
+            # fetch the value directly from the model's data.
+            column_key = self.columns[model_index.column()]
+            try:
+                dataf_column = self.dataf.columns.get_loc(column_key)
+            except KeyError:
+                value = None
+            else:
+                dataf_row = model_index.row()
+                value = self.dataf.iloc[dataf_row, dataf_column]
+        return value
+
 
 class SardesSortFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, source_model):
         super().__init__()
         self.setSourceModel(source_model)
+
+    def get_data_at(self, proxy_index):
+        """
+        Return the value of the model's data at the specified model index.
+        """
+        return self.sourceModel().get_data_at(self.mapToSource(proxy_index))
 
 
 class SardesTableView(QTableView):
