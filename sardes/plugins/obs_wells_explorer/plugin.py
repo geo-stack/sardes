@@ -45,8 +45,6 @@ class ObsWellsExplorer(SardesPlugin):
         # ---- Setup the Observation Well table view
         self.obs_well_tableview = SardesTableView(
             ObsWellsTableModel(self.main.db_connection_manager))
-        self.obs_well_tableview.doubleClicked.connect(
-            self._handle_table_double_clicked)
 
         # Restore the state of the observation wells table horizontal header
         # from the configs.
