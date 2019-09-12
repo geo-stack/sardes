@@ -206,6 +206,33 @@ class SardesTableModel(QAbstractTableModel):
         else:
             return True
 
+    def cancel_all_data_edits(self):
+        """
+        Cancel all the edits that were made to the table data since last save.
+        """
+        self._dataf_edits = {}
+        self.dataChanged.emit(
+            self.index(0, 0),
+            self.index(self.rowCount() - 1, self.columnCount() - 1))
+        self.sig_data_edited.emit(False)
+
+    def cancel_data_edits_at(self, model_index):
+        """
+        Cancel the edits that were made at the specified model index if any
+        since last save.
+        """
+        dataf_index = self.dataf.index[model_index.row()]
+        dataf_column = self.columns[model_index.column()]
+        try:
+            del self._dataf_edits[dataf_index][dataf_column]
+            if len(self._dataf_edits[dataf_index]) == 0:
+                del self._dataf_edits[dataf_index]
+        except KeyError:
+            pass
+        else:
+            self.dataChanged.emit(model_index, model_index)
+            self.sig_data_edited.emit(self.has_unsaved_data_edits())
+
 
 class SardesSortFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, source_model):
