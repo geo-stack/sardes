@@ -174,12 +174,14 @@ class SardesTableModel(QAbstractTableModel):
         """Qt method override."""
         return Qt.ItemIsEnabled | Qt.ItemIsEditable | Qt.ItemIsSelectable
 
-    def get_data_at(self, model_index):
+    def get_data_at(self, model_index, ignore_edits=False):
         """
         Return the value of the model's data at the specified model index.
         """
-        # First we check if the data was edited by the user.
-        value = self.get_data_change_at(model_index)
+        # We check first if the data was edited by the user if 'ignore_edits'
+        # is True.
+        value = (NoDataChange(model_index) if ignore_edits else
+                 self.get_data_edits_at(model_index))
         if isinstance(value, NoDataChange):
             # This means that the value was not edited by the user, so we
             # fetch the value directly from the model's data.
