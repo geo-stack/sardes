@@ -151,11 +151,17 @@ class SardesTableModel(QAbstractTableModel):
             if column is None:
                 value = ''
             else:
-                value = self.dataf.iloc[row, column]
-                value = '' if pd.isna(value) else value
+                value = self.get_data_edits_at(index)
+                if isinstance(value, NoDataChange):
+                    value = self.dataf.iloc[row, column]
+                value = '' if (pd.isna(value) or value is None) else value
             return str(value)
         elif role == Qt.ForegroundRole:
             return QVariant()
+        elif role == Qt.BackgroundRole:
+            return (QVariant() if
+                    isinstance(self.get_data_edits_at(index), NoDataChange)
+                    else QColor('#CCFF99'))
         elif role == Qt.ToolTipRole:
             return (QVariant() if column is None
                     else self.dataf.iloc[row, column])
