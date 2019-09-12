@@ -69,6 +69,10 @@ class SardesTableModel(QAbstractTableModel):
     # ---- Columns
     @property
     def columns(self):
+        """
+        Return the list of keys used to reference the columns in this
+        model's data.
+        """
         return list(self.__data_columns_mapper__.keys())
 
     def columnCount(self, parent=QModelIndex()):
@@ -78,9 +82,18 @@ class SardesTableModel(QAbstractTableModel):
     # ---- Horizontal Headers
     @property
     def horizontal_header_labels(self):
+        """
+        Return the list of labels that need to be displayed for each column
+        of the table's horizontal header.
+        """
         return list(self.__data_columns_mapper__.values())
 
     def get_horizontal_header_label_at(self, column_or_index):
+        """
+        Return the text of the label to display in the horizontal
+        header for the key or logical index associated
+        with the column.
+        """
         return self.__data_columns_mapper__[
             column_or_index if isinstance(column_or_index, str) else
             self.columns[column_or_index]
