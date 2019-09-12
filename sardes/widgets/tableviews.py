@@ -185,6 +185,13 @@ class SardesTableModel(QAbstractTableModel):
                 value = self.dataf.iloc[dataf_row, dataf_column]
         return value
 
+    # ---- Data changes
+    def has_unsaved_data_edits(self):
+        """
+        Return whether edits were made to the table since last save.
+        """
+        return len(self._dataf_edits) > 0
+
 
 class SardesSortFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, source_model):
