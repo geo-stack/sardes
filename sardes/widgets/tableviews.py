@@ -155,6 +155,8 @@ class SardesTableModel(QAbstractTableModel):
                 if isinstance(value, NoDataChange):
                     value = self.dataf.iloc[row, column]
                 value = '' if (pd.isna(value) or value is None) else value
+            if pd.api.types.is_bool(value):
+                value = _('Yes') if value else _('No')
             return str(value)
         elif role == Qt.ForegroundRole:
             return QVariant()
