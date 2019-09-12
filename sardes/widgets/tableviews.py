@@ -192,6 +192,20 @@ class SardesTableModel(QAbstractTableModel):
         """
         return len(self._dataf_edits) > 0
 
+    def has_unsaved_data_edits_at(self, model_index):
+        """
+        Return whether edits were made at the specified model index
+        since last save.
+        """
+        dataf_index = self.dataf.index[model_index.row()]
+        dataf_column = self.columns[model_index.column()]
+        try:
+            self._dataf_edits[dataf_index][dataf_column]
+        except KeyError:
+            return False
+        else:
+            return True
+
 
 class SardesSortFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, source_model):
