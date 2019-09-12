@@ -233,6 +233,45 @@ class SardesTableModel(QAbstractTableModel):
             self.dataChanged.emit(model_index, model_index)
             self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
+    def get_data_edits_at(self, model_index):
+        """
+        Return the edited value, if any, that was made at the specified
+        model index since last save.
+        """
+        dataf_index = self.dataf.index[model_index.row()]
+        dataf_column = self.columns[model_index.column()]
+        try:
+            return self._dataf_edits[dataf_index][dataf_column]
+        except KeyError:
+            return NoDataChange(model_index)
+
+    def set_data_edits_at(self, model_index, new_value):
+        """
+        Store the value that was edited at the specified model index.
+        If the edited value corresponds to the value stored in the model's
+        unsaved data, then any edited value stored at that model index is
+        discarted. A signal is also emitted at the end of this method to
+        indicate that the data were edited so that the GUI can be updated
+        accordingly.
+        """
+        model_value = self.get_data_at(model_index, ignore_edits=True)
+        if model_value == new_value:
+            # We remove this from the list of unsaved data changes since the
+            # new value is the same as that of the database.
+            self.cancel_data_edits_at(model_index)
+        else:
+            # We store the edited value until it is commited and saved to the
+            # database.
+            dataf_column = self.columns[model_index.column()]
+            dataf_index = self.dataf.index[model_index.row()]
+            try:
+                self._dataf_edits[dataf_index].update({
+                    dataf_column: new_value})
+            except KeyError:
+                self._dataf_edits[dataf_index] = {
+                    dataf_column: new_value}
+        self.sig_data_edited.emit(self.has_unsaved_data_edits())
+
 
 class SardesSortFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, source_model):
