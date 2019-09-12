@@ -162,6 +162,10 @@ class SardesTableModel(QAbstractTableModel):
         else:
             return QVariant()
 
+    def flags(self, index):
+        """Qt method override."""
+        return Qt.ItemIsEnabled | Qt.ItemIsEditable | Qt.ItemIsSelectable
+
     def get_data_at(self, model_index):
         """
         Return the value of the model's data at the specified model index.
