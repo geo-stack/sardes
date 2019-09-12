@@ -470,6 +470,64 @@ class SardesTableView(QTableView):
             columns_options_menu.addAction(action)
             action.setChecked(not self.horizontalHeader().isSectionHidden(i))
 
+    # ---- Data edits
+    @property
+    def commit_edits_button(self):
+        """
+        Return a toolbutton that save the edits made to the data of the
+        table when triggered.
+        """
+        if self._commit_changes_button is None:
+            self._commit_changes_button = create_toolbutton(
+                self,
+                icon='commit_changes',
+                text=_("Edit observation well"),
+                tip=_('Edit the currently selected observation well.'),
+                triggered=lambda: self._save_data_edits(force=False),
+                iconsize=get_iconsize()
+                )
+            self._commit_changes_button.setEnabled(False)
+            self.sig_data_edited.connect(
+                self._commit_changes_button.setEnabled)
+        return self._commit_changes_button
+
+    def _save_data_edits(self, force=True):
+        """
+        Save the data edits to the database. If 'force' is 'False', a message
+        is first shown before proceeding.
+        """
+        if force is False:
+            reply = QMessageBox.warning(
+                self, _('Save changes'),
+                _("This will permanently save the changes made in this "
+                  "table in the database.<br><br>"
+                  "This action <b>cannot</b> be undone."),
+                buttons=QMessageBox.Ok | QMessageBox.Cancel
+                )
+            if reply == QMessageBox.Cancel:
+                return
+        self.source_model.save_data_edits()
+
+    @property
+    def cancel_edits_button(self):
+        """
+        Return a toolbutton that cancel all the edits that were made to
+        the data of the table since last save when triggered.
+        """
+        if self._cancel_changes_button is None:
+            self._cancel_changes_button = create_toolbutton(
+                self,
+                icon='cancel_changes',
+                text=_("Edit observation well"),
+                tip=_('Edit the currently selected observation well.'),
+                triggered=self.source_model.cancel_all_data_edits,
+                iconsize=get_iconsize()
+                )
+            self._cancel_changes_button.setEnabled(False)
+            self.sig_data_edited.connect(
+                self._cancel_changes_button.setEnabled)
+        return self._cancel_changes_button
+
 
 if __name__ == '__main__':
     from sardes.database.database_manager import DatabaseConnectionManager
