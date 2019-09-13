@@ -343,7 +343,6 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
             self.mapToSource(proxy_index), value)
 
 
-class SardesTableView(QTableView):
 class SardesTableViewBase(QTableView):
     """
     Basic functionality for Sardes table views.
@@ -360,7 +359,10 @@ class SardesTableViewBase(QTableView):
         self.horizontalHeader().setSectionsMovable(True)
         self.setMouseTracking(True)
 
-        self.set_table_model(model)
+        self._setup_table_model(db_connection_manager)
+        self._setup_item_delegates()
+
+        # Toolbuttons.
         self._columns_options_button = None
         self._toggle_column_visibility_actions = []
 
