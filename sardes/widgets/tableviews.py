@@ -569,8 +569,8 @@ class SardesTableViewBase(QTableView):
         Return a toolbutton that save the edits made to the data of the
         table when triggered.
         """
-        if self._commit_changes_button is None:
-            self._commit_changes_button = create_toolbutton(
+        if self._commit_edits_button is None:
+            self._commit_edits_button = create_toolbutton(
                 self,
                 icon='commit_changes',
                 text=_("Edit observation well"),
