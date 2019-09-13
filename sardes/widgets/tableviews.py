@@ -31,8 +31,11 @@ class NoDataEdit(object):
     A class to indicate that no edit have been done to the data since last
     save.
     """
+
     def __init__(self, model_index):
         super() .__init__()
+        self.model_index = model_index
+
 
 class SardesTableModel(QAbstractTableModel):
     """
