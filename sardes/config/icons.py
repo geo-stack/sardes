@@ -35,6 +35,9 @@ FA_ICONS = {
     'cancel_changes': [
         ('mdi.close-circle-outline',),
         {'color': RED, 'scale_factor': 1.2}],
+    'cancel_selection_changes': [
+        ('mdi.close-box-outline',),
+        {'color': RED, 'scale_factor': 1.2}],
     'clear_selected_data': [
         ('mdi.close-box-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
@@ -76,6 +79,12 @@ FA_ICONS = {
     'failed': [
         ('mdi.alert-circle-outline',),
         {'color': RED, 'scale_factor': 1.3}],
+    'file_image': [
+        ('mdi.file-image',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'file_download': [
+        ('mdi.file-download',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'home': [
         ('mdi.home',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
@@ -101,6 +110,9 @@ FA_ICONS = {
                      {'scale_factor': 1.65,
                       'offset': (0.25, 0),
                       'color': ICON_COLOR}]}],
+    'menu_down': [
+        ('mdi.menu-down',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'information': [
         ('mdi.information-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
@@ -131,6 +143,9 @@ FA_ICONS = {
         {'color': ICON_COLOR, 'scale_factor': 0.9, 'offset': (0, -0.1)}],
     'show_plot': [
         ('mdi.chart-line',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'show_barplot': [
+        ('mdi.chart-bar-stacked',),
         {'color': ICON_COLOR}],
     'succes': [
         ('mdi.check-circle-outline',),
@@ -141,6 +156,10 @@ FA_ICONS = {
     'toolbars': [
         ('mdi.wrench',),
         {'color': ICON_COLOR}],
+    'undo': [
+        ('mdi.undo-variant',),
+        {'color': ICON_COLOR}],
+
     'warning': [
         ('mdi.alert-circle-outline',),
         {'color': RED, 'scale_factor': 1.3}],
