@@ -366,24 +366,31 @@ class SardesTableViewBase(QTableView):
         self._columns_options_button = None
         self._toggle_column_visibility_actions = []
 
-        # Toolbuttons.
-        self._commit_changes_button = None
-        self._cancel_changes_button = None
-        self._cancel_selected_changes_button = None
-        self._commit_changes_button = None
+        self._edit_selection_button = None
+        self._cancel_edits_button = None
+        self._commit_edits_button = None
 
-    def set_table_model(self, source_model):
-        """Setup the data model for this table view."""
-        self.source_model = source_model
-        self.proxy_model = SardesSortFilterProxyModel(source_model)
+    def _setup_table_model(self, db_connection_manager):
+        """
+        Setup the data model for this table view.
+        """
+        self.source_model = SardesTableModel(
+            self.DATA_COLUMNS_MAPPER,
+            self.GET_DATA_METHOD,
+            db_connection_manager)
+        self.source_model.sig_data_edited.connect(self.sig_data_edited.emit)
+        self.proxy_model = SardesSortFilterProxyModel(self.source_model)
         self.setModel(self.proxy_model)
 
-        # Set the item delegates for each columns.
+    def _setup_item_delegates(self):
+        """
+        Setup the item delegates for each column of this table view.
+        """
         for i, column in enumerate(self.source_model.columns):
-            self.setItemDelegateForColumn(
-                i, self.source_model.get_delegate_for_column(column))
-        self.source_model.sig_data_edited.connect(
-            self.sig_data_edited.emit)
+            item_delegate = self.create_delegate_for_column(column)
+            self.setItemDelegateForColumn(i, item_delegate)
+            self.source_model.set_column_editable(
+                column, item_delegate is not None)
 
     # ---- Utilities
     def get_selected_rows_data(self):
@@ -527,8 +534,8 @@ class SardesTableViewBase(QTableView):
         Return a toolbutton that will turn on edit mode for the first editable
         cell selected in this table view when triggered.
         """
-        if self._commit_changes_button is None:
-            self._commit_changes_button = create_toolbutton(
+        if self._edit_selection_button is None:
+            self._edit_selection_button = create_toolbutton(
                 self,
                 icon='edit_database_item',
                 text=_("Edit observation well"),
