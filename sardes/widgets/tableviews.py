@@ -15,8 +15,11 @@ from collections import OrderedDict
 # ---- Third party imports
 import pandas as pd
 from qtpy.QtCore import (QAbstractTableModel, QModelIndex,
-                         QSortFilterProxyModel, Qt, QVariant, Slot)
-from qtpy.QtWidgets import QApplication, QMenu, QTableView
+                         QSortFilterProxyModel, Qt, QVariant, Signal, Slot)
+from qtpy.QtGui import QColor
+from qtpy.QtWidgets import (QApplication, QComboBox, QLineEdit, QMenu,
+                            QMessageBox, QStyledItemDelegate, QTableView,
+                            QDoubleSpinBox, QToolButton, QHeaderView)
 
 # ---- Local imports
 from sardes.config.locale import _
@@ -35,6 +38,132 @@ class NoDataEdit(object):
     def __init__(self, model_index):
         super() .__init__()
         self.model_index = model_index
+
+
+# =============================================================================
+# ---- Delegates
+# =============================================================================
+class BaseDelegate(QStyledItemDelegate):
+
+    def __init__(self, parent=None):
+        super(BaseDelegate, self) .__init__(parent)
+
+
+class StringEditDelegate(BaseDelegate):
+    """
+    A delegate that allow to edit the text of a table cell.
+    """
+
+    def __init__(self, parent=None, length=None, unique=False):
+        super() .__init__(parent)
+        self._length = length
+
+    def createEditor(self, parent, option, index):
+        """Qt method override."""
+        self.editor = QLineEdit(parent)
+        if self._length is not None:
+            self.editor.setMaxLength(self._length)
+        return self.editor
+
+    def setEditorData(self, editor, index):
+        """Qt method override."""
+        editor.setText(index.model().data(index))
+
+    def setModelData(self, editor, model, index):
+        """Qt method override."""
+        if editor.text() != model.data(index):
+            model.set_data_edits_at(index, editor.text())
+
+
+class FloatEditDelegate(BaseDelegate):
+    """
+    A delegate that allow to edit a float value in a spin box.
+    """
+
+    def __init__(self, parent=None, bottom=None, top=None, decimals=None):
+        super() .__init__(parent)
+        self._bottom = bottom
+        self._top = top
+        self._decimals = decimals
+
+    def createEditor(self, parent, option, index):
+        """Qt method override."""
+        self.editor = QDoubleSpinBox(parent)
+        if self._bottom is not None:
+            self.editor.setMinimum(self._bottom)
+        if self._top is not None:
+            self.editor.setMaximum(self._top)
+        if self._decimals is not None:
+            self.editor.setDecimals(self._decimals)
+        return self.editor
+
+    def setEditorData(self, editor, index):
+        """Qt method override."""
+        editor.setValue(index.model().get_data_at(index))
+
+    def setModelData(self, editor, model, index):
+        """Qt method override."""
+        editor_data = editor.value()
+        model_data = model.get_data_at(index)
+        if editor_data != model_data:
+            model.set_data_edits_at(index, editor_data)
+
+
+class BoolEditDelegate(BaseDelegate):
+    """
+    A delegate that allow to edit the a boolean value with a combobox.
+    """
+
+    def __init__(self, parent=None):
+        super() .__init__(parent)
+
+    def createEditor(self, parent, option, index):
+        """Qt method override."""
+        self.editor = QComboBox(parent)
+        self.editor.addItem(_('Yes'), userData=True)
+        self.editor.addItem(_('No'), userData=False)
+        return self.editor
+
+    def setEditorData(self, editor, index):
+        """Qt method override."""
+        model_data = index.model().get_data_at(index)
+        for i in range(editor.count()):
+            if editor.itemData(i) == model_data:
+                editor.setCurrentIndex(i)
+                break
+        else:
+            editor.setCurrentIndex(0)
+
+    def setModelData(self, editor, model, index):
+        """Qt method override."""
+        editor_data = editor.itemData(editor.currentIndex())
+        model_data = model.get_data_at(index)
+        if editor_data != model_data:
+            model.set_data_edits_at(index, editor_data)
+
+
+class ComboBoxDelegate(BaseDelegate):
+    """
+    A delegate that allow to edit a string value from a list of predefined
+    values.
+    """
+
+    def __init__(self, parent=None):
+        super() .__init__(parent)
+
+    def createEditor(self, parent, option, index):
+        """Qt method override."""
+        self.editor = QComboBox(parent)
+        self.editor.setEditable(True)
+        return self.editor
+
+    def setEditorData(self, editor, index):
+        """Qt method override."""
+        pass
+
+    def setModelData(self, editor, model, index):
+        """Qt method override."""
+        pass
 
 
 # =============================================================================
@@ -343,6 +472,9 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
             self.mapToSource(proxy_index), value)
 
 
+# =============================================================================
+# ---- Table View
+# =============================================================================
 class SardesTableViewBase(QTableView):
     """
     Basic functionality for Sardes table views.
