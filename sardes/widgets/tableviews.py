@@ -37,6 +37,9 @@ class NoDataEdit(object):
         self.model_index = model_index
 
 
+# =============================================================================
+# ---- Table Model
+# =============================================================================
 class SardesTableModel(QAbstractTableModel):
     """
     An abstract table model to be used in a table view to display the list of
@@ -44,23 +47,12 @@ class SardesTableModel(QAbstractTableModel):
     """
     sig_data_edited = Signal(bool)
 
-    # A list of tuple that maps the keys of the columns dataframe with their
-    # corresponding human readable label to use in the GUI.
-    __data_columns_mapper__ = []
-
-    # The method to call on the database connection manager to retrieve the
-    # data for this model.
-    __get_data_method__ = None
-
-    def __init__(self, db_connection_manager=None):
+    def __init__(self, data_columns_mapper, get_data_method,
+                 db_connection_manager=None):
         super().__init__()
-
-        # Convert the data columns mapper from a list of tuples to an
-        # ordered dictionary.
-        self.__data_columns_mapper__ = OrderedDict(
-            self.__data_columns_mapper__)
-        self._is_column_editable = [False] * len(self.__data_columns_mapper__)
-        self._column_delegates = {}
+        self._data_columns_mapper = OrderedDict(data_columns_mapper)
+        self._get_data_method = get_data_method
+        self._is_column_editable = {}
 
         # A pandas dataframe containing the data that are shown in the
         # database.
@@ -86,7 +78,7 @@ class SardesTableModel(QAbstractTableModel):
         Return the list of keys used to reference the columns in this
         model's data.
         """
-        return list(self.__data_columns_mapper__.keys())
+        return list(self._data_columns_mapper.keys())
 
     def columnCount(self, parent=QModelIndex()):
         """Qt method override. Return the number of column of the table."""
@@ -99,7 +91,7 @@ class SardesTableModel(QAbstractTableModel):
         Return the list of labels that need to be displayed for each column
         of the table's horizontal header.
         """
-        return list(self.__data_columns_mapper__.values())
+        return list(self._data_columns_mapper.values())
 
     def get_horizontal_header_label_at(self, column_or_index):
         """
@@ -107,7 +99,7 @@ class SardesTableModel(QAbstractTableModel):
         header for the key or logical index associated
         with the column.
         """
-        return self.__data_columns_mapper__[
+        return self._data_columns_mapper[
             column_or_index if isinstance(column_or_index, str) else
             self.columns[column_or_index]
             ]
@@ -144,7 +136,7 @@ class SardesTableModel(QAbstractTableModel):
         update the content of this table view.
         """
         get_data_method = getattr(
-            self.db_connection_manager, self.__get_data_method__)
+            self.db_connection_manager, self._get_data_method)
         get_data_method(callback=self._update_data)
 
     def rowCount(self, parent=QModelIndex()):
@@ -216,7 +208,14 @@ class SardesTableModel(QAbstractTableModel):
         """
         Return whether the item at the specified model index is editable.
         """
-        return self._is_column_editable[model_index.column()]
+        return self._is_column_editable.get(
+            self.columns[model_index.column()], False)
+
+    def set_column_editable(self, column, value):
+        """
+        Set whether the items for the specified column are editable.
+        """
+        self._is_column_editable[column] = value
 
     def has_unsaved_data_edits(self):
         """
@@ -307,31 +306,6 @@ class SardesTableModel(QAbstractTableModel):
                 self._dataf_edits[dataf_index] = {
                     dataf_column: new_value}
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
-
-    # ---- Delegates
-    def get_delegate_for_column(self, column):
-        """
-        Return the item delegate that this model's table view need to use
-        for the specified column.
-        """
-        if column not in self._column_delegates:
-            column_delegate = self._create_delegate_for_column(column)
-            self._column_delegates[column] = column_delegate
-            self._is_column_editable[self.columns.index(column)] = (
-                column_delegate is not None)
-        return self._column_delegates[column]
-
-    def _create_delegate_for_column(self, column):
-        """
-        Create the item delegate that this model's table view need to use
-        for the specified column. If None is returned, the items of the
-        column will not be editable.
-
-        All table model *must* reimplement this method to return the
-        appropriate delegate to be used for each columns of its
-        corresponding table.
-        """
-        raise NotImplementedError
 
 
 class SardesSortFilterProxyModel(QSortFilterProxyModel):
