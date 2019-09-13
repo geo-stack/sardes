@@ -388,6 +388,13 @@ class SardesTableView(QTableView):
         self.proxy_model = SardesSortFilterProxyModel(source_model)
         self.setModel(self.proxy_model)
 
+        # Set the item delegates for each columns.
+        for i, column in enumerate(self.source_model.columns):
+            self.setItemDelegateForColumn(
+                i, self.source_model.get_delegate_for_column(column))
+        self.source_model.sig_data_edited.connect(
+            self.sig_data_edited.emit)
+
     # ---- Utilities
     def get_selected_rows_data(self):
         """
