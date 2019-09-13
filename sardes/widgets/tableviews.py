@@ -376,6 +376,12 @@ class SardesTableView(QTableView):
         self._columns_options_button = None
         self._toggle_column_visibility_actions = []
 
+        # Toolbuttons.
+        self._commit_changes_button = None
+        self._cancel_changes_button = None
+        self._cancel_selected_changes_button = None
+        self._commit_changes_button = None
+
     def set_table_model(self, source_model):
         """Setup the data model for this table view."""
         self.source_model = source_model
@@ -518,6 +524,41 @@ class SardesTableView(QTableView):
             action.setChecked(not self.horizontalHeader().isSectionHidden(i))
 
     # ---- Data edits
+    @property
+    def edit_selection_button(self):
+        """
+        Return a toolbutton that will turn on edit mode for the first editable
+        cell selected in this table view when triggered.
+        """
+        if self._commit_changes_button is None:
+            self._commit_changes_button = create_toolbutton(
+                self,
+                icon='edit_database_item',
+                text=_("Edit observation well"),
+                tip=_('Edit the currently selected observation well.'),
+                shortcut='Ctrl+E',
+                triggered=self._edit_selection,
+                iconsize=get_iconsize()
+                )
+        return self._commit_changes_button
+
+    def _edit_selection(self):
+        """
+        Turn on edit mode for the first editable cell selected in this table.
+        """
+        for model_index in self.selectionModel().selectedIndexes():
+            if self.model().is_item_editable(model_index):
+                break
+        self._edit_data_at(model_index)
+
+    def _edit_data_at(self, model_index):
+        """
+        Turn on edit mode for the cell at the specified model index.
+        """
+        if (model_index is not None and
+                self.model().is_item_editable(model_index)):
+            self.edit(model_index)
+
     @property
     def commit_edits_button(self):
         """
