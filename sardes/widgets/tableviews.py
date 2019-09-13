@@ -370,13 +370,15 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
 
 
 class SardesTableView(QTableView):
+class SardesTableViewBase(QTableView):
     """
-    A single table widget that displays data for a list of items
-    that are saved in the database.
+    Basic functionality for Sardes table views.
+
+    WARNING: Don't override any methods or attributes present here.
     """
     sig_data_edited = Signal(bool)
 
-    def __init__(self, model, parent=None):
+    def __init__(self, db_connection_manager, parent=None):
         super().__init__(parent)
         self.setSortingEnabled(True)
         self.setAlternatingRowColors(True)
