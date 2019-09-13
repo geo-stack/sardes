@@ -48,6 +48,8 @@ class SardesTableModel(QAbstractTableModel):
         # ordered dictionary.
         self.__data_columns_mapper__ = OrderedDict(
             self.__data_columns_mapper__)
+        self._is_column_editable = [False] * len(self.__data_columns_mapper__)
+        self._column_delegates = {}
 
         # A pandas dataframe containing the data that are shown in the
         # database.
@@ -195,7 +197,13 @@ class SardesTableModel(QAbstractTableModel):
                 value = self.dataf.iloc[dataf_row, dataf_column]
         return value
 
-    # ---- Data changes
+    # ---- Data edits
+    def is_item_editable(self, model_index):
+        """
+        Return whether the item at the specified model index is editable.
+        """
+        return self._is_column_editable[model_index.column()]
+
     def has_unsaved_data_edits(self):
         """
         Return whether edits were made to the table since last save.
@@ -286,6 +294,31 @@ class SardesTableModel(QAbstractTableModel):
                     dataf_column: new_value}
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
+    # ---- Delegates
+    def get_delegate_for_column(self, column):
+        """
+        Return the item delegate that this model's table view need to use
+        for the specified column.
+        """
+        if column not in self._column_delegates:
+            column_delegate = self._create_delegate_for_column(column)
+            self._column_delegates[column] = column_delegate
+            self._is_column_editable[self.columns.index(column)] = (
+                column_delegate is not None)
+        return self._column_delegates[column]
+
+    def _create_delegate_for_column(self, column):
+        """
+        Create the item delegate that this model's table view need to use
+        for the specified column. If None is returned, the items of the
+        column will not be editable.
+
+        All table model *must* reimplement this method to return the
+        appropriate delegate to be used for each columns of its
+        corresponding table.
+        """
+        raise NotImplementedError
+
 
 class SardesSortFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, source_model):
@@ -299,6 +332,13 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
         return self.sourceModel().get_data_at(self.mapToSource(proxy_index))
 
     # ---- Data edits
+    def is_item_editable(self, proxy_index):
+        """
+        Return whether the item at the specified model index is editable.
+        """
+        return self.sourceModel().is_item_editable(
+            self.mapToSource(proxy_index))
+
     def cancel_data_edits_at(self, proxy_indexes):
         """
         Cancel the edits that were made at the specified proxy model indexes
