@@ -363,6 +363,7 @@ class SardesTableView(QTableView):
     A single table widget that displays data for a list of items
     that are saved in the database.
     """
+    sig_data_edited = Signal(bool)
 
     def __init__(self, model, parent=None):
         super().__init__(parent)
