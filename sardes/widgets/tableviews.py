@@ -630,10 +630,40 @@ class SardesTableView(QTableView):
                 triggered=self.source_model.cancel_all_data_edits,
                 iconsize=get_iconsize()
                 )
-            self._cancel_changes_button.setEnabled(False)
-            self.sig_data_edited.connect(
-                self._cancel_changes_button.setEnabled)
-        return self._cancel_changes_button
+            self._cancel_edits_button.setEnabled(False)
+            self.sig_data_edited.connect(self._cancel_edits_button.setEnabled)
+        return self._cancel_edits_button
+
+
+class SardesTableView(SardesTableViewBase):
+    """
+    Sardes table view class to display and edit the data that are
+    saved in the database.
+
+    All table *must* inherit this class and reimplement its interface.
+    """
+    # A list of tuple that maps the keys of the columns dataframe with their
+    # corresponding human readable label to use in the GUI.
+    DATA_COLUMNS_MAPPER = []
+
+    # The name of the method that the database connection manager need to call
+    # to retrieve the data from the database for this table view.
+    GET_DATA_METHOD = None
+
+    def __init__(self, db_connection_manager=None, parent=None):
+        super().__init__(db_connection_manager, parent)
+
+    def create_delegate_for_column(self, column):
+        """
+        Create the item delegate that this model's table view need to use
+        for the specified column. If None is returned, the items of the
+        column will not be editable.
+
+        All table model *must* reimplement this method to return the
+        appropriate delegate to be used for each columns of its
+        corresponding table.
+        """
+        raise NotImplementedError
 
 
 if __name__ == '__main__':
