@@ -578,10 +578,9 @@ class SardesTableViewBase(QTableView):
                 triggered=lambda: self._save_data_edits(force=False),
                 iconsize=get_iconsize()
                 )
-            self._commit_changes_button.setEnabled(False)
-            self.sig_data_edited.connect(
-                self._commit_changes_button.setEnabled)
-        return self._commit_changes_button
+            self._commit_edits_button.setEnabled(False)
+            self.sig_data_edited.connect(self._commit_edits_button.setEnabled)
+        return self._commit_edits_button
 
     def _save_data_edits(self, force=True):
         """
@@ -606,8 +605,8 @@ class SardesTableViewBase(QTableView):
         Return a toolbutton that cancel all the edits that were made to
         the data of the table since last save when triggered.
         """
-        if self._cancel_changes_button is None:
-            self._cancel_changes_button = create_toolbutton(
+        if self._cancel_edits_button is None:
+            self._cancel_edits_button = create_toolbutton(
                 self,
                 icon='cancel_changes',
                 text=_("Edit observation well"),
