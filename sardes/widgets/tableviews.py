@@ -26,6 +26,14 @@ from sardes.utils.qthelpers import (
     hexstate_to_qbytearray)
 
 
+class NoDataEdit(object):
+    """
+    A class to indicate that no edit have been done to the data since last
+    save.
+    """
+    def __init__(self, model_index):
+        super() .__init__()
+
 class SardesTableModel(QAbstractTableModel):
     """
     An abstract table model to be used in a table view to display the list of
@@ -154,7 +162,7 @@ class SardesTableModel(QAbstractTableModel):
                 value = ''
             else:
                 value = self.get_data_edits_at(index)
-                if isinstance(value, NoDataChange):
+                if isinstance(value, NoDataEdit):
                     value = self.dataf.iloc[row, column]
                 value = '' if (pd.isna(value) or value is None) else value
             if pd.api.types.is_bool(value):
@@ -164,7 +172,7 @@ class SardesTableModel(QAbstractTableModel):
             return QVariant()
         elif role == Qt.BackgroundRole:
             return (QVariant() if
-                    isinstance(self.get_data_edits_at(index), NoDataChange)
+                    isinstance(self.get_data_edits_at(index), NoDataEdit)
                     else QColor('#CCFF99'))
         elif role == Qt.ToolTipRole:
             return (QVariant() if column is None
@@ -185,9 +193,9 @@ class SardesTableModel(QAbstractTableModel):
         """
         # We check first if the data was edited by the user if 'ignore_edits'
         # is True.
-        value = (NoDataChange(model_index) if ignore_edits else
+        value = (NoDataEdit(model_index) if ignore_edits else
                  self.get_data_edits_at(model_index))
-        if isinstance(value, NoDataChange):
+        if isinstance(value, NoDataEdit):
             # This means that the value was not edited by the user, so we
             # fetch the value directly from the model's data.
             column_key = self.columns[model_index.column()]
@@ -268,7 +276,7 @@ class SardesTableModel(QAbstractTableModel):
         try:
             return self._dataf_edits[dataf_index][dataf_column]
         except KeyError:
-            return NoDataChange(model_index)
+            return NoDataEdit(model_index)
 
     def set_data_edits_at(self, model_index, new_value):
         """
