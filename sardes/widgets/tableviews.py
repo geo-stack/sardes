@@ -298,14 +298,14 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
         """
         return self.sourceModel().get_data_at(self.mapToSource(proxy_index))
 
-    # ---- Data changes
-    def cancel_data_edits_at(self, proxy_index):
+    # ---- Data edits
+    def cancel_data_edits_at(self, proxy_indexes):
         """
-        Cancel the edits that were made at the specified proxy model index
+        Cancel the edits that were made at the specified proxy model indexes
         since last save if any.
         """
         self.sourceModel().cancel_data_edits_at(
-            self.mapToSource(proxy_index))
+            self.mapToSource(proxy_indexes))
 
     def set_data_edits_at(self, proxy_index, value):
         """
