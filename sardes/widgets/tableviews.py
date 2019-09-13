@@ -226,22 +226,26 @@ class SardesTableModel(QAbstractTableModel):
             self.index(self.rowCount() - 1, self.columnCount() - 1))
         self.sig_data_edited.emit(False)
 
-    def cancel_data_edits_at(self, model_index):
+    def cancel_data_edits_at(self, model_indexes):
         """
-        Cancel the edits that were made at the specified model index if any
+        Cancel the edits, if any, that were made at the specified model indexes
         since last save.
         """
-        dataf_index = self.dataf.index[model_index.row()]
-        dataf_column = self.columns[model_index.column()]
-        try:
-            del self._dataf_edits[dataf_index][dataf_column]
-            if len(self._dataf_edits[dataf_index]) == 0:
-                del self._dataf_edits[dataf_index]
-        except KeyError:
-            pass
-        else:
-            self.dataChanged.emit(model_index, model_index)
-            self.sig_data_edited.emit(self.has_unsaved_data_edits())
+        if not isinstance(model_indexes, [list, tuple]):
+            model_indexes = [model_indexes, ]
+        for model_index in model_indexes:
+            dataf_index = self.dataf.index[model_index.row()]
+            dataf_column = self.columns[model_index.column()]
+            try:
+                del self._dataf_edits[dataf_index][dataf_column]
+                if len(self._dataf_edits[dataf_index]) == 0:
+                    del self._dataf_edits[dataf_index]
+            except KeyError:
+                pass
+            else:
+                self.dataChanged.emit(model_index, model_index)
+                self.sig_data_edited.emit(self.has_unsaved_data_edits())
+
 
     def get_data_edits_at(self, model_index):
         """
