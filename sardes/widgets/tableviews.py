@@ -544,7 +544,7 @@ class SardesTableViewBase(QTableView):
                 triggered=self._edit_selection,
                 iconsize=get_iconsize()
                 )
-        return self._commit_changes_button
+        return self._edit_selection_button
 
     def _edit_selection(self):
         """
