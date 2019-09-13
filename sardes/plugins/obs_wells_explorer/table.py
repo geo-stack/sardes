@@ -9,18 +9,20 @@
 
 
 # ---- Local imports
-from sardes.widgets.tableviews import SardesTableModel
+from sardes.widgets.tableviews import (SardesTableView, StringEditDelegate,
+                                       BoolEditDelegate, ComboBoxDelegate,
+                                       FloatEditDelegate)
 from sardes.config.locale import _
 
 
-class ObsWellsTableModel(SardesTableModel):
+class ObsWellsTableView(SardesTableView):
     """
-    An abstract table model to be used in a table view to display the list of
-    observation wells that are saved in the database.
+    A table to display the list of observation wells that are saved
+    in the database.
     """
     # A list of tuple that maps the keys of the columns dataframe with their
     # corresponding human readable label to use in the GUI.
-    __data_columns_mapper__ = [
+    DATA_COLUMNS_MAPPER = [
         ('obs_well_id', _('Well ID')),
         ('common_name', _('Common Name')),
         ('municipality', _('Municipality')),
@@ -35,6 +37,22 @@ class ObsWellsTableModel(SardesTableModel):
         ('obs_well_notes', _('Note'))
         ]
 
-    # The method to call on the database connection manager to retrieve the
-    # data for this model.
-    __get_data_method__ = 'get_observation_wells_data'
+    # The name of the method that the database connection manager need to call
+    # to retrieve the data from the database for this table view.
+    GET_DATA_METHOD = 'get_observation_wells_data'
+
+    # ---- Delegates
+    def create_delegate_for_column(self, column):
+        """
+        Create the item delegate that this model's table view need to use
+        for the specified column. If None is returned, the items of the
+        column will not be editable.
+        """
+        if column in ['is_station_active']:
+            return BoolEditDelegate(self)
+        elif column in ['obs_well_id']:
+            return None
+        elif column in ['latitude', 'longitude']:
+            return FloatEditDelegate(self, -180, 180, 16)
+        else:
+            return StringEditDelegate(self)
