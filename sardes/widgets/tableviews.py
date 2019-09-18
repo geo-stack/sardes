@@ -481,7 +481,7 @@ class SardesTableViewBase(QTableView):
         super().__init__(parent)
         self.setSortingEnabled(True)
         self.setAlternatingRowColors(True)
-        self.setCornerButtonEnabled(False)
+        self.setCornerButtonEnabled(True)
         self.horizontalHeader().setSectionsMovable(True)
         self.setMouseTracking(True)
 
