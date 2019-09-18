@@ -14,12 +14,13 @@ from collections import OrderedDict
 
 # ---- Third party imports
 import pandas as pd
-from qtpy.QtCore import (QAbstractTableModel, QModelIndex,
+from qtpy.QtCore import (QAbstractTableModel, QEvent, QModelIndex,
                          QSortFilterProxyModel, Qt, QVariant, Signal, Slot)
-from qtpy.QtGui import QColor
-from qtpy.QtWidgets import (QApplication, QComboBox, QLineEdit, QMenu,
-                            QMessageBox, QStyledItemDelegate, QTableView,
-                            QDoubleSpinBox, QToolButton, QHeaderView)
+from qtpy.QtGui import QColor, QKeySequence
+from qtpy.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox,
+                            QHeaderView, QLineEdit, QMenu, QMessageBox,
+                            QStyledItemDelegate, QTableView, QTextEdit,
+                            QToolButton)
 
 # ---- Local imports
 from sardes.config.locale import _
