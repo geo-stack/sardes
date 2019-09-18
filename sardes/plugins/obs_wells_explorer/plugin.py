@@ -70,7 +70,8 @@ class ObsWellsExplorer(SardesPlugin):
             )
         upper_toolbar.addWidget(show_plot_button)
 
-        upper_toolbar.addWidget(self.obs_well_tableview.edit_selection_button)
+        upper_toolbar.addWidget(
+            self.obs_well_tableview.edit_current_item_button)
         upper_toolbar.addWidget(self.obs_well_tableview.commit_edits_button)
         upper_toolbar.addWidget(self.obs_well_tableview.cancel_edits_button)
 

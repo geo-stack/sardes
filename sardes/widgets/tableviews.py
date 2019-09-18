@@ -656,22 +656,23 @@ class SardesTableViewBase(QTableView):
 
     # ---- Data edits
     @property
-    def edit_selection_button(self):
+    def edit_current_item_button(self):
         """
-        Return a toolbutton that will turn on edit mode for the first editable
-        cell selected in this table view when triggered.
+        Return a toolbutton that will turn on edit mode for this table
+        current cell when triggered.
         """
-        if self._edit_selection_button is None:
-            self._edit_selection_button = create_toolbutton(
+        if self._edit_current_item_button is None:
+            shorcut_str = (QKeySequence('Ctrl+Enter')
+                           .toString(QKeySequence.NativeText))
+            self._edit_current_item_button = create_toolbutton(
                 self,
                 icon='edit_database_item',
-                text=_("Edit observation well"),
-                tip=_('Edit the currently selected observation well.'),
-                shortcut='Ctrl+E',
-                triggered=self._edit_selection,
+                text=_("Edit current item ({})").format(shorcut_str),
+                tip=_("Edit the currently focused item in this table."),
+                triggered=self._edit_current_item,
                 iconsize=get_iconsize()
                 )
-        return self._edit_selection_button
+        return self._edit_current_item_button
 
     def _edit_current_item(self):
         """
