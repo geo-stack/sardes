@@ -367,12 +367,12 @@ class SardesTableModel(QAbstractTableModel):
             self.columns[column_or_index]
             ]
 
-    def headerData(self, section, orientation, role):
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
         """Qt method override."""
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             return self.get_horizontal_header_label_at(section)
         if role == Qt.DisplayRole and orientation == Qt.Vertical:
-            return section
+            return section + 1
         else:
             return QVariant()
 
@@ -566,6 +566,14 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
         super().__init__()
         self.setSourceModel(source_model)
 
+    # ---- Qt methods override
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        """
+        Override Qt method so that the visual indexes of the rows are shown in
+        the vertical header of the table instead of their logical indexes.
+        """
+        return self.sourceModel().headerData(section, orientation, role)
+
     # ---- Source model methods
     def cancel_data_edits_at(self, proxy_indexes):
         self.sourceModel().cancel_data_edits_at(
@@ -675,6 +683,10 @@ class SardesTableViewBase(QTableView):
         selected items.
         """
         return len(self.get_selected_rows_data())
+
+    def visible_row_count(self):
+        """Return this table number of visible rows."""
+        return self.source_model.rowCount()
 
     # ---- Column options
     def column_count(self):
