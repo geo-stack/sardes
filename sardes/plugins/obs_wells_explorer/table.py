@@ -50,8 +50,11 @@ class ObsWellsTableView(SardesTableView):
         """
         if column in ['is_station_active']:
             return BoolEditDelegate(self)
-        elif column in ['common_name']:
+        elif column in ['obs_well_id']:
             return StringEditDelegate(self, unique_constraint=True)
+        elif column in ['common_name', 'municipality', 'is_influenced',
+                        'in_recharge_zone', 'confinement']:
+            return StringEditDelegate(self)
         elif column in ['obs_well_notes']:
             return TextEditDelegate(self)
         elif column in ['obs_well_id']:
