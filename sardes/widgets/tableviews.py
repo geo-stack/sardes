@@ -131,6 +131,34 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         else:
             return None
 
+
+class SardesItemDelegate(SardesItemDelegateBase):
+    """
+    Sardes item delegates to edit the data of displayed in a table view.
+
+    Specific delegates *can* inherit this class and reimplement its interface.
+    """
+
+    def __init__(self, *args, **kargs):
+        super() .__init__(*args, **kargs)
+
+    def create_editor(self, parent):
+        """Return the editor to use in this item delegate."""
+        raise NotImplementedError
+
+    def get_editor_data(self):
+        """Return the value of this item delegate's editor."""
+        raise NotImplementedError
+
+    def set_editor_data(self):
+        """Set the data of this item delegate's editor."""
+        raise NotImplementedError
+
+    def validate_edits(self):
+        """Validate the value of this item delegate's editor."""
+        raise NotImplementedError
+
+
     """
     A delegate that allow to edit the text of a table cell.
     """
