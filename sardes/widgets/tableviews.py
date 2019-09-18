@@ -748,6 +748,22 @@ class SardesTableViewBase(QTableView):
             self.sig_data_edited.connect(self._cancel_edits_button.setEnabled)
         return self._cancel_edits_button
 
+    def raise_edits_error(self, model_index, message):
+        """"
+        Raise a modal dialog that shows the specifed error message that
+        occured while editing the data at the specifed model index.
+        When the dialog is closed by the user, the focus is given back
+        the last edited cell and edit mode is turned on again, so that the
+        the user can correct the invalid edits accordingly.
+        """
+        QMessageBox.critical(
+            self, _('Edits error'),
+            message,
+            buttons=QMessageBox.Ok)
+        self.setCurrentIndex(model_index)
+        self._edit_current_item()
+        self.model().undo_last_data_edits(update_model_view=False)
+
     def keyPressEvent(self, event):
         """
         Extend Qt method to control when entering edit mode
