@@ -9,9 +9,9 @@
 
 
 # ---- Local imports
-from sardes.widgets.tableviews import (SardesTableView, StringEditDelegate,
-                                       BoolEditDelegate, ComboBoxDelegate,
-                                       FloatEditDelegate)
+from sardes.widgets.tableviews import (
+    SardesTableView, StringEditDelegate, BoolEditDelegate, NumEditDelegate,
+    NotEditableDelegate, TextEditDelegate)
 from sardes.config.locale import _
 
 
@@ -50,9 +50,13 @@ class ObsWellsTableView(SardesTableView):
         """
         if column in ['is_station_active']:
             return BoolEditDelegate(self)
+        elif column in ['common_name']:
+            return StringEditDelegate(self, unique_constraint=True)
+        elif column in ['obs_well_notes']:
+            return TextEditDelegate(self)
         elif column in ['obs_well_id']:
-            return None
+            return NotEditableDelegate(self)
         elif column in ['latitude', 'longitude']:
-            return FloatEditDelegate(self, -180, 180, 16)
+            return NumEditDelegate(self, 16, -180, 180)
         else:
-            return StringEditDelegate(self)
+            return NotEditableDelegate(self)
