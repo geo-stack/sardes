@@ -34,6 +34,13 @@ class NoDataEdit(object):
     A class to indicate that no edit have been done to the data since last
     save.
     """
+# =============================================================================
+# ---- Delegates
+# =============================================================================
+class NotEditableDelegate(QStyledItemDelegate):
+    def createEditor(self, parent, option, index):
+        """Qt method override."""
+        return None
 
     def __init__(self, model_index):
         super() .__init__()
@@ -181,7 +188,6 @@ class SardesTableModel(QAbstractTableModel):
         super().__init__()
         self._data_columns_mapper = OrderedDict(data_columns_mapper)
         self._get_data_method = get_data_method
-        self._is_column_editable = {}
 
         # A pandas dataframe containing the data that are shown in the
         # database.
@@ -306,10 +312,7 @@ class SardesTableModel(QAbstractTableModel):
 
     def flags(self, model_index):
         """Qt method override."""
-        if self.is_data_editable_at(model_index):
-            return Qt.ItemIsEnabled | Qt.ItemIsEditable | Qt.ItemIsSelectable
-        else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        return Qt.ItemIsEnabled | Qt.ItemIsEditable | Qt.ItemIsSelectable
 
     def get_data_at(self, model_index, ignore_edits=False):
         """
