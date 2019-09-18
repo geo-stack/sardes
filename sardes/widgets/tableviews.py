@@ -742,6 +742,17 @@ class SardesTableViewBase(QTableView):
             self.sig_data_edited.connect(self._cancel_edits_button.setEnabled)
         return self._cancel_edits_button
 
+    def keyPressEvent(self, event):
+        """
+        Extend Qt method to control when entering edit mode
+        for the current cell.
+        """
+        ctrl = event.modifiers() & Qt.ControlModifier
+        if ctrl and event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            self._edit_current_item()
+            event.accept()
+        super().keyPressEvent(event)
+
 
 class SardesTableView(SardesTableViewBase):
     """
