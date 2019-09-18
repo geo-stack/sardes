@@ -29,11 +29,6 @@ from sardes.utils.qthelpers import (
     hexstate_to_qbytearray)
 
 
-class NoDataEdit(object):
-    """
-    A class to indicate that no edit have been done to the data since last
-    save.
-    """
 # =============================================================================
 # ---- Delegates
 # =============================================================================
@@ -42,8 +37,6 @@ class NotEditableDelegate(QStyledItemDelegate):
         """Qt method override."""
         return None
 
-    def __init__(self, model_index):
-        super() .__init__()
         self.model_index = model_index
 
 
@@ -176,6 +169,17 @@ class ComboBoxDelegate(BaseDelegate):
 # =============================================================================
 # ---- Table Model
 # =============================================================================
+class NoDataEdit(object):
+    """
+    A class to indicate that no edit have been done to the data since last
+    save.
+    """
+
+    def __init__(self, model_index):
+        super() .__init__()
+        self.model_index = model_index
+
+
 class SardesTableModel(QAbstractTableModel):
     """
     An abstract table model to be used in a table view to display the list of
