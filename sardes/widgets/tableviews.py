@@ -673,22 +673,19 @@ class SardesTableViewBase(QTableView):
                 )
         return self._edit_selection_button
 
-    def _edit_selection(self):
+    def _edit_current_item(self):
         """
-        Turn on edit mode for the first editable cell selected in this table.
+        Turn on edit mode for this table current cell.
         """
-        for model_index in self.selectionModel().selectedIndexes():
-            if self.model().is_data_editable_at(model_index):
-                break
-        self._edit_data_at(model_index)
-
-    def _edit_data_at(self, model_index):
-        """
-        Turn on edit mode for the cell at the specified model index.
-        """
-        if (model_index is not None and
-                self.model().is_data_editable_at(model_index)):
-            self.edit(model_index)
+        current_index = self.selectionModel().currentIndex()
+        if current_index.isValid():
+            if self.state() != self.EditingState:
+                self.selectionModel().clearSelection()
+                self.selectionModel().setCurrentIndex(
+                    current_index, self.selectionModel().Select)
+                self.edit(current_index)
+            else:
+                self.itemDelegate(current_index).commit_data()
 
     @property
     def commit_edits_button(self):
