@@ -901,7 +901,7 @@ class SardesTableViewBase(QTableView):
 
     def edit(self, model_index, trigger=None, event=None):
         """
-        Ëxtend Qt method to ensure that the cell of this table that is
+        Extend Qt method to ensure that the cell of this table that is
         going to be edited is visible.
         """
         if trigger is None:
