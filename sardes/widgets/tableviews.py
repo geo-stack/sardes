@@ -436,43 +436,28 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
         super().__init__()
         self.setSourceModel(source_model)
 
-    def get_data_at(self, proxy_index, ignore_edits=False):
-        """
-        Return the value of the model's data at the specified model index.
-        """
-        return self.sourceModel().get_data_at(self.mapToSource(proxy_index))
-
-    # ---- Data
-    def is_value_in_column(self, proxy_index, value):
-        """
-        Check if the specified value is in the data of this model at the
-        column specified by the model index.
-        """
-        return self.sourceModel().is_value_in_column(
-            self.mapToSource(proxy_index), value)
-
-    # ---- Data edits
-    def is_data_editable_at(self, proxy_index):
-        """
-        Return whether the item at the specified model index is editable.
-        """
-        return self.sourceModel().is_data_editable_at(
-            self.mapToSource(proxy_index))
-
+    # ---- Source model methods
     def cancel_data_edits_at(self, proxy_indexes):
-        """
-        Cancel the edits that were made at the specified proxy model indexes
-        since last save if any.
-        """
         self.sourceModel().cancel_data_edits_at(
             self.mapToSource(proxy_indexes))
 
+    def get_data_at(self, proxy_index, ignore_edits=False):
+        return self.sourceModel().get_data_at(self.mapToSource(proxy_index))
+
+    def get_horizontal_header_label_at(self, column_or_index):
+        return self.sourceModel().get_horizontal_header_label_at(
+            column_or_index)
+
+    def is_value_in_column(self, proxy_index, value):
+        return self.sourceModel().is_value_in_column(
+            self.mapToSource(proxy_index), value)
+
     def set_data_edits_at(self, proxy_index, value):
-        """
-        Store the value that was edited at the specified proxy model index.
-        """
         self.sourceModel().set_data_edits_at(
             self.mapToSource(proxy_index), value)
+
+    def undo_last_data_edits(self, update_model_view=True):
+        self.sourceModel().undo_last_data_edits(update_model_view)
 
 
 # =============================================================================
