@@ -361,19 +361,6 @@ class SardesTableModel(QAbstractTableModel):
                 ])
 
     # ---- Data edits
-    def is_data_editable_at(self, model_index):
-        """
-        Return whether the item at the specified model index is editable.
-        """
-        return self._is_column_editable.get(
-            self.columns[model_index.column()], False)
-
-    def set_column_editable(self, column, value):
-        """
-        Set whether the items for the specified column are editable.
-        """
-        self._is_column_editable[column] = value
-
     def has_unsaved_data_edits(self):
         """
         Return whether any edits were made to the table's data since last save.
