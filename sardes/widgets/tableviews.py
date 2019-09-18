@@ -37,19 +37,100 @@ class NotEditableDelegate(QStyledItemDelegate):
         """Qt method override."""
         return None
 
+
+class SardesItemDelegateBase(QStyledItemDelegate):
+    """
+    Basic functionality for Sardes item delegates.
+
+    WARNING: Don't override any methods or attributes present here.
+    """
+
+    def __init__(self, model_view, unique_constraint=False):
+        super() .__init__(parent=model_view)
+        self.model_view = model_view
+        self.model_index = None
+        self.editor = None
+        self._unique_constraint = unique_constraint
+
+    # ---- Qt methods override
+    def createEditor(self, parent, option, model_index):
+        """Qt method override."""
         self.model_index = model_index
+        self.editor = self.create_editor(parent)
+        self.editor.installEventFilter(self)
+        return self.editor
 
+    def setEditorData(self, editor, index):
+        """Qt method override."""
+        self.set_editor_data(self.get_model_data())
 
-# =============================================================================
-# ---- Delegates
-# =============================================================================
-class BaseDelegate(QStyledItemDelegate):
+    def setModelData(self, editor, model, index):
+        """Qt method override."""
+        pass
 
-    def __init__(self, parent=None):
-        super(BaseDelegate, self) .__init__(parent)
+    # ---- Private methods
+    def eventFilter(self, widget, event):
+        if self.editor and event.type() == QEvent.KeyPress:
+            """Commit edits on Enter of Ctrl+Enter key press."""
+            key_cond = event.key() in (Qt.Key_Return, Qt.Key_Enter)
+            mod_cond = (not event.modifiers() or
+                        event.modifiers() & Qt.ControlModifier)
+            if key_cond and mod_cond:
+                self.commit_data()
+                return True
+        return super().eventFilter(widget, event)
 
+    def commit_data(self):
+        self.closeEditor.emit(self.editor, self.NoHint)
+        editor_value = self.get_editor_data()
+        model_value = self.get_model_data()
+        if editor_value != model_value:
+            # We need to validate the edits before submitting the edits to
+            # the model or else, unique check will always return an error.
+            error_message = self.validate_edits()
 
-class StringEditDelegate(BaseDelegate):
+            # We store the edits even though they are not validated, so that
+            # when we return to this delegate to edits, the last value
+            # entered by the user is preserved.
+            self.model.set_data_edits_at(self.model_index, editor_value)
+            if error_message is not None:
+                self.model_view.raise_edits_error(
+                    self.model_index, error_message)
+
+    # ---- Public methods
+    @property
+    def model(self):
+        """
+        Return the model whose data this item delegate is used to edit.
+        """
+        return self.model_index.model()
+
+    def get_model_data(self):
+        """
+        Return the value stored in the model at the model index
+        corresponding to this item delegate.
+        """
+        return self.model_index.model().get_data_at(self.model_index)
+
+    def validate_unique_constaint(self):
+        """
+        If a unique constraint is set for this item delegate, check that
+        the edited value does not violate that and return an error message
+        if it does.
+        """
+        field_name = self.model.get_horizontal_header_label_at(
+            self.model_index.column())
+        edited_value = self.get_editor_data()
+        if (self._unique_constraint and self.model.is_value_in_column(
+                self.model_index, edited_value)):
+            return _(
+                "<b>Duplicate key value violates unique constraint.</b>"
+                "<br><br>"
+                "The {} <i>{}</i> already exists. Please use another value"
+                ).format(field_name, edited_value, field_name)
+        else:
+            return None
+
     """
     A delegate that allow to edit the text of a table cell.
     """
