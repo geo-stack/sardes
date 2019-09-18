@@ -483,6 +483,7 @@ class SardesTableViewBase(QTableView):
         self.setAlternatingRowColors(True)
         self.setCornerButtonEnabled(True)
         self.horizontalHeader().setSectionsMovable(True)
+        self.setEditTriggers(self.NoEditTriggers)
         self.setMouseTracking(True)
 
         self._setup_table_model(db_connection_manager)
