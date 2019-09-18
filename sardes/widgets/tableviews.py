@@ -753,6 +753,22 @@ class SardesTableViewBase(QTableView):
             event.accept()
         super().keyPressEvent(event)
 
+    def edit(self, model_index, trigger=None, event=None):
+        """
+        Ëxtend Qt method to ensure that the cell of this table that is
+        going to be edited is visible.
+        """
+        if trigger is None:
+            # Scroll to item if it is not currently visible in the scrollarea.
+            item_rect = self.visualRect(model_index)
+            view_rect = self.geometry()
+            if not view_rect.contains(item_rect):
+                self.scrollTo(model_index, hint=self.EnsureVisible)
+
+            return super().edit(model_index)
+        else:
+            return super().edit(model_index, trigger, event)
+
 
 class SardesTableView(SardesTableViewBase):
     """
