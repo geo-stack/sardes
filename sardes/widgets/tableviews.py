@@ -493,7 +493,7 @@ class SardesTableViewBase(QTableView):
         self._columns_options_button = None
         self._toggle_column_visibility_actions = []
 
-        self._edit_selection_button = None
+        self._edit_current_item_button = None
         self._cancel_edits_button = None
         self._commit_edits_button = None
 
@@ -516,8 +516,6 @@ class SardesTableViewBase(QTableView):
         for i, column in enumerate(self.source_model.columns):
             item_delegate = self.create_delegate_for_column(column)
             self.setItemDelegateForColumn(i, item_delegate)
-            self.source_model.set_column_editable(
-                column, item_delegate is not None)
 
     # ---- Utilities
     def get_selected_rows_data(self):
@@ -655,6 +653,13 @@ class SardesTableViewBase(QTableView):
             action.setChecked(not self.horizontalHeader().isSectionHidden(i))
 
     # ---- Data edits
+    def is_data_editable_at(self, model_index):
+        """
+        Return whether the item at the specified model index is editable.
+        """
+        return not isinstance(
+            self.itemDelegate(model_index), NotEditableDelegate)
+
     @property
     def edit_current_item_button(self):
         """
