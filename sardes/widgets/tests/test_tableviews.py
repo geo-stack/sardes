@@ -40,11 +40,13 @@ TABLE_DATAF = pd.DataFrame(
 # missing in the dataframe.
 
 
-class MockSardesTableModel(SardesTableModel):
-    __data_columns_mapper__ = [
-        (col, header) for col, header in zip(COLUMNS, HEADERS)
-        ]
-    __get_data_method__ = 'get_data'
+class SardesTableViewTest(SardesTableView):
+    DATA_COLUMNS_MAPPER = [
+        (col, header) for col, header in zip(COLUMNS, HEADERS)]
+    GET_DATA_METHOD = 'get_data'
+
+    def create_delegate_for_column(self, column):
+        return None
 
 
 class MockDatabaseConnectionManager(DatabaseConnectionManager):
@@ -63,7 +65,7 @@ def dbconnmanager():
 
 @pytest.fixture
 def tableview(qtbot, mocker, dbconnmanager):
-    tableview = SardesTableView(MockSardesTableModel(dbconnmanager))
+    tableview = SardesTableViewTest(dbconnmanager)
 
     # Setup the width of the table so that all columns are shown.
     width = 0
