@@ -304,6 +304,18 @@ class NoDataEdit(object):
         self.model_index = model_index
 
 
+class ValueChanged(object):
+    """
+    A class that represent a change of a value at a given model index.
+    """
+
+    def __init__(self, model_index, dataf_value, edited_value):
+        super() .__init__()
+        self.model_index = model_index
+        self.dataf_value = dataf_value
+        self.edited_value = edited_value
+
+
 class SardesTableModel(QAbstractTableModel):
     """
     An abstract table model to be used in a table view to display the list of
@@ -321,9 +333,12 @@ class SardesTableModel(QAbstractTableModel):
         # database.
         self.dataf = pd.DataFrame([])
 
-        # A dictionary containing the edits made by the user to the
-        # content of this table's model data.
+        # A list containing the edits made by the user to the
+        # content of this table's model data in chronological order.
         self._dataf_edits = []
+        self._edited_data = {}
+        self._new_rows = []
+        self._deleted_rows = []
 
         self.set_database_connection_manager(db_connection_manager)
 
@@ -442,25 +457,33 @@ class SardesTableModel(QAbstractTableModel):
         """Qt method override."""
         return Qt.ItemIsEnabled | Qt.ItemIsEditable | Qt.ItemIsSelectable
 
-    def get_data_at(self, model_index, ignore_edits=False):
+    def get_dataf_value_at(self, model_index):
         """
-        Return the value of the model's data at the specified model index.
+        Return the unedited value of the model's data at the specified model
+        index.
+        """
+        column_key = self.columns[model_index.column()]
+        try:
+            dataf_column = self.dataf.columns.get_loc(column_key)
+        except KeyError:
+            value = None
+        else:
+            dataf_row = model_index.row()
+            value = self.dataf.iloc[dataf_row, dataf_column]
+        return value
+
+    def get_data_at(self, model_index):
+        """
+        Return the edited, visible, value of the model's data at the
+        specified model index.
         """
         # We check first if the data was edited by the user if 'ignore_edits'
         # is True.
-        value = (NoDataEdit(model_index) if ignore_edits else
-                 self.get_edited_data_at(model_index))
+        value = self.get_edited_data_at(model_index)
         if isinstance(value, NoDataEdit):
             # This means that the value was not edited by the user, so we
             # fetch the value directly from the model's data.
-            column_key = self.columns[model_index.column()]
-            try:
-                dataf_column = self.dataf.columns.get_loc(column_key)
-            except KeyError:
-                value = None
-            else:
-                dataf_row = model_index.row()
-                value = self.dataf.iloc[dataf_row, dataf_column]
+            value = self.get_dataf_value_at(model_index)
         return value
 
     def is_value_in_column(self, model_index, value):
@@ -469,13 +492,13 @@ class SardesTableModel(QAbstractTableModel):
         column specified by the model index.
         """
         # First we check if value is found in the edited data.
-        for edited_index, edited_value in reversed(self._dataf_edits):
+        for edited_index, edited_value in self._edited_data.items():
             if (edited_index.column() == model_index.column() and
-                    edited_value == value):
+                    (edited_value == value)):
                 return True
         else:
-            # Then we check if value is found in the unedited data of this
-            # model's data.
+            # Else we check if the value is found in the unedited data
+            # of this model's data.
             dataf_column = self.columns[model_index.column()]
             isin_indexes = self.dataf[self.dataf[dataf_column].isin([value])]
             return any([
@@ -489,27 +512,21 @@ class SardesTableModel(QAbstractTableModel):
         """
         Return whether any edits were made to the table's data since last save.
         """
-        for edited_index, edited_value in reversed(self._dataf_edits):
-            dataf_value = self.dataf.loc[
-                self.dataf.index[edited_index.row()],
-                self.columns[edited_index.column()]]
-            if dataf_value != edited_value:
-                return True
-        else:
-            return False
+        return bool(len(self._edited_data))
 
     def is_data_edited_at(self, model_index):
         """
         Return whether edits were made at the specified model index
         since last save.
         """
-        return not isinstance(self.get_edited_data_at(model_index), NoDataEdit)
+        return model_index in self._edited_data
 
     def cancel_all_data_edits(self):
         """
         Cancel all the edits that were made to the table data since last save.
         """
         self._dataf_edits = []
+        self._edited_data = {}
         self.dataChanged.emit(
             self.index(0, 0),
             self.index(self.rowCount() - 1, self.columnCount() - 1))
@@ -523,29 +540,30 @@ class SardesTableModel(QAbstractTableModel):
         Return the edited value, if any, that was made at the specified
         model index since last save.
         """
-        for edited_index, edited_value in reversed(self._dataf_edits):
-            if edited_index == model_index:
-                dataf_value = self.dataf.loc[
-                    self.dataf.index[model_index.row()],
-                    self.columns[model_index.column()]]
-                return (NoDataEdit(model_index) if
-                        edited_value == dataf_value else
-                        edited_value)
-        else:
-            return NoDataEdit(model_index)
+        return self._edited_data.get(model_index, NoDataEdit(model_index))
 
-    def set_data_edits_at(self, model_index, new_value):
+    def set_data_edits_at(self, model_index, edited_value):
         """
         Store the value that was edited at the specified model index.
-        If the edited value corresponds to the value stored in the model's
-        unsaved data, then any edited value stored at that model index is
-        discarted. A signal is also emitted at the end of this method to
-        indicate that the data were edited so that the GUI can be updated
-        accordingly.
+        A signal is also emitted to indicate that the data were edited,
+        so that the GUI can be updated accordingly.
         """
-        # We store the edited value until it is commited and saved to the
-        # database.
-        self._dataf_edits.append((model_index, new_value))
+        dataf_value = self.get_dataf_value_at(model_index)
+
+        # We store the edited value until it is commited and
+        # saved to the database.
+        self._dataf_edits.append(
+            ValueChanged(model_index, dataf_value, edited_value))
+
+        # We add the model index to the list of indexes whose value have
+        # been edited if the edited value differ from the value saved in
+        # the model's data.
+        if dataf_value != edited_value:
+            self._edited_data[model_index] = edited_value
+        else:
+            if model_index in self._edited_data:
+                del self._edited_data[model_index]
+
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
     def undo_last_data_edits(self, update_model_view=True):
@@ -553,12 +571,23 @@ class SardesTableModel(QAbstractTableModel):
         Undo the last data edits that was added to the stack.
         An update of the view is forced if  update_model_view is True.
         """
-        if len(self._dataf_edits) > 0:
-            last_model_index = self._dataf_edits[-1][0]
-            del self._dataf_edits[-1]
-            self.sig_data_edited.emit(self.has_unsaved_data_edits())
-            if update_model_view:
-                self.dataChanged.emit(last_model_index, last_model_index)
+        if len(self._dataf_edits) == 0:
+            return
+
+        # Undo the last edit.
+        last_edit = self._dataf_edits.pop(-1)
+        if last_edit.model_index in self._edited_data:
+            del self._edited_data[last_edit.model_index]
+
+        # Check if there was a previous edit for this model index in the stack.
+        for edit in reversed(self._dataf_edits):
+            if edit.model_index == last_edit.model_index:
+                self._edited_data[edit.model_index] = edit.edited_value
+                break
+
+        if update_model_view:
+            self.dataChanged.emit(edit.model_index, edit.model_index)
+        self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
 
 class SardesSortFilterProxyModel(QSortFilterProxyModel):
@@ -579,7 +608,7 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
         self.sourceModel().cancel_data_edits_at(
             self.mapToSource(proxy_indexes))
 
-    def get_data_at(self, proxy_index, ignore_edits=False):
+    def get_data_at(self, proxy_index):
         return self.sourceModel().get_data_at(self.mapToSource(proxy_index))
 
     def get_horizontal_header_label_at(self, column_or_index):
