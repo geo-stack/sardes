@@ -278,30 +278,6 @@ class BoolEditDelegate(SardesItemDelegate):
         return editor
 
 
-class ComboBoxDelegate(SardesItemDelegate):
-    """
-    A delegate that allow to edit a string value from a list of predefined
-    values.
-    """
-
-    def __init__(self, parent=None):
-        super() .__init__(parent)
-
-    def createEditor(self, parent, option, index):
-        """Qt method override."""
-        self.editor = QComboBox(parent)
-        self.editor.setEditable(True)
-        return self.editor
-
-    def setEditorData(self, editor, index):
-        """Qt method override."""
-        pass
-
-    def setModelData(self, editor, model, index):
-        """Qt method override."""
-        pass
-
-
 # =============================================================================
 # ---- Table Model
 # =============================================================================
