@@ -34,7 +34,12 @@ from sardes.utils.qthelpers import (
 # ---- Delegates
 # =============================================================================
 class NotEditableDelegate(QStyledItemDelegate):
-    def createEditor(self, parent, option, index):
+    """
+    A delegate used to indicate that the items in the associated
+    column are not editable.
+    """
+
+    def createEditor(self, *args, **kargs):
         """Qt method override."""
         return None
 
@@ -71,6 +76,10 @@ class SardesItemDelegateBase(QStyledItemDelegate):
 
     # ---- Private methods
     def eventFilter(self, widget, event):
+        """
+        An event filter to control when the data of this delegate's editor
+        are commited to the model.
+        """
         if self.editor and event.type() == QEvent.KeyPress:
             """Commit edits on Enter of Ctrl+Enter key press."""
             key_cond = event.key() in (Qt.Key_Return, Qt.Key_Enter)
@@ -82,6 +91,9 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         return super().eventFilter(widget, event)
 
     def commit_data(self):
+        """
+        Commit the data of this delegate's editor to the model.
+        """
         self.closeEditor.emit(self.editor, self.NoHint)
         editor_value = self.get_editor_data()
         model_value = self.get_model_data()
