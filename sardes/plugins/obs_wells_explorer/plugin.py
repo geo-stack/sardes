@@ -72,7 +72,7 @@ class ObsWellsExplorer(SardesPlugin):
 
         upper_toolbar.addWidget(
             self.obs_well_tableview.edit_current_item_button)
-        upper_toolbar.addWidget(self.obs_well_tableview.commit_edits_button)
+        upper_toolbar.addWidget(self.obs_well_tableview.save_edits_button)
         upper_toolbar.addWidget(self.obs_well_tableview.cancel_edits_button)
 
         upper_toolbar.addWidget(create_toolbar_stretcher())

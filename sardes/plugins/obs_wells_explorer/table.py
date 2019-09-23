@@ -60,12 +60,10 @@ class ObsWellsTableModel(SardesTableModel):
             return StringEditDelegate(view)
         elif column in ['obs_well_notes']:
             return TextEditDelegate(view)
-        elif column in ['obs_well_id']:
-            return NotEditableDelegate(view)
         elif column in ['latitude', 'longitude']:
             return NumEditDelegate(view, 16, -180, 180)
         else:
-            return NotEditableDelegate(view)
+            return NotEditableDelegate(self)
 
     # ---- Data edits
     def save_value_change_edit(self, dataf_index, dataf_column, edited_value):
