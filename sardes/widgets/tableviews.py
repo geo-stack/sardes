@@ -123,7 +123,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         Return the value stored in the model at the model index
         corresponding to this item delegate.
         """
-        return self.model_index.model().get_data_at(self.model_index)
+        return self.model_index.model().get_value_at(self.model_index)
 
     def validate_unique_constaint(self):
         """
@@ -464,7 +464,7 @@ class SardesTableModelBase(QAbstractTableModel):
             value = self.dataf.iloc[dataf_row, dataf_column]
         return value
 
-    def get_data_at(self, model_index):
+    def get_value_at(self, model_index):
         """
         Return the edited, visible, value of the model's data at the
         specified model index.
@@ -666,8 +666,8 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
     def fetch_model_data(self):
         self.sourceModel().fetch_model_data()
 
-    def get_data_at(self, proxy_index):
-        return self.sourceModel().get_data_at(self.mapToSource(proxy_index))
+    def get_value_at(self, proxy_index):
+        return self.sourceModel().get_value_at(self.mapToSource(proxy_index))
 
     def get_horizontal_header_label_at(self, column_or_index):
         return self.sourceModel().get_horizontal_header_label_at(
