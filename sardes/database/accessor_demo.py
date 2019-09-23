@@ -8,8 +8,8 @@
 # -----------------------------------------------------------------------------
 
 # ---- Standard imports
-from time import sleep
 from copy import deepcopy
+from time import sleep
 
 # ---- Third party imports
 import numpy as np
@@ -153,7 +153,7 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         print("Fetching observation wells from the database...", end='')
         sleep(0.5)
         print("done")
-        return OBS_WELLS_DF if self.is_connected() else []
+        return deepcopy(OBS_WELLS_DF) if self.is_connected() else []
 
     # ---- Monitored properties
     @property
