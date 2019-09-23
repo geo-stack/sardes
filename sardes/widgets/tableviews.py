@@ -532,7 +532,8 @@ class SardesTableModelBase(QAbstractTableModel):
             if isinstance(edit, ValueChanged):
                 self.save_value_change_edit(
                     edit.dataf_index, edit.dataf_column, edit.edited_value)
-        self.db_connection_manager.run_tasks()
+        if self.db_connection_manager is not None:
+            self.db_connection_manager.run_tasks()
 
     def get_edited_data_at(self, model_index):
         """
