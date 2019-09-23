@@ -150,11 +150,17 @@ class DatabaseConnectionManager(QObject):
             self.sig_database_is_connecting.emit()
             self._add_task(
                 'connect_to_db', self._handle_connect_to_db, db_accessor)
-            self._db_connection_thread.start()
+            self.run_tasks()
 
     def disconnect_from_db(self):
         """Close the connection with the database"""
         self._add_task('disconnect_from_db', self._handle_disconnect_from_db)
+        self.run_tasks()
+
+    def run_tasks(self):
+        """
+        Execute all the tasks that were added to the stack.
+        """
         self._db_connection_thread.start()
 
     # ---- Observation wells
@@ -166,7 +172,7 @@ class DatabaseConnectionManager(QObject):
         as a pandas DataFrame.
         """
         self._add_task('get_observation_wells_data', callback)
-        self._db_connection_thread.start()
+        self.run_tasks()
 
     # ---- Monitored properties
     def get_monitored_properties(self, callback=None):
@@ -190,7 +196,7 @@ class DatabaseConnectionManager(QObject):
             monitored_properties = [monitored_properties, ]
         self._add_task('get_timeseries_for_obs_well', callback,
                        obs_well_id, monitored_properties)
-        self._db_connection_thread.start()
+        self.run_tasks()
 
     # ---- Handlers
     @Slot(object, object)
