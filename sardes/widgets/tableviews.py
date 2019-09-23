@@ -568,6 +568,7 @@ class SardesTableModelBase(QAbstractTableModel):
                 del self._edited_data[model_index]
 
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
+        self.dataChanged.emit(model_index, model_index)
 
     def undo_last_data_edits(self, update_model_view=True):
         """
