@@ -24,22 +24,24 @@ from qtpy.QtCore import Qt
 
 # ---- Local imports
 from sardes.config.locale import _
-from sardes.widgets.tableviews import SardesTableView, SardesTableModel
+from sardes.widgets.tableviews import (SardesTableView, SardesTableModel,
+                                       NotEditableDelegate, StringEditDelegate,
+                                       NumEditDelegate, BoolEditDelegate)
 
 
-NCOL = 5
+NCOL = 6
 COLUMNS = ['col{}'.format(i) for i in range(NCOL)]
 HEADERS = [_('Column #{}').format(i) for i in range(NCOL)]
-VALUES = [['str1', True, 1.111, 1],
-          ['str2', False, 2.222, 2],
-          ['str3', True, 3.333, 3]]
+VALUES = [['str1', True, 1.111, 1, 'not editable'],
+          ['str2', False, 2.222, 2, 'not editable'],
+          ['str3', True, 3.333, 3, 'not editable']]
 INDEXES = [uuid.uuid4() for i in range(len(VALUES))]
 TABLE_DATAF = pd.DataFrame(
     VALUES,
     index=INDEXES,
     columns=COLUMNS[:-1]
     )
-# Note that the fifth column mapped in the table model is
+# Note that the sixth column mapped in the table model is
 # missing in the dataframe.
 
 
@@ -52,7 +54,16 @@ class SardesTableModelMock(SardesTableModel):
         self.set_model_data(deepcopy(TABLE_DATAF))
 
     def create_delegate_for_column(self, view, column):
-        return None
+        if column == 'col0':
+            return StringEditDelegate(view, unique_constraint=True)
+        elif column == 'col1':
+            return BoolEditDelegate(view)
+        elif column == 'col2':
+            return NumEditDelegate(view, decimals=3)
+        elif column == 'col3':
+            return NumEditDelegate(view)
+        else:
+            return NotEditableDelegate(view)
 
     def save_value_change_edit(self, dataf_index, dataf_column, edited_value):
         TABLE_DATAF.loc[dataf_index, dataf_column] = edited_value
@@ -85,6 +96,18 @@ def tableview(qtbot, mocker, tablemodel):
     column_options_button = tableview.get_column_options_button()
     qtbot.addWidget(column_options_button)
 
+    # Assert everything is working as expected when table is empty.
+    assert tableview
+    assert tableview.model().rowCount() == 0
+    assert tableview.model().columnCount() == NCOL
+    assert tableview.visible_row_count() == 0
+
+    # Fetch the model data explicitely. We need to do this because
+    # the table view that we use for testing is not connected to a
+    # database connection manager.
+    tableview.model().fetch_model_data()
+    qtbot.wait(100)
+
     return tableview
 
 
@@ -93,14 +116,8 @@ def tableview(qtbot, mocker, tablemodel):
 # =============================================================================
 def test_tableview_init(tableview, qtbot):
     """Test that the location table view is initialized correctly."""
-    assert tableview
-    assert tableview.model().rowCount() == 0
-    assert tableview.model().columnCount() == NCOL
-    assert tableview.visible_row_count() == 0
 
-    # Fetch the model data. We need to wait a little to let the time for
-    # the data to display in the table.
-    tableview.model().fetch_model_data()
+    # Assert that the content of the table is as expected.
     assert_frame_equal(tableview.source_model.dataf, TABLE_DATAF)
     assert tableview.visible_row_count() == len(TABLE_DATAF)
 
@@ -123,7 +140,6 @@ def test_tableview_vert_headers(tableview, qtbot):
     """
     Test the labels of the table horizontal header.
     """
-    tableview.model().fetch_model_data()
     assert tableview.visible_row_count() == len(TABLE_DATAF)
     for i in range(tableview.visible_row_count()):
         assert i + 1 == tableview.model().headerData(i, Qt.Vertical)
@@ -142,7 +158,6 @@ def test_tableview_row_selection(tableview, qtbot):
     """
     Test the data returned for the currently selected row.
     """
-    tableview.model().fetch_model_data()
     assert tableview.get_selected_row_data() is None
 
     # Select the rows of table one after the other.
@@ -219,6 +234,136 @@ def test_restore_columns_to_defaults(tableview, qtbot):
     assert not horiz_header.isSectionHidden(logical_index)
     assert tableview.visible_column_count() == NCOL
     assert tableview.hidden_column_count() == 0
+
+
+def test_edit_non_editable_cell(tableview, qtbot):
+    """
+    Test editing the content of a non editable cell.
+    """
+    # Select a table cell whose content is not editable and try to edit it.
+    qtbot.mouseClick(
+        tableview.viewport(),
+        Qt.LeftButton,
+        pos=tableview.visualRect(tableview.model().index(0, 4)).center())
+
+    model_index = tableview.selectionModel().currentIndex()
+    item_delegate = tableview.itemDelegate(model_index)
+    assert model_index.data() == 'not editable'
+    assert isinstance(item_delegate, NotEditableDelegate)
+
+    # Try to edit the content of the selected cell.
+    qtbot.keyPress(tableview, Qt.Key_Enter, modifier=Qt.ControlModifier)
+    assert tableview.state() != tableview.EditingState
+
+
+def test_edit_editable_cell(tableview, qtbot):
+    """
+    Test editing the content of an editable cell.
+    """
+    expected_data = ['str1', 'Yes', '1.111', '1']
+    expected_value = ['str1', True, 1.111, 1]
+    expected_edited_data = ['new_str1', 'No', '1.234', '7']
+    expected_edited_value = ['new_str1', False, 1.234, 7]
+
+    for i in range(4):
+        # Select the editable table cell at model index(0, i).
+        qtbot.mouseClick(
+            tableview.viewport(),
+            Qt.LeftButton,
+            pos=tableview.visualRect(tableview.model().index(0, i)).center())
+
+        model_index = tableview.selectionModel().currentIndex()
+        item_delegate = tableview.itemDelegate(model_index)
+        assert model_index.data() == expected_data[i]
+
+        # Edit the value of the cell and cancel the edit.
+        qtbot.keyPress(tableview, Qt.Key_Enter, modifier=Qt.ControlModifier)
+
+        assert tableview.state() == tableview.EditingState
+        qtbot.keyClicks(item_delegate.editor, expected_edited_data[i])
+        qtbot.keyPress(item_delegate.editor, Qt.Key_Escape)
+        assert tableview.state() != tableview.EditingState
+
+        assert model_index.data() == expected_data[i]
+        assert tableview.model().get_value_at(model_index) == expected_value[i]
+        assert len(tableview.source_model._dataf_edits) == i
+
+        # Edit the value of the cell and accept the edit.
+        qtbot.keyPress(tableview, Qt.Key_Enter, modifier=Qt.ControlModifier)
+
+        assert tableview.state() == tableview.EditingState
+        qtbot.keyClicks(item_delegate.editor, expected_edited_data[i])
+        qtbot.keyPress(item_delegate.editor, Qt.Key_Enter)
+        assert tableview.state() != tableview.EditingState
+
+        assert model_index.data() == expected_edited_data[i]
+        assert (tableview.model().get_value_at(model_index) ==
+                expected_edited_value[i])
+        assert len(tableview.source_model._dataf_edits) == i + 1
+
+
+def test_cancel_edits(tableview, qtbot):
+    """
+    Test cancelling all edits made to the table's data.
+    """
+    # Do some edits to the table's data programmatically.
+    expected_data = ['new_str1', 'No', '1.234', '7']
+    expected_value = ['new_str1', False, 1.234, 7]
+
+    assert tableview.model().has_unsaved_data_edits() is False
+    for i in range(4):
+        model_index = tableview.model().index(0, i)
+        tableview.model().set_data_edits_at(model_index, expected_value[i])
+        assert model_index.data() == expected_data[i]
+        assert tableview.model().get_value_at(model_index) == expected_value[i]
+    assert len(tableview.source_model._dataf_edits) == i + 1
+    assert tableview.model().has_unsaved_data_edits() is True
+
+    # Cancel all edits.
+    expected_data = ['str1', 'Yes', '1.111', '1']
+    expected_value = ['str1', True, 1.111, 1]
+
+    tableview.model().cancel_all_data_edits()
+    for i in range(4):
+        model_index = tableview.model().index(0, i)
+        assert model_index.data() == expected_data[i]
+        assert tableview.model().get_value_at(model_index) == expected_value[i]
+    assert tableview.model().has_unsaved_data_edits() is False
+    assert len(tableview.source_model._dataf_edits) == 0
+
+
+def test_save_edits(tableview, qtbot):
+    """
+    Test saving all edits made to the table's data.
+    """
+    expected_data = ['new_str1', 'No', '1.234', '7']
+    expected_value = ['new_str1', False, 1.234, 7]
+
+    # Do some edits to the table's data programmatically.
+    assert len(tableview.source_model._dataf_edits) == 0
+    assert tableview.model().has_unsaved_data_edits() is False
+    for i in range(4):
+        model_index = tableview.model().index(0, i)
+        tableview.model().set_data_edits_at(model_index, expected_value[i])
+        assert model_index.data() == expected_data[i]
+        assert tableview.model().get_value_at(model_index) == expected_value[i]
+    assert len(tableview.source_model._dataf_edits) == i + 1
+    assert tableview.model().has_unsaved_data_edits() is True
+
+    # Save all edits.
+    tableview.model().save_data_edits()
+
+    # We need to fetch the model data explicitely here because the table view
+    # used for the tests is not connected to a database connection manager.
+    tableview.model().fetch_model_data()
+    qtbot.wait(100)
+
+    assert len(tableview.source_model._dataf_edits) == 0
+    assert tableview.model().has_unsaved_data_edits() is False
+    for i in range(4):
+        model_index = tableview.model().index(0, i)
+        assert model_index.data() == expected_data[i]
+        assert tableview.model().get_value_at(model_index) == expected_value[i]
 
 
 if __name__ == "__main__":
