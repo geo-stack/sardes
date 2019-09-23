@@ -661,9 +661,8 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
         return self.sourceModel().headerData(section, orientation, role)
 
     # ---- Source model methods
-    def cancel_data_edits_at(self, proxy_indexes):
-        self.sourceModel().cancel_data_edits_at(
-            self.mapToSource(proxy_indexes))
+    def cancel_all_data_edits(self):
+        self.sourceModel().cancel_all_data_edits()
 
     def fetch_model_data(self):
         self.sourceModel().fetch_model_data()
