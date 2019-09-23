@@ -674,9 +674,15 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
         return self.sourceModel().get_horizontal_header_label_at(
             column_or_index)
 
+    def has_unsaved_data_edits(self):
+        return self.sourceModel().has_unsaved_data_edits()
+
     def is_value_in_column(self, proxy_index, value):
         return self.sourceModel().is_value_in_column(
             self.mapToSource(proxy_index), value)
+
+    def save_data_edits(self):
+        self.sourceModel().save_data_edits()
 
     def set_data_edits_at(self, proxy_index, value):
         self.sourceModel().set_data_edits_at(
