@@ -38,11 +38,19 @@ class ObsWellsTableModel(SardesTableModel):
         ]
 
     def fetch_model_data(self):
+        """
+        Fetch the observation well data for this table model.
+        """
         self.db_connection_manager.get_observation_wells_data(
             callback=self.set_model_data)
 
     # ---- Delegates
     def create_delegate_for_column(self, view, column):
+        """
+        Create the item delegate that the view need to use when editing the
+        data of this model for the specified column. If None is returned,
+        the items of the column will not be editable.
+        """
         if column in ['is_station_active']:
             return BoolEditDelegate(view)
         elif column in ['obs_well_id', 'common_name']:
@@ -58,3 +66,11 @@ class ObsWellsTableModel(SardesTableModel):
             return NumEditDelegate(view, 16, -180, 180)
         else:
             return NotEditableDelegate(view)
+
+    # ---- Data edits
+    def save_value_change_edit(self, dataf_index, dataf_column, edited_value):
+        """
+        Save the new value for an existing observation well in the database.
+        """
+        self.db_connection_manager.save_observation_well_data(
+            dataf_index, dataf_column, edited_value, postpone_exec=True)

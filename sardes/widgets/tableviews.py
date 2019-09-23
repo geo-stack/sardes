@@ -525,7 +525,14 @@ class SardesTableModelBase(QAbstractTableModel):
         self.sig_data_edited.emit(False)
 
     def save_data_edits(self):
-        pass
+        """
+        Save all data edits to the database.
+        """
+        for edit in self._dataf_edits:
+            if isinstance(edit, ValueChanged):
+                self.save_value_change_edit(
+                    edit.dataf_index, edit.dataf_column, edit.edited_value)
+        self.db_connection_manager.run_tasks()
 
     def get_edited_data_at(self, model_index):
         """
@@ -613,6 +620,27 @@ class SardesTableModel(SardesTableModelBase):
         Create the item delegate that the view need to use when editing the
         data of this model for the specified column. If None is returned,
         the items of the column will not be editable.
+        """
+        raise NotImplementedError
+
+    # ---- Data edits
+    def save_value_change_edit(self, dataf_index, dataf_column, edited_value):
+        """
+        Save the new value for an existing item in the database.
+        """
+        raise NotImplementedError
+
+    def save_new_row_edit(self, dataf_index):
+        """
+        Do the database operations corresponding to the addition of a new
+        row in this table.
+        """
+        raise NotImplementedError
+
+    def save_del_row_edit(self, dataf_index):
+        """
+        Do the database operations corresponding to the removal of a
+        row in this table.
         """
         raise NotImplementedError
 
