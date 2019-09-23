@@ -720,7 +720,7 @@ class SardesTableView(QTableView):
 
         self._edit_current_item_button = None
         self._cancel_edits_button = None
-        self._commit_edits_button = None
+        self._save_edits_button = None
 
     def _setup_table_model(self, table_model):
         """
@@ -914,23 +914,24 @@ class SardesTableView(QTableView):
                 self.itemDelegate(current_index).commit_data()
 
     @property
-    def commit_edits_button(self):
+    def save_edits_button(self):
         """
         Return a toolbutton that save the edits made to the data of the
         table when triggered.
         """
-        if self._commit_edits_button is None:
-            self._commit_edits_button = create_toolbutton(
+        if self._save_edits_button is None:
+            self._save_edits_button = create_toolbutton(
                 self,
                 icon='commit_changes',
                 text=_("Edit observation well"),
                 tip=_('Edit the currently selected observation well.'),
                 triggered=lambda: self._save_data_edits(force=False),
-                iconsize=get_iconsize()
+                iconsize=get_iconsize(),
+                shortcut='Ctrl+S'
                 )
-            self._commit_edits_button.setEnabled(False)
-            self.sig_data_edited.connect(self._commit_edits_button.setEnabled)
-        return self._commit_edits_button
+            self._save_edits_button.setEnabled(False)
+            self.sig_data_edited.connect(self._save_edits_button.setEnabled)
+        return self._save_edits_button
 
     def _save_data_edits(self, force=True):
         """
