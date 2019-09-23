@@ -297,11 +297,15 @@ class ValueChanged(object):
     A class that represent a change of a value at a given model index.
     """
 
-    def __init__(self, model_index, dataf_value, edited_value):
+    def __init__(self, model_index, edited_value,
+                 dataf_index, dataf_column, dataf_value):
         super() .__init__()
         self.model_index = model_index
-        self.dataf_value = dataf_value
         self.edited_value = edited_value
+
+        self.dataf_index = dataf_index
+        self.dataf_column = dataf_column
+        self.dataf_value = dataf_value
 
 
 class SardesTableModelBase(QAbstractTableModel):
@@ -529,11 +533,14 @@ class SardesTableModelBase(QAbstractTableModel):
         so that the GUI can be updated accordingly.
         """
         dataf_value = self.get_dataf_value_at(model_index)
+        dataf_index = self.dataf.index[model_index.row()]
+        dataf_column = self.columns[model_index.column()]
 
         # We store the edited value until it is commited and
         # saved to the database.
         self._dataf_edits.append(
-            ValueChanged(model_index, dataf_value, edited_value))
+            ValueChanged(model_index, edited_value,
+                         dataf_index, dataf_column, dataf_value))
 
         # We add the model index to the list of indexes whose value have
         # been edited if the edited value differ from the value saved in
