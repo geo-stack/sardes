@@ -663,6 +663,9 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
         self.sourceModel().cancel_data_edits_at(
             self.mapToSource(proxy_indexes))
 
+    def fetch_model_data(self):
+        self.sourceModel().fetch_model_data()
+
     def get_data_at(self, proxy_index):
         return self.sourceModel().get_data_at(self.mapToSource(proxy_index))
 

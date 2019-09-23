@@ -12,7 +12,9 @@ Tests for the ObservationWellTableView.
 """
 
 # ---- Standard imports
+from copy import deepcopy
 import os.path as osp
+import uuid
 
 # ---- Third party imports
 import pytest
@@ -22,50 +24,52 @@ from qtpy.QtCore import Qt
 
 # ---- Local imports
 from sardes.config.locale import _
-from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.widgets.tableviews import SardesTableView, SardesTableModel
 
 
 NCOL = 5
 COLUMNS = ['col{}'.format(i) for i in range(NCOL)]
 HEADERS = [_('Column #{}').format(i) for i in range(NCOL)]
+VALUES = [['str1', True, 1.111, 1],
+          ['str2', False, 2.222, 2],
+          ['str3', True, 3.333, 3]]
+INDEXES = [uuid.uuid4() for i in range(len(VALUES))]
 TABLE_DATAF = pd.DataFrame(
-    [['str1', True, 1.111, 1],
-     ['str2', False, 2.222, 2],
-     ['str3', True, 3.333, 3]
-     ],
+    VALUES,
+    index=INDEXES,
     columns=COLUMNS[:-1]
     )
 # Note that the fifth column mapped in the table model is
 # missing in the dataframe.
 
 
-class SardesTableViewTest(SardesTableView):
-    DATA_COLUMNS_MAPPER = [
+class SardesTableModelMock(SardesTableModel):
+    __data_columns_mapper__ = [
         (col, header) for col, header in zip(COLUMNS, HEADERS)]
-    GET_DATA_METHOD = 'get_data'
 
-    def create_delegate_for_column(self, column):
+    # ---- Public methods
+    def fetch_model_data(self):
+        self.set_model_data(deepcopy(TABLE_DATAF))
+
+    def create_delegate_for_column(self, view, column):
         return None
 
-
-class MockDatabaseConnectionManager(DatabaseConnectionManager):
-    def get_data(self, callback):
-        callback(TABLE_DATAF)
+    def save_value_change_edit(self, dataf_index, dataf_column, edited_value):
+        TABLE_DATAF.loc[dataf_index, dataf_column] = edited_value
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def dbconnmanager():
-    dbconnmanager = MockDatabaseConnectionManager()
-    return dbconnmanager
+def tablemodel(qtbot, mocker):
+    tablemodel = SardesTableModelMock()
+    return tablemodel
 
 
 @pytest.fixture
-def tableview(qtbot, mocker, dbconnmanager):
-    tableview = SardesTableViewTest(dbconnmanager)
+def tableview(qtbot, mocker, tablemodel):
+    tableview = SardesTableView(tablemodel)
 
     # Setup the width of the table so that all columns are shown.
     width = 0
@@ -87,20 +91,16 @@ def tableview(qtbot, mocker, dbconnmanager):
 # =============================================================================
 # ---- Tests for ObservationWellTableView
 # =============================================================================
-def test_tableview_init(tableview, dbconnmanager, qtbot):
+def test_tableview_init(tableview, qtbot):
     """Test that the location table view is initialized correctly."""
     assert tableview
     assert tableview.model().rowCount() == 0
     assert tableview.model().columnCount() == NCOL
     assert tableview.visible_row_count() == 0
 
-    # Connect to the database. This should trigger in the location table view
-    # a query to get and display the content of the database location table.
-    dbconnmanager.sig_database_connection_changed.emit(True)
-
-    # We need to wait a little to let the time for the data to display in
-    # the table.
-    qtbot.wait(500)
+    # Fetch the model data. We need to wait a little to let the time for
+    # the data to display in the table.
+    tableview.model().fetch_model_data()
     assert_frame_equal(tableview.source_model.dataf, TABLE_DATAF)
     assert tableview.visible_row_count() == len(TABLE_DATAF)
 
@@ -119,13 +119,11 @@ def test_tableview_horiz_headers(tableview):
         assert header == tableview.model().headerData(i, Qt.Horizontal)
 
 
-def test_tableview_vert_headers(tableview, dbconnmanager, qtbot):
+def test_tableview_vert_headers(tableview, qtbot):
     """
     Test the labels of the table horizontal header.
     """
-    dbconnmanager.sig_database_connection_changed.emit(True)
-    qtbot.wait(500)
-
+    tableview.model().fetch_model_data()
     assert tableview.visible_row_count() == len(TABLE_DATAF)
     for i in range(tableview.visible_row_count()):
         assert i + 1 == tableview.model().headerData(i, Qt.Vertical)
@@ -139,12 +137,12 @@ def test_tableview_vert_headers(tableview, dbconnmanager, qtbot):
         assert (tableview.model().data(tableview.model().index(i, 0)) ==
                 TABLE_DATAF.iloc[-1 - i, 0])
 
-def test_tableview_row_selection(tableview, dbconnmanager, qtbot):
+
+def test_tableview_row_selection(tableview, qtbot):
     """
     Test the data returned for the currently selected row.
     """
-    dbconnmanager.sig_database_connection_changed.emit(True)
-    qtbot.wait(500)
+    tableview.model().fetch_model_data()
     assert tableview.get_selected_row_data() is None
 
     # Select the rows of table one after the other.
