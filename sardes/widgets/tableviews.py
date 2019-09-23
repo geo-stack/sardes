@@ -401,7 +401,13 @@ class SardesTableModelBase(QAbstractTableModel):
             mapped in HORIZONTAL_HEADER_LABELS.
         """
         self.dataf = dataf
+        self._dataf_edits = []
+        self._edited_data = {}
+        self._new_rows = []
+        self._deleted_rows = []
+
         self.modelReset.emit()
+        self.sig_data_edited.emit(False)
 
     def rowCount(self, parent=QModelIndex()):
         """Qt method override. Return the number of row of the table."""
