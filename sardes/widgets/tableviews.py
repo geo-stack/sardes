@@ -307,6 +307,13 @@ class ValueChanged(object):
         self.dataf_column = dataf_column
         self.dataf_value = dataf_value
 
+    def type(self):
+        """
+        Return an integer that indicates the type of data edit this
+        edit correspond to, as defined in :class:`SardesTableModelBase`.
+        """
+        return SardesTableModelBase.ValueChanged
+
 
 class SardesTableModelBase(QAbstractTableModel):
     """
@@ -315,6 +322,10 @@ class SardesTableModelBase(QAbstractTableModel):
     WARNING: Don't override any methods or attributes present here.
     """
     sig_data_edited = Signal(bool)
+
+    ValueChanged = 0
+    RowAdded = 1
+    RowRemoved = 2
 
     # A list of tuple that maps the keys of the columns dataframe with their
     # corresponding human readable label to use in the GUI.
@@ -524,17 +535,6 @@ class SardesTableModelBase(QAbstractTableModel):
             self.index(self.rowCount() - 1, self.columnCount() - 1))
         self.sig_data_edited.emit(False)
 
-    def save_data_edits(self):
-        """
-        Save all data edits to the database.
-        """
-        for edit in self._dataf_edits:
-            if isinstance(edit, ValueChanged):
-                self.save_value_change_edit(
-                    edit.dataf_index, edit.dataf_column, edit.edited_value)
-        if self.db_connection_manager is not None:
-            self.db_connection_manager.run_tasks()
-
     def get_edited_data_at(self, model_index):
         """
         Return the edited value, if any, that was made at the specified
@@ -626,23 +626,9 @@ class SardesTableModel(SardesTableModelBase):
         raise NotImplementedError
 
     # ---- Data edits
-    def save_value_change_edit(self, dataf_index, dataf_column, edited_value):
+    def save_data_edits(self):
         """
-        Save the new value for an existing item in the database.
-        """
-        raise NotImplementedError
-
-    def save_new_row_edit(self, dataf_index):
-        """
-        Do the database operations corresponding to the addition of a new
-        row in this table.
-        """
-        raise NotImplementedError
-
-    def save_del_row_edit(self, dataf_index):
-        """
-        Do the database operations corresponding to the removal of a
-        row in this table.
+        Save all data edits to the database.
         """
         raise NotImplementedError
 

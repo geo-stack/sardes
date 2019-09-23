@@ -65,8 +65,15 @@ class SardesTableModelMock(SardesTableModel):
         else:
             return NotEditableDelegate(view)
 
-    def save_value_change_edit(self, dataf_index, dataf_column, edited_value):
-        TABLE_DATAF.loc[dataf_index, dataf_column] = edited_value
+    def save_data_edits(self):
+        """
+        Save all data edits to the database.
+        """
+        for edit in self._dataf_edits:
+            if edit.type() == self.ValueChanged:
+                TABLE_DATAF.loc[edit.dataf_index, edit.dataf_column] = (
+                    edit.edited_value)
+        self.fetch_model_data()
 
 
 # =============================================================================
@@ -352,10 +359,6 @@ def test_save_edits(tableview, qtbot):
 
     # Save all edits.
     tableview.model().save_data_edits()
-
-    # We need to fetch the model data explicitely here because the table view
-    # used for the tests is not connected to a database connection manager.
-    tableview.model().fetch_model_data()
     qtbot.wait(100)
 
     assert len(tableview.source_model._dataf_edits) == 0
