@@ -880,13 +880,6 @@ class SardesTableView(QTableView):
             action.setChecked(not self.horizontalHeader().isSectionHidden(i))
 
     # ---- Data edits
-    def is_data_editable_at(self, model_index):
-        """
-        Return whether the item at the specified model index is editable.
-        """
-        return not isinstance(
-            self.itemDelegate(model_index), NotEditableDelegate)
-
     @property
     def edit_current_item_button(self):
         """
