@@ -50,6 +50,7 @@ def test_mainwindow_settings(qtbot, mocker):
     in and from our configs.
     """
     mainwindow1 = MainWindow()
+    qtbot.addWidget(mainwindow1)
     mainwindow1.show()
     qtbot.waitForWindowShown(mainwindow1)
 
@@ -75,10 +76,8 @@ def test_mainwindow_settings(qtbot, mocker):
     assert mainwindow1.pos() != QPoint(*expected_normal_window_pos)
     assert mainwindow1.isMaximized()
 
-    # Close and delete the window.
-    with qtbot.waitSignal(mainwindow1.destroyed):
-        mainwindow1.close()
-        mainwindow1.deleteLater()
+    # Close the main window.
+    mainwindow1.close()
 
     # Create a new instance of the main window and assert that the size,
     # position and maximized state were restored from the previous
