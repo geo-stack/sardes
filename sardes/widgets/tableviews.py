@@ -304,18 +304,21 @@ class ValueChanged(object):
         self.edited_value = edited_value
 
 
-class SardesTableModel(QAbstractTableModel):
+class SardesTableModelBase(QAbstractTableModel):
     """
-    An abstract table model to be used in a table view to display the list of
-    observation wells that are saved in the database.
+    Basic functionality for Sardes table models.
+
+    WARNING: Don't override any methods or attributes present here.
     """
     sig_data_edited = Signal(bool)
 
-    def __init__(self, data_columns_mapper, get_data_method,
-                 db_connection_manager=None):
+    # A list of tuple that maps the keys of the columns dataframe with their
+    # corresponding human readable label to use in the GUI.
+    __data_columns_mapper__ = []
+
+    def __init__(self, db_connection_manager=None):
         super().__init__()
-        self._data_columns_mapper = OrderedDict(data_columns_mapper)
-        self._get_data_method = get_data_method
+        self._data_columns_mapper = OrderedDict(self.__data_columns_mapper__)
 
         # A pandas dataframe containing the data that are shown in the
         # database.
@@ -335,7 +338,7 @@ class SardesTableModel(QAbstractTableModel):
         self.db_connection_manager = db_connection_manager
         if db_connection_manager is not None:
             self.db_connection_manager.sig_database_connection_changed.connect(
-                self._trigger_data_update)
+                self.fetch_data)
 
     # ---- Columns
     @property
@@ -380,10 +383,9 @@ class SardesTableModel(QAbstractTableModel):
             return QVariant()
 
     # ---- Table data
-    def _update_data(self, dataf):
+    def set_model_data(self, dataf):
         """
-        Update the content of this table model with the data
-        contained in dataf.
+        Set the content of this table model to the data contained in dataf.
 
         Parameters
         ----------
@@ -394,16 +396,6 @@ class SardesTableModel(QAbstractTableModel):
         """
         self.dataf = dataf
         self.modelReset.emit()
-
-    @Slot(bool)
-    def _trigger_data_update(self, connection_state):
-        """
-        Get the list of observation wells that are saved in the database and
-        update the content of this table view.
-        """
-        get_data_method = getattr(
-            self.db_connection_manager, self._get_data_method)
-        get_data_method(callback=self._update_data)
 
     def rowCount(self, parent=QModelIndex()):
         """Qt method override. Return the number of row of the table."""
@@ -578,6 +570,38 @@ class SardesTableModel(QAbstractTableModel):
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
 
+class SardesTableModel(SardesTableModelBase):
+    """
+    An abstract table model to be used in a table view to display the data
+    that are saved in the database.
+
+    All table *must* inherit this class and reimplement its interface.
+
+    """
+    # A list of tuple that maps the keys of the columns dataframe with their
+    # corresponding human readable label to use in the GUI.
+    __data_columns_mapper__ = []
+
+    def __init__(self, db_connection_manager=None):
+        super().__init__(db_connection_manager)
+
+    def fetch_data(self):
+        """
+        Fetch the data for this table model.
+
+        Note that the data need to be passed to :func:`set_model_data`.
+        """
+        raise NotImplementedError
+
+    def create_delegate_for_column(self, view, column):
+        """
+        Create the item delegate that the view need to use when editing the
+        data of this model for the specified column. If None is returned,
+        the items of the column will not be editable.
+        """
+        raise NotImplementedError
+
+
 class SardesSortFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, source_model):
         super().__init__()
@@ -618,15 +642,14 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
 # =============================================================================
 # ---- Table View
 # =============================================================================
-class SardesTableViewBase(QTableView):
+class SardesTableView(QTableView):
     """
-    Basic functionality for Sardes table views.
-
-    WARNING: Don't override any methods or attributes present here.
+    Sardes table view class to display and edit the data that are
+    saved in the database.
     """
     sig_data_edited = Signal(bool)
 
-    def __init__(self, db_connection_manager, parent=None):
+    def __init__(self, table_model, parent=None):
         super().__init__(parent)
         self.setSortingEnabled(True)
         self.setAlternatingRowColors(True)
@@ -635,7 +658,7 @@ class SardesTableViewBase(QTableView):
         self.setEditTriggers(self.NoEditTriggers)
         self.setMouseTracking(True)
 
-        self._setup_table_model(db_connection_manager)
+        self._setup_table_model(table_model)
         self._setup_item_delegates()
 
         # Toolbuttons.
@@ -646,14 +669,11 @@ class SardesTableViewBase(QTableView):
         self._cancel_edits_button = None
         self._commit_edits_button = None
 
-    def _setup_table_model(self, db_connection_manager):
+    def _setup_table_model(self, table_model):
         """
         Setup the data model for this table view.
         """
-        self.source_model = SardesTableModel(
-            self.DATA_COLUMNS_MAPPER,
-            self.GET_DATA_METHOD,
-            db_connection_manager)
+        self.source_model = table_model
         self.source_model.sig_data_edited.connect(self.sig_data_edited.emit)
         self.proxy_model = SardesSortFilterProxyModel(self.source_model)
         self.setModel(self.proxy_model)
@@ -663,7 +683,8 @@ class SardesTableViewBase(QTableView):
         Setup the item delegates for each column of this table view.
         """
         for i, column in enumerate(self.source_model.columns):
-            item_delegate = self.create_delegate_for_column(column)
+            item_delegate = self.source_model.create_delegate_for_column(
+                self, column)
             self.setItemDelegateForColumn(i, item_delegate)
 
     # ---- Utilities
@@ -943,37 +964,6 @@ class SardesTableViewBase(QTableView):
             return super().edit(model_index)
         else:
             return super().edit(model_index, trigger, event)
-
-
-class SardesTableView(SardesTableViewBase):
-    """
-    Sardes table view class to display and edit the data that are
-    saved in the database.
-
-    All table *must* inherit this class and reimplement its interface.
-    """
-    # A list of tuple that maps the keys of the columns dataframe with their
-    # corresponding human readable label to use in the GUI.
-    DATA_COLUMNS_MAPPER = []
-
-    # The name of the method that the database connection manager need to call
-    # to retrieve the data from the database for this table view.
-    GET_DATA_METHOD = None
-
-    def __init__(self, db_connection_manager=None, parent=None):
-        super().__init__(db_connection_manager, parent)
-
-    def create_delegate_for_column(self, column):
-        """
-        Create the item delegate that this model's table view need to use
-        for the specified column. If None is returned, the items of the
-        column will not be editable.
-
-        All table model *must* reimplement this method to return the
-        appropriate delegate to be used for each columns of its
-        corresponding table.
-        """
-        raise NotImplementedError
 
 
 if __name__ == '__main__':

@@ -16,10 +16,10 @@ from sardes.api.plugins import SardesPlugin
 from sardes.api.panes import SardesPaneWidget
 from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
-from sardes.plugins.obs_wells_explorer.table import ObsWellsTableView
+from sardes.plugins.obs_wells_explorer.table import ObsWellsTableModel
+from sardes.widgets.tableviews import SardesTableView
 from sardes.utils.qthelpers import (create_toolbutton,
                                     create_toolbar_stretcher)
-from sardes.widgets.tableviews import SardesTableView
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
 
 """Observation well explorer plugin"""
@@ -43,8 +43,8 @@ class ObsWellsExplorer(SardesPlugin):
         plugin's dockwidget.
         """
         # ---- Setup the Observation Well table view
-        self.obs_well_tableview = ObsWellsTableView(
-            self.main.db_connection_manager)
+        self.obs_well_tableview = SardesTableView(
+            ObsWellsTableModel(self.main.db_connection_manager))
 
         # Restore the state of the observation wells table horizontal header
         # from the configs.
