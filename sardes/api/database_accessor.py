@@ -72,44 +72,25 @@ class DatabaseAccessorBase(ABC):
         """
         pass
 
-    def save_observation_wells_data(self, obs_wells_data):
+    def save_observation_well_data(self, sampling_feature_id, attribute_name,
+                                   value):
         """
-        Save in the database the new values for the attributes of one or more
-        observation wells.
+        Save in the database the new attribute value for the observation well
+        corresponding to the specified sampling feature ID.
 
         Parameters
         ----------
-        obs_wells_data: object
-            A dictionary where the keys correspond to observation well IDs.
-            The values correspond to dictionaries whose keys correspond
-            to one or more attributes of the corresponding observation well
-            for which the data need to be updated in the database.
+        sampling_feature_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the observation well
+            in the database.
+        attribute_name: str
+            Name of the attribute of the observation well for which the
+            value need to be updated in the database.
             See :func:`get_observation_wells_data` for the list of attributes
             that are defined for the observation well feature.
-        """
-        for obs_well_id in obs_wells_data:
-            print("Updating observation well '{}' attributes..."
-                  .format(obs_well_id), end=' ')
-            self._save_observation_well_data(
-                obs_well_id, obs_wells_data[obs_well_id])
-            print('done')
-
-        # Commit changes to the BD.
-        self._session.commit()
-
-    def _save_observation_well_data(obs_well_id, obs_well_data):
-        """
-        Save in the database the new values for the attributes of the
-        specified observation well to the database.
-
-        Parameters
-        ----------
-        obs_well_id: str
-            The unique identifier of the observation well.
-        obs_well_data: dict
-            A dictionary where the keys correspond to one or more
-            attributes of the observation well for which the values need
-            to be updated in the database.
+        value: object
+            Value that need to be updated for the corresponding attribute and
+            observation well.
         """
         raise NotImplementedError
 
