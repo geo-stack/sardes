@@ -104,7 +104,6 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         print("Instantiating DatabaseAccessorDemo with :")
         print("args :", args)
         print("kargs :", kargs)
-        self._wells = deepcopy(OBS_WELLS_DF)
 
     def is_connected(self):
         """
@@ -138,6 +137,14 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         """
         return OBS_WELLS_DF['obs_well_id'].values
 
+    def save_observation_well_data(self, sampling_feature_id, attribute_name,
+                                   attribute_value):
+        """
+        Save in the database the new attribute value for the observation well
+        corresponding to the specified sampling feature ID.
+        """
+        OBS_WELLS_DF.loc[sampling_feature_id, attribute_name] = attribute_value
+
     def get_observation_wells_data(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -146,7 +153,7 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         print("Fetching observation wells from the database...", end='')
         sleep(0.5)
         print("done")
-        return self._wells if self.is_connected() else []
+        return OBS_WELLS_DF if self.is_connected() else []
 
     # ---- Monitored properties
     @property
