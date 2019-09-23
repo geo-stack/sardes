@@ -342,7 +342,9 @@ class SardesTableModelBase(QAbstractTableModel):
         self.db_connection_manager = db_connection_manager
         if db_connection_manager is not None:
             self.db_connection_manager.sig_database_connection_changed.connect(
-                self.fetch_data)
+                self.fetch_model_data)
+            self.db_connection_manager.sig_database_data_changed.connect(
+                self.fetch_model_data)
 
     # ---- Columns
     @property
@@ -592,7 +594,7 @@ class SardesTableModel(SardesTableModelBase):
     def __init__(self, db_connection_manager=None):
         super().__init__(db_connection_manager)
 
-    def fetch_data(self):
+    def fetch_model_data(self):
         """
         Fetch the data for this table model.
 

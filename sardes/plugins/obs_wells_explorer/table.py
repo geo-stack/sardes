@@ -37,7 +37,7 @@ class ObsWellsTableModel(SardesTableModel):
         ('obs_well_notes', _('Note'))
         ]
 
-    def fetch_data(self):
+    def fetch_model_data(self):
         self.db_connection_manager.get_observation_wells_data(
             callback=self.set_model_data)
 
