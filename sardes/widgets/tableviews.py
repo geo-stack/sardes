@@ -948,7 +948,7 @@ class SardesTableView(QTableView):
                 )
             if reply == QMessageBox.Cancel:
                 return
-        self.source_model.save_data_edits()
+        self.model().save_data_edits()
 
     @property
     def cancel_edits_button(self):
@@ -962,7 +962,7 @@ class SardesTableView(QTableView):
                 icon='cancel_changes',
                 text=_("Edit observation well"),
                 tip=_('Edit the currently selected observation well.'),
-                triggered=self.source_model.cancel_all_data_edits,
+                triggered=self.model().cancel_all_data_edits,
                 iconsize=get_iconsize()
                 )
             self._cancel_edits_button.setEnabled(False)
