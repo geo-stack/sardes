@@ -25,7 +25,7 @@ from qtpy.QtCore import Qt
 # ---- Local imports
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
-    SardesTableWidget, SardesTableView, SardesTableModel, NotEditableDelegate,
+    SardesTableWidget, SardesTableModel, NotEditableDelegate,
     StringEditDelegate, NumEditDelegate, BoolEditDelegate)
 
 
