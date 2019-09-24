@@ -260,6 +260,47 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             )
         return obs_well
 
+    def save_observation_well_data(self, sampling_feature_id, attribute_name,
+                                   attribute_value):
+        """
+        Save in the database the new attribute value for the observation well
+        corresponding to the specified sampling feature ID.
+        """
+        obs_well = self._get_observation_well(sampling_feature_id)
+
+        note_attrs = [
+            'common_name', 'aquifer_type', 'confinement', 'aquifer_code',
+            'in_recharge_zone', 'is_influenced', 'is_station_active',
+            'obs_well_notes']
+
+        if attribute_name in ['obs_well_id']:
+            setattr(obs_well, attribute_name, attribute_value)
+        elif attribute_name in note_attrs:
+            index = note_attrs.index(attribute_name)
+            label = [
+                'nom_commu', 'aquifere', 'nappe', 'code_aqui', 'zone_rechar',
+                'influences', 'station_active', 'remarque'][index]
+
+            notes = [n.strip() for n in obs_well.obs_well_notes.split(r'||')]
+            notes[index] = '{}: {}'.format(label, attribute_value)
+            obs_well.obs_well_notes = r' || '.join(notes)
+        elif attribute_name in ['latitude', 'longitude']:
+            location = self._get_location(obs_well.loc_id)
+            setattr(location, attribute_name, attribute_value)
+
+            # We also need to update the postgis geometry object for the
+            # location.
+            location.loc_geom = WKTElement(
+                'POINT({} {})'.format(location.longitude, location.latitude),
+                srid=4326)
+        elif attribute_name in ['municipality']:
+            location = self._get_location(obs_well.loc_id)
+            location.loc_notes = (
+                ' || municipalité : {}'.format(attribute_value))
+
+        # Commit changes to the BD.
+        self._session.commit()
+
     def get_observation_wells_data(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
