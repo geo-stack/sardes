@@ -151,9 +151,12 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         to the observation wells that are saved in the database.
         """
         print("Fetching observation wells from the database...", end='')
-        sleep(0.5)
+        sleep(0.3)
         print("done")
-        return deepcopy(OBS_WELLS_DF) if self.is_connected() else []
+        if self.is_connected():
+            return deepcopy(OBS_WELLS_DF)
+        else:
+            raise AttributeError
 
     # ---- Monitored properties
     @property
