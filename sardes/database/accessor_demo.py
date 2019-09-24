@@ -8,8 +8,8 @@
 # -----------------------------------------------------------------------------
 
 # ---- Standard imports
-from time import sleep
 from copy import deepcopy
+from time import sleep
 
 # ---- Third party imports
 import numpy as np
@@ -35,7 +35,7 @@ for i in range(5):
     for _ in range(6):
         OBS_WELL_ID += str(int(np.random.rand(1) * 9))
     AQUIFER_CODE = int(np.random.rand(1) * 5)
-    AQUIFER_TYPE, AQUIFER_CONFINEMENT = [
+    AQUIFER_CONFINEMENT, AQUIFER_TYPE = [
         ('Confined', 'Rock'),
         ('Confined', 'Sediments'),
         ('Semi-Confined', 'Rock'),
@@ -54,7 +54,7 @@ for i in range(5):
         str(bool(np.floor(np.random.rand(1) * 2))),
         round(45 + np.random.rand(1)[0] * 2, 6),
         round(-75 + np.random.rand(1)[0] * 2, 6),
-        str(bool(np.floor(np.random.rand(1) * 2))),
+        bool(np.floor(np.random.rand(1) * 2)),
         'Notes for observation well #{}'.format(OBS_WELL_ID)])
 OBS_WELLS_DF = pd.DataFrame(OBS_WELLS_DATA, columns=OBS_WELLS_COLUMNS)
 
@@ -104,7 +104,6 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         print("Instantiating DatabaseAccessorDemo with :")
         print("args :", args)
         print("kargs :", kargs)
-        self._wells = deepcopy(OBS_WELLS_DF)
 
     def is_connected(self):
         """
@@ -138,15 +137,23 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         """
         return OBS_WELLS_DF['obs_well_id'].values
 
+    def save_observation_well_data(self, sampling_feature_id, attribute_name,
+                                   attribute_value):
+        """
+        Save in the database the new attribute value for the observation well
+        corresponding to the specified sampling feature ID.
+        """
+        OBS_WELLS_DF.loc[sampling_feature_id, attribute_name] = attribute_value
+
     def get_observation_wells_data(self):
         """
-        Get a list of ObservationWell objects containing information related
+        Return a :class:`pandas.DataFrame` containing the information related
         to the observation wells that are saved in the database.
         """
         print("Fetching observation wells from the database...", end='')
         sleep(0.5)
         print("done")
-        return self._wells if self.is_connected() else []
+        return deepcopy(OBS_WELLS_DF) if self.is_connected() else []
 
     # ---- Monitored properties
     @property

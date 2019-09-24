@@ -12,9 +12,13 @@ Object-Relational Mapping and Accessor implementation of the RSESQ database.
 """
 
 # ---- Third party imports
+from geoalchemy2 import Geometry
+from geoalchemy2.elements import WKTElement
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.types import TEXT, VARCHAR, Boolean
 from sqlalchemy import ForeignKey
 from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
@@ -39,18 +43,14 @@ class Location(Base):
     """
     __tablename__ = 'localisation'
     __table_args__ = ({"schema": "rsesq"})
-    __mapper_args__ = {
-        'include_properties': [
-            'loc_id', 'latitude', 'longitude', 'note']}
 
-    loc_id = Column(String, primary_key=True)
+    loc_common_name = Column('nom_communn', String)
     latitude = Column('latitude_8', Float)
     longitude = Column(Float)
-    is_station_active = Column('station_active', String)
+    is_station_active = Column('station_active', Boolean)
     loc_notes = Column('remarque', String)
-
-    sampling_features = relationship(
-        "SamplingFeature", back_populates="location")
+    loc_id = Column(String, primary_key=True)
+    loc_geom = Column('geom', Geometry('POINT', 4326))
 
     def __repr__(self):
         return format_sqlobject_repr(self)
@@ -64,14 +64,12 @@ class SamplingFeature(Base):
     __tablename__ = 'elements_caracteristique'
     __table_args__ = ({"schema": "rsesq"})
 
-    sampling_feature_uuid = Column('elemcarac_uuid', String, primary_key=True)
+    sampling_feature_uuid = Column(
+        'elemcarac_uuid', UUID(as_uuid=True), primary_key=True)
     interest_id = Column('interet_id', String)
     loc_id = Column(Integer, ForeignKey('rsesq.localisation.loc_id'))
 
     __mapper_args__ = {'polymorphic_on': interest_id}
-
-    location = relationship(
-        "Location", back_populates="sampling_features")
 
     def __repr__(self):
         return format_sqlobject_repr(self)
@@ -82,8 +80,8 @@ class ObservationWell(SamplingFeature):
     An object used to map the observation wells of the RSESQ.
     """
     __mapper_args__ = {'polymorphic_identity': 1}
-    obs_well_id = Column('elemcarac_nom', String)
-    obs_well_notes = Column('elemcarac_note', String)
+    obs_well_id = Column('elemcarac_nom', VARCHAR(length=250))
+    obs_well_notes = Column('elemcarac_note', TEXT(length=None))
 
 
 class LoggerInstallation(Base):
@@ -208,6 +206,19 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         self._engine.dispose()
         self._connection = None
 
+    # ---- Locations
+    def _get_location(self, loc_id):
+        """
+        Return the sqlalchemy Location object corresponding to the
+        specified location ID.
+        """
+        location = (
+            self._session.query(Location)
+            .filter(Location.loc_id == loc_id)
+            .one()
+            )
+        return location
+
     # ---- Observation wells
     @property
     def observation_wells(self):
@@ -222,9 +233,77 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             )
         return [obj.obs_well_id for obj in obs_well_ids]
 
+    def _get_obs_well_sampling_feature_uuid(self, obs_well_id):
+        """
+        Return the sampling feature UUID corresponding the the observation
+        well common ID that is used to reference the well in the monitoring
+        network (not the database).
+        """
+        sampling_feature_uuid = (
+            self._session.query(ObservationWell.sampling_feature_uuid)
+            .filter(ObservationWell.obs_well_id == obs_well_id)
+            .one()
+            .sampling_feature_uuid
+            )
+        return sampling_feature_uuid
+
+    def _get_observation_well(self, sampling_feature_uuid):
+        """
+        Return the sqlalchemy ObservationWell object corresponding to the
+        specified sampling feature UUID.
+        """
+        obs_well = (
+            self._session.query(ObservationWell)
+            .filter(ObservationWell.sampling_feature_uuid ==
+                    sampling_feature_uuid)
+            .one()
+            )
+        return obs_well
+
+    def save_observation_well_data(self, sampling_feature_id, attribute_name,
+                                   attribute_value):
+        """
+        Save in the database the new attribute value for the observation well
+        corresponding to the specified sampling feature ID.
+        """
+        obs_well = self._get_observation_well(sampling_feature_id)
+
+        note_attrs = [
+            'common_name', 'aquifer_type', 'confinement', 'aquifer_code',
+            'in_recharge_zone', 'is_influenced', 'is_station_active',
+            'obs_well_notes']
+
+        if attribute_name in ['obs_well_id']:
+            setattr(obs_well, attribute_name, attribute_value)
+        elif attribute_name in note_attrs:
+            index = note_attrs.index(attribute_name)
+            label = [
+                'nom_commu', 'aquifere', 'nappe', 'code_aqui', 'zone_rechar',
+                'influences', 'station_active', 'remarque'][index]
+
+            notes = [n.strip() for n in obs_well.obs_well_notes.split(r'||')]
+            notes[index] = '{}: {}'.format(label, attribute_value)
+            obs_well.obs_well_notes = r' || '.join(notes)
+        elif attribute_name in ['latitude', 'longitude']:
+            location = self._get_location(obs_well.loc_id)
+            setattr(location, attribute_name, attribute_value)
+
+            # We also need to update the postgis geometry object for the
+            # location.
+            location.loc_geom = WKTElement(
+                'POINT({} {})'.format(location.longitude, location.latitude),
+                srid=4326)
+        elif attribute_name in ['municipality']:
+            location = self._get_location(obs_well.loc_id)
+            location.loc_notes = (
+                ' || municipalité : {}'.format(attribute_value))
+
+        # Commit changes to the BD.
+        self._session.commit()
+
     def get_observation_wells_data(self):
         """
-        Return a pandas DataFrame containing the information related
+        Return a :class:`pandas.DataFrame` containing the information related
         to the observation wells that are saved in the database.
         """
         if self.is_connected():
@@ -256,12 +335,24 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
                     split_notes.str[i].str.split(':').str[1].str.strip())
                 obs_wells[key] = obs_wells[key][obs_wells[key] != 'NULL']
 
+            # Convert to bool.
+            obs_wells['is_station_active'] = (
+                obs_wells['is_station_active']
+                .map({'True': True, 'False': False}))
+
             obs_wells['municipality'] = (
                 obs_wells['loc_notes'].str.split(':').str[1].str.strip())
 
-            return obs_wells
+            # Set the index to the observation well ids.
+            obs_wells.set_index(
+                'sampling_feature_uuid', inplace=True, drop=True)
+
+            # Replace nan by None.
+            obs_wells = obs_wells.where(obs_wells.notnull(), None)
         else:
-            return pd.DataFrame([])
+            obs_wells = pd.DataFrame([])
+
+        return obs_wells
 
     # ---- Monitored properties
     @property
@@ -315,15 +406,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         :class:`TimeSeries` objects holding the data acquired in the
         observation well for the specified monitored property.
         """
-        # Get the sampling feature uuid that is used to reference in the
-        # database the corresponding observation well.
-        sampling_feature_uuid = (
-            self._session.query(ObservationWell)
-            .filter(ObservationWell.obs_well_id == obs_well_id)
-            .one()
-            .sampling_feature_uuid
-            )
-
         # Get the observation property id that is used to reference in the
         # database the corresponding monitored property.
         obs_property_id = (
@@ -334,13 +416,16 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             .obs_property_id
             )
 
+        # Get the sampling feature uuid corresponding to the observation well.
+        sampling_feature_uuid = (
+            self._get_obs_well_sampling_feature_uuid(obs_well_id))
+
         # Define a query to fetch the timseries data from the database.
         query = (
             self._session.query(TimeSeriesRaw.value,
                                 TimeSeriesRaw.datetime,
                                 TimeSeriesRaw.channel_uuid)
-            .filter(Observation.sampling_feature_uuid ==
-                    sampling_feature_uuid)
+            .filter(Observation.sampling_feature_uuid == sampling_feature_uuid)
             .filter(Observation.observation_uuid ==
                     TimeSeriesChannels.observation_uuid)
             .filter(TimeSeriesChannels.obs_property_id == obs_property_id)
@@ -380,6 +465,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
                 tseries_color=(
                     self.get_monitored_property_color(monitored_property))
                 ))
+
         return tseries_group
 
     def execute(self, sql_request, **kwargs):

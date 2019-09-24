@@ -17,9 +17,9 @@ from sardes.api.panes import SardesPaneWidget
 from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
 from sardes.plugins.obs_wells_explorer.table import ObsWellsTableModel
+from sardes.widgets.tableviews import SardesTableView
 from sardes.utils.qthelpers import (create_toolbutton,
                                     create_toolbar_stretcher)
-from sardes.widgets.tableviews import SardesTableView
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
 
 """Observation well explorer plugin"""
@@ -45,8 +45,6 @@ class ObsWellsExplorer(SardesPlugin):
         # ---- Setup the Observation Well table view
         self.obs_well_tableview = SardesTableView(
             ObsWellsTableModel(self.main.db_connection_manager))
-        self.obs_well_tableview.doubleClicked.connect(
-            self._handle_table_double_clicked)
 
         # Restore the state of the observation wells table horizontal header
         # from the configs.
@@ -72,6 +70,10 @@ class ObsWellsExplorer(SardesPlugin):
             )
         upper_toolbar.addWidget(show_plot_button)
 
+        upper_toolbar.addWidget(
+            self.obs_well_tableview.edit_current_item_button)
+        upper_toolbar.addWidget(self.obs_well_tableview.save_edits_button)
+        upper_toolbar.addWidget(self.obs_well_tableview.cancel_edits_button)
 
         upper_toolbar.addWidget(create_toolbar_stretcher())
         upper_toolbar.addWidget(
@@ -97,7 +99,7 @@ class ObsWellsExplorer(SardesPlugin):
 
             # Get the timeseries data for that observation well.
             self.main.db_connection_manager.get_timeseries_for_obs_well(
-                current_obs_well['obs_well_id'],
+                current_obs_well.index.values[0],
                 ['NIV_EAU', 'TEMP'],
                 self._show_timeseries)
 
@@ -109,8 +111,11 @@ class ObsWellsExplorer(SardesPlugin):
         viewer = TimeSeriesPlotViewer(self.obs_well_tableview)
 
         # Set the title of the window.
-        viewer.setWindowTitle(_("Observation well {}").format(
-                              self.get_current_obs_well_data()['obs_well_id']))
+        current_obs_well_data = self.get_current_obs_well_data().iloc[0]
+        viewer.setWindowTitle(_("Observation well {} ({})").format(
+            current_obs_well_data['obs_well_id'],
+            current_obs_well_data['municipality'])
+            )
 
         # Setup the water level axe.
         # where = 'left'

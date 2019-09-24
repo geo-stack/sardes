@@ -64,6 +64,15 @@ class DatabaseConnectionWorker(QObject):
         return None,
 
     # ---- Observation wells
+    def _save_observation_well_data(self, sampling_feature_id, attribute_name,
+                                    attribute_value):
+        """
+        Save in the database the new attribute value for the observation well
+        corresponding to the specified sampling feature ID.
+        """
+        self.db_accessor.save_observation_well_data(
+            sampling_feature_id, attribute_name, attribute_value)
+
     def _get_observation_wells_data(self):
         """
         Try get the list of observation wells that are saved in the database
@@ -111,6 +120,7 @@ class DatabaseConnectionManager(QObject):
     sig_database_disconnected = Signal()
     sig_database_is_connecting = Signal()
     sig_database_connection_changed = Signal(bool)
+    sig_database_data_changed = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -122,12 +132,15 @@ class DatabaseConnectionManager(QObject):
         self._db_connection_worker.moveToThread(self._db_connection_thread)
         self._db_connection_thread.started.connect(
             self._db_connection_worker.run_tasks)
+        self._db_connection_thread.finished.connect(
+            self._handle_run_tasks_finished)
 
         # Connect the worker signals to handlers.
         self._db_connection_worker.sig_task_completed.connect(
             self._exec_callback)
 
         self._is_connecting = False
+        self._data_changed = False
 
     def is_connected(self):
         """Return whether a connection to a database is currently active."""
@@ -150,14 +163,36 @@ class DatabaseConnectionManager(QObject):
             self.sig_database_is_connecting.emit()
             self._add_task(
                 'connect_to_db', self._handle_connect_to_db, db_accessor)
-            self._db_connection_thread.start()
+            self.run_tasks()
 
     def disconnect_from_db(self):
         """Close the connection with the database"""
         self._add_task('disconnect_from_db', self._handle_disconnect_from_db)
+        self.run_tasks()
+
+    def run_tasks(self):
+        """
+        Execute all the tasks that were added to the stack.
+        """
         self._db_connection_thread.start()
 
     # ---- Observation wells
+    def save_observation_well_data(self, sampling_feature_id, attribute_name,
+                                   attribute_value, callback=None,
+                                   postpone_exec=False):
+        """
+        Save in the database the new attribute value for the observation well
+        corresponding to the specified sampling feature ID.
+        """
+        self._data_changed = True
+        self._add_task('save_observation_well_data',
+                       callback,
+                       sampling_feature_id,
+                       attribute_name,
+                       attribute_value)
+        if not postpone_exec:
+            self.run_tasks()
+
     def get_observation_wells_data(self, callback):
         """
         Get the list of observation wells that are saved in the database.
@@ -166,7 +201,7 @@ class DatabaseConnectionManager(QObject):
         as a pandas DataFrame.
         """
         self._add_task('get_observation_wells_data', callback)
-        self._db_connection_thread.start()
+        self.run_tasks()
 
     # ---- Monitored properties
     def get_monitored_properties(self, callback=None):
@@ -190,7 +225,7 @@ class DatabaseConnectionManager(QObject):
             monitored_properties = [monitored_properties, ]
         self._add_task('get_timeseries_for_obs_well', callback,
                        obs_well_id, monitored_properties)
-        self._db_connection_thread.start()
+        self.run_tasks()
 
     # ---- Handlers
     @Slot(object, object)
@@ -221,3 +256,13 @@ class DatabaseConnectionManager(QObject):
         task_uuid4 = uuid.uuid4()
         self._task_callbacks[task_uuid4] = callback
         self._db_connection_worker.add_task(task_uuid4, task, *args, **kargs)
+
+    @Slot()
+    def _handle_run_tasks_finished(self):
+        """
+        Handle when all tasks that needed to be run by the worker are
+        completed.
+        """
+        if self._data_changed is True:
+            self._data_changed = False
+            self.sig_database_data_changed.emit()

@@ -14,9 +14,13 @@ from collections import OrderedDict
 
 # ---- Third party imports
 import pandas as pd
-from qtpy.QtCore import (QAbstractTableModel, QModelIndex,
-                         QSortFilterProxyModel, Qt, QVariant, Slot)
-from qtpy.QtWidgets import QApplication, QMenu, QTableView
+from qtpy.QtCore import (QAbstractTableModel, QEvent, QModelIndex,
+                         QSortFilterProxyModel, Qt, QVariant, Signal, Slot)
+from qtpy.QtGui import QColor, QKeySequence
+from qtpy.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox,
+                            QHeaderView, QLineEdit, QMenu, QMessageBox,
+                            QSpinBox, QStyledItemDelegate, QTableView,
+                            QTextEdit, QToolButton)
 
 # ---- Local imports
 from sardes.config.locale import _
@@ -26,24 +30,322 @@ from sardes.utils.qthelpers import (
     hexstate_to_qbytearray)
 
 
-class SardesTableModel(QAbstractTableModel):
+# =============================================================================
+# ---- Delegates
+# =============================================================================
+class NotEditableDelegate(QStyledItemDelegate):
     """
-    An abstract table model to be used in a table view to display the list of
-    observation wells that are saved in the database.
+    A delegate used to indicate that the items in the associated
+    column are not editable.
     """
+
+    def createEditor(self, *args, **kargs):
+        """Qt method override."""
+        return None
+
+
+class SardesItemDelegateBase(QStyledItemDelegate):
+    """
+    Basic functionality for Sardes item delegates.
+
+    WARNING: Don't override any methods or attributes present here.
+    """
+
+    def __init__(self, model_view, unique_constraint=False):
+        super() .__init__(parent=model_view)
+        self.model_view = model_view
+        self.model_index = None
+        self.editor = None
+        self._unique_constraint = unique_constraint
+
+    # ---- Qt methods override
+    def createEditor(self, parent, option, model_index):
+        """Qt method override."""
+        self.model_index = model_index
+        self.editor = self.create_editor(parent)
+        self.editor.installEventFilter(self)
+        return self.editor
+
+    def setEditorData(self, editor, index):
+        """Qt method override."""
+        self.set_editor_data(self.get_model_data())
+
+    def setModelData(self, editor, model, index):
+        """Qt method override."""
+        pass
+
+    # ---- Private methods
+    def eventFilter(self, widget, event):
+        """
+        An event filter to control when the data of this delegate's editor
+        are commited to the model.
+        """
+        if self.editor and event.type() == QEvent.KeyPress:
+            """Commit edits on Enter of Ctrl+Enter key press."""
+            key_cond = event.key() in (Qt.Key_Return, Qt.Key_Enter)
+            mod_cond = (not event.modifiers() or
+                        event.modifiers() & Qt.ControlModifier)
+            if key_cond and mod_cond:
+                self.commit_data()
+                return True
+        return super().eventFilter(widget, event)
+
+    def commit_data(self):
+        """
+        Commit the data of this delegate's editor to the model.
+        """
+        self.closeEditor.emit(self.editor, self.NoHint)
+        editor_value = self.get_editor_data()
+        model_value = self.get_model_data()
+        if editor_value != model_value:
+            # We need to validate the edits before submitting the edits to
+            # the model or else, unique check will always return an error.
+            error_message = self.validate_edits()
+
+            # We store the edits even though they are not validated, so that
+            # when we return to this delegate to edits, the last value
+            # entered by the user is preserved.
+            self.model.set_data_edits_at(self.model_index, editor_value)
+            if error_message is not None:
+                self.model_view.raise_edits_error(
+                    self.model_index, error_message)
+
+    # ---- Public methods
+    @property
+    def model(self):
+        """
+        Return the model whose data this item delegate is used to edit.
+        """
+        return self.model_index.model()
+
+    def get_model_data(self):
+        """
+        Return the value stored in the model at the model index
+        corresponding to this item delegate.
+        """
+        return self.model_index.model().get_value_at(self.model_index)
+
+    def validate_unique_constaint(self):
+        """
+        If a unique constraint is set for this item delegate, check that
+        the edited value does not violate that and return an error message
+        if it does.
+        """
+        field_name = self.model.get_horizontal_header_label_at(
+            self.model_index.column())
+        edited_value = self.get_editor_data()
+        if (self._unique_constraint and self.model.is_value_in_column(
+                self.model_index, edited_value)):
+            return _(
+                "<b>Duplicate key value violates unique constraint.</b>"
+                "<br><br>"
+                "The {} <i>{}</i> already exists. Please use another value"
+                ).format(field_name, edited_value, field_name)
+        else:
+            return None
+
+
+class SardesItemDelegate(SardesItemDelegateBase):
+    """
+    Sardes item delegates to edit the data of displayed in a table view.
+
+    Specific delegates *can* inherit this class and reimplement its interface.
+    """
+
+    def __init__(self, *args, **kargs):
+        super() .__init__(*args, **kargs)
+
+    def create_editor(self, parent):
+        """Return the editor to use in this item delegate."""
+        raise NotImplementedError
+
+    def get_editor_data(self):
+        """
+        Return the value of this item delegate's editor.
+
+        You may need to reimplement this method if the type of your
+        item delegate's editor is not supported or else a NotImplementedError
+        will be raised.
+        """
+        if isinstance(self.editor, QLineEdit):
+            data = self.editor.text()
+            return None if data == '' else data
+        if isinstance(self.editor, QTextEdit):
+            data = self.editor.toPlainText()
+            return None if data == '' else data
+        elif isinstance(self.editor, (QSpinBox, QDoubleSpinBox)):
+            return self.editor.value()
+        elif isinstance(self.editor, QComboBox):
+            return self.editor.itemData(self.editor.currentIndex())
+        else:
+            raise NotImplementedError
+
+    def set_editor_data(self, data):
+        """
+        Set the data of this item delegate's editor.
+
+        You may need to reimplement this method if the type of your
+        item delegate's editor is not supported or else a NotImplementedError
+        will be raised.
+        """
+        if isinstance(self.editor, (QTextEdit, QLineEdit)):
+            data = '' if (pd.isna(data) or data is None) else data
+            self.editor.setText(data)
+        elif isinstance(self.editor, (QSpinBox, QDoubleSpinBox)):
+            self.editor.setValue(data)
+        elif isinstance(self.editor, QComboBox):
+            for i in range(self.editor.count()):
+                if self.editor.itemData(i) == data:
+                    self.editor.setCurrentIndex(i)
+                    break
+            else:
+                self.editor.setCurrentIndex(0)
+        else:
+            raise NotImplementedError
+
+    def validate_edits(self):
+        """Validate the value of this item delegate's editor."""
+        return None
+
+
+class TextEditDelegate(SardesItemDelegate):
+    """
+    A delegate to edit very long strings that can span over multiple lines.
+    """
+
+    def __init__(self, model_view):
+        super() .__init__(model_view, unique_constraint=False)
+
+    def create_editor(self, parent):
+        return QTextEdit(parent)
+
+
+class StringEditDelegate(SardesItemDelegate):
+    """
+    A delegate to edit a 250 characters strings.
+    """
+    MAX_LENGTH = 250
+
+    def __init__(self, model_view, unique_constraint=False):
+        super() .__init__(model_view, unique_constraint=unique_constraint)
+
+    def create_editor(self, parent):
+        editor = QLineEdit(parent)
+        editor.setMaxLength(self.MAX_LENGTH)
+        return editor
+
+    def validate_edits(self):
+        return self.validate_unique_constaint()
+
+
+class NumEditDelegate(SardesItemDelegate):
+    """
+    A delegate to edit a float or an integer value in a spin box.
+    """
+
+    def __init__(self, model_view, decimals=0, bottom=None, top=None,
+                 unique_constraint=False):
+        super() .__init__(model_view, unique_constraint=unique_constraint)
+        self._bottom = bottom
+        self._top = top
+        self._decimals = decimals
+
+    def create_editor(self, parent):
+        if self._decimals == 0:
+            editor = QSpinBox(parent)
+        else:
+            editor = QDoubleSpinBox(parent)
+            editor.setDecimals(self._decimals)
+        if self._bottom is not None:
+            editor.setMinimum(self._bottom)
+        if self._top is not None:
+            editor.setMaximum(self._top)
+        return editor
+
+
+class BoolEditDelegate(SardesItemDelegate):
+    """
+    A delegate to edit a boolean value with a combobox.
+    """
+
+    def __init__(self, parent=None):
+        super() .__init__(parent)
+
+    def create_editor(self, parent):
+        editor = QComboBox(parent)
+        editor.addItem(_('Yes'), userData=True)
+        editor.addItem(_('No'), userData=False)
+        return editor
+
+
+# =============================================================================
+# ---- Table Model
+# =============================================================================
+class NoDataEdit(object):
+    """
+    A class to indicate that no edit have been done to the data since last
+    save.
+    """
+
+    def __init__(self, model_index):
+        super() .__init__()
+        self.model_index = model_index
+
+
+class ValueChanged(object):
+    """
+    A class that represent a change of a value at a given model index.
+    """
+
+    def __init__(self, model_index, edited_value,
+                 dataf_index, dataf_column, dataf_value):
+        super() .__init__()
+        self.model_index = model_index
+        self.edited_value = edited_value
+
+        self.dataf_index = dataf_index
+        self.dataf_column = dataf_column
+        self.dataf_value = dataf_value
+
+    def type(self):
+        """
+        Return an integer that indicates the type of data edit this
+        edit correspond to, as defined in :class:`SardesTableModelBase`.
+        """
+        return SardesTableModelBase.ValueChanged
+
+
+class SardesTableModelBase(QAbstractTableModel):
+    """
+    Basic functionality for Sardes table models.
+
+    WARNING: Don't override any methods or attributes present here.
+    """
+    sig_data_edited = Signal(bool)
+
+    ValueChanged = 0
+    RowAdded = 1
+    RowRemoved = 2
+
     # A list of tuple that maps the keys of the columns dataframe with their
     # corresponding human readable label to use in the GUI.
     __data_columns_mapper__ = []
 
-    # The method to call on the database connection manager to retrieve the
-    # data for this model.
-    __get_data_method__ = None
-
     def __init__(self, db_connection_manager=None):
         super().__init__()
-        self.__data_columns_mapper__ = OrderedDict(
-            self.__data_columns_mapper__)
+        self._data_columns_mapper = OrderedDict(self.__data_columns_mapper__)
+
+        # A pandas dataframe containing the data that are shown in the
+        # database.
         self.dataf = pd.DataFrame([])
+
+        # A list containing the edits made by the user to the
+        # content of this table's model data in chronological order.
+        self._dataf_edits = []
+        self._edited_data = {}
+        self._new_rows = []
+        self._deleted_rows = []
+
         self.set_database_connection_manager(db_connection_manager)
 
     def set_database_connection_manager(self, db_connection_manager):
@@ -51,12 +353,18 @@ class SardesTableModel(QAbstractTableModel):
         self.db_connection_manager = db_connection_manager
         if db_connection_manager is not None:
             self.db_connection_manager.sig_database_connection_changed.connect(
-                self._trigger_data_update)
+                self.fetch_model_data)
+            self.db_connection_manager.sig_database_data_changed.connect(
+                self.fetch_model_data)
 
     # ---- Columns
     @property
     def columns(self):
-        return list(self.__data_columns_mapper__.keys())
+        """
+        Return the list of keys used to reference the columns in this
+        model's data.
+        """
+        return list(self._data_columns_mapper.keys())
 
     def columnCount(self, parent=QModelIndex()):
         """Qt method override. Return the number of column of the table."""
@@ -65,10 +373,19 @@ class SardesTableModel(QAbstractTableModel):
     # ---- Horizontal Headers
     @property
     def horizontal_header_labels(self):
-        return list(self.__data_columns_mapper__.values())
+        """
+        Return the list of labels that need to be displayed for each column
+        of the table's horizontal header.
+        """
+        return list(self._data_columns_mapper.values())
 
     def get_horizontal_header_label_at(self, column_or_index):
-        return self.__data_columns_mapper__[
+        """
+        Return the text of the label to display in the horizontal
+        header for the key or logical index associated
+        with the column.
+        """
+        return self._data_columns_mapper[
             column_or_index if isinstance(column_or_index, str) else
             self.columns[column_or_index]
             ]
@@ -83,10 +400,9 @@ class SardesTableModel(QAbstractTableModel):
             return QVariant()
 
     # ---- Table data
-    def _update_data(self, dataf):
+    def set_model_data(self, dataf):
         """
-        Update the content of this table model with the data
-        contained in dataf.
+        Set the content of this table model to the data contained in dataf.
 
         Parameters
         ----------
@@ -96,17 +412,13 @@ class SardesTableModel(QAbstractTableModel):
             mapped in HORIZONTAL_HEADER_LABELS.
         """
         self.dataf = dataf
-        self.modelReset.emit()
+        self._dataf_edits = []
+        self._edited_data = {}
+        self._new_rows = []
+        self._deleted_rows = []
 
-    @Slot(bool)
-    def _trigger_data_update(self, connection_state):
-        """
-        Get the list of observation wells that are saved in the database and
-        update the content of this table view.
-        """
-        get_data_method = getattr(
-            self.db_connection_manager, self.__get_data_method__)
-        get_data_method(callback=self._update_data)
+        self.modelReset.emit()
+        self.sig_data_edited.emit(False)
 
     def rowCount(self, parent=QModelIndex()):
         """Qt method override. Return the number of row of the table."""
@@ -125,16 +437,200 @@ class SardesTableModel(QAbstractTableModel):
             if column is None:
                 value = ''
             else:
-                value = self.dataf.iloc[row, column]
-                value = '' if pd.isna(value) else value
+                value = self.get_edited_data_at(index)
+                if isinstance(value, NoDataEdit):
+                    value = self.dataf.iloc[row, column]
+                value = '' if (pd.isna(value) or value is None) else value
+            if pd.api.types.is_bool(value):
+                value = _('Yes') if value else _('No')
             return str(value)
         elif role == Qt.ForegroundRole:
             return QVariant()
+        elif role == Qt.BackgroundRole:
+            return (QVariant() if
+                    isinstance(self.get_edited_data_at(index), NoDataEdit)
+                    else QColor('#CCFF99'))
         elif role == Qt.ToolTipRole:
             return (QVariant() if column is None
                     else self.dataf.iloc[row, column])
         else:
             return QVariant()
+
+    def flags(self, model_index):
+        """Qt method override."""
+        return Qt.ItemIsEnabled | Qt.ItemIsEditable | Qt.ItemIsSelectable
+
+    def get_dataf_value_at(self, model_index):
+        """
+        Return the unedited value of the model's data at the specified model
+        index.
+        """
+        column_key = self.columns[model_index.column()]
+        try:
+            dataf_column = self.dataf.columns.get_loc(column_key)
+        except KeyError:
+            value = None
+        else:
+            dataf_row = model_index.row()
+            value = self.dataf.iloc[dataf_row, dataf_column]
+        return value
+
+    def get_value_at(self, model_index):
+        """
+        Return the edited, visible, value of the model's data at the
+        specified model index.
+        """
+        # We check first if the data was edited by the user if 'ignore_edits'
+        # is True.
+        value = self.get_edited_data_at(model_index)
+        if isinstance(value, NoDataEdit):
+            # This means that the value was not edited by the user, so we
+            # fetch the value directly from the model's data.
+            value = self.get_dataf_value_at(model_index)
+        return value
+
+    def is_value_in_column(self, model_index, value):
+        """
+        Check if the specified value is in the data of this model at the
+        column specified by the model index.
+        """
+        # First we check if value is found in the edited data.
+        for edited_index, edited_value in self._edited_data.items():
+            if (edited_index.column() == model_index.column() and
+                    (edited_value == value)):
+                return True
+        else:
+            # Else we check if the value is found in the unedited data
+            # of this model's data.
+            dataf_column = self.columns[model_index.column()]
+            isin_indexes = self.dataf[self.dataf[dataf_column].isin([value])]
+            return any([
+                not self.is_data_edited_at(self.index(
+                    self.dataf.index.get_loc(index), model_index.column()))
+                for index in isin_indexes.index
+                ])
+
+    # ---- Data edits
+    def has_unsaved_data_edits(self):
+        """
+        Return whether any edits were made to the table's data since last save.
+        """
+        return bool(len(self._edited_data))
+
+    def is_data_edited_at(self, model_index):
+        """
+        Return whether edits were made at the specified model index
+        since last save.
+        """
+        return model_index in self._edited_data
+
+    def cancel_all_data_edits(self):
+        """
+        Cancel all the edits that were made to the table data since last save.
+        """
+        self._dataf_edits = []
+        self._edited_data = {}
+        self.dataChanged.emit(
+            self.index(0, 0),
+            self.index(self.rowCount() - 1, self.columnCount() - 1))
+        self.sig_data_edited.emit(False)
+
+    def get_edited_data_at(self, model_index):
+        """
+        Return the edited value, if any, that was made at the specified
+        model index since last save.
+        """
+        return self._edited_data.get(model_index, NoDataEdit(model_index))
+
+    def set_data_edits_at(self, model_index, edited_value):
+        """
+        Store the value that was edited at the specified model index.
+        A signal is also emitted to indicate that the data were edited,
+        so that the GUI can be updated accordingly.
+        """
+        dataf_value = self.get_dataf_value_at(model_index)
+        dataf_index = self.dataf.index[model_index.row()]
+        dataf_column = self.columns[model_index.column()]
+
+        # We store the edited value until it is commited and
+        # saved to the database.
+        self._dataf_edits.append(
+            ValueChanged(model_index, edited_value,
+                         dataf_index, dataf_column, dataf_value))
+
+        # We add the model index to the list of indexes whose value have
+        # been edited if the edited value differ from the value saved in
+        # the model's data.
+        if dataf_value != edited_value:
+            self._edited_data[model_index] = edited_value
+        else:
+            if model_index in self._edited_data:
+                del self._edited_data[model_index]
+
+        self.sig_data_edited.emit(self.has_unsaved_data_edits())
+        self.dataChanged.emit(model_index, model_index)
+
+    def undo_last_data_edits(self, update_model_view=True):
+        """
+        Undo the last data edits that was added to the stack.
+        An update of the view is forced if  update_model_view is True.
+        """
+        if len(self._dataf_edits) == 0:
+            return
+
+        # Undo the last edit.
+        last_edit = self._dataf_edits.pop(-1)
+        if last_edit.model_index in self._edited_data:
+            del self._edited_data[last_edit.model_index]
+
+        # Check if there was a previous edit for this model index in the stack.
+        for edit in reversed(self._dataf_edits):
+            if edit.model_index == last_edit.model_index:
+                self._edited_data[edit.model_index] = edit.edited_value
+                break
+
+        if update_model_view:
+            self.dataChanged.emit(edit.model_index, edit.model_index)
+        self.sig_data_edited.emit(self.has_unsaved_data_edits())
+
+
+class SardesTableModel(SardesTableModelBase):
+    """
+    An abstract table model to be used in a table view to display the data
+    that are saved in the database.
+
+    All table *must* inherit this class and reimplement its interface.
+
+    """
+    # A list of tuple that maps the keys of the columns dataframe with their
+    # corresponding human readable label to use in the GUI.
+    __data_columns_mapper__ = []
+
+    def __init__(self, db_connection_manager=None):
+        super().__init__(db_connection_manager)
+
+    def fetch_model_data(self):
+        """
+        Fetch the data for this table model.
+
+        Note that the data need to be passed to :func:`set_model_data`.
+        """
+        raise NotImplementedError
+
+    def create_delegate_for_column(self, view, column):
+        """
+        Create the item delegate that the view need to use when editing the
+        data of this model for the specified column. If None is returned,
+        the items of the column will not be editable.
+        """
+        raise NotImplementedError
+
+    # ---- Data edits
+    def save_data_edits(self):
+        """
+        Save all data edits to the database.
+        """
+        raise NotImplementedError
 
 
 class SardesSortFilterProxyModel(QSortFilterProxyModel):
@@ -142,6 +638,7 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
         super().__init__()
         self.setSourceModel(source_model)
 
+    # ---- Qt methods override
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """
         Override Qt method so that the visual indexes of the rows are shown in
@@ -149,29 +646,85 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
         """
         return self.sourceModel().headerData(section, orientation, role)
 
+    # ---- Source model methods
+    def cancel_all_data_edits(self):
+        self.sourceModel().cancel_all_data_edits()
 
+    def fetch_model_data(self):
+        self.sourceModel().fetch_model_data()
+
+    def get_value_at(self, proxy_index):
+        return self.sourceModel().get_value_at(self.mapToSource(proxy_index))
+
+    def get_horizontal_header_label_at(self, column_or_index):
+        return self.sourceModel().get_horizontal_header_label_at(
+            column_or_index)
+
+    def has_unsaved_data_edits(self):
+        return self.sourceModel().has_unsaved_data_edits()
+
+    def is_value_in_column(self, proxy_index, value):
+        return self.sourceModel().is_value_in_column(
+            self.mapToSource(proxy_index), value)
+
+    def save_data_edits(self):
+        self.sourceModel().save_data_edits()
+
+    def set_data_edits_at(self, proxy_index, value):
+        self.sourceModel().set_data_edits_at(
+            self.mapToSource(proxy_index), value)
+
+    def undo_last_data_edits(self, update_model_view=True):
+        self.sourceModel().undo_last_data_edits(update_model_view)
+
+
+# =============================================================================
+# ---- Table View
+# =============================================================================
 class SardesTableView(QTableView):
     """
-    A single table view that displays the list of observation wells
-    that are saved in the database.
+    Sardes table view class to display and edit the data that are
+    saved in the database.
     """
+    sig_data_edited = Signal(bool)
 
-    def __init__(self, model, parent=None):
+    def __init__(self, table_model, parent=None):
         super().__init__(parent)
         self.setSortingEnabled(True)
         self.setAlternatingRowColors(True)
-        self.setCornerButtonEnabled(False)
+        self.setCornerButtonEnabled(True)
         self.horizontalHeader().setSectionsMovable(True)
+        self.setEditTriggers(self.NoEditTriggers)
+        self.setMouseTracking(True)
 
-        self.set_table_model(model)
+        self._setup_table_model(table_model)
+        self._setup_item_delegates()
+
+        # Toolbuttons.
         self._columns_options_button = None
         self._toggle_column_visibility_actions = []
 
-    def set_table_model(self, source_model):
-        """Setup the data model for this table view."""
-        self.source_model = source_model
-        self.proxy_model = SardesSortFilterProxyModel(source_model)
+        self._edit_current_item_button = None
+        self._cancel_edits_button = None
+        self._save_edits_button = None
+
+    def _setup_table_model(self, table_model):
+        """
+        Setup the data model for this table view.
+        """
+        self.source_model = table_model
+        self.source_model.sig_data_edited.connect(self.sig_data_edited.emit)
+        self.proxy_model = SardesSortFilterProxyModel(self.source_model)
         self.setModel(self.proxy_model)
+
+    def _setup_item_delegates(self):
+        """
+        Setup the item delegates for each column of this table view.
+        """
+        for i, column in enumerate(self.source_model.columns):
+            item_delegate = self.source_model.create_delegate_for_column(
+                self, column)
+            self.setItemDelegateForColumn(i, item_delegate)
 
     # ---- Utilities
     def get_selected_rows_data(self):
@@ -179,7 +732,9 @@ class SardesTableView(QTableView):
         Return the data relative to the currently selected rows in this table.
         """
         proxy_indexes = self.selectionModel().selectedIndexes()
-        rows = [self.proxy_model.mapToSource(i).row() for i in proxy_indexes]
+        rows = sorted(list(set(
+            [(self.proxy_model.mapToSource(i).row()) for i in proxy_indexes]
+            )))
         return self.source_model.dataf.iloc[rows]
 
     def get_selected_row_data(self):
@@ -190,10 +745,21 @@ class SardesTableView(QTableView):
         """
         selected_data = self.get_selected_rows_data()
         if len(selected_data) > 0:
-            row_data = selected_data.iloc[0]
+            row_data = selected_data.iloc[[0]]
         else:
             row_data = None
         return row_data
+
+    def row_count(self):
+        """Return this table number of visible row."""
+        return self.proxy_model.rowCount()
+
+    def selected_row_count(self):
+        """
+        Return the number of rows of this table that have at least one
+        selected items.
+        """
+        return len(self.get_selected_rows_data())
 
     def visible_row_count(self):
         """Return this table number of visible rows."""
@@ -298,6 +864,139 @@ class SardesTableView(QTableView):
             self._toggle_column_visibility_actions.append(action)
             columns_options_menu.addAction(action)
             action.setChecked(not self.horizontalHeader().isSectionHidden(i))
+
+    # ---- Data edits
+    @property
+    def edit_current_item_button(self):
+        """
+        Return a toolbutton that will turn on edit mode for this table
+        current cell when triggered.
+        """
+        if self._edit_current_item_button is None:
+            shorcut_str = (QKeySequence('Ctrl+Enter')
+                           .toString(QKeySequence.NativeText))
+            self._edit_current_item_button = create_toolbutton(
+                self,
+                icon='edit_database_item',
+                text=_("Edit current item ({})").format(shorcut_str),
+                tip=_("Edit the currently focused item in this table."),
+                triggered=self._edit_current_item,
+                iconsize=get_iconsize()
+                )
+        return self._edit_current_item_button
+
+    def _edit_current_item(self):
+        """
+        Turn on edit mode for this table current cell.
+        """
+        current_index = self.selectionModel().currentIndex()
+        if current_index.isValid():
+            if self.state() != self.EditingState:
+                self.selectionModel().clearSelection()
+                self.selectionModel().setCurrentIndex(
+                    current_index, self.selectionModel().Select)
+                self.edit(current_index)
+            else:
+                self.itemDelegate(current_index).commit_data()
+
+    @property
+    def save_edits_button(self):
+        """
+        Return a toolbutton that save the edits made to the data of the
+        table when triggered.
+        """
+        if self._save_edits_button is None:
+            self._save_edits_button = create_toolbutton(
+                self,
+                icon='commit_changes',
+                text=_("Edit observation well"),
+                tip=_('Edit the currently selected observation well.'),
+                triggered=lambda: self._save_data_edits(force=False),
+                iconsize=get_iconsize(),
+                shortcut='Ctrl+S'
+                )
+            self._save_edits_button.setEnabled(False)
+            self.sig_data_edited.connect(self._save_edits_button.setEnabled)
+        return self._save_edits_button
+
+    def _save_data_edits(self, force=True):
+        """
+        Save the data edits to the database. If 'force' is 'False', a message
+        is first shown before proceeding.
+        """
+        if force is False:
+            reply = QMessageBox.warning(
+                self, _('Save changes'),
+                _("This will permanently save the changes made in this "
+                  "table in the database.<br><br>"
+                  "This action <b>cannot</b> be undone."),
+                buttons=QMessageBox.Ok | QMessageBox.Cancel
+                )
+            if reply == QMessageBox.Cancel:
+                return
+        self.model().save_data_edits()
+
+    @property
+    def cancel_edits_button(self):
+        """
+        Return a toolbutton that cancel all the edits that were made to
+        the data of the table since last save when triggered.
+        """
+        if self._cancel_edits_button is None:
+            self._cancel_edits_button = create_toolbutton(
+                self,
+                icon='cancel_changes',
+                text=_("Edit observation well"),
+                tip=_('Edit the currently selected observation well.'),
+                triggered=self.model().cancel_all_data_edits,
+                iconsize=get_iconsize()
+                )
+            self._cancel_edits_button.setEnabled(False)
+            self.sig_data_edited.connect(self._cancel_edits_button.setEnabled)
+        return self._cancel_edits_button
+
+    def raise_edits_error(self, model_index, message):
+        """"
+        Raise a modal dialog that shows the specifed error message that
+        occured while editing the data at the specifed model index.
+        When the dialog is closed by the user, the focus is given back
+        the last edited cell and edit mode is turned on again, so that the
+        the user can correct the invalid edits accordingly.
+        """
+        QMessageBox.critical(
+            self, _('Edits error'),
+            message,
+            buttons=QMessageBox.Ok)
+        self.setCurrentIndex(model_index)
+        self._edit_current_item()
+        self.model().undo_last_data_edits(update_model_view=False)
+
+    def keyPressEvent(self, event):
+        """
+        Extend Qt method to control when entering edit mode
+        for the current cell.
+        """
+        ctrl = event.modifiers() & Qt.ControlModifier
+        if ctrl and event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            self._edit_current_item()
+            event.accept()
+        super().keyPressEvent(event)
+
+    def edit(self, model_index, trigger=None, event=None):
+        """
+        Extend Qt method to ensure that the cell of this table that is
+        going to be edited is visible.
+        """
+        if trigger is None:
+            # Scroll to item if it is not currently visible in the scrollarea.
+            item_rect = self.visualRect(model_index)
+            view_rect = self.geometry()
+            if not view_rect.contains(item_rect):
+                self.scrollTo(model_index, hint=self.EnsureVisible)
+
+            return super().edit(model_index)
+        else:
+            return super().edit(model_index, trigger, event)
 
 
 if __name__ == '__main__':
