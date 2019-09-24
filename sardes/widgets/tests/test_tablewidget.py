@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 """
-Tests for the ObservationWellTableView.
+Tests for the SardesTableWidget class.
 """
 
 # ---- Standard imports
@@ -24,9 +24,9 @@ from qtpy.QtCore import Qt
 
 # ---- Local imports
 from sardes.config.locale import _
-from sardes.widgets.tableviews import (SardesTableView, SardesTableModel,
-                                       NotEditableDelegate, StringEditDelegate,
-                                       NumEditDelegate, BoolEditDelegate)
+from sardes.widgets.tableviews import (
+    SardesTableWidget, SardesTableView, SardesTableModel, NotEditableDelegate,
+    StringEditDelegate, NumEditDelegate, BoolEditDelegate)
 
 
 NCOL = 6
@@ -86,67 +86,66 @@ def tablemodel(qtbot, mocker):
 
 
 @pytest.fixture
-def tableview(qtbot, mocker, tablemodel):
-    tableview = SardesTableView(tablemodel)
+def tablewidget(qtbot, mocker, tablemodel):
+    tablewidget = SardesTableWidget(tablemodel)
 
     # Setup the width of the table so that all columns are shown.
     width = 0
-    for i in range(tableview.column_count()):
-        width += tableview.horizontalHeader().sectionSize(i)
-    tableview.setMinimumWidth(width + 25)
+    for i in range(tablewidget.tableview.column_count()):
+        width += tablewidget.tableview.horizontalHeader().sectionSize(i)
+    tablewidget.tableview.setMinimumWidth(width + 25)
 
-    tableview.show()
-    qtbot.waitForWindowShown(tableview)
-    qtbot.addWidget(tableview)
-
-    # Setup the column options button.
-    column_options_button = tableview.get_column_options_button()
-    qtbot.addWidget(column_options_button)
+    tablewidget.show()
+    qtbot.waitForWindowShown(tablewidget)
+    qtbot.addWidget(tablewidget)
 
     # Assert everything is working as expected when table is empty.
-    assert tableview
-    assert tableview.model().rowCount() == 0
-    assert tableview.model().columnCount() == NCOL
-    assert tableview.visible_row_count() == 0
+    assert tablewidget
+    assert tablewidget.tableview.model().rowCount() == 0
+    assert tablewidget.tableview.model().columnCount() == NCOL
+    assert tablewidget.tableview.visible_row_count() == 0
 
     # Fetch the model data explicitely. We need to do this because
     # the table view that we use for testing is not connected to a
     # database connection manager.
-    tableview.model().fetch_model_data()
+    tablewidget.tableview.model().fetch_model_data()
     qtbot.wait(100)
 
-    return tableview
+    return tablewidget
 
 
 # =============================================================================
 # ---- Tests for ObservationWellTableView
 # =============================================================================
-def test_tableview_init(tableview, qtbot):
-    """Test that the location table view is initialized correctly."""
+def test_tablewidget_init(tablewidget):
+    """Test that SardesTableWidget is initialized correctly."""
+    tableview = tablewidget.tableview
 
     # Assert that the content of the table is as expected.
     assert_frame_equal(tableview.source_model.dataf, TABLE_DATAF)
     assert tableview.visible_row_count() == len(TABLE_DATAF)
 
     # Assert that all columns are visible.
-    for action in tableview._toggle_column_visibility_actions:
+    for action in tableview.get_column_visibility_actions():
         assert action.isChecked()
     for logical_index in range(tableview.column_count()):
         assert not tableview.horizontalHeader().isSectionHidden(logical_index)
 
 
-def test_tableview_horiz_headers(tableview):
+def test_tablewidget_horiz_headers(tablewidget):
     """
     Test the labels of the table horizontal header.
     """
+    tableview = tablewidget.tableview
     for i, header in enumerate(HEADERS[:-1]):
         assert header == tableview.model().headerData(i, Qt.Horizontal)
 
 
-def test_tableview_vert_headers(tableview, qtbot):
+def test_tablewidget_vert_headers(tablewidget):
     """
     Test the labels of the table horizontal header.
     """
+    tableview = tablewidget.tableview
     assert tableview.visible_row_count() == len(TABLE_DATAF)
     for i in range(tableview.visible_row_count()):
         assert i + 1 == tableview.model().headerData(i, Qt.Vertical)
@@ -161,10 +160,11 @@ def test_tableview_vert_headers(tableview, qtbot):
                 TABLE_DATAF.iloc[-1 - i, 0])
 
 
-def test_tableview_row_selection(tableview, qtbot):
+def test_tablewidget_row_selection(tablewidget, qtbot):
     """
     Test the data returned for the currently selected row.
     """
+    tableview = tablewidget.tableview
     assert tableview.get_selected_row_data() is None
 
     # Select the rows of table one after the other.
@@ -178,8 +178,9 @@ def test_tableview_row_selection(tableview, qtbot):
                            TABLE_DATAF.iloc[[row]])
 
 
-def test_toggle_column_visibility(tableview, qtbot):
+def test_toggle_column_visibility(tablewidget, qtbot):
     """Test toggling on and off the visibility of the columns."""
+    tableview = tablewidget.tableview
     horiz_header = tableview.horizontalHeader()
     assert tableview.column_count() == NCOL
     assert tableview.visible_column_count() == NCOL
@@ -204,7 +205,7 @@ def test_toggle_column_visibility(tableview, qtbot):
     assert tableview.visible_column_count() == NCOL - 2
 
     # Restore column visibility with action 'Show all'.
-    menu = tableview.get_column_options_button().menu()
+    menu = tablewidget._column_options_button.menu()
     menu.actions()[1].trigger()
     for action in tableview._toggle_column_visibility_actions:
         assert action.isChecked()
@@ -214,8 +215,9 @@ def test_toggle_column_visibility(tableview, qtbot):
     assert tableview.hidden_column_count() == 0
 
 
-def test_restore_columns_to_defaults(tableview, qtbot):
+def test_restore_columns_to_defaults(tablewidget, qtbot):
     """Test restoring the visibility and order of the columns."""
+    tableview = tablewidget.tableview
     horiz_header = tableview.horizontalHeader()
 
     # Move the third column to first position.
@@ -233,7 +235,7 @@ def test_restore_columns_to_defaults(tableview, qtbot):
     assert tableview.hidden_column_count() == 1
 
     # Restore columns to defaults with action 'Restore to defaults'.
-    menu = tableview.get_column_options_button().menu()
+    menu = tablewidget._column_options_button.menu()
     menu.actions()[0].trigger()
     assert horiz_header.logicalIndex(0) == 0
     assert horiz_header.logicalIndex(2) == 2
@@ -243,10 +245,12 @@ def test_restore_columns_to_defaults(tableview, qtbot):
     assert tableview.hidden_column_count() == 0
 
 
-def test_edit_non_editable_cell(tableview, qtbot):
+def test_edit_non_editable_cell(tablewidget, qtbot):
     """
     Test editing the content of a non editable cell.
     """
+    tableview = tablewidget.tableview
+
     # Select a table cell whose content is not editable and try to edit it.
     qtbot.mouseClick(
         tableview.viewport(),
@@ -263,10 +267,12 @@ def test_edit_non_editable_cell(tableview, qtbot):
     assert tableview.state() != tableview.EditingState
 
 
-def test_edit_editable_cell(tableview, qtbot):
+def test_edit_editable_cell(tablewidget, qtbot):
     """
     Test editing the content of an editable cell.
     """
+    tableview = tablewidget.tableview
+
     expected_data = ['str1', 'Yes', '1.111', '1']
     expected_value = ['str1', True, 1.111, 1]
     expected_edited_data = ['new_str1', 'No', '1.234', '7']
@@ -309,10 +315,12 @@ def test_edit_editable_cell(tableview, qtbot):
         assert len(tableview.source_model._dataf_edits) == i + 1
 
 
-def test_cancel_edits(tableview, qtbot):
+def test_cancel_edits(tablewidget, qtbot):
     """
     Test cancelling all edits made to the table's data.
     """
+    tableview = tablewidget.tableview
+
     # Do some edits to the table's data programmatically.
     expected_data = ['new_str1', 'No', '1.234', '7']
     expected_value = ['new_str1', False, 1.234, 7]
@@ -339,10 +347,12 @@ def test_cancel_edits(tableview, qtbot):
     assert len(tableview.source_model._dataf_edits) == 0
 
 
-def test_save_edits(tableview, qtbot):
+def test_save_edits(tablewidget, qtbot):
     """
     Test saving all edits made to the table's data.
     """
+    tableview = tablewidget.tableview
+
     expected_data = ['new_str1', 'No', '1.234', '7']
     expected_value = ['new_str1', False, 1.234, 7]
 

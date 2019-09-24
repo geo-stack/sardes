@@ -1065,6 +1065,9 @@ class SardesTableWidget(SardesPaneWidget):
         for action in self.tableview.get_column_visibility_actions():
             menu.addAction(action)
 
+        # We store a reference to this button to access it more
+        # easily during testing.
+        self._column_options_button = toolbutton
         return toolbutton
 
 
