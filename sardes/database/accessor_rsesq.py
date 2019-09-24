@@ -344,7 +344,11 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
                 obs_wells['loc_notes'].str.split(':').str[1].str.strip())
 
             # Set the index to the observation well ids.
-            obs_wells.set_index('obs_well_id', inplace=True, drop=False)
+            obs_wells.set_index(
+                'sampling_feature_uuid', inplace=True, drop=True)
+
+            # Replace nan by None.
+            obs_wells = obs_wells.where(obs_wells.notnull(), None)
         else:
             obs_wells = pd.DataFrame([])
 
