@@ -12,10 +12,13 @@ Object-Relational Mapping and Accessor implementation of the RSESQ database.
 """
 
 # ---- Third party imports
+from geoalchemy2 import Geometry
+from geoalchemy2.elements import WKTElement
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.types import TEXT, VARCHAR, Boolean
 from sqlalchemy import ForeignKey
 from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
@@ -40,18 +43,14 @@ class Location(Base):
     """
     __tablename__ = 'localisation'
     __table_args__ = ({"schema": "rsesq"})
-    __mapper_args__ = {
-        'include_properties': [
-            'loc_id', 'latitude', 'longitude', 'note']}
 
-    loc_id = Column(String, primary_key=True)
+    loc_common_name = Column('nom_communn', String)
     latitude = Column('latitude_8', Float)
     longitude = Column(Float)
-    is_station_active = Column('station_active', String)
+    is_station_active = Column('station_active', Boolean)
     loc_notes = Column('remarque', String)
-
-    sampling_features = relationship(
-        "SamplingFeature", back_populates="location")
+    loc_id = Column(String, primary_key=True)
+    loc_geom = Column('geom', Geometry('POINT', 4326))
 
     def __repr__(self):
         return format_sqlobject_repr(self)
@@ -71,8 +70,6 @@ class SamplingFeature(Base):
     loc_id = Column(Integer, ForeignKey('rsesq.localisation.loc_id'))
 
     __mapper_args__ = {'polymorphic_on': interest_id}
-
-    location = relationship("Location", back_populates="sampling_features")
 
     def __repr__(self):
         return format_sqlobject_repr(self)
