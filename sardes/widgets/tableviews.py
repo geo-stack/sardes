@@ -16,7 +16,7 @@ from collections import OrderedDict
 import pandas as pd
 from qtpy.QtCore import (QAbstractTableModel, QEvent, QModelIndex,
                          QSortFilterProxyModel, Qt, QVariant, Signal, Slot)
-from qtpy.QtGui import QColor, QKeySequence
+from qtpy.QtGui import QColor, QCursor, QKeySequence
 from qtpy.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox,
                             QHeaderView, QLineEdit, QMenu, QMessageBox,
                             QSpinBox, QStyledItemDelegate, QTableView,
@@ -866,6 +866,27 @@ class SardesTableView(QTableView):
             action.setChecked(not self.horizontalHeader().isSectionHidden(i))
 
     # ---- Data edits
+    def is_data_editable_at(self, model_index):
+        """
+        Return whether the item at the specified model index is editable.
+        """
+        return not isinstance(
+            self.itemDelegate(model_index), NotEditableDelegate)
+
+    def contextMenuEvent(self, event):
+        """
+        Override Qt method to show a context menu that shows different actions
+        available for the cell.
+        """
+        if self.is_data_editable_at(self.selectionModel().currentIndex()):
+            menu = QMenu(self)
+            menu.addAction(create_action(
+                self, _('Edit'),
+                icon='edit_database_item',
+                shortcut='Ctrl+Enter',
+                triggered=self._edit_current_item))
+            menu.popup(QCursor.pos())
+
     @property
     def edit_current_item_button(self):
         """
