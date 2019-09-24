@@ -53,10 +53,11 @@ class ObsWellsTableModel(SardesTableModel):
         """
         if column in ['is_station_active']:
             return BoolEditDelegate(view)
-        elif column in ['obs_well_id', 'common_name']:
+        elif column in ['obs_well_id']:
             return StringEditDelegate(view, unique_constraint=True)
-        elif column in ['municipality', 'is_influenced',
-                        'in_recharge_zone', 'confinement']:
+        elif column in ['municipality', 'is_influenced', 'common_name',
+                        'in_recharge_zone', 'confinement', 'aquifer_type',
+                        'aquifer_code']:
             return StringEditDelegate(view)
         elif column in ['obs_well_notes']:
             return TextEditDelegate(view)
