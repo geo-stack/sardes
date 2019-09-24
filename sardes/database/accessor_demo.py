@@ -34,7 +34,7 @@ for i in range(5):
     OBS_WELL_ID = '0'
     for _ in range(6):
         OBS_WELL_ID += str(int(np.random.rand(1) * 9))
-    AQUIFER_CODE = int(np.random.rand(1) * 5)
+    AQUIFER_CODE = str(int(np.random.rand(1) * 5))
     AQUIFER_CONFINEMENT, AQUIFER_TYPE = [
         ('Confined', 'Rock'),
         ('Confined', 'Sediments'),
