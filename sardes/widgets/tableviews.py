@@ -20,7 +20,7 @@ from qtpy.QtGui import QColor, QCursor, QKeySequence
 from qtpy.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox,
                             QHeaderView, QLineEdit, QMenu, QMessageBox,
                             QSpinBox, QStyledItemDelegate, QTableView,
-                            QTextEdit, QToolButton)
+                            QTextEdit, QToolButton, QLabel)
 
 # ---- Local imports
 from sardes.api.panes import SardesPaneWidget
@@ -943,6 +943,7 @@ class SardesTableWidget(SardesPaneWidget):
         self.set_central_widget(self.tableview)
 
         self._setup_upper_toolbar()
+        self._setup_status_bar()
 
     # ---- Setup
     def _setup_upper_toolbar(self):
@@ -963,6 +964,26 @@ class SardesTableWidget(SardesPaneWidget):
 
         toolbar.addWidget(self._create_columns_options_button())
 
+    def _setup_status_bar(self):
+        """
+        Setup the status bar of this table widget.
+        """
+        statusbar = self.statusBar()
+
+        # Number of row(s) selected.
+        self.selected_line_count = QLabel()
+        statusbar.addPermanentWidget(self.selected_line_count)
+
+        self._update_line_count()
+        self.tableview.selectionModel().selectionChanged.connect(
+            self._update_line_count)
+        self.tableview.model().rowsRemoved.connect(
+            self._update_line_count)
+        self.tableview.model().rowsInserted.connect(
+            self._update_line_count)
+        self.tableview.model().modelReset.connect(
+            self._update_line_count)
+
     @property
     def db_connection_manager(self):
         """
@@ -970,6 +991,16 @@ class SardesTableWidget(SardesPaneWidget):
         of this table widget.
         """
         return self.tableview.source_model.db_connection_manager
+
+    # ---- Line count
+    def _update_line_count(self):
+        """
+        Update the text of the selected/total row count indicator.
+        """
+        text = _("{} out of {} row(s) selected").format(
+            self.tableview.selected_row_count(),
+            self.tableview.visible_row_count())
+        self.selected_line_count.setText(text + ' ')
 
     # ---- Toolbar
     def add_toolbar_widget(self, widget, which='upper'):
