@@ -206,6 +206,19 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         self._engine.dispose()
         self._connection = None
 
+    # ---- Locations
+    def _get_location(self, loc_id):
+        """
+        Return the sqlalchemy Location object corresponding to the
+        specified location ID.
+        """
+        location = (
+            self._session.query(Location)
+            .filter(Location.loc_id == loc_id)
+            .one()
+            )
+        return location
+
     # ---- Observation wells
     @property
     def observation_wells(self):
