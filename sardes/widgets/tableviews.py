@@ -899,7 +899,7 @@ class SardesTableView(QTableView):
             self._edit_current_item_button = create_toolbutton(
                 self,
                 icon='edit_database_item',
-                text=_("Edit current item ({})").format(shorcut_str),
+                text=_("Edit ({})").format(shorcut_str),
                 tip=_("Edit the currently focused item in this table."),
                 triggered=self._edit_current_item,
                 iconsize=get_iconsize()
