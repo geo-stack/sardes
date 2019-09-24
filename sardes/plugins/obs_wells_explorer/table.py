@@ -92,8 +92,8 @@ class ObsWellsTableWidget(SardesTableWidget):
         table_model = ObsWellsTableModel(db_connection_manager)
         super().__init__(table_model, parent)
 
-        self.add_separator()
-        self.add_widget(self._create_show_data_button())
+        self.add_toolbar_separator()
+        self.add_toolbar_widget(self._create_show_data_button())
 
     # ---- Timeseries
     def get_current_obs_well_data(self):

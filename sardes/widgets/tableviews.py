@@ -953,16 +953,34 @@ class SardesTableWidget(SardesPaneWidget):
 
     @property
     def db_connection_manager(self):
+        """
+        Return the database connection manager associated with the model
+        of this table widget.
+        """
         return self.tableview.source_model.db_connection_manager
 
     # ---- Toolbar
-    def add_widget(self, widget):
-        self.get_upper_toolbar().insertWidget(
-            self._upper_toolbar_separator, widget)
+    def add_toolbar_widget(self, widget, which='upper'):
+        """
+        Add a new widget to the uppermost toolbar if 'which' is 'upper',
+        else add it to the lowermost toolbar.
+        """
+        if which == 'upper':
+            self.get_upper_toolbar().insertWidget(
+                self._upper_toolbar_separator, widget)
+        else:
+            self.get_lower_toolbar().addWidget(widget)
 
-    def add_separator(self):
-        self.get_upper_toolbar().insertSeparator(
-            self._upper_toolbar_separator)
+    def add_toolbar_separator(self, which='which'):
+        """
+        Add a new separator to the uppermost toolbar if 'which' is 'upper',
+        else add it to the lowermost toolbar.
+        """
+        if which == 'upper':
+            self.get_upper_toolbar().insertSeparator(
+                self._upper_toolbar_separator)
+        else:
+            self.get_lower_toolbar().addSeparator()
 
     # ---- Table view header state
     def get_table_horiz_header_state(self):
