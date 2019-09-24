@@ -134,7 +134,7 @@ class ObsWellsTableWidget(SardesTableWidget):
     def _show_timeseries(self, tseries_groups):
         """
         Create and show a timeseries plot viewer to visualize interactively
-        the timeseries data contained in tseries_list.
+        the timeseries data contained in tseries_groups.
         """
         viewer = TimeSeriesPlotViewer(self)
 
