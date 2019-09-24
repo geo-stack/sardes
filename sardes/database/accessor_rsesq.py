@@ -234,6 +234,11 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         return [obj.obs_well_id for obj in obs_well_ids]
 
     def _get_obs_well_sampling_feature_uuid(self, obs_well_id):
+        """
+        Return the sampling feature UUID corresponding the the observation
+        well common ID that is used to reference the well in the monitoring
+        network (not the database).
+        """
         sampling_feature_uuid = (
             self._session.query(ObservationWell.sampling_feature_uuid)
             .filter(ObservationWell.obs_well_id == obs_well_id)
@@ -241,6 +246,19 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             .sampling_feature_uuid
             )
         return sampling_feature_uuid
+
+    def _get_observation_well(self, sampling_feature_uuid):
+        """
+        Return the sqlalchemy ObservationWell object corresponding to the
+        specified sampling feature UUID.
+        """
+        obs_well = (
+            self._session.query(ObservationWell)
+            .filter(ObservationWell.sampling_feature_uuid ==
+                    sampling_feature_uuid)
+            .one()
+            )
+        return obs_well
 
     def get_observation_wells_data(self):
         """
