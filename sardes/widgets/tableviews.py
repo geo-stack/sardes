@@ -942,14 +942,26 @@ class SardesTableWidget(SardesPaneWidget):
         self.tableview = SardesTableView(table_model)
         self.set_central_widget(self.tableview)
 
-        upper_toolbar = self.get_upper_toolbar()
-        upper_toolbar.addWidget(self._create_edit_current_item_button())
-        upper_toolbar.addWidget(self._create_save_edits_button())
-        upper_toolbar.addWidget(self._create_cancel_edits_button())
+        self._setup_upper_toolbar()
 
-        self._upper_toolbar_separator = upper_toolbar.addWidget(
+    # ---- Setup
+    def _setup_upper_toolbar(self):
+        """
+        Setup the upper toolbar of this table widget.
+        """
+        super()._setup_upper_toolbar()
+        toolbar = self.get_upper_toolbar()
+
+        toolbar.addWidget(self._create_edit_current_item_button())
+        toolbar.addWidget(self._create_save_edits_button())
+        toolbar.addWidget(self._create_cancel_edits_button())
+
+        # We add a stretcher here so that the columns options button is
+        # aligned to the right side of the toolbar.
+        self._upper_toolbar_separator = toolbar.addWidget(
             create_toolbar_stretcher())
-        upper_toolbar.addWidget(self._create_columns_options_button())
+
+        toolbar.addWidget(self._create_columns_options_button())
 
     @property
     def db_connection_manager(self):
