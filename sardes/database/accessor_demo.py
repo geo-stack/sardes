@@ -41,7 +41,7 @@ for i in range(5):
         ('Semi-Confined', 'Rock'),
         ('Semi-Confined', 'Sediments'),
         ('Unconfined', 'Rock'),
-        ('Unconfined', 'Sediments')][AQUIFER_CODE]
+        ('Unconfined', 'Sediments')][int(AQUIFER_CODE)]
 
     OBS_WELLS_DATA.append([
         OBS_WELL_ID,
