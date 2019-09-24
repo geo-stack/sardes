@@ -80,8 +80,8 @@ class ObservationWell(SamplingFeature):
     An object used to map the observation wells of the RSESQ.
     """
     __mapper_args__ = {'polymorphic_identity': 1}
-    obs_well_id = Column('elemcarac_nom', String)
-    obs_well_notes = Column('elemcarac_note', String)
+    obs_well_id = Column('elemcarac_nom', VARCHAR(length=250))
+    obs_well_notes = Column('elemcarac_note', TEXT(length=None))
 
 
 class LoggerInstallation(Base):
