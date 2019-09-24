@@ -1014,7 +1014,7 @@ class SardesTableWidget(SardesPaneWidget):
         else:
             self.get_lower_toolbar().addWidget(widget)
 
-    def add_toolbar_separator(self, which='which'):
+    def add_toolbar_separator(self, which='upper'):
         """
         Add a new separator to the uppermost toolbar if 'which' is 'upper',
         else add it to the lowermost toolbar.
