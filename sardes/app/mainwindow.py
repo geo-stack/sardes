@@ -75,8 +75,10 @@ class MainWindow(QMainWindow):
         self.internal_plugins = []
 
         # Setup the database connection manager.
+        print("Setting up the database connection manager...", end=' ')
         splash.showMessage(_("Setting up the database connection manager..."))
         self.db_connection_manager = DatabaseConnectionManager()
+        print("done")
 
         self.setup()
         splash.finish(self)
