@@ -1038,6 +1038,8 @@ class SardesTableWidget(SardesPaneWidget):
         """
         self.tableview.restore_horiz_header_state(hexstate)
 
+    # ---- Row selection toolbuttons
+
     # ---- Editing toolbuttons
     def _create_edit_current_item_button(self):
         """
