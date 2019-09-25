@@ -349,10 +349,9 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
 
             # Replace nan by None.
             obs_wells = obs_wells.where(obs_wells.notnull(), None)
+            return obs_wells
         else:
-            obs_wells = pd.DataFrame([])
-
-        return obs_wells
+            raise AttributeError
 
     # ---- Monitored properties
     @property

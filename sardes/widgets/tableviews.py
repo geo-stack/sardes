@@ -20,14 +20,15 @@ from qtpy.QtGui import QColor, QCursor, QKeySequence
 from qtpy.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox,
                             QHeaderView, QLineEdit, QMenu, QMessageBox,
                             QSpinBox, QStyledItemDelegate, QTableView,
-                            QTextEdit, QToolButton)
+                            QTextEdit, QToolButton, QLabel)
 
 # ---- Local imports
+from sardes.api.panes import SardesPaneWidget
 from sardes.config.locale import _
 from sardes.config.gui import get_iconsize
 from sardes.utils.qthelpers import (
-    create_action, create_toolbutton, qbytearray_to_hexstate,
-    hexstate_to_qbytearray)
+    create_action, create_toolbutton, create_toolbar_stretcher,
+    qbytearray_to_hexstate, hexstate_to_qbytearray)
 
 
 # =============================================================================
@@ -700,13 +701,8 @@ class SardesTableView(QTableView):
         self._setup_table_model(table_model)
         self._setup_item_delegates()
 
-        # Toolbuttons.
-        self._columns_options_button = None
-        self._toggle_column_visibility_actions = []
-
-        self._edit_current_item_button = None
-        self._cancel_edits_button = None
-        self._save_edits_button = None
+        # List of QAction to toggle the visibility this table's columns.
+        self._setup_column_visibility_actions()
 
     def _setup_table_model(self, table_model):
         """
@@ -725,6 +721,19 @@ class SardesTableView(QTableView):
             item_delegate = self.source_model.create_delegate_for_column(
                 self, column)
             self.setItemDelegateForColumn(i, item_delegate)
+
+    def _setup_column_visibility_actions(self):
+        self._toggle_column_visibility_actions = []
+        for i, label in enumerate(self.source_model.horizontal_header_labels):
+            action = create_action(
+                self, label,
+                toggled=(lambda toggle,
+                         logical_index=i:
+                         self.horizontalHeader().setSectionHidden(
+                             logical_index, not toggle)
+                         ))
+            self._toggle_column_visibility_actions.append(action)
+            action.setChecked(not self.horizontalHeader().isSectionHidden(i))
 
     # ---- Utilities
     def get_selected_rows_data(self):
@@ -763,7 +772,7 @@ class SardesTableView(QTableView):
 
     def visible_row_count(self):
         """Return this table number of visible rows."""
-        return self.source_model.rowCount()
+        return self.model().rowCount()
 
     # ---- Column options
     def column_count(self):
@@ -791,6 +800,10 @@ class SardesTableView(QTableView):
         if hexstate is not None:
             self.horizontalHeader().restoreState(
                 hexstate_to_qbytearray(hexstate))
+        for i, action in enumerate(self.get_column_visibility_actions()):
+            action.blockSignals(True)
+            action.setChecked(not self.horizontalHeader().isSectionHidden(i))
+            action.blockSignals(False)
 
     def show_all_available_columns(self):
         """
@@ -811,59 +824,12 @@ class SardesTableView(QTableView):
                 logical_index)
         self.resizeColumnsToContents()
 
-    def get_column_options_button(self):
+    def get_column_visibility_actions(self):
         """
-        Return a toolbutton with a menu that contains actions to toggle the
-        visibility of the available columns of this table.
+        Return a list of QAction for toggling on/off the visibility of this
+        table column.
         """
-        if self._columns_options_button is None:
-            self._create_columns_options_button()
-        return self._columns_options_button
-
-    def _create_columns_options_button(self):
-        """
-        Create and return a toolbutton with a menu that contains actions
-        to toggle the visibility of the available columns of this table.
-        """
-        # Create the column options button.
-        self._columns_options_button = create_toolbutton(
-            self,
-            icon='table_columns',
-            text=_("Column options"),
-            tip=_("Open a menu to select the columns to "
-                  "display in this table."),
-            iconsize=get_iconsize()
-            )
-        self._columns_options_button.setPopupMode(
-            self._columns_options_button.InstantPopup)
-
-        # Create the column options menu.
-        columns_options_menu = QMenu()
-        self._columns_options_button.setMenu(columns_options_menu)
-
-        # Add a show all column and restore to defaults action.
-        columns_options_menu.addAction(create_action(
-            self, _('Restore to defaults'),
-            triggered=self.restore_horiz_header_to_defaults))
-        columns_options_menu.addAction(create_action(
-            self, _('Show all'),
-            triggered=self.show_all_available_columns))
-        columns_options_menu.addSeparator()
-
-        # Add an action to toggle the visibility for each available
-        # column of this table.
-        self._toggle_column_visibility_actions = []
-        for i, label in enumerate(self.source_model.horizontal_header_labels):
-            action = create_action(
-                self, label,
-                toggled=(lambda toggle,
-                         logical_index=i:
-                         self.horizontalHeader().setSectionHidden(
-                             logical_index, not toggle)
-                         ))
-            self._toggle_column_visibility_actions.append(action)
-            columns_options_menu.addAction(action)
-            action.setChecked(not self.horizontalHeader().isSectionHidden(i))
+        return self._toggle_column_visibility_actions
 
     # ---- Data edits
     def is_data_editable_at(self, model_index):
@@ -887,25 +853,6 @@ class SardesTableView(QTableView):
                 triggered=self._edit_current_item))
             menu.popup(QCursor.pos())
 
-    @property
-    def edit_current_item_button(self):
-        """
-        Return a toolbutton that will turn on edit mode for this table
-        current cell when triggered.
-        """
-        if self._edit_current_item_button is None:
-            shorcut_str = (QKeySequence('Ctrl+Enter')
-                           .toString(QKeySequence.NativeText))
-            self._edit_current_item_button = create_toolbutton(
-                self,
-                icon='edit_database_item',
-                text=_("Edit ({})").format(shorcut_str),
-                tip=_("Edit the currently focused item in this table."),
-                triggered=self._edit_current_item,
-                iconsize=get_iconsize()
-                )
-        return self._edit_current_item_button
-
     def _edit_current_item(self):
         """
         Turn on edit mode for this table current cell.
@@ -920,25 +867,12 @@ class SardesTableView(QTableView):
             else:
                 self.itemDelegate(current_index).commit_data()
 
-    @property
-    def save_edits_button(self):
+    def _cancel_data_edits(self):
         """
-        Return a toolbutton that save the edits made to the data of the
-        table when triggered.
+        Cancel all the edits that were made to the table data of this view
+        since last save.
         """
-        if self._save_edits_button is None:
-            self._save_edits_button = create_toolbutton(
-                self,
-                icon='commit_changes',
-                text=_("Edit observation well"),
-                tip=_('Edit the currently selected observation well.'),
-                triggered=lambda: self._save_data_edits(force=False),
-                iconsize=get_iconsize(),
-                shortcut='Ctrl+S'
-                )
-            self._save_edits_button.setEnabled(False)
-            self.sig_data_edited.connect(self._save_edits_button.setEnabled)
-        return self._save_edits_button
+        self.model().cancel_all_data_edits()
 
     def _save_data_edits(self, force=True):
         """
@@ -956,25 +890,6 @@ class SardesTableView(QTableView):
             if reply == QMessageBox.Cancel:
                 return
         self.model().save_data_edits()
-
-    @property
-    def cancel_edits_button(self):
-        """
-        Return a toolbutton that cancel all the edits that were made to
-        the data of the table since last save when triggered.
-        """
-        if self._cancel_edits_button is None:
-            self._cancel_edits_button = create_toolbutton(
-                self,
-                icon='cancel_changes',
-                text=_("Edit observation well"),
-                tip=_('Edit the currently selected observation well.'),
-                triggered=self.model().cancel_all_data_edits,
-                iconsize=get_iconsize()
-                )
-            self._cancel_edits_button.setEnabled(False)
-            self.sig_data_edited.connect(self._cancel_edits_button.setEnabled)
-        return self._cancel_edits_button
 
     def raise_edits_error(self, model_index, message):
         """"
@@ -1018,6 +933,203 @@ class SardesTableView(QTableView):
             return super().edit(model_index)
         else:
             return super().edit(model_index, trigger, event)
+
+
+class SardesTableWidget(SardesPaneWidget):
+    def __init__(self, table_model, parent=None):
+        super().__init__(parent)
+
+        self.tableview = SardesTableView(table_model)
+        self.set_central_widget(self.tableview)
+
+        self._setup_upper_toolbar()
+        self._setup_status_bar()
+
+    # ---- Setup
+    def _setup_upper_toolbar(self):
+        """
+        Setup the upper toolbar of this table widget.
+        """
+        super()._setup_upper_toolbar()
+        toolbar = self.get_upper_toolbar()
+
+        toolbar.addWidget(self._create_edit_current_item_button())
+        toolbar.addWidget(self._create_save_edits_button())
+        toolbar.addWidget(self._create_cancel_edits_button())
+
+        # We add a stretcher here so that the columns options button is
+        # aligned to the right side of the toolbar.
+        self._upper_toolbar_separator = toolbar.addWidget(
+            create_toolbar_stretcher())
+
+        toolbar.addWidget(self._create_columns_options_button())
+
+    def _setup_status_bar(self):
+        """
+        Setup the status bar of this table widget.
+        """
+        statusbar = self.statusBar()
+
+        # Number of row(s) selected.
+        self.selected_line_count = QLabel()
+        statusbar.addPermanentWidget(self.selected_line_count)
+
+        self._update_line_count()
+        self.tableview.selectionModel().selectionChanged.connect(
+            self._update_line_count)
+        self.tableview.model().rowsRemoved.connect(
+            self._update_line_count)
+        self.tableview.model().rowsInserted.connect(
+            self._update_line_count)
+        self.tableview.model().modelReset.connect(
+            self._update_line_count)
+
+    @property
+    def db_connection_manager(self):
+        """
+        Return the database connection manager associated with the model
+        of this table widget.
+        """
+        return self.tableview.source_model.db_connection_manager
+
+    # ---- Line count
+    def _update_line_count(self):
+        """
+        Update the text of the selected/total row count indicator.
+        """
+        text = _("{} out of {} row(s) selected").format(
+            self.tableview.selected_row_count(),
+            self.tableview.visible_row_count())
+        self.selected_line_count.setText(text + ' ')
+
+    # ---- Toolbar
+    def add_toolbar_widget(self, widget, which='upper'):
+        """
+        Add a new widget to the uppermost toolbar if 'which' is 'upper',
+        else add it to the lowermost toolbar.
+        """
+        if which == 'upper':
+            self.get_upper_toolbar().insertWidget(
+                self._upper_toolbar_separator, widget)
+        else:
+            self.get_lower_toolbar().addWidget(widget)
+
+    def add_toolbar_separator(self, which='upper'):
+        """
+        Add a new separator to the uppermost toolbar if 'which' is 'upper',
+        else add it to the lowermost toolbar.
+        """
+        if which == 'upper':
+            self.get_upper_toolbar().insertSeparator(
+                self._upper_toolbar_separator)
+        else:
+            self.get_lower_toolbar().addSeparator()
+
+    # ---- Table view header state
+    def get_table_horiz_header_state(self):
+        """
+        Return the current state of this table horizontal header.
+        """
+        return self.tableview.get_horiz_header_state()
+
+    def restore_table_horiz_header_state(self, hexstate):
+        """
+        Restore the state of this table horizontal header from hexstate.
+        """
+        self.tableview.restore_horiz_header_state(hexstate)
+
+    # ---- Editing toolbuttons
+    def _create_edit_current_item_button(self):
+        """
+        Return a toolbutton that will turn on edit mode for this table
+        current cell when triggered.
+        """
+        shorcut_str = (QKeySequence('Ctrl+Enter')
+                       .toString(QKeySequence.NativeText))
+        toolbutton = create_toolbutton(
+            self,
+            icon='edit_database_item',
+            text=_("Edit ({})").format(shorcut_str),
+            tip=_("Edit the currently focused item in this table."),
+            triggered=self.tableview._edit_current_item,
+            iconsize=get_iconsize()
+            )
+        return toolbutton
+
+    def _create_save_edits_button(self):
+        """
+        Return a toolbutton that save the edits made to the data of the
+        table when triggered.
+        """
+        toolbutton = create_toolbutton(
+            self,
+            icon='commit_changes',
+            text=_("Edit observation well"),
+            tip=_('Edit the currently selected observation well.'),
+            triggered=lambda: self.tableview._save_data_edits(force=False),
+            iconsize=get_iconsize(),
+            shortcut='Ctrl+S'
+            )
+        toolbutton.setEnabled(False)
+        self.tableview.sig_data_edited.connect(toolbutton.setEnabled)
+        return toolbutton
+
+    def _create_cancel_edits_button(self):
+        """
+        Return a toolbutton that cancel all the edits that were made to
+        the data of the table since last save when triggered.
+        """
+        toolbutton = create_toolbutton(
+            self,
+            icon='cancel_changes',
+            text=_("Edit observation well"),
+            tip=_('Edit the currently selected observation well.'),
+            triggered=self.tableview._cancel_data_edits,
+            iconsize=get_iconsize()
+            )
+        toolbutton.setEnabled(False)
+        self.tableview.sig_data_edited.connect(toolbutton.setEnabled)
+        return toolbutton
+
+    # ---- Columns option toolbutton
+    def _create_columns_options_button(self):
+        """
+        Create and return a toolbutton with a menu that contains actions
+        to toggle the visibility of the available columns of this table.
+        """
+        # Create the column options button.
+        toolbutton = create_toolbutton(
+            self,
+            icon='table_columns',
+            text=_("Column options"),
+            tip=_("Open a menu to select the columns to "
+                  "display in this table."),
+            iconsize=get_iconsize()
+            )
+        toolbutton.setPopupMode(toolbutton.InstantPopup)
+
+        # Create the column options menu.
+        menu = QMenu()
+        toolbutton.setMenu(menu)
+
+        # Add a show all column and restore to defaults action.
+        menu.addAction(create_action(
+            self, _('Restore to defaults'),
+            triggered=self.tableview.restore_horiz_header_to_defaults))
+        menu.addAction(create_action(
+            self, _('Show all'),
+            triggered=self.tableview.show_all_available_columns))
+
+        # Add an action to toggle the visibility for each available
+        # column of this table.
+        menu.addSeparator()
+        for action in self.tableview.get_column_visibility_actions():
+            menu.addAction(action)
+
+        # We store a reference to this button to access it more
+        # easily during testing.
+        self._column_options_button = toolbutton
+        return toolbutton
 
 
 if __name__ == '__main__':
