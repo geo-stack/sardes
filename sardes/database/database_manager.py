@@ -157,8 +157,6 @@ class DatabaseConnectionManager(QObject):
         self._db_connection_worker.moveToThread(self._db_connection_thread)
         self._db_connection_thread.started.connect(
             self._db_connection_worker.run_tasks)
-        self._db_connection_thread.finished.connect(
-            self._handle_run_tasks_finished)
 
         # Connect the worker signals to handlers.
         self._db_connection_worker.sig_task_completed.connect(
