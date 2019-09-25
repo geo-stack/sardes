@@ -102,19 +102,24 @@ class MainWindow(QMainWindow):
 
         # Observation Wells plugin.
         from sardes.plugins.obs_wells_explorer import SARDES_PLUGIN_CLASS
-        splash.showMessage(_("Loading the {} plugin...")
-                           .format(SARDES_PLUGIN_CLASS.get_plugin_title()))
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        splash.showMessage(_("Loading the {} plugin...").format(plugin_title))
         plugin = SARDES_PLUGIN_CLASS(self)
         plugin.register_plugin()
         self.internal_plugins.append(plugin)
+        print("done")
 
         # Database plugin.
         from sardes.plugins.databases import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
         splash.showMessage(_("Loading the {} plugin...")
                            .format(SARDES_PLUGIN_CLASS.get_plugin_title()))
         self.databases_plugin = SARDES_PLUGIN_CLASS(self)
         self.databases_plugin.register_plugin()
         self.internal_plugins.append(self.databases_plugin)
+        print("done")
 
     def setup_thirdparty_plugins(self):
         """Setup Sardes third party plugins."""
