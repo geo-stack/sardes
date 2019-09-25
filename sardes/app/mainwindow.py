@@ -89,8 +89,9 @@ class MainWindow(QMainWindow):
         self._restore_window_geometry()
         self.setup_internal_plugins()
         self.setup_thirdparty_plugins()
-        # Note: The window state must be restored after the setup of this
-        #       mainwindow plugins and toolbars.
+
+        # Note: The window state must be restored after the setup of the
+        # plugins and toolbars.
         self._restore_window_state()
 
     def setup_internal_plugins(self):
