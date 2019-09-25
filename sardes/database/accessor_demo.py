@@ -101,9 +101,6 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
 
     def __init__(self, *args, **kargs):
         super().__init__()
-        print("Instantiating DatabaseAccessorDemo with :")
-        print("args :", args)
-        print("kargs :", kargs)
 
     def is_connected(self):
         """
@@ -115,18 +112,14 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         """
         Create a new connection object to communicate with the database.
         """
-        print("Connecting to database...", end='')
         sleep(1)
         self._connection = True
-        print("done")
 
     def close_connection(self):
         """
         Close the currently active connection with the database.
         """
-        print("Closing connection to database...", end='')
         self._connection = None
-        print("done")
 
     # ---- Observation wells
     @property

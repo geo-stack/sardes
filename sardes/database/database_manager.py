@@ -54,13 +54,22 @@ class DatabaseConnectionWorker(QObject):
     def _connect_to_db(self, db_accessor):
         """Try to create a new connection with the database"""
         self.db_accessor = db_accessor
+        print("Connecting to database with {}...".format(
+            type(self.db_accessor).__name__))
         self.db_accessor.connect()
+        if self.db_accessor._connection_error is None:
+            print("Connection to database succeeded.")
+        else:
+            print("Connection to database failed.")
         return self.db_accessor._connection, self.db_accessor._connection_error
 
     def _disconnect_from_db(self):
         """Close the connection with the database"""
+        print("Closing connection with database...".format(
+            type(self.db_accessor).__name__))
         if self.db_accessor is not None:
             self.db_accessor.close_connection()
+        print("Connection with database closed.")
         return None,
 
     # ---- Observation wells
