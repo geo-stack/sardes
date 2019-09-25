@@ -97,7 +97,6 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
     This accessor is for testing and debuging purposes and does not depend
     on a database.
     """
-    __database_type_name__ = 'Sardes Demo'
 
     def __init__(self, *args, **kargs):
         super().__init__()
