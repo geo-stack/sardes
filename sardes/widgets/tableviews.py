@@ -610,7 +610,7 @@ class SardesTableModel(SardesTableModelBase):
     def __init__(self, db_connection_manager=None):
         super().__init__(db_connection_manager)
 
-    def fetch_model_data(self):
+    def fetch_model_data(self, *args, **kargs):
         """
         Fetch the data for this table model.
 
@@ -651,7 +651,7 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
     def cancel_all_data_edits(self):
         self.sourceModel().cancel_all_data_edits()
 
-    def fetch_model_data(self):
+    def fetch_model_data(self, *args, **kargs):
         self.sourceModel().fetch_model_data()
 
     def get_value_at(self, proxy_index):

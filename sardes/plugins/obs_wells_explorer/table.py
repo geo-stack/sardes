@@ -45,7 +45,7 @@ class ObsWellsTableModel(SardesTableModel):
         ('obs_well_notes', _('Note'))
         ]
 
-    def fetch_model_data(self):
+    def fetch_model_data(self, *args, **kargs):
         """
         Fetch the observation well data for this table model.
         """
