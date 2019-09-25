@@ -332,6 +332,7 @@ class MainWindow(QMainWindow):
     # ---- Qt method override/extension
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
+        print('Closing SARDES...')
         self._save_window_geometry()
         self._save_window_state()
 
