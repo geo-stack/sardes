@@ -75,8 +75,10 @@ class MainWindow(QMainWindow):
         self.internal_plugins = []
 
         # Setup the database connection manager.
+        print("Setting up the database connection manager...", end=' ')
         splash.showMessage(_("Setting up the database connection manager..."))
         self.db_connection_manager = DatabaseConnectionManager()
+        print("done")
 
         self.setup()
         splash.finish(self)
@@ -87,9 +89,18 @@ class MainWindow(QMainWindow):
         self._restore_window_geometry()
         self.setup_internal_plugins()
         self.setup_thirdparty_plugins()
-        # Note: The window state must be restored after the setup of this
-        #       mainwindow plugins and toolbars.
+
+        # Note: The window state must be restored after the setup of the
+        # plugins and toolbars.
         self._restore_window_state()
+
+        # Connect to database if options is True.
+        # NOTE: This must be done after all internal and thirdparty plugins
+        # have been registered in case they are connected to the database
+        # manager connection signals.
+        if self.databases_plugin.get_option('auto_connect_to_database'):
+            self.db_connection_manager.connect_to_db(
+                self.databases_plugin.connect_to_database())
 
     def setup_internal_plugins(self):
         """Setup Sardes internal plugins."""
@@ -99,19 +110,24 @@ class MainWindow(QMainWindow):
 
         # Observation Wells plugin.
         from sardes.plugins.obs_wells_explorer import SARDES_PLUGIN_CLASS
-        splash.showMessage(_("Loading the {} plugin...")
-                           .format(SARDES_PLUGIN_CLASS.get_plugin_title()))
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        splash.showMessage(_("Loading the {} plugin...").format(plugin_title))
         plugin = SARDES_PLUGIN_CLASS(self)
         plugin.register_plugin()
         self.internal_plugins.append(plugin)
+        print("done")
 
         # Database plugin.
         from sardes.plugins.databases import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
         splash.showMessage(_("Loading the {} plugin...")
                            .format(SARDES_PLUGIN_CLASS.get_plugin_title()))
         self.databases_plugin = SARDES_PLUGIN_CLASS(self)
         self.databases_plugin.register_plugin()
         self.internal_plugins.append(self.databases_plugin)
+        print("done")
 
     def setup_thirdparty_plugins(self):
         """Setup Sardes third party plugins."""
@@ -314,20 +330,9 @@ class MainWindow(QMainWindow):
                  self.lock_dockwidgets_and_toolbars_action.isChecked())
 
     # ---- Qt method override/extension
-    def show(self):
-        """Extend Qt show to connect to database automatically."""
-        super().show()
-
-        # Connect to database if options is True.
-        # NOTE: This must be done after all internal and thirdparty plugins
-        # have been registered in case they are connected to the database
-        # manager connection signals.
-        if self.databases_plugin.get_option('auto_connect_to_database'):
-            self.db_connection_manager.connect_to_db(
-                self.databases_plugin.connect_to_database())
-
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
+        print('Closing SARDES...')
         self._save_window_geometry()
         self._save_window_state()
 

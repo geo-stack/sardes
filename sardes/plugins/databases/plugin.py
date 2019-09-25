@@ -34,12 +34,9 @@ class Databases(SardesPlugin):
     def setup_plugin(self):
         """Setup this plugin."""
         # Setup the database connection widget.
-        db_connection_manager = self.main.db_connection_manager
-        auto_connect_to_database = self.get_option('auto_connect_to_database')
-
         self.db_connection_widget = DatabaseConnectionWidget(
-            db_connection_manager,
-            auto_connect_to_database,
+            self.main.db_connection_manager,
+            self.get_option('auto_connect_to_database'),
             parent=self.main)
         self.db_connection_widget.hide()
 

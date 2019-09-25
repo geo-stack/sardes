@@ -11,6 +11,7 @@
 # ---- Standard imports
 import uuid
 from collections import OrderedDict
+from time import sleep
 
 # ---- Third party imports
 from pandas import DataFrame
@@ -54,13 +55,22 @@ class DatabaseConnectionWorker(QObject):
     def _connect_to_db(self, db_accessor):
         """Try to create a new connection with the database"""
         self.db_accessor = db_accessor
+        print("Connecting to database with {}...".format(
+            type(self.db_accessor).__name__))
         self.db_accessor.connect()
+        if self.db_accessor._connection_error is None:
+            print("Connection to database succeeded.")
+        else:
+            print("Connection to database failed.")
         return self.db_accessor._connection, self.db_accessor._connection_error
 
     def _disconnect_from_db(self):
         """Close the connection with the database"""
+        print("Closing connection with database...".format(
+            type(self.db_accessor).__name__))
         if self.db_accessor is not None:
             self.db_accessor.close_connection()
+        print("Connection with database closed.")
         return None,
 
     # ---- Observation wells
@@ -126,18 +136,31 @@ class DatabaseConnectionManager(QObject):
         super().__init__(parent)
 
         self._task_callbacks = {}
+        self._running_tasks = []
+        self._queued_tasks = []
+        self._pending_tasks = []
+        self._task_data = {}
+
+        # Queued tasks are tasks whose execution has not been requested yet.
+        # This happens when we want the Worker to execute a list of tasks
+        # in a single run. All queued tasks are dumped in the list of pending
+        # tasks when `run_task` is called.
+        #
+        # Pending tasks are tasks whose execution was postponed due to
+        # the fact that the worker was busy. These tasks are run as soon
+        # as the worker become available.
+        #
+        # Running tasks are tasks that are being executed by the worker.
 
         self._db_connection_worker = DatabaseConnectionWorker()
         self._db_connection_thread = QThread()
         self._db_connection_worker.moveToThread(self._db_connection_thread)
         self._db_connection_thread.started.connect(
             self._db_connection_worker.run_tasks)
-        self._db_connection_thread.finished.connect(
-            self._handle_run_tasks_finished)
 
         # Connect the worker signals to handlers.
         self._db_connection_worker.sig_task_completed.connect(
-            self._exec_callback)
+            self._exec_task_callback)
 
         self._is_connecting = False
         self._data_changed = False
@@ -174,7 +197,7 @@ class DatabaseConnectionManager(QObject):
         """
         Execute all the tasks that were added to the stack.
         """
-        self._db_connection_thread.start()
+        self._run_tasks()
 
     # ---- Observation wells
     def save_observation_well_data(self, sampling_feature_id, attribute_name,
@@ -227,7 +250,7 @@ class DatabaseConnectionManager(QObject):
                        obs_well_id, monitored_properties)
         self.run_tasks()
 
-    # ---- Handlers
+    # ---- Tasks handlers
     @Slot(object, object)
     def _handle_connect_to_db(self, connection, connection_error):
         """
@@ -247,17 +270,49 @@ class DatabaseConnectionManager(QObject):
         self.sig_database_connection_changed.emit(self.is_connected())
 
     @Slot(object, object)
-    def _exec_callback(self, task_uuid4, returned_values):
+    def _exec_task_callback(self, task_uuid4, returned_values):
+        """
+        This is the (only) slot that is called after a task is completed
+        by the worker.
+        """
+        # Run the callback associated with the specified task UUID if any.
         if self._task_callbacks[task_uuid4] is not None:
             self._task_callbacks[task_uuid4](*returned_values)
+
+        # Clean up internal variables.
         del self._task_callbacks[task_uuid4]
+        del self._task_data[task_uuid4]
+        self._running_tasks.remove(task_uuid4)
+
+        if len(self._running_tasks) == 0:
+            self._handle_run_tasks_finished()
 
     def _add_task(self, task, callback, *args, **kargs):
         task_uuid4 = uuid.uuid4()
         self._task_callbacks[task_uuid4] = callback
-        self._db_connection_worker.add_task(task_uuid4, task, *args, **kargs)
+        self._queued_tasks.append(task_uuid4)
+        self._task_data[task_uuid4] = (task, args, kargs)
 
-    @Slot()
+    def _run_tasks(self):
+        """
+        Execute all the tasks that were added to the stack.
+        """
+        self._pending_tasks.extend(self._queued_tasks)
+        self._queued_tasks = []
+        if len(self._running_tasks) == 0:
+            # Even though the worker has done executing all its tasks,
+            # we may still need to wait a little for it to stop properly.
+            while self._db_connection_thread.isRunning():
+                sleep(0.1)
+
+            self._running_tasks = self._pending_tasks
+            self._pending_tasks = []
+            for task_uuid4 in self._running_tasks:
+                task, args, kargs = self._task_data[task_uuid4]
+                self._db_connection_worker.add_task(
+                    task_uuid4, task, *args, **kargs)
+            self._db_connection_thread.start()
+
     def _handle_run_tasks_finished(self):
         """
         Handle when all tasks that needed to be run by the worker are
@@ -266,3 +321,5 @@ class DatabaseConnectionManager(QObject):
         if self._data_changed is True:
             self._data_changed = False
             self.sig_database_data_changed.emit()
+        if len(self._pending_tasks) > 0:
+            self._run_tasks()
