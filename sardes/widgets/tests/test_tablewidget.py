@@ -50,7 +50,7 @@ class SardesTableModelMock(SardesTableModel):
         (col, header) for col, header in zip(COLUMNS, HEADERS)]
 
     # ---- Public methods
-    def fetch_model_data(self):
+    def fetch_model_data(self, *args, **kargs):
         self.set_model_data(deepcopy(TABLE_DATAF))
 
     def create_delegate_for_column(self, view, column):
