@@ -399,11 +399,13 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
                 }[monitored_property]
 
     # ---- Timeseries
-    def get_timeseries_for_obs_well(self, obs_well_id, monitored_property):
+    def get_timeseries_for_obs_well(self, sampling_feature_uuid,
+                                    monitored_property):
         """
-        Return a :class:`MonitoredProperty` object containing the
-        :class:`TimeSeries` objects holding the data acquired in the
-        observation well for the specified monitored property.
+        Return a :class:`TimeSeriesGroup` object containing the
+        :class:`TimeSeries` objects holding the data acquired for the
+        specified monitored property in the observation well corresponding
+        to the specified sampling feature ID. .
         """
         # Get the observation property id that is used to reference in the
         # database the corresponding monitored property.
@@ -414,10 +416,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             .one()
             .obs_property_id
             )
-
-        # Get the sampling feature uuid corresponding to the observation well.
-        sampling_feature_uuid = (
-            self._get_obs_well_sampling_feature_uuid(obs_well_id))
 
         # Define a query to fetch the timseries data from the database.
         query = (
