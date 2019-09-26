@@ -138,6 +138,15 @@ FA_ICONS = {
     'save': [
         ('fa.save',),
         {'color': ICON_COLOR}],
+    'select_all': [
+        ('mdi.select-all',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'select_row': [
+        ('mdi.arrow-expand-horizontal',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'select_column': [
+        ('mdi.arrow-expand-vertical',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'table_columns': [
         ('fa.columns',),
         {'color': ICON_COLOR, 'scale_factor': 0.9, 'offset': (0, -0.1)}],
