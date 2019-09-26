@@ -47,9 +47,10 @@ def create_action(parent, text, shortcut=None, icon=None, tip=None,
     if icon is not None:
         icon = get_icon(icon) if isinstance(icon, str) else icon
         action.setIcon(icon)
-    if tip is not None:
-        action.setToolTip(tip)
-        action.setStatusTip(tip)
+    if any((text, tip, shortcut)):
+        action.setToolTip(format_tooltip(text, tip, shortcut))
+    if text:
+        action.setStatusTip(format_statustip(text, shortcut))
     if data is not None:
         action.setData(data)
     if menurole is not None:
@@ -107,6 +108,22 @@ def create_toolbutton(parent, text=None, shortcut=None, icon=None, tip=None,
     if iconsize is not None:
         button.setIconSize(QSize(iconsize, iconsize))
     return button
+
+
+def format_statustip(text, shortcut):
+    """
+    Format text and shortcut into a single str to be set
+    as an action status tip. The status tip is displayed on all status
+    bars provided by the action's top-level parent widget.
+    """
+    keystr = QKeySequence(shortcut).toString(QKeySequence.NativeText)
+    if text and keystr:
+        stip = "{} ({})".format(text, keystr)
+    elif text:
+        stip = "{}".format(text)
+    else:
+        stip = ""
+    return stip
 
 
 def format_tooltip(text, tip, shortcut):
