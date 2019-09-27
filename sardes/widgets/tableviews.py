@@ -749,7 +749,7 @@ class SardesTableView(QTableView):
             icon='edit_database_item',
             tip=_("Edit the currently focused item in this table."),
             triggered=self._edit_current_item,
-            shortcut='Ctrl+Enter',
+            shortcut=['Ctrl+Enter', 'Ctrl+Return'],
             context=Qt.WindowShortcut)
         self.selectionModel().currentChanged.connect(
             lambda current, previous: edit_item_action.setEnabled(
@@ -1018,17 +1018,6 @@ class SardesTableView(QTableView):
         self.setCurrentIndex(model_index)
         self._edit_current_item()
         self.model().undo_last_data_edits(update_model_view=False)
-
-    def keyPressEvent(self, event):
-        """
-        Extend Qt method to control when entering edit mode
-        for the current cell.
-        """
-        ctrl = event.modifiers() & Qt.ControlModifier
-        if ctrl and event.key() in (Qt.Key_Return, Qt.Key_Enter):
-            self._edit_current_item()
-            event.accept()
-        super().keyPressEvent(event)
 
     def edit(self, model_index, trigger=None, event=None):
         """
