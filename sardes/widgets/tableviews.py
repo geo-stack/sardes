@@ -779,6 +779,7 @@ class SardesTableView(QTableView):
 
         self._actions['edit'] = [
             edit_item_action, save_edits_action, cancel_edits_action]
+        self.addActions(self._actions['edit'])
 
         # Setup selection actions
         select_all_action = create_action(
@@ -786,8 +787,7 @@ class SardesTableView(QTableView):
             icon='select_all',
             tip=_("Selects all items in the table."),
             triggered=self.selectAll,
-            shortcut='Ctrl+A',
-            context=Qt.WindowShortcut)
+            shortcut='Ctrl+A')
 
         select_row_action = create_action(
             self, _("Select Row"),
@@ -803,15 +803,15 @@ class SardesTableView(QTableView):
             self, _("Select Column"),
             icon='select_column',
             tip=_("Select the entire column of the current selection. "
-                  "If the current selection spans multiple columns, all"
+                  "If the current selection spans multiple columns, all "
                   "columns that intersect the selection will be selected."),
             triggered=self.select_column,
-            shortcut='Ctrl+Space',
-            context=Qt.WindowShortcut
-            )
+            shortcut='Ctrl+Space')
 
         self._actions['selection'] = [
             select_all_action, select_row_action, select_column_action]
+        self.addActions(self._actions['selection'])
+
 
     # ---- Data selection
     def get_selected_rows_data(self):
