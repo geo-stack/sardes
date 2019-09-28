@@ -20,9 +20,7 @@ def intervals_extract(iterable):
     https://www.geeksforgeeks.org/python-make-a-list-of-intervals-with-sequential-numbers/
     """
     sequence = sorted(set(iterable))
-    intervals = []
     for key, group in itertools.groupby(enumerate(sequence),
                                         lambda v: v[1] - v[0]):
         group = list(group)
-        intervals.append([group[0][1], group[-1][1]])
-    return intervals
+        yield [group[0][1], group[-1][1]]

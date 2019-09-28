@@ -34,7 +34,7 @@ def center_widget_to_another(widget, other_widget):
     widget.move(q1.topLeft())
 
 
-def create_action(parent, text, shortcut=None, icon=None, tip=None,
+def create_action(parent, text=None, shortcut=None, icon=None, tip=None,
                   toggled=None, triggered=None, data=None, menurole=None,
                   context=Qt.WindowShortcut):
     """Create and return a QAction with the provided settings."""
