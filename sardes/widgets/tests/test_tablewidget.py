@@ -19,7 +19,7 @@ import uuid
 # ---- Third party imports
 import pytest
 import pandas as pd
-from pandas.testing import assert_frame_equal, assert_series_equal
+from pandas.testing import assert_frame_equal
 from qtpy.QtCore import Qt
 
 # ---- Local imports
@@ -115,7 +115,7 @@ def tablewidget(qtbot, mocker, tablemodel):
 
 
 # =============================================================================
-# ---- Tests for ObservationWellTableView
+# ---- Tests
 # =============================================================================
 def test_tablewidget_init(tablewidget):
     """Test that SardesTableWidget is initialized correctly."""
@@ -377,6 +377,168 @@ def test_save_edits(tablewidget, qtbot):
         model_index = tableview.model().index(0, i)
         assert model_index.data() == expected_data[i]
         assert tableview.model().get_value_at(model_index) == expected_value[i]
+
+
+def test_select_all_and_clear(tablewidget, qtbot):
+    """
+    Test select all and clear actions.
+    """
+    tableview = tablewidget.tableview
+    selection_model = tablewidget.tableview.selectionModel()
+
+    # Set a current index of the model selection.
+    expected_model_index = tableview.model().index(1, 1)
+    selection_model.setCurrentIndex(
+        expected_model_index, selection_model.Current)
+    assert selection_model.currentIndex() == expected_model_index
+    assert len(selection_model.selectedIndexes()) == 0
+
+    # Select all cells with keyboard shortcut Ctrl+A.
+    qtbot.keyPress(tablewidget, Qt.Key_A, modifier=Qt.ControlModifier)
+    assert selection_model.currentIndex() == expected_model_index
+    assert len(selection_model.selectedIndexes()) == NCOL * len(TABLE_DATAF)
+
+    # Clear all cells with keyboard shortcut Escape.
+    qtbot.keyPress(tablewidget, Qt.Key_Escape)
+    assert selection_model.currentIndex() == expected_model_index
+    assert len(selection_model.selectedIndexes()) == 0
+
+
+def test_select_row(tablewidget, qtbot):
+    """
+    Test select row action.
+    """
+    model = tablewidget.tableview.model()
+    selection_model = tablewidget.tableview.selectionModel()
+
+    # Set a current index of the model selection.
+    expected_index = model.index(1, 1)
+    selection_model.setCurrentIndex(expected_index, selection_model.Current)
+    assert selection_model.currentIndex() == expected_index
+    assert len(selection_model.selectedIndexes()) == 0
+
+    # Select some cells in the table, one in the first row and another one
+    # in the third row.
+    selection_model.select(model.index(0, 1), selection_model.Select)
+    selection_model.select(model.index(2, 0), selection_model.Select)
+    assert selection_model.currentIndex() == expected_index
+    assert len(selection_model.selectedIndexes()) == 2
+
+    # Select rows with keyboard shortcut Shift+Space.
+    qtbot.keyPress(tablewidget, Qt.Key_Space, modifier=Qt.ShiftModifier)
+    assert selection_model.currentIndex() == expected_index
+    assert len(selection_model.selectedIndexes()) == NCOL * 2
+    assert [index.row() for index in selection_model.selectedRows()] == [0, 2]
+
+
+def test_select_column(tablewidget, qtbot):
+    """
+    Test select column action.
+    """
+    model = tablewidget.tableview.model()
+    selection_model = tablewidget.tableview.selectionModel()
+
+    # Set a current index of the model selection.
+    expected_index = model.index(1, 1)
+    selection_model.setCurrentIndex(expected_index, selection_model.Current)
+    assert selection_model.currentIndex() == expected_index
+    assert len(selection_model.selectedIndexes()) == 0
+
+    # Select some cells in the table, one in the second column and another one
+    # in the fourth column.
+    selection_model.select(model.index(0, 1), selection_model.Select)
+    selection_model.select(model.index(2, 3), selection_model.Select)
+    assert selection_model.currentIndex() == expected_index
+    assert len(selection_model.selectedIndexes()) == 2
+
+    # Select columns with keyboard shortcut Ctrl+Space.
+    qtbot.keyPress(tablewidget, Qt.Key_Space, modifier=Qt.ControlModifier)
+    assert selection_model.currentIndex() == expected_index
+    assert len(selection_model.selectedIndexes()) == len(TABLE_DATAF) * 2
+    assert ([index.column() for index in selection_model.selectedColumns()] ==
+            [1, 3])
+
+
+def test_move_current_to_border(tablewidget, qtbot):
+    """
+    Test the shortcuts to move the current cell to the border of the table with
+    the Ctrl + Arrow key shortcuts.
+    """
+    model = tablewidget.tableview.model()
+    selection_model = tablewidget.tableview.selectionModel()
+
+    # Set a current index of the model selection.
+    expected_index = model.index(0, 2)
+    selection_model.setCurrentIndex(expected_index, selection_model.Select)
+    assert selection_model.currentIndex() == expected_index
+    assert selection_model.selectedIndexes() == [expected_index]
+
+    # Move current index to the end of the row with Ctrl+Right
+    expected_index = model.index(0, NCOL - 1)
+    qtbot.keyPress(tablewidget, Qt.Key_Right, modifier=Qt.ControlModifier)
+    assert selection_model.currentIndex() == expected_index
+    assert selection_model.selectedIndexes() == [expected_index]
+
+    # Move current index to the bottom of the column with Ctrl+Down
+    expected_index = model.index(len(TABLE_DATAF) - 1, NCOL - 1)
+    qtbot.keyPress(tablewidget, Qt.Key_Down, modifier=Qt.ControlModifier)
+    assert selection_model.currentIndex() == expected_index
+    assert selection_model.selectedIndexes() == [expected_index]
+
+    # Move current index to the start of the row with Ctrl+Left
+    expected_index = model.index(len(TABLE_DATAF) - 1, 0)
+    qtbot.keyPress(tablewidget, Qt.Key_Left, modifier=Qt.ControlModifier)
+    assert selection_model.currentIndex() == expected_index
+    assert selection_model.selectedIndexes() == [expected_index]
+
+    # Move current index to the top of the column with Ctrl+Up
+    expected_index = model.index(0, 0)
+    qtbot.keyPress(tablewidget, Qt.Key_Up, modifier=Qt.ControlModifier)
+    assert selection_model.currentIndex() == expected_index
+    assert selection_model.selectedIndexes() == [expected_index]
+
+
+def test_extend_selection_to_border(tablewidget, qtbot):
+    """
+    Test the shortcuts to select all cell between the current selection and
+    one of the table's border is working correctly with the
+    Ctrl + Shift + Arrow key shortcuts.
+    """
+    model = tablewidget.tableview.model()
+    selection_model = tablewidget.tableview.selectionModel()
+
+    # Set a current index and select some cells in the table.
+    expected_current_index = model.index(1, 1)
+    selection_model.setCurrentIndex(
+        expected_current_index, selection_model.Current)
+    selection_model.select(model.index(1, 2), selection_model.Select)
+    selection_model.select(model.index(1, 4), selection_model.Select)
+
+    assert selection_model.currentIndex() == expected_current_index
+    assert len(selection_model.selectedIndexes()) == 2
+
+    # Select all cells above selection with Ctrl+Shift+Up.
+    qtbot.keyPress(tablewidget, Qt.Key_Up,
+                   modifier=Qt.ControlModifier | Qt.ShiftModifier)
+
+    selected_indexes = selection_model.selectedIndexes()
+    expected_selected_indexes = [(0, 1), (0, 2), (1, 1), (1, 2), (1, 4)]
+    assert selection_model.currentIndex() == expected_current_index
+    assert len(selected_indexes) == len(expected_selected_indexes)
+    for index in expected_selected_indexes:
+        assert model.index(*index) in selected_indexes
+
+    # Select all cells to the left of selection with Ctrl+Shift+Left.
+    qtbot.keyPress(tablewidget, Qt.Key_Left,
+                   modifier=Qt.ControlModifier | Qt.ShiftModifier)
+
+    selected_indexes = selection_model.selectedIndexes()
+    expected_selected_indexes = [
+        (0, 0), (1, 0), (0, 1), (0, 2), (1, 1), (1, 2), (1, 4)]
+    assert selection_model.currentIndex() == expected_current_index
+    assert len(selected_indexes) == len(expected_selected_indexes)
+    for index in expected_selected_indexes:
+        assert model.index(*index) in selected_indexes
 
 
 if __name__ == "__main__":

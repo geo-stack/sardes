@@ -52,7 +52,7 @@ def test_format_tooltip():
         else:
             expected_ttip = ""
 
-        tooltip = format_tooltip(text=text, shortcut=shortcut, tip=tip)
+        tooltip = format_tooltip(text=text, shortcuts=shortcut, tip=tip)
         assertion_error = {'text': text, 'shortcut': shortcut, 'tip': tip}
 
         assert tooltip == expected_ttip, assertion_error

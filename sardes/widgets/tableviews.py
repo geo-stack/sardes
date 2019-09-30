@@ -11,11 +11,13 @@
 # ---- Standard imports
 import sys
 from collections import OrderedDict
+import itertools
 
 # ---- Third party imports
 import pandas as pd
 from qtpy.QtCore import (QAbstractTableModel, QEvent, QModelIndex,
-                         QSortFilterProxyModel, Qt, QVariant, Signal, Slot)
+                         QSortFilterProxyModel, Qt, QVariant, Signal, Slot,
+                         QItemSelection, QItemSelectionModel)
 from qtpy.QtGui import QColor, QCursor, QKeySequence
 from qtpy.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox,
                             QHeaderView, QLineEdit, QMenu, QMessageBox,
@@ -26,6 +28,7 @@ from qtpy.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox,
 from sardes.api.panes import SardesPaneWidget
 from sardes.config.locale import _
 from sardes.config.gui import get_iconsize
+from sardes.utils.data_operations import intervals_extract
 from sardes.utils.qthelpers import (
     create_action, create_toolbutton, create_toolbar_stretcher,
     qbytearray_to_hexstate, hexstate_to_qbytearray)
@@ -698,8 +701,10 @@ class SardesTableView(QTableView):
         self.setEditTriggers(self.NoEditTriggers)
         self.setMouseTracking(True)
 
+        self._actions = {}
         self._setup_table_model(table_model)
         self._setup_item_delegates()
+        self._setup_shortcuts()
 
         # List of QAction to toggle the visibility this table's columns.
         self._setup_column_visibility_actions()
@@ -735,14 +740,109 @@ class SardesTableView(QTableView):
             self._toggle_column_visibility_actions.append(action)
             action.setChecked(not self.horizontalHeader().isSectionHidden(i))
 
-    # ---- Utilities
+    def _setup_shortcuts(self):
+        """
+        Setup the various shortcuts available for this tableview.
+        """
+        # Edit actions
+        edit_item_action = create_action(
+            self, _("Edit"),
+            icon='edit_database_item',
+            tip=_("Edit the currently focused item in this table."),
+            triggered=self._edit_current_item,
+            shortcut=['Ctrl+Enter', 'Ctrl+Return'],
+            context=Qt.WindowShortcut)
+        self.selectionModel().currentChanged.connect(
+            lambda current, previous: edit_item_action.setEnabled(
+                self.is_data_editable_at(current)))
+
+        save_edits_action = create_action(
+            self, _("Save edits"),
+            icon='commit_changes',
+            tip=_('Save all edits made to the table in the database.'),
+            triggered=lambda: self._save_data_edits(force=False),
+            shortcut='Ctrl+S',
+            context=Qt.WindowShortcut
+            )
+        save_edits_action.setEnabled(False)
+        self.sig_data_edited.connect(save_edits_action.setEnabled)
+
+        cancel_edits_action = create_action(
+            self, _("Cancel edits"),
+            icon='cancel_changes',
+            tip=_('Cancel all edits made to the table since last save.'),
+            triggered=self._cancel_data_edits,
+            shortcut='Ctrl+Delete',
+            context=Qt.WindowShortcut
+            )
+        cancel_edits_action.setEnabled(False)
+        self.sig_data_edited.connect(cancel_edits_action.setEnabled)
+
+        self._actions['edit'] = [
+            edit_item_action, save_edits_action, cancel_edits_action]
+        self.addActions(self._actions['edit'])
+
+        # Setup selection actions
+        select_all_action = create_action(
+            self, _("Select All"),
+            icon='select_all',
+            tip=_("Selects all items in the table."),
+            triggered=self.selectAll,
+            shortcut='Ctrl+A')
+
+        select_clear_action = create_action(
+            self, _("Clear All"),
+            icon='select_clear',
+            tip=_("Clears the selection in the table."),
+            triggered=lambda _: self.selectionModel().clearSelection(),
+            shortcut='Escape')
+
+        select_row_action = create_action(
+            self, _("Select Row"),
+            icon='select_row',
+            tip=_("Select the entire row of the current selection. "
+                  "If the current selection spans multiple rows, "
+                  "all rows that intersect the selection will be selected."),
+            triggered=self.select_row,
+            shortcut='Shift+Space',
+            context=Qt.WindowShortcut)
+
+        select_column_action = create_action(
+            self, _("Select Column"),
+            icon='select_column',
+            tip=_("Select the entire column of the current selection. "
+                  "If the current selection spans multiple columns, all "
+                  "columns that intersect the selection will be selected."),
+            triggered=self.select_column,
+            shortcut='Ctrl+Space')
+
+        self._actions['selection'] = [
+            select_all_action, select_clear_action, select_row_action,
+            select_column_action]
+        self.addActions(self._actions['selection'])
+
+        # Setup move actions.
+        for key in ['Up', 'Down', 'Left', 'Right']:
+            self.addAction(create_action(
+                parent=self,
+                triggered=lambda _, key=key: self.move_current_to_border(key),
+                shortcut='Ctrl+{}'.format(key)
+                ))
+            self.addAction(create_action(
+                parent=self,
+                triggered=lambda _, key=key:
+                    self.extend_selection_to_border(key),
+                shortcut='Ctrl+Shift+{}'.format(key)
+                ))
+
+    # ---- Data selection
     def get_selected_rows_data(self):
         """
         Return the data relative to the currently selected rows in this table.
         """
         proxy_indexes = self.selectionModel().selectedIndexes()
         rows = sorted(list(set(
-            [(self.proxy_model.mapToSource(i).row()) for i in proxy_indexes]
+            [self.proxy_model.mapToSource(i).row() for i in proxy_indexes]
             )))
         return self.source_model.dataf.iloc[rows]
 
@@ -759,6 +859,143 @@ class SardesTableView(QTableView):
             row_data = None
         return row_data
 
+    def select_row(self):
+        """
+        Select the entire row of the current selection. If the current
+        selection spans multiple rows, all rows that intersect the selection
+        will be selected.
+        """
+        self.setFocus()
+        selected_indexes = self.selectionModel().selectedIndexes()
+        selected_rows = sorted(list(set(
+            [index.row() for index in selected_indexes])))
+        for interval in intervals_extract(selected_rows):
+            self.selectionModel().select(
+                QItemSelection(self.model().index(interval[0], 0),
+                               self.model().index(interval[1], 0)),
+                QItemSelectionModel.Select | QItemSelectionModel.Rows)
+
+    def select_column(self):
+        """
+        Select the entire column of the current selection. If the current
+        selection spans multiple columns, all columns that intersect the
+        selection will be selected.
+        """
+        self.setFocus()
+        selected_indexes = self.selectionModel().selectedIndexes()
+        selected_columns = sorted(list(set(
+            [index.column() for index in selected_indexes])))
+        for interval in intervals_extract(selected_columns):
+            self.selectionModel().select(
+                QItemSelection(self.model().index(0, interval[0]),
+                               self.model().index(0, interval[1])),
+                QItemSelectionModel.Select | QItemSelectionModel.Columns)
+
+    def move_current_to_border(self, key):
+        """
+        Move the currently selected index to the top, bottom, far right or
+        far left of this table.
+        """
+        current_index = self.selectionModel().currentIndex()
+        if key == 'Up':
+            row = 0
+            column = current_index.column()
+        elif key == 'Down':
+            row = self.model().rowCount() - 1
+            column = current_index.column()
+        elif key == 'Left':
+            row = current_index.row()
+            column = self.horizontalHeader().logicalIndex(0)
+        elif key == 'Right':
+            row = current_index.row()
+            column = self.horizontalHeader().logicalIndex(
+                self.visible_column_count() - 1)
+        self.selectionModel().setCurrentIndex(
+            self.model().index(row, column),
+            QItemSelectionModel.ClearAndSelect)
+
+    def extend_selection_to_border(self, key):
+        """
+        Extend the selection adjacent to the current cell to the top, bottom,
+        right or left border of this table.
+        """
+        current_index = self.selectionModel().currentIndex()
+        current_visual_column = (
+            self.horizontalHeader().visualIndex(current_index.column()))
+        self.selectionModel().select(
+            current_index, QItemSelectionModel.Select)
+
+        if key in ['Left', 'Right']:
+            # We get a list of rows that have selection on the column of
+            # the current index.
+            rows_with_selection = [
+                index.row()
+                for index in self.selectionModel().selectedIndexes()
+                if index.column() == current_index.column()]
+
+            # Now we determine the top and bottom rows of the row interval
+            # over which we need to extend the selection to the left or to
+            # the right. of this table.
+            for interval in intervals_extract(rows_with_selection):
+                if interval[0] <= current_index.row() <= interval[1]:
+                    top_row = interval[0]
+                    bottom_row = interval[1]
+                    break
+
+            # We define the list of logical column indexes for which we need
+            # to extend the selection.
+            if key == 'Left':
+                columns_to_select = sorted(
+                    [self.horizontalHeader().logicalIndex(index) for
+                     index in range(0, current_visual_column + 1)])
+            else:
+                columns_to_select = sorted(
+                    [self.horizontalHeader().logicalIndex(index) for index in
+                     range(current_visual_column, self.visible_column_count())]
+                    )
+        elif key in ['Up', 'Down']:
+            # We get a list of columns that have selection on the row of
+            # the current index.
+            visual_columns_with_selection = [
+                self.horizontalHeader().visualIndex(index.column())
+                for index in self.selectionModel().selectedIndexes()
+                if index.row() == current_index.row()]
+
+            # Now we determine the left and right columns of the column
+            # interval over which we need to extend the selection to the
+            # top or the bottom of this table.
+            for interval in intervals_extract(visual_columns_with_selection):
+                if interval[0] <= current_visual_column <= interval[1]:
+                    left_column = interval[0]
+                    right_column = interval[1]
+                    break
+
+            # We define the list of logical column indexes for which we need
+            # to extend the selection.
+            columns_to_select = sorted(
+                [self.horizontalHeader().logicalIndex(index) for
+                 index in range(left_column, right_column + 1)])
+
+            # We determine the top and bottom rows over which we need to
+            # extend the columns.
+            if key == 'Up':
+                top_row = 0
+                bottom_row = current_index.row()
+            elif key == 'Down':
+                top_row = current_index.row()
+                bottom_row = self.model().rowCount() - 1
+
+        # We extend the selection between the top and bottom row and
+        # left and right column visual indexes.
+        selection = QItemSelection()
+        for column_interval in intervals_extract(columns_to_select):
+            selection.select(
+                self.model().index(top_row, column_interval[0]),
+                self.model().index(bottom_row, column_interval[1]))
+        self.selectionModel().select(
+            selection, QItemSelectionModel.Select)
+
+    # ---- Utilities
     def row_count(self):
         """Return this table number of visible row."""
         return self.proxy_model.rowCount()
@@ -844,14 +1081,15 @@ class SardesTableView(QTableView):
         Override Qt method to show a context menu that shows different actions
         available for the cell.
         """
-        if self.is_data_editable_at(self.selectionModel().currentIndex()):
-            menu = QMenu(self)
-            menu.addAction(create_action(
-                self, _('Edit'),
-                icon='edit_database_item',
-                shortcut='Ctrl+Enter',
-                triggered=self._edit_current_item))
-            menu.popup(QCursor.pos())
+        menu = QMenu(self)
+
+        for action in self._actions['edit']:
+            menu.addAction(action)
+        menu.addSeparator()
+        for action in self._actions['selection']:
+            menu.addAction(action)
+
+        menu.popup(QCursor.pos())
 
     def _edit_current_item(self):
         """
@@ -907,17 +1145,6 @@ class SardesTableView(QTableView):
         self._edit_current_item()
         self.model().undo_last_data_edits(update_model_view=False)
 
-    def keyPressEvent(self, event):
-        """
-        Extend Qt method to control when entering edit mode
-        for the current cell.
-        """
-        ctrl = event.modifiers() & Qt.ControlModifier
-        if ctrl and event.key() in (Qt.Key_Return, Qt.Key_Enter):
-            self._edit_current_item()
-            event.accept()
-        super().keyPressEvent(event)
-
     def edit(self, model_index, trigger=None, event=None):
         """
         Extend Qt method to ensure that the cell of this table that is
@@ -953,9 +1180,14 @@ class SardesTableWidget(SardesPaneWidget):
         super()._setup_upper_toolbar()
         toolbar = self.get_upper_toolbar()
 
-        toolbar.addWidget(self._create_edit_current_item_button())
-        toolbar.addWidget(self._create_save_edits_button())
-        toolbar.addWidget(self._create_cancel_edits_button())
+        # Edit toolbuttons.
+        for action in self.tableview._actions['edit']:
+            toolbar.addAction(action)
+
+        # Selection toolbuttons.
+        toolbar.addSeparator()
+        for action in self.tableview._actions['selection']:
+            toolbar.addAction(action)
 
         # We add a stretcher here so that the columns options button is
         # aligned to the right side of the toolbar.
@@ -1037,61 +1269,6 @@ class SardesTableWidget(SardesPaneWidget):
         Restore the state of this table horizontal header from hexstate.
         """
         self.tableview.restore_horiz_header_state(hexstate)
-
-    # ---- Row selection toolbuttons
-
-    # ---- Editing toolbuttons
-    def _create_edit_current_item_button(self):
-        """
-        Return a toolbutton that will turn on edit mode for this table
-        current cell when triggered.
-        """
-        shorcut_str = (QKeySequence('Ctrl+Enter')
-                       .toString(QKeySequence.NativeText))
-        toolbutton = create_toolbutton(
-            self,
-            icon='edit_database_item',
-            text=_("Edit ({})").format(shorcut_str),
-            tip=_("Edit the currently focused item in this table."),
-            triggered=self.tableview._edit_current_item,
-            iconsize=get_iconsize()
-            )
-        return toolbutton
-
-    def _create_save_edits_button(self):
-        """
-        Return a toolbutton that save the edits made to the data of the
-        table when triggered.
-        """
-        toolbutton = create_toolbutton(
-            self,
-            icon='commit_changes',
-            text=_("Edit observation well"),
-            tip=_('Edit the currently selected observation well.'),
-            triggered=lambda: self.tableview._save_data_edits(force=False),
-            iconsize=get_iconsize(),
-            shortcut='Ctrl+S'
-            )
-        toolbutton.setEnabled(False)
-        self.tableview.sig_data_edited.connect(toolbutton.setEnabled)
-        return toolbutton
-
-    def _create_cancel_edits_button(self):
-        """
-        Return a toolbutton that cancel all the edits that were made to
-        the data of the table since last save when triggered.
-        """
-        toolbutton = create_toolbutton(
-            self,
-            icon='cancel_changes',
-            text=_("Edit observation well"),
-            tip=_('Edit the currently selected observation well.'),
-            triggered=self.tableview._cancel_data_edits,
-            iconsize=get_iconsize()
-            )
-        toolbutton.setEnabled(False)
-        self.tableview.sig_data_edited.connect(toolbutton.setEnabled)
-        return toolbutton
 
     # ---- Columns option toolbutton
     def _create_columns_options_button(self):

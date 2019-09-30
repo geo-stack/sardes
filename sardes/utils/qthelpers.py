@@ -34,7 +34,7 @@ def center_widget_to_another(widget, other_widget):
     widget.move(q1.topLeft())
 
 
-def create_action(parent, text, shortcut=None, icon=None, tip=None,
+def create_action(parent, text=None, shortcut=None, icon=None, tip=None,
                   toggled=None, triggered=None, data=None, menurole=None,
                   context=Qt.WindowShortcut):
     """Create and return a QAction with the provided settings."""
@@ -47,15 +47,20 @@ def create_action(parent, text, shortcut=None, icon=None, tip=None,
     if icon is not None:
         icon = get_icon(icon) if isinstance(icon, str) else icon
         action.setIcon(icon)
-    if tip is not None:
-        action.setToolTip(tip)
-        action.setStatusTip(tip)
+    if any((text, tip, shortcut)):
+        action.setToolTip(format_tooltip(text, tip, shortcut))
+    if text:
+        action.setStatusTip(format_statustip(text, shortcut))
     if data is not None:
         action.setData(data)
     if menurole is not None:
         action.setMenuRole(menurole)
     if shortcut is not None:
-        action.setShortcut(shortcut)
+        if isinstance(shortcut, (list, tuple)):
+            action.setShortcuts(shortcut)
+        else:
+            action.setShortcut(shortcut)
+
     action.setShortcutContext(context)
 
     return action
@@ -103,18 +108,37 @@ def create_toolbutton(parent, text=None, shortcut=None, icon=None, tip=None,
         button.toggled.connect(toggled)
         button.setCheckable(True)
     if shortcut is not None:
-        button.setShortcut(shortcut)
+        if isinstance(shortcut, (list, tuple)):
+            button.setShortcuts(shortcut)
+        else:
+            button.setShortcut(shortcut)
     if iconsize is not None:
         button.setIconSize(QSize(iconsize, iconsize))
     return button
 
 
-def format_tooltip(text, tip, shortcut):
+def format_statustip(text, shortcuts):
+    """
+    Format text and shortcut into a single str to be set
+    as an action status tip. The status tip is displayed on all status
+    bars provided by the action's top-level parent widget.
+    """
+    keystr = get_shortcuts_native_text(shortcuts)
+    if text and keystr:
+        stip = "{} ({})".format(text, keystr)
+    elif text:
+        stip = "{}".format(text)
+    else:
+        stip = ""
+    return stip
+
+
+def format_tooltip(text, tip, shortcuts):
     """
     Format text, tip and shortcut into a single str to be set
     as a widget's tooltip.
     """
-    keystr = QKeySequence(shortcut).toString(QKeySequence.NativeText)
+    keystr = get_shortcuts_native_text(shortcuts)
     ttip = ""
     if text or keystr:
         ttip += "<p style='white-space:pre'><b>"
@@ -126,6 +150,17 @@ def format_tooltip(text, tip, shortcut):
     if tip:
         ttip += "<p>{}</p>".format(tip or '')
     return ttip
+
+
+def get_shortcuts_native_text(shortcuts):
+    """
+    Return the native text of a shortcut or a list of shortcuts.
+    """
+    if not isinstance(shortcuts, (list, tuple)):
+        shortcuts = [shortcuts, ]
+
+    return ', '.join([QKeySequence(sc).toString(QKeySequence.NativeText)
+                      for sc in shortcuts])
 
 
 def create_waitspinner(size=32, n=11, parent=None):
