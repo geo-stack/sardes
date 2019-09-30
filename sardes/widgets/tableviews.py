@@ -831,7 +831,7 @@ class SardesTableView(QTableView):
             self.addAction(create_action(
                 parent=self,
                 triggered=lambda _, key=key:
-                    self.extend_selection_to_limit(key),
+                    self.extend_selection_to_border(key),
                 shortcut='Ctrl+Shift+{}'.format(key)
                 ))
 
@@ -914,10 +914,10 @@ class SardesTableView(QTableView):
             self.model().index(row, column),
             QItemSelectionModel.ClearAndSelect)
 
-    def extend_selection_to_limit(self, key):
+    def extend_selection_to_border(self, key):
         """
         Extend the selection adjacent to the current cell to the top, bottom,
-        right or left limit of this table.
+        right or left border of this table.
         """
         current_index = self.selectionModel().currentIndex()
         current_visual_column = (
