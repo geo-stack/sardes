@@ -28,7 +28,7 @@ def test_intervals_extract():
     """Test that the function intervals_extract is working as expected."""
     sequence = [2, 3, 4, 5, 7, 8, 9, 11, 15, 16]
     expected_result = [[2, 5], [7, 9], [11, 11], [15, 16]]
-    assert intervals_extract(sequence) == expected_result
+    assert list(intervals_extract(sequence)) == expected_result
 
 
 if __name__ == "__main__":
