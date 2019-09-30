@@ -62,7 +62,7 @@ def test_dbmanager_init(dbmanager):
 
 def test_dbmanager_connect(dbmanager, dbaccessor, qtbot):
     """
-    Test that the databse connection manager connection to the database is
+    Test that the database connection manager connection to the database is
     working as expected.
     """
     # We ask the manager to connect to the database.
@@ -85,6 +85,8 @@ def test_dbmanager_connect(dbmanager, dbaccessor, qtbot):
         assert len(dbmanager._running_tasks) == 1
     assert not dbmanager.is_connected()
     assert len(dbmanager._running_tasks) == 0
+
+    qtbot.waitUntil(lambda: not dbmanager._db_connection_thread.isRunning())
 
 
 def test_run_tasks_if_posponed(dbmanager, dbaccessor, qtbot):
@@ -117,6 +119,8 @@ def test_run_tasks_if_posponed(dbmanager, dbaccessor, qtbot):
 
     assert len(dbmanager._running_tasks) == 0
     assert returned_values == expected_values
+
+    qtbot.waitUntil(lambda: not dbmanager._db_connection_thread.isRunning())
 
 
 def test_run_tasks_if_busy(dbmanager, dbaccessor, qtbot):
