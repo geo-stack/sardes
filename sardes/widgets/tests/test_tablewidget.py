@@ -19,7 +19,7 @@ import uuid
 # ---- Third party imports
 import pytest
 import pandas as pd
-from pandas.testing import assert_frame_equal, assert_series_equal
+from pandas.testing import assert_frame_equal
 from qtpy.QtCore import Qt
 
 # ---- Local imports
@@ -115,7 +115,7 @@ def tablewidget(qtbot, mocker, tablemodel):
 
 
 # =============================================================================
-# ---- Tests for ObservationWellTableView
+# ---- Tests
 # =============================================================================
 def test_tablewidget_init(tablewidget):
     """Test that SardesTableWidget is initialized correctly."""
@@ -377,6 +377,31 @@ def test_save_edits(tablewidget, qtbot):
         model_index = tableview.model().index(0, i)
         assert model_index.data() == expected_data[i]
         assert tableview.model().get_value_at(model_index) == expected_value[i]
+
+
+def test_select_all_and_clear(tablewidget, qtbot):
+    """
+    Test select all and clear actions.
+    """
+    tableview = tablewidget.tableview
+    selection_model = tablewidget.tableview.selectionModel()
+
+    # Set a current index of the model selection.
+    expected_model_index = tableview.model().index(1, 1)
+    selection_model.setCurrentIndex(
+        expected_model_index, selection_model.Current)
+    assert selection_model.currentIndex() == expected_model_index
+    assert len(selection_model.selectedIndexes()) == 0
+
+    # Select all cells with keyboard shortcut Ctrl+A.
+    qtbot.keyPress(tablewidget, Qt.Key_A, modifier=Qt.ControlModifier)
+    assert selection_model.currentIndex() == expected_model_index
+    assert len(selection_model.selectedIndexes()) == NCOL * len(TABLE_DATAF)
+
+    # Clear all cells with keyboard shortcut Escape.
+    qtbot.keyPress(tablewidget, Qt.Key_Escape)
+    assert selection_model.currentIndex() == expected_model_index
+    assert len(selection_model.selectedIndexes()) == 0
 
 
 if __name__ == "__main__":
