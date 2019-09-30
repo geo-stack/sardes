@@ -141,6 +141,9 @@ FA_ICONS = {
     'select_all': [
         ('mdi.select-all',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'select_clear': [
+        ('mdi.select-off',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'select_row': [
         ('mdi.arrow-expand-horizontal',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],

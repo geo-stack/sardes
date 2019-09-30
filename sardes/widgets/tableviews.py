@@ -790,6 +790,13 @@ class SardesTableView(QTableView):
             triggered=self.selectAll,
             shortcut='Ctrl+A')
 
+        select_clear_action = create_action(
+            self, _("Clear All"),
+            icon='select_clear',
+            tip=_("Clears the selection in the table."),
+            triggered=lambda _: self.selectionModel().clearSelection(),
+            shortcut='Escape')
+
         select_row_action = create_action(
             self, _("Select Row"),
             icon='select_row',
@@ -810,7 +817,8 @@ class SardesTableView(QTableView):
             shortcut='Ctrl+Space')
 
         self._actions['selection'] = [
-            select_all_action, select_row_action, select_column_action]
+            select_all_action, select_clear_action, select_row_action,
+            select_column_action]
         self.addActions(self._actions['selection'])
 
         # Setup move actions.
