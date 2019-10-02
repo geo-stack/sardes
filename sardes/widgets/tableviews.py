@@ -895,6 +895,36 @@ class SardesTableView(QTableView):
             select_column_action]
         self.addActions(self._actions['selection'])
 
+        # Setup sort actions.
+        sort_ascending_action = create_action(
+            self, _("Sort Ascending"),
+            icon='sort_ascending',
+            tip=_("Reorder rows by sorting the data of the current column "
+                  "in ascending order."),
+            triggered=lambda _:
+                self.sort_by_current_column(Qt.AscendingOrder),
+            shortcut="Ctrl+<")
+
+        sort_descending_action = create_action(
+            self, _("Sort Descending"),
+            icon='sort_descending',
+            tip=_("Reorder rows by sorting the data of the current column "
+                  "in descending order."),
+            triggered=lambda _:
+                self.sort_by_current_column(Qt.DescendingOrder),
+            shortcut="Ctrl+>")
+
+        sort_clear_action = create_action(
+            self, _("Clear Sort"),
+            icon='sort_clear',
+            tip=_("Clear all sorts applied to the columns of the table."),
+            triggered=lambda _: self.clear_sort(),
+            shortcut="Ctrl+.")
+
+        self._actions['sort'] = [sort_ascending_action, sort_descending_action,
+                                 sort_clear_action]
+        self.addActions(self._actions['sort'])
+
         # Setup move actions.
         for key in ['Up', 'Down', 'Left', 'Right']:
             self.addAction(create_action(
@@ -1302,6 +1332,11 @@ class SardesTableWidget(SardesPaneWidget):
         # Selection toolbuttons.
         toolbar.addSeparator()
         for action in self.tableview._actions['selection']:
+            toolbar.addAction(action)
+
+        # Sort data toolbuttons.
+        toolbar.addSeparator()
+        for action in self.tableview._actions['sort']:
             toolbar.addAction(action)
 
         # We add a stretcher here so that the columns options button is
