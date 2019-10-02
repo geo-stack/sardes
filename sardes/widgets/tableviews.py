@@ -768,10 +768,10 @@ class SardesTableView(QTableView):
 
     def __init__(self, table_model, parent=None):
         super().__init__(parent)
-        self.setSortingEnabled(True)
+        self.setSortingEnabled(False)
         self.setAlternatingRowColors(True)
         self.setCornerButtonEnabled(True)
-        self.horizontalHeader().setSectionsMovable(True)
+        self.setHorizontalHeader(SardesHeaderView(parent=self))
         self.setEditTriggers(self.NoEditTriggers)
         self.setMouseTracking(True)
 
