@@ -909,6 +909,39 @@ class SardesTableView(QTableView):
                 shortcut='Ctrl+Shift+{}'.format(key)
                 ))
 
+    # ---- Data sorting
+    def get_columns_sorting_state(self):
+        """
+        Return a 2-items tuple where the first item is the logical index
+        of the currently sorted column (this value is -1 if there is None)
+        and the second item is the sorting order (0 for ascending and
+        1 for descending).
+        """
+        return (self.horizontalHeader().sortIndicatorSection(),
+                self.horizontalHeader().sortIndicatorOrder())
+
+    def clear_sort(self):
+        """
+        Clear all sorts applied to the columns of this table.
+        """
+        self.horizontalHeader().clear_sort()
+
+    def sort_by_column(self, column_logical_index, sorting_order):
+        """
+        Sort the rows of this table by ordering the data of the specified
+        column in the specified sorting order.
+        """
+        self.horizontalHeader().sort_by_column(
+            column_logical_index, sorting_order)
+
+    def sort_by_current_column(self, sorting_order):
+        """
+        Sort the rows of this table by ordering the data of the currently
+        selected column, if any, in the specified sorting order.
+        """
+        self.sort_by_column(
+            self.selectionModel().currentIndex().column(), sorting_order)
+
     # ---- Data selection
     def get_selected_rows_data(self):
         """
