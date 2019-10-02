@@ -818,7 +818,7 @@ class SardesTableView(QTableView):
         """
         Setup the various shortcuts available for this tableview.
         """
-        # Edit actions
+        # Setup edit actions.
         edit_item_action = create_action(
             self, _("Edit"),
             icon='edit_database_item',
@@ -856,7 +856,7 @@ class SardesTableView(QTableView):
             edit_item_action, save_edits_action, cancel_edits_action]
         self.addActions(self._actions['edit'])
 
-        # Setup selection actions
+        # Setup selection actions.
         select_all_action = create_action(
             self, _("Select All"),
             icon='select_all',
