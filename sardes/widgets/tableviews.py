@@ -11,18 +11,17 @@
 # ---- Standard imports
 import sys
 from collections import OrderedDict
-import itertools
 
 # ---- Third party imports
 import pandas as pd
 from qtpy.QtCore import (QAbstractTableModel, QEvent, QModelIndex,
                          QSortFilterProxyModel, Qt, QVariant, Signal, Slot,
-                         QItemSelection, QItemSelectionModel)
-from qtpy.QtGui import QColor, QCursor, QKeySequence
+                         QItemSelection, QItemSelectionModel, QRect)
+from qtpy.QtGui import QColor, QCursor
 from qtpy.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox,
-                            QHeaderView, QLineEdit, QMenu, QMessageBox,
+                            QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox,
                             QSpinBox, QStyledItemDelegate, QTableView,
-                            QTextEdit, QToolButton, QLabel)
+                            QTextEdit)
 
 # ---- Local imports
 from sardes.api.panes import SardesPaneWidget
@@ -641,6 +640,7 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, source_model):
         super().__init__()
         self.setSourceModel(source_model)
+        self.setSortCaseSensitivity(False)
 
     # ---- Qt methods override
     def headerData(self, section, orientation, role=Qt.DisplayRole):
@@ -685,6 +685,80 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
 # =============================================================================
 # ---- Table View
 # =============================================================================
+class SardesHeaderView(QHeaderView):
+    """
+    An horizontal header view that allow sorting by columns on double mouse
+    click events (instead of single mouse clicks) and allow to clear the
+    sorting of it's associated table view.
+    """
+
+    def __init__(self, parent, orientation=Qt.Horizontal):
+        super().__init__(orientation, parent)
+        self.setHighlightSections(True)
+        self.setSectionsClickable(True)
+        self.setSectionsMovable(True)
+        self.sectionDoubleClicked.connect(self._handle_section_doubleclick)
+
+        # Sort indicators variables to allow sorting on mouse double click
+        # events instead of single click events.
+        self._sort_indicator_section = -1
+        self._sort_indicator_order = Qt.AscendingOrder
+        self._update_sort_indicator()
+        self.sortIndicatorChanged.connect(self._update_sort_indicator)
+
+    def clear_sort(self):
+        """
+        Clear all sorts applied to the columns of the tabl associated with this
+        header view.
+        """
+        self._sort_indicator_section = -1
+        self._sort_indicator_order = 0
+        self.setSortIndicatorShown(False)
+        self._update_sort_indicator()
+        self.parent().model().sort(-1)
+
+    def sort_by_column(self, section, order):
+        """
+        Sort the rows of the table associated with this header view
+        by ordering the data of the specified section (column) in the
+        specified sorting order.
+        """
+        self._sort_indicator_section = section
+        self._sort_indicator_order = order
+        self._update_sort_indicator()
+        self.setSortIndicatorShown(True)
+        self.parent().sortByColumn(section, order)
+
+    # ---- Utils
+    def visual_rect_at(self, section):
+        """
+        Return the visual rect of for the specified section.
+        """
+        return QRect(self.sectionViewportPosition(section), 0,
+                     self.sectionSize(section), self.size().height())
+
+    # ---- Private methods
+    @Slot(int)
+    def _handle_section_doubleclick(self, section):
+        """
+        Sort data on the column that was double clicked with the mouse.
+        """
+        order = (Qt.AscendingOrder if
+                 section != self._sort_indicator_section else
+                 int(not bool(self._sort_indicator_order)))
+        self.sort_by_column(section, order)
+
+    def _update_sort_indicator(self):
+        """
+        Force the sort indicator section and order to override Qt behaviour
+        on single mouse click.
+        """
+        self.blockSignals(True)
+        self.setSortIndicator(
+            self._sort_indicator_section, self._sort_indicator_order)
+        self.blockSignals(False)
+
+
 class SardesTableView(QTableView):
     """
     Sardes table view class to display and edit the data that are
@@ -694,10 +768,10 @@ class SardesTableView(QTableView):
 
     def __init__(self, table_model, parent=None):
         super().__init__(parent)
-        self.setSortingEnabled(True)
+        self.setSortingEnabled(False)
         self.setAlternatingRowColors(True)
         self.setCornerButtonEnabled(True)
-        self.horizontalHeader().setSectionsMovable(True)
+        self.setHorizontalHeader(SardesHeaderView(parent=self))
         self.setEditTriggers(self.NoEditTriggers)
         self.setMouseTracking(True)
 
@@ -744,7 +818,7 @@ class SardesTableView(QTableView):
         """
         Setup the various shortcuts available for this tableview.
         """
-        # Edit actions
+        # Setup edit actions.
         edit_item_action = create_action(
             self, _("Edit"),
             icon='edit_database_item',
@@ -782,7 +856,7 @@ class SardesTableView(QTableView):
             edit_item_action, save_edits_action, cancel_edits_action]
         self.addActions(self._actions['edit'])
 
-        # Setup selection actions
+        # Setup selection actions.
         select_all_action = create_action(
             self, _("Select All"),
             icon='select_all',
@@ -821,6 +895,36 @@ class SardesTableView(QTableView):
             select_column_action]
         self.addActions(self._actions['selection'])
 
+        # Setup sort actions.
+        sort_ascending_action = create_action(
+            self, _("Sort Ascending"),
+            icon='sort_ascending',
+            tip=_("Reorder rows by sorting the data of the current column "
+                  "in ascending order."),
+            triggered=lambda _:
+                self.sort_by_current_column(Qt.AscendingOrder),
+            shortcut="Ctrl+<")
+
+        sort_descending_action = create_action(
+            self, _("Sort Descending"),
+            icon='sort_descending',
+            tip=_("Reorder rows by sorting the data of the current column "
+                  "in descending order."),
+            triggered=lambda _:
+                self.sort_by_current_column(Qt.DescendingOrder),
+            shortcut="Ctrl+>")
+
+        sort_clear_action = create_action(
+            self, _("Clear Sort"),
+            icon='sort_clear',
+            tip=_("Clear all sorts applied to the columns of the table."),
+            triggered=lambda _: self.clear_sort(),
+            shortcut="Ctrl+.")
+
+        self._actions['sort'] = [sort_ascending_action, sort_descending_action,
+                                 sort_clear_action]
+        self.addActions(self._actions['sort'])
+
         # Setup move actions.
         for key in ['Up', 'Down', 'Left', 'Right']:
             self.addAction(create_action(
@@ -834,6 +938,39 @@ class SardesTableView(QTableView):
                     self.extend_selection_to_border(key),
                 shortcut='Ctrl+Shift+{}'.format(key)
                 ))
+
+    # ---- Data sorting
+    def get_columns_sorting_state(self):
+        """
+        Return a 2-items tuple where the first item is the logical index
+        of the currently sorted column (this value is -1 if there is None)
+        and the second item is the sorting order (0 for ascending and
+        1 for descending).
+        """
+        return (self.horizontalHeader().sortIndicatorSection(),
+                self.horizontalHeader().sortIndicatorOrder())
+
+    def clear_sort(self):
+        """
+        Clear all sorts applied to the columns of this table.
+        """
+        self.horizontalHeader().clear_sort()
+
+    def sort_by_column(self, column_logical_index, sorting_order):
+        """
+        Sort the rows of this table by ordering the data of the specified
+        column in the specified sorting order.
+        """
+        self.horizontalHeader().sort_by_column(
+            column_logical_index, sorting_order)
+
+    def sort_by_current_column(self, sorting_order):
+        """
+        Sort the rows of this table by ordering the data of the currently
+        selected column, if any, in the specified sorting order.
+        """
+        self.sort_by_column(
+            self.selectionModel().currentIndex().column(), sorting_order)
 
     # ---- Data selection
     def get_selected_rows_data(self):
@@ -890,6 +1027,14 @@ class SardesTableView(QTableView):
                 QItemSelection(self.model().index(0, interval[0]),
                                self.model().index(0, interval[1])),
                 QItemSelectionModel.Select | QItemSelectionModel.Columns)
+
+    def get_selected_columns(self):
+        """
+        Return the list of logical indexes corresponding to the columns
+        that are currently selected in the table.
+        """
+        return [index.column() for index in
+                self.selectionModel().selectedColumns()]
 
     def move_current_to_border(self, key):
         """
@@ -1187,6 +1332,11 @@ class SardesTableWidget(SardesPaneWidget):
         # Selection toolbuttons.
         toolbar.addSeparator()
         for action in self.tableview._actions['selection']:
+            toolbar.addAction(action)
+
+        # Sort data toolbuttons.
+        toolbar.addSeparator()
+        for action in self.tableview._actions['sort']:
             toolbar.addAction(action)
 
         # We add a stretcher here so that the columns options button is

@@ -38,6 +38,8 @@ class ObsWellsExplorer(SardesPlugin):
         # from the configs.
         self.tablewidget.restore_table_horiz_header_state(
             self.get_option('horiz_header/state', None))
+        self.tablewidget.tableview.sort_by_column(
+            *self.get_option('horiz_header/sorting', (-1, 0)))
 
         return self.tablewidget
 
@@ -52,3 +54,5 @@ class ObsWellsExplorer(SardesPlugin):
         # horizontal header.
         self.set_option('horiz_header/state',
                         self.tablewidget.get_table_horiz_header_state())
+        self.set_option('horiz_header/sorting',
+                        self.tablewidget.tableview.get_columns_sorting_state())
