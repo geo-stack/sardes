@@ -23,7 +23,8 @@ from sardes.config.gui import ICON_COLOR, GREEN, RED
 
 DIRNAME = os.path.join(__rootdir__, 'ressources', 'icons')
 LOCAL_ICONS = {
-    'master': 'sardes'}
+    'master': 'sardes',
+    'sort_clear': 'sort_clear'}
 
 FA_ICONS = {
     'bug': [
@@ -159,6 +160,12 @@ FA_ICONS = {
     'show_barplot': [
         ('mdi.chart-bar-stacked',),
         {'color': ICON_COLOR}],
+    'sort_ascending': [
+        ('mdi.sort-ascending',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'sort_descending': [
+        ('mdi.sort-descending',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'succes': [
         ('mdi.check-circle-outline',),
         {'color': GREEN, 'scale_factor': 1.3}],
@@ -171,7 +178,6 @@ FA_ICONS = {
     'undo': [
         ('mdi.undo-variant',),
         {'color': ICON_COLOR}],
-
     'warning': [
         ('mdi.alert-circle-outline',),
         {'color': RED, 'scale_factor': 1.3}],
