@@ -998,6 +998,14 @@ class SardesTableView(QTableView):
                                self.model().index(0, interval[1])),
                 QItemSelectionModel.Select | QItemSelectionModel.Columns)
 
+    def get_selected_columns(self):
+        """
+        Return the list of logical indexes corresponding to the columns
+        that are currently selected in the table.
+        """
+        return [index.column() for index in
+                self.selectionModel().selectedColumns()]
+
     def move_current_to_border(self, key):
         """
         Move the currently selected index to the top, bottom, far right or
