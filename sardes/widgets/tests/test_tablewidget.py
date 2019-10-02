@@ -29,58 +29,61 @@ from sardes.widgets.tableviews import (
     StringEditDelegate, NumEditDelegate, BoolEditDelegate)
 
 
-NCOL = 6
-COLUMNS = ['col{}'.format(i) for i in range(NCOL)]
-HEADERS = [_('Column #{}').format(i) for i in range(NCOL)]
-VALUES = [['str1', True, 1.111, 1, 'not editable'],
-          ['str2', False, 2.222, 2, 'not editable'],
-          ['str3', True, 3.333, 3, 'not editable']]
-INDEXES = [uuid.uuid4() for i in range(len(VALUES))]
-TABLE_DATAF = pd.DataFrame(
-    VALUES,
-    index=INDEXES,
-    columns=COLUMNS[:-1]
-    )
-# Note that the sixth column mapped in the table model is
-# missing in the dataframe.
-
-
-class SardesTableModelMock(SardesTableModel):
-    __data_columns_mapper__ = [
-        (col, header) for col, header in zip(COLUMNS, HEADERS)]
-
-    # ---- Public methods
-    def fetch_model_data(self, *args, **kargs):
-        self.set_model_data(deepcopy(TABLE_DATAF))
-
-    def create_delegate_for_column(self, view, column):
-        if column == 'col0':
-            return StringEditDelegate(view, unique_constraint=True)
-        elif column == 'col1':
-            return BoolEditDelegate(view)
-        elif column == 'col2':
-            return NumEditDelegate(view, decimals=3)
-        elif column == 'col3':
-            return NumEditDelegate(view)
-        else:
-            return NotEditableDelegate(view)
-
-    def save_data_edits(self):
-        """
-        Save all data edits to the database.
-        """
-        for edit in self._dataf_edits:
-            if edit.type() == self.ValueChanged:
-                TABLE_DATAF.loc[edit.dataf_index, edit.dataf_column] = (
-                    edit.edited_value)
-        self.fetch_model_data()
-
-
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
+NCOL = 6
+COLUMNS = ['col{}'.format(i) for i in range(NCOL)]
+HEADERS = [_('Column #{}').format(i) for i in range(NCOL)]
+VALUES = [['str1', True, 1.111, 3, 'not editable'],
+          ['str2', False, 2.222, 1, 'not editable'],
+          ['str3', True, 3.333, 2, 'not editable']]
+INDEXES = [uuid.uuid4() for i in range(len(VALUES))]
+
+
 @pytest.fixture
-def tablemodel(qtbot, mocker):
+def TABLE_DATAF():
+    # Note that the sixth column mapped in the table model is
+    # missing in the dataframe.
+    return pd.DataFrame(
+        VALUES,
+        index=INDEXES,
+        columns=COLUMNS[:-1]
+        )
+
+
+@pytest.fixture
+def tablemodel(qtbot, mocker, TABLE_DATAF):
+    class SardesTableModelMock(SardesTableModel):
+        __data_columns_mapper__ = [
+            (col, header) for col, header in zip(COLUMNS, HEADERS)]
+
+        # ---- Public methods
+        def fetch_model_data(self, *args, **kargs):
+            self.set_model_data(deepcopy(TABLE_DATAF))
+
+        def create_delegate_for_column(self, view, column):
+            if column == 'col0':
+                return StringEditDelegate(view, unique_constraint=True)
+            elif column == 'col1':
+                return BoolEditDelegate(view)
+            elif column == 'col2':
+                return NumEditDelegate(view, decimals=3)
+            elif column == 'col3':
+                return NumEditDelegate(view)
+            else:
+                return NotEditableDelegate(view)
+
+        def save_data_edits(self):
+            """
+            Save all data edits to the database.
+            """
+            for edit in self._dataf_edits:
+                if edit.type() == self.ValueChanged:
+                    TABLE_DATAF.loc[edit.dataf_index, edit.dataf_column] = (
+                        edit.edited_value)
+            self.fetch_model_data()
+
     tablemodel = SardesTableModelMock()
     return tablemodel
 
@@ -115,11 +118,27 @@ def tablewidget(qtbot, mocker, tablemodel):
 
 
 # =============================================================================
+# ---- Utils
+# =============================================================================
+def get_values_for_column(model_index):
+    """
+    Return the list of displayed values in the column of the table
+    corresponding to the specified model index.
+    """
+    model = model_index.model()
+    column = model_index.column()
+    return [
+        model.index(row, column).data() for row in range(model.rowCount())]
+
+
+# =============================================================================
 # ---- Tests
 # =============================================================================
-def test_tablewidget_init(tablewidget):
+def test_tablewidget_init(tablewidget, TABLE_DATAF):
     """Test that SardesTableWidget is initialized correctly."""
     tableview = tablewidget.tableview
+    horiz_header = tablewidget.tableview.horizontalHeader()
+    model = tableview.model()
 
     # Assert that the content of the table is as expected.
     assert_frame_equal(tableview.source_model.dataf, TABLE_DATAF)
@@ -131,6 +150,14 @@ def test_tablewidget_init(tablewidget):
     for logical_index in range(tableview.column_count()):
         assert not tableview.horizontalHeader().isSectionHidden(logical_index)
 
+    # Assert that no column is initially selected.
+    assert tableview.get_selected_columns() == []
+
+    # Assert that the data are not initially sorted.
+    assert get_values_for_column(model.index(0, 0)) == ['str1', 'str2', 'str3']
+    assert horiz_header.sortIndicatorOrder() == 0
+    assert horiz_header.sortIndicatorSection() == -1
+
 
 def test_tablewidget_horiz_headers(tablewidget):
     """
@@ -141,7 +168,7 @@ def test_tablewidget_horiz_headers(tablewidget):
         assert header == tableview.model().headerData(i, Qt.Horizontal)
 
 
-def test_tablewidget_vert_headers(tablewidget):
+def test_tablewidget_vert_headers(tablewidget, TABLE_DATAF):
     """
     Test the labels of the table horizontal header.
     """
@@ -153,14 +180,14 @@ def test_tablewidget_vert_headers(tablewidget):
                 TABLE_DATAF.iloc[i, 0])
 
     # Sort rows along the first column.
-    tableview.sortByColumn(0, Qt.DescendingOrder)
+    tableview.sort_by_column(0, Qt.DescendingOrder)
     for i in range(tableview.visible_row_count()):
         assert i + 1 == tableview.model().headerData(i, Qt.Vertical)
         assert (tableview.model().data(tableview.model().index(i, 0)) ==
                 TABLE_DATAF.iloc[-1 - i, 0])
 
 
-def test_tablewidget_row_selection(tablewidget, qtbot):
+def test_tablewidget_row_selection(tablewidget, qtbot, TABLE_DATAF):
     """
     Test the data returned for the currently selected row.
     """
@@ -273,8 +300,8 @@ def test_edit_editable_cell(tablewidget, qtbot):
     """
     tableview = tablewidget.tableview
 
-    expected_data = ['str1', 'Yes', '1.111', '1']
-    expected_value = ['str1', True, 1.111, 1]
+    expected_data = ['str1', 'Yes', '1.111', '3']
+    expected_value = ['str1', True, 1.111, 3]
     expected_edited_data = ['new_str1', 'No', '1.234', '7']
     expected_edited_value = ['new_str1', False, 1.234, 7]
 
@@ -335,8 +362,8 @@ def test_cancel_edits(tablewidget, qtbot):
     assert tableview.model().has_unsaved_data_edits() is True
 
     # Cancel all edits.
-    expected_data = ['str1', 'Yes', '1.111', '1']
-    expected_value = ['str1', True, 1.111, 1]
+    expected_data = ['str1', 'Yes', '1.111', '3']
+    expected_value = ['str1', True, 1.111, 3]
 
     tableview.model().cancel_all_data_edits()
     for i in range(4):
@@ -379,7 +406,7 @@ def test_save_edits(tablewidget, qtbot):
         assert tableview.model().get_value_at(model_index) == expected_value[i]
 
 
-def test_select_all_and_clear(tablewidget, qtbot):
+def test_select_all_and_clear(tablewidget, qtbot, TABLE_DATAF):
     """
     Test select all and clear actions.
     """
@@ -431,7 +458,7 @@ def test_select_row(tablewidget, qtbot):
     assert [index.row() for index in selection_model.selectedRows()] == [0, 2]
 
 
-def test_select_column(tablewidget, qtbot):
+def test_select_column(tablewidget, qtbot, TABLE_DATAF):
     """
     Test select column action.
     """
@@ -455,11 +482,10 @@ def test_select_column(tablewidget, qtbot):
     qtbot.keyPress(tablewidget, Qt.Key_Space, modifier=Qt.ControlModifier)
     assert selection_model.currentIndex() == expected_index
     assert len(selection_model.selectedIndexes()) == len(TABLE_DATAF) * 2
-    assert ([index.column() for index in selection_model.selectedColumns()] ==
-            [1, 3])
+    assert tablewidget.tableview.get_selected_columns() == [1, 3]
 
 
-def test_move_current_to_border(tablewidget, qtbot):
+def test_move_current_to_border(tablewidget, qtbot, TABLE_DATAF):
     """
     Test the shortcuts to move the current cell to the border of the table with
     the Ctrl + Arrow key shortcuts.
@@ -539,6 +565,104 @@ def test_extend_selection_to_border(tablewidget, qtbot):
     assert len(selected_indexes) == len(expected_selected_indexes)
     for index in expected_selected_indexes:
         assert model.index(*index) in selected_indexes
+
+
+def test_horiz_header_single_mouse_click(tablewidget, qtbot):
+    """
+    Test that single mouse clicking on a header section select the
+    corresponding column and do NOT sort the data.
+    """
+    tableview = tablewidget.tableview
+    horiz_header = tablewidget.tableview.horizontalHeader()
+    model = tableview.model()
+
+    # Single mouse click on the first section of the horizontal header
+    # and assert that the column was selected and that NO sorting was done.
+    visual_rect = horiz_header.visual_rect_at(0)
+    qtbot.mouseClick(
+        horiz_header.viewport(), Qt.LeftButton, pos=visual_rect.center())
+
+    assert tableview.get_selected_columns() == [0]
+    assert get_values_for_column(model.index(0, 0)) == ['str1', 'str2', 'str3']
+    assert horiz_header.sortIndicatorOrder() == 0
+    assert horiz_header.sortIndicatorSection() == -1
+
+
+def test_horiz_header_double_mouse_click(tablewidget, qtbot):
+    """
+    Test that double mouse clicking on a header section sort the data
+    according to that column (instead of single clicking).
+    """
+    tableview = tablewidget.tableview
+    horiz_header = tablewidget.tableview.horizontalHeader()
+    model = tableview.model()
+
+    clicked_column_index = 3
+    visual_rect = horiz_header.visual_rect_at(clicked_column_index)
+
+    # We need first to single mouse click to select the column.
+    qtbot.mouseClick(
+        horiz_header.viewport(), Qt.LeftButton, pos=visual_rect.center())
+    assert tableview.get_selected_columns() == [clicked_column_index]
+
+    # Double mouse click on the fourth section and assert that the
+    # data were sorted in ASCENDING order according to that column.
+    qtbot. mouseDClick(
+        horiz_header.viewport(), Qt.LeftButton, pos=visual_rect.center())
+
+    assert tableview.get_selected_columns() == [clicked_column_index]
+    assert get_values_for_column(model.index(0, 0)) == ['str2', 'str3', 'str1']
+    assert horiz_header.sortIndicatorOrder() == 0
+    assert horiz_header.sortIndicatorSection() == clicked_column_index
+
+    # Double mouse click again on the fourth section and assert that the
+    # data were sorted in DESCENDING order according to that column.
+    qtbot. mouseDClick(
+        horiz_header.viewport(), Qt.LeftButton, pos=visual_rect.center())
+
+    assert tableview.get_selected_columns() == [clicked_column_index]
+    assert get_values_for_column(model.index(0, 0)) == ['str1', 'str3', 'str2']
+    assert horiz_header.sortIndicatorOrder() == 1
+    assert horiz_header.sortIndicatorSection() == clicked_column_index
+
+
+def test_column_sorting(tablewidget, qtbot):
+    """
+    Test that sorting by column work as expected.
+    """
+    tableview = tablewidget.tableview
+    selection_model = tablewidget.tableview.selectionModel()
+    horiz_header = tablewidget.tableview.horizontalHeader()
+    model = tableview.model()
+
+    # Select a cell in column 4 of the table.
+    selected_column_index = 3
+    selected_model_index = model.index(1, selected_column_index)
+    selection_model.setCurrentIndex(
+        selected_model_index, selection_model.SelectCurrent)
+    assert selection_model.currentIndex() == selected_model_index
+    assert len(selection_model.selectedIndexes()) == 1
+
+    # Sort in ascending order according to the current column using the
+    # keyboard shorcut Ctrl+<.
+    qtbot.keyPress(tableview, Qt.Key_Less, modifier=Qt.ControlModifier)
+    assert get_values_for_column(model.index(0, 0)) == ['str2', 'str3', 'str1']
+    assert horiz_header.sortIndicatorOrder() == 0
+    assert horiz_header.sortIndicatorSection() == selected_column_index
+
+    # Sort in descending order according to the current column using the
+    # keyboard shorcut Ctrl+>.
+    qtbot.keyPress(tableview, Qt.Key_Greater, modifier=Qt.ControlModifier)
+    assert get_values_for_column(model.index(0, 0)) == ['str1', 'str3', 'str2']
+    assert horiz_header.sortIndicatorOrder() == 1
+    assert horiz_header.sortIndicatorSection() == selected_column_index
+
+    # Clear sorting.
+    qtbot.keyPress(tableview, Qt.Key_Period, modifier=Qt.ControlModifier)
+    tableview._actions['sort'][-1].trigger()
+    assert get_values_for_column(model.index(0, 0)) == ['str1', 'str2', 'str3']
+    assert horiz_header.sortIndicatorOrder() == 0
+    assert horiz_header.sortIndicatorSection() == -1
 
 
 if __name__ == "__main__":
