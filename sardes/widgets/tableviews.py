@@ -11,18 +11,17 @@
 # ---- Standard imports
 import sys
 from collections import OrderedDict
-import itertools
 
 # ---- Third party imports
 import pandas as pd
 from qtpy.QtCore import (QAbstractTableModel, QEvent, QModelIndex,
                          QSortFilterProxyModel, Qt, QVariant, Signal, Slot,
-                         QItemSelection, QItemSelectionModel)
-from qtpy.QtGui import QColor, QCursor, QKeySequence
+                         QItemSelection, QItemSelectionModel, QRect)
+from qtpy.QtGui import QColor, QCursor
 from qtpy.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox,
-                            QHeaderView, QLineEdit, QMenu, QMessageBox,
+                            QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox,
                             QSpinBox, QStyledItemDelegate, QTableView,
-                            QTextEdit, QToolButton, QLabel)
+                            QTextEdit)
 
 # ---- Local imports
 from sardes.api.panes import SardesPaneWidget
@@ -685,6 +684,80 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
 # =============================================================================
 # ---- Table View
 # =============================================================================
+class SardesHeaderView(QHeaderView):
+    """
+    An horizontal header view that allow sorting by columns on double mouse
+    click events (instead of single mouse clicks) and allow to clear the
+    sorting of it's associated table view.
+    """
+
+    def __init__(self, parent, orientation=Qt.Horizontal):
+        super().__init__(orientation, parent)
+        self.setHighlightSections(True)
+        self.setSectionsClickable(True)
+        self.setSectionsMovable(True)
+        self.sectionDoubleClicked.connect(self._handle_section_doubleclick)
+
+        # Sort indicators variables to allow sorting on mouse double click
+        # events instead of single click events.
+        self._sort_indicator_section = -1
+        self._sort_indicator_order = Qt.AscendingOrder
+        self._update_sort_indicator()
+        self.sortIndicatorChanged.connect(self._update_sort_indicator)
+
+    def clear_sort(self):
+        """
+        Clear all sorts applied to the columns of the tabl associated with this
+        header view.
+        """
+        self._sort_indicator_section = -1
+        self._sort_indicator_order = 0
+        self.setSortIndicatorShown(False)
+        self._update_sort_indicator()
+        self.parent().model().sort(-1)
+
+    def sort_by_column(self, section, order):
+        """
+        Sort the rows of the table associated with this header view
+        by ordering the data of the specified section (column) in the
+        specified sorting order.
+        """
+        self._sort_indicator_section = section
+        self._sort_indicator_order = order
+        self._update_sort_indicator()
+        self.setSortIndicatorShown(True)
+        self.parent().sortByColumn(section, order)
+
+    # ---- Utils
+    def visual_rect_at(self, section):
+        """
+        Return the visual rect of for the specified section.
+        """
+        return QRect(self.sectionViewportPosition(section), 0,
+                     self.sectionSize(section), self.size().height())
+
+    # ---- Private methods
+    @Slot(int)
+    def _handle_section_doubleclick(self, section):
+        """
+        Sort data on the column that was double clicked with the mouse.
+        """
+        order = (Qt.AscendingOrder if
+                 section != self._sort_indicator_section else
+                 int(not bool(self._sort_indicator_order)))
+        self.sort_by_column(section, order)
+
+    def _update_sort_indicator(self):
+        """
+        Force the sort indicator section and order to override Qt behaviour
+        on single mouse click.
+        """
+        self.blockSignals(True)
+        self.setSortIndicator(
+            self._sort_indicator_section, self._sort_indicator_order)
+        self.blockSignals(False)
+
+
 class SardesTableView(QTableView):
     """
     Sardes table view class to display and edit the data that are
