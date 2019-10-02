@@ -640,6 +640,7 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
     def __init__(self, source_model):
         super().__init__()
         self.setSourceModel(source_model)
+        self.setSortCaseSensitivity(False)
 
     # ---- Qt methods override
     def headerData(self, section, orientation, role=Qt.DisplayRole):
