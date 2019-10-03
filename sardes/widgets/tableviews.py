@@ -1136,6 +1136,39 @@ class SardesTableView(QTableView):
             selection, QItemSelectionModel.Select)
 
     # ---- Utilities
+    def copy_to_clipboard(self):
+        """
+        Put a copy of the selection on the Clipboard.
+
+        When the selection is composed of nonadjacent cells, the selected
+        cells are collapsed together and their content is pasted as a single
+        rectangle that *must* be contiguous, or else an error message is
+        shown to the user.
+
+        Also see:
+        # https://docs.microsoft.com/en-us/office/troubleshoot/excel/command-cannot-be-used-on-selections
+        """
+        selected_indexes = sorted(
+            self.selectionModel().selectedIndexes(), key=lambda v: v.row())
+        selected_columns = [
+            sorted([index.column() for index in group]) for key, group in
+            itertools.groupby(selected_indexes, lambda v: v.row())]
+
+        if not selected_columns[1:] == selected_columns[:-1]:
+            QMessageBox.information(
+                self, __appname__,
+                _("This function cannot be used with multiple selections."),
+                buttons=QMessageBox.Ok
+                )
+        else:
+            collapsed_selection = [
+                sorted(group, key=lambda v: v.column()) for key, group in
+                itertools.groupby(selected_indexes, lambda v: v.row())]
+            selected_text = '\n'.join(
+                '\t'.join(index.data() for index in row)
+                for row in collapsed_selection)
+            QApplication.clipboard().setText(selected_text)
+
     def row_count(self):
         """Return this table number of visible row."""
         return self.proxy_model.rowCount()
