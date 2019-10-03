@@ -824,8 +824,7 @@ class SardesTableView(QTableView):
             icon='edit_database_item',
             tip=_("Edit the currently focused item in this table."),
             triggered=self._edit_current_item,
-            shortcut=['Ctrl+Enter', 'Ctrl+Return'],
-            context=Qt.WindowShortcut)
+            shortcut=['Ctrl+Enter', 'Ctrl+Return'])
         self.selectionModel().currentChanged.connect(
             lambda current, previous: edit_item_action.setEnabled(
                 self.is_data_editable_at(current)))
@@ -835,9 +834,7 @@ class SardesTableView(QTableView):
             icon='commit_changes',
             tip=_('Save all edits made to the table in the database.'),
             triggered=lambda: self._save_data_edits(force=False),
-            shortcut='Ctrl+S',
-            context=Qt.WindowShortcut
-            )
+            shortcut='Ctrl+S')
         save_edits_action.setEnabled(False)
         self.sig_data_edited.connect(save_edits_action.setEnabled)
 
@@ -846,9 +843,7 @@ class SardesTableView(QTableView):
             icon='cancel_changes',
             tip=_('Cancel all edits made to the table since last save.'),
             triggered=self._cancel_data_edits,
-            shortcut='Ctrl+Delete',
-            context=Qt.WindowShortcut
-            )
+            shortcut='Ctrl+Delete')
         cancel_edits_action.setEnabled(False)
         self.sig_data_edited.connect(cancel_edits_action.setEnabled)
 
