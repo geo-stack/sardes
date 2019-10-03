@@ -56,6 +56,9 @@ FA_ICONS = {
     'commit_changes': [
         ('mdi.check-circle-outline',),
         {'color': GREEN, 'scale_factor': 1.2}],
+    'copy_clipboard': [
+        ('mdi.content-copy',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'erase_data': [
         ('mdi.eraser',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
