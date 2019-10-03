@@ -21,12 +21,13 @@ import pytest
 import pandas as pd
 from pandas.testing import assert_frame_equal
 from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QApplication
 
 # ---- Local imports
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableWidget, SardesTableModel, NotEditableDelegate,
-    StringEditDelegate, NumEditDelegate, BoolEditDelegate)
+    StringEditDelegate, NumEditDelegate, BoolEditDelegate, QMessageBox)
 
 
 # =============================================================================
@@ -53,7 +54,7 @@ def TABLE_DATAF():
 
 
 @pytest.fixture
-def tablemodel(qtbot, mocker, TABLE_DATAF):
+def tablemodel(qtbot, TABLE_DATAF):
     class SardesTableModelMock(SardesTableModel):
         __data_columns_mapper__ = [
             (col, header) for col, header in zip(COLUMNS, HEADERS)]
@@ -89,7 +90,7 @@ def tablemodel(qtbot, mocker, TABLE_DATAF):
 
 
 @pytest.fixture
-def tablewidget(qtbot, mocker, tablemodel):
+def tablewidget(qtbot, tablemodel):
     tablewidget = SardesTableWidget(tablemodel)
 
     # Setup the width of the table so that all columns are shown.
@@ -663,6 +664,44 @@ def test_column_sorting(tablewidget, qtbot):
     assert get_values_for_column(model.index(0, 0)) == ['str1', 'str2', 'str3']
     assert horiz_header.sortIndicatorOrder() == 0
     assert horiz_header.sortIndicatorSection() == -1
+
+
+def test_copy_to_clipboard(tablewidget, qtbot, mocker):
+    """
+    Test that the function to copy the content of the selected cells to the
+    clipboard is working as expected.
+    """
+    tableview = tablewidget.tableview
+    selection_model = tablewidget.tableview.selectionModel()
+    model = tablewidget.tableview.model()
+    mocker.patch.object(QMessageBox, 'information')
+    QApplication.clipboard().clear()
+
+    # Try to copy something to the clipboard when nothing is selected
+    # in the table.
+    qtbot.keyPress(tableview, Qt.Key_C, modifier=Qt.ControlModifier)
+    assert QApplication.clipboard().text() == ''
+
+    # Do an invalid selection in the table and copy the selection to the
+    # clipboard using the keyboard shorcut Ctrl+S.
+    coord_to_select = [(0, 0), (0, 1), (2, 0), (2, 2)]
+    for coord in coord_to_select:
+        selection_model.select(model.index(*coord), selection_model.Select)
+    qtbot.keyPress(tableview, Qt.Key_C, modifier=Qt.ControlModifier)
+
+    assert QApplication.clipboard().text() == ''
+
+    # Clear the selection of the table.
+    qtbot.keyPress(tableview, Qt.Key_Escape)
+
+    # Do a valid selection in the table and copy the selection to the
+    # clipboard using the keyboard shorcut Ctrl+S.
+    coord_to_select = [(0, 0), (0, 2), (2, 0), (2, 2)]
+    for coord in coord_to_select:
+        selection_model.select(model.index(*coord), selection_model.Select)
+    qtbot.keyPress(tableview, Qt.Key_C, modifier=Qt.ControlModifier)
+
+    assert QApplication.clipboard().text() == 'str1\t1.111\nstr3\t3.333'
 
 
 if __name__ == "__main__":

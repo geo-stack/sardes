@@ -11,6 +11,7 @@
 # ---- Standard imports
 import sys
 from collections import OrderedDict
+import itertools
 
 # ---- Third party imports
 import pandas as pd
@@ -24,6 +25,7 @@ from qtpy.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox,
                             QTextEdit)
 
 # ---- Local imports
+from sardes import __appname__
 from sardes.api.panes import SardesPaneWidget
 from sardes.config.locale import _
 from sardes.config.gui import get_iconsize
@@ -818,14 +820,25 @@ class SardesTableView(QTableView):
         """
         Setup the various shortcuts available for this tableview.
         """
+        # Setup IO actions
+        copy_to_clipboard_action = create_action(
+            self, _("Copy"),
+            icon='copy_clipboard',
+            tip=_("Put a copy of the selection on the Clipboard "
+                  "so you can paste it somewhere else."),
+            triggered=self.copy_to_clipboard,
+            shortcut='Ctrl+C')
+
+        self._actions['io'] = [copy_to_clipboard_action]
+        self.addActions(self._actions['io'])
+
         # Setup edit actions.
         edit_item_action = create_action(
             self, _("Edit"),
             icon='edit_database_item',
             tip=_("Edit the currently focused item in this table."),
             triggered=self._edit_current_item,
-            shortcut=['Ctrl+Enter', 'Ctrl+Return'],
-            context=Qt.WindowShortcut)
+            shortcut=['Ctrl+Enter', 'Ctrl+Return'])
         self.selectionModel().currentChanged.connect(
             lambda current, previous: edit_item_action.setEnabled(
                 self.is_data_editable_at(current)))
@@ -835,9 +848,7 @@ class SardesTableView(QTableView):
             icon='commit_changes',
             tip=_('Save all edits made to the table in the database.'),
             triggered=lambda: self._save_data_edits(force=False),
-            shortcut='Ctrl+S',
-            context=Qt.WindowShortcut
-            )
+            shortcut='Ctrl+S')
         save_edits_action.setEnabled(False)
         self.sig_data_edited.connect(save_edits_action.setEnabled)
 
@@ -846,9 +857,7 @@ class SardesTableView(QTableView):
             icon='cancel_changes',
             tip=_('Cancel all edits made to the table since last save.'),
             triggered=self._cancel_data_edits,
-            shortcut='Ctrl+Delete',
-            context=Qt.WindowShortcut
-            )
+            shortcut='Ctrl+Delete')
         cancel_edits_action.setEnabled(False)
         self.sig_data_edited.connect(cancel_edits_action.setEnabled)
 
@@ -1141,6 +1150,39 @@ class SardesTableView(QTableView):
             selection, QItemSelectionModel.Select)
 
     # ---- Utilities
+    def copy_to_clipboard(self):
+        """
+        Put a copy of the selection on the Clipboard.
+
+        When the selection is composed of nonadjacent cells, the selected
+        cells are collapsed together and their content is pasted as a single
+        rectangle that *must* be contiguous, or else an error message is
+        shown to the user.
+
+        Also see:
+        # https://docs.microsoft.com/en-us/office/troubleshoot/excel/command-cannot-be-used-on-selections
+        """
+        selected_indexes = sorted(
+            self.selectionModel().selectedIndexes(), key=lambda v: v.row())
+        selected_columns = [
+            sorted([index.column() for index in group]) for key, group in
+            itertools.groupby(selected_indexes, lambda v: v.row())]
+
+        if not selected_columns[1:] == selected_columns[:-1]:
+            QMessageBox.information(
+                self, __appname__,
+                _("This function cannot be used with multiple selections."),
+                buttons=QMessageBox.Ok
+                )
+        else:
+            collapsed_selection = [
+                sorted(group, key=lambda v: v.column()) for key, group in
+                itertools.groupby(selected_indexes, lambda v: v.row())]
+            selected_text = '\n'.join(
+                '\t'.join(index.data() for index in row)
+                for row in collapsed_selection)
+            QApplication.clipboard().setText(selected_text)
+
     def row_count(self):
         """Return this table number of visible row."""
         return self.proxy_model.rowCount()
@@ -1227,13 +1269,12 @@ class SardesTableView(QTableView):
         available for the cell.
         """
         menu = QMenu(self)
-
-        for action in self._actions['edit']:
-            menu.addAction(action)
-        menu.addSeparator()
-        for action in self._actions['selection']:
-            menu.addAction(action)
-
+        sections = list(self._actions.keys())
+        for section in sections:
+            for action in self._actions[section]:
+                menu.addAction(action)
+            if section != sections[-1]:
+                menu.addSeparator()
         menu.popup(QCursor.pos())
 
     def _edit_current_item(self):
@@ -1325,19 +1366,12 @@ class SardesTableWidget(SardesPaneWidget):
         super()._setup_upper_toolbar()
         toolbar = self.get_upper_toolbar()
 
-        # Edit toolbuttons.
-        for action in self.tableview._actions['edit']:
-            toolbar.addAction(action)
-
-        # Selection toolbuttons.
-        toolbar.addSeparator()
-        for action in self.tableview._actions['selection']:
-            toolbar.addAction(action)
-
-        # Sort data toolbuttons.
-        toolbar.addSeparator()
-        for action in self.tableview._actions['sort']:
-            toolbar.addAction(action)
+        sections = list(self.tableview._actions.keys())
+        for section in sections:
+            for action in self.tableview._actions[section]:
+                toolbar.addAction(action)
+            if section != sections[-1]:
+                toolbar.addSeparator()
 
         # We add a stretcher here so that the columns options button is
         # aligned to the right side of the toolbar.
