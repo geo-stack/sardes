@@ -360,7 +360,6 @@ def except_hook(cls, exception, traceback):
     See this StackOverflow answer for more details :
     https://stackoverflow.com/a/33741755/4481445
     """
-
     sys.__excepthook__(cls, exception, traceback)
 
 
