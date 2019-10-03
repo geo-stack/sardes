@@ -1319,19 +1319,12 @@ class SardesTableWidget(SardesPaneWidget):
         super()._setup_upper_toolbar()
         toolbar = self.get_upper_toolbar()
 
-        # Edit toolbuttons.
-        for action in self.tableview._actions['edit']:
-            toolbar.addAction(action)
-
-        # Selection toolbuttons.
-        toolbar.addSeparator()
-        for action in self.tableview._actions['selection']:
-            toolbar.addAction(action)
-
-        # Sort data toolbuttons.
-        toolbar.addSeparator()
-        for action in self.tableview._actions['sort']:
-            toolbar.addAction(action)
+        sections = list(self.tableview._actions.keys())
+        for section in sections:
+            for action in self.tableview._actions[section]:
+                toolbar.addAction(action)
+            if section != sections[-1]:
+                toolbar.addSeparator()
 
         # We add a stretcher here so that the columns options button is
         # aligned to the right side of the toolbar.
