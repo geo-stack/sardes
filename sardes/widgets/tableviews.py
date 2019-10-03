@@ -1222,13 +1222,12 @@ class SardesTableView(QTableView):
         available for the cell.
         """
         menu = QMenu(self)
-
-        for action in self._actions['edit']:
-            menu.addAction(action)
-        menu.addSeparator()
-        for action in self._actions['selection']:
-            menu.addAction(action)
-
+        sections = list(self._actions.keys())
+        for section in sections:
+            for action in self._actions[section]:
+                menu.addAction(action)
+            if section != sections[-1]:
+                menu.addSeparator()
         menu.popup(QCursor.pos())
 
     def _edit_current_item(self):
