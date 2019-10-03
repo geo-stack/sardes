@@ -11,6 +11,7 @@
 # ---- Standard imports
 import sys
 from collections import OrderedDict
+import itertools
 
 # ---- Third party imports
 import pandas as pd
@@ -24,6 +25,7 @@ from qtpy.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox,
                             QTextEdit)
 
 # ---- Local imports
+from sardes import __appname__
 from sardes.api.panes import SardesPaneWidget
 from sardes.config.locale import _
 from sardes.config.gui import get_iconsize
@@ -818,6 +820,18 @@ class SardesTableView(QTableView):
         """
         Setup the various shortcuts available for this tableview.
         """
+        # Setup IO actions
+        copy_to_clipboard_action = create_action(
+            self, _("Copy"),
+            icon='copy_clipboard',
+            tip=_("Put a copy of the selection on the Clipboard "
+                  "so you can paste it somewhere else."),
+            triggered=self.copy_to_clipboard,
+            shortcut='Ctrl+C')
+
+        self._actions['io'] = [copy_to_clipboard_action]
+        self.addActions(self._actions['io'])
+
         # Setup edit actions.
         edit_item_action = create_action(
             self, _("Edit"),
