@@ -366,5 +366,9 @@ def except_hook(cls, exception, traceback):
 if __name__ == '__main__':
     sys.excepthook = except_hook
     main = MainWindow()
+
+    from PyQt5.QtWidgets import QStyleFactory
+    app.setStyle(QStyleFactory.create('WindowsVista'))
+
     main.show()
     sys.exit(app.exec_())
