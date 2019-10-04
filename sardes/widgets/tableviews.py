@@ -861,8 +861,18 @@ class SardesTableView(QTableView):
         cancel_edits_action.setEnabled(False)
         self.sig_data_edited.connect(cancel_edits_action.setEnabled)
 
+        undo_edits_action = create_action(
+            self, _("Undo"),
+            icon='undo',
+            tip=_('Undo last edit made to the table.'),
+            triggered=self._undo_last_data_edit,
+            shortcut='Ctrl+Z')
+        undo_edits_action.setEnabled(False)
+        self.sig_data_edited.connect(undo_edits_action.setEnabled)
+
         self._actions['edit'] = [
-            edit_item_action, save_edits_action, cancel_edits_action]
+            edit_item_action, save_edits_action, cancel_edits_action,
+            undo_edits_action]
         self.addActions(self._actions['edit'])
 
         # Setup selection actions.
@@ -1297,6 +1307,13 @@ class SardesTableView(QTableView):
         since last save.
         """
         self.model().cancel_all_data_edits()
+
+    def _undo_last_data_edit(self):
+        """
+        Undo the last data edits that was added to the table.
+        An update of the view is forced if  update_model_view is True.
+        """
+        self.model().undo_last_data_edit()
 
     def _save_data_edits(self, force=True):
         """
