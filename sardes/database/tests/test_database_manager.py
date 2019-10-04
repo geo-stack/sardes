@@ -24,7 +24,7 @@ from sardes.database.accessor_demo import DatabaseAccessorDemo
 
 
 def _do_something(some_value):
-    sleep(0.3)
+    sleep(0.5)
     return some_value,
 
 
@@ -176,6 +176,7 @@ def test_run_tasks_if_busy(dbmanager, dbaccessor, qtbot):
 
     # We now wait for the worker to finish and assert that all tasks have
     # been executed as expected.
+    qtbot.wait(0.5 * 2.5 * 1000)
     qtbot.waitUntil(lambda: not dbmanager._db_connection_thread.isRunning(),
                     timeout=3000)
     assert len(dbmanager._queued_tasks) == 0
