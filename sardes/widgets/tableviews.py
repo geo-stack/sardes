@@ -595,7 +595,7 @@ class SardesTableModelBase(QAbstractTableModel):
                 break
 
         if update_model_view:
-            self.dataChanged.emit(edit.model_index, edit.model_index)
+            self.dataChanged.emit(last_edit.model_index, last_edit.model_index)
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
 
