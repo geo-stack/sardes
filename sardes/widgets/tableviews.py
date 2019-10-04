@@ -12,17 +12,20 @@
 import sys
 from collections import OrderedDict
 import itertools
+from math import floor, ceil
 
 # ---- Third party imports
 import pandas as pd
 from qtpy.QtCore import (QAbstractTableModel, QEvent, QModelIndex,
                          QSortFilterProxyModel, Qt, QVariant, Signal, Slot,
-                         QItemSelection, QItemSelectionModel, QRect)
-from qtpy.QtGui import QColor, QCursor
+                         QItemSelection, QItemSelectionModel, QRect,
+                         )
+from qtpy.QtGui import QColor, QCursor, QPen
 from qtpy.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox,
                             QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox,
                             QSpinBox, QStyledItemDelegate, QTableView,
-                            QTextEdit)
+                            QTextEdit, QListView, QStyle, QStyleOption,
+                            )
 
 # ---- Local imports
 from sardes import __appname__
