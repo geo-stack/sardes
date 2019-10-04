@@ -291,7 +291,7 @@ def test_edit_non_editable_cell(tablewidget, qtbot):
     assert isinstance(item_delegate, NotEditableDelegate)
 
     # Try to edit the content of the selected cell.
-    qtbot.keyPress(tableview, Qt.Key_Enter, modifier=Qt.ControlModifier)
+    qtbot.keyPress(tableview, Qt.Key_Enter)
     assert tableview.state() != tableview.EditingState
 
 
@@ -318,7 +318,7 @@ def test_edit_editable_cell(tablewidget, qtbot):
         assert model_index.data() == expected_data[i]
 
         # Edit the value of the cell and cancel the edit.
-        qtbot.keyPress(tableview, Qt.Key_Enter, modifier=Qt.ControlModifier)
+        qtbot.keyPress(tableview, Qt.Key_Enter)
 
         assert tableview.state() == tableview.EditingState
         qtbot.keyClicks(item_delegate.editor, expected_edited_data[i])
@@ -330,7 +330,7 @@ def test_edit_editable_cell(tablewidget, qtbot):
         assert len(tableview.source_model._dataf_edits) == i
 
         # Edit the value of the cell and accept the edit.
-        qtbot.keyPress(tableview, Qt.Key_Enter, modifier=Qt.ControlModifier)
+        qtbot.keyPress(tableview, Qt.Key_Enter)
 
         assert tableview.state() == tableview.EditingState
         qtbot.keyClicks(item_delegate.editor, expected_edited_data[i])
