@@ -193,7 +193,7 @@ def test_tablewidget_row_selection(tablewidget, qtbot, TABLE_DATAF):
     Test the data returned for the currently selected row.
     """
     tableview = tablewidget.tableview
-    assert tableview.get_selected_row_data() is None
+    assert tableview.get_current_row_data() is None
 
     # Select the rows of table one after the other.
     for row in range(len(TABLE_DATAF)):
@@ -202,7 +202,7 @@ def test_tablewidget_row_selection(tablewidget, qtbot, TABLE_DATAF):
         qtbot.mouseClick(
             tableview.viewport(), Qt.LeftButton, pos=visual_rect.center())
 
-        assert_frame_equal(tableview.get_selected_row_data(),
+        assert_frame_equal(tableview.get_current_row_data(),
                            TABLE_DATAF.iloc[[row]])
 
 
