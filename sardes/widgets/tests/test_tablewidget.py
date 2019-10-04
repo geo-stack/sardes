@@ -375,6 +375,32 @@ def test_cancel_edits(tablewidget, qtbot):
     assert len(tableview.source_model._dataf_edits) == 0
 
 
+def test_undo_edits(tablewidget, qtbot):
+    """
+    Test undo edit action in table view.
+    """
+    tableview = tablewidget.tableview
+
+    # Do some edits to the table's data programmatically in the first row
+    # of the table.
+    expected_data = ['new_str1', 'No', '1.234', '7']
+    expected_value = ['new_str1', False, 1.234, 7]
+    for i in range(4):
+        model_index = tableview.model().index(0, i)
+        tableview.model().set_data_edits_at(model_index, expected_value[i])
+        assert model_index.data() == expected_data[i]
+        assert tableview.model().get_value_at(model_index) == expected_value[i]
+
+    # Undo the edits one by one with keyboard shortcut Ctrl+Z.
+    original_data = ['str1', 'Yes', '1.111', '3', 'not editable']
+    original_value = ['str1', True, 1.111, 3, 'not editable']
+    for i in reversed(range(4)):
+        qtbot.keyPress(tablewidget, Qt.Key_Z, modifier=Qt.ControlModifier)
+        model_index = tableview.model().index(0, i)
+        assert model_index.data() == original_data[i]
+        assert tableview.model().get_value_at(model_index) == original_value[i]
+
+
 def test_save_edits(tablewidget, qtbot):
     """
     Test saving all edits made to the table's data.

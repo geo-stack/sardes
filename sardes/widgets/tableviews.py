@@ -575,7 +575,7 @@ class SardesTableModelBase(QAbstractTableModel):
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
         self.dataChanged.emit(model_index, model_index)
 
-    def undo_last_data_edits(self, update_model_view=True):
+    def undo_last_data_edit(self, update_model_view=True):
         """
         Undo the last data edits that was added to the stack.
         An update of the view is forced if  update_model_view is True.
@@ -595,7 +595,7 @@ class SardesTableModelBase(QAbstractTableModel):
                 break
 
         if update_model_view:
-            self.dataChanged.emit(edit.model_index, edit.model_index)
+            self.dataChanged.emit(last_edit.model_index, last_edit.model_index)
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
 
@@ -680,8 +680,8 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
         self.sourceModel().set_data_edits_at(
             self.mapToSource(proxy_index), value)
 
-    def undo_last_data_edits(self, update_model_view=True):
-        self.sourceModel().undo_last_data_edits(update_model_view)
+    def undo_last_data_edit(self, update_model_view=True):
+        self.sourceModel().undo_last_data_edit(update_model_view)
 
 
 # =============================================================================
@@ -861,8 +861,18 @@ class SardesTableView(QTableView):
         cancel_edits_action.setEnabled(False)
         self.sig_data_edited.connect(cancel_edits_action.setEnabled)
 
+        undo_edits_action = create_action(
+            self, _("Undo"),
+            icon='undo',
+            tip=_('Undo last edit made to the table.'),
+            triggered=self._undo_last_data_edit,
+            shortcut='Ctrl+Z')
+        undo_edits_action.setEnabled(False)
+        self.sig_data_edited.connect(undo_edits_action.setEnabled)
+
         self._actions['edit'] = [
-            edit_item_action, save_edits_action, cancel_edits_action]
+            edit_item_action, save_edits_action, cancel_edits_action,
+            undo_edits_action]
         self.addActions(self._actions['edit'])
 
         # Setup selection actions.
@@ -1298,6 +1308,13 @@ class SardesTableView(QTableView):
         """
         self.model().cancel_all_data_edits()
 
+    def _undo_last_data_edit(self):
+        """
+        Undo the last data edits that was added to the table.
+        An update of the view is forced if  update_model_view is True.
+        """
+        self.model().undo_last_data_edit()
+
     def _save_data_edits(self, force=True):
         """
         Save the data edits to the database. If 'force' is 'False', a message
@@ -1329,7 +1346,7 @@ class SardesTableView(QTableView):
             buttons=QMessageBox.Ok)
         self.setCurrentIndex(model_index)
         self._edit_current_item()
-        self.model().undo_last_data_edits(update_model_view=False)
+        self.model().undo_last_data_edit(update_model_view=False)
 
     def edit(self, model_index, trigger=None, event=None):
         """
