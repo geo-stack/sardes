@@ -774,7 +774,7 @@ class SardesTableView(QTableView):
         self.setAlternatingRowColors(True)
         self.setCornerButtonEnabled(True)
         self.setHorizontalHeader(SardesHeaderView(parent=self))
-        self.setEditTriggers(self.NoEditTriggers)
+        self.setEditTriggers(self.DoubleClicked)
         self.setMouseTracking(True)
 
         self._actions = {}
