@@ -575,7 +575,7 @@ class SardesTableModelBase(QAbstractTableModel):
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
         self.dataChanged.emit(model_index, model_index)
 
-    def undo_last_data_edits(self, update_model_view=True):
+    def undo_last_data_edit(self, update_model_view=True):
         """
         Undo the last data edits that was added to the stack.
         An update of the view is forced if  update_model_view is True.
@@ -680,8 +680,8 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
         self.sourceModel().set_data_edits_at(
             self.mapToSource(proxy_index), value)
 
-    def undo_last_data_edits(self, update_model_view=True):
-        self.sourceModel().undo_last_data_edits(update_model_view)
+    def undo_last_data_edit(self, update_model_view=True):
+        self.sourceModel().undo_last_data_edit(update_model_view)
 
 
 # =============================================================================
@@ -1329,7 +1329,7 @@ class SardesTableView(QTableView):
             buttons=QMessageBox.Ok)
         self.setCurrentIndex(model_index)
         self._edit_current_item()
-        self.model().undo_last_data_edits(update_model_view=False)
+        self.model().undo_last_data_edit(update_model_view=False)
 
     def edit(self, model_index, trigger=None, event=None):
         """
