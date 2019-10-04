@@ -1046,15 +1046,15 @@ class SardesTableView(QTableView):
             )))
         return self.source_model.dataf.iloc[rows]
 
-    def get_selected_row_data(self):
+    def get_current_row_data(self):
         """
-        Return the data relative to the currently selected row in this table.
-        If more than one row is selected, the data from the first row of the
-        selection is returned.
+        Return the data relative to the row with the current item (the item
+        with the focus).
         """
-        selected_data = self.get_selected_rows_data()
-        if len(selected_data) > 0:
-            row_data = selected_data.iloc[[0]]
+        proxy_index = self.selectionModel().currentIndex()
+        if proxy_index.isValid():
+            row = self.proxy_model.mapToSource(proxy_index).row()
+            row_data = self.source_model.dataf.iloc[[row]]
         else:
             row_data = None
         return row_data

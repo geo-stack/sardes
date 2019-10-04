@@ -101,7 +101,7 @@ class ObsWellsTableWidget(SardesTableWidget):
         Return the observation well data relative to the currently selected
         row in the table.
         """
-        return self.tableview.get_selected_row_data()
+        return self.tableview.get_current_row_data()
 
     def _create_show_data_button(self):
         toolbutton = create_toolbutton(
@@ -121,6 +121,7 @@ class ObsWellsTableWidget(SardesTableWidget):
         """
         Handle when a row is double-clicked in the table.
         """
+        self.tableview.setFocus()
         current_obs_well = self.get_current_obs_well_data()
         if current_obs_well is not None:
             QApplication.setOverrideCursor(Qt.WaitCursor)
