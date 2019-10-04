@@ -774,7 +774,7 @@ class SardesTableView(QTableView):
         self.setAlternatingRowColors(True)
         self.setCornerButtonEnabled(True)
         self.setHorizontalHeader(SardesHeaderView(parent=self))
-        self.setEditTriggers(self.NoEditTriggers)
+        self.setEditTriggers(self.DoubleClicked)
         self.setMouseTracking(True)
 
         self._actions = {}
@@ -838,7 +838,7 @@ class SardesTableView(QTableView):
             icon='edit_database_item',
             tip=_("Edit the currently focused item in this table."),
             triggered=self._edit_current_item,
-            shortcut=['Ctrl+Enter', 'Ctrl+Return'])
+            shortcut=['Enter', 'Return'])
         self.selectionModel().currentChanged.connect(
             lambda current, previous: edit_item_action.setEnabled(
                 self.is_data_editable_at(current)))
