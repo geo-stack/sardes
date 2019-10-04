@@ -1294,7 +1294,6 @@ class SardesTableView(QTableView):
         current_index = self.selectionModel().currentIndex()
         if current_index.isValid():
             if self.state() != self.EditingState:
-                self.selectionModel().clearSelection()
                 self.selectionModel().setCurrentIndex(
                     current_index, self.selectionModel().Select)
                 self.edit(current_index)
