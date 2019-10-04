@@ -38,17 +38,6 @@ from sardes.utils.qthelpers import (
 # =============================================================================
 # ---- Delegates
 # =============================================================================
-class NotEditableDelegate(QStyledItemDelegate):
-    """
-    A delegate used to indicate that the items in the associated
-    column are not editable.
-    """
-
-    def createEditor(self, *args, **kargs):
-        """Qt method override."""
-        return None
-
-
 class SardesItemDelegateBase(QStyledItemDelegate):
     """
     Basic functionality for Sardes item delegates.
@@ -78,6 +67,41 @@ class SardesItemDelegateBase(QStyledItemDelegate):
     def setModelData(self, editor, model, index):
         """Qt method override."""
         pass
+
+    def paint(self, painter, option, index):
+        """
+        Override Qt method to paint a custom focus rectangle and to force the
+        table to get the style from QListView, which looks more modern.
+        """
+        widget = QListView()
+        style = widget.style()
+
+        # We remove the State_HasFocus from the option so that Qt doesn't
+        # paint it. We paint our own focus rectangle instead.
+        has_focus = bool(option.state & QStyle.State_HasFocus)
+        option.state &= ~ QStyle.State_HasFocus
+
+        # We dont want cells to be highlighted because of mouse over.
+        option.state &= ~QStyle.State_MouseOver
+
+        # We must set the text ouselves or else no text is painted.
+        option.text = index.data()
+
+        # We must fill the background with a solid color before painting the
+        # control. This is necessary, for example, to color the background of
+        # the cells with un-saved edits.
+        painter.fillRect(option.rect, index.data(Qt.BackgroundRole))
+        style.drawControl(QStyle.CE_ItemViewItem, option, painter, widget)
+
+        # Finally, we paint a focus rectangle ourselves.
+        if has_focus:
+            painter.save()
+            w = 2
+            pen = QPen(Qt.black, w, Qt.SolidLine, Qt.SquareCap, Qt.MiterJoin)
+            painter.setPen(pen)
+            painter.drawRect(option.rect.adjusted(
+                floor(w / 2), floor(w / 2), -ceil(w / 2), -ceil(w / 2)))
+            painter.restore()
 
     # ---- Private methods
     def eventFilter(self, widget, event):
@@ -148,6 +172,22 @@ class SardesItemDelegateBase(QStyledItemDelegate):
                 ).format(field_name, edited_value, field_name)
         else:
             return None
+
+
+class NotEditableDelegate(SardesItemDelegateBase):
+    """
+    A delegate used to indicate that the items in the associated
+    column are not editable.
+    """
+
+    def createEditor(self, *args, **kargs):
+        return None
+
+    def setEditorData(self, editor, index):
+        pass
+
+    def setModelData(self, editor, model, index):
+        pass
 
 
 class SardesItemDelegate(SardesItemDelegateBase):
