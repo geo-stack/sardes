@@ -428,7 +428,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             .filter(TimeSeriesChannels.obs_property_id == obs_property_id)
             .filter(TimeSeriesRaw.channel_uuid ==
                     TimeSeriesChannels.channel_uuid)
-            .order_by(TimeSeriesRaw.datetime)
+            .order_by(TimeSeriesRaw.datetime, TimeSeriesRaw.channel_uuid)
             ).with_labels()
 
         # Fetch the data from the database and store them in a pandas
