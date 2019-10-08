@@ -112,6 +112,12 @@ class DatabaseConnectionWorker(QObject):
         Get the time data acquired in the observation well for each
         monitored property listed in monitored_properties.
         """
+        prop_enum = (' and '.join(monitored_properties) if
+                     len(monitored_properties) == 2 else
+                     ', '.join(monitored_properties))
+        print("Fetching {} data for observation well {}.".format(
+            prop_enum, obs_well_id))
+
         mprop_list = []
         try:
             for monitored_property in monitored_properties:

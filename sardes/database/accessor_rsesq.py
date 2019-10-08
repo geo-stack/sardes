@@ -447,7 +447,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         duplicated = data.duplicated(subset='datetime')
         nbr_duplicate = len(duplicated[duplicated])
         if nbr_duplicate:
-            print(("Warning: {} duplicated {} value(s) were found while "
+            print(("Warning: {} duplicated {} entrie(s) were found while "
                    "fetching these data."
                    ).format(nbr_duplicate, monitored_property))
             data.drop_duplicates(subset='datetime', inplace=True)
