@@ -441,6 +441,18 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
 
         data['datetime'] = pd.to_datetime(
             data['datetime'], format="%Y-%m-%d %H:%M:%S")
+
+        # Check for duplicates along the time axis and drop the duplicated
+        # entries if any.
+        duplicated = data.duplicated(subset='datetime')
+        nbr_duplicate = len(duplicated[duplicated])
+        if nbr_duplicate:
+            print(("Warning: {} duplicated {} value(s) were found while "
+                   "fetching these data."
+                   ).format(nbr_duplicate, monitored_property))
+            data.drop_duplicates(subset='datetime', inplace=True)
+
+        # Set the index.
         data.set_index(['datetime'], drop=True, inplace=True)
 
         # For each channel, store the data in a time series object and
@@ -450,6 +462,8 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             self.get_monitored_property_name(monitored_property),
             self.get_monitored_property_units(monitored_property)
             )
+
+        # Split the data in channels.
         for channel_uuid in data['channel_uuid'].unique():
             channel_data = data[data['channel_uuid'] == channel_uuid]
             tseries_group.add_timeseries(TimeSeries(
