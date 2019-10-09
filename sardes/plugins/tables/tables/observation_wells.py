@@ -16,7 +16,6 @@ from qtpy.QtWidgets import QApplication, QFileDialog
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
 from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
-from sardes.tools.dataio import export_data_to_file
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import (
     SardesTableModel, SardesTableWidget, StringEditDelegate, BoolEditDelegate,
@@ -125,63 +124,6 @@ class ObsWellsTableWidget(SardesTableWidget):
             iconsize=get_iconsize()
             )
         return toolbutton
-
-    def _create_export_data_button(self):
-        toolbutton = create_toolbutton(
-            self,
-            icon='file_export',
-            text=_("Export data"),
-            tip=_('Show the data of the timeseries acquired in the currently '
-                  'selected observation well in an interactive '
-                  'plot viewer.'),
-            triggered=lambda _: self._get_export_data(),
-            iconsize=get_iconsize()
-            )
-        return toolbutton
-
-    def _get_export_data(self):
-        self.start_process()
-        # self.tableview.setFocus()
-        # current_obs_well = self.get_current_obs_well_data()
-        # statusbar = ProcessStatusBar(self)
-        # # statusbar.set_label()
-        # statusbar.show(_("This is a test..."))
-        # import time
-        # time.sleep(3)
-        # statusbar.close()
-        # ffmat = "*.xlsx;;*.xls;;*.csv"
-        # fname = _('data_timeseries')
-        # fname, ftype = QFileDialog.getSaveFileName(
-        #     self, "Save Data", fname, ffmat)
-        # if fname:
-        #     ftype = ftype.replace('*', '')
-        #     fname = fname if fname.endswith(ftype) else fname + ftype
-
-        #     QApplication.setOverrideCursor(Qt.WaitCursor)
-        #     self.db_connection_manager.export_timeseries_to_file(
-        #         [current_obs_well.index.values[0]],
-        #         [fname],
-        #         ['NIV_EAU'])
-        #     QApplication.restoreOverrideCursor()
-
-            # viewer.setWindowTitle(_("Observation well {} ({})").format(
-            # current_obs_well_data['obs_well_id'],
-            # current_obs_well_data['municipality'])
-
-    # def _handle_export_data(self, tseries_groups):
-    #     ffmat = "*.xlsx;;*.xls;;*.csv"
-    #     fname = _('data_timeseries')
-    #     fname, ftype = QFileDialog.getSaveFileName(
-    #         self, "Save Data", fname, ffmat)
-    #     if fname:
-    #         ftype = ftype.replace('*', '')
-    #         fname = fname if fname.endswith(ftype) else fname + ftype
-    #         try:
-    #             export_data_to_file(tseries_groups, fname)
-    #         except Exception as e:
-    #             print(e)
-    #             pass
-    #     QApplication.restoreOverrideCursor()
 
     def _show_timeseries_plot_viewer(self, *args, **kargs):
         """
