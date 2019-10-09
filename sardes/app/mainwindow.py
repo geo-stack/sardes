@@ -108,8 +108,8 @@ class MainWindow(QMainWindow):
         # we would have to add each of them as hidden import to the pyinstaller
         # spec file for them to be packaged as part of the Sardes binary.
 
-        # Observation Wells plugin.
-        from sardes.plugins.obs_wells_explorer import SARDES_PLUGIN_CLASS
+        # Tables plugin.
+        from sardes.plugins.tables import SARDES_PLUGIN_CLASS
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
         print("Loading the {} plugin...".format(plugin_title), end=' ')
         splash.showMessage(_("Loading the {} plugin...").format(plugin_title))
