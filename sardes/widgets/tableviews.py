@@ -884,7 +884,8 @@ class SardesTableView(QTableView):
             icon='edit_database_item',
             tip=_("Edit the currently focused item in this table."),
             triggered=self._edit_current_item,
-            shortcut=['Enter', 'Return'])
+            shortcut=['Enter', 'Return'],
+            context=Qt.WidgetShortcut)
         self.selectionModel().currentChanged.connect(
             lambda current, previous: edit_item_action.setEnabled(
                 self.is_data_editable_at(current)))
@@ -894,7 +895,8 @@ class SardesTableView(QTableView):
             icon='commit_changes',
             tip=_('Save all edits made to the table in the database.'),
             triggered=lambda: self._save_data_edits(force=False),
-            shortcut='Ctrl+S')
+            shortcut='Ctrl+S',
+            context=Qt.WidgetShortcut)
         save_edits_action.setEnabled(False)
         self.sig_data_edited.connect(save_edits_action.setEnabled)
 
@@ -903,7 +905,8 @@ class SardesTableView(QTableView):
             icon='cancel_changes',
             tip=_('Cancel all edits made to the table since last save.'),
             triggered=self._cancel_data_edits,
-            shortcut='Ctrl+Delete')
+            shortcut='Ctrl+Delete',
+            context=Qt.WidgetShortcut)
         cancel_edits_action.setEnabled(False)
         self.sig_data_edited.connect(cancel_edits_action.setEnabled)
 
@@ -912,7 +915,8 @@ class SardesTableView(QTableView):
             icon='undo',
             tip=_('Undo last edit made to the table.'),
             triggered=self._undo_last_data_edit,
-            shortcut='Ctrl+Z')
+            shortcut='Ctrl+Z',
+            context=Qt.WidgetShortcut)
         undo_edits_action.setEnabled(False)
         self.sig_data_edited.connect(undo_edits_action.setEnabled)
 
@@ -927,14 +931,16 @@ class SardesTableView(QTableView):
             icon='select_all',
             tip=_("Selects all items in the table."),
             triggered=self.selectAll,
-            shortcut='Ctrl+A')
+            shortcut='Ctrl+A',
+            context=Qt.WidgetShortcut)
 
         select_clear_action = create_action(
             self, _("Clear All"),
             icon='select_clear',
             tip=_("Clears the selection in the table."),
             triggered=lambda _: self.selectionModel().clearSelection(),
-            shortcut='Escape')
+            shortcut='Escape',
+            context=Qt.WidgetShortcut)
 
         select_row_action = create_action(
             self, _("Select Row"),
@@ -944,7 +950,7 @@ class SardesTableView(QTableView):
                   "all rows that intersect the selection will be selected."),
             triggered=self.select_row,
             shortcut='Shift+Space',
-            context=Qt.WindowShortcut)
+            context=Qt.WidgetShortcut)
 
         select_column_action = create_action(
             self, _("Select Column"),
@@ -953,7 +959,8 @@ class SardesTableView(QTableView):
                   "If the current selection spans multiple columns, all "
                   "columns that intersect the selection will be selected."),
             triggered=self.select_column,
-            shortcut='Ctrl+Space')
+            shortcut='Ctrl+Space',
+            context=Qt.WidgetShortcut)
 
         self._actions['selection'] = [
             select_all_action, select_clear_action, select_row_action,
@@ -968,7 +975,8 @@ class SardesTableView(QTableView):
                   "in ascending order."),
             triggered=lambda _:
                 self.sort_by_current_column(Qt.AscendingOrder),
-            shortcut="Ctrl+<")
+            shortcut="Ctrl+<",
+            context=Qt.WidgetShortcut)
 
         sort_descending_action = create_action(
             self, _("Sort Descending"),
@@ -977,14 +985,16 @@ class SardesTableView(QTableView):
                   "in descending order."),
             triggered=lambda _:
                 self.sort_by_current_column(Qt.DescendingOrder),
-            shortcut="Ctrl+>")
+            shortcut="Ctrl+>",
+            context=Qt.WidgetShortcut)
 
         sort_clear_action = create_action(
             self, _("Clear Sort"),
             icon='sort_clear',
             tip=_("Clear all sorts applied to the columns of the table."),
             triggered=lambda _: self.clear_sort(),
-            shortcut="Ctrl+.")
+            shortcut="Ctrl+.",
+            context=Qt.WidgetShortcut)
 
         self._actions['sort'] = [sort_ascending_action, sort_descending_action,
                                  sort_clear_action]
@@ -995,13 +1005,15 @@ class SardesTableView(QTableView):
             self.addAction(create_action(
                 parent=self,
                 triggered=lambda _, key=key: self.move_current_to_border(key),
-                shortcut='Ctrl+{}'.format(key)
+                shortcut='Ctrl+{}'.format(key),
+                context=Qt.WidgetShortcut
                 ))
             self.addAction(create_action(
                 parent=self,
                 triggered=lambda _, key=key:
                     self.extend_selection_to_border(key),
-                shortcut='Ctrl+Shift+{}'.format(key)
+                shortcut='Ctrl+Shift+{}'.format(key),
+                context=Qt.WidgetShortcut
                 ))
 
     # ---- Data sorting
