@@ -24,8 +24,7 @@ from qtpy.QtGui import QColor, QCursor, QPen
 from qtpy.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox,
                             QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox,
                             QSpinBox, QStyledItemDelegate, QTableView,
-                            QTextEdit, QListView, QStyle, QStyleOption,
-                            )
+                            QTextEdit, QListView, QStyle, QStyleOption)
 
 # ---- Local imports
 from sardes import __appname__
@@ -375,10 +374,6 @@ class SardesTableModelBase(QAbstractTableModel):
     RowAdded = 1
     RowRemoved = 2
 
-    # A list of tuple that maps the keys of the columns dataframe with their
-    # corresponding human readable label to use in the GUI.
-    __data_columns_mapper__ = []
-
     def __init__(self, db_connection_manager=None):
         super().__init__()
         self._data_columns_mapper = OrderedDict(self.__data_columns_mapper__)
@@ -654,6 +649,13 @@ class SardesTableModel(SardesTableModelBase):
     # A list of tuple that maps the keys of the columns dataframe with their
     # corresponding human readable label to use in the GUI.
     __data_columns_mapper__ = []
+
+    # The label that will be used to reference this table in the GUI.
+    TABLE_TITLE = ''
+
+    # A unique ID that will be used to reference this table in the code and
+    # in the user configurations.
+    TABLE_ID = ''
 
     def __init__(self, db_connection_manager=None):
         super().__init__(db_connection_manager)
@@ -1409,14 +1411,25 @@ class SardesTableView(QTableView):
 
 
 class SardesTableWidget(SardesPaneWidget):
+
     def __init__(self, table_model, parent=None):
         super().__init__(parent)
+        self.setAutoFillBackground(True)
 
         self.tableview = SardesTableView(table_model)
         self.set_central_widget(self.tableview)
 
         self._setup_upper_toolbar()
         self._setup_status_bar()
+
+    # ---- Public methods
+    def get_table_title(self):
+        """Return the title of this widget's table."""
+        return self.tableview.source_model.TABLE_TITLE
+
+    def get_table_id(self):
+        """Return the ID of this widget's table."""
+        return self.tableview.source_model.TABLE_ID
 
     # ---- Setup
     def _setup_upper_toolbar(self):
