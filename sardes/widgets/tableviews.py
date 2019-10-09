@@ -1458,6 +1458,7 @@ class SardesTableWidget(SardesPaneWidget):
         Setup the status bar of this table widget.
         """
         statusbar = self.statusBar()
+        statusbar.setSizeGripEnabled(False)
 
         # Number of row(s) selected.
         self.selected_line_count = QLabel()
