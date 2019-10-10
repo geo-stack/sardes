@@ -155,6 +155,33 @@ class DatabaseAccessorBase(ABC):
         return DataFrame([])
 
     # ---- Sondes
+    def get_sonde_models_lib(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the information related
+        to sonde brands and models.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A :class:`pandas.DataFrame` containing the information related
+            to sonde brands and models.
+
+            The row indexes of the dataframe must correspond to the IDs
+            used to reference the sonde model and brand combination in
+            the database.
+
+            The dataframe can contain any of the columns that are
+            listed below.
+
+            Columns
+            ~~~~~~~~~~~~~~~~
+            - sonde_brand: str
+                A sonde manufacturer.
+            - sonde_model: str
+                A sonde model.
+        """
+        return DataFrame([])
+
     def get_sondes_data(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
