@@ -85,9 +85,8 @@ class DatabaseConnectionWorker(QObject):
 
     def _get_observation_wells_data(self):
         """
-        Try get the list of observation wells that are saved in the database
-        and send the results through the sig_observation_wells_fetched
-        signal.
+        Try to get the list of observation wells that are
+        saved in the database.
         """
         try:
             obs_wells = self.db_accessor.get_observation_wells_data()
@@ -237,9 +236,6 @@ class DatabaseConnectionManager(QObject):
     def get_observation_wells_data(self, callback):
         """
         Get the list of observation wells that are saved in the database.
-
-        The results are sent through the sig_database_observation_wells signal
-        as a pandas DataFrame.
         """
         self._add_task('get_observation_wells_data', callback)
         self.run_tasks()
