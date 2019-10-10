@@ -95,6 +95,18 @@ class DatabaseConnectionWorker(QObject):
             obs_wells = DataFrame([])
         return obs_wells,
 
+    # ---- Sondes
+    def _get_sondes_data(self):
+        """
+        Try to get the list of sondes that are saved in the database.
+        """
+        try:
+            sondes = self.db_accessor.get_sondes_data()
+        except AttributeError as e:
+            print(e)
+            sondes = DataFrame([])
+        return sondes,
+
     # ---- Monitored properties
     def get_monitored_properties(self):
         """
@@ -230,6 +242,14 @@ class DatabaseConnectionManager(QObject):
         as a pandas DataFrame.
         """
         self._add_task('get_observation_wells_data', callback)
+        self.run_tasks()
+
+    # ---- Sondes
+    def get_sondes_data(self, callback):
+        """
+        Get the list of sondes that are saved in the database.
+        """
+        self._add_task('get_sondes_data', callback)
         self.run_tasks()
 
     # ---- Monitored properties
