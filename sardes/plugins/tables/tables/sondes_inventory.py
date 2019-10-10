@@ -40,11 +40,12 @@ class SondesInventoryTableModel(SardesTableModel):
     # corresponding human readable label to use in the GUI.
     __data_columns_mapper__ = [
         ('sonde_id', _('Sonde ID')),
+        ('sonde_brand', _('Brand')),
+        ('sonde_model', _('Model')),
         ('date_reception', _('Date Reception')),
         ('date_withdrawal', _('Date Withdrawal')),
-        ('en_reparation', _('Date Withdrawal')),
-        ('out_of_order', _('Out of order')),
         ('in_repair', _('In Repair')),
+        ('out_of_order', _('Out of order')),
         ('lost', _('Lost')),
         ('off_network', _('Off Network')),
         ('sonde_notes', _('Remarque')),
@@ -54,14 +55,8 @@ class SondesInventoryTableModel(SardesTableModel):
         """
         Fetch the observation well data for this table model.
         """
-        columns = list(self._data_columns_mapper.keys())
-        data = ['123123', 'qwer', '06-08-2019', '05-03-04',
-                True, True, False, False, True, 'Some notes']
-        # self.set_model_data(pd.DataFrame(data, columns=columns))
-        self.set_model_data(pd.DataFrame())
-
-        # self.db_connection_manager.get_observation_wells_data(
-        #     callback=self.set_model_data)
+        self.db_connection_manager.get_sondes_data(
+            callback=self.set_model_data)
 
     # ---- Delegates
     def create_delegate_for_column(self, view, column):
