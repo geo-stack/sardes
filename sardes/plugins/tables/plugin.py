@@ -15,7 +15,7 @@ from sardes.plugins.tables.tables import (
     ObsWellsTableWidget, SondesInventoryTableWidget)
 
 # ---- Third party imports
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, QSize
 from qtpy.QtWidgets import QApplication, QFileDialog, QTabWidget
 
 # ---- Local imports
@@ -46,10 +46,12 @@ class Tables(SardesPlugin):
         """
         self.tabwidget = QTabWidget(self.main)
         self.tabwidget.setTabPosition(self.tabwidget.North)
+        self.tabwidget.setIconSize(QSize(18, 18))
         self.tabwidget.setStyleSheet("QTabWidget::pane { "
                                      "margin: 1px,1px,1px,1px;"
                                      "padding: 0px;"
-                                     "}")
+                                     "}"
+                                     "QTabBar::tab { height: 30px;}")
         return self.tabwidget
 
     def close_plugin(self):
