@@ -237,6 +237,10 @@ class DatabaseConnectionManager(QObject):
         """
         self._run_tasks()
 
+    def close(self):
+        """Close this database connection manager."""
+        self._db_connection_worker._disconnect_from_db()
+
     # ---- Observation wells
     def save_observation_well_data(self, sampling_feature_id, attribute_name,
                                    attribute_value, callback=None,

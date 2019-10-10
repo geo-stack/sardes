@@ -340,6 +340,9 @@ class MainWindow(QMainWindow):
         for plugin in self.internal_plugins + self.thirdparty_plugins:
             plugin.close_plugin()
 
+        # Close the database connection manager.
+        self.db_connection_manager.close()
+
         event.accept()
 
     def createPopupMenu(self):
