@@ -48,7 +48,7 @@ class ObsWellsTableModel(SardesTableModel):
         ('latitude', _('Latitude')),
         ('longitude', _('Longitude')),
         ('is_station_active', _('Active')),
-        ('obs_well_notes', _('Note'))
+        ('obs_well_notes', _('Notes'))
         ]
 
     def fetch_model_data(self, *args, **kargs):

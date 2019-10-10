@@ -39,7 +39,7 @@ class SondesInventoryTableModel(SardesTableModel):
         ('out_of_order', _('Out of order')),
         ('lost', _('Lost')),
         ('off_network', _('Off Network')),
-        ('sonde_notes', _('Remarque')),
+        ('sonde_notes', _('Notes')),
         ]
 
     def fetch_model_data(self, *args, **kargs):
