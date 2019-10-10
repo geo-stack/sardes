@@ -7,18 +7,9 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
-# ---- Third party imports
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QApplication, QFileDialog
-import pandas as pd
-
 
 # ---- Local imports
-from sardes.widgets.timeseries import TimeSeriesPlotViewer
-from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
-from sardes.tools.dataio import export_data_to_file
-from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import (
     SardesTableModel, SardesTableWidget, StringEditDelegate, BoolEditDelegate,
     NumEditDelegate, NotEditableDelegate, TextEditDelegate)
@@ -39,9 +30,9 @@ class SondesInventoryTableModel(SardesTableModel):
     # A list of tuple that maps the keys of the columns dataframe with their
     # corresponding human readable label to use in the GUI.
     __data_columns_mapper__ = [
-        ('sonde_serial_no', _('Serial Number')),
         ('sonde_brand', _('Brand')),
         ('sonde_model', _('Model')),
+        ('sonde_serial_no', _('Serial Number')),
         ('date_reception', _('Date Reception')),
         ('date_withdrawal', _('Date Withdrawal')),
         ('in_repair', _('In Repair')),
