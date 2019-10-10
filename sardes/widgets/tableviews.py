@@ -136,7 +136,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
             # the model or else, unique check will always return an error.
             error_message = self.validate_edits()
 
-            # We store the edits even though they are not validated, so that
+            # We store the edits even if the validation fails, so that
             # when we return to this delegate to edits, the last value
             # entered by the user is preserved.
             self.model.set_data_edits_at(self.model_index, editor_value)
