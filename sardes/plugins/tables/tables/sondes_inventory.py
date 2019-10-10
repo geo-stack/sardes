@@ -42,12 +42,22 @@ class SondesInventoryTableModel(SardesTableModel):
         ('sonde_notes', _('Notes')),
         ]
 
+    def __init__(self, *args, **kargs):
+        super().__init__(*args, **kargs)
+        self._sonde_models_lib = None
+
     def fetch_model_data(self, *args, **kargs):
         """
         Fetch the observation well data for this table model.
         """
         self.db_connection_manager.get_sondes_data(
             callback=self.set_model_data)
+    def set_sonde_models_lib(self, sonde_models_lib):
+        """
+        Set the sonde model library that this model is going
+        to use for its 'sonde_brand' and 'sonde_model' item delegates.
+        """
+        self._sonde_models_lib = sonde_models_lib
 
     # ---- Delegates
     def create_delegate_for_column(self, view, column):
