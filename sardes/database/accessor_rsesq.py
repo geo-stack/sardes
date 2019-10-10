@@ -382,6 +382,30 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             raise AttributeError
 
     # ---- Sondes
+    def get_sonde_models_lib(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the information related
+        to sonde brands and models.
+        """
+        if self.is_connected():
+            query = (
+                self._session.query(SondeModels)
+                .order_by(SondeModels.sonde_brand,
+                          SondeModels.sonde_model)
+                ).with_labels()
+            sonde_models = pd.read_sql_query(
+                query.statement, query.session.bind, coerce_float=True)
+
+            # Rename the column names to that expected by the api.
+            columns_map = map_table_column_names(SondeModels, with_labels=True)
+            sonde_models.rename(columns_map, axis='columns', inplace=True)
+
+            # Set the index to the observation well ids.
+            sonde_models.set_index('sonde_model_id', inplace=True, drop=True)
+            return sonde_models
+        else:
+            raise AttributeError('Not connected to a database.')
+
     def get_sondes_data(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -420,7 +444,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             sondes.set_index('sonde_uuid', inplace=True, drop=True)
             return sondes
         else:
-            raise AttributeError
+            raise AttributeError('Not connected to a database.')
 
     # ---- Monitored properties
     @property
