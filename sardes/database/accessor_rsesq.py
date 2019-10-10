@@ -84,15 +84,6 @@ class ObservationWell(SamplingFeature):
     obs_well_notes = Column('elemcarac_note', TEXT(length=None))
 
 
-class LoggerInstallation(Base):
-    __tablename__ = 'sonde_installation'
-    __table_args__ = ({"schema": "processus"})
-
-    installation_id = Column('deploiement_id', String, primary_key=True)
-    logger_id = Column('no_sonde', String)
-    obs_well_id = Column('no_piezometre', String)
-
-
 class Observation(Base):
     __tablename__ = 'observation'
     __table_args__ = ({"schema": "rsesq"})
@@ -116,6 +107,43 @@ class ObservationProperty(Base):
 
     def __repr__(self):
         return format_sqlobject_repr(self)
+
+
+class Sondes(Base):
+    __tablename__ = 'sonde_caracteristiques'
+    __table_args__ = ({"schema": "metadonnees"})
+
+    sonde_uuid = Column('no_sonde_uuid', UUID(as_uuid=True), primary_key=True)
+    sonde_serial_no = Column('no_sonde', String)
+    date_reception = Column('date_reception', DateTime)
+    date_withdrawal = Column('date_retrait', DateTime)
+    in_repair = Column('en_reparation', Boolean)
+    out_of_order = Column('hors_service', Boolean)
+    lost = Column('perdue', Boolean)
+    off_network = Column('hors_reseau', Boolean)
+    sonde_notes = Column('remarque', String)
+
+    sonde_model_id = Column(
+        'instrument_id', Integer,
+        ForeignKey('librairies.lib_instrument_mddep.instrument_id'))
+
+
+class SondeInstallations(Base):
+    __tablename__ = 'sonde_installation'
+    __table_args__ = ({"schema": "processus"})
+
+    installation_id = Column('deploiement_id', String, primary_key=True)
+    logger_id = Column('no_sonde', String)
+    obs_well_id = Column('no_piezometre', String)
+
+
+class SondeModels(Base):
+    __tablename__ = 'lib_instrument_mddep'
+    __table_args__ = ({"schema": "librairies"})
+
+    sonde_model_id = Column('instrument_id', Integer, primary_key=True)
+    sonde_brand = Column('instrument_marque', String)
+    sonde_model = Column('instrument_model', String)
 
 
 class TimeSeriesChannels(Base):
@@ -350,6 +378,47 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             # Replace nan by None.
             obs_wells = obs_wells.where(obs_wells.notnull(), None)
             return obs_wells
+        else:
+            raise AttributeError
+
+    # ---- Sondes
+    def get_sondes_data(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the information related
+        to the sondes used to monitor groundwater properties in the wells.
+        """
+        if self.is_connected():
+            query = (
+                self._session.query(Sondes,
+                                    SondeModels.sonde_brand,
+                                    SondeModels.sonde_model)
+                .filter(SondeModels.sonde_model_id == Sondes.sonde_model_id)
+                .order_by(SondeModels.sonde_brand,
+                          SondeModels.sonde_model,
+                          Sondes.sonde_serial_no)
+                ).with_labels()
+            sondes = pd.read_sql_query(
+                query.statement, query.session.bind, coerce_float=True)
+
+            # Rename the column names to that expected by the api.
+            columns_map = map_table_column_names(
+                Sondes, SondeModels, with_labels=True)
+            sondes.rename(columns_map, axis='columns', inplace=True)
+
+            # Strip timezone info since it is not set correctly in the
+            # BD anyway.
+            sondes['date_reception'] = (
+                sondes['date_reception'].dt.tz_localize(None))
+            sondes['date_withdrawal'] = (
+                sondes['date_withdrawal'].dt.tz_localize(None))
+
+            # Strip the hour portion since it doesn't make sense here.
+            sondes['date_reception'] = sondes['date_reception'].dt.date
+            sondes['date_withdrawal'] = sondes['date_withdrawal'].dt.date
+
+            # Set the index to the observation well ids.
+            sondes.set_index('sonde_uuid', inplace=True, drop=True)
+            return sondes
         else:
             raise AttributeError
 
