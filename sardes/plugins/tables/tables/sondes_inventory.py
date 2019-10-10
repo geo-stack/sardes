@@ -39,7 +39,7 @@ class SondesInventoryTableModel(SardesTableModel):
     # A list of tuple that maps the keys of the columns dataframe with their
     # corresponding human readable label to use in the GUI.
     __data_columns_mapper__ = [
-        ('sonde_id', _('Sonde ID')),
+        ('sonde_serial_no', _('Serial Number')),
         ('sonde_brand', _('Brand')),
         ('sonde_model', _('Model')),
         ('date_reception', _('Date Reception')),

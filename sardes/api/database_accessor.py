@@ -175,8 +175,8 @@ class DatabaseAccessorBase(ABC):
 
             Columns
             ~~~~~~~~~~~~~~~~
-            - sonde_id: str
-                The unique identifier of the sonde.
+            - sonde_serial_no: str
+                The serial number of the sonde.
             - sonde_brand: str
                 The brand of the sonde.
             - sonde_model: str
