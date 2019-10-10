@@ -47,7 +47,7 @@ class Tables(SardesPlugin):
         self.tabwidget = QTabWidget(self.main)
         self.tabwidget.setTabPosition(self.tabwidget.North)
         self.tabwidget.setStyleSheet("QTabWidget::pane { "
-                                     "margin: 0px,0px,0px,0px;"
+                                     "margin: 1px,1px,1px,1px;"
                                      "padding: 0px;"
                                      "}")
         return self.tabwidget
