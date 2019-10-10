@@ -12,7 +12,7 @@
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableModel, SardesTableWidget, StringEditDelegate, BoolEditDelegate,
-    NumEditDelegate, NotEditableDelegate, TextEditDelegate)
+    NumEditDelegate, NotEditableDelegate, TextEditDelegate, DateEditDelegate)
 
 
 class SondesInventoryTableModel(SardesTableModel):
@@ -59,8 +59,14 @@ class SondesInventoryTableModel(SardesTableModel):
         if column in ['en_reparation', 'out_of_order', 'in_repair',
                       'lost', 'off_network']:
             return BoolEditDelegate(view)
+        elif column in ['date_reception', 'date_withdrawal']:
+            return DateEditDelegate(view)
+        elif column == 'sonde_notes':
+            return TextEditDelegate(view)
+        elif column == 'sonde_serial_no':
+            return StringEditDelegate(view)
         else:
-            return NotEditableDelegate(self)
+            return NotEditableDelegate(view)
 
     # ---- Data edits
     def save_data_edits(self):
