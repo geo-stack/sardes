@@ -61,6 +61,9 @@ class Tables(SardesPlugin):
         """
         super().close_plugin()
 
+        # Save the currently active tab index.
+        self.set_option('last_focused_tab', self.tabwidget.currentIndex())
+
         # Save in the configs the state of the tables.
         for table_id, table in self._tables.items():
             CONF.set(table_id, 'horiz_header/state',
@@ -73,6 +76,10 @@ class Tables(SardesPlugin):
         self._tables = {}
         self._create_and_register_table(ObsWellsTableWidget)
         self._create_and_register_table(SondesInventoryTableWidget)
+
+        # Setup the current active tab from the value saved in the configs.
+        self.tabwidget.setCurrentIndex(
+            self.get_option('last_focused_tab', 0))
 
     def _create_and_register_table(self, TableClass):
         table = TableClass(self.main.db_connection_manager)
