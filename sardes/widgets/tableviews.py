@@ -11,6 +11,7 @@
 # ---- Standard imports
 import sys
 from collections import OrderedDict
+from datetime import datetime
 import itertools
 from math import floor, ceil
 
@@ -21,10 +22,11 @@ from qtpy.QtCore import (QAbstractTableModel, QEvent, QModelIndex,
                          QItemSelection, QItemSelectionModel, QRect,
                          )
 from qtpy.QtGui import QColor, QCursor, QPen
-from qtpy.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox,
-                            QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox,
-                            QSpinBox, QStyledItemDelegate, QTableView,
-                            QTextEdit, QListView, QStyle, QStyleOption)
+from qtpy.QtWidgets import (QApplication, QComboBox, QDateEdit,
+                            QDoubleSpinBox, QHeaderView, QLabel, QLineEdit,
+                            QMenu, QMessageBox, QSpinBox, QStyledItemDelegate,
+                            QTableView, QTextEdit, QListView, QStyle,
+                            QStyleOption)
 
 # ---- Local imports
 from sardes import __appname__
@@ -34,7 +36,8 @@ from sardes.config.gui import get_iconsize
 from sardes.utils.data_operations import intervals_extract
 from sardes.utils.qthelpers import (
     create_action, create_toolbutton, create_toolbar_stretcher,
-    qbytearray_to_hexstate, hexstate_to_qbytearray)
+    qbytearray_to_hexstate, hexstate_to_qbytearray, qdatetime_from_datetime,
+    get_datetime_from_editor)
 
 
 # =============================================================================
@@ -224,6 +227,8 @@ class SardesItemDelegate(SardesItemDelegateBase):
             return self.editor.value()
         elif isinstance(self.editor, QComboBox):
             return self.editor.itemData(self.editor.currentIndex())
+        elif isinstance(self.editor, QDateEdit):
+            return get_datetime_from_editor(self.editor)
         else:
             raise NotImplementedError
 
@@ -247,12 +252,31 @@ class SardesItemDelegate(SardesItemDelegateBase):
                     break
             else:
                 self.editor.setCurrentIndex(0)
+        elif isinstance(self.editor, QDateEdit):
+            data = (datetime.today() if (pd.isna(data) or data is None)
+                    else data)
+            self.editor.setDateTime(qdatetime_from_datetime(data))
         else:
             raise NotImplementedError
 
     def validate_edits(self):
         """Validate the value of this item delegate's editor."""
         return None
+
+
+class DateEditDelegate(SardesItemDelegate):
+    """
+    A delegate to edit a date.
+    """
+
+    def __init__(self, model_view):
+        super() .__init__(model_view)
+
+    def create_editor(self, parent):
+        editor = QDateEdit(parent)
+        editor.setCalendarPopup(True)
+        editor.setDisplayFormat("yyyy-MM-dd")
+        return editor
 
 
 class TextEditDelegate(SardesItemDelegate):
