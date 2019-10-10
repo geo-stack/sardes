@@ -202,9 +202,6 @@ class SardesItemDelegate(SardesItemDelegateBase):
     Specific delegates *can* inherit this class and reimplement its interface.
     """
 
-    def __init__(self, *args, **kargs):
-        super() .__init__(*args, **kargs)
-
     def create_editor(self, parent):
         """Return the editor to use in this item delegate."""
         raise NotImplementedError
@@ -269,9 +266,6 @@ class DateEditDelegate(SardesItemDelegate):
     A delegate to edit a date.
     """
 
-    def __init__(self, model_view):
-        super() .__init__(model_view)
-
     def create_editor(self, parent):
         editor = QDateEdit(parent)
         editor.setCalendarPopup(True)
@@ -284,9 +278,6 @@ class TextEditDelegate(SardesItemDelegate):
     A delegate to edit very long strings that can span over multiple lines.
     """
 
-    def __init__(self, model_view):
-        super() .__init__(model_view, unique_constraint=False)
-
     def create_editor(self, parent):
         return QTextEdit(parent)
 
@@ -296,9 +287,6 @@ class StringEditDelegate(SardesItemDelegate):
     A delegate to edit a 250 characters strings.
     """
     MAX_LENGTH = 250
-
-    def __init__(self, model_view, unique_constraint=False):
-        super() .__init__(model_view, unique_constraint=unique_constraint)
 
     def create_editor(self, parent):
         editor = QLineEdit(parent)
@@ -338,9 +326,6 @@ class BoolEditDelegate(SardesItemDelegate):
     """
     A delegate to edit a boolean value with a combobox.
     """
-
-    def __init__(self, parent=None):
-        super() .__init__(parent)
 
     def create_editor(self, parent):
         editor = QComboBox(parent)
