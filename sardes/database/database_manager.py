@@ -99,6 +99,20 @@ class DatabaseConnectionWorker(QObject):
         return obs_wells,
 
     # ---- Sondes
+    def _get_sonde_models_lib(self):
+        """
+        Try to get the list of sonde models that are saved in the database.
+        """
+        print("Fetching sonde models librairy from the database...", end='')
+        try:
+            sonde_models = self.db_accessor.get_sonde_models_lib()
+            print("done")
+        except AttributeError as e:
+            print("failed")
+            print(e)
+            sonde_models = DataFrame([])
+        return sonde_models,
+
     def _get_sondes_data(self):
         """
         Try to get the list of sondes that are saved in the database.
@@ -248,12 +262,21 @@ class DatabaseConnectionManager(QObject):
         self.run_tasks()
 
     # ---- Sondes
-    def get_sondes_data(self, callback):
+    def get_sonde_models_lib(self, callback, postpone_exec=False):
+        """
+        Get the list of sonde models that are saved in the database.
+        """
+        self._add_task('get_sonde_models_lib', callback)
+        if not postpone_exec:
+            self.run_tasks()
+
+    def get_sondes_data(self, callback, postpone_exec=False):
         """
         Get the list of sondes that are saved in the database.
         """
         self._add_task('get_sondes_data', callback)
-        self.run_tasks()
+        if not postpone_exec:
+            self.run_tasks()
 
     # ---- Monitored properties
     def get_monitored_properties(self, callback=None):
