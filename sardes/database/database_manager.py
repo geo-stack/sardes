@@ -88,9 +88,13 @@ class DatabaseConnectionWorker(QObject):
         Try to get the list of observation wells that are
         saved in the database.
         """
+        print("Fetching observation wells from the database...", end='')
         try:
             obs_wells = self.db_accessor.get_observation_wells_data()
-        except AttributeError:
+            print("done")
+        except AttributeError as e:
+            print("failed")
+            print(e)
             obs_wells = DataFrame([])
         return obs_wells,
 
@@ -99,9 +103,12 @@ class DatabaseConnectionWorker(QObject):
         """
         Try to get the list of sondes that are saved in the database.
         """
+        print("Fetching sondes inventory from the database...", end='')
         try:
             sondes = self.db_accessor.get_sondes_data()
+            print("done")
         except AttributeError as e:
+            print("failed")
             print(e)
             sondes = DataFrame([])
         return sondes,

@@ -142,13 +142,20 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         Return a :class:`pandas.DataFrame` containing the information related
         to the observation wells that are saved in the database.
         """
-        print("Fetching observation wells from the database...", end='')
         sleep(0.3)
-        print("done")
         if self.is_connected():
             return deepcopy(OBS_WELLS_DF)
         else:
-            raise AttributeError
+            raise AttributeError('Not connected to a database.')
+
+    # ---- Sondes
+    def get_sondes_data(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the information related
+        to the sondes used to monitor groundwater properties in the wells.
+        """
+        sleep(0.3)
+        raise AttributeError('Not connected to a database.')
 
     # ---- Monitored properties
     @property
