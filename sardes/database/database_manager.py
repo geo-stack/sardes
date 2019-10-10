@@ -103,7 +103,7 @@ class DatabaseConnectionWorker(QObject):
         """
         Try to get the list of sonde models that are saved in the database.
         """
-        print("Fetching sonde models librairy from the database...", end='')
+        print("Fetching sonde models library from the database...", end='')
         try:
             sonde_models = self.db_accessor.get_sonde_models_lib()
             print("done")
