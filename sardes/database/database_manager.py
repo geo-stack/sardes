@@ -89,12 +89,16 @@ class DatabaseConnectionWorker(QObject):
         saved in the database.
         """
         print("Fetching observation wells from the database...", end='')
-        try:
-            obs_wells = self.db_accessor.get_observation_wells_data()
-            print("done")
-        except AttributeError as e:
-            print("failed")
-            print(e)
+        if self.is_connected():
+            try:
+                obs_wells = self.db_accessor.get_observation_wells_data()
+                print("done")
+            except AttributeError as e:
+                print("failed")
+                print(e)
+                obs_wells = DataFrame([])
+        else:
+            print("failed. No database connection.")
             obs_wells = DataFrame([])
         return obs_wells,
 
@@ -104,12 +108,16 @@ class DatabaseConnectionWorker(QObject):
         Try to get the list of sonde models that are saved in the database.
         """
         print("Fetching sonde models library from the database...", end='')
-        try:
-            sonde_models = self.db_accessor.get_sonde_models_lib()
-            print("done")
-        except AttributeError as e:
-            print("failed")
-            print(e)
+        if self.is_connected():
+            try:
+                sonde_models = self.db_accessor.get_sonde_models_lib()
+                print("done")
+            except AttributeError as e:
+                print("failed")
+                print(e)
+                sonde_models = DataFrame([])
+        else:
+            print("failed. No database connection.")
             sonde_models = DataFrame([])
         return sonde_models,
 
@@ -118,12 +126,16 @@ class DatabaseConnectionWorker(QObject):
         Try to get the list of sondes that are saved in the database.
         """
         print("Fetching sondes inventory from the database...", end='')
-        try:
-            sondes = self.db_accessor.get_sondes_data()
-            print("done")
-        except AttributeError as e:
-            print("failed")
-            print(e)
+        if self.is_connected():
+            try:
+                sondes = self.db_accessor.get_sondes_data()
+                print("done")
+            except AttributeError as e:
+                print("failed")
+                print(e)
+                sondes = DataFrame([])
+        else:
+            print("failed. No database connection.")
             sondes = DataFrame([])
         return sondes,
 

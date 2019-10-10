@@ -143,10 +143,7 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         to the observation wells that are saved in the database.
         """
         sleep(0.3)
-        if self.is_connected():
-            return deepcopy(OBS_WELLS_DF)
-        else:
-            raise AttributeError('Not connected to a database.')
+        return deepcopy(OBS_WELLS_DF)
 
     # ---- Sondes
     def get_sondes_data(self):

@@ -334,52 +334,49 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         Return a :class:`pandas.DataFrame` containing the information related
         to the observation wells that are saved in the database.
         """
-        if self.is_connected():
-            query = (
-                self._session.query(ObservationWell,
-                                    Location.latitude,
-                                    Location.longitude,
-                                    Location.loc_notes)
-                .filter(Location.loc_id == ObservationWell.loc_id)
-                .order_by(ObservationWell.obs_well_id)
-                ).with_labels()
-            obs_wells = pd.read_sql_query(
-                query.statement, query.session.bind, coerce_float=True)
+        query = (
+            self._session.query(ObservationWell,
+                                Location.latitude,
+                                Location.longitude,
+                                Location.loc_notes)
+            .filter(Location.loc_id == ObservationWell.loc_id)
+            .order_by(ObservationWell.obs_well_id)
+            ).with_labels()
+        obs_wells = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
 
-            # Rename the column names to that expected by the api.
-            columns_map = map_table_column_names(
-                Location, ObservationWell, with_labels=True)
-            obs_wells.rename(columns_map, axis='columns', inplace=True)
+        # Rename the column names to that expected by the api.
+        columns_map = map_table_column_names(
+            Location, ObservationWell, with_labels=True)
+        obs_wells.rename(columns_map, axis='columns', inplace=True)
 
-            # Reformat notes correctly.
-            keys_in_notes = ['common_name', 'aquifer_type', 'confinement',
-                             'aquifer_code', 'in_recharge_zone',
-                             'is_influenced', 'is_station_active',
-                             'obs_well_notes']
-            split_notes = obs_wells['obs_well_notes'].str.split(r'\|\|')
-            obs_wells.drop(labels='obs_well_notes', axis=1, inplace=True)
-            for i, key in enumerate(keys_in_notes):
-                obs_wells[key] = (
-                    split_notes.str[i].str.split(':').str[1].str.strip())
-                obs_wells[key] = obs_wells[key][obs_wells[key] != 'NULL']
+        # Reformat notes correctly.
+        keys_in_notes = ['common_name', 'aquifer_type', 'confinement',
+                         'aquifer_code', 'in_recharge_zone',
+                         'is_influenced', 'is_station_active',
+                         'obs_well_notes']
+        split_notes = obs_wells['obs_well_notes'].str.split(r'\|\|')
+        obs_wells.drop(labels='obs_well_notes', axis=1, inplace=True)
+        for i, key in enumerate(keys_in_notes):
+            obs_wells[key] = (
+                split_notes.str[i].str.split(':').str[1].str.strip())
+            obs_wells[key] = obs_wells[key][obs_wells[key] != 'NULL']
 
-            # Convert to bool.
-            obs_wells['is_station_active'] = (
-                obs_wells['is_station_active']
-                .map({'True': True, 'False': False}))
+        # Convert to bool.
+        obs_wells['is_station_active'] = (
+            obs_wells['is_station_active']
+            .map({'True': True, 'False': False}))
 
-            obs_wells['municipality'] = (
-                obs_wells['loc_notes'].str.split(':').str[1].str.strip())
+        obs_wells['municipality'] = (
+            obs_wells['loc_notes'].str.split(':').str[1].str.strip())
 
-            # Set the index to the observation well ids.
-            obs_wells.set_index(
-                'sampling_feature_uuid', inplace=True, drop=True)
+        # Set the index to the observation well ids.
+        obs_wells.set_index(
+            'sampling_feature_uuid', inplace=True, drop=True)
 
-            # Replace nan by None.
-            obs_wells = obs_wells.where(obs_wells.notnull(), None)
-            return obs_wells
-        else:
-            raise AttributeError
+        # Replace nan by None.
+        obs_wells = obs_wells.where(obs_wells.notnull(), None)
+        return obs_wells
 
     # ---- Sondes
     def get_sonde_models_lib(self):
@@ -387,64 +384,58 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         Return a :class:`pandas.DataFrame` containing the information related
         to sonde brands and models.
         """
-        if self.is_connected():
-            query = (
-                self._session.query(SondeModels)
-                .order_by(SondeModels.sonde_brand,
-                          SondeModels.sonde_model)
-                ).with_labels()
-            sonde_models = pd.read_sql_query(
-                query.statement, query.session.bind, coerce_float=True)
+        query = (
+            self._session.query(SondeModels)
+            .order_by(SondeModels.sonde_brand,
+                      SondeModels.sonde_model)
+            ).with_labels()
+        sonde_models = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
 
-            # Rename the column names to that expected by the api.
-            columns_map = map_table_column_names(SondeModels, with_labels=True)
-            sonde_models.rename(columns_map, axis='columns', inplace=True)
+        # Rename the column names to that expected by the api.
+        columns_map = map_table_column_names(SondeModels, with_labels=True)
+        sonde_models.rename(columns_map, axis='columns', inplace=True)
 
-            # Set the index to the observation well ids.
-            sonde_models.set_index('sonde_model_id', inplace=True, drop=True)
-            return sonde_models
-        else:
-            raise AttributeError('Not connected to a database.')
+        # Set the index to the observation well ids.
+        sonde_models.set_index('sonde_model_id', inplace=True, drop=True)
+        return sonde_models
 
     def get_sondes_data(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
         to the sondes used to monitor groundwater properties in the wells.
         """
-        if self.is_connected():
-            query = (
-                self._session.query(Sondes,
-                                    SondeModels.sonde_brand,
-                                    SondeModels.sonde_model)
-                .filter(SondeModels.sonde_model_id == Sondes.sonde_model_id)
-                .order_by(SondeModels.sonde_brand,
-                          SondeModels.sonde_model,
-                          Sondes.sonde_serial_no)
-                ).with_labels()
-            sondes = pd.read_sql_query(
-                query.statement, query.session.bind, coerce_float=True)
+        query = (
+            self._session.query(Sondes,
+                                SondeModels.sonde_brand,
+                                SondeModels.sonde_model)
+            .filter(SondeModels.sonde_model_id == Sondes.sonde_model_id)
+            .order_by(SondeModels.sonde_brand,
+                      SondeModels.sonde_model,
+                      Sondes.sonde_serial_no)
+            ).with_labels()
+        sondes = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
 
-            # Rename the column names to that expected by the api.
-            columns_map = map_table_column_names(
-                Sondes, SondeModels, with_labels=True)
-            sondes.rename(columns_map, axis='columns', inplace=True)
+        # Rename the column names to that expected by the api.
+        columns_map = map_table_column_names(
+            Sondes, SondeModels, with_labels=True)
+        sondes.rename(columns_map, axis='columns', inplace=True)
 
-            # Strip timezone info since it is not set correctly in the
-            # BD anyway.
-            sondes['date_reception'] = (
-                sondes['date_reception'].dt.tz_localize(None))
-            sondes['date_withdrawal'] = (
-                sondes['date_withdrawal'].dt.tz_localize(None))
+        # Strip timezone info since it is not set correctly in the
+        # BD anyway.
+        sondes['date_reception'] = (
+            sondes['date_reception'].dt.tz_localize(None))
+        sondes['date_withdrawal'] = (
+            sondes['date_withdrawal'].dt.tz_localize(None))
 
-            # Strip the hour portion since it doesn't make sense here.
-            sondes['date_reception'] = sondes['date_reception'].dt.date
-            sondes['date_withdrawal'] = sondes['date_withdrawal'].dt.date
+        # Strip the hour portion since it doesn't make sense here.
+        sondes['date_reception'] = sondes['date_reception'].dt.date
+        sondes['date_withdrawal'] = sondes['date_withdrawal'].dt.date
 
-            # Set the index to the observation well ids.
-            sondes.set_index('sonde_uuid', inplace=True, drop=True)
-            return sondes
-        else:
-            raise AttributeError('Not connected to a database.')
+        # Set the index to the observation well ids.
+        sondes.set_index('sonde_uuid', inplace=True, drop=True)
+        return sondes
 
     # ---- Monitored properties
     @property
