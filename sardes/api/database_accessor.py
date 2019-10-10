@@ -200,6 +200,26 @@ class DatabaseAccessorBase(ABC):
         """
         return DataFrame([])
 
+    def save_sondes_data(self, sonde_id, attribute_name, value):
+        """
+        Save in the database the new attribute value for the sonde
+        corresponding to the specified sonde UID.
+
+        Parameters
+        ----------
+        sonde_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the sonde in the database.
+        attribute_name: str
+            Name of the attribute of the sonde for which the
+            value need to be updated in the database.
+            See :func:`get_sondes_data` for the list of attributes
+            that are defined for the sonde feature.
+        value: object
+            Value that need to be updated for the corresponding attribute and
+            sonde.
+        """
+        raise NotImplementedError
+
     # ---- Monitored properties
     @property
     @abstractmethod
