@@ -404,9 +404,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         # Set the index to the observation well ids.
         sonde_models.set_index('sonde_model_id', inplace=True, drop=True)
 
-        # Sort the values.
-        sonde_models.sort_values('sonde_brand_model', inplace=True)
-
         return sonde_models
 
     def get_sondes_data(self):
@@ -415,9 +412,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         to the sondes used to monitor groundwater properties in the wells.
         """
         query = (
-            self._session.query(Sondes,
-                                SondeModels.sonde_brand,
-                                SondeModels.sonde_model)
+            self._session.query(Sondes)
             .filter(SondeModels.sonde_model_id == Sondes.sonde_model_id)
             .order_by(SondeModels.sonde_brand,
                       SondeModels.sonde_model,
@@ -442,17 +437,9 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         sondes['date_reception'] = sondes['date_reception'].dt.date
         sondes['date_withdrawal'] = sondes['date_withdrawal'].dt.date
 
-        # Combine the brand and model into a same field.
-        sondes['sonde_brand_model'] = (
-            sondes[['sonde_brand', 'sonde_model']]
-            .apply(lambda x: ' '.join(x), axis=1))
-
         # Set the index to the observation well ids.
         sondes.set_index('sonde_uuid', inplace=True, drop=True)
 
-        # Sort the values.
-        sondes.sort_values(['sonde_brand_model', 'sonde_serial_no'],
-                           inplace=True)
         return sondes
 
     # ---- Monitored properties

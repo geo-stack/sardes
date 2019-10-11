@@ -206,8 +206,9 @@ class DatabaseAccessorBase(ABC):
             ~~~~~~~~~~~~~~~~
             - sonde_serial_no: str
                 The serial number of the sonde.
-            - sonde_brand_model: str
-                The brand and model of the sonde.
+            - sonde_model_id: int, :class:`uuid.UUID`
+                The ID used to reference the sonde brand and model in the
+                database.
             - date_reception: datetime
                 The date when the sonde was added to the inventory.
             - date_withdrawal: datetime
@@ -227,6 +228,8 @@ class DatabaseAccessorBase(ABC):
 
             Optional Columns
             ~~~~~~~~~~~~~~~~
+            - sonde_brand_model: str
+                The brand and model of the sonde.
             - sonde_brand: str
                 The brand of the sonde.
             - sonde_model: str
@@ -234,7 +237,7 @@ class DatabaseAccessorBase(ABC):
         """
         return DataFrame([])
 
-    def save_sondes_data(self, sonde_id, attribute_name, value):
+    def save_sonde_data(self, sonde_id, attribute_name, value):
         """
         Save in the database the new attribute value for the sonde
         corresponding to the specified sonde UID.

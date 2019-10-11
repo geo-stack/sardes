@@ -104,19 +104,19 @@ SONDE_MODELS_LIB = pd.DataFrame([
     )
 
 SONDES_DATA = pd.DataFrame([
-    ['Solinst Barologger M1.5 Gold', '1022034',
+    [0, 'Solinst Barologger M1.5 Gold', '1022034',
      datetime(2007, 3, 26), datetime(2017, 11, 27),
      False, True, True, False,
      'Notes for sonde Solinst Barologger M1.5 Gold 1022034'],
-    ['Solinst LT M10 Gold', '1062392',
+    [1, 'Solinst LT M10 Gold', '1062392',
      datetime(2011, 5, 10), datetime(2017, 11, 27),
      False, True, True, False,
      'Notes for sonde Solinst LT M10 Gold 1062392'],
-    ['Solinst LT M10 Edge', '2004771',
+    [2, 'Solinst LT M10 Edge', '2004771',
      datetime(2012, 1, 1), None,
      False, False, False, False,
      'Notes for sonde Solinst LT M10 Edge 2004771']],
-    columns=['sonde_brand_model', 'sonde_serial_no',
+    columns=['sonde_model_id', 'sonde_brand_model', 'sonde_serial_no',
              'date_reception', 'date_withdrawal', 'in_repair',
              'out_of_order', 'lost', 'off_network', 'sonde_notes']
     )
@@ -196,8 +196,17 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         to the sondes used to monitor groundwater properties in the wells.
         """
         sleep(0.3)
-        return deepcopy(SONDES_DATA).sort_values(
-            ['sonde_brand_model', 'sonde_serial_no'])
+        return (deepcopy(SONDES_DATA)
+                .sort_values(['sonde_brand_model', 'sonde_serial_no'])
+                .drop('sonde_brand_model', axis=1)
+                )
+
+    def save_sonde_data(self, sonde_id, attribute_name, attribute_value):
+        """
+        Save in the database the new attribute value for the sonde
+        corresponding to the specified sonde UID.
+        """
+        SONDES_DATA.loc[sonde_id, attribute_name] = attribute_value
 
     # ---- Monitored properties
     @property

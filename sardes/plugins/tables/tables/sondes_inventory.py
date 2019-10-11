@@ -8,6 +8,8 @@
 # -----------------------------------------------------------------------------
 
 # ---- Third party imports
+import pandas as pd
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox
 
 # ---- Local imports
@@ -28,10 +30,9 @@ class SondeModelEditDelegate(SardesItemDelegate):
 
         # Populate the combobox with the available brand in the library.
         sonde_models_lib = self.model_view.source_model._sonde_models_lib
-        if sonde_models_lib is not None:
-            for brand in sorted(
-                    sonde_models_lib['sonde_brand_model'].unique()):
-                editor.addItem(brand, userData=brand)
+        for index in sonde_models_lib.index:
+            editor.addItem(sonde_models_lib.loc[index, 'sonde_brand_model'],
+                           userData=index)
         return editor
 
 
@@ -50,7 +51,7 @@ class SondesInventoryTableModel(SardesTableModel):
     # A list of tuple that maps the keys of the columns dataframe with their
     # corresponding human readable label to use in the GUI.
     __data_columns_mapper__ = [
-        ('sonde_brand_model', _('Model')),
+        ('sonde_model_id', _('Model')),
         ('sonde_serial_no', _('Serial Number')),
         ('date_reception', _('Date Reception')),
         ('date_withdrawal', _('Date Withdrawal')),
@@ -77,12 +78,25 @@ class SondesInventoryTableModel(SardesTableModel):
             callback=self.set_model_data, postpone_exec=True)
         self.db_connection_manager.run_tasks()
 
+    # ---- Sonde models library.
     def set_sonde_models_lib(self, sonde_models_lib):
         """
         Set the sonde model library that this model is going
         to use for its 'sonde_brand' and 'sonde_model' item delegates.
         """
         self._sonde_models_lib = sonde_models_lib
+
+    def get_sonde_model_at(self, model_index):
+        """
+        Return a human readable string containing the brand and the
+        model of the sonde corresponding to the specified model_index.
+        """
+        sonde_model_id = self.get_value_at(model_index)
+        if pd.isna(sonde_model_id) or sonde_model_id is None:
+            return ''
+        else:
+            return (self._sonde_models_lib
+                    .loc[sonde_model_id, 'sonde_brand_model'])
 
     # ---- Delegates
     def create_delegate_for_column(self, view, column):
@@ -100,7 +114,7 @@ class SondesInventoryTableModel(SardesTableModel):
             return TextEditDelegate(view)
         elif column == 'sonde_serial_no':
             return StringEditDelegate(view)
-        elif column == 'sonde_brand_model':
+        elif column == 'sonde_model_id':
             return SondeModelEditDelegate(view)
         else:
             return NotEditableDelegate(view)
@@ -117,6 +131,17 @@ class SondesInventoryTableModel(SardesTableModel):
         #             edit.dataf_index, edit.dataf_column,
         #             edit.edited_value, postpone_exec=True)
         # self.db_connection_manager.run_tasks()
+
+    # ---- Data display
+    def data(self, index, role=Qt.DisplayRole):
+        """
+        Override base class method to display a human readable string of the
+        brand and model of the sondes instead of a database ID.
+        """
+        if self.columns[index.column()] == 'sonde_model_id':
+            if role in [Qt.DisplayRole, Qt.ToolTipRole]:
+                return self.get_sonde_model_at(index)
+        return super().data(index, role)
 
 
 class SondesInventoryTableWidget(SardesTableWidget):
