@@ -104,19 +104,19 @@ SONDE_MODELS_LIB = pd.DataFrame([
     )
 
 SONDES_DATA = pd.DataFrame([
-    ['1022034', 'Solinst', 'Barologger M1.5 Gold',
+    ['Solinst', 'Barologger M1.5 Gold', '1022034',
      datetime(2007, 3, 26), datetime(2017, 11, 27),
      False, True, True, False,
      'Notes for sonde Solinst Barologger M1.5 Gold 1022034'],
-    ['1062392', 'Solinst', 'LT M10 Gold',
+    ['Solinst', 'LT M10 Gold', '1062392',
      datetime(2011, 5, 10), datetime(2017, 11, 27),
      False, True, True, False,
      'Notes for sonde Solinst LT M10 Gold 1062392'],
-    ['2004771', 'Solinst', 'LT M10 Edge',
+    ['Solinst', 'LT M10 Edge', '2004771',
      datetime(2012, 1, 1), None,
      False, False, False, False,
      'Notes for sonde Solinst LT M10 Edge 2004771']],
-    columns=['sonde_serial_no', 'sonde_brand', 'sonde_model',
+    columns=['sonde_brand', 'sonde_model', 'sonde_serial_no',
              'date_reception', 'date_withdrawal', 'in_repair',
              'out_of_order', 'lost', 'off_network', 'sonde_notes']
     )

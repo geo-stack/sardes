@@ -12,11 +12,15 @@ Tests for the DatabaseConnectionWidget.
 """
 
 # ---- Standard imports
+# ---- Standard imports
+import os
 import os.path as osp
 from unittest.mock import Mock
+os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import pytest
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QMainWindow
 
 # ---- Local imports
@@ -25,7 +29,7 @@ from sardes.database.accessor_demo import (
     DatabaseAccessorDemo, OBS_WELLS_DF, SONDE_MODELS_LIB, SONDES_DATA)
 from sardes.plugins.tables import SARDES_PLUGIN_CLASS
 from sardes.plugins.tables.tables.sondes_inventory import (
-    SondesInventoryTableModel)
+    SondeBrandEditDelegate, SondesInventoryTableModel)
 from sardes.plugins.tables.tables.observation_wells import (
     ObsWellsTableModel)
 
@@ -79,10 +83,58 @@ def test_tables_plugin_init(mainwindow):
     tablewidget = mainwindow.plugin._tables[SondesInventoryTableModel.TABLE_ID]
     assert tablewidget.tableview.row_count() == len(SONDES_DATA)
 
+
 # =============================================================================
 # ---- Tests Table Sondes Inventory
 # =============================================================================
+def test_edit_sonde_brand(mainwindow, qtbot):
+    """
+    Test editing sonde brand in the sondes inventory table.
+    """
+    tablewidget = mainwindow.plugin._tables[SondesInventoryTableModel.TABLE_ID]
+    tableview = tablewidget.tableview
+    model = tablewidget.tableview.model()
 
+    # We need to select the tab corresponding to the table sondes inventory.
+    mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
+
+    # Select the first cell of the table.
+    brand_model_index = tableview.model().index(0, 0)
+    model_model_index = tableview.model().index(0, 1)
+    assert brand_model_index.data() == 'Solinst'
+    assert model_model_index.data() == 'Barologger M1.5 Gold'
+    assert model.get_value_at(brand_model_index) == 'Solinst'
+    assert model.get_value_at(model_model_index) == 'Barologger M1.5 Gold'
+
+    qtbot.mouseClick(
+        tableview.viewport(),
+        Qt.LeftButton,
+        pos=tableview.visualRect(brand_model_index).center())
+
+    # Enable editing mode on the selected cell.
+    qtbot.keyPress(tableview, Qt.Key_Enter)
+    assert tableview.state() == tableview.EditingState
+
+    # Assert the editor of the item delegate is showing the right data.
+    editor = tableview.itemDelegate(brand_model_index).editor
+    assert editor.currentData() == 'Solinst'
+    assert editor.count() == len(SONDE_MODELS_LIB['sonde_brand'].unique())
+
+    # Select a new value and accept the edit.
+    editor.setCurrentIndex(editor.findData('Telog 2'))
+    qtbot.keyPress(editor, Qt.Key_Enter)
+    assert tableview.state() != tableview.EditingState
+    assert brand_model_index.data() == 'Telog 2'
+    assert model_model_index.data() == ''
+    assert model.get_value_at(brand_model_index) == 'Telog 2'
+    assert model.get_value_at(model_model_index) is None
+
+    # Undo the last edit.
+    tableview. _undo_last_data_edit()
+    assert brand_model_index.data() == 'Solinst'
+    assert model_model_index.data() == 'Barologger M1.5 Gold'
+    assert model.get_value_at(brand_model_index) == 'Solinst'
+    assert model.get_value_at(model_model_index) == 'Barologger M1.5 Gold'
 
 
 if __name__ == "__main__":
