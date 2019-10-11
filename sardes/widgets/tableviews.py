@@ -478,21 +478,9 @@ class SardesTableModelBase(QAbstractTableModel):
 
     def data(self, index, role=Qt.DisplayRole):
         """Qt method override."""
-        column_key = self.columns[index.column()]
-        row = index.row()
-        try:
-            column = self.dataf.columns.get_loc(column_key)
-        except KeyError:
-            column = None
-
-        if role == Qt.DisplayRole:
-            if column is None:
-                value = ''
-            else:
-                value = self.get_edited_data_at(index)
-                if isinstance(value, NoDataEdit):
-                    value = self.dataf.iloc[row, column]
-                value = '' if (pd.isna(value) or value is None) else value
+        if role in [Qt.DisplayRole, Qt.ToolTipRole]:
+            value = self.get_value_at(index)
+            value = '' if (pd.isna(value) or value is None) else value
             if pd.api.types.is_bool(value):
                 value = _('Yes') if value else _('No')
             return str(value)
@@ -503,9 +491,6 @@ class SardesTableModelBase(QAbstractTableModel):
                 return QColor('#CCFF99')
             else:
                 return QStyleOption().palette.base().color()
-        elif role == Qt.ToolTipRole:
-            return (QVariant() if column is None
-                    else self.dataf.iloc[row, column])
         else:
             return QVariant()
 
