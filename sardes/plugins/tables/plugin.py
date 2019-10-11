@@ -22,7 +22,7 @@ from qtpy.QtWidgets import QApplication, QFileDialog, QTabWidget
 from sardes.config.main import CONF
 
 
-"""Observation well explorer plugin"""
+"""Tables plugin"""
 
 
 class Tables(SardesPlugin):
