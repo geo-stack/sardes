@@ -137,5 +137,53 @@ def test_edit_sonde_brand(mainwindow, qtbot):
     assert model.get_value_at(model_model_index) == 'Barologger M1.5 Gold'
 
 
+def test_edit_sonde_model(mainwindow, qtbot):
+    """
+    Test editing sonde model in the sondes inventory table.
+    """
+    tablewidget = mainwindow.plugin._tables[SondesInventoryTableModel.TABLE_ID]
+    tableview = tablewidget.tableview
+    model = tablewidget.tableview.model()
+
+    # We need to select the tab corresponding to the table sondes inventory.
+    mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
+
+    # Select the model cell on the first row of the table.
+    model_index = tableview.model().index(0, 1)
+    assert model_index.data() == 'Barologger M1.5 Gold'
+    assert model.get_value_at(model_index) == 'Barologger M1.5 Gold'
+
+    qtbot.mouseClick(
+        tableview.viewport(),
+        Qt.LeftButton,
+        pos=tableview.visualRect(model_index).center())
+
+    # Enable editing mode on the selected cell.
+    qtbot.keyPress(tableview, Qt.Key_Enter)
+    assert tableview.state() == tableview.EditingState
+
+    # Assert the editor of the item delegate is showing the right data.
+    editor = tableview.itemDelegate(model_index).editor
+    assert editor.currentData() == 'Barologger M1.5 Gold'
+    assert (editor.count() ==
+            len(SONDE_MODELS_LIB
+                [SONDE_MODELS_LIB['sonde_brand'] == 'Solinst']
+                ['sonde_model']
+                .unique())
+            )
+
+    # Select a new value and accept the edit.
+    editor.setCurrentIndex(editor.findData('L M10'))
+    qtbot.keyPress(editor, Qt.Key_Enter)
+    assert tableview.state() != tableview.EditingState
+    assert model_index.data() == 'L M10'
+    assert model.get_value_at(model_index) == 'L M10'
+
+    # Undo the last edit.
+    tableview. _undo_last_data_edit()
+    assert model_index.data() == 'Barologger M1.5 Gold'
+    assert model.get_value_at(model_index) == 'Barologger M1.5 Gold'
+
+
 if __name__ == "__main__":
     pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
