@@ -10,13 +10,16 @@
 """Qt utilities"""
 
 # ---- Standard imports
+from datetime import datetime
 from math import pi
 import sys
+from time import strptime
 
 # ---- Third party imports
-from qtpy.QtGui import QFont, QKeySequence
-from qtpy.QtCore import QByteArray, QPoint, QSize, Qt
-from qtpy.QtWidgets import QAction, QSizePolicy, QToolBar, QToolButton, QWidget
+from qtpy.QtGui import QKeySequence
+from qtpy.QtCore import QByteArray, QDateTime, QPoint, QSize, Qt
+from qtpy.QtWidgets import (QAction, QDateEdit, QSizePolicy, QToolBar,
+                            QToolButton, QWidget)
 
 # ---- Local imports
 from sardes.config.gui import (get_iconsize, get_toolbar_item_spacing)
@@ -198,3 +201,29 @@ def qbytearray_to_hexstate(qba):
 def hexstate_to_qbytearray(hexstate):
     """Convert a str hexstate to a QByteArray object."""
     return QByteArray().fromHex(str(hexstate).encode('utf-8'))
+
+
+def qdatetime_from_datetime(datetime_object):
+    """Convert a datetime to a QDateTime object."""
+    return QDateTime(*tuple(datetime_object.timetuple())[:6])
+
+
+def get_datetime_from_editor(editor):
+    """
+    Return a datetime object corresponding to the current datetime value of a
+    a QDateTimeEdit widget.
+    """
+    dtime = datetime.strptime(
+        editor.dateTime().toString('yyyy-MM-dd hh:mm'), '%Y-%m-%d %H:%M')
+    if isinstance(editor, QDateEdit):
+        return dtime.date()
+    else:
+        return dtime
+
+
+def qdatetime_from_str(str_date_time, datetime_format="%Y-%m-%d %H:%M"):
+    """Convert a date time str to a QDateTime object."""
+    struct_time = strptime(str_date_time, datetime_format)
+    return QDateTime(struct_time.tm_year, struct_time.tm_mon,
+                     struct_time.tm_mday, struct_time.tm_hour,
+                     struct_time.tm_min)

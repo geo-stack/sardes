@@ -172,6 +172,9 @@ FA_ICONS = {
     'succes': [
         ('mdi.check-circle-outline',),
         {'color': GREEN, 'scale_factor': 1.3}],
+    'table': [
+        ('mdi.table',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'tooloptions': [
         ('fa.bars',),
         {'color': ICON_COLOR}],

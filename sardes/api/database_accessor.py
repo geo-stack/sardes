@@ -154,6 +154,109 @@ class DatabaseAccessorBase(ABC):
         """
         return DataFrame([])
 
+    # ---- Sondes
+    def get_sonde_models_lib(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the information related
+        to sonde brands and models.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A :class:`pandas.DataFrame` containing the information related
+            to sonde brands and models.
+
+            The row indexes of the dataframe must correspond to the IDs
+            used to reference the sonde model and brand combination in
+            the database.
+
+            The dataframe can contain any of the columns that are
+            listed below.
+
+            Columns
+            ~~~~~~~~~~~~~~~~
+            - sonde_brand_model: str
+                A sonde brand and model combination.
+            - sonde_brand: str
+                A sonde manufacturer.
+            - sonde_model: str
+                A sonde model.
+        """
+        return DataFrame([])
+
+    def get_sondes_data(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the information related
+        to the sondes used to monitor groundwater properties in the wells.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A :class:`pandas.DataFrame` containing the information related
+            to the sondes used to monitor groundwater properties in the wells.
+
+            The row indexes of the dataframe must correspond to the
+            sonde IDs, which are unique identifiers used to reference the
+            sondes in the database.
+
+            The dataframe can contain any of the columns that are
+            listed below.
+
+            Required Columns
+            ~~~~~~~~~~~~~~~~
+            - sonde_serial_no: str
+                The serial number of the sonde.
+            - sonde_model_id: int, :class:`uuid.UUID`
+                The ID used to reference the sonde brand and model in the
+                database.
+            - date_reception: datetime
+                The date when the sonde was added to the inventory.
+            - date_withdrawal: datetime
+                The date when the sonde was removed from the inventory.
+            - in_repair: bool
+                Indicate wheter the sonde is currently being repaired.
+            - out_of_order: bool
+                Indicate whether the sonde is out of order.
+                unconsolidated sediment.
+            - lost: bool
+                Indicates whether the sonde has been lost.
+            - off_network: bool
+                Indicate whether the sonde is currently being used outside
+                of the monitoring network.
+            - sonde_notes: str
+                Any notes related to the sonde.
+
+            Optional Columns
+            ~~~~~~~~~~~~~~~~
+            - sonde_brand_model: str
+                The brand and model of the sonde.
+            - sonde_brand: str
+                The brand of the sonde.
+            - sonde_model: str
+                The model of the sonde.
+        """
+        return DataFrame([])
+
+    def save_sonde_data(self, sonde_id, attribute_name, value):
+        """
+        Save in the database the new attribute value for the sonde
+        corresponding to the specified sonde UID.
+
+        Parameters
+        ----------
+        sonde_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the sonde in the database.
+        attribute_name: str
+            Name of the attribute of the sonde for which the
+            value need to be updated in the database.
+            See :func:`get_sondes_data` for the list of attributes
+            that are defined for the sonde feature.
+        value: object
+            Value that need to be updated for the corresponding attribute and
+            sonde.
+        """
+        raise NotImplementedError
+
     # ---- Monitored properties
     @property
     @abstractmethod

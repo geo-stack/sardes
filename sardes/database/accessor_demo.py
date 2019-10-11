@@ -9,6 +9,7 @@
 
 # ---- Standard imports
 from copy import deepcopy
+from datetime import date
 from time import sleep
 
 # ---- Third party imports
@@ -24,11 +25,6 @@ from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
 # =============================================================================
 # Module variable definition
 # =============================================================================
-OBS_WELLS_COLUMNS = ['obs_well_id', 'common_name', 'municipality',
-                     'aquifer_type', 'confinement', 'aquifer_code',
-                     'in_recharge_zone', 'is_influenced', 'latitude',
-                     'longitude', 'is_station_active', 'obs_well_notes']
-
 OBS_WELLS_DATA = []
 for i in range(5):
     OBS_WELL_ID = '0'
@@ -56,7 +52,13 @@ for i in range(5):
         round(-75 + np.random.rand(1)[0] * 2, 6),
         bool(np.floor(np.random.rand(1) * 2)),
         'Notes for observation well #{}'.format(OBS_WELL_ID)])
-OBS_WELLS_DF = pd.DataFrame(OBS_WELLS_DATA, columns=OBS_WELLS_COLUMNS)
+OBS_WELLS_DF = pd.DataFrame(
+    OBS_WELLS_DATA,
+    columns=['obs_well_id', 'common_name', 'municipality',
+             'aquifer_type', 'confinement', 'aquifer_code',
+             'in_recharge_zone', 'is_influenced', 'latitude',
+             'longitude', 'is_station_active', 'obs_well_notes']
+    )
 
 MONITORED_PROPERTIES = ['NIV_EAU', 'TEMP', 'COND_ELEC']
 MONITORED_PROPERTY_NAMES = {
@@ -85,6 +87,37 @@ TSERIES_VALUES += 1 * np.sin(YEARLY_RADS * 4)
 TSERIES_VALUES += 0.5 * np.sin(YEARLY_RADS * 8)
 TSERIES_VALUES += 0.25 * np.random.rand(len(TSERIES_VALUES))
 TSERIES['NIV_EAU'] = Series(TSERIES_VALUES, index=DATE_RANGE)
+
+SONDE_MODELS_LIB = pd.DataFrame([
+    ['Solinst', 'Barologger M1.5 Gold'],
+    ['Solinst', 'LT M10 Gold'],
+    ['Solinst', 'LT M10 Edge'],
+    ['Solinst', 'Barologger M1,5'],
+    ['Solinst', 'LT M20 Gold'],
+    ['Solinst', 'L M10'],
+    ['Telog 1', 'Druck'],
+    ['Telog 2', 'Druck'],
+    ['In-Situ', 'Troll']],
+    columns=['sonde_brand', 'sonde_model']
+    )
+
+SONDES_DATA = pd.DataFrame([
+    [0, 'Solinst Barologger M1.5 Gold', '1022034',
+     date(2007, 3, 26), date(2017, 11, 27),
+     False, True, True, False,
+     'Notes for sonde Solinst Barologger M1.5 Gold 1022034'],
+    [1, 'Solinst LT M10 Gold', '1062392',
+     date(2011, 5, 10), date(2017, 11, 27),
+     False, True, True, False,
+     'Notes for sonde Solinst LT M10 Gold 1062392'],
+    [2, 'Solinst LT M10 Edge', '2004771',
+     date(2012, 1, 1), None,
+     False, False, False, False,
+     'Notes for sonde Solinst LT M10 Edge 2004771']],
+    columns=['sonde_model_id', 'sonde_brand_model', 'sonde_serial_no',
+             'date_reception', 'date_withdrawal', 'in_repair',
+             'out_of_order', 'lost', 'off_network', 'sonde_notes']
+    )
 
 
 # =============================================================================
@@ -142,13 +175,42 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         Return a :class:`pandas.DataFrame` containing the information related
         to the observation wells that are saved in the database.
         """
-        print("Fetching observation wells from the database...", end='')
         sleep(0.3)
-        print("done")
-        if self.is_connected():
-            return deepcopy(OBS_WELLS_DF)
-        else:
-            raise AttributeError
+        return deepcopy(OBS_WELLS_DF)
+
+    # ---- Sondes
+    def get_sonde_models_lib(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the information related
+        to sonde brands and models.
+        """
+        sleep(0.1)
+        sonde_models = deepcopy(SONDE_MODELS_LIB)
+
+        # Combine the brand and model into a same field.
+        sonde_models['sonde_brand_model'] = (
+            sonde_models[['sonde_brand', 'sonde_model']]
+            .apply(lambda x: ' '.join(x), axis=1))
+
+        return sonde_models.sort_values('sonde_brand_model')
+
+    def get_sondes_data(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the information related
+        to the sondes used to monitor groundwater properties in the wells.
+        """
+        sleep(0.3)
+        return (deepcopy(SONDES_DATA)
+                .sort_values(['sonde_brand_model', 'sonde_serial_no'])
+                .drop('sonde_brand_model', axis=1)
+                )
+
+    def save_sonde_data(self, sonde_id, attribute_name, attribute_value):
+        """
+        Save in the database the new attribute value for the sonde
+        corresponding to the specified sonde UID.
+        """
+        SONDES_DATA.loc[sonde_id, attribute_name] = attribute_value
 
     # ---- Monitored properties
     @property

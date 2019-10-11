@@ -11,6 +11,7 @@
 # ---- Standard imports
 import sys
 from collections import OrderedDict
+from datetime import datetime
 import itertools
 from math import floor, ceil
 
@@ -21,11 +22,11 @@ from qtpy.QtCore import (QAbstractTableModel, QEvent, QModelIndex,
                          QItemSelection, QItemSelectionModel, QRect,
                          )
 from qtpy.QtGui import QColor, QCursor, QPen
-from qtpy.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox,
-                            QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox,
-                            QSpinBox, QStyledItemDelegate, QTableView,
-                            QTextEdit, QListView, QStyle, QStyleOption,
-                            )
+from qtpy.QtWidgets import (QApplication, QComboBox, QDateEdit,
+                            QDoubleSpinBox, QHeaderView, QLabel, QLineEdit,
+                            QMenu, QMessageBox, QSpinBox, QStyledItemDelegate,
+                            QTableView, QTextEdit, QListView, QStyle,
+                            QStyleOption)
 
 # ---- Local imports
 from sardes import __appname__
@@ -35,7 +36,8 @@ from sardes.config.gui import get_iconsize
 from sardes.utils.data_operations import intervals_extract
 from sardes.utils.qthelpers import (
     create_action, create_toolbutton, create_toolbar_stretcher,
-    qbytearray_to_hexstate, hexstate_to_qbytearray)
+    qbytearray_to_hexstate, hexstate_to_qbytearray, qdatetime_from_datetime,
+    get_datetime_from_editor)
 
 
 # =============================================================================
@@ -134,7 +136,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
             # the model or else, unique check will always return an error.
             error_message = self.validate_edits()
 
-            # We store the edits even though they are not validated, so that
+            # We store the edits even if the validation fails, so that
             # when we return to this delegate to edits, the last value
             # entered by the user is preserved.
             self.model.set_data_edits_at(self.model_index, editor_value)
@@ -200,9 +202,6 @@ class SardesItemDelegate(SardesItemDelegateBase):
     Specific delegates *can* inherit this class and reimplement its interface.
     """
 
-    def __init__(self, *args, **kargs):
-        super() .__init__(*args, **kargs)
-
     def create_editor(self, parent):
         """Return the editor to use in this item delegate."""
         raise NotImplementedError
@@ -225,6 +224,8 @@ class SardesItemDelegate(SardesItemDelegateBase):
             return self.editor.value()
         elif isinstance(self.editor, QComboBox):
             return self.editor.itemData(self.editor.currentIndex())
+        elif isinstance(self.editor, QDateEdit):
+            return get_datetime_from_editor(self.editor)
         else:
             raise NotImplementedError
 
@@ -248,6 +249,10 @@ class SardesItemDelegate(SardesItemDelegateBase):
                     break
             else:
                 self.editor.setCurrentIndex(0)
+        elif isinstance(self.editor, QDateEdit):
+            data = (datetime.today() if (pd.isna(data) or data is None)
+                    else data)
+            self.editor.setDateTime(qdatetime_from_datetime(data))
         else:
             raise NotImplementedError
 
@@ -256,13 +261,22 @@ class SardesItemDelegate(SardesItemDelegateBase):
         return None
 
 
+class DateEditDelegate(SardesItemDelegate):
+    """
+    A delegate to edit a date.
+    """
+
+    def create_editor(self, parent):
+        editor = QDateEdit(parent)
+        editor.setCalendarPopup(True)
+        editor.setDisplayFormat("yyyy-MM-dd")
+        return editor
+
+
 class TextEditDelegate(SardesItemDelegate):
     """
     A delegate to edit very long strings that can span over multiple lines.
     """
-
-    def __init__(self, model_view):
-        super() .__init__(model_view, unique_constraint=False)
 
     def create_editor(self, parent):
         return QTextEdit(parent)
@@ -273,9 +287,6 @@ class StringEditDelegate(SardesItemDelegate):
     A delegate to edit a 250 characters strings.
     """
     MAX_LENGTH = 250
-
-    def __init__(self, model_view, unique_constraint=False):
-        super() .__init__(model_view, unique_constraint=unique_constraint)
 
     def create_editor(self, parent):
         editor = QLineEdit(parent)
@@ -315,9 +326,6 @@ class BoolEditDelegate(SardesItemDelegate):
     """
     A delegate to edit a boolean value with a combobox.
     """
-
-    def __init__(self, parent=None):
-        super() .__init__(parent)
 
     def create_editor(self, parent):
         editor = QComboBox(parent)
@@ -374,10 +382,6 @@ class SardesTableModelBase(QAbstractTableModel):
     ValueChanged = 0
     RowAdded = 1
     RowRemoved = 2
-
-    # A list of tuple that maps the keys of the columns dataframe with their
-    # corresponding human readable label to use in the GUI.
-    __data_columns_mapper__ = []
 
     def __init__(self, db_connection_manager=None):
         super().__init__()
@@ -474,21 +478,9 @@ class SardesTableModelBase(QAbstractTableModel):
 
     def data(self, index, role=Qt.DisplayRole):
         """Qt method override."""
-        column_key = self.columns[index.column()]
-        row = index.row()
-        try:
-            column = self.dataf.columns.get_loc(column_key)
-        except KeyError:
-            column = None
-
-        if role == Qt.DisplayRole:
-            if column is None:
-                value = ''
-            else:
-                value = self.get_edited_data_at(index)
-                if isinstance(value, NoDataEdit):
-                    value = self.dataf.iloc[row, column]
-                value = '' if (pd.isna(value) or value is None) else value
+        if role in [Qt.DisplayRole, Qt.ToolTipRole]:
+            value = self.get_value_at(index)
+            value = '' if (pd.isna(value) or value is None) else value
             if pd.api.types.is_bool(value):
                 value = _('Yes') if value else _('No')
             return str(value)
@@ -499,9 +491,6 @@ class SardesTableModelBase(QAbstractTableModel):
                 return QColor('#CCFF99')
             else:
                 return QStyleOption().palette.base().color()
-        elif role == Qt.ToolTipRole:
-            return (QVariant() if column is None
-                    else self.dataf.iloc[row, column])
         else:
             return QVariant()
 
@@ -591,33 +580,40 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         return self._edited_data.get(model_index, NoDataEdit(model_index))
 
-    def set_data_edits_at(self, model_index, edited_value):
+    def set_data_edits_at(self, model_indexes, edited_values):
         """
-        Store the value that was edited at the specified model index.
+        Store the values that were edited at the specified model indexes.
         A signal is also emitted to indicate that the data were edited,
         so that the GUI can be updated accordingly.
         """
-        dataf_value = self.get_dataf_value_at(model_index)
-        dataf_index = self.dataf.index[model_index.row()]
-        dataf_column = self.columns[model_index.column()]
+        if not isinstance(model_indexes, list):
+            model_indexes = [model_indexes, ]
+        if not isinstance(edited_values, list):
+            edited_values = [edited_values, ]
 
-        # We store the edited value until it is commited and
+        edits = []
+        for model_index, edited_value in zip(model_indexes, edited_values):
+            dataf_value = self.get_dataf_value_at(model_index)
+            dataf_index = self.dataf.index[model_index.row()]
+            dataf_column = self.columns[model_index.column()]
+
+            edits.append(ValueChanged(model_index, edited_value,
+                                      dataf_index, dataf_column, dataf_value))
+
+            # We add the model index to the list of indexes whose value have
+            # been edited if the edited value differ from the value saved in
+            # the model's data.
+            if dataf_value != edited_value:
+                self._edited_data[model_index] = edited_value
+            else:
+                if model_index in self._edited_data:
+                    del self._edited_data[model_index]
+            self.dataChanged.emit(model_index, model_index)
+
+        # We store the edited values until it is commited and
         # saved to the database.
-        self._dataf_edits.append(
-            ValueChanged(model_index, edited_value,
-                         dataf_index, dataf_column, dataf_value))
-
-        # We add the model index to the list of indexes whose value have
-        # been edited if the edited value differ from the value saved in
-        # the model's data.
-        if dataf_value != edited_value:
-            self._edited_data[model_index] = edited_value
-        else:
-            if model_index in self._edited_data:
-                del self._edited_data[model_index]
-
+        self._dataf_edits.append(edits)
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
-        self.dataChanged.emit(model_index, model_index)
 
     def undo_last_data_edit(self, update_model_view=True):
         """
@@ -627,19 +623,30 @@ class SardesTableModelBase(QAbstractTableModel):
         if len(self._dataf_edits) == 0:
             return
 
-        # Undo the last edit.
-        last_edit = self._dataf_edits.pop(-1)
-        if last_edit.model_index in self._edited_data:
-            del self._edited_data[last_edit.model_index]
+        # Undo the last edits. Note that the last edits can comprise
+        # more than one edit.
+        last_edits = self._dataf_edits.pop(-1)
+        for last_edit in last_edits:
+            if last_edit.model_index in self._edited_data:
+                del self._edited_data[last_edit.model_index]
 
-        # Check if there was a previous edit for this model index in the stack.
-        for edit in reversed(self._dataf_edits):
-            if edit.model_index == last_edit.model_index:
-                self._edited_data[edit.model_index] = edit.edited_value
-                break
+            # Check if there was a previous edit for this model index
+            # in the stack and add it to the list of edited data if that is
+            # the case.
+            for edits in reversed(self._dataf_edits):
+                try:
+                    edit = edits[[edit.model_index for edit in edits]
+                                 .index(last_edit.model_index)]
 
-        if update_model_view:
-            self.dataChanged.emit(last_edit.model_index, last_edit.model_index)
+                    self._edited_data[edit.model_index] = edit.edited_value
+                except ValueError:
+                    continue
+                else:
+                    break
+
+            if update_model_view:
+                self.dataChanged.emit(last_edit.model_index,
+                                      last_edit.model_index)
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
 
@@ -654,6 +661,13 @@ class SardesTableModel(SardesTableModelBase):
     # A list of tuple that maps the keys of the columns dataframe with their
     # corresponding human readable label to use in the GUI.
     __data_columns_mapper__ = []
+
+    # The label that will be used to reference this table in the GUI.
+    TABLE_TITLE = ''
+
+    # A unique ID that will be used to reference this table in the code and
+    # in the user configurations.
+    TABLE_ID = ''
 
     def __init__(self, db_connection_manager=None):
         super().__init__(db_connection_manager)
@@ -700,6 +714,10 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
     def cancel_all_data_edits(self):
         self.sourceModel().cancel_all_data_edits()
 
+    @property
+    def columns(self):
+        return self.sourceModel().columns
+
     def fetch_model_data(self, *args, **kargs):
         self.sourceModel().fetch_model_data()
 
@@ -720,9 +738,14 @@ class SardesSortFilterProxyModel(QSortFilterProxyModel):
     def save_data_edits(self):
         self.sourceModel().save_data_edits()
 
-    def set_data_edits_at(self, proxy_index, value):
-        self.sourceModel().set_data_edits_at(
-            self.mapToSource(proxy_index), value)
+    def set_data_edits_at(self, proxy_indexes, edited_values):
+        if not isinstance(proxy_indexes, list):
+            proxy_indexes = [proxy_indexes, ]
+        if not isinstance(edited_values, list):
+            edited_values = [edited_values, ]
+
+        model_indexes = [self.mapToSource(idx) for idx in proxy_indexes]
+        self.sourceModel().set_data_edits_at(model_indexes, edited_values)
 
     def undo_last_data_edit(self, update_model_view=True):
         self.sourceModel().undo_last_data_edit(update_model_view)
@@ -882,7 +905,8 @@ class SardesTableView(QTableView):
             icon='edit_database_item',
             tip=_("Edit the currently focused item in this table."),
             triggered=self._edit_current_item,
-            shortcut=['Enter', 'Return'])
+            shortcut=['Enter', 'Return'],
+            context=Qt.WidgetShortcut)
         self.selectionModel().currentChanged.connect(
             lambda current, previous: edit_item_action.setEnabled(
                 self.is_data_editable_at(current)))
@@ -892,7 +916,8 @@ class SardesTableView(QTableView):
             icon='commit_changes',
             tip=_('Save all edits made to the table in the database.'),
             triggered=lambda: self._save_data_edits(force=False),
-            shortcut='Ctrl+S')
+            shortcut='Ctrl+S',
+            context=Qt.WidgetShortcut)
         save_edits_action.setEnabled(False)
         self.sig_data_edited.connect(save_edits_action.setEnabled)
 
@@ -901,7 +926,8 @@ class SardesTableView(QTableView):
             icon='cancel_changes',
             tip=_('Cancel all edits made to the table since last save.'),
             triggered=self._cancel_data_edits,
-            shortcut='Ctrl+Delete')
+            shortcut='Ctrl+Delete',
+            context=Qt.WidgetShortcut)
         cancel_edits_action.setEnabled(False)
         self.sig_data_edited.connect(cancel_edits_action.setEnabled)
 
@@ -910,7 +936,8 @@ class SardesTableView(QTableView):
             icon='undo',
             tip=_('Undo last edit made to the table.'),
             triggered=self._undo_last_data_edit,
-            shortcut='Ctrl+Z')
+            shortcut='Ctrl+Z',
+            context=Qt.WidgetShortcut)
         undo_edits_action.setEnabled(False)
         self.sig_data_edited.connect(undo_edits_action.setEnabled)
 
@@ -925,14 +952,16 @@ class SardesTableView(QTableView):
             icon='select_all',
             tip=_("Selects all items in the table."),
             triggered=self.selectAll,
-            shortcut='Ctrl+A')
+            shortcut='Ctrl+A',
+            context=Qt.WidgetShortcut)
 
         select_clear_action = create_action(
             self, _("Clear All"),
             icon='select_clear',
             tip=_("Clears the selection in the table."),
             triggered=lambda _: self.selectionModel().clearSelection(),
-            shortcut='Escape')
+            shortcut='Escape',
+            context=Qt.WidgetShortcut)
 
         select_row_action = create_action(
             self, _("Select Row"),
@@ -942,7 +971,7 @@ class SardesTableView(QTableView):
                   "all rows that intersect the selection will be selected."),
             triggered=self.select_row,
             shortcut='Shift+Space',
-            context=Qt.WindowShortcut)
+            context=Qt.WidgetShortcut)
 
         select_column_action = create_action(
             self, _("Select Column"),
@@ -951,7 +980,8 @@ class SardesTableView(QTableView):
                   "If the current selection spans multiple columns, all "
                   "columns that intersect the selection will be selected."),
             triggered=self.select_column,
-            shortcut='Ctrl+Space')
+            shortcut='Ctrl+Space',
+            context=Qt.WidgetShortcut)
 
         self._actions['selection'] = [
             select_all_action, select_clear_action, select_row_action,
@@ -966,7 +996,8 @@ class SardesTableView(QTableView):
                   "in ascending order."),
             triggered=lambda _:
                 self.sort_by_current_column(Qt.AscendingOrder),
-            shortcut="Ctrl+<")
+            shortcut="Ctrl+<",
+            context=Qt.WidgetShortcut)
 
         sort_descending_action = create_action(
             self, _("Sort Descending"),
@@ -975,14 +1006,16 @@ class SardesTableView(QTableView):
                   "in descending order."),
             triggered=lambda _:
                 self.sort_by_current_column(Qt.DescendingOrder),
-            shortcut="Ctrl+>")
+            shortcut="Ctrl+>",
+            context=Qt.WidgetShortcut)
 
         sort_clear_action = create_action(
             self, _("Clear Sort"),
             icon='sort_clear',
             tip=_("Clear all sorts applied to the columns of the table."),
             triggered=lambda _: self.clear_sort(),
-            shortcut="Ctrl+.")
+            shortcut="Ctrl+.",
+            context=Qt.WidgetShortcut)
 
         self._actions['sort'] = [sort_ascending_action, sort_descending_action,
                                  sort_clear_action]
@@ -993,13 +1026,15 @@ class SardesTableView(QTableView):
             self.addAction(create_action(
                 parent=self,
                 triggered=lambda _, key=key: self.move_current_to_border(key),
-                shortcut='Ctrl+{}'.format(key)
+                shortcut='Ctrl+{}'.format(key),
+                context=Qt.WidgetShortcut
                 ))
             self.addAction(create_action(
                 parent=self,
                 triggered=lambda _, key=key:
                     self.extend_selection_to_border(key),
-                shortcut='Ctrl+Shift+{}'.format(key)
+                shortcut='Ctrl+Shift+{}'.format(key),
+                context=Qt.WidgetShortcut
                 ))
 
     # ---- Data sorting
@@ -1409,14 +1444,25 @@ class SardesTableView(QTableView):
 
 
 class SardesTableWidget(SardesPaneWidget):
+
     def __init__(self, table_model, parent=None):
         super().__init__(parent)
+        self.setAutoFillBackground(True)
 
         self.tableview = SardesTableView(table_model)
         self.set_central_widget(self.tableview)
 
         self._setup_upper_toolbar()
         self._setup_status_bar()
+
+    # ---- Public methods
+    def get_table_title(self):
+        """Return the title of this widget's table."""
+        return self.tableview.source_model.TABLE_TITLE
+
+    def get_table_id(self):
+        """Return the ID of this widget's table."""
+        return self.tableview.source_model.TABLE_ID
 
     # ---- Setup
     def _setup_upper_toolbar(self):
@@ -1445,6 +1491,7 @@ class SardesTableWidget(SardesPaneWidget):
         Setup the status bar of this table widget.
         """
         statusbar = self.statusBar()
+        statusbar.setSizeGripEnabled(False)
 
         # Number of row(s) selected.
         self.selected_line_count = QLabel()

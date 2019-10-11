@@ -9,18 +9,17 @@
 
 # ---- Third party imports
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication, QFileDialog
 
 
 # ---- Local imports
-from sardes.widgets.tableviews import (
-    SardesTableModel, StringEditDelegate, BoolEditDelegate, NumEditDelegate,
-    NotEditableDelegate, TextEditDelegate)
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
 from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
-from sardes.widgets.tableviews import SardesTableWidget
 from sardes.utils.qthelpers import create_toolbutton
+from sardes.widgets.tableviews import (
+    SardesTableModel, SardesTableWidget, StringEditDelegate, BoolEditDelegate,
+    NumEditDelegate, NotEditableDelegate, TextEditDelegate)
 
 
 class ObsWellsTableModel(SardesTableModel):
@@ -28,6 +27,13 @@ class ObsWellsTableModel(SardesTableModel):
     A table model to display the list of observation wells that are saved
     in the database.
     """
+    # The label that will be used to reference this table in the GUI.
+    TABLE_TITLE = _('Observation Wells')
+
+    # An id that will be used to reference this table in the code and
+    # in the user configurations.
+    TABLE_ID = 'table_observation_wells'
+
     # A list of tuple that maps the keys of the columns dataframe with their
     # corresponding human readable label to use in the GUI.
     __data_columns_mapper__ = [
@@ -42,7 +48,7 @@ class ObsWellsTableModel(SardesTableModel):
         ('latitude', _('Latitude')),
         ('longitude', _('Longitude')),
         ('is_station_active', _('Active')),
-        ('obs_well_notes', _('Note'))
+        ('obs_well_notes', _('Notes'))
         ]
 
     def fetch_model_data(self, *args, **kargs):
@@ -79,15 +85,17 @@ class ObsWellsTableModel(SardesTableModel):
         """
         Save all data edits to the database.
         """
-        for edit in self._dataf_edits:
-            if edit.type() == self.ValueChanged:
-                self.db_connection_manager.save_observation_well_data(
-                    edit.dataf_index, edit.dataf_column,
-                    edit.edited_value, postpone_exec=True)
+        for edits in self._dataf_edits:
+            for edit in edits:
+                if edit.type() == self.ValueChanged:
+                    self.db_connection_manager.save_observation_well_data(
+                        edit.dataf_index, edit.dataf_column,
+                        edit.edited_value, postpone_exec=True)
         self.db_connection_manager.run_tasks()
 
 
 class ObsWellsTableWidget(SardesTableWidget):
+
     def __init__(self, db_connection_manager, parent=None):
         table_model = ObsWellsTableModel(db_connection_manager)
         super().__init__(table_model, parent)
