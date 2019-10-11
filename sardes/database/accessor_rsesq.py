@@ -379,6 +379,18 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         return obs_wells
 
     # ---- Sondes
+    def _get_sonde(self, sonde_id):
+        """
+        Return the sqlalchemy Sondes object corresponding to the
+        specified sonde ID.
+        """
+        sonde = (
+            self._session.query(Sondes)
+            .filter(Sondes.sonde_uuid == sonde_id)
+            .one()
+            )
+        return sonde
+
     def get_sonde_models_lib(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -441,6 +453,15 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         sondes.set_index('sonde_uuid', inplace=True, drop=True)
 
         return sondes
+
+    def save_sonde_data(self, sonde_id, attribute_name, attribute_value):
+        """
+        Save in the database the new attribute value for the sonde
+        corresponding to the specified sonde UID.
+        """
+        sonde = self._get_sonde(sonde_id)
+        setattr(sonde, attribute_name, attribute_value)
+        self._session.commit()
 
     # ---- Monitored properties
     @property

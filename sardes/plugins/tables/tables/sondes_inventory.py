@@ -124,13 +124,13 @@ class SondesInventoryTableModel(SardesTableModel):
         """
         Save all data edits to the database.
         """
-        pass
-        # for edit in self._dataf_edits:
-        #     if edit.type() == self.ValueChanged:
-        #         self.db_connection_manager.save_observation_well_data(
-        #             edit.dataf_index, edit.dataf_column,
-        #             edit.edited_value, postpone_exec=True)
-        # self.db_connection_manager.run_tasks()
+        for edits in self._dataf_edits:
+            for edit in edits:
+                if edit.type() == self.ValueChanged:
+                    self.db_connection_manager.save_sonde_data(
+                        edit.dataf_index, edit.dataf_column,
+                        edit.edited_value, postpone_exec=True)
+        self.db_connection_manager.run_tasks()
 
     # ---- Data display
     def data(self, index, role=Qt.DisplayRole):

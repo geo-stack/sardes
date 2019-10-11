@@ -139,6 +139,14 @@ class DatabaseConnectionWorker(QObject):
             sondes = DataFrame([])
         return sondes,
 
+    def _save_sonde_data(self, sonde_id, attribute_name, attribute_value):
+        """
+        Save in the database the new attribute value for the sonde
+        corresponding to the specified sonde UID.
+        """
+        self.db_accessor.save_sonde_data(
+            sonde_id, attribute_name, attribute_value)
+
     # ---- Monitored properties
     def get_monitored_properties(self):
         """
@@ -291,6 +299,21 @@ class DatabaseConnectionManager(QObject):
         Get the list of sondes that are saved in the database.
         """
         self._add_task('get_sondes_data', callback)
+        if not postpone_exec:
+            self.run_tasks()
+
+    def save_sonde_data(self, sonde_id, attribute_name, attribute_value,
+                        callback=None, postpone_exec=False):
+        """
+        Save in the database the new attribute value for the sonde
+        corresponding to the specified sonde UID.
+        """
+        self._data_changed = True
+        self._add_task('save_sonde_data',
+                       callback,
+                       sonde_id,
+                       attribute_name,
+                       attribute_value)
         if not postpone_exec:
             self.run_tasks()
 
