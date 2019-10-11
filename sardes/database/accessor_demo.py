@@ -89,18 +89,16 @@ TSERIES_VALUES += 0.25 * np.random.rand(len(TSERIES_VALUES))
 TSERIES['NIV_EAU'] = Series(TSERIES_VALUES, index=DATE_RANGE)
 
 SONDE_MODELS_LIB = pd.DataFrame([
-    ['Solinst Barologger M1.5 Gold', 'Solinst Barologger', 'M1.5 Gold'],
-    ['Solinst LT M10 Gold', 'Solinst', 'LT M10 Gold'],
-    ['Solinst LT M10 Edge', 'Solinst', 'LT M10 Edge'],
-    ['Solinst Barologger M1,5', 'Solinst', 'Barologger M1,5'],
-    ['Solinst LT M10 Edge', 'Solinst', 'LT M10 Edge'],
-    ['Solinst LT M20 Gold', 'Solinst', 'LT M20 Gold'],
-    ['Solinst LTC M10 Edge', 'Solinst', 'LTC M10 Edge'],
-    ['Solinst L M10', 'Solinst', 'L M10'],
-    ['Telog 1 Druck', 'Telog 1', 'Druck'],
-    ['Telog 2 Druck', 'Telog 2', 'Druck'],
-    ['In-Situ Troll', 'In-Situ', 'Troll']],
-    columns=['sonde_brand_model', 'sonde_brand', 'sonde_model']
+    ['Solinst', 'Barologger M1.5 Gold'],
+    ['Solinst', 'LT M10 Gold'],
+    ['Solinst', 'LT M10 Edge'],
+    ['Solinst', 'Barologger M1,5'],
+    ['Solinst', 'LT M20 Gold'],
+    ['Solinst', 'L M10'],
+    ['Telog 1', 'Druck'],
+    ['Telog 2', 'Druck'],
+    ['In-Situ', 'Troll']],
+    columns=['sonde_brand', 'sonde_model']
     )
 
 SONDES_DATA = pd.DataFrame([
@@ -187,8 +185,14 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         to sonde brands and models.
         """
         sleep(0.1)
-        return deepcopy(SONDE_MODELS_LIB).sort_values(
-            'sonde_brand_model')
+        sonde_models = deepcopy(SONDE_MODELS_LIB)
+
+        # Combine the brand and model into a same field.
+        sonde_models['sonde_brand_model'] = (
+            sonde_models[['sonde_brand', 'sonde_model']]
+            .apply(lambda x: ' '.join(x), axis=1))
+
+        return sonde_models.sort_values('sonde_brand_model')
 
     def get_sondes_data(self):
         """
