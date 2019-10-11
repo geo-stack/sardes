@@ -69,10 +69,12 @@ class SondesInventoryTableModel(SardesTableModel):
         """
         Fetch the observation well data for this table model.
         """
-        self.db_connection_manager.get_sondes_data(
-            callback=self.set_model_data, postpone_exec=True)
+        # Note we need to fetch the sonde models library before we fetch
+        # the sonde data.
         self.db_connection_manager.get_sonde_models_lib(
             callback=self.set_sonde_models_lib, postpone_exec=True)
+        self.db_connection_manager.get_sondes_data(
+            callback=self.set_model_data, postpone_exec=True)
         self.db_connection_manager.run_tasks()
 
     def set_sonde_models_lib(self, sonde_models_lib):
