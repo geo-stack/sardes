@@ -175,6 +175,8 @@ class DatabaseAccessorBase(ABC):
 
             Columns
             ~~~~~~~~~~~~~~~~
+            - sonde_brand_model: str
+                A sonde brand and model combination.
             - sonde_brand: str
                 A sonde manufacturer.
             - sonde_model: str
@@ -200,14 +202,12 @@ class DatabaseAccessorBase(ABC):
             The dataframe can contain any of the columns that are
             listed below.
 
-            Columns
+            Required Columns
             ~~~~~~~~~~~~~~~~
             - sonde_serial_no: str
                 The serial number of the sonde.
-            - sonde_brand: str
-                The brand of the sonde.
-            - sonde_model: str
-                The model of the sonde.
+            - sonde_brand_model: str
+                The brand and model of the sonde.
             - date_reception: datetime
                 The date when the sonde was added to the inventory.
             - date_withdrawal: datetime
@@ -224,6 +224,13 @@ class DatabaseAccessorBase(ABC):
                 of the monitoring network.
             - sonde_notes: str
                 Any notes related to the sonde.
+
+            Optional Columns
+            ~~~~~~~~~~~~~~~~
+            - sonde_brand: str
+                The brand of the sonde.
+            - sonde_model: str
+                The model of the sonde.
         """
         return DataFrame([])
 

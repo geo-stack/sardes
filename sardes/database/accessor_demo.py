@@ -89,34 +89,34 @@ TSERIES_VALUES += 0.25 * np.random.rand(len(TSERIES_VALUES))
 TSERIES['NIV_EAU'] = Series(TSERIES_VALUES, index=DATE_RANGE)
 
 SONDE_MODELS_LIB = pd.DataFrame([
-    ['Solinst', 'Barologger M1.5 Gold'],
-    ['Solinst', 'LT M10 Gold'],
-    ['Solinst', 'LT M10 Edge'],
-    ['Solinst', 'Barologger M1,5'],
-    ['Solinst', 'LT M10 Edge'],
-    ['Solinst', 'LT M20 Gold'],
-    ['Solinst', 'LTC M10 Edge'],
-    ['Solinst', 'L M10'],
-    ['Telog 1', 'Druck'],
-    ['Telog 2', 'Druck'],
-    ['In-Situ', 'Troll']],
-    columns=['sonde_brand', 'sonde_model']
+    ['Solinst Barologger M1.5 Gold', 'Solinst Barologger', 'M1.5 Gold'],
+    ['Solinst LT M10 Gold', 'Solinst', 'LT M10 Gold'],
+    ['Solinst LT M10 Edge', 'Solinst', 'LT M10 Edge'],
+    ['Solinst Barologger M1,5', 'Solinst', 'Barologger M1,5'],
+    ['Solinst LT M10 Edge', 'Solinst', 'LT M10 Edge'],
+    ['Solinst LT M20 Gold', 'Solinst', 'LT M20 Gold'],
+    ['Solinst LTC M10 Edge', 'Solinst', 'LTC M10 Edge'],
+    ['Solinst L M10', 'Solinst', 'L M10'],
+    ['Telog 1 Druck', 'Telog 1', 'Druck'],
+    ['Telog 2 Druck', 'Telog 2', 'Druck'],
+    ['In-Situ Troll', 'In-Situ', 'Troll']],
+    columns=['sonde_brand_model', 'sonde_brand', 'sonde_model']
     )
 
 SONDES_DATA = pd.DataFrame([
-    ['Solinst', 'Barologger M1.5 Gold', '1022034',
+    ['Solinst Barologger M1.5 Gold', '1022034',
      datetime(2007, 3, 26), datetime(2017, 11, 27),
      False, True, True, False,
      'Notes for sonde Solinst Barologger M1.5 Gold 1022034'],
-    ['Solinst', 'LT M10 Gold', '1062392',
+    ['Solinst LT M10 Gold', '1062392',
      datetime(2011, 5, 10), datetime(2017, 11, 27),
      False, True, True, False,
      'Notes for sonde Solinst LT M10 Gold 1062392'],
-    ['Solinst', 'LT M10 Edge', '2004771',
+    ['Solinst LT M10 Edge', '2004771',
      datetime(2012, 1, 1), None,
      False, False, False, False,
      'Notes for sonde Solinst LT M10 Edge 2004771']],
-    columns=['sonde_brand', 'sonde_model', 'sonde_serial_no',
+    columns=['sonde_brand_model', 'sonde_serial_no',
              'date_reception', 'date_withdrawal', 'in_repair',
              'out_of_order', 'lost', 'off_network', 'sonde_notes']
     )
@@ -187,7 +187,8 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         to sonde brands and models.
         """
         sleep(0.1)
-        return deepcopy(SONDE_MODELS_LIB)
+        return deepcopy(SONDE_MODELS_LIB).sort_values(
+            'sonde_brand_model')
 
     def get_sondes_data(self):
         """
@@ -195,7 +196,8 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         to the sondes used to monitor groundwater properties in the wells.
         """
         sleep(0.3)
-        return deepcopy(SONDES_DATA)
+        return deepcopy(SONDES_DATA).sort_values(
+            ['sonde_brand_model', 'sonde_serial_no'])
 
     # ---- Monitored properties
     @property

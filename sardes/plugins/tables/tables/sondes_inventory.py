@@ -18,7 +18,7 @@ from sardes.widgets.tableviews import (
     TextEditDelegate, DateEditDelegate)
 
 
-class SondeBrandEditDelegate(SardesItemDelegate):
+class SondeModelEditDelegate(SardesItemDelegate):
     """
     A delegate to select the brand of a sonde from a predefined list.
     """
@@ -29,51 +29,10 @@ class SondeBrandEditDelegate(SardesItemDelegate):
         # Populate the combobox with the available brand in the library.
         sonde_models_lib = self.model_view.source_model._sonde_models_lib
         if sonde_models_lib is not None:
-            for brand in sonde_models_lib['sonde_brand'].unique():
+            for brand in sorted(
+                    sonde_models_lib['sonde_brand_model'].unique()):
                 editor.addItem(brand, userData=brand)
         return editor
-
-    def commit_data(self):
-        """
-        Override base method so that we clear the sonde model when
-        the sonde brand changes.
-        """
-        self.closeEditor.emit(self.editor, self.NoHint)
-        new_sonde_brand = self.get_editor_data()
-        old_sonde_brand = self.get_model_data()
-        if new_sonde_brand != old_sonde_brand:
-            sonde_model_model_index = self.model_view.model().index(
-                self.model_index.row(),
-                self.model_view.model().columns.index('sonde_model'))
-            self.model.set_data_edits_at(
-                [self.model_index, sonde_model_model_index],
-                [new_sonde_brand, None])
-
-
-class SondeModelEditDelegate(SardesItemDelegate):
-    """
-    A delegate to select the model of a sonde from a predefined list.
-    """
-
-    def create_editor(self, parent):
-        editor = QComboBox(parent)
-
-        # Populate the combobox with the available models for the brand
-        # at the corresponding index in the library.
-        sonde_brand = self.get_sonde_brand()
-        sonde_models_lib = self.model_view.source_model._sonde_models_lib
-        if sonde_models_lib is not None:
-            sonde_models_lib = (sonde_models_lib[
-                sonde_models_lib['sonde_brand'] == sonde_brand])
-            for model in sonde_models_lib['sonde_model'].unique():
-                editor.addItem(model, userData=model)
-        return editor
-
-    def get_sonde_brand(self):
-        brand_model_index = self.model_view.model().index(
-            self.model_index.row(),
-            self.model_view.model().columns.index('sonde_brand'))
-        return self.model_index.model().get_value_at(brand_model_index)
 
 
 class SondesInventoryTableModel(SardesTableModel):
@@ -91,8 +50,7 @@ class SondesInventoryTableModel(SardesTableModel):
     # A list of tuple that maps the keys of the columns dataframe with their
     # corresponding human readable label to use in the GUI.
     __data_columns_mapper__ = [
-        ('sonde_brand', _('Brand')),
-        ('sonde_model', _('Model')),
+        ('sonde_brand_model', _('Model')),
         ('sonde_serial_no', _('Serial Number')),
         ('date_reception', _('Date Reception')),
         ('date_withdrawal', _('Date Withdrawal')),
@@ -140,9 +98,7 @@ class SondesInventoryTableModel(SardesTableModel):
             return TextEditDelegate(view)
         elif column == 'sonde_serial_no':
             return StringEditDelegate(view)
-        elif column == 'sonde_brand':
-            return SondeBrandEditDelegate(view)
-        elif column == 'sonde_model':
+        elif column == 'sonde_brand_model':
             return SondeModelEditDelegate(view)
         else:
             return NotEditableDelegate(view)

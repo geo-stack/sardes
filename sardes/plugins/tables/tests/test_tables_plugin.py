@@ -29,7 +29,7 @@ from sardes.database.accessor_demo import (
     DatabaseAccessorDemo, OBS_WELLS_DF, SONDE_MODELS_LIB, SONDES_DATA)
 from sardes.plugins.tables import SARDES_PLUGIN_CLASS
 from sardes.plugins.tables.tables.sondes_inventory import (
-    SondeBrandEditDelegate, SondesInventoryTableModel)
+    SondesInventoryTableModel)
 from sardes.plugins.tables.tables.observation_wells import (
     ObsWellsTableModel)
 
@@ -87,7 +87,7 @@ def test_tables_plugin_init(mainwindow):
 # =============================================================================
 # ---- Tests Table Sondes Inventory
 # =============================================================================
-def test_edit_sonde_brand(mainwindow, qtbot):
+def test_edit_sonde_model(mainwindow, qtbot):
     """
     Test editing sonde brand in the sondes inventory table.
     """
@@ -99,59 +99,9 @@ def test_edit_sonde_brand(mainwindow, qtbot):
     mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
 
     # Select the first cell of the table.
-    brand_model_index = tableview.model().index(0, 0)
-    model_model_index = tableview.model().index(0, 1)
-    assert brand_model_index.data() == 'Solinst'
-    assert model_model_index.data() == 'Barologger M1.5 Gold'
-    assert model.get_value_at(brand_model_index) == 'Solinst'
-    assert model.get_value_at(model_model_index) == 'Barologger M1.5 Gold'
-
-    qtbot.mouseClick(
-        tableview.viewport(),
-        Qt.LeftButton,
-        pos=tableview.visualRect(brand_model_index).center())
-
-    # Enable editing mode on the selected cell.
-    qtbot.keyPress(tableview, Qt.Key_Enter)
-    assert tableview.state() == tableview.EditingState
-
-    # Assert the editor of the item delegate is showing the right data.
-    editor = tableview.itemDelegate(brand_model_index).editor
-    assert editor.currentData() == 'Solinst'
-    assert editor.count() == len(SONDE_MODELS_LIB['sonde_brand'].unique())
-
-    # Select a new value and accept the edit.
-    editor.setCurrentIndex(editor.findData('Telog 2'))
-    qtbot.keyPress(editor, Qt.Key_Enter)
-    assert tableview.state() != tableview.EditingState
-    assert brand_model_index.data() == 'Telog 2'
-    assert model_model_index.data() == ''
-    assert model.get_value_at(brand_model_index) == 'Telog 2'
-    assert model.get_value_at(model_model_index) is None
-
-    # Undo the last edit.
-    tableview. _undo_last_data_edit()
-    assert brand_model_index.data() == 'Solinst'
-    assert model_model_index.data() == 'Barologger M1.5 Gold'
-    assert model.get_value_at(brand_model_index) == 'Solinst'
-    assert model.get_value_at(model_model_index) == 'Barologger M1.5 Gold'
-
-
-def test_edit_sonde_model(mainwindow, qtbot):
-    """
-    Test editing sonde model in the sondes inventory table.
-    """
-    tablewidget = mainwindow.plugin._tables[SondesInventoryTableModel.TABLE_ID]
-    tableview = tablewidget.tableview
-    model = tablewidget.tableview.model()
-
-    # We need to select the tab corresponding to the table sondes inventory.
-    mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
-
-    # Select the model cell on the first row of the table.
-    model_index = tableview.model().index(0, 1)
-    assert model_index.data() == 'Barologger M1.5 Gold'
-    assert model.get_value_at(model_index) == 'Barologger M1.5 Gold'
+    model_index = tableview.model().index(0, 0)
+    assert model_index.data() == 'Solinst Barologger M1.5 Gold'
+    assert model.get_value_at(model_index) == 'Solinst Barologger M1.5 Gold'
 
     qtbot.mouseClick(
         tableview.viewport(),
@@ -164,25 +114,21 @@ def test_edit_sonde_model(mainwindow, qtbot):
 
     # Assert the editor of the item delegate is showing the right data.
     editor = tableview.itemDelegate(model_index).editor
-    assert editor.currentData() == 'Barologger M1.5 Gold'
-    assert (editor.count() ==
-            len(SONDE_MODELS_LIB
-                [SONDE_MODELS_LIB['sonde_brand'] == 'Solinst']
-                ['sonde_model']
-                .unique())
-            )
+    assert editor.currentData() == 'Solinst Barologger M1.5 Gold'
+    assert editor.count() == len(
+        SONDE_MODELS_LIB['sonde_brand_model'].unique())
 
     # Select a new value and accept the edit.
-    editor.setCurrentIndex(editor.findData('L M10'))
+    editor.setCurrentIndex(editor.findData('Telog 2 Druck'))
     qtbot.keyPress(editor, Qt.Key_Enter)
     assert tableview.state() != tableview.EditingState
-    assert model_index.data() == 'L M10'
-    assert model.get_value_at(model_index) == 'L M10'
+    assert model_index.data() == 'Telog 2 Druck'
+    assert model.get_value_at(model_index) == 'Telog 2 Druck'
 
     # Undo the last edit.
     tableview. _undo_last_data_edit()
-    assert model_index.data() == 'Barologger M1.5 Gold'
-    assert model.get_value_at(model_index) == 'Barologger M1.5 Gold'
+    assert model_index.data() == 'Solinst Barologger M1.5 Gold'
+    assert model.get_value_at(model_index) == 'Solinst Barologger M1.5 Gold'
 
 
 if __name__ == "__main__":
