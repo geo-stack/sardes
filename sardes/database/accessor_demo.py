@@ -9,7 +9,7 @@
 
 # ---- Standard imports
 from copy import deepcopy
-from datetime import datetime
+from datetime import date
 from time import sleep
 
 # ---- Third party imports
@@ -103,15 +103,15 @@ SONDE_MODELS_LIB = pd.DataFrame([
 
 SONDES_DATA = pd.DataFrame([
     [0, 'Solinst Barologger M1.5 Gold', '1022034',
-     datetime(2007, 3, 26), datetime(2017, 11, 27),
+     date(2007, 3, 26), date(2017, 11, 27),
      False, True, True, False,
      'Notes for sonde Solinst Barologger M1.5 Gold 1022034'],
     [1, 'Solinst LT M10 Gold', '1062392',
-     datetime(2011, 5, 10), datetime(2017, 11, 27),
+     date(2011, 5, 10), date(2017, 11, 27),
      False, True, True, False,
      'Notes for sonde Solinst LT M10 Gold 1062392'],
     [2, 'Solinst LT M10 Edge', '2004771',
-     datetime(2012, 1, 1), None,
+     date(2012, 1, 1), None,
      False, False, False, False,
      'Notes for sonde Solinst LT M10 Edge 2004771']],
     columns=['sonde_model_id', 'sonde_brand_model', 'sonde_serial_no',
