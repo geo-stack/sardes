@@ -21,8 +21,8 @@
    sodipodi:docname="sardes_splash.svg"
    inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
    inkscape:export-filename="C:\Users\User\sardes\sardes\ressources\sardes_splash.png"
-   inkscape:export-xdpi="58.808556"
-   inkscape:export-ydpi="58.808556"><metadata
+   inkscape:export-xdpi="49.615116"
+   inkscape:export-ydpi="49.615116"><metadata
    id="metadata408"><rdf:RDF><cc:Work
        rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
          rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title /></cc:Work></rdf:RDF></metadata><defs
@@ -699,8 +699,8 @@
    inkscape:window-height="1017"
    id="namedview404"
    showgrid="false"
-   inkscape:zoom="2.343757"
-   inkscape:cx="962.20565"
+   inkscape:zoom="8.1207518"
+   inkscape:cx="942.19519"
    inkscape:cy="365.4333"
    inkscape:window-x="-8"
    inkscape:window-y="-8"
@@ -784,6 +784,7 @@
 
 
 
+
 </g><text
    id="text5236-32"
    y="267.39911"
@@ -801,6 +802,7 @@
      x="409.6062"
      sodipodi:role="line"
      id="tspan1499">de données d’eaux souterraines</tspan></text>
+
 
 
 
@@ -865,6 +867,7 @@
      x="254.64215"
      y="558.4408"
      style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:41.33333206px;font-family:Carlito;-inkscape-font-specification:'Carlito Bold';fill:#001844;fill-opacity:1;stroke-width:1">v0.4.2</tspan></text>
+
 
 
 
