@@ -61,7 +61,7 @@ FA_ICONS = {
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'erase_data': [
         ('mdi.eraser',),
-        {'color': ICON_COLOR, 'scale_factor': 1.3}],
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'eye_on': [
         ('mdi.eye',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
