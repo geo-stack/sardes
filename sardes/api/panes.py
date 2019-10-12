@@ -31,11 +31,13 @@ class SardesPaneWidget(QMainWindow):
     # ---- Setup
     def _setup_upper_toolbar(self):
         self._upper_toolbar = create_mainwindow_toolbar("panes_upper_toolbar")
+        self._upper_toolbar.setStyleSheet("QToolBar {border: 0px;}")
         self.addToolBar(self._upper_toolbar)
 
     def _setup_lower_toolbar(self):
         self._lower_toolbar = create_mainwindow_toolbar(
             "panes_lower_toolbar", areas=Qt.BottomToolBarArea)
+        self._lower_toolbar.setStyleSheet("QToolBar {border: 0px;}")
         self.addToolBar(self._lower_toolbar)
 
     # ---- Public methods

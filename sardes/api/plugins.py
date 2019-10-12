@@ -10,7 +10,7 @@
 # ---- Third party imports
 from appconfigs.user import NoDefault
 from qtpy.QtCore import QObject, Qt, Slot
-from qtpy.QtWidgets import QDockWidget, QWidget
+from qtpy.QtWidgets import QDockWidget, QGridLayout, QWidget
 
 # ---- Local imports
 from sardes.config.main import CONF
@@ -99,7 +99,14 @@ class SardesPluginBase(QObject):
             self.dockwidget = QDockWidget()
             self.dockwidget.setObjectName(
                 self.__class__.__name__ + "_dw")
-            self.dockwidget.setWidget(self.pane_widget)
+
+            # Encapsulate the pane widget in another widget to control the
+            # size of the contents margins.
+            self._pane_margins_widget = QWidget()
+            layout = QGridLayout(self._pane_margins_widget)
+            layout.addWidget(self.pane_widget)
+            layout.setContentsMargins(0, 0, 0, 0)
+            self.dockwidget.setWidget(self._pane_margins_widget)
 
             self.dockwidget.setWindowTitle(self.get_plugin_title())
 
