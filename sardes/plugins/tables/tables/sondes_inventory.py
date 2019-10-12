@@ -107,7 +107,7 @@ class SondesInventoryTableModel(SardesTableModel):
         """
         if column in ['en_reparation', 'out_of_order', 'in_repair',
                       'lost', 'off_network']:
-            return BoolEditDelegate(view)
+            return BoolEditDelegate(view, is_required=True)
         elif column in ['date_reception', 'date_withdrawal']:
             return DateEditDelegate(view)
         elif column == 'sonde_notes':
