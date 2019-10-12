@@ -66,9 +66,10 @@ class ObsWellsTableModel(SardesTableModel):
         the items of the column will not be editable.
         """
         if column in ['is_station_active']:
-            return BoolEditDelegate(view)
+            return BoolEditDelegate(view, is_required=True)
         elif column in ['obs_well_id']:
-            return StringEditDelegate(view, unique_constraint=True)
+            return StringEditDelegate(view, unique_constraint=True,
+                                      is_required=True)
         elif column in ['municipality', 'is_influenced', 'common_name',
                         'in_recharge_zone', 'confinement', 'aquifer_type',
                         'aquifer_code']:

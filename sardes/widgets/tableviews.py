@@ -50,12 +50,14 @@ class SardesItemDelegateBase(QStyledItemDelegate):
     WARNING: Don't override any methods or attributes present here.
     """
 
-    def __init__(self, model_view, unique_constraint=False):
+    def __init__(self, model_view, unique_constraint=False,
+                 is_required=False):
         super() .__init__(parent=model_view)
         self.model_view = model_view
         self.model_index = None
         self.editor = None
-        self._unique_constraint = unique_constraint
+        self.unique_constraint = unique_constraint
+        self.is_required = is_required
 
     # ---- Qt methods override
     def createEditor(self, parent, option, model_index):
@@ -139,13 +141,12 @@ class SardesItemDelegateBase(QStyledItemDelegate):
             # We store the edits even if the validation fails, so that
             # when we return to this delegate to edits, the last value
             # entered by the user is preserved.
-            self.model.set_data_edits_at(self.model_index, editor_value)
+            self.model().set_data_edits_at(self.model_index, editor_value)
             if error_message is not None:
                 self.model_view.raise_edits_error(
                     self.model_index, error_message)
 
     # ---- Public methods
-    @property
     def model(self):
         """
         Return the model whose data this item delegate is used to edit.
@@ -165,10 +166,10 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         the edited value does not violate that and return an error message
         if it does.
         """
-        field_name = self.model.get_horizontal_header_label_at(
+        field_name = self.model().get_horizontal_header_label_at(
             self.model_index.column())
         edited_value = self.get_editor_data()
-        if (self._unique_constraint and self.model.is_value_in_column(
+        if (self.unique_constraint and self.model().is_value_in_column(
                 self.model_index, edited_value)):
             return _(
                 "<b>Duplicate key value violates unique constraint.</b>"
@@ -178,12 +179,27 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         else:
             return None
 
+    def clear_model_data(self, model_index):
+        """
+        Set the data of the model index associated with this delegate to
+        a null value.
+
+        Note that we need to pass the model index as an argument, else
+        it won't be possible to clear the data if the editor have not been
+        created at least once.
+        """
+        if not self.is_required:
+            model_index.model().set_data_edits_at(model_index, None)
+
 
 class NotEditableDelegate(SardesItemDelegateBase):
     """
     A delegate used to indicate that the items in the associated
     column are not editable.
     """
+
+    def __init__(self, model_view):
+        super().__init__(model_view, is_required=True)
 
     def createEditor(self, *args, **kargs):
         return None
@@ -192,6 +208,13 @@ class NotEditableDelegate(SardesItemDelegateBase):
         pass
 
     def setModelData(self, editor, model, index):
+        pass
+
+    def clear_model_data(self, model_index):
+        """
+        Override base class method to prevent clearing the model data.
+        a null value.
+        """
         pass
 
 
@@ -911,6 +934,17 @@ class SardesTableView(QTableView):
             lambda current, previous: edit_item_action.setEnabled(
                 self.is_data_editable_at(current)))
 
+        clear_item_action = create_action(
+            self, _("Clear"),
+            icon='erase_data',
+            tip=_("Set the currently focused item to NULL."),
+            triggered=self._clear_current_item,
+            shortcut='Ctrl+Delete',
+            context=Qt.WidgetShortcut)
+        self.selectionModel().currentChanged.connect(
+            lambda current, previous: clear_item_action.setEnabled(
+                not self.is_data_required_at(current)))
+
         save_edits_action = create_action(
             self, _("Save edits"),
             icon='commit_changes',
@@ -942,8 +976,8 @@ class SardesTableView(QTableView):
         self.sig_data_edited.connect(undo_edits_action.setEnabled)
 
         self._actions['edit'] = [
-            edit_item_action, save_edits_action, cancel_edits_action,
-            undo_edits_action]
+            edit_item_action, clear_item_action, undo_edits_action,
+            save_edits_action, cancel_edits_action]
         self.addActions(self._actions['edit'])
 
         # Setup selection actions.
@@ -1352,6 +1386,13 @@ class SardesTableView(QTableView):
         return not isinstance(
             self.itemDelegate(model_index), NotEditableDelegate)
 
+    def is_data_required_at(self, model_index):
+        """
+        Return whether a non null value is required for the item at the
+        specified model index.
+        """
+        return self.itemDelegate(model_index).is_required
+
     def contextMenuEvent(self, event):
         """
         Override Qt method to show a context menu that shows different actions
@@ -1365,6 +1406,14 @@ class SardesTableView(QTableView):
             if section != sections[-1]:
                 menu.addSeparator()
         menu.popup(QCursor.pos())
+
+    def _clear_current_item(self):
+        """
+        Set current item's data to None.
+        """
+        current_index = self.selectionModel().currentIndex()
+        if current_index.isValid():
+            self.itemDelegate(current_index).clear_model_data(current_index)
 
     def _edit_current_item(self):
         """

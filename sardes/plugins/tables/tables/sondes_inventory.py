@@ -115,7 +115,7 @@ class SondesInventoryTableModel(SardesTableModel):
         elif column == 'sonde_serial_no':
             return StringEditDelegate(view)
         elif column == 'sonde_model_id':
-            return SondeModelEditDelegate(view)
+            return SondeModelEditDelegate(view, is_required=True)
         else:
             return NotEditableDelegate(view)
 
