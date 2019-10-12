@@ -65,7 +65,8 @@ def tablemodel(qtbot, TABLE_DATAF):
 
         def create_delegate_for_column(self, view, column):
             if column == 'col0':
-                return StringEditDelegate(view, unique_constraint=True)
+                return StringEditDelegate(view, unique_constraint=True,
+                                          is_required=True)
             elif column == 'col1':
                 return BoolEditDelegate(view)
             elif column == 'col2':
@@ -281,12 +282,12 @@ def test_edit_non_editable_cell(tablewidget, qtbot):
     tableview = tablewidget.tableview
 
     # Select a table cell whose content is not editable and try to edit it.
+    model_index = tableview.model().index(0, 4)
     qtbot.mouseClick(
         tableview.viewport(),
         Qt.LeftButton,
-        pos=tableview.visualRect(tableview.model().index(0, 4)).center())
+        pos=tableview.visualRect(model_index).center())
 
-    model_index = tableview.selectionModel().currentIndex()
     item_delegate = tableview.itemDelegate(model_index)
     assert model_index.data() == 'not editable'
     assert isinstance(item_delegate, NotEditableDelegate)
@@ -294,6 +295,14 @@ def test_edit_non_editable_cell(tablewidget, qtbot):
     # Try to edit the content of the selected cell.
     qtbot.keyPress(tableview, Qt.Key_Enter)
     assert tableview.state() != tableview.EditingState
+
+    # Try to clear the content of the selected cell.
+    assert item_delegate.is_required
+    assert model_index.data() == 'not editable'
+    assert tableview.model().get_value_at(model_index) == 'not editable'
+    qtbot.keyPress(tableview, Qt.Key_Delete, modifier=Qt.ControlModifier)
+    assert model_index.data() == 'not editable'
+    assert tableview.model().get_value_at(model_index) == 'not editable'
 
 
 def test_edit_editable_cell(tablewidget, qtbot):
@@ -342,6 +351,50 @@ def test_edit_editable_cell(tablewidget, qtbot):
         assert (tableview.model().get_value_at(model_index) ==
                 expected_edited_value[i])
         assert len(tableview.source_model._dataf_edits) == i + 1
+
+
+def test_clearing_required_cell(tablewidget, qtbot):
+    """
+    Test clearing the content of cell that required a non null value.
+    """
+    tableview = tablewidget.tableview
+    model_index = tableview.model().index(0, 0)
+    assert tableview.itemDelegate(model_index).is_required
+    assert model_index.data() == 'str1'
+    assert tableview.model().get_value_at(model_index) == 'str1'
+
+    # Select a table cell that requires a non null value.
+    qtbot.mouseClick(
+        tableview.viewport(),
+        Qt.LeftButton,
+        pos=tableview.visualRect(model_index).center())
+
+    # Try to clear the content of the selected cell.
+    qtbot.keyPress(tableview, Qt.Key_Delete, modifier=Qt.ControlModifier)
+    assert model_index.data() == 'str1'
+    assert tableview.model().get_value_at(model_index) == 'str1'
+
+
+def test_clearing_non_required_cell(tablewidget, qtbot):
+    """
+    Test clearing the content of cell that required a non null value.
+    """
+    tableview = tablewidget.tableview
+    model_index = tableview.model().index(0, 2)
+    assert not tableview.itemDelegate(model_index).is_required
+    assert model_index.data() == '1.111'
+    assert tableview.model().get_value_at(model_index) == 1.111
+
+    # Select a table cell that does not require a non null value.
+    qtbot.mouseClick(
+        tableview.viewport(),
+        Qt.LeftButton,
+        pos=tableview.visualRect(model_index).center())
+
+    # Try to clear the content of the selected cell.
+    qtbot.keyPress(tableview, Qt.Key_Delete, modifier=Qt.ControlModifier)
+    assert model_index.data() == ''
+    assert tableview.model().get_value_at(model_index) is None
 
 
 def test_cancel_edits(tablewidget, qtbot):
