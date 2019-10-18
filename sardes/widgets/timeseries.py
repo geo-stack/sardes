@@ -155,6 +155,10 @@ class TimeSeriesAxes(MplAxes):
         for tseries in self.tseries_group:
             self._add_timeseries(tseries)
 
+        # Invert yaxis if required by the group.
+        if tseries_group.yaxis_inverted:
+            self.invert_yaxis()
+
         self.figure.canvas.draw()
 
     def _add_timeseries(self, tseries):

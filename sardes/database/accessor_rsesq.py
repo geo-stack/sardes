@@ -557,7 +557,8 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         tseries_group = TimeSeriesGroup(
             monitored_property,
             self.get_monitored_property_name(monitored_property),
-            self.get_monitored_property_units(monitored_property)
+            self.get_monitored_property_units(monitored_property),
+            yaxis_inverted=(monitored_property == 'NIV_EAU')
             )
 
         # Check for duplicates along the time axis and drop the duplicated
