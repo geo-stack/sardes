@@ -8,4 +8,4 @@
 # -----------------------------------------------------------------------------
 
 # The following statement is required to register this plugin.
-from .plugin import ObsWellsExplorer as SARDES_PLUGIN_CLASS
+from .plugin import Tables as SARDES_PLUGIN_CLASS

@@ -12,7 +12,20 @@
 # moving forward, and remember to keep your UI out of the way.
 # http://blog.teamtreehouse.com/10-user-interface-design-fundamentals
 
+print('Starting SARDES...')
+# ---- Setup the main Qt application.
+import sys
+from qtpy.QtWidgets import QApplication
+app = QApplication(sys.argv)
+
+# ---- Setup the splash screen.
+from sardes.widgets.splash import SplashScreen
+from sardes.config.locale import _
+splash = SplashScreen()
+
+
 # ---- Standard imports
+splash.showMessage(_("Importing standard Python modules..."))
 import os
 import os.path as osp
 import platform
@@ -20,22 +33,24 @@ import sys
 import importlib
 
 # ---- Third party imports
+splash.showMessage(_("Importing third party Python modules..."))
 from qtpy.QtCore import Qt, QUrl, Slot
 from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
-                            QMessageBox, QSizePolicy, QToolButton, QWidget)
+                            QMessageBox, QToolButton)
 
 # ---- Local imports
+splash.showMessage(_("Importing local Python modules..."))
 from sardes import __namever__, __project_url__
 from sardes.config.main import CONF
 from sardes.config.icons import get_icon
-from sardes.config.locale import (_, get_available_translations, get_lang_conf,
+from sardes.config.locale import (get_available_translations, get_lang_conf,
                                   LANGUAGE_CODES, set_lang_conf)
 from sardes.config.main import CONFIG_DIR
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.utils.qthelpers import (
-    create_action, create_mainwindow_toolbar, create_toolbutton,
-    qbytearray_to_hexstate, hexstate_to_qbytearray)
+    create_action, create_mainwindow_toolbar, create_toolbar_stretcher,
+    create_toolbutton, qbytearray_to_hexstate, hexstate_to_qbytearray)
 
 from multiprocessing import freeze_support
 freeze_support()
@@ -60,9 +75,13 @@ class MainWindow(QMainWindow):
         self.internal_plugins = []
 
         # Setup the database connection manager.
+        print("Setting up the database connection manager...", end=' ')
+        splash.showMessage(_("Setting up the database connection manager..."))
         self.db_connection_manager = DatabaseConnectionManager()
+        print("done")
 
         self.setup()
+        splash.finish(self)
 
     def setup(self):
         """Setup the main window"""
@@ -70,9 +89,18 @@ class MainWindow(QMainWindow):
         self._restore_window_geometry()
         self.setup_internal_plugins()
         self.setup_thirdparty_plugins()
-        # Note: The window state must be restored after the setup of this
-        #       mainwindow plugins and toolbars.
+
+        # Note: The window state must be restored after the setup of the
+        # plugins and toolbars.
         self._restore_window_state()
+
+        # Connect to database if options is True.
+        # NOTE: This must be done after all internal and thirdparty plugins
+        # have been registered in case they are connected to the database
+        # manager connection signals.
+        if self.databases_plugin.get_option('auto_connect_to_database'):
+            self.db_connection_manager.connect_to_db(
+                self.databases_plugin.connect_to_database())
 
     def setup_internal_plugins(self):
         """Setup Sardes internal plugins."""
@@ -80,17 +108,26 @@ class MainWindow(QMainWindow):
         # we would have to add each of them as hidden import to the pyinstaller
         # spec file for them to be packaged as part of the Sardes binary.
 
-        # Observation Wells plugin.
-        from sardes.plugins.obs_wells_explorer import SARDES_PLUGIN_CLASS
+        # Tables plugin.
+        from sardes.plugins.tables import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        splash.showMessage(_("Loading the {} plugin...").format(plugin_title))
         plugin = SARDES_PLUGIN_CLASS(self)
         plugin.register_plugin()
         self.internal_plugins.append(plugin)
+        print("done")
 
         # Database plugin.
         from sardes.plugins.databases import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        splash.showMessage(_("Loading the {} plugin...")
+                           .format(SARDES_PLUGIN_CLASS.get_plugin_title()))
         self.databases_plugin = SARDES_PLUGIN_CLASS(self)
         self.databases_plugin.register_plugin()
         self.internal_plugins.append(self.databases_plugin)
+        print("done")
 
     def setup_thirdparty_plugins(self):
         """Setup Sardes third party plugins."""
@@ -108,6 +145,9 @@ class MainWindow(QMainWindow):
                     if module_spec:
                         module = module_spec.loader.load_module()
                         sys.modules[module_name] = module
+                        splash.showMessage(
+                            _("Loading the {} plugin...").format(
+                                module.SARDES_PLUGIN_CLASS.get_plugin_title()))
                         plugin = module.SARDES_PLUGIN_CLASS(self)
                         plugin.register_plugin()
                         self.thirdparty_plugins.append(plugin)
@@ -137,10 +177,8 @@ class MainWindow(QMainWindow):
         self.options_menu_toolbar = create_mainwindow_toolbar(
             "Options toolbar")
 
-        # Add a stretcher item.
-        stretcher = QWidget()
-        stretcher.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.options_menu_toolbar.addWidget(stretcher)
+        # Add a stretcher to the toolbar.
+        self.options_menu_toolbar.addWidget(create_toolbar_stretcher())
 
         # Add the tools and options button.
         self.options_menu_button = self._create_options_menu_button()
@@ -292,26 +330,18 @@ class MainWindow(QMainWindow):
                  self.lock_dockwidgets_and_toolbars_action.isChecked())
 
     # ---- Qt method override/extension
-    def show(self):
-        """Extend Qt show to connect to database automatically."""
-        super().show()
-
-        # Connect to database if options is True.
-        # NOTE: This must be done after all internal and thirdparty plugins
-        # have been registered in case they are connected to the database
-        # manager connection signals.
-        if self.databases_plugin.get_option('auto_connect_to_database'):
-            self.db_connection_manager.connect_to_db(
-                self.databases_plugin.connect_to_database())
-
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
+        print('Closing SARDES...')
         self._save_window_geometry()
         self._save_window_state()
 
         # Close all internal and thirdparty plugins.
         for plugin in self.internal_plugins + self.thirdparty_plugins:
             plugin.close_plugin()
+
+        # Close the database connection manager.
+        self.db_connection_manager.close()
 
         event.accept()
 
@@ -333,13 +363,15 @@ def except_hook(cls, exception, traceback):
     See this StackOverflow answer for more details :
     https://stackoverflow.com/a/33741755/4481445
     """
-
     sys.__excepthook__(cls, exception, traceback)
 
 
 if __name__ == '__main__':
     sys.excepthook = except_hook
-    app = QApplication(sys.argv)
     main = MainWindow()
+
+    from PyQt5.QtWidgets import QStyleFactory
+    app.setStyle(QStyleFactory.create('WindowsVista'))
+
     main.show()
     sys.exit(app.exec_())

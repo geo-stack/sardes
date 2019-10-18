@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Local imports
-from sardes.api.sardes_plugins import SardesPlugin
+from sardes.api.plugins import SardesPlugin
 from sardes.config.database import get_dbconfig, set_dbconfig
 from sardes.config.locale import _
 from sardes.utils.qthelpers import (create_mainwindow_toolbar,
@@ -26,19 +26,17 @@ class Databases(SardesPlugin):
     def __init__(self, parent):
         super().__init__(parent)
 
-    def get_plugin_title(self):
+    @classmethod
+    def get_plugin_title(cls):
         """Return widget title"""
         return _('Database Connector')
 
     def setup_plugin(self):
         """Setup this plugin."""
         # Setup the database connection widget.
-        db_connection_manager = self.main.db_connection_manager
-        auto_connect_to_database = self.get_option('auto_connect_to_database')
-
         self.db_connection_widget = DatabaseConnectionWidget(
-            db_connection_manager,
-            auto_connect_to_database,
+            self.main.db_connection_manager,
+            self.get_option('auto_connect_to_database'),
             parent=self.main)
         self.db_connection_widget.hide()
 
@@ -120,10 +118,7 @@ class Databases(SardesPlugin):
         """
         super().close_plugin()
 
-        # Close the connection with the database if any.
-        self.main.db_connection_manager.disconnect_from_db()
-
-        # Save to th config the values displayed in each database
+        # Save to the configs the values displayed in each database
         # connection dialog.
         for dialog in self.internal_database_dialogs:
             set_dbconfig(dialog.dbtype_name, dialog.get_database_kargs())

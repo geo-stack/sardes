@@ -11,6 +11,7 @@
 # ---- Standard imports
 import uuid
 from collections import OrderedDict
+from time import sleep
 
 # ---- Third party imports
 from pandas import DataFrame
@@ -54,27 +55,132 @@ class DatabaseConnectionWorker(QObject):
     def _connect_to_db(self, db_accessor):
         """Try to create a new connection with the database"""
         self.db_accessor = db_accessor
+        print("Connecting to database with {}...".format(
+            type(self.db_accessor).__name__))
         self.db_accessor.connect()
+        if self.db_accessor._connection_error is None:
+            print("Connection to database succeeded.")
+        else:
+            print("Connection to database failed.")
         return self.db_accessor._connection, self.db_accessor._connection_error
 
     def _disconnect_from_db(self):
         """Close the connection with the database"""
+        print("Closing connection with database...".format(
+            type(self.db_accessor).__name__))
         if self.db_accessor is not None:
             self.db_accessor.close_connection()
+        print("Connection with database closed.")
         return None,
 
-    def _get_observation_wells(self):
+    # ---- Observation wells
+    def _save_observation_well_data(self, sampling_feature_id, attribute_name,
+                                    attribute_value):
         """
-        Try get the list of observation wells that are saved in the database
-        and send the results through the sig_observation_wells_fetched
-        signal.
+        Save in the database the new attribute value for the observation well
+        corresponding to the specified sampling feature ID.
         """
-        try:
-            obs_wells = self.db_accessor.get_observation_wells()
-        except AttributeError:
+        self.db_accessor.save_observation_well_data(
+            sampling_feature_id, attribute_name, attribute_value)
+
+    def _get_observation_wells_data(self):
+        """
+        Try to get the list of observation wells that are
+        saved in the database.
+        """
+        print("Fetching observation wells from the database...", end='')
+        if self.is_connected():
+            try:
+                obs_wells = self.db_accessor.get_observation_wells_data()
+                print("done")
+            except AttributeError as e:
+                print("failed")
+                print(e)
+                obs_wells = DataFrame([])
+        else:
+            print("failed. No database connection.")
             obs_wells = DataFrame([])
         return obs_wells,
 
+    # ---- Sondes
+    def _get_sonde_models_lib(self):
+        """
+        Try to get the list of sonde models that are saved in the database.
+        """
+        print("Fetching sonde models library from the database...", end='')
+        if self.is_connected():
+            try:
+                sonde_models = self.db_accessor.get_sonde_models_lib()
+                print("done")
+            except AttributeError as e:
+                print("failed")
+                print(e)
+                sonde_models = DataFrame([])
+        else:
+            print("failed. No database connection.")
+            sonde_models = DataFrame([])
+        return sonde_models,
+
+    def _get_sondes_data(self):
+        """
+        Try to get the list of sondes that are saved in the database.
+        """
+        print("Fetching sondes inventory from the database...", end='')
+        if self.is_connected():
+            try:
+                sondes = self.db_accessor.get_sondes_data()
+                print("done")
+            except AttributeError as e:
+                print("failed")
+                print(e)
+                sondes = DataFrame([])
+        else:
+            print("failed. No database connection.")
+            sondes = DataFrame([])
+        return sondes,
+
+    def _save_sonde_data(self, sonde_id, attribute_name, attribute_value):
+        """
+        Save in the database the new attribute value for the sonde
+        corresponding to the specified sonde UID.
+        """
+        self.db_accessor.save_sonde_data(
+            sonde_id, attribute_name, attribute_value)
+
+    # ---- Monitored properties
+    def get_monitored_properties(self):
+        """
+        Return the list of of properties for which time data is stored in the
+        database.
+        """
+        try:
+            monitored_properties = self.db_accessor.monitored_properties
+        except AttributeError:
+            monitored_properties = []
+        return monitored_properties,
+
+    def _get_timeseries_for_obs_well(self, obs_well_id, monitored_properties):
+        """
+        Get the time data acquired in the observation well for each
+        monitored property listed in monitored_properties.
+        """
+        prop_enum = (' and '.join(monitored_properties) if
+                     len(monitored_properties) == 2 else
+                     ', '.join(monitored_properties))
+        print("Fetching {} data for observation well {}.".format(
+            prop_enum, obs_well_id))
+
+        mprop_list = []
+        try:
+            for monitored_property in monitored_properties:
+                mprop_list.append(
+                    self.db_accessor.get_timeseries_for_obs_well(
+                        obs_well_id, monitored_property)
+                    )
+        except AttributeError as error:
+            print(type(error).__name__, end=': ')
+            print(error)
+        return mprop_list,
 
 
 class DatabaseConnectionManager(QObject):
@@ -82,11 +188,27 @@ class DatabaseConnectionManager(QObject):
     sig_database_disconnected = Signal()
     sig_database_is_connecting = Signal()
     sig_database_connection_changed = Signal(bool)
+    sig_database_data_changed = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
         self._task_callbacks = {}
+        self._running_tasks = []
+        self._queued_tasks = []
+        self._pending_tasks = []
+        self._task_data = {}
+
+        # Queued tasks are tasks whose execution has not been requested yet.
+        # This happens when we want the Worker to execute a list of tasks
+        # in a single run. All queued tasks are dumped in the list of pending
+        # tasks when `run_task` is called.
+        #
+        # Pending tasks are tasks whose execution was postponed due to
+        # the fact that the worker was busy. These tasks are run as soon
+        # as the worker become available.
+        #
+        # Running tasks are tasks that are being executed by the worker.
 
         self._db_connection_worker = DatabaseConnectionWorker()
         self._db_connection_thread = QThread()
@@ -96,9 +218,10 @@ class DatabaseConnectionManager(QObject):
 
         # Connect the worker signals to handlers.
         self._db_connection_worker.sig_task_completed.connect(
-            self._exec_callback)
+            self._exec_task_callback)
 
         self._is_connecting = False
+        self._data_changed = False
 
     def is_connected(self):
         """Return whether a connection to a database is currently active."""
@@ -121,24 +244,104 @@ class DatabaseConnectionManager(QObject):
             self.sig_database_is_connecting.emit()
             self._add_task(
                 'connect_to_db', self._handle_connect_to_db, db_accessor)
-            self._db_connection_thread.start()
+            self.run_tasks()
 
     def disconnect_from_db(self):
         """Close the connection with the database"""
         self._add_task('disconnect_from_db', self._handle_disconnect_from_db)
-        self._db_connection_thread.start()
+        self.run_tasks()
 
-    def get_observation_wells(self, callback):
+    def run_tasks(self):
+        """
+        Execute all the tasks that were added to the stack.
+        """
+        self._run_tasks()
+
+    def close(self):
+        """Close this database connection manager."""
+        self._db_connection_worker._disconnect_from_db()
+
+    # ---- Observation wells
+    def save_observation_well_data(self, sampling_feature_id, attribute_name,
+                                   attribute_value, callback=None,
+                                   postpone_exec=False):
+        """
+        Save in the database the new attribute value for the observation well
+        corresponding to the specified sampling feature ID.
+        """
+        self._data_changed = True
+        self._add_task('save_observation_well_data',
+                       callback,
+                       sampling_feature_id,
+                       attribute_name,
+                       attribute_value)
+        if not postpone_exec:
+            self.run_tasks()
+
+    def get_observation_wells_data(self, callback):
         """
         Get the list of observation wells that are saved in the database.
-
-        The results are sent through the sig_database_observation_wells signal
-        as a list of ObservationWell objects.
         """
-        self._add_task('get_observation_wells', callback)
-        self._db_connection_thread.start()
+        self._add_task('get_observation_wells_data', callback)
+        self.run_tasks()
 
-    # ---- Handlers
+    # ---- Sondes
+    def get_sonde_models_lib(self, callback, postpone_exec=False):
+        """
+        Get the list of sonde models that are saved in the database.
+        """
+        self._add_task('get_sonde_models_lib', callback)
+        if not postpone_exec:
+            self.run_tasks()
+
+    def get_sondes_data(self, callback, postpone_exec=False):
+        """
+        Get the list of sondes that are saved in the database.
+        """
+        self._add_task('get_sondes_data', callback)
+        if not postpone_exec:
+            self.run_tasks()
+
+    def save_sonde_data(self, sonde_id, attribute_name, attribute_value,
+                        callback=None, postpone_exec=False):
+        """
+        Save in the database the new attribute value for the sonde
+        corresponding to the specified sonde UID.
+        """
+        self._data_changed = True
+        self._add_task('save_sonde_data',
+                       callback,
+                       sonde_id,
+                       attribute_name,
+                       attribute_value)
+        if not postpone_exec:
+            self.run_tasks()
+
+    # ---- Monitored properties
+    def get_monitored_properties(self, callback=None):
+        """
+        Get the list of of properties for which time data is stored in the
+        database.
+        """
+        monitored_properties = (
+            self._db_connection_worker.get_monitored_properties())
+        if callback is not None:
+            callback(monitored_properties)
+        return monitored_properties
+
+    def get_timeseries_for_obs_well(self, obs_well_id, monitored_properties,
+                                    callback):
+        """
+        Get the time data acquired in the observation well for each
+        monitored property in the list.
+        """
+        if isinstance(monitored_properties, str):
+            monitored_properties = [monitored_properties, ]
+        self._add_task('get_timeseries_for_obs_well', callback,
+                       obs_well_id, monitored_properties)
+        self.run_tasks()
+
+    # ---- Tasks handlers
     @Slot(object, object)
     def _handle_connect_to_db(self, connection, connection_error):
         """
@@ -158,12 +361,56 @@ class DatabaseConnectionManager(QObject):
         self.sig_database_connection_changed.emit(self.is_connected())
 
     @Slot(object, object)
-    def _exec_callback(self, task_uuid4, returned_values):
+    def _exec_task_callback(self, task_uuid4, returned_values):
+        """
+        This is the (only) slot that is called after a task is completed
+        by the worker.
+        """
+        # Run the callback associated with the specified task UUID if any.
         if self._task_callbacks[task_uuid4] is not None:
             self._task_callbacks[task_uuid4](*returned_values)
+
+        # Clean up internal variables.
         del self._task_callbacks[task_uuid4]
+        del self._task_data[task_uuid4]
+        self._running_tasks.remove(task_uuid4)
+
+        if len(self._running_tasks) == 0:
+            self._handle_run_tasks_finished()
 
     def _add_task(self, task, callback, *args, **kargs):
         task_uuid4 = uuid.uuid4()
         self._task_callbacks[task_uuid4] = callback
-        self._db_connection_worker.add_task(task_uuid4, task, *args, **kargs)
+        self._queued_tasks.append(task_uuid4)
+        self._task_data[task_uuid4] = (task, args, kargs)
+
+    def _run_tasks(self):
+        """
+        Execute all the tasks that were added to the stack.
+        """
+        self._pending_tasks.extend(self._queued_tasks)
+        self._queued_tasks = []
+        if len(self._running_tasks) == 0:
+            # Even though the worker has done executing all its tasks,
+            # we may still need to wait a little for it to stop properly.
+            while self._db_connection_thread.isRunning():
+                sleep(0.1)
+
+            self._running_tasks = self._pending_tasks
+            self._pending_tasks = []
+            for task_uuid4 in self._running_tasks:
+                task, args, kargs = self._task_data[task_uuid4]
+                self._db_connection_worker.add_task(
+                    task_uuid4, task, *args, **kargs)
+            self._db_connection_thread.start()
+
+    def _handle_run_tasks_finished(self):
+        """
+        Handle when all tasks that needed to be run by the worker are
+        completed.
+        """
+        if self._data_changed is True:
+            self._data_changed = False
+            self.sig_database_data_changed.emit()
+        if len(self._pending_tasks) > 0:
+            self._run_tasks()

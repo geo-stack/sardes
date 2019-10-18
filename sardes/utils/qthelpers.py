@@ -10,20 +10,34 @@
 """Qt utilities"""
 
 # ---- Standard imports
+from datetime import datetime
 from math import pi
 import sys
+from time import strptime
 
 # ---- Third party imports
-from qtpy.QtCore import QByteArray, QSize, Qt
-from qtpy.QtWidgets import QAction, QSizePolicy, QToolBar, QToolButton
+from qtpy.QtGui import QKeySequence
+from qtpy.QtCore import QByteArray, QDateTime, QPoint, QSize, Qt
+from qtpy.QtWidgets import (QAction, QDateEdit, QSizePolicy, QToolBar,
+                            QToolButton, QWidget)
 
 # ---- Local imports
-from sardes.config.gui import get_iconsize
+from sardes.config.gui import (get_iconsize, get_toolbar_item_spacing)
 from sardes.config.icons import get_icon
 from sardes.widgets.waitingspinner import WaitingSpinner
 
 
-def create_action(parent, text, shortcut=None, icon=None, tip=None,
+def center_widget_to_another(widget, other_widget):
+    """Center widget position to another widget's geometry."""
+    q1 = widget.frameGeometry()
+    w2 = other_widget.frameGeometry().width()
+    h2 = other_widget.frameGeometry().height()
+    c2 = other_widget.mapToGlobal(QPoint(w2 / 2, h2 / 2))
+    q1.moveCenter(c2)
+    widget.move(q1.topLeft())
+
+
+def create_action(parent, text=None, shortcut=None, icon=None, tip=None,
                   toggled=None, triggered=None, data=None, menurole=None,
                   context=Qt.WindowShortcut):
     """Create and return a QAction with the provided settings."""
@@ -36,43 +50,44 @@ def create_action(parent, text, shortcut=None, icon=None, tip=None,
     if icon is not None:
         icon = get_icon(icon) if isinstance(icon, str) else icon
         action.setIcon(icon)
-    if tip is not None:
-        action.setToolTip(tip)
-        action.setStatusTip(tip)
+    if any((text, tip, shortcut)):
+        action.setToolTip(format_tooltip(text, tip, shortcut))
+    if text:
+        action.setStatusTip(format_statustip(text, shortcut))
     if data is not None:
         action.setData(data)
     if menurole is not None:
         action.setMenuRole(menurole)
     if shortcut is not None:
-        action.setShortcut(shortcut)
+        if isinstance(shortcut, (list, tuple)):
+            action.setShortcuts(shortcut)
+        else:
+            action.setShortcut(shortcut)
+
     action.setShortcutContext(context)
 
     return action
 
 
-def create_mainwindow_toolbar(title, iconsize=None):
+def create_mainwindow_toolbar(title, iconsize=None, areas=None, spacing=None,
+                              movable=False, floatable=False):
     """Create and return a toolbar with title and object_name."""
     toolbar = QToolBar(title)
     toolbar.setObjectName(title.lower().replace(' ', '_'))
-    toolbar.setFloatable(False)
-    toolbar.setAllowedAreas(Qt.TopToolBarArea)
-
-    iconsize = get_iconsize() if iconsize is None else iconsize
+    toolbar.setFloatable(floatable)
+    toolbar.setMovable(movable)
+    toolbar.setAllowedAreas(areas or Qt.TopToolBarArea)
+    toolbar.layout().setSpacing(spacing or get_toolbar_item_spacing())
+    iconsize = iconsize or get_iconsize()
     toolbar.setIconSize(QSize(iconsize, iconsize))
-
     return toolbar
 
 
-def create_toolbar_separator():
-    """Create and return a toolbar separator widget."""
-    separator = QToolBar()
-    separator.addSeparator()
-    separator.setStyleSheet(
-        "QToolBar {border: 0px; background: transparent}")
-    policy = separator.sizePolicy()
-    policy.setVerticalPolicy(QSizePolicy.Expanding)
-    separator.setSizePolicy(policy)
-    return separator
+def create_toolbar_stretcher():
+    """Create a stretcher to be used in a toolbar """
+    stretcher = QWidget()
+    stretcher.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+    return stretcher
 
 
 def create_toolbutton(parent, text=None, shortcut=None, icon=None, tip=None,
@@ -85,10 +100,8 @@ def create_toolbutton(parent, text=None, shortcut=None, icon=None, tip=None,
     if icon is not None:
         icon = get_icon(icon) if isinstance(icon, str) else icon
         button.setIcon(icon)
-    if text is not None or tip is not None:
-        ttip = ("<p style='white-space:pre'><b>{} ({})</b></p>"
-                "<p>{}</p>").format(text or '', shortcut or '', tip or '')
-        button.setToolTip(ttip)
+    if any((text, tip, shortcut)):
+        button.setToolTip(format_tooltip(text, tip, shortcut))
     if text_beside_icon:
         button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
     button.setAutoRaise(autoraise)
@@ -98,10 +111,62 @@ def create_toolbutton(parent, text=None, shortcut=None, icon=None, tip=None,
         button.toggled.connect(toggled)
         button.setCheckable(True)
     if shortcut is not None:
-        button.setShortcut(shortcut)
+        if isinstance(shortcut, (list, tuple)):
+            button.setShortcuts(shortcut)
+        else:
+            button.setShortcut(shortcut)
     if iconsize is not None:
         button.setIconSize(QSize(iconsize, iconsize))
     return button
+
+
+def format_statustip(text, shortcuts):
+    """
+    Format text and shortcut into a single str to be set
+    as an action status tip. The status tip is displayed on all status
+    bars provided by the action's top-level parent widget.
+    """
+    keystr = get_shortcuts_native_text(shortcuts)
+    if text and keystr:
+        stip = "{} ({})".format(text, keystr)
+    elif text:
+        stip = "{}".format(text)
+    else:
+        stip = ""
+    return stip
+
+
+def format_tooltip(text, tip, shortcuts):
+    """
+    Format text, tip and shortcut into a single str to be set
+    as a widget's tooltip.
+    """
+    keystr = get_shortcuts_native_text(shortcuts)
+    # We need to replace the unicode characters < and > by their HTML
+    # code to avoid problem with the HTML formatting of the tooltip.
+    keystr = keystr.replace('<', '&#60;').replace('>', '&#62;')
+    ttip = ""
+    if text or keystr:
+        ttip += "<p style='white-space:pre'><b>"
+        if text:
+            ttip += "{}".format(text) + (" " if keystr else "")
+        if keystr:
+            ttip += "({})".format(keystr)
+        ttip += "</b></p>"
+    if tip:
+        ttip += "<p>{}</p>".format(tip or '')
+    return ttip
+
+
+def get_shortcuts_native_text(shortcuts):
+    """
+    Return the native text of a shortcut or a list of shortcuts.
+    """
+    if not isinstance(shortcuts, (list, tuple)):
+        shortcuts = [shortcuts, ]
+
+    return ', '.join([QKeySequence(sc).toString(QKeySequence.NativeText)
+                      for sc in shortcuts])
 
 
 def create_waitspinner(size=32, n=11, parent=None):
@@ -136,3 +201,29 @@ def qbytearray_to_hexstate(qba):
 def hexstate_to_qbytearray(hexstate):
     """Convert a str hexstate to a QByteArray object."""
     return QByteArray().fromHex(str(hexstate).encode('utf-8'))
+
+
+def qdatetime_from_datetime(datetime_object):
+    """Convert a datetime to a QDateTime object."""
+    return QDateTime(*tuple(datetime_object.timetuple())[:6])
+
+
+def get_datetime_from_editor(editor):
+    """
+    Return a datetime object corresponding to the current datetime value of a
+    a QDateTimeEdit widget.
+    """
+    dtime = datetime.strptime(
+        editor.dateTime().toString('yyyy-MM-dd hh:mm'), '%Y-%m-%d %H:%M')
+    if isinstance(editor, QDateEdit):
+        return dtime.date()
+    else:
+        return dtime
+
+
+def qdatetime_from_str(str_date_time, datetime_format="%Y-%m-%d %H:%M"):
+    """Convert a date time str to a QDateTime object."""
+    struct_time = strptime(str_date_time, datetime_format)
+    return QDateTime(struct_time.tm_year, struct_time.tm_mon,
+                     struct_time.tm_mday, struct_time.tm_hour,
+                     struct_time.tm_min)

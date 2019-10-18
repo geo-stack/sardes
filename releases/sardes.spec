@@ -9,6 +9,8 @@ block_cipher = None
 
 added_files = [('../sardes/ressources/icons/*.png', 'ressources/icons'),
                ('../sardes/ressources/icons/*.svg', 'ressources/icons'),
+               ('../sardes/ressources/sardes_splash.png', 'ressources'),
+               ('../sardes/ressources/sardes_banner.png', 'ressources'),
                ('../sardes/locale/fr/LC_MESSAGES/*.mo', 'locale/fr/LC_MESSAGES')]
 
 a = Analysis(['../sardes/app/mainwindow.py'],
