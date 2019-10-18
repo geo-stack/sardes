@@ -24,13 +24,20 @@ class TimeSeriesGroup(Mapping):
     The :class:`TimeSeriesGroup` class provides an abstract container to
     manage sardes :class:`TimeSeries` that belongs to the same monitored
     property.
+
+    Parameters
+    ----------
+    yaxis_inverted: bool
+        A boolean to indicate whether the data should be plotted on an
+        inverted y-axis (positive towards bottom).
     """
 
-    def __init__(self, prop_id, prop_name, prop_units):
+    def __init__(self, prop_id, prop_name, prop_units, yaxis_inverted=False):
         self._timeseries = []
         self.prop_id = prop_id
         self.prop_name = prop_name
         self.prop_units = prop_units
+        self.yaxis_inverted = yaxis_inverted
 
     def __len__(self, key):
         return len(self._tseries)
