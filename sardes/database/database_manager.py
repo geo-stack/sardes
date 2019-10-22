@@ -182,6 +182,26 @@ class DatabaseConnectionWorker(QObject):
             print(error)
         return mprop_list,
 
+    # ---- Manual mesurements
+    def _get_manual_measurements(self, callback=None, postpone_exec=False):
+        """
+        Get the list of manual measurements made in the observation wells
+        of the monitoring network.
+        """
+        print("Fetching manual measurements from the database...", end='')
+        if self.is_connected():
+            try:
+                measurements = self.db_accessor.get_manual_measurements()
+                print("done")
+            except AttributeError as e:
+                print("failed")
+                print(e)
+                measurements = DataFrame([])
+        else:
+            print("failed. No database connection.")
+            measurements = DataFrame([])
+        return measurements,
+
 
 class DatabaseConnectionManager(QObject):
     sig_database_connected = Signal(object, object)
@@ -278,12 +298,13 @@ class DatabaseConnectionManager(QObject):
         if not postpone_exec:
             self.run_tasks()
 
-    def get_observation_wells_data(self, callback):
+    def get_observation_wells_data(self, callback, postpone_exec=False):
         """
         Get the list of observation wells that are saved in the database.
         """
         self._add_task('get_observation_wells_data', callback)
-        self.run_tasks()
+        if not postpone_exec:
+            self.run_tasks()
 
     # ---- Sondes
     def get_sonde_models_lib(self, callback, postpone_exec=False):
@@ -340,6 +361,16 @@ class DatabaseConnectionManager(QObject):
         self._add_task('get_timeseries_for_obs_well', callback,
                        obs_well_id, monitored_properties)
         self.run_tasks()
+
+    # ---- Manual mesurements
+    def get_manual_measurements(self, callback=None, postpone_exec=False):
+        """
+        Get the list of manual measurements made in the observation wells
+        of the monitoring network.
+        """
+        self._add_task('get_manual_measurements', callback)
+        if not postpone_exec:
+            self.run_tasks()
 
     # ---- Tasks handlers
     @Slot(object, object)

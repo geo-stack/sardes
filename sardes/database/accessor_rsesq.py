@@ -56,6 +56,24 @@ class Location(Base):
         return format_sqlobject_repr(self)
 
 
+class ManualMeasurements(Base):
+    """
+    An object used to map the 'manual measurements' table of the
+    RSESQ database.
+    """
+    __tablename__ = 'generique'
+    __table_args__ = ({"schema": "resultats"})
+
+    manual_measurement_id = Column('generic_res_id', Integer, primary_key=True)
+    obs_well_id = Column('no_piezometre', String)
+    manual_measurement_date = Column('la_date', DateTime)
+    manual_measurement_time = Column('heure', DateTime)
+    manual_measurement = Column('lecture_profondeur', Float)
+
+    def __repr__(self):
+        return format_sqlobject_repr(self)
+
+
 class SamplingFeature(Base):
     """
     An object used to map the 'elements_caracteristique' table of the
@@ -599,6 +617,55 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             print("Permission error for user {}".format(self.user))
             raise p
 
+    # ---- Manual mesurements
+    def get_manual_measurements(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the water level manual
+        measurements made in the observation wells for the entire monitoring
+        network.
+        """
+        # Define a query to fetch the timseries data from the database.
+        query = (
+            self._session.query(ManualMeasurements,
+                                ObservationWell.sampling_feature_uuid)
+            .filter(ManualMeasurements.obs_well_id ==
+                    ObservationWell.obs_well_id)
+            .order_by(ManualMeasurements.obs_well_id,
+                      ManualMeasurements.manual_measurement_date,
+                      ManualMeasurements.manual_measurement_time)
+            ).with_labels()
+        measurements = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
+
+        # Rename the column names to that expected by the api.
+        columns_map = map_table_column_names(
+            ManualMeasurements, ObservationWell, with_labels=True)
+        measurements.rename(columns_map, axis='columns', inplace=True)
+
+        # Strip timezone info since it is not set correctly in the
+        # BD anyway.
+        measurements['manual_measurement_date'] = (
+            measurements['manual_measurement_date'].dt.tz_localize(None))
+        measurements['manual_measurement_time'] = (
+            measurements['manual_measurement_time'].dt.tz_localize(None))
+
+        # Join the date and hour into a single datetime column.
+        measurements['datetime'] = pd.to_datetime(
+            measurements['manual_measurement_date'].dt.date.astype(str) +
+            ' ' +
+            measurements['manual_measurement_time'].dt.time.astype(str))
+
+        # Drop the columns that are not required by the API.
+        measurements.drop(['manual_measurement_date',
+                           'manual_measurement_time',
+                           'obs_well_id'],
+                          axis=1, inplace=True)
+
+        # Set the index to the observation well ids.
+        measurements.set_index(
+            'manual_measurement_id', inplace=True, drop=True)
+        return measurements
+
 
 if __name__ == "__main__":
     from sardes.config.database import get_dbconfig
@@ -608,6 +675,7 @@ if __name__ == "__main__":
 
     accessor.connect()
     obs_wells = accessor.get_observation_wells_data()
+    manual_measurements = accessor.get_manual_measurements()
 
     print(accessor.observation_wells)
     print(accessor.monitored_properties)

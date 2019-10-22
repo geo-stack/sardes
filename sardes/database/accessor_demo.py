@@ -7,9 +7,13 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+"""
+Accessor implementation of a Demo database.
+"""
+
 # ---- Standard imports
 from copy import deepcopy
-from datetime import date
+import datetime as dt
 from time import sleep
 
 # ---- Third party imports
@@ -88,6 +92,17 @@ TSERIES_VALUES += 0.5 * np.sin(YEARLY_RADS * 8)
 TSERIES_VALUES += 0.25 * np.random.rand(len(TSERIES_VALUES))
 TSERIES['NIV_EAU'] = Series(TSERIES_VALUES, index=DATE_RANGE)
 
+MANUAL_MEASUREMENTS = pd.DataFrame([
+    [OBS_WELLS_DF.index[0], dt.datetime(2010, 8, 10, 16, 10, 34), 5.23],
+    [OBS_WELLS_DF.index[0], dt.datetime(2010, 11, 10, 12, 55, 22), 4.36],
+    [OBS_WELLS_DF.index[0], dt.datetime(2011, 8, 2, 18, 50, 17), 4.91],
+    [OBS_WELLS_DF.index[1], dt.datetime(2009, 8, 2, 18, 34, 38), 28.34],
+    [OBS_WELLS_DF.index[2], dt.datetime(2015, 8, 2, 18, 37, 23), 14.87],
+    [OBS_WELLS_DF.index[2], dt.datetime(2016, 2, 4, 13, 26, 3), 2.03]
+    ],
+    columns=['sampling_feature_uuid', 'datetime', 'manual_measurement']
+    )
+
 SONDE_MODELS_LIB = pd.DataFrame([
     ['Solinst', 'Barologger M1.5 Gold'],
     ['Solinst', 'LT M10 Gold'],
@@ -103,15 +118,15 @@ SONDE_MODELS_LIB = pd.DataFrame([
 
 SONDES_DATA = pd.DataFrame([
     [0, 'Solinst Barologger M1.5 Gold', '1022034',
-     date(2007, 3, 26), date(2017, 11, 27),
+     dt.date(2007, 3, 26), dt.date(2017, 11, 27),
      False, True, True, False,
      'Notes for sonde Solinst Barologger M1.5 Gold 1022034'],
     [1, 'Solinst LT M10 Gold', '1062392',
-     date(2011, 5, 10), date(2017, 11, 27),
+     dt.date(2011, 5, 10), dt.date(2017, 11, 27),
      False, True, True, False,
      'Notes for sonde Solinst LT M10 Gold 1062392'],
     [2, 'Solinst LT M10 Edge', '2004771',
-     date(2012, 1, 1), None,
+     dt.date(2012, 1, 1), None,
      False, False, False, False,
      'Notes for sonde Solinst LT M10 Edge 2004771']],
     columns=['sonde_model_id', 'sonde_brand_model', 'sonde_serial_no',
@@ -263,6 +278,17 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
                 self.get_monitored_property_color(monitored_property))
             ))
         return tseries_group
+
+    # ---- Manual mesurements
+    def get_manual_measurements(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the water level manual
+        measurements made in the observation wells for the entire monitoring
+        network.
+        """
+        sleep(0.1)
+        manual_measurements = deepcopy(MANUAL_MEASUREMENTS)
+        return manual_measurements
 
 
 if __name__ == '__main__':

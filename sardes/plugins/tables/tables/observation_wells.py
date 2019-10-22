@@ -9,8 +9,7 @@
 
 # ---- Third party imports
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QApplication, QFileDialog
-
+from qtpy.QtWidgets import QApplication
 
 # ---- Local imports
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
@@ -53,7 +52,7 @@ class ObsWellsTableModel(SardesTableModel):
 
     def fetch_model_data(self, *args, **kargs):
         """
-        Fetch the observation well data for this table model.
+        Fetch the data and libraries for this table model.
         """
         self.db_connection_manager.get_observation_wells_data(
             callback=self.set_model_data)
@@ -86,7 +85,7 @@ class ObsWellsTableModel(SardesTableModel):
         """
         Save all data edits to the database.
         """
-        for edits in self._dataf_edits:
+        for edits in self._data_edit_stack:
             for edit in edits:
                 if edit.type() == self.ValueChanged:
                     self.db_connection_manager.save_observation_well_data(

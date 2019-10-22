@@ -22,7 +22,7 @@ from qtpy.QtCore import (QAbstractTableModel, QEvent, QModelIndex,
                          QItemSelection, QItemSelectionModel, QRect,
                          )
 from qtpy.QtGui import QColor, QCursor, QPen
-from qtpy.QtWidgets import (QApplication, QComboBox, QDateEdit,
+from qtpy.QtWidgets import (QApplication, QComboBox, QDateEdit, QDateTimeEdit,
                             QDoubleSpinBox, QHeaderView, QLabel, QLineEdit,
                             QMenu, QMessageBox, QSpinBox, QStyledItemDelegate,
                             QTableView, QTextEdit, QListView, QStyle,
@@ -247,7 +247,7 @@ class SardesItemDelegate(SardesItemDelegateBase):
             return self.editor.value()
         elif isinstance(self.editor, QComboBox):
             return self.editor.itemData(self.editor.currentIndex())
-        elif isinstance(self.editor, QDateEdit):
+        elif isinstance(self.editor, (QDateEdit, QDateTimeEdit)):
             return get_datetime_from_editor(self.editor)
         else:
             raise NotImplementedError
@@ -272,7 +272,7 @@ class SardesItemDelegate(SardesItemDelegateBase):
                     break
             else:
                 self.editor.setCurrentIndex(0)
-        elif isinstance(self.editor, QDateEdit):
+        elif isinstance(self.editor, (QDateEdit, QDateTimeEdit)):
             data = (datetime.today() if (pd.isna(data) or data is None)
                     else data)
             self.editor.setDateTime(qdatetime_from_datetime(data))
@@ -293,6 +293,23 @@ class DateEditDelegate(SardesItemDelegate):
         editor = QDateEdit(parent)
         editor.setCalendarPopup(True)
         editor.setDisplayFormat("yyyy-MM-dd")
+        return editor
+
+
+class DateTimeDelegate(SardesItemDelegate):
+    """
+    A delegate to edit a datetime.
+    """
+
+    def __init__(self, model_view, display_format=None):
+        super() .__init__(model_view)
+        self.display_format = ("yyyy-MM-dd hh:mm:ss" if display_format is None
+                               else display_format)
+
+    def create_editor(self, parent):
+        editor = QDateTimeEdit(parent)
+        editor.setCalendarPopup(True)
+        editor.setDisplayFormat(self.display_format)
         return editor
 
 
