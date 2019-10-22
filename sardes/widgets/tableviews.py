@@ -607,7 +607,7 @@ class SardesTableModelBase(QAbstractTableModel):
         Return whether edits were made at the specified model index
         since last save.
         """
-        return (self.dataf.index[model_index.row()],
+        return (self.dataf_index_at(model_index),
                 self.columns[model_index.column()]
                 ) in self._edited_dataf.index
 
@@ -625,8 +625,8 @@ class SardesTableModelBase(QAbstractTableModel):
         Return the edited value, if any, that was made at the specified
         model index since last save.
         """
-        dataf_index = self.dataf.index[model_index.row()]
-        dataf_column = self.columns[model_index.column()]
+        dataf_index = self.dataf_index_at(model_index)
+        dataf_column = self.dataf_column_at(model_index)
         try:
             return self._edited_dataf.loc[
                 (dataf_index, dataf_column), 'edited_value']
@@ -647,8 +647,8 @@ class SardesTableModelBase(QAbstractTableModel):
         edits = []
         for model_index, edited_value in zip(model_indexes, edited_values):
             dataf_value = self.get_dataf_value_at(model_index)
-            dataf_index = self.dataf.index[model_index.row()]
-            dataf_column = self.columns[model_index.column()]
+            dataf_index = self.dataf_index_at(model_index)
+            dataf_column = self.dataf_column_at(model_index)
             edits.append(ValueChanged(
                 dataf_index, dataf_column, dataf_value, edited_value))
 
@@ -680,9 +680,9 @@ class SardesTableModelBase(QAbstractTableModel):
         # more than one edit.
         last_edits = self._data_edit_stack.pop(-1)
         for last_edit in last_edits:
-            if (last_edit.index, last_edit.column) in self._edited_data.index:
-                self._edited_data.drop((last_edit.index, last_edit.column),
-                                       inplace=True)
+            if (last_edit.index, last_edit.column) in self._edited_dataf.index:
+                self._edited_dataf.drop((last_edit.index, last_edit.column),
+                                        inplace=True)
 
             # Check if there was a previous edit for this model index
             # in the stack and add it to the list of edited data if that is
