@@ -52,7 +52,7 @@ class ObsWellsTableModel(SardesTableModel):
 
     def fetch_model_data(self, *args, **kargs):
         """
-        Fetch the observation well data for this table model.
+        Fetch the data and libraries for this table model.
         """
         self.db_connection_manager.get_observation_wells_data(
             callback=self.set_model_data)

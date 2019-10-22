@@ -66,7 +66,7 @@ class SondesInventoryTableModel(SardesTableModel):
 
     def fetch_model_data(self, *args, **kargs):
         """
-        Fetch the observation well data for this table model.
+        Fetch the data and libraries for this table model.
         """
         # Note we need to fetch the sonde models library before we fetch
         # the sonde data.
