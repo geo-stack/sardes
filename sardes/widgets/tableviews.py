@@ -516,7 +516,7 @@ class SardesTableModelBase(QAbstractTableModel):
         elif role == Qt.ForegroundRole:
             return QVariant()
         elif role == Qt.BackgroundRole:
-            if not isinstance(self.get_edited_data_at(index), NoDataEdit):
+            if self.is_data_edited_at(index):
                 return QColor('#CCFF99')
             else:
                 return QStyleOption().palette.base().color()
