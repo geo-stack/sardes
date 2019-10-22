@@ -366,9 +366,10 @@ class NoDataEdit(object):
     save.
     """
 
-    def __init__(self, model_index):
+    def __init__(self, index, column):
         super() .__init__()
-        self.model_index = model_index
+        self.index = index
+        self.column = column
 
 
 class ValueChanged(object):
@@ -376,15 +377,12 @@ class ValueChanged(object):
     A class that represent a change of a value at a given model index.
     """
 
-    def __init__(self, model_index, edited_value,
-                 dataf_index, dataf_column, dataf_value):
+    def __init__(self, index, column, value, edited_value):
         super() .__init__()
-        self.model_index = model_index
+        self.index = index
+        self.column = column
+        self.value = value
         self.edited_value = edited_value
-
-        self.dataf_index = dataf_index
-        self.dataf_column = dataf_column
-        self.dataf_value = dataf_value
 
     def type(self):
         """
@@ -413,13 +411,25 @@ class SardesTableModelBase(QAbstractTableModel):
         # A pandas dataframe containing the data that are shown in the
         # database.
         self.dataf = pd.DataFrame([])
+        self.visual_dataf = pd.DataFrame([], columns=self.columns)
 
         # A list containing the edits made by the user to the
         # content of this table's model data in chronological order.
-        self._dataf_edits = []
-        self._edited_data = {}
+        self._data_edit_stack = []
         self._new_rows = []
         self._deleted_rows = []
+
+        # A pandas dataframe that contains the edited values at their
+        # corresponding data index and column.
+        self._edited_dataf = pd.DataFrame(
+            [], columns=['index', 'column', 'edited_value'])
+        self._edited_dataf.set_index('index', inplace=True, drop=True)
+        self._edited_dataf.set_index(
+            'column', inplace=True, drop=True, append=True)
+
+        # Sorting and filtering.
+        self._sort_by_columns = None
+        self._sort_order = Qt.AscendingOrder
 
         self.set_database_connection_manager(db_connection_manager)
 
@@ -487,30 +497,28 @@ class SardesTableModelBase(QAbstractTableModel):
             mapped in HORIZONTAL_HEADER_LABELS.
         """
         self.dataf = dataf
-        self._dataf_edits = []
-        self._edited_data = {}
+        self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
+        self._data_edit_stack = []
         self._new_rows = []
         self._deleted_rows = []
+        self._update_visual_data()
 
         self.modelReset.emit()
         self.sig_data_edited.emit(False)
 
     def rowCount(self, parent=QModelIndex()):
-        """Qt method override. Return the number of row of the table."""
-        return len(self.dataf)
+        """Qt method override. Return the number visible rows in the table."""
+        return len(self.visual_dataf)
 
     def data(self, index, role=Qt.DisplayRole):
         """Qt method override."""
         if role in [Qt.DisplayRole, Qt.ToolTipRole]:
-            value = self.get_value_at(index)
-            value = '' if (pd.isna(value) or value is None) else value
-            if pd.api.types.is_bool(value):
-                value = _('Yes') if value else _('No')
-            return str(value)
+            return self.visual_dataf.loc[
+                self.dataf_index_at(index), self.dataf_column_at(index)]
         elif role == Qt.ForegroundRole:
             return QVariant()
         elif role == Qt.BackgroundRole:
-            if not isinstance(self.get_edited_data_at(index), NoDataEdit):
+            if self.is_data_edited_at(index):
                 return QColor('#CCFF99')
             else:
                 return QStyleOption().palette.base().color()
@@ -526,15 +534,11 @@ class SardesTableModelBase(QAbstractTableModel):
         Return the unedited value of the model's data at the specified model
         index.
         """
-        column_key = self.columns[model_index.column()]
         try:
-            dataf_column = self.dataf.columns.get_loc(column_key)
+            return self.dataf.loc[self.dataf_index_at(model_index),
+                                  self.dataf_column_at(model_index)]
         except KeyError:
-            value = None
-        else:
-            dataf_row = model_index.row()
-            value = self.dataf.iloc[dataf_row, dataf_column]
-        return value
+            return None
 
     def get_value_at(self, model_index):
         """
@@ -555,15 +559,16 @@ class SardesTableModelBase(QAbstractTableModel):
         Check if the specified value is in the data of this model at the
         column specified by the model index.
         """
+        dataf_column = self.dataf_column_at(model_index)
+
         # First we check if value is found in the edited data.
-        for edited_index, edited_value in self._edited_data.items():
-            if (edited_index.column() == model_index.column() and
-                    (edited_value == value)):
-                return True
+        if any(self._edited_dataf
+               .loc[(slice(None), slice(dataf_column)), 'edited_value']
+               .isin([value])):
+            return True
         else:
             # Else we check if the value is found in the unedited data
             # of this model's data.
-            dataf_column = self.columns[model_index.column()]
             isin_indexes = self.dataf[self.dataf[dataf_column].isin([value])]
             return any([
                 not self.is_data_edited_at(self.index(
@@ -571,29 +576,129 @@ class SardesTableModelBase(QAbstractTableModel):
                 for index in isin_indexes.index
                 ])
 
+    # ---- Visual Data
+    def dataf_index_at(self, model_index):
+        """
+        Return the dataframe index corresponding to the specified visual
+        model index.
+        """
+        return self.visual_dataf.index[model_index.row()]
+
+    def dataf_column_at(self, model_index):
+        """
+        Return the dataframe column corresponding to the specified visual
+        model index.
+        """
+        return self.columns[model_index.column()]
+
+    def _update_visual_data(self):
+        """
+        Update the visual dataframe that is used to display the value in
+        this tables.
+        """
+        self.visual_dataf = self.dataf.copy()
+
+        # Fist we apply the edited values to the dataframe.
+        for index, column in self._edited_dataf.index:
+            self.visual_dataf.loc[index, column] = (
+                self._edited_dataf.loc[(index, column), 'edited_value'])
+
+        # Add missing columns to the visual dataframe.
+        for column in self.columns:
+            if column not in self.visual_dataf.columns:
+                self.visual_dataf[column] = ''
+
+        if not self.dataf.empty:
+            self.visual_dataf = self.logical_to_visual_data(self.visual_dataf)
+            self._filter_visual_data()
+            self._sort_visual_data()
+
+            # Transform the data to string and replace nan and boolean
+            # values with strings.
+            # Note that this must be done after the filtering and sorting
+            # is applied or else, it won't work as expected for numerical
+            # values.
+            self.visual_dataf.fillna(value='', inplace=True)
+            self.visual_dataf = self.visual_dataf.astype(str)
+            self.visual_dataf.replace(
+                to_replace={'True': _('Yes'), 'False': _('No')}, inplace=True)
+
+        self.dataChanged.emit(QModelIndex(), QModelIndex())
+
+    def _filter_visual_data(self):
+        """
+        Apply the filters to the visual data.
+        """
+        pass
+
+    def _sort_visual_data(self):
+        """
+        Sort the visual data.
+        """
+        if self._sort_by_columns is not None:
+            self.visual_dataf.sort_values(
+                by=self._sort_by_columns,
+                ascending=(self._sort_order == Qt.AscendingOrder),
+                inplace=True)
+
+    def sort(self, column, order=Qt.AscendingOrder):
+        """
+        Implement Qt sort method so that sorting by columns is done with pandas
+        instead of using  QSortFilterProxyModel, which is very slow for large
+        datasets.
+
+        https://bugreports.qt.io/browse/QTBUG-45208
+        https://stackoverflow.com/a/42039683/4481445
+        """
+        self.layoutAboutToBeChanged.emit()
+        old_model_indexes = self.persistentIndexList()
+        old_ids = self.visual_dataf.index.copy()
+
+        self._sort_by_columns = None if column == -1 else self.columns[column]
+        self._sort_order = order
+        self._update_visual_data()
+
+        # Updating persistent indexes
+        new_model_indexes = []
+        for index in old_model_indexes:
+            new_row = self.visual_dataf.index.get_loc(old_ids[index.row()])
+            new_model_indexes.append(
+                self.index(new_row, index.column(), index.parent()))
+
+        self.changePersistentIndexList(old_model_indexes, new_model_indexes)
+        self.layoutChanged.emit()
+        self.dataChanged.emit(QModelIndex(), QModelIndex())
+
     # ---- Data edits
+    def data_edit_count(self):
+        """
+        Return the number of edits in the stack.
+        """
+        return len(self._data_edit_stack)
+
     def has_unsaved_data_edits(self):
         """
         Return whether any edits were made to the table's data since last save.
         """
-        return bool(len(self._edited_data))
+        return bool(len(self._edited_dataf))
 
     def is_data_edited_at(self, model_index):
         """
         Return whether edits were made at the specified model index
         since last save.
         """
-        return model_index in self._edited_data
+        return (self.dataf_index_at(model_index),
+                self.columns[model_index.column()]
+                ) in self._edited_dataf.index
 
     def cancel_all_data_edits(self):
         """
         Cancel all the edits that were made to the table data since last save.
         """
-        self._dataf_edits = []
-        self._edited_data = {}
-        self.dataChanged.emit(
-            self.index(0, 0),
-            self.index(self.rowCount() - 1, self.columnCount() - 1))
+        self._data_edit_stack = []
+        self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
+        self._update_visual_data()
+        self.dataChanged.emit(QModelIndex(), QModelIndex())
         self.sig_data_edited.emit(False)
 
     def get_edited_data_at(self, model_index):
@@ -601,7 +706,13 @@ class SardesTableModelBase(QAbstractTableModel):
         Return the edited value, if any, that was made at the specified
         model index since last save.
         """
-        return self._edited_data.get(model_index, NoDataEdit(model_index))
+        dataf_index = self.dataf_index_at(model_index)
+        dataf_column = self.dataf_column_at(model_index)
+        try:
+            return self._edited_dataf.loc[
+                (dataf_index, dataf_column), 'edited_value']
+        except KeyError:
+            return NoDataEdit(dataf_index, dataf_column)
 
     def set_data_edits_at(self, model_indexes, edited_values):
         """
@@ -617,59 +728,63 @@ class SardesTableModelBase(QAbstractTableModel):
         edits = []
         for model_index, edited_value in zip(model_indexes, edited_values):
             dataf_value = self.get_dataf_value_at(model_index)
-            dataf_index = self.dataf.index[model_index.row()]
-            dataf_column = self.columns[model_index.column()]
-
-            edits.append(ValueChanged(model_index, edited_value,
-                                      dataf_index, dataf_column, dataf_value))
+            dataf_index = self.dataf_index_at(model_index)
+            dataf_column = self.dataf_column_at(model_index)
+            edits.append(ValueChanged(
+                dataf_index, dataf_column, dataf_value, edited_value))
 
             # We add the model index to the list of indexes whose value have
             # been edited if the edited value differ from the value saved in
             # the model's data.
+            if (dataf_index, dataf_column) in self._edited_dataf.index:
+                self._edited_dataf.drop(
+                    (dataf_index, dataf_column), inplace=True)
             if dataf_value != edited_value:
-                self._edited_data[model_index] = edited_value
-            else:
-                if model_index in self._edited_data:
-                    del self._edited_data[model_index]
-            self.dataChanged.emit(model_index, model_index)
-
+                self._edited_dataf.loc[(dataf_index, dataf_column),
+                                       'edited_value'
+                                       ] = edited_value
         # We store the edited values until it is commited and
         # saved to the database.
-        self._dataf_edits.append(edits)
+        self._data_edit_stack.append(edits)
+
+        # We make the appropriate calls to update the model and GUI.
+        self._update_visual_data()
+        self.dataChanged.emit(QModelIndex(), QModelIndex())
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
-    def undo_last_data_edit(self, update_model_view=True):
+    def undo_last_data_edit(self):
         """
         Undo the last data edits that was added to the stack.
         An update of the view is forced if  update_model_view is True.
         """
-        if len(self._dataf_edits) == 0:
+        if len(self._data_edit_stack) == 0:
             return
 
         # Undo the last edits. Note that the last edits can comprise
         # more than one edit.
-        last_edits = self._dataf_edits.pop(-1)
+        last_edits = self._data_edit_stack.pop(-1)
         for last_edit in last_edits:
-            if last_edit.model_index in self._edited_data:
-                del self._edited_data[last_edit.model_index]
+            if (last_edit.index, last_edit.column) in self._edited_dataf.index:
+                self._edited_dataf.drop((last_edit.index, last_edit.column),
+                                        inplace=True)
 
             # Check if there was a previous edit for this model index
             # in the stack and add it to the list of edited data if that is
             # the case.
-            for edits in reversed(self._dataf_edits):
+            for edits in reversed(self._data_edit_stack):
                 try:
-                    edit = edits[[edit.model_index for edit in edits]
-                                 .index(last_edit.model_index)]
-
-                    self._edited_data[edit.model_index] = edit.edited_value
+                    edit = edits[[(edit.index, edit.column) for edit in edits]
+                                 .index((last_edit.index, last_edit.column))]
+                    self._edited_dataf.loc[
+                        (edit.index, edit.column), 'edited_value'
+                        ] = edit.edited_value
                 except ValueError:
                     continue
                 else:
                     break
 
-            if update_model_view:
-                self.dataChanged.emit(last_edit.model_index,
-                                      last_edit.model_index)
+        self._update_visual_data()
+        self.dataChanged.emit(QModelIndex(), QModelIndex())
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
 
@@ -711,67 +826,30 @@ class SardesTableModel(SardesTableModelBase):
         """
         raise NotImplementedError
 
+    # ---- Visua data
+    def logical_to_visual_data(self, visual_dataf):
+        """
+        Transform logical data to visual data.
+
+        Do any transformations to the source data so that they are displayed
+        as you want in the table. Note that these transformations are
+        applied to the visual dataframe, so that the source data are
+        preserved in the process.
+
+        For example, if you would like to display boolean values in a given
+        column of the table as 'Yes' or 'No' strings, you would need to do:
+
+        visual_dataf[column].replace(
+            to_replace={True: 'Yes', False: 'No'}, inplace=False)
+        """
+        return visual_dataf
+
     # ---- Data edits
     def save_data_edits(self):
         """
         Save all data edits to the database.
         """
         raise NotImplementedError
-
-
-class SardesSortFilterProxyModel(QSortFilterProxyModel):
-    def __init__(self, source_model):
-        super().__init__()
-        self.setSourceModel(source_model)
-        self.setSortCaseSensitivity(False)
-
-    # ---- Qt methods override
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        """
-        Override Qt method so that the visual indexes of the rows are shown in
-        the vertical header of the table instead of their logical indexes.
-        """
-        return self.sourceModel().headerData(section, orientation, role)
-
-    # ---- Source model methods
-    def cancel_all_data_edits(self):
-        self.sourceModel().cancel_all_data_edits()
-
-    @property
-    def columns(self):
-        return self.sourceModel().columns
-
-    def fetch_model_data(self, *args, **kargs):
-        self.sourceModel().fetch_model_data()
-
-    def get_value_at(self, proxy_index):
-        return self.sourceModel().get_value_at(self.mapToSource(proxy_index))
-
-    def get_horizontal_header_label_at(self, column_or_index):
-        return self.sourceModel().get_horizontal_header_label_at(
-            column_or_index)
-
-    def has_unsaved_data_edits(self):
-        return self.sourceModel().has_unsaved_data_edits()
-
-    def is_value_in_column(self, proxy_index, value):
-        return self.sourceModel().is_value_in_column(
-            self.mapToSource(proxy_index), value)
-
-    def save_data_edits(self):
-        self.sourceModel().save_data_edits()
-
-    def set_data_edits_at(self, proxy_indexes, edited_values):
-        if not isinstance(proxy_indexes, list):
-            proxy_indexes = [proxy_indexes, ]
-        if not isinstance(edited_values, list):
-            edited_values = [edited_values, ]
-
-        model_indexes = [self.mapToSource(idx) for idx in proxy_indexes]
-        self.sourceModel().set_data_edits_at(model_indexes, edited_values)
-
-    def undo_last_data_edit(self, update_model_view=True):
-        self.sourceModel().undo_last_data_edit(update_model_view)
 
 
 # =============================================================================
@@ -881,8 +959,7 @@ class SardesTableView(QTableView):
         """
         self.source_model = table_model
         self.source_model.sig_data_edited.connect(self.sig_data_edited.emit)
-        self.proxy_model = SardesSortFilterProxyModel(self.source_model)
-        self.setModel(self.proxy_model)
+        self.setModel(self.source_model)
 
     def _setup_item_delegates(self):
         """
@@ -1109,10 +1186,9 @@ class SardesTableView(QTableView):
         """
         Return the data relative to the currently selected rows in this table.
         """
-        proxy_indexes = self.selectionModel().selectedIndexes()
+        model_indexes = self.selectionModel().selectedIndexes()
         rows = sorted(list(set(
-            [self.proxy_model.mapToSource(i).row() for i in proxy_indexes]
-            )))
+            [index.row() for index in model_indexes])))
         return self.source_model.dataf.iloc[rows]
 
     def get_current_row_data(self):
@@ -1120,13 +1196,9 @@ class SardesTableView(QTableView):
         Return the data relative to the row with the current item (the item
         with the focus).
         """
-        proxy_index = self.selectionModel().currentIndex()
-        if proxy_index.isValid():
-            row = self.proxy_model.mapToSource(proxy_index).row()
-            row_data = self.source_model.dataf.iloc[[row]]
-        else:
-            row_data = None
-        return row_data
+        model_index = self.selectionModel().currentIndex()
+        return (None if not model_index.isValid() else
+                self.source_model.dataf.iloc[[model_index.row()]])
 
     def select_row(self):
         """
@@ -1308,7 +1380,7 @@ class SardesTableView(QTableView):
 
     def row_count(self):
         """Return this table number of visible row."""
-        return self.proxy_model.rowCount()
+        return self.model().rowCount()
 
     def selected_row_count(self):
         """
@@ -1473,7 +1545,7 @@ class SardesTableView(QTableView):
             buttons=QMessageBox.Ok)
         self.setCurrentIndex(model_index)
         self._edit_current_item()
-        self.model().undo_last_data_edit(update_model_view=False)
+        self.model().undo_last_data_edit()
 
     def edit(self, model_index, trigger=None, event=None):
         """

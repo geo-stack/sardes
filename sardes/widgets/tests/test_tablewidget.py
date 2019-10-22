@@ -38,7 +38,7 @@ COLUMNS = ['col{}'.format(i) for i in range(NCOL)]
 HEADERS = [_('Column #{}').format(i) for i in range(NCOL)]
 VALUES = [['str1', True, 1.111, 3, 'not editable'],
           ['str2', False, 2.222, 1, 'not editable'],
-          ['str3', True, 3.333, 2, 'not editable']]
+          ['str3', True, 3.333, 29, 'not editable']]
 INDEXES = [uuid.uuid4() for i in range(len(VALUES))]
 
 
@@ -80,11 +80,12 @@ def tablemodel(qtbot, TABLE_DATAF):
             """
             Save all data edits to the database.
             """
-            for edits in self._dataf_edits:
+            for edits in self._data_edit_stack:
                 for edit in edits:
                     if edit.type() == self.ValueChanged:
-                        TABLE_DATAF.loc[edit.dataf_index,
-                                        edit.dataf_column] = edit.edited_value
+                        TABLE_DATAF.loc[
+                            edit.index, edit.column
+                            ] = edit.edited_value
             self.fetch_model_data()
 
     tablemodel = SardesTableModelMock()
@@ -199,7 +200,7 @@ def test_tablewidget_row_selection(tablewidget, qtbot, TABLE_DATAF):
 
     # Select the rows of table one after the other.
     for row in range(len(TABLE_DATAF)):
-        index = tableview.proxy_model.index(row, 0)
+        index = tableview.model().index(row, 0)
         visual_rect = tableview.visualRect(index)
         qtbot.mouseClick(
             tableview.viewport(), Qt.LeftButton, pos=visual_rect.center())
@@ -337,7 +338,7 @@ def test_edit_editable_cell(tablewidget, qtbot):
 
         assert model_index.data() == expected_data[i]
         assert tableview.model().get_value_at(model_index) == expected_value[i]
-        assert len(tableview.source_model._dataf_edits) == i
+        assert tableview.model().data_edit_count() == i
 
         # Edit the value of the cell and accept the edit.
         qtbot.keyPress(tableview, Qt.Key_Enter)
@@ -350,7 +351,7 @@ def test_edit_editable_cell(tablewidget, qtbot):
         assert model_index.data() == expected_edited_data[i]
         assert (tableview.model().get_value_at(model_index) ==
                 expected_edited_value[i])
-        assert len(tableview.source_model._dataf_edits) == i + 1
+        assert tableview.model().data_edit_count() == i + 1
 
 
 def test_clearing_required_cell(tablewidget, qtbot):
@@ -413,7 +414,7 @@ def test_cancel_edits(tablewidget, qtbot):
         tableview.model().set_data_edits_at(model_index, expected_value[i])
         assert model_index.data() == expected_data[i]
         assert tableview.model().get_value_at(model_index) == expected_value[i]
-    assert len(tableview.source_model._dataf_edits) == i + 1
+    assert tableview.model().data_edit_count() == i + 1
     assert tableview.model().has_unsaved_data_edits() is True
 
     # Cancel all edits.
@@ -426,7 +427,7 @@ def test_cancel_edits(tablewidget, qtbot):
         assert model_index.data() == expected_data[i]
         assert tableview.model().get_value_at(model_index) == expected_value[i]
     assert tableview.model().has_unsaved_data_edits() is False
-    assert len(tableview.source_model._dataf_edits) == 0
+    assert tableview.model().data_edit_count() == 0
 
 
 def test_undo_edits(tablewidget, qtbot):
@@ -465,21 +466,21 @@ def test_save_edits(tablewidget, qtbot):
     expected_value = ['new_str1', False, 1.234, 7]
 
     # Do some edits to the table's data programmatically.
-    assert len(tableview.source_model._dataf_edits) == 0
+    assert tableview.model().data_edit_count() == 0
     assert tableview.model().has_unsaved_data_edits() is False
     for i in range(4):
         model_index = tableview.model().index(0, i)
         tableview.model().set_data_edits_at(model_index, expected_value[i])
         assert model_index.data() == expected_data[i]
         assert tableview.model().get_value_at(model_index) == expected_value[i]
-    assert len(tableview.source_model._dataf_edits) == i + 1
+    assert tableview.model().data_edit_count() == i + 1
     assert tableview.model().has_unsaved_data_edits() is True
 
     # Save all edits.
     tableview.model().save_data_edits()
     qtbot.wait(100)
 
-    assert len(tableview.source_model._dataf_edits) == 0
+    assert tableview.model().data_edit_count() == 0
     assert tableview.model().has_unsaved_data_edits() is False
     for i in range(4):
         model_index = tableview.model().index(0, i)
@@ -692,7 +693,7 @@ def test_horiz_header_double_mouse_click(tablewidget, qtbot):
         horiz_header.viewport(), Qt.LeftButton, pos=visual_rect.center())
 
     assert tableview.get_selected_columns() == [clicked_column_index]
-    assert get_values_for_column(model.index(0, 0)) == ['str2', 'str3', 'str1']
+    assert get_values_for_column(model.index(0, 0)) == ['str2', 'str1', 'str3']
     assert horiz_header.sortIndicatorOrder() == 0
     assert horiz_header.sortIndicatorSection() == clicked_column_index
 
@@ -702,7 +703,7 @@ def test_horiz_header_double_mouse_click(tablewidget, qtbot):
         horiz_header.viewport(), Qt.LeftButton, pos=visual_rect.center())
 
     assert tableview.get_selected_columns() == [clicked_column_index]
-    assert get_values_for_column(model.index(0, 0)) == ['str1', 'str3', 'str2']
+    assert get_values_for_column(model.index(0, 0)) == ['str3', 'str1', 'str2']
     assert horiz_header.sortIndicatorOrder() == 1
     assert horiz_header.sortIndicatorSection() == clicked_column_index
 
@@ -724,17 +725,17 @@ def test_column_sorting(tablewidget, qtbot):
     assert selection_model.currentIndex() == selected_model_index
     assert len(selection_model.selectedIndexes()) == 1
 
-    # Sort in ascending order according to the current column using the
+    # Sort in ASCENDING order according to the current column using the
     # keyboard shorcut Ctrl+<.
     qtbot.keyPress(tableview, Qt.Key_Less, modifier=Qt.ControlModifier)
-    assert get_values_for_column(model.index(0, 0)) == ['str2', 'str3', 'str1']
+    assert get_values_for_column(model.index(0, 0)) == ['str2', 'str1', 'str3']
     assert horiz_header.sortIndicatorOrder() == 0
     assert horiz_header.sortIndicatorSection() == selected_column_index
 
-    # Sort in descending order according to the current column using the
+    # Sort in DESCENDING order according to the current column using the
     # keyboard shorcut Ctrl+>.
     qtbot.keyPress(tableview, Qt.Key_Greater, modifier=Qt.ControlModifier)
-    assert get_values_for_column(model.index(0, 0)) == ['str1', 'str3', 'str2']
+    assert get_values_for_column(model.index(0, 0)) == ['str3', 'str1', 'str2']
     assert horiz_header.sortIndicatorOrder() == 1
     assert horiz_header.sortIndicatorSection() == selected_column_index
 
