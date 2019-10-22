@@ -62,7 +62,7 @@ def mainwindow(qtbot, mocker, dbconnmanager):
     with qtbot.waitSignal(dbconnmanager.sig_database_connected, timeout=3000):
         dbconnmanager.connect_to_db(DatabaseAccessorDemo())
     assert dbconnmanager.is_connected()
-    qtbot.wait(1000)
+    qtbot.wait(1500)
 
     return mainwindow
 
@@ -73,7 +73,7 @@ def mainwindow(qtbot, mocker, dbconnmanager):
 def test_tables_plugin_init(mainwindow):
     """Test that the databse connection manager is initialized correctly."""
     assert mainwindow.plugin
-    assert len(mainwindow.plugin._tables) == 2
+    assert len(mainwindow.plugin._tables) == 3
 
     # Table Observation Wells.
     tablewidget = mainwindow.plugin._tables[ObsWellsTableModel.TABLE_ID]
@@ -126,7 +126,7 @@ def test_edit_sonde_model(mainwindow, qtbot):
     assert model.get_value_at(model_index) == 7
 
     # Undo the last edit.
-    tableview. _undo_last_data_edit()
+    tableview._undo_last_data_edit()
     assert model_index.data() == 'Solinst Barologger M1.5 Gold'
     assert model.get_value_at(model_index) == 0
 
