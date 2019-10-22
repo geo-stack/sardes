@@ -532,15 +532,11 @@ class SardesTableModelBase(QAbstractTableModel):
         Return the unedited value of the model's data at the specified model
         index.
         """
-        column_key = self.columns[model_index.column()]
         try:
-            dataf_column = self.dataf.columns.get_loc(column_key)
+            return self.dataf.loc[self.dataf_index_at(model_index),
+                                  self.dataf_column_at(model_index)]
         except KeyError:
-            value = None
-        else:
-            dataf_row = model_index.row()
-            value = self.dataf.iloc[dataf_row, dataf_column]
-        return value
+            return None
 
     def get_value_at(self, model_index):
         """
