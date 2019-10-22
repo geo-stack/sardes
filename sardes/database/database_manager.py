@@ -29,6 +29,16 @@ class DatabaseConnectionWorker(QObject):
         self.db_accessor = None
         self._tasks = OrderedDict()
 
+        # Setup a cache structure for the tables and libraries.
+        self._cache = {}
+
+    def clear_cache(self):
+        """
+        Clear the cache for the tables and libraries data.
+        """
+        print("Clearing the database worker cache... done.")
+        self._cache = {}
+
     # ---- Task management
     def add_task(self, task_uuid4, task, *args, **kargs):
         """
@@ -55,6 +65,7 @@ class DatabaseConnectionWorker(QObject):
     def _connect_to_db(self, db_accessor):
         """Try to create a new connection with the database"""
         self.db_accessor = db_accessor
+        self.clear_cache()
         print("Connecting to database with {}...".format(
             type(self.db_accessor).__name__))
         self.db_accessor.connect()
@@ -66,6 +77,7 @@ class DatabaseConnectionWorker(QObject):
 
     def _disconnect_from_db(self):
         """Close the connection with the database"""
+        self.clear_cache()
         print("Closing connection with database...".format(
             type(self.db_accessor).__name__))
         if self.db_accessor is not None:
@@ -73,79 +85,37 @@ class DatabaseConnectionWorker(QObject):
         print("Connection with database closed.")
         return None,
 
-    # ---- Observation wells
-    def _save_observation_well_data(self, sampling_feature_id, attribute_name,
-                                    attribute_value):
+    # ---- Get data
+    def _get(self, name, *args, **kargs):
         """
-        Save in the database the new attribute value for the observation well
-        corresponding to the specified sampling feature ID.
+        Get the data related to name from the database.
         """
-        self.db_accessor.save_observation_well_data(
-            sampling_feature_id, attribute_name, attribute_value)
+        if name in self._cache:
+            print("Fetched '{}' from store.".format(name))
+            return self._cache[name],
 
-    def _get_observation_wells_data(self):
-        """
-        Try to get the list of observation wells that are
-        saved in the database.
-        """
-        print("Fetching observation wells from the database...", end='')
+        print("Fetching '{}' from the database...".format(name), end='')
         if self.is_connected():
             try:
-                obs_wells = self.db_accessor.get_observation_wells_data()
+                data = self.db_accessor.get(name, *args, **kargs)
+                self._cache[name] = data
                 print("done")
             except AttributeError as e:
                 print("failed")
                 print(e)
-                obs_wells = DataFrame([])
+                data = DataFrame([])
         else:
-            print("failed. No database connection.")
-            obs_wells = DataFrame([])
-        return obs_wells,
+            print("failed because not connected to a database.")
+            data = DataFrame([])
+        return data,
 
-    # ---- Sondes
-    def _get_sonde_models_lib(self):
+    def _set(self, name, *args, **kargs):
         """
-        Try to get the list of sonde models that are saved in the database.
+        Save the data related to name in the database.
         """
-        print("Fetching sonde models library from the database...", end='')
-        if self.is_connected():
-            try:
-                sonde_models = self.db_accessor.get_sonde_models_lib()
-                print("done")
-            except AttributeError as e:
-                print("failed")
-                print(e)
-                sonde_models = DataFrame([])
-        else:
-            print("failed. No database connection.")
-            sonde_models = DataFrame([])
-        return sonde_models,
-
-    def _get_sondes_data(self):
-        """
-        Try to get the list of sondes that are saved in the database.
-        """
-        print("Fetching sondes inventory from the database...", end='')
-        if self.is_connected():
-            try:
-                sondes = self.db_accessor.get_sondes_data()
-                print("done")
-            except AttributeError as e:
-                print("failed")
-                print(e)
-                sondes = DataFrame([])
-        else:
-            print("failed. No database connection.")
-            sondes = DataFrame([])
-        return sondes,
-
-    def _save_sonde_data(self, sonde_id, attribute_name, attribute_value):
-        """
-        Save in the database the new attribute value for the sonde
-        corresponding to the specified sonde UID.
-        """
-        self.db_accessor.save_sonde_data(
-            sonde_id, attribute_name, attribute_value)
+        if name in self._cache:
+            del self._cache[name]
+        self.db_accessor.set(name, *args, **kargs)
 
     # ---- Monitored properties
     def get_monitored_properties(self):
@@ -181,26 +151,6 @@ class DatabaseConnectionWorker(QObject):
             print(type(error).__name__, end=': ')
             print(error)
         return mprop_list,
-
-    # ---- Manual mesurements
-    def _get_manual_measurements(self, callback=None, postpone_exec=False):
-        """
-        Get the list of manual measurements made in the observation wells
-        of the monitoring network.
-        """
-        print("Fetching manual measurements from the database...", end='')
-        if self.is_connected():
-            try:
-                measurements = self.db_accessor.get_manual_measurements()
-                print("done")
-            except AttributeError as e:
-                print("failed")
-                print(e)
-                measurements = DataFrame([])
-        else:
-            print("failed. No database connection.")
-            measurements = DataFrame([])
-        return measurements,
 
 
 class DatabaseConnectionManager(QObject):
@@ -254,6 +204,23 @@ class DatabaseConnectionManager(QObject):
         return self._is_connecting
 
     # ---- Public methods
+    def get(self, *args, callback=None, postpone_exec=False):
+        """
+        Get the data related to name from the database.
+        """
+        self._add_task('get', callback, *args)
+        if not postpone_exec:
+            self.run_tasks()
+
+    def set(self, *args, callback=None, postpone_exec=False):
+        """
+        Set the data related to name in the database.
+        """
+        self._data_changed = True
+        self._add_task('set', callback, *args)
+        if not postpone_exec:
+            self.run_tasks()
+
     def connect_to_db(self, db_accessor):
         """
         Try to create a new connection with the database using the
@@ -281,63 +248,6 @@ class DatabaseConnectionManager(QObject):
         """Close this database connection manager."""
         self._db_connection_worker._disconnect_from_db()
 
-    # ---- Observation wells
-    def save_observation_well_data(self, sampling_feature_id, attribute_name,
-                                   attribute_value, callback=None,
-                                   postpone_exec=False):
-        """
-        Save in the database the new attribute value for the observation well
-        corresponding to the specified sampling feature ID.
-        """
-        self._data_changed = True
-        self._add_task('save_observation_well_data',
-                       callback,
-                       sampling_feature_id,
-                       attribute_name,
-                       attribute_value)
-        if not postpone_exec:
-            self.run_tasks()
-
-    def get_observation_wells_data(self, callback, postpone_exec=False):
-        """
-        Get the list of observation wells that are saved in the database.
-        """
-        self._add_task('get_observation_wells_data', callback)
-        if not postpone_exec:
-            self.run_tasks()
-
-    # ---- Sondes
-    def get_sonde_models_lib(self, callback, postpone_exec=False):
-        """
-        Get the list of sonde models that are saved in the database.
-        """
-        self._add_task('get_sonde_models_lib', callback)
-        if not postpone_exec:
-            self.run_tasks()
-
-    def get_sondes_data(self, callback, postpone_exec=False):
-        """
-        Get the list of sondes that are saved in the database.
-        """
-        self._add_task('get_sondes_data', callback)
-        if not postpone_exec:
-            self.run_tasks()
-
-    def save_sonde_data(self, sonde_id, attribute_name, attribute_value,
-                        callback=None, postpone_exec=False):
-        """
-        Save in the database the new attribute value for the sonde
-        corresponding to the specified sonde UID.
-        """
-        self._data_changed = True
-        self._add_task('save_sonde_data',
-                       callback,
-                       sonde_id,
-                       attribute_name,
-                       attribute_value)
-        if not postpone_exec:
-            self.run_tasks()
-
     # ---- Monitored properties
     def get_monitored_properties(self, callback=None):
         """
@@ -361,16 +271,6 @@ class DatabaseConnectionManager(QObject):
         self._add_task('get_timeseries_for_obs_well', callback,
                        obs_well_id, monitored_properties)
         self.run_tasks()
-
-    # ---- Manual mesurements
-    def get_manual_measurements(self, callback=None, postpone_exec=False):
-        """
-        Get the list of manual measurements made in the observation wells
-        of the monitoring network.
-        """
-        self._add_task('get_manual_measurements', callback)
-        if not postpone_exec:
-            self.run_tasks()
 
     # ---- Tasks handlers
     @Slot(object, object)
