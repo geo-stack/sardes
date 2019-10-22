@@ -98,7 +98,6 @@ class DatabaseConnectionWorker(QObject):
         if self.is_connected():
             try:
                 data = self.db_accessor.get(name, *args, **kargs)
-                self._cache[name] = data
                 print("done")
             except AttributeError as e:
                 print("failed")
@@ -107,6 +106,8 @@ class DatabaseConnectionWorker(QObject):
         else:
             print("failed because not connected to a database.")
             data = DataFrame([])
+        data.name = name
+        self._cache[name] = data
         return data,
 
     def _set(self, name, *args, **kargs):
