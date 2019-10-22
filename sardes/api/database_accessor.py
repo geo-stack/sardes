@@ -326,3 +326,35 @@ class DatabaseAccessorBase(ABC):
             specified monitored property.
         """
         pass
+
+    # ---- Manual mesurements
+    def get_manual_measurements(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the water level manual
+        measurements made in the observation wells for the entire monitoring
+        network.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A :class:`pandas.DataFrame` containing the information related
+            to the observation wells that are saved in the database.
+
+            The row indexes of the dataframe must correspond to the
+            IDs used to reference each manual measurement in the database.
+
+            The dataframe must contain the following columns.
+
+            Required Columns
+            ~~~~~~~~~~~~~~~~
+            - sampling_feature_uuid: object
+                A unique identifier that is used to reference the observation
+                well in the database.
+            - datetime: :class:`datetime.Datetime`
+                A datetime object corresponding to the time when the manual
+                measurement was made in the well.
+            - manual_measurement: float
+                The value of the water level that was measured manually
+                in the well.
+        """
+        pass
