@@ -739,61 +739,6 @@ class SardesTableModel(SardesTableModelBase):
         raise NotImplementedError
 
 
-class SardesSortFilterProxyModel(QSortFilterProxyModel):
-    def __init__(self, source_model):
-        super().__init__()
-        self.setSourceModel(source_model)
-        self.setSortCaseSensitivity(False)
-
-    # ---- Qt methods override
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        """
-        Override Qt method so that the visual indexes of the rows are shown in
-        the vertical header of the table instead of their logical indexes.
-        """
-        return self.sourceModel().headerData(section, orientation, role)
-
-    # ---- Source model methods
-    def cancel_all_data_edits(self):
-        self.sourceModel().cancel_all_data_edits()
-
-    @property
-    def columns(self):
-        return self.sourceModel().columns
-
-    def fetch_model_data(self, *args, **kargs):
-        self.sourceModel().fetch_model_data()
-
-    def get_value_at(self, proxy_index):
-        return self.sourceModel().get_value_at(self.mapToSource(proxy_index))
-
-    def get_horizontal_header_label_at(self, column_or_index):
-        return self.sourceModel().get_horizontal_header_label_at(
-            column_or_index)
-
-    def has_unsaved_data_edits(self):
-        return self.sourceModel().has_unsaved_data_edits()
-
-    def is_value_in_column(self, proxy_index, value):
-        return self.sourceModel().is_value_in_column(
-            self.mapToSource(proxy_index), value)
-
-    def save_data_edits(self):
-        self.sourceModel().save_data_edits()
-
-    def set_data_edits_at(self, proxy_indexes, edited_values):
-        if not isinstance(proxy_indexes, list):
-            proxy_indexes = [proxy_indexes, ]
-        if not isinstance(edited_values, list):
-            edited_values = [edited_values, ]
-
-        model_indexes = [self.mapToSource(idx) for idx in proxy_indexes]
-        self.sourceModel().set_data_edits_at(model_indexes, edited_values)
-
-    def undo_last_data_edit(self, update_model_view=True):
-        self.sourceModel().undo_last_data_edit(update_model_view)
-
-
 # =============================================================================
 # ---- Table View
 # =============================================================================
@@ -901,8 +846,7 @@ class SardesTableView(QTableView):
         """
         self.source_model = table_model
         self.source_model.sig_data_edited.connect(self.sig_data_edited.emit)
-        self.proxy_model = SardesSortFilterProxyModel(self.source_model)
-        self.setModel(self.proxy_model)
+        self.setModel(self.source_model)
 
     def _setup_item_delegates(self):
         """
@@ -1129,10 +1073,9 @@ class SardesTableView(QTableView):
         """
         Return the data relative to the currently selected rows in this table.
         """
-        proxy_indexes = self.selectionModel().selectedIndexes()
+        model_indexes = self.selectionModel().selectedIndexes()
         rows = sorted(list(set(
-            [self.proxy_model.mapToSource(i).row() for i in proxy_indexes]
-            )))
+            [index.row() for index in model_indexes])))
         return self.source_model.dataf.iloc[rows]
 
     def get_current_row_data(self):
@@ -1140,13 +1083,9 @@ class SardesTableView(QTableView):
         Return the data relative to the row with the current item (the item
         with the focus).
         """
-        proxy_index = self.selectionModel().currentIndex()
-        if proxy_index.isValid():
-            row = self.proxy_model.mapToSource(proxy_index).row()
-            row_data = self.source_model.dataf.iloc[[row]]
-        else:
-            row_data = None
-        return row_data
+        model_index = self.selectionModel().currentIndex()
+        return (None if not model_index.isValid() else
+                self.source_model.dataf.iloc[[model_index.row()]])
 
     def select_row(self):
         """
@@ -1328,7 +1267,7 @@ class SardesTableView(QTableView):
 
     def row_count(self):
         """Return this table number of visible row."""
-        return self.proxy_model.rowCount()
+        return self.model().rowCount()
 
     def selected_row_count(self):
         """
