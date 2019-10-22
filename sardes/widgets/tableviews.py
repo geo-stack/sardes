@@ -413,7 +413,9 @@ class SardesTableModelBase(QAbstractTableModel):
 
         # A list containing the edits made by the user to the
         # content of this table's model data in chronological order.
-        self._dataf_edits = []
+        self._data_edit_stack = []
+        self._new_rows = []
+        self._deleted_rows = []
 
         # A pandas dataframe that contains the edited values at their
         # corresponding data index and column.
@@ -423,8 +425,6 @@ class SardesTableModelBase(QAbstractTableModel):
         self._edited_dataf.set_index(
             'column', inplace=True, drop=True, append=True)
 
-        self._new_rows = []
-        self._deleted_rows = []
 
         self.set_database_connection_manager(db_connection_manager)
 
@@ -492,7 +492,7 @@ class SardesTableModelBase(QAbstractTableModel):
             mapped in HORIZONTAL_HEADER_LABELS.
         """
         self.dataf = dataf
-        self._dataf_edits = []
+        self._data_edit_stack = []
         self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
         self._new_rows = []
         self._deleted_rows = []
@@ -612,7 +612,7 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         Cancel all the edits that were made to the table data since last save.
         """
-        self._dataf_edits = []
+        self._data_edit_stack = []
         self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
         self.dataChanged.emit(QModelIndex(), QModelIndex())
         self.sig_data_edited.emit(False)
@@ -661,7 +661,7 @@ class SardesTableModelBase(QAbstractTableModel):
                                        ] = edited_value
         # We store the edited values until it is commited and
         # saved to the database.
-        self._dataf_edits.append(edits)
+        self._data_edit_stack.append(edits)
         self.dataChanged.emit(QModelIndex(), QModelIndex())
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
@@ -670,12 +670,12 @@ class SardesTableModelBase(QAbstractTableModel):
         Undo the last data edits that was added to the stack.
         An update of the view is forced if  update_model_view is True.
         """
-        if len(self._dataf_edits) == 0:
+        if len(self._data_edit_stack) == 0:
             return
 
         # Undo the last edits. Note that the last edits can comprise
         # more than one edit.
-        last_edits = self._dataf_edits.pop(-1)
+        last_edits = self._data_edit_stack.pop(-1)
         for last_edit in last_edits:
             if (last_edit.index, last_edit.column) in self._edited_data.index:
                 self._edited_data.drop((last_edit.index, last_edit.column),
@@ -684,7 +684,7 @@ class SardesTableModelBase(QAbstractTableModel):
             # Check if there was a previous edit for this model index
             # in the stack and add it to the list of edited data if that is
             # the case.
-            for edits in reversed(self._dataf_edits):
+            for edits in reversed(self._data_edit_stack):
                 try:
                     edit = edits[[(edit.index, edit.column) for edit in edits]
                                  .index((last_edit.index, last_edit.column))]
