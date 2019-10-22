@@ -561,12 +561,12 @@ class SardesTableModelBase(QAbstractTableModel):
         Check if the specified value is in the data of this model at the
         column specified by the model index.
         """
-        dataf_column = self.columns[model_index.column()]
+        dataf_column = self.dataf_column_at(model_index)
 
         # First we check if value is found in the edited data.
         if any(self._edited_dataf
                .loc[(slice(None), slice(dataf_column)), 'edited_value']
-               .isin(value)):
+               .isin([value])):
             return True
         else:
             # Else we check if the value is found in the unedited data
