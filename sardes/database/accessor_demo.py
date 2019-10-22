@@ -177,7 +177,7 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         """
         return OBS_WELLS_DF['obs_well_id'].values
 
-    def save_observation_well_data(self, sampling_feature_id, attribute_name,
+    def set_observation_wells_data(self, sampling_feature_id, attribute_name,
                                    attribute_value):
         """
         Save in the database the new attribute value for the observation well
@@ -220,7 +220,7 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
                 .drop('sonde_brand_model', axis=1)
                 )
 
-    def save_sonde_data(self, sonde_id, attribute_name, attribute_value):
+    def set_sondes_data(self, sonde_id, attribute_name, attribute_value):
         """
         Save in the database the new attribute value for the sonde
         corresponding to the specified sonde UID.
