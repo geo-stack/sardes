@@ -123,7 +123,7 @@ class SondesInventoryTableModel(SardesTableModel):
         """
         Save all data edits to the database.
         """
-        for edits in self._dataf_edits:
+        for edits in self._data_edit_stack:
             for edit in edits:
                 if edit.type() == self.ValueChanged:
                     self.db_connection_manager.save_sonde_data(
