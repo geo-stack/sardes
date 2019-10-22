@@ -755,7 +755,7 @@ class SardesTableModelBase(QAbstractTableModel):
         self.dataChanged.emit(QModelIndex(), QModelIndex())
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
-    def undo_last_data_edit(self, update_model_view=True):
+    def undo_last_data_edit(self):
         """
         Undo the last data edits that was added to the stack.
         An update of the view is forced if  update_model_view is True.
@@ -1548,7 +1548,7 @@ class SardesTableView(QTableView):
             buttons=QMessageBox.Ok)
         self.setCurrentIndex(model_index)
         self._edit_current_item()
-        self.model().undo_last_data_edit(update_model_view=False)
+        self.model().undo_last_data_edit()
 
     def edit(self, model_index, trigger=None, event=None):
         """
