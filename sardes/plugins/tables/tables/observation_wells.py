@@ -9,8 +9,7 @@
 
 # ---- Third party imports
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QApplication, QFileDialog
-
+from qtpy.QtWidgets import QApplication
 
 # ---- Local imports
 from sardes.widgets.timeseries import TimeSeriesPlotViewer

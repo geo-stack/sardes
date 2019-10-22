@@ -8,8 +8,6 @@
 # -----------------------------------------------------------------------------
 
 # ---- Third party imports
-import pandas as pd
-from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox
 
 # ---- Local imports
@@ -123,7 +121,7 @@ class SondesInventoryTableModel(SardesTableModel):
         """
         Save all data edits to the database.
         """
-        for edits in self._data_edit_stack:
+        for edits in self._dataf_edits:
             for edit in edits:
                 if edit.type() == self.ValueChanged:
                     self.db_connection_manager.save_sonde_data(
