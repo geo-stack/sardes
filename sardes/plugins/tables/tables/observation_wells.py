@@ -54,8 +54,8 @@ class ObsWellsTableModel(SardesTableModel):
         """
         Fetch the data and libraries for this table model.
         """
-        self.db_connection_manager.get_observation_wells_data(
-            callback=self.set_model_data)
+        self.db_connection_manager.get(
+            'observation_wells_data', callback=self.set_model_data)
 
     # ---- Delegates
     def create_delegate_for_column(self, view, column):
@@ -88,7 +88,8 @@ class ObsWellsTableModel(SardesTableModel):
         for edits in self._data_edit_stack:
             for edit in edits:
                 if edit.type() == self.ValueChanged:
-                    self.db_connection_manager.save_observation_well_data(
+                    self.db_connection_manager.set(
+                        'observation_wells_data',
                         edit.index, edit.column, edit.edited_value,
                         postpone_exec=True)
         self.db_connection_manager.run_tasks()

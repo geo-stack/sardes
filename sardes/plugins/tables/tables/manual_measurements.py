@@ -67,10 +67,14 @@ class ManualMeasurementsTableModel(SardesTableModel):
         """
         # Note we need to fetch the observation well data before we fetch
         # the manual measurements data.
-        self.db_connection_manager.get_observation_wells_data(
-            callback=self.set_obs_well_data, postpone_exec=True)
-        self.db_connection_manager.get_manual_measurements(
-            callback=self.set_model_data, postpone_exec=True)
+        self.db_connection_manager.get(
+            'observation_wells_data',
+            callback=self.set_obs_well_data,
+            postpone_exec=True)
+        self.db_connection_manager.get(
+            'manual_measurements',
+            callback=self.set_model_data,
+            postpone_exec=True)
         self.db_connection_manager.run_tasks()
 
     # ---- Sonde models library.

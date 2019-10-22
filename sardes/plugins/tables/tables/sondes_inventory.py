@@ -70,10 +70,14 @@ class SondesInventoryTableModel(SardesTableModel):
         """
         # Note we need to fetch the sonde models library before we fetch
         # the sonde data.
-        self.db_connection_manager.get_sonde_models_lib(
-            callback=self.set_sonde_models_lib, postpone_exec=True)
-        self.db_connection_manager.get_sondes_data(
-            callback=self.set_model_data, postpone_exec=True)
+        self.db_connection_manager.get(
+            'sonde_models_lib',
+            callback=self.set_sonde_models_lib,
+            postpone_exec=True)
+        self.db_connection_manager.get(
+            'sondes_data',
+            callback=self.set_model_data,
+            postpone_exec=True)
         self.db_connection_manager.run_tasks()
 
     # ---- Sonde models library.
@@ -124,7 +128,8 @@ class SondesInventoryTableModel(SardesTableModel):
         for edits in self._dataf_edits:
             for edit in edits:
                 if edit.type() == self.ValueChanged:
-                    self.db_connection_manager.save_sonde_data(
+                    self.db_connection_manager.set(
+                        'sondes_data',
                         edit.index, edit.column, edit.edited_value,
                         postpone_exec=True)
         self.db_connection_manager.run_tasks()
