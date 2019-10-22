@@ -80,7 +80,7 @@ def tablemodel(qtbot, TABLE_DATAF):
             """
             Save all data edits to the database.
             """
-            for edits in self._dataf_edits:
+            for edits in self._data_edit_stack:
                 for edit in edits:
                     if edit.type() == self.ValueChanged:
                         TABLE_DATAF.loc[
@@ -200,7 +200,7 @@ def test_tablewidget_row_selection(tablewidget, qtbot, TABLE_DATAF):
 
     # Select the rows of table one after the other.
     for row in range(len(TABLE_DATAF)):
-        index = tableview.proxy_model.index(row, 0)
+        index = tableview.model().index(row, 0)
         visual_rect = tableview.visualRect(index)
         qtbot.mouseClick(
             tableview.viewport(), Qt.LeftButton, pos=visual_rect.center())
@@ -338,7 +338,7 @@ def test_edit_editable_cell(tablewidget, qtbot):
 
         assert model_index.data() == expected_data[i]
         assert tableview.model().get_value_at(model_index) == expected_value[i]
-        assert len(tableview.source_model._dataf_edits) == i
+        assert tableview.model().data_edit_count() == i
 
         # Edit the value of the cell and accept the edit.
         qtbot.keyPress(tableview, Qt.Key_Enter)
@@ -351,7 +351,7 @@ def test_edit_editable_cell(tablewidget, qtbot):
         assert model_index.data() == expected_edited_data[i]
         assert (tableview.model().get_value_at(model_index) ==
                 expected_edited_value[i])
-        assert len(tableview.source_model._dataf_edits) == i + 1
+        assert tableview.model().data_edit_count() == i + 1
 
 
 def test_clearing_required_cell(tablewidget, qtbot):
@@ -414,7 +414,7 @@ def test_cancel_edits(tablewidget, qtbot):
         tableview.model().set_data_edits_at(model_index, expected_value[i])
         assert model_index.data() == expected_data[i]
         assert tableview.model().get_value_at(model_index) == expected_value[i]
-    assert len(tableview.source_model._dataf_edits) == i + 1
+    assert tableview.model().data_edit_count() == i + 1
     assert tableview.model().has_unsaved_data_edits() is True
 
     # Cancel all edits.
@@ -427,7 +427,7 @@ def test_cancel_edits(tablewidget, qtbot):
         assert model_index.data() == expected_data[i]
         assert tableview.model().get_value_at(model_index) == expected_value[i]
     assert tableview.model().has_unsaved_data_edits() is False
-    assert len(tableview.source_model._dataf_edits) == 0
+    assert tableview.model().data_edit_count() == 0
 
 
 def test_undo_edits(tablewidget, qtbot):
@@ -466,21 +466,21 @@ def test_save_edits(tablewidget, qtbot):
     expected_value = ['new_str1', False, 1.234, 7]
 
     # Do some edits to the table's data programmatically.
-    assert len(tableview.source_model._dataf_edits) == 0
+    assert tableview.model().data_edit_count() == 0
     assert tableview.model().has_unsaved_data_edits() is False
     for i in range(4):
         model_index = tableview.model().index(0, i)
         tableview.model().set_data_edits_at(model_index, expected_value[i])
         assert model_index.data() == expected_data[i]
         assert tableview.model().get_value_at(model_index) == expected_value[i]
-    assert len(tableview.source_model._dataf_edits) == i + 1
+    assert tableview.model().data_edit_count() == i + 1
     assert tableview.model().has_unsaved_data_edits() is True
 
     # Save all edits.
     tableview.model().save_data_edits()
     qtbot.wait(100)
 
-    assert len(tableview.source_model._dataf_edits) == 0
+    assert tableview.model().data_edit_count() == 0
     assert tableview.model().has_unsaved_data_edits() is False
     for i in range(4):
         model_index = tableview.model().index(0, i)
