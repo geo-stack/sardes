@@ -654,12 +654,7 @@ class SardesTableModelBase(QAbstractTableModel):
 
         self._sort_by_columns = None if column == -1 else self.columns[column]
         self._sort_order = order
-        if self._sort_by_columns is None:
-            # We need to do a full visual data update to clear any previous
-            # sorting applied to the visual data.
-            self._update_visual_data()
-        else:
-            self._sort_visual_data()
+        self._update_visual_data()
 
         # Updating persistent indexes
         new_model_indexes = []

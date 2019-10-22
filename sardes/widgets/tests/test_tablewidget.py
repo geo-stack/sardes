@@ -38,7 +38,7 @@ COLUMNS = ['col{}'.format(i) for i in range(NCOL)]
 HEADERS = [_('Column #{}').format(i) for i in range(NCOL)]
 VALUES = [['str1', True, 1.111, 3, 'not editable'],
           ['str2', False, 2.222, 1, 'not editable'],
-          ['str3', True, 3.333, 2, 'not editable']]
+          ['str3', True, 3.333, 29, 'not editable']]
 INDEXES = [uuid.uuid4() for i in range(len(VALUES))]
 
 
@@ -693,7 +693,7 @@ def test_horiz_header_double_mouse_click(tablewidget, qtbot):
         horiz_header.viewport(), Qt.LeftButton, pos=visual_rect.center())
 
     assert tableview.get_selected_columns() == [clicked_column_index]
-    assert get_values_for_column(model.index(0, 0)) == ['str2', 'str3', 'str1']
+    assert get_values_for_column(model.index(0, 0)) == ['str2', 'str1', 'str3']
     assert horiz_header.sortIndicatorOrder() == 0
     assert horiz_header.sortIndicatorSection() == clicked_column_index
 
@@ -703,7 +703,7 @@ def test_horiz_header_double_mouse_click(tablewidget, qtbot):
         horiz_header.viewport(), Qt.LeftButton, pos=visual_rect.center())
 
     assert tableview.get_selected_columns() == [clicked_column_index]
-    assert get_values_for_column(model.index(0, 0)) == ['str1', 'str3', 'str2']
+    assert get_values_for_column(model.index(0, 0)) == ['str3', 'str1', 'str2']
     assert horiz_header.sortIndicatorOrder() == 1
     assert horiz_header.sortIndicatorSection() == clicked_column_index
 
@@ -725,17 +725,17 @@ def test_column_sorting(tablewidget, qtbot):
     assert selection_model.currentIndex() == selected_model_index
     assert len(selection_model.selectedIndexes()) == 1
 
-    # Sort in ascending order according to the current column using the
+    # Sort in ASCENDING order according to the current column using the
     # keyboard shorcut Ctrl+<.
     qtbot.keyPress(tableview, Qt.Key_Less, modifier=Qt.ControlModifier)
-    assert get_values_for_column(model.index(0, 0)) == ['str2', 'str3', 'str1']
+    assert get_values_for_column(model.index(0, 0)) == ['str2', 'str1', 'str3']
     assert horiz_header.sortIndicatorOrder() == 0
     assert horiz_header.sortIndicatorSection() == selected_column_index
 
-    # Sort in descending order according to the current column using the
+    # Sort in DESCENDING order according to the current column using the
     # keyboard shorcut Ctrl+>.
     qtbot.keyPress(tableview, Qt.Key_Greater, modifier=Qt.ControlModifier)
-    assert get_values_for_column(model.index(0, 0)) == ['str1', 'str3', 'str2']
+    assert get_values_for_column(model.index(0, 0)) == ['str3', 'str1', 'str2']
     assert horiz_header.sortIndicatorOrder() == 1
     assert horiz_header.sortIndicatorSection() == selected_column_index
 
