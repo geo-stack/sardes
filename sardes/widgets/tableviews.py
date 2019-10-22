@@ -411,6 +411,7 @@ class SardesTableModelBase(QAbstractTableModel):
         # A pandas dataframe containing the data that are shown in the
         # database.
         self.dataf = pd.DataFrame([])
+        self.visual_dataf = pd.DataFrame([], columns=self.columns)
 
         # A list containing the edits made by the user to the
         # content of this table's model data in chronological order.
@@ -426,6 +427,9 @@ class SardesTableModelBase(QAbstractTableModel):
         self._edited_dataf.set_index(
             'column', inplace=True, drop=True, append=True)
 
+        # Sorting and filtering.
+        self._sort_by_columns = None
+        self._sort_order = Qt.AscendingOrder
 
         self.set_database_connection_manager(db_connection_manager)
 
@@ -493,26 +497,24 @@ class SardesTableModelBase(QAbstractTableModel):
             mapped in HORIZONTAL_HEADER_LABELS.
         """
         self.dataf = dataf
-        self._data_edit_stack = []
         self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
+        self._data_edit_stack = []
         self._new_rows = []
         self._deleted_rows = []
+        self._update_visual_data()
 
         self.modelReset.emit()
         self.sig_data_edited.emit(False)
 
     def rowCount(self, parent=QModelIndex()):
-        """Qt method override. Return the number of row of the table."""
-        return len(self.dataf)
+        """Qt method override. Return the number visible rows in the table."""
+        return len(self.visual_dataf)
 
     def data(self, index, role=Qt.DisplayRole):
         """Qt method override."""
         if role in [Qt.DisplayRole, Qt.ToolTipRole]:
-            value = self.get_value_at(index)
-            value = '' if (pd.isna(value) or value is None) else value
-            if pd.api.types.is_bool(value):
-                value = _('Yes') if value else _('No')
-            return str(value)
+            return self.visual_dataf.loc[
+                self.dataf_index_at(index), self.dataf_column_at(index)]
         elif role == Qt.ForegroundRole:
             return QVariant()
         elif role == Qt.BackgroundRole:
@@ -589,6 +591,87 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         return self.columns[model_index.column()]
 
+    def _update_visual_data(self):
+        """
+        Update the visual dataframe that is used to display the value in
+        this tables.
+        """
+        self.visual_dataf = self.dataf.copy()
+
+        # Fist we apply the edited values to the dataframe.
+        for index, column in self._edited_dataf.index:
+            self.visual_dataf.loc[index, column] = (
+                self._edited_dataf.loc[(index, column), 'edited_value'])
+
+        # Add missing columns to the visual dataframe.
+        for column in self.columns:
+            if column not in self.visual_dataf.columns:
+                self.visual_dataf[column] = ''
+
+        self.visual_dataf = self.logical_to_visual_data(self.visual_dataf)
+        self._filter_visual_data()
+        self._sort_visual_data()
+
+        # Transform the data to string and replace nan and boolean values with
+        # strings. Note that this must be done after the filtering and sorting
+        # is applied or else, it won't work as expected for numerical values.
+        self.visual_dataf.fillna(value='', inplace=True)
+        self.visual_dataf = self.visual_dataf.astype(str)
+        self.visual_dataf.replace(
+            to_replace={'True': _('Yes'), 'False': _('No')}, inplace=True)
+
+        self.dataChanged.emit(QModelIndex(), QModelIndex())
+
+    def _filter_visual_data(self):
+        """
+        Apply the filters to the visual data.
+        """
+        pass
+
+    def _sort_visual_data(self):
+        """
+        Sort the visual data.
+        """
+        if self._sort_by_columns is not None:
+            self.visual_dataf.sort_values(
+                by=self._sort_by_columns,
+                ascending=(self._sort_order == Qt.AscendingOrder),
+                inplace=True)
+
+    def sort(self, column, order=Qt.AscendingOrder):
+        """
+        Implement Qt sort method so that sorting by columns is done with pandas
+        instead of using  QSortFilterProxyModel, which is very slow for large
+        datasets.
+
+        https://bugreports.qt.io/browse/QTBUG-45208
+        https://stackoverflow.com/a/42039683/4481445
+        """
+
+        self.layoutAboutToBeChanged.emit()
+        old_model_indexes = self.persistentIndexList()
+        old_ids = self.visual_dataf.index.copy()
+
+        self._sort_by_columns = None if column == -1 else self.columns[column]
+        self._sort_order = order
+        if self._sort_by_columns is None:
+            # We need to do a full visual data update to clear any previous
+            # sorting applied to the visual data.
+            self._update_visual_data()
+        else:
+            self._sort_visual_data()
+
+        # Updating persistent indexes
+        new_model_indexes = []
+        for index in old_model_indexes:
+            new_row = self.visual_dataf.index.get_loc(old_ids[index.row()])
+            new_model_indexes.append(
+                self.index(new_row, index.column(), index.parent()))
+
+        self.changePersistentIndexList(old_model_indexes, new_model_indexes)
+        self.layoutChanged.emit()
+        self.dataChanged.emit(QModelIndex(), QModelIndex())
+
     # ---- Data edits
     def data_edit_count(self):
         """
@@ -617,6 +700,7 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         self._data_edit_stack = []
         self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
+        self._update_visual_data()
         self.dataChanged.emit(QModelIndex(), QModelIndex())
         self.sig_data_edited.emit(False)
 
@@ -665,6 +749,9 @@ class SardesTableModelBase(QAbstractTableModel):
         # We store the edited values until it is commited and
         # saved to the database.
         self._data_edit_stack.append(edits)
+
+        # We make the appropriate calls to update the model and GUI.
+        self._update_visual_data()
         self.dataChanged.emit(QModelIndex(), QModelIndex())
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
@@ -699,6 +786,7 @@ class SardesTableModelBase(QAbstractTableModel):
                 else:
                     break
 
+        self._update_visual_data()
         self.dataChanged.emit(QModelIndex(), QModelIndex())
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
@@ -740,6 +828,24 @@ class SardesTableModel(SardesTableModelBase):
         the items of the column will not be editable.
         """
         raise NotImplementedError
+
+    # ---- Visua data
+    def logical_to_visual_data(self, visual_dataf):
+        """
+        Transform logical data to visual data.
+
+        Do any transformations to the source data so that they are displayed
+        as you want in the table. Note that these transformations are
+        applied to the visual dataframe, so that the source data are
+        preserved in the process.
+
+        For example, if you would like to display boolean values in a given
+        column of the table as 'Yes' or 'No' strings, you would need to do:
+
+        visual_dataf[column].replace(
+            to_replace={True: 'Yes', False: 'No'}, inplace=False)
+        """
+        return visual_dataf
 
     # ---- Data edits
     def save_data_edits(self):
