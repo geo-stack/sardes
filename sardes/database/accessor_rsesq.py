@@ -675,6 +675,7 @@ if __name__ == "__main__":
 
     accessor.connect()
     obs_wells = accessor.get_observation_wells_data()
+    manual_measurements = accessor.get_manual_measurements()
 
     print(accessor.observation_wells)
     print(accessor.monitored_properties)
