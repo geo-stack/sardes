@@ -590,6 +590,12 @@ class SardesTableModelBase(QAbstractTableModel):
         return self.columns[model_index.column()]
 
     # ---- Data edits
+    def data_edit_count(self):
+        """
+        Return the number of edits in the stack.
+        """
+        return len(self._data_edit_stack)
+
     def has_unsaved_data_edits(self):
         """
         Return whether any edits were made to the table's data since last save.
