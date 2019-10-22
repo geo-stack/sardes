@@ -831,6 +831,19 @@ class SardesTableModelBase(QAbstractTableModel):
         self.dataChanged.emit(QModelIndex(), QModelIndex())
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
+    def save_data_edits(self):
+        """
+        Save all data edits to the database.
+        """
+        for edits in self._data_edit_stack:
+            for edit in edits:
+                if edit.type() == self.ValueChanged:
+                    self.db_connection_manager.set(
+                        self.TABLE_DATA_NAME,
+                        edit.index, edit.column, edit.edited_value,
+                        postpone_exec=True)
+        self.db_connection_manager.run_tasks()
+
 
 class SardesTableModel(SardesTableModelBase):
     """
@@ -884,13 +897,6 @@ class SardesTableModel(SardesTableModelBase):
             to_replace={True: 'Yes', False: 'No'}, inplace=False)
         """
         return visual_dataf
-
-    # ---- Data edits
-    def save_data_edits(self):
-        """
-        Save all data edits to the database.
-        """
-        raise NotImplementedError
 
 
 # =============================================================================

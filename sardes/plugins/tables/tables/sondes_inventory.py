@@ -98,20 +98,6 @@ class SondesInventoryTableModel(SardesTableModel):
             )
         return visual_dataf
 
-    # ---- Data edits
-    def save_data_edits(self):
-        """
-        Save all data edits to the database.
-        """
-        for edits in self._dataf_edits:
-            for edit in edits:
-                if edit.type() == self.ValueChanged:
-                    self.db_connection_manager.set(
-                        'sondes_data',
-                        edit.index, edit.column, edit.edited_value,
-                        postpone_exec=True)
-        self.db_connection_manager.run_tasks()
-
 
 class SondesInventoryTableWidget(SardesTableWidget):
     def __init__(self, db_connection_manager, parent=None):

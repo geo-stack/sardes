@@ -78,20 +78,6 @@ class ObsWellsTableModel(SardesTableModel):
         else:
             return NotEditableDelegate(self)
 
-    # ---- Data edits
-    def save_data_edits(self):
-        """
-        Save all data edits to the database.
-        """
-        for edits in self._data_edit_stack:
-            for edit in edits:
-                if edit.type() == self.ValueChanged:
-                    self.db_connection_manager.set(
-                        'observation_wells_data',
-                        edit.index, edit.column, edit.edited_value,
-                        postpone_exec=True)
-        self.db_connection_manager.run_tasks()
-
 
 class ObsWellsTableWidget(SardesTableWidget):
 

@@ -85,18 +85,11 @@ class ManualMeasurementsTableModel(SardesTableModel):
         obs_wells_data = self.libraries['observation_wells_data']
         visual_dataf['sampling_feature_uuid'] = (
             visual_dataf['sampling_feature_uuid']
-            .replace(self._obs_well_data['obs_well_id'].to_dict())
+            .replace(obs_wells_data['obs_well_id'].to_dict())
             )
         visual_dataf['datetime'] = (visual_dataf['datetime']
                                     .dt.strftime('%Y-%m-%d %H:%M'))
         return visual_dataf
-
-    # ---- Data edits
-    def save_data_edits(self):
-        """
-        Save all data edits to the database.
-        """
-        pass
 
 
 class ManualMeasurementsTableWidget(SardesTableWidget):
