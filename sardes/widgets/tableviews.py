@@ -613,10 +613,8 @@ class SardesTableModelBase(QAbstractTableModel):
         Cancel all the edits that were made to the table data since last save.
         """
         self._dataf_edits = []
-        self.dataChanged.emit(
-            self.index(0, 0),
-            self.index(self.rowCount() - 1, self.columnCount() - 1))
         self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
+        self.dataChanged.emit(QModelIndex(), QModelIndex())
         self.sig_data_edited.emit(False)
 
     def get_edited_data_at(self, model_index):
@@ -658,15 +656,13 @@ class SardesTableModelBase(QAbstractTableModel):
                 self._edited_dataf.drop(
                     (dataf_index, dataf_column), inplace=True)
             if dataf_value != edited_value:
-                self._edited_data.loc[(dataf_index, dataf_column),
-                                      'edited_value'
-                                      ] = edited_value
-
-            self.dataChanged.emit(model_index, model_index)
-
+                self._edited_dataf.loc[(dataf_index, dataf_column),
+                                       'edited_value'
+                                       ] = edited_value
         # We store the edited values until it is commited and
         # saved to the database.
         self._dataf_edits.append(edits)
+        self.dataChanged.emit(QModelIndex(), QModelIndex())
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
     def undo_last_data_edit(self, update_model_view=True):
@@ -700,11 +696,7 @@ class SardesTableModelBase(QAbstractTableModel):
                 else:
                     break
 
-            if update_model_view:
-                model_index = self.index(
-                    self.dataf.index.get_loc(last_edit.index),
-                    self.columns.index(last_edit.column))
-                self.dataChanged.emit(model_index, model_index)
+        self.dataChanged.emit(QModelIndex(), QModelIndex())
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
 
