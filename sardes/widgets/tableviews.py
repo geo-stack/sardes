@@ -577,6 +577,21 @@ class SardesTableModelBase(QAbstractTableModel):
                 for index in isin_indexes.index
                 ])
 
+    # ---- Visual Data
+    def dataf_index_at(self, model_index):
+        """
+        Return the dataframe index corresponding to the specified visual
+        model index.
+        """
+        return self.visual_dataf.index[model_index.row()]
+
+    def dataf_column_at(self, model_index):
+        """
+        Return the dataframe column corresponding to the specified visual
+        model index.
+        """
+        return self.columns[model_index.column()]
+
     # ---- Data edits
     def has_unsaved_data_edits(self):
         """
