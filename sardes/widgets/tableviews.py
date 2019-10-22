@@ -366,9 +366,10 @@ class NoDataEdit(object):
     save.
     """
 
-    def __init__(self, model_index):
+    def __init__(self, index, column):
         super() .__init__()
-        self.model_index = model_index
+        self.index = index
+        self.column = column
 
 
 class ValueChanged(object):
@@ -628,7 +629,7 @@ class SardesTableModelBase(QAbstractTableModel):
             return self._edited_dataf.loc[
                 (dataf_index, dataf_column), 'edited_value']
         except KeyError:
-            return NoDataEdit(model_index)
+            return NoDataEdit(dataf_index, dataf_column)
 
     def set_data_edits_at(self, model_indexes, edited_values):
         """
