@@ -417,10 +417,10 @@ class SardesTableModelBase(QAbstractTableModel):
 
         # A pandas dataframe that contains the edited values at their
         # corresponding data index and column.
-        self._edited_data = pd.DataFrame(
+        self._edited_dataf = pd.DataFrame(
             [], columns=['index', 'column', 'edited_value'])
-        self._edited_data.set_index('index', inplace=True, drop=True)
-        self._edited_data.set_index(
+        self._edited_dataf.set_index('index', inplace=True, drop=True)
+        self._edited_dataf.set_index(
             'column', inplace=True, drop=True, append=True)
 
         self._new_rows = []
@@ -493,7 +493,7 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         self.dataf = dataf
         self._dataf_edits = []
-        self._edited_data.drop(self._edited_data.index, inplace=True)
+        self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
         self._new_rows = []
         self._deleted_rows = []
 
@@ -563,7 +563,7 @@ class SardesTableModelBase(QAbstractTableModel):
         dataf_column = self.columns[model_index.column()]
 
         # First we check if value is found in the edited data.
-        if any(self._edited_data
+        if any(self._edited_dataf
                .loc[(slice(None), slice(dataf_column)), 'edited_value']
                .isin(value)):
             return True
@@ -597,7 +597,7 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         Return whether any edits were made to the table's data since last save.
         """
-        return bool(len(self._edited_data))
+        return bool(len(self._edited_dataf))
 
     def is_data_edited_at(self, model_index):
         """
@@ -606,17 +606,17 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         return (self.dataf.index[model_index.row()],
                 self.columns[model_index.column()]
-                ) in self._edited_data.index
+                ) in self._edited_dataf.index
 
     def cancel_all_data_edits(self):
         """
         Cancel all the edits that were made to the table data since last save.
         """
         self._dataf_edits = []
-        self._edited_data.drop(self._edited_data.index, inplace=True)
         self.dataChanged.emit(
             self.index(0, 0),
             self.index(self.rowCount() - 1, self.columnCount() - 1))
+        self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
         self.sig_data_edited.emit(False)
 
     def get_edited_data_at(self, model_index):
@@ -627,7 +627,7 @@ class SardesTableModelBase(QAbstractTableModel):
         dataf_index = self.dataf.index[model_index.row()]
         dataf_column = self.columns[model_index.column()]
         try:
-            return self._edited_data.loc[
+            return self._edited_dataf.loc[
                 (dataf_index, dataf_column), 'edited_value']
         except KeyError:
             return NoDataEdit(model_index)
@@ -654,8 +654,8 @@ class SardesTableModelBase(QAbstractTableModel):
             # We add the model index to the list of indexes whose value have
             # been edited if the edited value differ from the value saved in
             # the model's data.
-            if (dataf_index, dataf_column) in self._edited_data.index:
-                self._edited_data.drop(
+            if (dataf_index, dataf_column) in self._edited_dataf.index:
+                self._edited_dataf.drop(
                     (dataf_index, dataf_column), inplace=True)
             if dataf_value != edited_value:
                 self._edited_data.loc[(dataf_index, dataf_column),
@@ -692,7 +692,7 @@ class SardesTableModelBase(QAbstractTableModel):
                 try:
                     edit = edits[[(edit.index, edit.column) for edit in edits]
                                  .index((last_edit.index, last_edit.column))]
-                    self._edited_data.loc[
+                    self._edited_dataf.loc[
                         (edit.index, edit.column), 'edited_value'
                         ] = edit.edited_value
                 except ValueError:
