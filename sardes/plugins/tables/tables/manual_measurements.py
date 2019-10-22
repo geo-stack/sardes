@@ -28,8 +28,7 @@ class ObsWellIdEditDelegate(SardesItemDelegate):
         editor = QComboBox(parent)
 
         # Populate the combobox with the existing observation wells.
-        obs_well_data = (self.model_view.source_model
-                         ._obs_well_data
+        obs_well_data = (self.model().libraries['observation_wells_data']
                          .sort_values('obs_well_id', axis=0, ascending=True))
         for index in obs_well_data.index:
             editor.addItem(obs_well_data.loc[index, 'obs_well_id'],
@@ -57,32 +56,10 @@ class ManualMeasurementsTableModel(SardesTableModel):
         ('manual_measurement', _('Water Level')),
         ]
 
-    def __init__(self, *args, **kargs):
-        super().__init__(*args, **kargs)
-        self._obs_well_data = None
-
-    def fetch_model_data(self, *args, **kargs):
-        """
-        Fetch the data and libraries for this table model.
-        """
-        # Note we need to fetch the observation well data before we fetch
-        # the manual measurements data.
-        self.db_connection_manager.get(
-            'observation_wells_data',
-            callback=self.set_obs_well_data,
-            postpone_exec=True)
-        self.db_connection_manager.get(
-            'manual_measurements',
-            callback=self.set_model_data,
-            postpone_exec=True)
-        self.db_connection_manager.run_tasks()
-
-    # ---- Sonde models library.
-    def set_obs_well_data(self, obs_well_data):
-        """
-        Set the observation wells data.
-        """
-        self._obs_well_data = obs_well_data
+    # Provide the name of the data and of the required libraries that
+    # this table need to fetch from the database.
+    TABLE_DATA_NAME = 'manual_measurements'
+    REQ_LIB_NAMES = ['observation_wells_data']
 
     # ---- Delegates
     def create_delegate_for_column(self, view, column):
@@ -105,6 +82,7 @@ class ManualMeasurementsTableModel(SardesTableModel):
         """
         Transform logical data to visual data.
         """
+        obs_wells_data = self.libraries['observation_wells_data']
         visual_dataf['sampling_feature_uuid'] = (
             visual_dataf['sampling_feature_uuid']
             .replace(self._obs_well_data['obs_well_id'].to_dict())

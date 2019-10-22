@@ -50,12 +50,10 @@ class ObsWellsTableModel(SardesTableModel):
         ('obs_well_notes', _('Notes'))
         ]
 
-    def fetch_model_data(self, *args, **kargs):
-        """
-        Fetch the data and libraries for this table model.
-        """
-        self.db_connection_manager.get(
-            'observation_wells_data', callback=self.set_model_data)
+    # Provide the name of the data and of the required libraries that
+    # this table need to fetch from the database.
+    TABLE_DATA_NAME = 'observation_wells_data'
+    REQ_LIB_NAMES = []
 
     # ---- Delegates
     def create_delegate_for_column(self, view, column):
