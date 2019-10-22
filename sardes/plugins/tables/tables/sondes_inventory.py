@@ -86,18 +86,6 @@ class SondesInventoryTableModel(SardesTableModel):
         """
         self._sonde_models_lib = sonde_models_lib
 
-    def get_sonde_model_at(self, model_index):
-        """
-        Return a human readable string containing the brand and the
-        model of the sonde corresponding to the specified model_index.
-        """
-        sonde_model_id = self.get_value_at(model_index)
-        if pd.isna(sonde_model_id) or sonde_model_id is None:
-            return ''
-        else:
-            return (self._sonde_models_lib
-                    .loc[sonde_model_id, 'sonde_brand_model'])
-
     # ---- Delegates
     def create_delegate_for_column(self, view, column):
         """
@@ -119,6 +107,17 @@ class SondesInventoryTableModel(SardesTableModel):
         else:
             return NotEditableDelegate(view)
 
+    # ---- Visual Data
+    def logical_to_visual_data(self, visual_dataf):
+        """
+        Transform logical data to visual data.
+        """
+        visual_dataf['sonde_model_id'] = (
+            visual_dataf['sonde_model_id']
+            .replace(self._sonde_models_lib['sonde_brand_model'].to_dict())
+            )
+        return visual_dataf
+
     # ---- Data edits
     def save_data_edits(self):
         """
@@ -131,17 +130,6 @@ class SondesInventoryTableModel(SardesTableModel):
                         edit.index, edit.column, edit.edited_value,
                         postpone_exec=True)
         self.db_connection_manager.run_tasks()
-
-    # ---- Data display
-    def data(self, index, role=Qt.DisplayRole):
-        """
-        Override base class method to display a human readable string of the
-        brand and model of the sondes instead of a database ID.
-        """
-        if self.columns[index.column()] == 'sonde_model_id':
-            if role in [Qt.DisplayRole, Qt.ToolTipRole]:
-                return self.get_sonde_model_at(index)
-        return super().data(index, role)
 
 
 class SondesInventoryTableWidget(SardesTableWidget):
