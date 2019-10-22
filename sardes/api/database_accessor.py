@@ -29,6 +29,20 @@ class DatabaseAccessorBase(ABC):
         self._connection = None
         self._connection_error = None
 
+    # ---- Database getter and setter
+    def get(self, name, *args, **kargs):
+        """
+        Get the data related to name from the database.
+        """
+        method_to_exec = getattr(self, 'get_' + name)
+        return method_to_exec(*args, **kargs)
+
+    def set(self, name, *args, **kargs):
+        """
+        Save the data related to name in the database.
+        """
+        getattr(self, 'set_' + name)(*args, **kargs)
+
     # ---- Database connection
     @abstractmethod
     def is_connected(self):
