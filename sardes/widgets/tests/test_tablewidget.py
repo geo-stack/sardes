@@ -83,8 +83,9 @@ def tablemodel(qtbot, TABLE_DATAF):
             for edits in self._dataf_edits:
                 for edit in edits:
                     if edit.type() == self.ValueChanged:
-                        TABLE_DATAF.loc[edit.dataf_index,
-                                        edit.dataf_column] = edit.edited_value
+                        TABLE_DATAF.loc[
+                            edit.index, edit.column
+                            ] = edit.edited_value
             self.fetch_model_data()
 
     tablemodel = SardesTableModelMock()

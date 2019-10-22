@@ -128,8 +128,8 @@ class SondesInventoryTableModel(SardesTableModel):
             for edit in edits:
                 if edit.type() == self.ValueChanged:
                     self.db_connection_manager.save_sonde_data(
-                        edit.dataf_index, edit.dataf_column,
-                        edit.edited_value, postpone_exec=True)
+                        edit.index, edit.column, edit.edited_value,
+                        postpone_exec=True)
         self.db_connection_manager.run_tasks()
 
     # ---- Data display
