@@ -298,12 +298,13 @@ class DatabaseConnectionManager(QObject):
         if not postpone_exec:
             self.run_tasks()
 
-    def get_observation_wells_data(self, callback):
+    def get_observation_wells_data(self, callback, postpone_exec=False):
         """
         Get the list of observation wells that are saved in the database.
         """
         self._add_task('get_observation_wells_data', callback)
-        self.run_tasks()
+        if not postpone_exec:
+            self.run_tasks()
 
     # ---- Sondes
     def get_sonde_models_lib(self, callback, postpone_exec=False):
