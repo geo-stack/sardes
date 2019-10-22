@@ -608,17 +608,20 @@ class SardesTableModelBase(QAbstractTableModel):
             if column not in self.visual_dataf.columns:
                 self.visual_dataf[column] = ''
 
-        self.visual_dataf = self.logical_to_visual_data(self.visual_dataf)
-        self._filter_visual_data()
-        self._sort_visual_data()
+        if not self.dataf.empty:
+            self.visual_dataf = self.logical_to_visual_data(self.visual_dataf)
+            self._filter_visual_data()
+            self._sort_visual_data()
 
-        # Transform the data to string and replace nan and boolean values with
-        # strings. Note that this must be done after the filtering and sorting
-        # is applied or else, it won't work as expected for numerical values.
-        self.visual_dataf.fillna(value='', inplace=True)
-        self.visual_dataf = self.visual_dataf.astype(str)
-        self.visual_dataf.replace(
-            to_replace={'True': _('Yes'), 'False': _('No')}, inplace=True)
+            # Transform the data to string and replace nan and boolean
+            # values with strings.
+            # Note that this must be done after the filtering and sorting
+            # is applied or else, it won't work as expected for numerical
+            # values.
+            self.visual_dataf.fillna(value='', inplace=True)
+            self.visual_dataf = self.visual_dataf.astype(str)
+            self.visual_dataf.replace(
+                to_replace={'True': _('Yes'), 'False': _('No')}, inplace=True)
 
         self.dataChanged.emit(QModelIndex(), QModelIndex())
 
@@ -647,7 +650,6 @@ class SardesTableModelBase(QAbstractTableModel):
         https://bugreports.qt.io/browse/QTBUG-45208
         https://stackoverflow.com/a/42039683/4481445
         """
-
         self.layoutAboutToBeChanged.emit()
         old_model_indexes = self.persistentIndexList()
         old_ids = self.visual_dataf.index.copy()
