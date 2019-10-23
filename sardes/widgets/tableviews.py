@@ -458,7 +458,7 @@ class SardesTableModelBase(QAbstractTableModel):
             self.db_connection_manager.sig_database_connection_changed.connect(
                 self.fetch_model_data)
             self.db_connection_manager.sig_database_data_changed.connect(
-                self.fetch_model_data)
+                self.update_model_data)
 
     # ---- Columns
     @property
@@ -503,7 +503,25 @@ class SardesTableModelBase(QAbstractTableModel):
             return QVariant()
 
     # ---- Table data
-    def fetch_model_data(self, *args, **kargs):
+    def update_model_data(self, names):
+        """
+        Update this model's data and library according to the list of
+        data name in names.
+        """
+        for name in names:
+            if name in self.REQ_LIB_NAMES:
+                self.db_connection_manager.get(
+                    name,
+                    callback=self.set_model_library,
+                    postpone_exec=True)
+            elif name == self.TABLE_DATA_NAME:
+                self.db_connection_manager.get(
+                    self.TABLE_DATA_NAME,
+                    callback=self.set_model_data,
+                    postpone_exec=True)
+        self.db_connection_manager.run_tasks()
+
+    def fetch_model_data(self):
         """
         Fetch the data and libraries for this table model.
 
@@ -512,16 +530,7 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         # Note that we need to fetch the libraries before we fetch the
         # table's data.
-        for name in self.REQ_LIB_NAMES:
-            self.db_connection_manager.get(
-                name,
-                callback=self.set_model_library,
-                postpone_exec=True)
-        self.db_connection_manager.get(
-            self.TABLE_DATA_NAME,
-            callback=self.set_model_data,
-            postpone_exec=True)
-        self.db_connection_manager.run_tasks()
+        self.update_model_data(self.REQ_LIB_NAMES + [self.TABLE_DATA_NAME])
 
     def set_model_data(self, dataf):
         """
@@ -549,6 +558,7 @@ class SardesTableModelBase(QAbstractTableModel):
         Set the namespace for the library contained in the dataframe.
         """
         self.libraries[dataf.name] = dataf
+        self._update_visual_data()
 
     def rowCount(self, parent=QModelIndex()):
         """Qt method override. Return the number visible rows in the table."""

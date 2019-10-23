@@ -159,7 +159,7 @@ class DatabaseConnectionManager(QObject):
     sig_database_disconnected = Signal()
     sig_database_is_connecting = Signal()
     sig_database_connection_changed = Signal(bool)
-    sig_database_data_changed = Signal()
+    sig_database_data_changed = Signal(list)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -192,7 +192,7 @@ class DatabaseConnectionManager(QObject):
             self._exec_task_callback)
 
         self._is_connecting = False
-        self._data_changed = False
+        self._data_changed = []
 
     def is_connected(self):
         """Return whether a connection to a database is currently active."""
@@ -217,7 +217,7 @@ class DatabaseConnectionManager(QObject):
         """
         Set the data related to name in the database.
         """
-        self._data_changed = True
+        self._data_changed.append(args[0])
         self._add_task('set', callback, *args)
         if not postpone_exec:
             self.run_tasks()
@@ -341,8 +341,8 @@ class DatabaseConnectionManager(QObject):
         Handle when all tasks that needed to be run by the worker are
         completed.
         """
-        if self._data_changed is True:
-            self._data_changed = False
-            self.sig_database_data_changed.emit()
+        if len(self._data_changed):
+            self.sig_database_data_changed.emit(self._data_changed)
+            self._data_changed = []
         if len(self._pending_tasks) > 0:
             self._run_tasks()
