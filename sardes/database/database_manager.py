@@ -160,6 +160,7 @@ class DatabaseConnectionManager(QObject):
     sig_database_is_connecting = Signal()
     sig_database_connection_changed = Signal(bool)
     sig_database_data_changed = Signal(list)
+    sig_run_tasks_finished = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -346,3 +347,5 @@ class DatabaseConnectionManager(QObject):
             self._data_changed = []
         if len(self._pending_tasks) > 0:
             self._run_tasks()
+        else:
+            self.sig_run_tasks_finished.emit()
