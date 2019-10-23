@@ -94,3 +94,18 @@ class Tables(SardesPlugin):
             CONF.get(table.get_table_id(), 'horiz_header/state', None))
         table.tableview.sort_by_column(
             *CONF.get(table.get_table_id(), 'horiz_header/sorting', (-1, 0)))
+
+        # Connect signals.
+        table.tableview.sig_data_edited.connect(self._update_tab_names)
+
+    def _update_tab_names(self):
+        """
+        Append a '*' symbol at the end of a tab name when its corresponding
+        table have unsaved edits.
+        """
+        for index in range(self.tabwidget.count()):
+            table = self.tabwidget.widget(index)
+            tab_text = table.get_table_title()
+            if table.tableview.model().has_unsaved_data_edits():
+                tab_text += '*'
+            self.tabwidget.setTabText(index, tab_text)
