@@ -75,13 +75,17 @@ def test_tables_plugin_init(mainwindow):
     assert mainwindow.plugin
     assert len(mainwindow.plugin._tables) == 3
 
+    tabwidget = mainwindow.plugin.tabwidget
+
     # Table Observation Wells.
     tablewidget = mainwindow.plugin._tables[ObsWellsTableModel.TABLE_ID]
     assert tablewidget.tableview.row_count() == len(OBS_WELLS_DF)
+    assert tabwidget.tabText(0) == tablewidget.get_table_title()
 
     # Table Sondes Inventory.
     tablewidget = mainwindow.plugin._tables[SondesInventoryTableModel.TABLE_ID]
     assert tablewidget.tableview.row_count() == len(SONDES_DATA)
+    assert tabwidget.tabText(1) == tablewidget.get_table_title()
 
 
 # =============================================================================
@@ -91,6 +95,7 @@ def test_edit_sonde_model(mainwindow, qtbot):
     """
     Test editing sonde brand in the sondes inventory table.
     """
+    tabwidget = mainwindow.plugin.tabwidget
     tablewidget = mainwindow.plugin._tables[SondesInventoryTableModel.TABLE_ID]
     tableview = tablewidget.tableview
     model = tablewidget.tableview.model()
@@ -124,11 +129,13 @@ def test_edit_sonde_model(mainwindow, qtbot):
     assert tableview.state() != tableview.EditingState
     assert model_index.data() == 'Telog 2 Druck'
     assert model.get_value_at(model_index) == 7
+    assert tabwidget.tabText(1) == tablewidget.get_table_title() + '*'
 
     # Undo the last edit.
     tableview._undo_last_data_edit()
     assert model_index.data() == 'Solinst Barologger M1.5 Gold'
     assert model.get_value_at(model_index) == 0
+    assert tabwidget.tabText(1) == tablewidget.get_table_title()
 
 
 if __name__ == "__main__":
