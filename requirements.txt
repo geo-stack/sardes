@@ -2,9 +2,9 @@ appconfigs
 keyring
 matplotlib == 2.2.*
 numpy == 1.16.*
-pandas
+pandas == 0.25.*
 psycopg2
-pyqt5 <=5.12.2
+pyqt5 == 5.9.*
 qtawesome
 qtpy
 sqlalchemy
