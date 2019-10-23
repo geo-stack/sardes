@@ -50,12 +50,10 @@ class ObsWellsTableModel(SardesTableModel):
         ('obs_well_notes', _('Notes'))
         ]
 
-    def fetch_model_data(self, *args, **kargs):
-        """
-        Fetch the data and libraries for this table model.
-        """
-        self.db_connection_manager.get_observation_wells_data(
-            callback=self.set_model_data)
+    # Provide the name of the data and of the required libraries that
+    # this table need to fetch from the database.
+    TABLE_DATA_NAME = 'observation_wells_data'
+    REQ_LIB_NAMES = []
 
     # ---- Delegates
     def create_delegate_for_column(self, view, column):
@@ -79,19 +77,6 @@ class ObsWellsTableModel(SardesTableModel):
             return NumEditDelegate(view, 16, -180, 180)
         else:
             return NotEditableDelegate(self)
-
-    # ---- Data edits
-    def save_data_edits(self):
-        """
-        Save all data edits to the database.
-        """
-        for edits in self._data_edit_stack:
-            for edit in edits:
-                if edit.type() == self.ValueChanged:
-                    self.db_connection_manager.save_observation_well_data(
-                        edit.index, edit.column, edit.edited_value,
-                        postpone_exec=True)
-        self.db_connection_manager.run_tasks()
 
 
 class ObsWellsTableWidget(SardesTableWidget):

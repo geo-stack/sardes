@@ -17,38 +17,40 @@ from time import sleep
 
 # ---- Third party imports
 import pytest
+import pandas as pd
 
 # ---- Local imports
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.database.accessor_demo import DatabaseAccessorDemo
 
 
-def _do_something(some_value):
-    sleep(0.5)
-    return some_value,
-
-
-class DatabaseConnectionManagerMock(DatabaseConnectionManager):
-    def do_something(self, some_value, callback=None, postpone_exec=False):
-        self._data_changed = True
-        self._add_task('do_something', callback, some_value)
-        if not postpone_exec:
-            self.run_tasks()
-
-
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
+def DATAF():
+    return pd.DataFrame([1, 2, 3, 4], columns=['values'])
+
+
+@pytest.fixture
 def dbmanager(qtbot, mocker):
-    dbmanager = DatabaseConnectionManagerMock()
-    dbmanager._db_connection_worker._do_something = _do_something
+    dbmanager = DatabaseConnectionManager()
     return dbmanager
 
 
 @pytest.fixture
-def dbaccessor(qtbot, mocker):
+def dbaccessor(qtbot, mocker, DATAF):
+    def get_something():
+        sleep(0.5)
+        return DATAF.copy()
+
+    def set_something(index, value):
+        sleep(0.5)
+        DATAF.loc[index, 'values'] = value
+
     dbaccessor = DatabaseAccessorDemo()
+    dbaccessor.get_something = get_something
+    dbaccessor.set_something = set_something
     return dbaccessor
 
 
@@ -68,7 +70,7 @@ def test_dbmanager_connect(dbmanager, dbaccessor, qtbot):
     # We ask the manager to connect to the database.
     assert not dbmanager.is_connected()
     with qtbot.waitSignal(dbmanager.sig_database_connection_changed,
-                          timeout=3000):
+                          timeout=1500):
         dbmanager.connect_to_db(dbaccessor)
         assert len(dbmanager._queued_tasks) == 0
         assert len(dbmanager._pending_tasks) == 0
@@ -78,7 +80,7 @@ def test_dbmanager_connect(dbmanager, dbaccessor, qtbot):
 
     # We ask the manager to close the connection with the database.
     with qtbot.waitSignal(dbmanager.sig_database_connection_changed,
-                          timeout=3000):
+                          timeout=1500):
         dbmanager.disconnect_from_db()
         assert len(dbmanager._queued_tasks) == 0
         assert len(dbmanager._pending_tasks) == 0
@@ -94,31 +96,39 @@ def test_run_tasks_if_posponed(dbmanager, dbaccessor, qtbot):
     Test that the database manager is managing the queued as expected
     when the execution is postponed.
     """
-    expected_values = [1, 2, 3]
+    with qtbot.waitSignal(dbmanager.sig_database_connection_changed,
+                          timeout=1500):
+        dbmanager.connect_to_db(dbaccessor)
+
     returned_values = []
 
-    def task_callback(value):
-        returned_values.append(value)
+    def task_callback(dataf):
+        returned_values.append(dataf)
 
     # We send the task to the manager, but we ask to pospone the execution
     # of each task so that they can be executed by the worker all at once.
-    for value in expected_values:
-        dbmanager.do_something(value, task_callback, postpone_exec=True)
+    dbmanager.get('something', callback=task_callback, postpone_exec=True)
+    dbmanager.get('something', callback=task_callback, postpone_exec=True)
+    dbmanager.set('something', 2, -19.5, postpone_exec=True)
+    dbmanager.get('something', callback=task_callback, postpone_exec=True)
 
-    assert len(dbmanager._queued_tasks) == len(expected_values)
+    assert len(dbmanager._queued_tasks) == 4
     assert len(dbmanager._pending_tasks) == 0
     assert len(dbmanager._running_tasks) == 0
     assert returned_values == []
 
     # We ask the manager to execute the queued tasks in a single run.
-    with qtbot.waitSignal(dbmanager.sig_database_data_changed, timeout=3000):
+    with qtbot.waitSignal(dbmanager.sig_run_tasks_finished, timeout=5000):
         dbmanager.run_tasks()
         assert len(dbmanager._queued_tasks) == 0
         assert len(dbmanager._pending_tasks) == 0
-        assert len(dbmanager._running_tasks) == len(expected_values)
+        assert len(dbmanager._running_tasks) == 4
 
     assert len(dbmanager._running_tasks) == 0
-    assert returned_values == expected_values
+    assert len(returned_values) == 3
+    assert returned_values[0]['values'].values.tolist() == [1, 2, 3, 4]
+    assert returned_values[1]['values'].values.tolist() == [1, 2, 3, 4]
+    assert returned_values[2]['values'].values.tolist() == [1, 2, -19.5, 4]
 
     qtbot.waitUntil(lambda: not dbmanager._db_connection_thread.isRunning())
 
@@ -128,16 +138,20 @@ def test_run_tasks_if_busy(dbmanager, dbaccessor, qtbot):
     Test that the database manager is managing the queued as expected
     when adding new tasks while the worker is busy.
     """
+    with qtbot.waitSignal(dbmanager.sig_database_connection_changed,
+                          timeout=1500):
+        dbmanager.connect_to_db(dbaccessor)
+
     returned_values = []
 
-    def task_callback(value):
-        returned_values.append(value)
+    def task_callback(dataf):
+        returned_values.append(dataf)
 
     # We send the task to the manager, but we ask to pospone the execution
     # of each task so that they can be executed by the worker all at once.
-    dbmanager.do_something(1, task_callback, postpone_exec=True)
-    dbmanager.do_something(2, task_callback, postpone_exec=True)
-    dbmanager.do_something(3, task_callback, postpone_exec=True)
+    dbmanager.get('something', callback=task_callback, postpone_exec=True)
+    dbmanager.get('something', callback=task_callback, postpone_exec=True)
+    dbmanager.set('something', 2, -19.5, postpone_exec=True)
     assert len(dbmanager._queued_tasks) == 3
     assert len(dbmanager._pending_tasks) == 0
     assert len(dbmanager._running_tasks) == 0
@@ -153,7 +167,7 @@ def test_run_tasks_if_busy(dbmanager, dbaccessor, qtbot):
 
         # While the worker is running, we send another task, but pospone its
         # execution.
-        dbmanager.do_something(4, task_callback, postpone_exec=True)
+        dbmanager.set('something', 1, 0.512, postpone_exec=True)
         assert len(dbmanager._queued_tasks) == 1
         assert len(dbmanager._pending_tasks) == 0
         assert len(dbmanager._running_tasks) == 3
@@ -162,7 +176,7 @@ def test_run_tasks_if_busy(dbmanager, dbaccessor, qtbot):
         # While the worker is still running, we send another task, but do not
         # pospone its execution. This should cause this task and the previous
         # one to be moved as pending tasks.
-        dbmanager.do_something(5, task_callback, postpone_exec=False)
+        dbmanager.get('something', callback=task_callback, postpone_exec=False)
         assert len(dbmanager._queued_tasks) == 0
         assert len(dbmanager._pending_tasks) == 2
         assert len(dbmanager._running_tasks) == 3
@@ -174,16 +188,23 @@ def test_run_tasks_if_busy(dbmanager, dbaccessor, qtbot):
     assert len(dbmanager._pending_tasks) == 0
     assert len(dbmanager._running_tasks) == 2
 
+    assert len(returned_values) == 2
+    assert returned_values[0]['values'].values.tolist() == [1, 2, 3, 4]
+    assert returned_values[1]['values'].values.tolist() == [1, 2, 3, 4]
+
     # We now wait for the worker to finish and assert that all tasks have
     # been executed as expected.
-    qtbot.wait(0.5 * 2.5 * 1000)
-    qtbot.waitUntil(lambda: not dbmanager._db_connection_thread.isRunning(),
-                    timeout=3000)
+    qtbot.waitSignal(dbmanager.sig_run_tasks_finished)
+    qtbot.waitUntil(lambda: not dbmanager._db_connection_thread.isRunning())
+
     assert len(dbmanager._queued_tasks) == 0
     assert len(dbmanager._pending_tasks) == 0
     assert len(dbmanager._running_tasks) == 0
 
-    assert returned_values == [1, 2, 3, 4, 5]
+    assert len(returned_values) == 3
+    assert returned_values[0]['values'].values.tolist() == [1, 2, 3, 4]
+    assert returned_values[1]['values'].values.tolist() == [1, 2, 3, 4]
+    assert returned_values[2]['values'].values.tolist() == [1, 0.512, -19.5, 4]
 
 
 if __name__ == "__main__":

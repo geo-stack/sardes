@@ -27,7 +27,7 @@ class SondeModelEditDelegate(SardesItemDelegate):
         editor = QComboBox(parent)
 
         # Populate the combobox with the available brand in the library.
-        sonde_models_lib = self.model_view.source_model._sonde_models_lib
+        sonde_models_lib = self.model().libraries['sonde_models_lib']
         for index in sonde_models_lib.index:
             editor.addItem(sonde_models_lib.loc[index, 'sonde_brand_model'],
                            userData=index)
@@ -60,29 +60,10 @@ class SondesInventoryTableModel(SardesTableModel):
         ('sonde_notes', _('Notes')),
         ]
 
-    def __init__(self, *args, **kargs):
-        super().__init__(*args, **kargs)
-        self._sonde_models_lib = None
-
-    def fetch_model_data(self, *args, **kargs):
-        """
-        Fetch the data and libraries for this table model.
-        """
-        # Note we need to fetch the sonde models library before we fetch
-        # the sonde data.
-        self.db_connection_manager.get_sonde_models_lib(
-            callback=self.set_sonde_models_lib, postpone_exec=True)
-        self.db_connection_manager.get_sondes_data(
-            callback=self.set_model_data, postpone_exec=True)
-        self.db_connection_manager.run_tasks()
-
-    # ---- Sonde models library.
-    def set_sonde_models_lib(self, sonde_models_lib):
-        """
-        Set the sonde model library that this model is going
-        to use for its 'sonde_brand' and 'sonde_model' item delegates.
-        """
-        self._sonde_models_lib = sonde_models_lib
+    # Provide the name of the data and of the required libraries that
+    # this table need to fetch from the database.
+    TABLE_DATA_NAME = 'sondes_data'
+    REQ_LIB_NAMES = ['sonde_models_lib']
 
     # ---- Delegates
     def create_delegate_for_column(self, view, column):
@@ -110,24 +91,12 @@ class SondesInventoryTableModel(SardesTableModel):
         """
         Transform logical data to visual data.
         """
+        sonde_models_lib = self.libraries['sonde_models_lib']
         visual_dataf['sonde_model_id'] = (
             visual_dataf['sonde_model_id']
-            .replace(self._sonde_models_lib['sonde_brand_model'].to_dict())
+            .replace(sonde_models_lib['sonde_brand_model'].to_dict())
             )
         return visual_dataf
-
-    # ---- Data edits
-    def save_data_edits(self):
-        """
-        Save all data edits to the database.
-        """
-        for edits in self._dataf_edits:
-            for edit in edits:
-                if edit.type() == self.ValueChanged:
-                    self.db_connection_manager.save_sonde_data(
-                        edit.index, edit.column, edit.edited_value,
-                        postpone_exec=True)
-        self.db_connection_manager.run_tasks()
 
 
 class SondesInventoryTableWidget(SardesTableWidget):

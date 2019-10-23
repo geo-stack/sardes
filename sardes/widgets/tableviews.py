@@ -151,14 +151,14 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         """
         Return the model whose data this item delegate is used to edit.
         """
-        return self.model_index.model()
+        return self.model_view.model()
 
     def get_model_data(self):
         """
         Return the value stored in the model at the model index
         corresponding to this item delegate.
         """
-        return self.model_index.model().get_value_at(self.model_index)
+        return self.model().get_value_at(self.model_index)
 
     def validate_unique_constaint(self):
         """
@@ -429,6 +429,7 @@ class SardesTableModelBase(QAbstractTableModel):
         # database.
         self.dataf = pd.DataFrame([])
         self.visual_dataf = pd.DataFrame([], columns=self.columns)
+        self.libraries = {}
 
         # A list containing the edits made by the user to the
         # content of this table's model data in chronological order.
@@ -457,7 +458,7 @@ class SardesTableModelBase(QAbstractTableModel):
             self.db_connection_manager.sig_database_connection_changed.connect(
                 self.fetch_model_data)
             self.db_connection_manager.sig_database_data_changed.connect(
-                self.fetch_model_data)
+                self.update_model_data)
 
     # ---- Columns
     @property
@@ -502,6 +503,35 @@ class SardesTableModelBase(QAbstractTableModel):
             return QVariant()
 
     # ---- Table data
+    def update_model_data(self, names):
+        """
+        Update this model's data and library according to the list of
+        data name in names.
+        """
+        for name in names:
+            if name in self.REQ_LIB_NAMES:
+                self.db_connection_manager.get(
+                    name,
+                    callback=self.set_model_library,
+                    postpone_exec=True)
+            elif name == self.TABLE_DATA_NAME:
+                self.db_connection_manager.get(
+                    self.TABLE_DATA_NAME,
+                    callback=self.set_model_data,
+                    postpone_exec=True)
+        self.db_connection_manager.run_tasks()
+
+    def fetch_model_data(self):
+        """
+        Fetch the data and libraries for this table model.
+
+        Note that the data need to be passed to :func:`set_model_data` while
+        the libraries need to be passed to :func:`set_model_library`.
+        """
+        # Note that we need to fetch the libraries before we fetch the
+        # table's data.
+        self.update_model_data(self.REQ_LIB_NAMES + [self.TABLE_DATA_NAME])
+
     def set_model_data(self, dataf):
         """
         Set the content of this table model to the data contained in dataf.
@@ -522,6 +552,13 @@ class SardesTableModelBase(QAbstractTableModel):
 
         self.modelReset.emit()
         self.sig_data_edited.emit(False)
+
+    def set_model_library(self, dataf):
+        """
+        Set the namespace for the library contained in the dataframe.
+        """
+        self.libraries[dataf.name] = dataf
+        self._update_visual_data()
 
     def rowCount(self, parent=QModelIndex()):
         """Qt method override. Return the number visible rows in the table."""
@@ -804,6 +841,19 @@ class SardesTableModelBase(QAbstractTableModel):
         self.dataChanged.emit(QModelIndex(), QModelIndex())
         self.sig_data_edited.emit(self.has_unsaved_data_edits())
 
+    def save_data_edits(self):
+        """
+        Save all data edits to the database.
+        """
+        for edits in self._data_edit_stack:
+            for edit in edits:
+                if edit.type() == self.ValueChanged:
+                    self.db_connection_manager.set(
+                        self.TABLE_DATA_NAME,
+                        edit.index, edit.column, edit.edited_value,
+                        postpone_exec=True)
+        self.db_connection_manager.run_tasks()
+
 
 class SardesTableModel(SardesTableModelBase):
     """
@@ -824,16 +874,13 @@ class SardesTableModel(SardesTableModelBase):
     # in the user configurations.
     TABLE_ID = ''
 
+    # Provide the name of the data and of the required libraries that
+    # this table need to fetch from the database.
+    TABLE_DATA_NAME = ''
+    REQ_LIB_NAMES = []
+
     def __init__(self, db_connection_manager=None):
         super().__init__(db_connection_manager)
-
-    def fetch_model_data(self, *args, **kargs):
-        """
-        Fetch the data for this table model.
-
-        Note that the data need to be passed to :func:`set_model_data`.
-        """
-        raise NotImplementedError
 
     def create_delegate_for_column(self, view, column):
         """
@@ -860,13 +907,6 @@ class SardesTableModel(SardesTableModelBase):
             to_replace={True: 'Yes', False: 'No'}, inplace=False)
         """
         return visual_dataf
-
-    # ---- Data edits
-    def save_data_edits(self):
-        """
-        Save all data edits to the database.
-        """
-        raise NotImplementedError
 
 
 # =============================================================================

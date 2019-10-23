@@ -29,6 +29,20 @@ class DatabaseAccessorBase(ABC):
         self._connection = None
         self._connection_error = None
 
+    # ---- Database getter and setter
+    def get(self, name, *args, **kargs):
+        """
+        Get the data related to name from the database.
+        """
+        method_to_exec = getattr(self, 'get_' + name)
+        return method_to_exec(*args, **kargs)
+
+    def set(self, name, *args, **kargs):
+        """
+        Save the data related to name in the database.
+        """
+        getattr(self, 'set_' + name)(*args, **kargs)
+
     # ---- Database connection
     @abstractmethod
     def is_connected(self):
@@ -72,7 +86,7 @@ class DatabaseAccessorBase(ABC):
         """
         pass
 
-    def save_observation_well_data(self, sampling_feature_id, attribute_name,
+    def set_observation_wells_data(self, sampling_feature_id, attribute_name,
                                    value):
         """
         Save in the database the new attribute value for the observation well
@@ -237,7 +251,7 @@ class DatabaseAccessorBase(ABC):
         """
         return DataFrame([])
 
-    def save_sonde_data(self, sonde_id, attribute_name, value):
+    def set_sondes_data(self, sonde_id, attribute_name, value):
         """
         Save in the database the new attribute value for the sonde
         corresponding to the specified sonde UID.
@@ -357,4 +371,7 @@ class DatabaseAccessorBase(ABC):
                 The value of the water level that was measured manually
                 in the well.
         """
+        pass
+
+    def set_manual_measurements(self, *args, **kargs):
         pass
