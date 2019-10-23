@@ -195,7 +195,8 @@ def test_run_tasks_if_busy(dbmanager, dbaccessor, qtbot):
     # We now wait for the worker to finish and assert that all tasks have
     # been executed as expected.
     qtbot.waitSignal(dbmanager.sig_run_tasks_finished)
-    qtbot.waitUntil(lambda: not dbmanager._db_connection_thread.isRunning())
+    qtbot.waitUntil(lambda: not dbmanager._db_connection_thread.isRunning(),
+                    timeout=3000)
 
     assert len(dbmanager._queued_tasks) == 0
     assert len(dbmanager._pending_tasks) == 0
