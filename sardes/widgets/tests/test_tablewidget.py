@@ -467,28 +467,42 @@ def test_undo_when_not_unsaved_data_edits(tablewidget, qtbot):
 
     Regression test for cgq-qgc/sardes#118
     """
-    tableview = tablewidget.tableview
+    model = tablewidget.tableview.model()
 
-    # Do 2 successive edits on a cell, where the second edit bring the value
-    # of that same to that of the original value.
-    model_index = tableview.model().index(0, 0)
-    tableview.model().set_data_edits_at(model_index, 'new_str1')
-    tableview.model().set_data_edits_at(model_index, 'str1')
-    assert not tableview.model().has_unsaved_data_edits()
-    assert tableview.model().data_edit_count() == 2
+    # Do 3 successive edits on a cell, where the second edit bring back the
+    # value of the cell to that of the original value.
+    model_index = model.index(0, 0)
+    model.set_data_edits_at(model_index, 'new_str1')
+    model.set_data_edits_at(model_index, 'str1')
+    model.set_data_edits_at(model_index, 'new_new_str1')
 
-    # Try to undo the two edits.
+    assert model.data_edit_count() == 3
+    assert model_index.data() == 'new_new_str1'
+    assert model.get_value_at(model_index) == 'new_new_str1'
+    assert model.has_unsaved_data_edits() is True
+    assert model.is_data_edited_at(model_index) is True
+
+    # Undo the 3 edits one after the other.
     qtbot.keyPress(tablewidget, Qt.Key_Z, modifier=Qt.ControlModifier)
-    assert model_index.data() == 'new_str1'
-    assert tableview.model().get_value_at(model_index) == 'new_str1'
-    assert tableview.model().has_unsaved_data_edits()
-    assert tableview.model().data_edit_count() == 1
-
-    qtbot.keyPress(tablewidget, Qt.Key_Z, modifier=Qt.ControlModifier)
+    assert model.data_edit_count() == 2
     assert model_index.data() == 'str1'
-    assert tableview.model().get_value_at(model_index) == 'str1'
-    assert not tableview.model().has_unsaved_data_edits()
-    assert tableview.model().data_edit_count() == 0
+    assert model.get_value_at(model_index) == 'str1'
+    assert model.has_unsaved_data_edits() is False
+    assert model.is_data_edited_at(model_index) is False
+
+    qtbot.keyPress(tablewidget, Qt.Key_Z, modifier=Qt.ControlModifier)
+    assert model.data_edit_count() == 1
+    assert model_index.data() == 'new_str1'
+    assert model.get_value_at(model_index) == 'new_str1'
+    assert model.has_unsaved_data_edits() is True
+    assert model.is_data_edited_at(model_index) is True
+
+    qtbot.keyPress(tablewidget, Qt.Key_Z, modifier=Qt.ControlModifier)
+    assert model.data_edit_count() == 0
+    assert model_index.data() == 'str1'
+    assert model.get_value_at(model_index) == 'str1'
+    assert model.has_unsaved_data_edits() is False
+    assert model.is_data_edited_at(model_index) is False
 
 
 def test_undo_edits(tablewidget, qtbot):
