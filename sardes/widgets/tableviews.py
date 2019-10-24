@@ -1243,10 +1243,18 @@ class SardesTableView(QTableView):
         """
         Return the data relative to the currently selected rows in this table.
         """
-        model_indexes = self.selectionModel().selectedIndexes()
-        rows = sorted(list(set(
-            [index.row() for index in model_indexes])))
-        return self.source_model.dataf.iloc[rows]
+        dataf_indexes = list(set(
+            [self.model().dataf_index_at(index) for index in
+             self.selectionModel().selectedIndexes()]
+            ))
+
+        selected_dataf = self.source_model.dataf.loc[dataf_indexes]
+        if self.model()._sort_by_columns is not None:
+            selected_dataf.sort_values(
+                by=self.model()._sort_by_columns,
+                ascending=(self.model()._sort_order == Qt.AscendingOrder),
+                inplace=True)
+        return selected_dataf
 
     def get_current_row_data(self):
         """
