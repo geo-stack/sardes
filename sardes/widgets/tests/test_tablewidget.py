@@ -191,22 +191,49 @@ def test_tablewidget_vert_headers(tablewidget, TABLE_DATAF):
                 TABLE_DATAF.iloc[-1 - i, 0])
 
 
-def test_tablewidget_row_selection(tablewidget, qtbot, TABLE_DATAF):
+def test_get_current_row_data(tablewidget, qtbot, TABLE_DATAF):
     """
-    Test the data returned for the currently selected row.
+    Test the data returned for the row with the current index.
+
+    Regression test for cgq-qgc/sardes#117
     """
     tableview = tablewidget.tableview
     assert tableview.get_current_row_data() is None
 
+    # Let's sort the data first since this can cause some problems as
+    # pointed out in cgq-qgc/sardes#117
+    tableview.sort_by_column(3, Qt.AscendingOrder)
+    sorted_dataf = TABLE_DATAF.copy().sort_values(by='col3', ascending=True)
+
     # Select the rows of table one after the other.
-    for row in range(len(TABLE_DATAF)):
+    for row in range(len(sorted_dataf)):
         index = tableview.model().index(row, 0)
         visual_rect = tableview.visualRect(index)
         qtbot.mouseClick(
             tableview.viewport(), Qt.LeftButton, pos=visual_rect.center())
 
         assert_frame_equal(tableview.get_current_row_data(),
-                           TABLE_DATAF.iloc[[row]])
+                           sorted_dataf.iloc[[row]])
+
+
+def test_get_selected_rows_data(tablewidget, qtbot, TABLE_DATAF):
+    """
+    Test the data returned for the rows with selection.
+
+    Regression test for cgq-qgc/sardes#117
+    """
+    tableview = tablewidget.tableview
+
+    # Let's sort the data first since this can cause some problems as
+    # pointed out in cgq-qgc/sardes#117
+    tableview.sort_by_column(3, Qt.AscendingOrder)
+    sorted_dataf = TABLE_DATAF.copy().sort_values(by='col3', ascending=True)
+
+    # Select all cells with keyboard shortcut Ctrl+A.
+    tableview.selectAll()
+    selected_rows_data = tableview.get_selected_rows_data()
+    assert len(selected_rows_data) == len(sorted_dataf)
+    assert_frame_equal(selected_rows_data, sorted_dataf)
 
 
 def test_toggle_column_visibility(tablewidget, qtbot):
