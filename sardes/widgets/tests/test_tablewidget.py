@@ -162,6 +162,10 @@ def test_tablewidget_init(tablewidget, TABLE_DATAF):
     assert horiz_header.sortIndicatorOrder() == 0
     assert horiz_header.sortIndicatorSection() == -1
 
+    # Assert there is no edits made to the data.
+    assert not tableview.model().has_unsaved_data_edits()
+    assert tableview.model().data_edit_count() == 0
+
 
 def test_tablewidget_horiz_headers(tablewidget):
     """
@@ -457,6 +461,36 @@ def test_cancel_edits(tablewidget, qtbot):
     assert tableview.model().data_edit_count() == 0
 
 
+def test_undo_when_not_unsaved_data_edits(tablewidget, qtbot):
+    """
+    Test undo edit action in table view.
+
+    Regression test for cgq-qgc/sardes#118
+    """
+    tableview = tablewidget.tableview
+
+    # Do 2 successive edits on a cell, where the second edit bring the value
+    # of that same to that of the original value.
+    model_index = tableview.model().index(0, 0)
+    tableview.model().set_data_edits_at(model_index, 'new_str1')
+    tableview.model().set_data_edits_at(model_index, 'str1')
+    assert not tableview.model().has_unsaved_data_edits()
+    assert tableview.model().data_edit_count() == 2
+
+    # Try to undo the two edits.
+    qtbot.keyPress(tablewidget, Qt.Key_Z, modifier=Qt.ControlModifier)
+    assert model_index.data() == 'new_str1'
+    assert tableview.model().get_value_at(model_index) == 'new_str1'
+    assert tableview.model().has_unsaved_data_edits()
+    assert tableview.model().data_edit_count() == 1
+
+    qtbot.keyPress(tablewidget, Qt.Key_Z, modifier=Qt.ControlModifier)
+    assert model_index.data() == 'str1'
+    assert tableview.model().get_value_at(model_index) == 'str1'
+    assert not tableview.model().has_unsaved_data_edits()
+    assert tableview.model().data_edit_count() == 0
+
+
 def test_undo_edits(tablewidget, qtbot):
     """
     Test undo edit action in table view.
@@ -472,8 +506,9 @@ def test_undo_edits(tablewidget, qtbot):
         tableview.model().set_data_edits_at(model_index, expected_value[i])
         assert model_index.data() == expected_data[i]
         assert tableview.model().get_value_at(model_index) == expected_value[i]
+        assert tableview.model().data_edit_count()
 
-    # Undo the edits one by one with keyboard shortcut Ctrl+Z.
+    # Undo all remaining edits one by one with keyboard shortcut Ctrl+Z.
     original_data = ['str1', 'Yes', '1.111', '3', 'not editable']
     original_value = ['str1', True, 1.111, 3, 'not editable']
     for i in reversed(range(4)):
