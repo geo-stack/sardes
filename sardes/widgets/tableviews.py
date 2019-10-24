@@ -1262,8 +1262,9 @@ class SardesTableView(QTableView):
         with the focus).
         """
         model_index = self.selectionModel().currentIndex()
+        dataf_index = self.model().dataf_index_at(model_index)
         return (None if not model_index.isValid() else
-                self.source_model.dataf.iloc[[model_index.row()]])
+                self.source_model.dataf.loc[[dataf_index]])
 
     def select_row(self):
         """
