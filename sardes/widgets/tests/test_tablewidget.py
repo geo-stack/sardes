@@ -162,6 +162,10 @@ def test_tablewidget_init(tablewidget, TABLE_DATAF):
     assert horiz_header.sortIndicatorOrder() == 0
     assert horiz_header.sortIndicatorSection() == -1
 
+    # Assert there is no edits made to the data.
+    assert not tableview.model().has_unsaved_data_edits()
+    assert tableview.model().data_edit_count() == 0
+
 
 def test_tablewidget_horiz_headers(tablewidget):
     """
@@ -457,6 +461,50 @@ def test_cancel_edits(tablewidget, qtbot):
     assert tableview.model().data_edit_count() == 0
 
 
+def test_undo_when_not_unsaved_data_edits(tablewidget, qtbot):
+    """
+    Test undo edit action in table view.
+
+    Regression test for cgq-qgc/sardes#118
+    """
+    model = tablewidget.tableview.model()
+
+    # Do 3 successive edits on a cell, where the second edit bring back the
+    # value of the cell to that of the original value.
+    model_index = model.index(0, 0)
+    model.set_data_edits_at(model_index, 'new_str1')
+    model.set_data_edits_at(model_index, 'str1')
+    model.set_data_edits_at(model_index, 'new_new_str1')
+
+    assert model.data_edit_count() == 3
+    assert model_index.data() == 'new_new_str1'
+    assert model.get_value_at(model_index) == 'new_new_str1'
+    assert model.has_unsaved_data_edits() is True
+    assert model.is_data_edited_at(model_index) is True
+
+    # Undo the 3 edits one after the other.
+    qtbot.keyPress(tablewidget, Qt.Key_Z, modifier=Qt.ControlModifier)
+    assert model.data_edit_count() == 2
+    assert model_index.data() == 'str1'
+    assert model.get_value_at(model_index) == 'str1'
+    assert model.has_unsaved_data_edits() is False
+    assert model.is_data_edited_at(model_index) is False
+
+    qtbot.keyPress(tablewidget, Qt.Key_Z, modifier=Qt.ControlModifier)
+    assert model.data_edit_count() == 1
+    assert model_index.data() == 'new_str1'
+    assert model.get_value_at(model_index) == 'new_str1'
+    assert model.has_unsaved_data_edits() is True
+    assert model.is_data_edited_at(model_index) is True
+
+    qtbot.keyPress(tablewidget, Qt.Key_Z, modifier=Qt.ControlModifier)
+    assert model.data_edit_count() == 0
+    assert model_index.data() == 'str1'
+    assert model.get_value_at(model_index) == 'str1'
+    assert model.has_unsaved_data_edits() is False
+    assert model.is_data_edited_at(model_index) is False
+
+
 def test_undo_edits(tablewidget, qtbot):
     """
     Test undo edit action in table view.
@@ -472,8 +520,9 @@ def test_undo_edits(tablewidget, qtbot):
         tableview.model().set_data_edits_at(model_index, expected_value[i])
         assert model_index.data() == expected_data[i]
         assert tableview.model().get_value_at(model_index) == expected_value[i]
+        assert tableview.model().data_edit_count()
 
-    # Undo the edits one by one with keyboard shortcut Ctrl+Z.
+    # Undo all remaining edits one by one with keyboard shortcut Ctrl+Z.
     original_data = ['str1', 'Yes', '1.111', '3', 'not editable']
     original_value = ['str1', True, 1.111, 3, 'not editable']
     for i in reversed(range(4)):
