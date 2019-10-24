@@ -415,7 +415,7 @@ class SardesTableModelBase(QAbstractTableModel):
 
     WARNING: Don't override any methods or attributes present here.
     """
-    sig_data_edited = Signal(bool)
+    sig_data_edited = Signal(bool, bool)
 
     ValueChanged = 0
     RowAdded = 1
@@ -551,7 +551,7 @@ class SardesTableModelBase(QAbstractTableModel):
         self._update_visual_data()
 
         self.modelReset.emit()
-        self.sig_data_edited.emit(False)
+        self.sig_data_edited.emit(False, False)
 
     def set_model_library(self, dataf):
         """
@@ -753,7 +753,7 @@ class SardesTableModelBase(QAbstractTableModel):
         self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
         self._update_visual_data()
         self.dataChanged.emit(QModelIndex(), QModelIndex())
-        self.sig_data_edited.emit(False)
+        self.sig_data_edited.emit(False, False)
 
     def get_edited_data_at(self, model_index):
         """
@@ -804,7 +804,8 @@ class SardesTableModelBase(QAbstractTableModel):
         # We make the appropriate calls to update the model and GUI.
         self._update_visual_data()
         self.dataChanged.emit(QModelIndex(), QModelIndex())
-        self.sig_data_edited.emit(self.has_unsaved_data_edits())
+        self.sig_data_edited.emit(
+            self.has_unsaved_data_edits(), bool(self.data_edit_count()))
 
     def undo_last_data_edit(self):
         """
@@ -839,7 +840,8 @@ class SardesTableModelBase(QAbstractTableModel):
 
         self._update_visual_data()
         self.dataChanged.emit(QModelIndex(), QModelIndex())
-        self.sig_data_edited.emit(self.has_unsaved_data_edits())
+        self.sig_data_edited.emit(
+            self.has_unsaved_data_edits(), bool(self.data_edit_count()))
 
     def save_data_edits(self):
         """
@@ -991,7 +993,7 @@ class SardesTableView(QTableView):
     Sardes table view class to display and edit the data that are
     saved in the database.
     """
-    sig_data_edited = Signal(bool)
+    sig_data_edited = Signal(bool, bool)
 
     def __init__(self, table_model, parent=None):
         super().__init__(parent)
@@ -1087,7 +1089,8 @@ class SardesTableView(QTableView):
             shortcut='Ctrl+S',
             context=Qt.WidgetShortcut)
         save_edits_action.setEnabled(False)
-        self.sig_data_edited.connect(save_edits_action.setEnabled)
+        self.sig_data_edited.connect(
+            lambda v1, v2: save_edits_action.setEnabled(v1))
 
         cancel_edits_action = create_action(
             self, _("Cancel edits"),
@@ -1097,7 +1100,8 @@ class SardesTableView(QTableView):
             shortcut='Ctrl+Delete',
             context=Qt.WidgetShortcut)
         cancel_edits_action.setEnabled(False)
-        self.sig_data_edited.connect(cancel_edits_action.setEnabled)
+        self.sig_data_edited.connect(
+            lambda v1, v2: cancel_edits_action.setEnabled(v1))
 
         undo_edits_action = create_action(
             self, _("Undo"),
@@ -1107,7 +1111,8 @@ class SardesTableView(QTableView):
             shortcut='Ctrl+Z',
             context=Qt.WidgetShortcut)
         undo_edits_action.setEnabled(False)
-        self.sig_data_edited.connect(undo_edits_action.setEnabled)
+        self.sig_data_edited.connect(
+            lambda v1, v2: undo_edits_action.setEnabled(v2))
 
         self._actions['edit'] = [
             edit_item_action, clear_item_action, undo_edits_action,
