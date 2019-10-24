@@ -825,17 +825,19 @@ class SardesTableModelBase(QAbstractTableModel):
 
             # Check if there was a previous edit for this model index
             # in the stack and add it to the list of edited data if that is
-            # the case.
+            # the case and if the edited value is different than the source
+            # value.
             for edits in reversed(self._data_edit_stack):
                 try:
                     edit = edits[[(edit.index, edit.column) for edit in edits]
                                  .index((last_edit.index, last_edit.column))]
-                    self._edited_dataf.loc[
-                        (edit.index, edit.column), 'edited_value'
-                        ] = edit.edited_value
                 except ValueError:
                     continue
                 else:
+                    if edit.edited_value != edit.value:
+                        self._edited_dataf.loc[
+                            (edit.index, edit.column), 'edited_value'
+                            ] = edit.edited_value
                     break
 
         self._update_visual_data()
