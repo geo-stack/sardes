@@ -12,12 +12,13 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QApplication
 
 # ---- Local imports
+from sardes.api.tablemodels import SardesTableModel
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
 from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import (
-    SardesTableModel, SardesTableWidget, StringEditDelegate, BoolEditDelegate,
+    SardesTableWidget, StringEditDelegate, BoolEditDelegate,
     NumEditDelegate, NotEditableDelegate, TextEditDelegate)
 
 

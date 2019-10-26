@@ -8,13 +8,13 @@
 # -----------------------------------------------------------------------------
 
 # ---- Third party imports
-import pandas as pd
 from qtpy.QtWidgets import QComboBox
 
 # ---- Local imports
+from sardes.api.tablemodels import SardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
-    SardesItemDelegate, SardesTableModel, SardesTableWidget,
+    SardesItemDelegate, SardesTableWidget,
     NotEditableDelegate, DateTimeDelegate, NumEditDelegate)
 
 
