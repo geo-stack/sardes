@@ -1121,6 +1121,12 @@ class SardesTableWidget(SardesPaneWidget):
         """Return the ID of this widget's table."""
         return self.tableview.source_model.TABLE_ID
 
+    def model(self):
+        """
+        Return the model associated with this table widget.
+        """
+        return self.tableview.model()
+
     # ---- Setup
     def _setup_upper_toolbar(self):
         """
