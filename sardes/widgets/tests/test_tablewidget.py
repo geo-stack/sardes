@@ -135,6 +135,11 @@ def get_values_for_column(model_index):
         model.index(row, column).data() for row in range(model.rowCount())]
 
 
+def get_selected_data(tablewidget):
+    return sorted([index.data() for index in
+                   tablewidget.tableview.selectionModel().selectedIndexes()])
+
+
 # =============================================================================
 # ---- Tests
 # =============================================================================
@@ -793,27 +798,33 @@ def test_column_sorting(tablewidget, qtbot):
     horiz_header = tablewidget.tableview.horizontalHeader()
     model = tableview.model()
 
-    # Select a cell in column 4 of the table.
-    selected_column_index = 3
-    selected_model_index = model.index(1, selected_column_index)
+    # Select some cells and set the current index.
+    selection_model.select(model.index(1, 2), selection_model.Select)
+    selection_model.select(model.index(2, 3), selection_model.Select)
+    selection_model.select(model.index(1, 3), selection_model.Select)
     selection_model.setCurrentIndex(
-        selected_model_index, selection_model.SelectCurrent)
-    assert selection_model.currentIndex() == selected_model_index
-    assert len(selection_model.selectedIndexes()) == 1
+        model.index(1, 3), selection_model.SelectCurrent)
+
+    assert selection_model.currentIndex().data() == '1'
+    assert get_selected_data(tablewidget) == ['1', '2.222', '29']
 
     # Sort in ASCENDING order according to the current column using the
     # keyboard shorcut Ctrl+<.
     qtbot.keyPress(tableview, Qt.Key_Less, modifier=Qt.ControlModifier)
     assert get_values_for_column(model.index(0, 0)) == ['str2', 'str1', 'str3']
     assert horiz_header.sortIndicatorOrder() == 0
-    assert horiz_header.sortIndicatorSection() == selected_column_index
+    assert horiz_header.sortIndicatorSection() == 3
+    assert selection_model.currentIndex().data() == '1'
+    assert get_selected_data(tablewidget) == ['1', '2.222', '29']
 
     # Sort in DESCENDING order according to the current column using the
     # keyboard shorcut Ctrl+>.
     qtbot.keyPress(tableview, Qt.Key_Greater, modifier=Qt.ControlModifier)
     assert get_values_for_column(model.index(0, 0)) == ['str3', 'str1', 'str2']
     assert horiz_header.sortIndicatorOrder() == 1
-    assert horiz_header.sortIndicatorSection() == selected_column_index
+    assert horiz_header.sortIndicatorSection() == 3
+    assert selection_model.currentIndex().data() == '1'
+    assert get_selected_data(tablewidget) == ['1', '2.222', '29']
 
     # Clear sorting.
     qtbot.keyPress(tableview, Qt.Key_Period, modifier=Qt.ControlModifier)
@@ -821,6 +832,40 @@ def test_column_sorting(tablewidget, qtbot):
     assert get_values_for_column(model.index(0, 0)) == ['str1', 'str2', 'str3']
     assert horiz_header.sortIndicatorOrder() == 0
     assert horiz_header.sortIndicatorSection() == -1
+    assert selection_model.currentIndex().data() == '1'
+    assert get_selected_data(tablewidget) == ['1', '2.222', '29']
+
+
+def test_auto_column_sorting(tablewidget, qtbot):
+    """
+    Test that sorting by column is done as expected when editing a value
+    in a sorted column.
+    """
+    tableview = tablewidget.tableview
+    selection_model = tablewidget.tableview.selectionModel()
+    model = tableview.model()
+
+    # Select some cells and set the current index.
+    selection_model.select(model.index(1, 2), selection_model.Select)
+    selection_model.select(model.index(2, 3), selection_model.Select)
+    selection_model.select(model.index(0, 0), selection_model.Select)
+    selection_model.setCurrentIndex(
+        model.index(0, 0), selection_model.SelectCurrent)
+
+    assert selection_model.currentIndex().data() == 'str1'
+    assert get_selected_data(tablewidget) == ['2.222', '29', 'str1']
+
+    # Sort in ASCENDING order according to the current column using the
+    # keyboard shorcut Ctrl+<.
+    qtbot.keyPress(tableview, Qt.Key_Less, modifier=Qt.ControlModifier)
+    assert get_values_for_column(model.index(0, 0)) == ['str1', 'str2', 'str3']
+
+    # Edit the value of the selected index and assert the values were
+    # automatically sorted.
+    tableview.model().set_data_edits_at(selection_model.currentIndex(), 'str4')
+    assert get_values_for_column(model.index(0, 0)) == ['str2', 'str3', 'str4']
+    assert selection_model.currentIndex().data() == 'str4'
+    assert get_selected_data(tablewidget) == ['2.222', '29', 'str4']
 
 
 def test_copy_to_clipboard(tablewidget, qtbot, mocker):
