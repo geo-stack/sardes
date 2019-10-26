@@ -148,6 +148,13 @@ class SardesTableModelBase(QAbstractTableModel):
             return QVariant()
 
     # ---- Table data
+    def req_data_names(self):
+        """
+        Required the names of all data and libraries that this table
+        requires.
+        """
+        return self.REQ_LIB_NAMES + [self.TABLE_DATA_NAME]
+
     def update_model_data(self, names):
         """
         Update this model's data and library according to the list of
