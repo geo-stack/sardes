@@ -454,6 +454,7 @@ class SardesTableView(QTableView):
     saved in the database.
     """
     sig_data_edited = Signal(bool, bool)
+    sig_show_event = Signal()
 
     def __init__(self, table_model, parent=None):
         super().__init__(parent)
@@ -471,6 +472,10 @@ class SardesTableView(QTableView):
 
         # List of QAction to toggle the visibility this table's columns.
         self._setup_column_visibility_actions()
+
+    def showEvent(self, *args, **kargs):
+        self.sig_show_event.emit()
+        super().showEvent(*args, **kargs)
 
     def _setup_table_model(self, table_model):
         """
