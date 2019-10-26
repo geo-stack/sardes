@@ -24,10 +24,11 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QApplication
 
 # ---- Local imports
+from sardes.api.tablemodels import SardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
-    SardesTableWidget, SardesTableModel, NotEditableDelegate,
-    StringEditDelegate, NumEditDelegate, BoolEditDelegate, QMessageBox)
+    SardesTableWidget, NotEditableDelegate, StringEditDelegate,
+    NumEditDelegate, BoolEditDelegate, QMessageBox)
 
 
 # =============================================================================
