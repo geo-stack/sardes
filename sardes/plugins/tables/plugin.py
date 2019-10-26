@@ -84,9 +84,22 @@ class Tables(SardesPlugin):
             CONF.set(table_id, 'horiz_header/sorting',
                      table.tableview.get_columns_sorting_state())
 
+    def register_plugin(self):
+        """
+        Extend base class method to do some connection with the database
+        manager to update the tables' data.
+        """
+        super().register_plugin()
+        connection_manager = self.main.db_connection_manager
+        connection_manager.sig_database_connection_changed.connect(
+            self._handle_database_connection_changed)
+        connection_manager.sig_database_data_changed.connect(
+            self._handle_database_changed)
+
     # ---- Private methods
     def _setup_tables(self):
         self._tables = {}
+        self._table_updates = {}
         self._create_and_register_table(ObsWellsTableWidget)
         self._create_and_register_table(SondesInventoryTableWidget)
         self._create_and_register_table(ManualMeasurementsTableWidget)
@@ -98,6 +111,7 @@ class Tables(SardesPlugin):
     def _create_and_register_table(self, TableClass):
         table = TableClass(self.main.db_connection_manager)
         self._tables[table.get_table_id()] = table
+        self._table_updates[table.get_table_id()] = []
         self.tabwidget.addTab(
             table, get_icon('table'), table.get_table_title())
 
@@ -109,6 +123,7 @@ class Tables(SardesPlugin):
 
         # Connect signals.
         table.tableview.sig_data_edited.connect(self._update_tab_names)
+        table.tableview.sig_show_event.connect(self._update_current_table)
 
     def _update_tab_names(self):
         """
@@ -121,3 +136,35 @@ class Tables(SardesPlugin):
             if table.tableview.model().has_unsaved_data_edits():
                 tab_text += '*'
             self.tabwidget.setTabText(index, tab_text)
+
+    def _handle_database_connection_changed(self):
+        """
+        Handle when a change is made to the database manager connection.
+        """
+        self._table_updates = {}
+        for table_id, table in self._tables.items():
+            self._table_updates[table_id] = table.model().req_data_names()
+        self._update_current_table()
+
+    def _handle_database_changed(self, data_names):
+        """
+        Handle when changes are made to the database by the manager.
+
+        Note that changes made to the database outside of Sardes are not
+        taken into account here.
+        """
+        for table_id, table in self._tables.items():
+            self._table_updates[table_id].append(
+                [name for name in data_names if
+                 name in table.model().req_data_names()])
+        self._update_current_table()
+
+    def _update_current_table(self):
+        """
+        Update the current table required data that were changed
+        since that table was last updated.
+        """
+        if self.current_table().isVisible():
+            self.current_table().model().update_model_data(
+                self._table_updates[self.current_table().get_table_id()])
+            self._table_updates[self.current_table().get_table_id()] = []

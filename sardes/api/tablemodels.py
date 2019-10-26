@@ -99,11 +99,6 @@ class SardesTableModelBase(QAbstractTableModel):
     def set_database_connection_manager(self, db_connection_manager):
         """Setup the database connection manager for this table model."""
         self.db_connection_manager = db_connection_manager
-        if db_connection_manager is not None:
-            self.db_connection_manager.sig_database_connection_changed.connect(
-                self.fetch_model_data)
-            self.db_connection_manager.sig_database_data_changed.connect(
-                self.update_model_data)
 
     # ---- Columns
     @property
