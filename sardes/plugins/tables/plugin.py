@@ -35,6 +35,18 @@ class Tables(SardesPlugin):
         self._setup_tables()
 
     # ---- Public methods implementation
+    def current_table(self):
+        """
+        Return the currently visible table of this plugin.
+        """
+        return self.tabwidget.currentWidget()
+
+    def table_count(self):
+        """
+        Return the number of tables installed this plugin.
+        """
+        return len(self._tables)
+
     @classmethod
     def get_plugin_title(cls):
         """Return widget title"""
