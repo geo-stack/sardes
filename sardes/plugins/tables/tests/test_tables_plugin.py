@@ -12,7 +12,6 @@ Tests for the DatabaseConnectionWidget.
 """
 
 # ---- Standard imports
-# ---- Standard imports
 import os
 import os.path as osp
 from unittest.mock import Mock
@@ -25,13 +24,9 @@ from qtpy.QtWidgets import QMainWindow
 
 # ---- Local imports
 from sardes.database.database_manager import DatabaseConnectionManager
-from sardes.database.accessor_demo import (
-    DatabaseAccessorDemo, OBS_WELLS_DF, SONDE_MODELS_LIB, SONDES_DATA)
+from sardes.database.accessor_demo import DatabaseAccessorDemo
 from sardes.plugins.tables import SARDES_PLUGIN_CLASS
-from sardes.plugins.tables.tables.sondes_inventory import (
-    SondesInventoryTableModel)
-from sardes.plugins.tables.tables.observation_wells import (
-    ObsWellsTableModel)
+from sardes.database.accessor_demo import SONDE_MODELS_LIB
 
 
 # =============================================================================
@@ -62,7 +57,7 @@ def mainwindow(qtbot, mocker, dbconnmanager):
     with qtbot.waitSignal(dbconnmanager.sig_database_connected, timeout=3000):
         dbconnmanager.connect_to_db(DatabaseAccessorDemo())
     assert dbconnmanager.is_connected()
-    qtbot.wait(1500)
+    qtbot.wait(1000)
 
     return mainwindow
 
@@ -70,22 +65,30 @@ def mainwindow(qtbot, mocker, dbconnmanager):
 # =============================================================================
 # ---- Tests
 # =============================================================================
-def test_tables_plugin_init(mainwindow):
+def test_tables_plugin_init(mainwindow, qtbot):
     """Test that the databse connection manager is initialized correctly."""
-    assert mainwindow.plugin
-    assert len(mainwindow.plugin._tables) == 3
-
     tabwidget = mainwindow.plugin.tabwidget
+    plugin = mainwindow.plugin
+
+    assert mainwindow.plugin
+    assert mainwindow.plugin.table_count() == 3
 
     # Table Observation Wells.
-    tablewidget = mainwindow.plugin._tables[ObsWellsTableModel.TABLE_ID]
-    assert tablewidget.tableview.row_count() == len(OBS_WELLS_DF)
-    assert tabwidget.tabText(0) == tablewidget.get_table_title()
-
-    # Table Sondes Inventory.
-    tablewidget = mainwindow.plugin._tables[SondesInventoryTableModel.TABLE_ID]
-    assert tablewidget.tableview.row_count() == len(SONDES_DATA)
-    assert tabwidget.tabText(1) == tablewidget.get_table_title()
+    for current_index in range(mainwindow.plugin.table_count()):
+        tabwidget.setCurrentIndex(current_index)
+        qtbot.wait(1000)
+        assert tabwidget.currentWidget() == plugin.current_table()
+        for index in range(mainwindow.plugin.table_count()):
+            table = tabwidget.widget(index)
+            table_id = table.get_table_id()
+            if index <= current_index:
+                assert table.tableview.row_count() > 0
+                assert len(plugin._table_updates[table_id]) == 0
+            else:
+                assert table.tableview.row_count() == 0
+                assert (len(plugin._table_updates[table_id]) ==
+                        len(table.model().req_data_names()))
+            assert tabwidget.tabText(index) == table.get_table_title()
 
 
 # =============================================================================
@@ -96,12 +99,13 @@ def test_edit_sonde_model(mainwindow, qtbot):
     Test editing sonde brand in the sondes inventory table.
     """
     tabwidget = mainwindow.plugin.tabwidget
-    tablewidget = mainwindow.plugin._tables[SondesInventoryTableModel.TABLE_ID]
+    tablewidget = mainwindow.plugin._tables['table_sondes_inventory']
     tableview = tablewidget.tableview
     model = tablewidget.tableview.model()
 
     # We need to select the tab corresponding to the table sondes inventory.
     mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
+    qtbot.wait(1000)
 
     # Select the first cell of the table.
     model_index = tableview.model().index(0, 0)
