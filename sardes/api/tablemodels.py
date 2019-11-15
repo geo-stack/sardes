@@ -191,6 +191,12 @@ class SardesTableModelBase(QAbstractTableModel):
             mapped in HORIZONTAL_HEADER_LABELS.
         """
         self.dataf = dataf
+
+        # Add missing columns to the dataframe.
+        for column in self.columns:
+            if column not in self.dataf.columns:
+                self.dataf[column] = None
+
         self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
         self._data_edit_stack = []
         self._new_rows = []
@@ -306,11 +312,6 @@ class SardesTableModelBase(QAbstractTableModel):
         for index, column in self._edited_dataf.index:
             self.visual_dataf.loc[index, column] = (
                 self._edited_dataf.loc[(index, column), 'edited_value'])
-
-        # Add missing columns to the visual dataframe.
-        for column in self.columns:
-            if column not in self.visual_dataf.columns:
-                self.visual_dataf[column] = ''
 
         if not self.dataf.empty:
             self.visual_dataf = self.logical_to_visual_data(self.visual_dataf)
