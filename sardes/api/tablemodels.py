@@ -154,6 +154,9 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         Update this model's data and library according to the list of
         data name in names.
+
+        Note that the data need to be passed to :func:`set_model_data` while
+        the libraries need to be passed to :func:`set_model_library`.
         """
         for name in names:
             if name in self.REQ_LIB_NAMES:
@@ -171,9 +174,6 @@ class SardesTableModelBase(QAbstractTableModel):
     def fetch_model_data(self):
         """
         Fetch the data and libraries for this table model.
-
-        Note that the data need to be passed to :func:`set_model_data` while
-        the libraries need to be passed to :func:`set_model_library`.
         """
         # Note that we need to fetch the libraries before we fetch the
         # table's data.
