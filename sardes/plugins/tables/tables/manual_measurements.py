@@ -82,11 +82,14 @@ class ManualMeasurementsTableModel(SardesTableModel):
         """
         Transform logical data to visual data.
         """
-        obs_wells_data = self.libraries['observation_wells_data']
-        visual_dataf['sampling_feature_uuid'] = (
-            visual_dataf['sampling_feature_uuid']
-            .replace(obs_wells_data['obs_well_id'].to_dict())
-            )
+        try:
+            obs_wells_data = self.libraries['observation_wells_data']
+            visual_dataf['sampling_feature_uuid'] = (
+                visual_dataf['sampling_feature_uuid']
+                .replace(obs_wells_data['obs_well_id'].to_dict())
+                )
+        except KeyError:
+            pass
         visual_dataf['datetime'] = (visual_dataf['datetime']
                                     .dt.strftime('%Y-%m-%d %H:%M'))
         return visual_dataf

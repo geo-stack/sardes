@@ -91,11 +91,15 @@ class SondesInventoryTableModel(SardesTableModel):
         """
         Transform logical data to visual data.
         """
-        sonde_models_lib = self.libraries['sonde_models_lib']
-        visual_dataf['sonde_model_id'] = (
-            visual_dataf['sonde_model_id']
-            .replace(sonde_models_lib['sonde_brand_model'].to_dict())
-            )
+        try:
+            sonde_models_lib = self.libraries['sonde_models_lib']
+            visual_dataf['sonde_model_id'] = (
+                visual_dataf['sonde_model_id']
+                .replace(sonde_models_lib['sonde_brand_model'].to_dict())
+                )
+        except KeyError:
+            pass
+
         return visual_dataf
 
 

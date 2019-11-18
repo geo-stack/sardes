@@ -17,6 +17,7 @@ import os.path as osp
 import uuid
 
 # ---- Third party imports
+import numpy as np
 import pytest
 import pandas as pd
 from pandas.testing import assert_frame_equal
@@ -37,20 +38,18 @@ from sardes.widgets.tableviews import (
 NCOL = 6
 COLUMNS = ['col{}'.format(i) for i in range(NCOL)]
 HEADERS = [_('Column #{}').format(i) for i in range(NCOL)]
-VALUES = [['str1', True, 1.111, 3, 'not editable'],
-          ['str2', False, 2.222, 1, 'not editable'],
-          ['str3', True, 3.333, 29, 'not editable']]
+VALUES = [['str1', True, 1.111, 3, 'not editable', None],
+          ['str2', False, 2.222, 1, 'not editable', None],
+          ['str3', True, 3.333, 29, 'not editable', None]]
 INDEXES = [uuid.uuid4() for i in range(len(VALUES))]
 
 
 @pytest.fixture
 def TABLE_DATAF():
-    # Note that the sixth column mapped in the table model is
-    # missing in the dataframe.
     return pd.DataFrame(
-        VALUES,
+        np.array(VALUES),
         index=INDEXES,
-        columns=COLUMNS[:-1]
+        columns=COLUMNS
         )
 
 
@@ -62,7 +61,9 @@ def tablemodel(qtbot, TABLE_DATAF):
 
         # ---- Public methods
         def fetch_model_data(self, *args, **kargs):
-            self.set_model_data(deepcopy(TABLE_DATAF))
+            # Note that we voluntarily exclude the sixth column from the data
+            # to see if the model can handle that case correctly.
+            self.set_model_data(deepcopy(TABLE_DATAF[COLUMNS[:-1]]))
 
         def create_delegate_for_column(self, view, column):
             if column == 'col0':
