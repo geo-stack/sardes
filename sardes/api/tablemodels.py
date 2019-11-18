@@ -227,7 +227,7 @@ class SardesTableModelBase(QAbstractTableModel):
             str_ = self.visual_dataf.loc[
                 self.dataf_index_at(index), self.dataf_column_at(index)]
             str_ = '' if (pd.isna(str_) or str_ is None) else str(str_)
-            str_.replace('True', _('Yes')).replace('False', _('No'))
+            str_ = str_.replace('True', _('Yes')).replace('False', _('No'))
             return str_
         elif role == Qt.ForegroundRole:
             return QVariant()
