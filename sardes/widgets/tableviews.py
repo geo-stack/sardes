@@ -1065,6 +1065,7 @@ class SardesTableView(QTableView):
                 )
             if reply == QMessageBox.Cancel:
                 return
+        self.selectionModel().clearSelection()
         self.model().save_data_edits()
 
     def raise_edits_error(self, model_index, message):
