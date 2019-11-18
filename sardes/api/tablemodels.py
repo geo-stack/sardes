@@ -93,6 +93,7 @@ class SardesTableModelBase(QAbstractTableModel):
         self._sort_by_columns = None
         self._sort_order = Qt.AscendingOrder
         self._filter_by_columns = None
+        self._old_model_indexes = self.visual_dataf.index.copy()
 
         self.set_database_connection_manager(db_connection_manager)
 
@@ -190,7 +191,10 @@ class SardesTableModelBase(QAbstractTableModel):
             column labels of the dataframe must match the values that are
             mapped in HORIZONTAL_HEADER_LABELS.
         """
+        self.beginResetModel()
         self.dataf = dataf
+        self.visual_dataf = dataf.copy()
+        self._old_model_indexes = self.visual_dataf.index.copy()
 
         # Add missing columns to the dataframe.
         for column in self.columns:
@@ -203,7 +207,7 @@ class SardesTableModelBase(QAbstractTableModel):
         self._deleted_rows = []
         self._update_visual_data()
 
-        self.modelReset.emit()
+        self.endResetModel()
         self.sig_data_edited.emit(False, False)
 
     def set_model_library(self, dataf):
@@ -303,54 +307,38 @@ class SardesTableModelBase(QAbstractTableModel):
         Update the visual dataframe that is used to display the value in
         this tables.
         """
-        self.layoutAboutToBeChanged.emit()
-        old_model_indexes = self.persistentIndexList()
-        old_ids = self.visual_dataf.index.copy()
         self.visual_dataf = self.dataf.copy()
+        if self.dataf.empty:
+            return
 
         # Fist we apply the edited values to the dataframe.
         for index, column in self._edited_dataf.index:
             self.visual_dataf.loc[index, column] = (
                 self._edited_dataf.loc[(index, column), 'edited_value'])
 
-        if not self.dataf.empty:
-            self.visual_dataf = self.logical_to_visual_data(self.visual_dataf)
-            if self._filter_by_columns is not None:
-                self._filter_visual_data()
-                self.modelReset.emit()
-            if self._sort_by_columns is not None:
-                self._sort_visual_data()
+        self.visual_dataf = self.logical_to_visual_data(self.visual_dataf)
 
-            # Transform the data to string and replace nan and boolean
-            # values with strings.
-            # Note that this must be done after the filtering and sorting
-            # is applied or else, it won't work as expected for numerical
-            # values.
-            self.visual_dataf.fillna(value='', inplace=True)
-            self.visual_dataf = self.visual_dataf.astype(str)
-            self.visual_dataf.replace(
-                to_replace={'True': _('Yes'), 'False': _('No')}, inplace=True)
+        # Sort the data.
+        if self._sort_by_columns is not None:
+            self._sort_visual_data()
 
-        # Update persistent indexes if no filtering has been done (since the
-        # later cause a model reset).
-        if self._filter_by_columns is None:
-            new_model_indexes = [
-                self.index(
-                    self.visual_dataf.index.get_loc(old_ids[index.row()]),
-                    index.column(),
-                    index.parent())
-                for index in old_model_indexes]
-            self.changePersistentIndexList(
-                old_model_indexes, new_model_indexes)
+        # Filter the data.
+        if self._filter_by_columns is not None:
+            self._filter_visual_data()
 
-        self.layoutChanged.emit()
-        self.dataChanged.emit(QModelIndex(), QModelIndex())
+        self.dataChanged.emit(
+            self.index(0, 0),
+            self.index(len(self.visual_dataf) - 1,
+                       len(self.visual_dataf.columns) - 1)
+            )
 
     def _filter_visual_data(self):
         """
         Apply the filters to the visual data.
         """
-        pass
+        self.beginResetModel()
+        self.endResetModel()
+        self._old_model_indexes = self.visual_dataf.index.copy()
 
     def _sort_visual_data(self):
         """
@@ -358,10 +346,33 @@ class SardesTableModelBase(QAbstractTableModel):
 
         https://stackoverflow.com/a/42039683/4481445
         """
-        self.visual_dataf.sort_values(
-            by=self._sort_by_columns,
-            ascending=(self._sort_order == Qt.AscendingOrder),
-            inplace=True)
+        self.layoutAboutToBeChanged.emit()
+        old_persistent_indexes = self.persistentIndexList()
+
+        if self._sort_by_columns is None:
+            # Clear sorting.
+            orig_ids = self.dataf.index.copy()
+            orig_ids = orig_ids[orig_ids.isin(self._old_model_indexes)]
+            self.visual_dataf = self.visual_dataf.loc[orig_ids, :]
+        else:
+            # Sort the data by columns.
+            self.visual_dataf.sort_values(
+                by=self._sort_by_columns,
+                ascending=(self._sort_order == Qt.AscendingOrder),
+                inplace=True)
+
+        # Update the persistent indexes.
+        new_persistent_indexes = [
+            self.index(self.visual_dataf.index
+                       .get_loc(self._old_model_indexes[index.row()]),
+                       index.column(),
+                       index.parent())
+            for index in old_persistent_indexes]
+        self.changePersistentIndexList(
+            old_persistent_indexes, new_persistent_indexes)
+        self._old_model_indexes = self.visual_dataf.index.copy()
+
+        self.layoutChanged.emit()
 
     def sort(self, column, order=Qt.AscendingOrder):
         """
@@ -373,7 +384,7 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         self._sort_by_columns = None if column == -1 else self.columns[column]
         self._sort_order = order
-        self._update_visual_data()
+        self._sort_visual_data()
 
     # ---- Data edits
     def data_edit_count(self):
@@ -404,7 +415,6 @@ class SardesTableModelBase(QAbstractTableModel):
         self._data_edit_stack = []
         self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
         self._update_visual_data()
-        self.dataChanged.emit(QModelIndex(), QModelIndex())
         self.sig_data_edited.emit(False, False)
 
     def get_edited_data_at(self, model_index):
@@ -455,7 +465,6 @@ class SardesTableModelBase(QAbstractTableModel):
 
         # We make the appropriate calls to update the model and GUI.
         self._update_visual_data()
-        self.dataChanged.emit(QModelIndex(), QModelIndex())
         self.sig_data_edited.emit(
             self.has_unsaved_data_edits(), bool(self.data_edit_count()))
 
@@ -493,7 +502,6 @@ class SardesTableModelBase(QAbstractTableModel):
                     break
 
         self._update_visual_data()
-        self.dataChanged.emit(QModelIndex(), QModelIndex())
         self.sig_data_edited.emit(
             self.has_unsaved_data_edits(), bool(self.data_edit_count()))
 
