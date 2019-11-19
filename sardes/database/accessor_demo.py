@@ -30,10 +30,8 @@ from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
 # Module variable definition
 # =============================================================================
 OBS_WELLS_DATA = []
+OBS_WELL_ID = ['0343128', '0466773', '0622056', '0652184', '0702303']
 for i in range(5):
-    OBS_WELL_ID = '0'
-    for _ in range(6):
-        OBS_WELL_ID += str(int(np.random.rand(1) * 9))
     AQUIFER_CODE = str(int(np.random.rand(1) * 5))
     AQUIFER_CONFINEMENT, AQUIFER_TYPE = [
         ('Confined', 'Rock'),
@@ -42,9 +40,8 @@ for i in range(5):
         ('Semi-Confined', 'Sediments'),
         ('Unconfined', 'Rock'),
         ('Unconfined', 'Sediments')][int(AQUIFER_CODE)]
-
     OBS_WELLS_DATA.append([
-        OBS_WELL_ID,
+        OBS_WELL_ID[i],
         'PO{:01d}'.format(i + 1),
         'Municipality {:01d}'.format(i + 1),
         AQUIFER_TYPE,
