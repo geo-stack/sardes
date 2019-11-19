@@ -551,7 +551,7 @@ class SardesTableView(QTableView):
             icon='commit_changes',
             tip=_('Save all edits made to the table in the database.'),
             triggered=lambda: self._save_data_edits(force=False),
-            shortcut='Ctrl+S',
+            shortcut=['Ctrl+Enter', 'Ctrl+Return'],
             context=Qt.WidgetShortcut)
         save_edits_action.setEnabled(False)
         self.sig_data_edited.connect(
