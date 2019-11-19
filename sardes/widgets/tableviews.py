@@ -540,7 +540,7 @@ class SardesTableView(QTableView):
             icon='erase_data',
             tip=_("Set the currently focused item to NULL."),
             triggered=self._clear_current_item,
-            shortcut='Ctrl+Delete',
+            shortcut='Ctrl+D',
             context=Qt.WidgetShortcut)
         self.selectionModel().currentChanged.connect(
             lambda current, previous: clear_item_action.setEnabled(
