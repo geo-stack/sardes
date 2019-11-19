@@ -142,5 +142,41 @@ def test_edit_sonde_model(mainwindow, qtbot):
     assert tabwidget.tabText(1) == tablewidget.get_table_title()
 
 
+def test_save_data_edits(mainwindow, qtbot):
+    """
+    Assert that tables data is updated correctly after edits are saved.
+    """
+    table_obs_well = mainwindow.plugin._tables['table_observation_wells']
+    table_man_meas = mainwindow.plugin._tables['table_manual_measurements']
+
+    # We need first to select the tab corresponding to the table manual
+    # measurements and assert the value displayed in cell at index (1, 1).
+    mainwindow.plugin.tabwidget.setCurrentWidget(table_man_meas)
+    qtbot.wait(1000)
+    model_index = table_man_meas.tableview.model().index(0, 0)
+    assert model_index.data() == '0343128'
+
+    # We now switch to table observation wells and do an edit to the table's
+    # data programmatically.
+    mainwindow.plugin.tabwidget.setCurrentWidget(table_obs_well)
+    qtbot.wait(1000)
+    model_index = table_obs_well.tableview.model().index(0, 0)
+    assert model_index.data() == '0343128'
+    table_obs_well.tableview.model().set_data_edits_at(
+        model_index, '0343128_modif')
+    assert model_index.data() == '0343128_modif'
+
+    # We now save the edits.
+    table_obs_well.tableview.model().save_data_edits()
+    qtbot.wait(100)
+
+    # We switch back to table manual measurements and assert that the changes
+    # made in table observation wells were reflected here as expected.
+    mainwindow.plugin.tabwidget.setCurrentWidget(table_man_meas)
+    qtbot.wait(1000)
+    model_index = table_man_meas.tableview.model().index(0, 0)
+    assert model_index.data() == '0343128_modif'
+
+
 if __name__ == "__main__":
     pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])

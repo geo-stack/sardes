@@ -137,14 +137,18 @@ class Tables(SardesPlugin):
                 tab_text += '*'
             self.tabwidget.setTabText(index, tab_text)
 
-    def _handle_database_connection_changed(self):
+    def _handle_database_connection_changed(self, is_connected_to_db):
         """
         Handle when a change is made to the database manager connection.
         """
-        self._table_updates = {}
-        for table_id, table in self._tables.items():
-            self._table_updates[table_id] = table.model().req_data_names()
-        self._update_current_table()
+        if is_connected_to_db:
+            for table_id, table in self._tables.items():
+                self._table_updates[table_id] = table.model().req_data_names()
+            self._update_current_table()
+        else:
+            for table_id, table in self._tables.items():
+                self._table_updates[table_id] = []
+                table.model().fetch_model_data()
 
     def _handle_database_changed(self, data_names):
         """
@@ -154,9 +158,11 @@ class Tables(SardesPlugin):
         taken into account here.
         """
         for table_id, table in self._tables.items():
-            self._table_updates[table_id].append(
+            self._table_updates[table_id].extend(
                 [name for name in data_names if
                  name in table.model().req_data_names()])
+            self._table_updates[table_id] = list(set(
+                self._table_updates[table_id]))
         self._update_current_table()
 
     def _update_current_table(self):

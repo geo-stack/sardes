@@ -301,7 +301,10 @@ class DatabaseConnectionManager(QObject):
         """
         # Run the callback associated with the specified task UUID if any.
         if self._task_callbacks[task_uuid4] is not None:
-            self._task_callbacks[task_uuid4](*returned_values)
+            try:
+                self._task_callbacks[task_uuid4](*returned_values)
+            except TypeError:
+                self._task_callbacks[task_uuid4]()
 
         # Clean up internal variables.
         del self._task_callbacks[task_uuid4]
