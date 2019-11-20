@@ -60,6 +60,10 @@ class SardesTableModelBase(QAbstractTableModel):
     WARNING: Don't override any methods or attributes present here.
     """
     sig_data_edited = Signal(bool, bool)
+    sig_data_about_to_be_updated = Signal()
+    sig_data_updated = Signal()
+    sig_data_about_to_be_saved = Signal()
+    sig_data_saved = Signal()
 
     ValueChanged = 0
     RowAdded = 1
@@ -72,8 +76,19 @@ class SardesTableModelBase(QAbstractTableModel):
         # A pandas dataframe containing the data that are shown in the
         # database.
         self.dataf = pd.DataFrame([])
+
+        # A pandas dataframe containing the data that need to be shown in the
+        # table, including the data edits.
         self.visual_dataf = pd.DataFrame([], columns=self.columns)
+
+        # A dictionary containing the dataframes of all the librairies
+        # required by this table to display its data correctly.
         self.libraries = {}
+
+        # A list containing the names of the data that needs to be updated,
+        # so that we can emit sig_data_updated only when all data have been
+        # updated.
+        self._data_that_need_to_be_updated = []
 
         # A list containing the edits made by the user to the
         # content of this table's model data in chronological order.
@@ -513,12 +528,17 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         Save all data edits to the database.
         """
+        self.sig_data_about_to_be_saved.emit()
         for edits in self._data_edit_stack:
             for edit in edits:
+                callback = (self.sig_data_saved.emit
+                            if edit == self._data_edit_stack[-1][-1]
+                            else None)
                 if edit.type() == self.ValueChanged:
                     self.db_connection_manager.set(
                         self.TABLE_DATA_NAME,
                         edit.index, edit.column, edit.edited_value,
+                        callback=callback,
                         postpone_exec=True)
         self.db_connection_manager.run_tasks()
 
