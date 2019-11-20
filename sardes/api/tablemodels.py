@@ -155,21 +155,17 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         Update this model's data and library according to the list of
         data name in names.
-
-        Note that the data need to be passed to :func:`set_model_data` while
-        the libraries need to be passed to :func:`set_model_library`.
         """
+        if not names:
+            return
+
+        self.sig_data_about_to_be_updated.emit()
+        self._data_that_need_to_be_updated = names
         for name in names:
-            if name in self.REQ_LIB_NAMES:
-                self.db_connection_manager.get(
-                    name,
-                    callback=self.set_model_library,
-                    postpone_exec=True)
-            elif name == self.TABLE_DATA_NAME:
-                self.db_connection_manager.get(
-                    self.TABLE_DATA_NAME,
-                    callback=self.set_model_data,
-                    postpone_exec=True)
+            self.db_connection_manager.get(
+                name,
+                callback=self.set_model_data,
+                postpone_exec=True)
         self.db_connection_manager.run_tasks()
 
     def fetch_data(self):
@@ -187,35 +183,40 @@ class SardesTableModelBase(QAbstractTableModel):
         Parameters
         ----------
         dataf: :class:`pd.DataFrame`
-            A pandas dataframe containing the data of this table model. The
-            column labels of the dataframe must match the values that are
-            mapped in HORIZONTAL_HEADER_LABELS.
+            A pandas dataframe containing the data or a library needed by this
+            table model.
+
+            Note that the column labels of the dataframe must match the
+            values that are mapped in _data_columns_mapper.
         """
-        self.beginResetModel()
-        self.dataf = dataf
-        self.visual_dataf = dataf.copy()
-        self._old_model_indexes = self.visual_dataf.index.copy()
+        if dataf.name == self.TABLE_DATA_NAME:
+            self.beginResetModel()
+            self.dataf = dataf
+            self.visual_dataf = dataf.copy()
+            self._old_model_indexes = self.visual_dataf.index.copy()
 
-        # Add missing columns to the dataframe.
-        for column in self.columns:
-            if column not in self.dataf.columns:
-                self.dataf[column] = None
+            # Add missing columns to the dataframe.
+            for column in self.columns:
+                if column not in self.dataf.columns:
+                    self.dataf[column] = None
 
-        self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
-        self._data_edit_stack = []
-        self._new_rows = []
-        self._deleted_rows = []
-        self._update_visual_data()
+            self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
+            self._data_edit_stack = []
+            self._new_rows = []
+            self._deleted_rows = []
+            self._update_visual_data()
 
-        self.endResetModel()
-        self.sig_data_edited.emit(False, False)
+            self.endResetModel()
+            self.sig_data_edited.emit(False, False)
+        elif dataf.name in self.REQ_LIB_NAMES:
+            self.libraries[dataf.name] = dataf
+            self._update_visual_data()
 
-    def set_model_library(self, dataf):
-        """
-        Set the namespace for the library contained in the dataframe.
-        """
-        self.libraries[dataf.name] = dataf
-        self._update_visual_data()
+        # Update the state of data update and emit a signal if the updating
+        # is completed.
+        self._data_that_need_to_be_updated.remove(dataf.name)
+        if not self._data_that_need_to_be_updated:
+            self.sig_data_updated.emit()
 
     def rowCount(self, parent=QModelIndex()):
         """Qt method override. Return the number visible rows in the table."""
