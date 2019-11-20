@@ -24,7 +24,8 @@ class ProcessStatusBar(QWidget):
     PROCESS_SUCCEEDED = 2
     PROCESS_FAILED = 3
 
-    def __init__(self, parent=None, orientation=Qt.Horizontal):
+    def __init__(self, parent=None, iconsize=24, ndots=11,
+                 orientation=Qt.Horizontal):
         super().__init__(parent)
         self._status = self.HIDDEN
 
@@ -36,14 +37,16 @@ class ProcessStatusBar(QWidget):
         self._label.setWordWrap(True)
         self._label.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
-        self._spinner = create_waitspinner(size=24)
+        self._spinner = create_waitspinner(iconsize, ndots, self)
 
         self._failed_icon = QLabel()
-        self._failed_icon.setPixmap(get_icon('failed').pixmap(QSize(24, 24)))
+        self._failed_icon.setPixmap(
+            get_icon('failed').pixmap(QSize(iconsize, iconsize)))
         self._failed_icon.hide()
 
         self._success_icon = QLabel()
-        self._success_icon.setPixmap(get_icon('succes').pixmap(QSize(24, 24)))
+        self._success_icon.setPixmap(
+            get_icon('succes').pixmap(QSize(iconsize, iconsize)))
         self._success_icon.hide()
 
         layout = QGridLayout(self)
