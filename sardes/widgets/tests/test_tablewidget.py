@@ -60,7 +60,7 @@ def tablemodel(qtbot, TABLE_DATAF):
             (col, header) for col, header in zip(COLUMNS, HEADERS)]
 
         # ---- Public methods
-        def fetch_model_data(self, *args, **kargs):
+        def fetch_data(self, *args, **kargs):
             # Note that we voluntarily exclude the sixth column from the data
             # to see if the model can handle that case correctly.
             self.set_model_data(deepcopy(TABLE_DATAF[COLUMNS[:-1]]))
@@ -88,7 +88,7 @@ def tablemodel(qtbot, TABLE_DATAF):
                         TABLE_DATAF.loc[
                             edit.index, edit.column
                             ] = edit.edited_value
-            self.fetch_model_data()
+            self.fetch_data()
 
     tablemodel = SardesTableModelMock()
     return tablemodel
@@ -117,7 +117,7 @@ def tablewidget(qtbot, tablemodel):
     # Fetch the model data explicitely. We need to do this because
     # the table view that we use for testing is not connected to a
     # database connection manager.
-    tablewidget.tableview.model().fetch_model_data()
+    tablewidget.fetch_model_data()
     qtbot.wait(100)
 
     return tablewidget

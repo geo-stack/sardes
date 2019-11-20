@@ -1130,6 +1130,12 @@ class SardesTableWidget(SardesPaneWidget):
         """
         return self.tableview.model()
 
+    def fetch_model_data(self):
+        """
+        Fetch the data and libraries of this table widget's model.
+        """
+        return self.model().fetch_data()
+
     # ---- Setup
     def _setup_upper_toolbar(self):
         """

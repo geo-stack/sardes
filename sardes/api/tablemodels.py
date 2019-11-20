@@ -172,9 +172,9 @@ class SardesTableModelBase(QAbstractTableModel):
                     postpone_exec=True)
         self.db_connection_manager.run_tasks()
 
-    def fetch_model_data(self):
+    def fetch_data(self):
         """
-        Fetch the data and libraries for this table model.
+        Fetch the data and libraries for this model.
         """
         # Note that we need to fetch the libraries before we fetch the
         # table's data.
