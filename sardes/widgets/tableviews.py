@@ -1136,6 +1136,13 @@ class SardesTableWidget(SardesPaneWidget):
         """
         return self.model().fetch_data()
 
+    def update_model_data(self, names):
+        """
+        Update the model's data and library of this table widget according
+        to the list of data name in names.
+        """
+        return self.model().update_data(names)
+
     # ---- Setup
     def _setup_upper_toolbar(self):
         """

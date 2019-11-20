@@ -151,7 +151,7 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         return self.REQ_LIB_NAMES + [self.TABLE_DATA_NAME]
 
-    def update_model_data(self, names):
+    def update_data(self, names):
         """
         Update this model's data and library according to the list of
         data name in names.
@@ -178,7 +178,7 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         # Note that we need to fetch the libraries before we fetch the
         # table's data.
-        self.update_model_data(self.REQ_LIB_NAMES + [self.TABLE_DATA_NAME])
+        self.update_data(self.REQ_LIB_NAMES + [self.TABLE_DATA_NAME])
 
     def set_model_data(self, dataf):
         """

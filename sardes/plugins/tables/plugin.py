@@ -171,6 +171,6 @@ class Tables(SardesPlugin):
         since that table was last updated.
         """
         if self.current_table().isVisible():
-            self.current_table().model().update_model_data(
+            self.current_table().update_model_data(
                 self._table_updates[self.current_table().get_table_id()])
             self._table_updates[self.current_table().get_table_id()] = []
