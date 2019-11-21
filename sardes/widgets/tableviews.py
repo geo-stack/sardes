@@ -37,6 +37,10 @@ from sardes.utils.qthelpers import (
     get_datetime_from_editor)
 from sardes.widgets.statusbar import ProcessStatusBar
 
+# Define the minimum amount of time that the tables wait spinner are shown.
+# Otherwise, for very short process, it only flashes in the screen.
+MSEC_MIN_PROGRESS_DISPLAY = 500
+
 
 # =============================================================================
 # ---- Delegates
@@ -1316,9 +1320,10 @@ class SardesTableWidget(SardesPaneWidget):
     def _handle_process_ended(self, text=''):
         self.get_upper_toolbar().setEnabled(True)
         self.tableview.setEnabled(True)
-        self._end_process_timer.start(500)
+        self._end_process_timer.start(MSEC_MIN_PROGRESS_DISPLAY)
 
     def _end_process(self, text=''):
+        self.tableview.setFocus()
         self.progressbar.hide()
 
 
