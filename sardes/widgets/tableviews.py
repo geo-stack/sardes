@@ -1063,13 +1063,18 @@ class SardesTableView(QTableView):
         is first shown before proceeding.
         """
         if force is False:
-            reply = QMessageBox.warning(
-                self, _('Save changes'),
+            msgbox = QMessageBox(
+                QMessageBox.Warning,
+                _('Save changes'),
                 _("This will permanently save the changes made in this "
                   "table in the database.<br><br>"
                   "This action <b>cannot</b> be undone."),
-                buttons=QMessageBox.Ok | QMessageBox.Cancel
-                )
+                buttons=QMessageBox.Save | QMessageBox.Cancel,
+                parent=self)
+            msgbox.button(msgbox.Save).setText(_("Save"))
+            msgbox.button(msgbox.Cancel).setText(_("Cancel"))
+
+            reply = msgbox.exec_()
             if reply == QMessageBox.Cancel:
                 return
         self.selectionModel().clearSelection()
