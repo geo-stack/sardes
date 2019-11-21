@@ -19,11 +19,11 @@ import pandas as pd
 from qtpy.QtCore import (QEvent, Qt, Signal, Slot, QItemSelection,
                          QItemSelectionModel, QRect, QTimer)
 from qtpy.QtGui import QCursor, QPen
-from qtpy.QtWidgets import (QApplication, QComboBox, QDateEdit, QDateTimeEdit,
-                            QDoubleSpinBox, QHeaderView, QLabel, QLineEdit,
-                            QMenu, QMessageBox, QSpinBox, QStyledItemDelegate,
-                            QTableView, QTextEdit, QListView, QStyle,
-                            QStyleOption, QWidget, QGridLayout)
+from qtpy.QtWidgets import (
+    QApplication, QCheckBox, QComboBox, QDateEdit, QDateTimeEdit,
+    QDoubleSpinBox, QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox,
+    QSpinBox, QStyledItemDelegate, QTableView, QTextEdit, QListView, QStyle,
+    QStyleOption, QWidget, QGridLayout)
 
 # ---- Local imports
 from sardes import __appname__
@@ -1062,16 +1062,29 @@ class SardesTableView(QTableView):
         Save the data edits to the database. If 'force' is 'False', a message
         is first shown before proceeding.
         """
-        if force is False:
-            reply = QMessageBox.warning(
-                self, _('Save changes'),
+        if force is False and self.model().confirm_before_saving_edits:
+            msgbox = QMessageBox(
+                QMessageBox.Warning,
+                _('Save changes'),
                 _("This will permanently save the changes made in this "
                   "table in the database.<br><br>"
-                  "This action <b>cannot</b> be undone."),
-                buttons=QMessageBox.Ok | QMessageBox.Cancel
-                )
+                  "This action <b>cannot</b> be undone.<br><br>"),
+                buttons=QMessageBox.Save | QMessageBox.Cancel,
+                parent=self)
+            msgbox.button(msgbox.Save).setText(_("Save"))
+            msgbox.button(msgbox.Cancel).setText(_("Cancel"))
+
+            chkbox = QCheckBox(
+                _("Do not show this message again during this session."))
+            msgbox.setCheckBox(chkbox)
+
+            reply = msgbox.exec_()
             if reply == QMessageBox.Cancel:
                 return
+            else:
+                self.model().confirm_before_saving_edits = (
+                    not chkbox.isChecked())
+
         self.selectionModel().clearSelection()
         self.model().save_data_edits()
 

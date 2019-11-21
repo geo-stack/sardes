@@ -406,6 +406,22 @@ class SardesTableModelBase(QAbstractTableModel):
         self._sort_visual_data()
 
     # ---- Data edits
+    @property
+    def confirm_before_saving_edits(self):
+        """
+        Return wheter we should ask confirmation to the user before saving
+        the data edits to the database.
+        """
+        return self.db_connection_manager._confirm_before_saving_edits
+
+    @confirm_before_saving_edits.setter
+    def confirm_before_saving_edits(self, x):
+        """
+        Set wheter we should ask confirmation to the user before saving
+        the data edits to the database.
+        """
+        self.db_connection_manager._confirm_before_saving_edits = bool(x)
+
     def data_edit_count(self):
         """
         Return the number of edits in the stack.
