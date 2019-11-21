@@ -60,6 +60,10 @@ class SardesTableModelBase(QAbstractTableModel):
     WARNING: Don't override any methods or attributes present here.
     """
     sig_data_edited = Signal(bool, bool)
+    sig_data_about_to_be_updated = Signal()
+    sig_data_updated = Signal()
+    sig_data_about_to_be_saved = Signal()
+    sig_data_saved = Signal()
 
     ValueChanged = 0
     RowAdded = 1
@@ -72,8 +76,19 @@ class SardesTableModelBase(QAbstractTableModel):
         # A pandas dataframe containing the data that are shown in the
         # database.
         self.dataf = pd.DataFrame([])
+
+        # A pandas dataframe containing the data that need to be shown in the
+        # table, including the data edits.
         self.visual_dataf = pd.DataFrame([], columns=self.columns)
+
+        # A dictionary containing the dataframes of all the librairies
+        # required by this table to display its data correctly.
         self.libraries = {}
+
+        # A list containing the names of the data that needs to be updated,
+        # so that we can emit sig_data_updated only when all data have been
+        # updated.
+        self._data_that_need_to_be_updated = []
 
         # A list containing the edits made by the user to the
         # content of this table's model data in chronological order.
@@ -151,34 +166,30 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         return self.REQ_LIB_NAMES + [self.TABLE_DATA_NAME]
 
-    def update_model_data(self, names):
+    def update_data(self, names):
         """
         Update this model's data and library according to the list of
         data name in names.
-
-        Note that the data need to be passed to :func:`set_model_data` while
-        the libraries need to be passed to :func:`set_model_library`.
         """
+        if not names:
+            return
+
+        self.sig_data_about_to_be_updated.emit()
+        self._data_that_need_to_be_updated = names
         for name in names:
-            if name in self.REQ_LIB_NAMES:
-                self.db_connection_manager.get(
-                    name,
-                    callback=self.set_model_library,
-                    postpone_exec=True)
-            elif name == self.TABLE_DATA_NAME:
-                self.db_connection_manager.get(
-                    self.TABLE_DATA_NAME,
-                    callback=self.set_model_data,
-                    postpone_exec=True)
+            self.db_connection_manager.get(
+                name,
+                callback=self.set_model_data,
+                postpone_exec=True)
         self.db_connection_manager.run_tasks()
 
-    def fetch_model_data(self):
+    def fetch_data(self):
         """
-        Fetch the data and libraries for this table model.
+        Fetch the data and libraries for this model.
         """
         # Note that we need to fetch the libraries before we fetch the
         # table's data.
-        self.update_model_data(self.REQ_LIB_NAMES + [self.TABLE_DATA_NAME])
+        self.update_data(self.REQ_LIB_NAMES + [self.TABLE_DATA_NAME])
 
     def set_model_data(self, dataf):
         """
@@ -187,35 +198,40 @@ class SardesTableModelBase(QAbstractTableModel):
         Parameters
         ----------
         dataf: :class:`pd.DataFrame`
-            A pandas dataframe containing the data of this table model. The
-            column labels of the dataframe must match the values that are
-            mapped in HORIZONTAL_HEADER_LABELS.
+            A pandas dataframe containing the data or a library needed by this
+            table model.
+
+            Note that the column labels of the dataframe must match the
+            values that are mapped in _data_columns_mapper.
         """
-        self.beginResetModel()
-        self.dataf = dataf
-        self.visual_dataf = dataf.copy()
-        self._old_model_indexes = self.visual_dataf.index.copy()
+        if dataf.name == self.TABLE_DATA_NAME:
+            self.beginResetModel()
+            self.dataf = dataf
+            self.visual_dataf = dataf.copy()
+            self._old_model_indexes = self.visual_dataf.index.copy()
 
-        # Add missing columns to the dataframe.
-        for column in self.columns:
-            if column not in self.dataf.columns:
-                self.dataf[column] = None
+            # Add missing columns to the dataframe.
+            for column in self.columns:
+                if column not in self.dataf.columns:
+                    self.dataf[column] = None
 
-        self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
-        self._data_edit_stack = []
-        self._new_rows = []
-        self._deleted_rows = []
-        self._update_visual_data()
+            self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
+            self._data_edit_stack = []
+            self._new_rows = []
+            self._deleted_rows = []
+            self._update_visual_data()
 
-        self.endResetModel()
-        self.sig_data_edited.emit(False, False)
+            self.endResetModel()
+            self.sig_data_edited.emit(False, False)
+        elif dataf.name in self.REQ_LIB_NAMES:
+            self.libraries[dataf.name] = dataf
+            self._update_visual_data()
 
-    def set_model_library(self, dataf):
-        """
-        Set the namespace for the library contained in the dataframe.
-        """
-        self.libraries[dataf.name] = dataf
-        self._update_visual_data()
+        # Update the state of data update and emit a signal if the updating
+        # is completed.
+        self._data_that_need_to_be_updated.remove(dataf.name)
+        if not self._data_that_need_to_be_updated:
+            self.sig_data_updated.emit()
 
     def rowCount(self, parent=QModelIndex()):
         """Qt method override. Return the number visible rows in the table."""
@@ -512,12 +528,17 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         Save all data edits to the database.
         """
+        self.sig_data_about_to_be_saved.emit()
         for edits in self._data_edit_stack:
             for edit in edits:
+                callback = (self.sig_data_saved.emit
+                            if edit == self._data_edit_stack[-1][-1]
+                            else None)
                 if edit.type() == self.ValueChanged:
                     self.db_connection_manager.set(
                         self.TABLE_DATA_NAME,
                         edit.index, edit.column, edit.edited_value,
+                        callback=callback,
                         postpone_exec=True)
         self.db_connection_manager.run_tasks()
 

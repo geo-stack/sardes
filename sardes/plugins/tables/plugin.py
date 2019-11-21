@@ -148,7 +148,7 @@ class Tables(SardesPlugin):
         else:
             for table_id, table in self._tables.items():
                 self._table_updates[table_id] = []
-                table.model().fetch_model_data()
+                table.fetch_model_data()
 
     def _handle_database_changed(self, data_names):
         """
@@ -171,6 +171,6 @@ class Tables(SardesPlugin):
         since that table was last updated.
         """
         if self.current_table().isVisible():
-            self.current_table().model().update_model_data(
+            self.current_table().update_model_data(
                 self._table_updates[self.current_table().get_table_id()])
             self._table_updates[self.current_table().get_table_id()] = []

@@ -12,9 +12,9 @@ Tests for the SardesTableWidget class.
 """
 
 # ---- Standard imports
-from copy import deepcopy
 import os.path as osp
 import uuid
+from unittest.mock import Mock
 
 # ---- Third party imports
 import numpy as np
@@ -29,7 +29,7 @@ from sardes.api.tablemodels import SardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableWidget, NotEditableDelegate, StringEditDelegate,
-    NumEditDelegate, BoolEditDelegate, QMessageBox)
+    NumEditDelegate, BoolEditDelegate, QMessageBox, MSEC_MIN_PROGRESS_DISPLAY)
 
 
 # =============================================================================
@@ -55,16 +55,19 @@ def TABLE_DATAF():
 
 @pytest.fixture
 def tablemodel(qtbot, TABLE_DATAF):
+
+    class ConnectionManagerMock(Mock):
+        def get(self, name, callback, postpone_exec):
+            dataf = TABLE_DATAF.copy()[COLUMNS[:-1]]
+            dataf.name = name
+            callback(dataf)
+
     class SardesTableModelMock(SardesTableModel):
+        TABLE_DATA_NAME = 'test_table_dataf_name'
         __data_columns_mapper__ = [
             (col, header) for col, header in zip(COLUMNS, HEADERS)]
 
         # ---- Public methods
-        def fetch_model_data(self, *args, **kargs):
-            # Note that we voluntarily exclude the sixth column from the data
-            # to see if the model can handle that case correctly.
-            self.set_model_data(deepcopy(TABLE_DATAF[COLUMNS[:-1]]))
-
         def create_delegate_for_column(self, view, column):
             if column == 'col0':
                 return StringEditDelegate(view, unique_constraint=True,
@@ -88,9 +91,10 @@ def tablemodel(qtbot, TABLE_DATAF):
                         TABLE_DATAF.loc[
                             edit.index, edit.column
                             ] = edit.edited_value
-            self.fetch_model_data()
+            self.fetch_data()
 
     tablemodel = SardesTableModelMock()
+    tablemodel.db_connection_manager = ConnectionManagerMock()
     return tablemodel
 
 
@@ -106,7 +110,7 @@ def tablewidget(qtbot, tablemodel):
 
     tablewidget.show()
     qtbot.waitForWindowShown(tablewidget)
-    qtbot.addWidget(tablewidget)
+    # qtbot.addWidget(tablewidget)
 
     # Assert everything is working as expected when table is empty.
     assert tablewidget
@@ -117,8 +121,8 @@ def tablewidget(qtbot, tablemodel):
     # Fetch the model data explicitely. We need to do this because
     # the table view that we use for testing is not connected to a
     # database connection manager.
-    tablewidget.tableview.model().fetch_model_data()
-    qtbot.wait(100)
+    tablewidget.fetch_model_data()
+    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
 
     return tablewidget
 
@@ -209,7 +213,7 @@ def test_get_current_row_data(tablewidget, qtbot, TABLE_DATAF):
     Regression test for cgq-qgc/sardes#117
     """
     tableview = tablewidget.tableview
-    assert tableview.get_current_row_data() is None
+    assert_frame_equal(tableview.get_current_row_data(), TABLE_DATAF.iloc[[0]])
 
     # Let's sort the data first since this can cause some problems as
     # pointed out in cgq-qgc/sardes#117
