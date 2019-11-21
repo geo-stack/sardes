@@ -240,11 +240,15 @@ class SardesTableModelBase(QAbstractTableModel):
     def data(self, index, role=Qt.DisplayRole):
         """Qt method override."""
         if role in [Qt.DisplayRole, Qt.ToolTipRole]:
-            str_ = self.visual_dataf.loc[
+            value = self.visual_dataf.loc[
                 self.dataf_index_at(index), self.dataf_column_at(index)]
-            str_ = '' if (pd.isna(str_) or str_ is None) else str(str_)
-            str_ = str_.replace('True', _('Yes')).replace('False', _('No'))
-            return str_
+            if pd.isna(value) or value is None:
+                value = ''
+            elif pd.api.types.is_bool(value):
+                value = _('Yes') if value else _('No')
+            else:
+                value = str(value)
+            return value
         elif role == Qt.ForegroundRole:
             return QVariant()
         elif role == Qt.BackgroundRole:
