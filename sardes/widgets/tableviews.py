@@ -17,13 +17,13 @@ from math import floor, ceil
 # ---- Third party imports
 import pandas as pd
 from qtpy.QtCore import (QEvent, Qt, Signal, Slot, QItemSelection,
-                         QItemSelectionModel, QRect)
+                         QItemSelectionModel, QRect, QTimer)
 from qtpy.QtGui import QCursor, QPen
 from qtpy.QtWidgets import (QApplication, QComboBox, QDateEdit, QDateTimeEdit,
                             QDoubleSpinBox, QHeaderView, QLabel, QLineEdit,
                             QMenu, QMessageBox, QSpinBox, QStyledItemDelegate,
                             QTableView, QTextEdit, QListView, QStyle,
-                            QStyleOption)
+                            QStyleOption, QWidget, QGridLayout)
 
 # ---- Local imports
 from sardes import __appname__
@@ -35,6 +35,7 @@ from sardes.utils.qthelpers import (
     create_action, create_toolbutton, create_toolbar_stretcher,
     qbytearray_to_hexstate, hexstate_to_qbytearray, qdatetime_from_datetime,
     get_datetime_from_editor)
+from sardes.widgets.statusbar import ProcessStatusBar
 
 
 # =============================================================================
@@ -1110,7 +1111,32 @@ class SardesTableWidget(SardesPaneWidget):
         self.setAutoFillBackground(True)
 
         self.tableview = SardesTableView(table_model)
-        self.set_central_widget(self.tableview)
+        self.tableview.setAutoFillBackground(True)
+        self.tableview.viewport().setStyleSheet(
+            "background-color: rgb(%d, %d, %d);" %
+            getattr(QStyleOption().palette, 'light')().color().getRgb()[:-1])
+
+        self.progressbar = ProcessStatusBar(self, 96, 16, Qt.Vertical)
+        self._end_process_timer = QTimer(self)
+        self._end_process_timer.setSingleShot(True)
+        self._end_process_timer.timeout.connect(self._end_process)
+
+        self.model().sig_data_about_to_be_updated.connect(self._start_process)
+        self.model().sig_data_about_to_be_saved.connect(self._start_process)
+        self.model().sig_data_updated.connect(self._handle_process_ended)
+        # Note that we do not need to connect sig_data_saved signal since a
+        # data edits save is always followed by a data update.
+
+        stack_widget = QWidget()
+        stack_layout = QGridLayout(stack_widget)
+        stack_layout.setContentsMargins(0, 0, 0, 0)
+        stack_layout.addWidget(self.tableview, 0, 0, 3, 3)
+        stack_layout.addWidget(self.progressbar, 1, 1)
+        stack_layout.setRowStretch(0, 1)
+        stack_layout.setRowStretch(2, 1)
+        stack_layout.setColumnStretch(0, 1)
+        stack_layout.setColumnStretch(2, 1)
+        self.set_central_widget(stack_widget)
 
         self._setup_upper_toolbar()
         self._setup_status_bar()
@@ -1279,6 +1305,21 @@ class SardesTableWidget(SardesPaneWidget):
         # easily during testing.
         self._column_options_button = toolbutton
         return toolbutton
+
+    # ---- Process state
+    def _start_process(self):
+        self._end_process_timer.stop()
+        self.get_upper_toolbar().setEnabled(False)
+        self.tableview.setEnabled(False)
+        self.progressbar.show()
+
+    def _handle_process_ended(self, text=''):
+        self.get_upper_toolbar().setEnabled(True)
+        self.tableview.setEnabled(True)
+        self._end_process_timer.start(500)
+
+    def _end_process(self, text=''):
+        self.progressbar.hide()
 
 
 if __name__ == '__main__':
