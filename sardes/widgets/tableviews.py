@@ -470,6 +470,8 @@ class SardesTableView(QTableView):
         self.setEditTriggers(self.DoubleClicked)
         self.setMouseTracking(True)
 
+        self._show_save_edits_warning = True
+
         self._actions = {}
         self._setup_table_model(table_model)
         self._setup_item_delegates()
@@ -1062,21 +1064,28 @@ class SardesTableView(QTableView):
         Save the data edits to the database. If 'force' is 'False', a message
         is first shown before proceeding.
         """
-        if force is False:
+        if force is False and self._show_save_edits_warning:
             msgbox = QMessageBox(
                 QMessageBox.Warning,
                 _('Save changes'),
                 _("This will permanently save the changes made in this "
                   "table in the database.<br><br>"
-                  "This action <b>cannot</b> be undone."),
+                  "This action <b>cannot</b> be undone.<br><br>"),
                 buttons=QMessageBox.Save | QMessageBox.Cancel,
                 parent=self)
             msgbox.button(msgbox.Save).setText(_("Save"))
             msgbox.button(msgbox.Cancel).setText(_("Cancel"))
 
+            chkbox = QCheckBox(
+                _("Do not show this message again during this session."))
+            msgbox.setCheckBox(chkbox)
+
             reply = msgbox.exec_()
             if reply == QMessageBox.Cancel:
                 return
+            else:
+                self._show_save_edits_warning = not chkbox.isChecked()
+
         self.selectionModel().clearSelection()
         self.model().save_data_edits()
 
