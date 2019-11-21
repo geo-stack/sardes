@@ -470,8 +470,6 @@ class SardesTableView(QTableView):
         self.setEditTriggers(self.DoubleClicked)
         self.setMouseTracking(True)
 
-        self._show_save_edits_warning = True
-
         self._actions = {}
         self._setup_table_model(table_model)
         self._setup_item_delegates()
@@ -1064,7 +1062,7 @@ class SardesTableView(QTableView):
         Save the data edits to the database. If 'force' is 'False', a message
         is first shown before proceeding.
         """
-        if force is False and self._show_save_edits_warning:
+        if force is False and self.model().confirm_before_saving_edits:
             msgbox = QMessageBox(
                 QMessageBox.Warning,
                 _('Save changes'),
@@ -1084,7 +1082,8 @@ class SardesTableView(QTableView):
             if reply == QMessageBox.Cancel:
                 return
             else:
-                self._show_save_edits_warning = not chkbox.isChecked()
+                self.model().confirm_before_saving_edits = (
+                    not chkbox.isChecked())
 
         self.selectionModel().clearSelection()
         self.model().save_data_edits()

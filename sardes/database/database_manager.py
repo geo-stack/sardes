@@ -164,6 +164,7 @@ class DatabaseConnectionManager(QObject):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._confirm_before_saving_edits = True
 
         self._task_callbacks = {}
         self._running_tasks = []
