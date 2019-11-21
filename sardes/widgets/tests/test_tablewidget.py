@@ -29,7 +29,9 @@ from sardes.api.tablemodels import SardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableWidget, NotEditableDelegate, StringEditDelegate,
-    NumEditDelegate, BoolEditDelegate, QMessageBox, MSEC_MIN_PROGRESS_DISPLAY)
+    NumEditDelegate, BoolEditDelegate, QMessageBox, MSEC_MIN_PROGRESS_DISPLAY,
+    QMessageBox, QCheckBox)
+from sardes.database.database_manager import DatabaseConnectionManager
 
 
 # =============================================================================
@@ -56,7 +58,7 @@ def TABLE_DATAF():
 @pytest.fixture
 def tablemodel(qtbot, TABLE_DATAF):
 
-    class ConnectionManagerMock(Mock):
+    class ConnectionManagerMock(DatabaseConnectionManager):
         def get(self, name, callback, postpone_exec):
             dataf = TABLE_DATAF.copy()[COLUMNS[:-1]]
             dataf.name = name
@@ -543,7 +545,7 @@ def test_undo_edits(tablewidget, qtbot):
         assert tableview.model().get_value_at(model_index) == original_value[i]
 
 
-def test_save_edits(tablewidget, qtbot):
+def test_save_edits(tablewidget, qtbot, mocker):
     """
     Test saving all edits made to the table's data.
     """
@@ -563,16 +565,48 @@ def test_save_edits(tablewidget, qtbot):
     assert tableview.model().data_edit_count() == i + 1
     assert tableview.model().has_unsaved_data_edits() is True
 
-    # Save all edits.
-    tableview.model().save_data_edits()
-    qtbot.wait(100)
+    # Cancel the saving of data edits.
+    patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Cancel)
+    qtbot.keyPress(tablewidget, Qt.Key_Enter, modifier=Qt.ControlModifier)
+    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
 
+    assert patcher.call_count == 1
+    assert tableview.model().data_edit_count() == i + 1
+    assert tableview.model().has_unsaved_data_edits() is True
+
+    # To simulate the user checking the 'Do not show' checkbox, we patch the
+    # Qt checkbox method 'isChecked'.
+    mocker.patch.object(QCheckBox, 'isChecked', return_value=True)
+
+    # Save all edits.
+    patcher.return_value = QMessageBox.Save
+    qtbot.keyPress(tablewidget, Qt.Key_Enter, modifier=Qt.ControlModifier)
+    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
+
+    assert patcher.call_count == 2
     assert tableview.model().data_edit_count() == 0
     assert tableview.model().has_unsaved_data_edits() is False
     for i in range(4):
         model_index = tableview.model().index(0, i)
         assert model_index.data() == expected_data[i]
         assert tableview.model().get_value_at(model_index) == expected_value[i]
+
+    # Do another edit.
+    model_index = tableview.model().index(0, 0)
+    tableview.model().set_data_edits_at(model_index, 'new_new_str1')
+    assert tableview.model().data_edit_count() == 1
+    assert tableview.model().has_unsaved_data_edits() is True
+
+    # Save the edits and assert that the warning dialog was not shown.
+    qtbot.keyPress(tablewidget, Qt.Key_Enter, modifier=Qt.ControlModifier)
+    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
+
+    assert patcher.call_count == 2
+    assert model_index.data() == 'new_new_str1'
+    assert tableview.model().get_value_at(model_index) == 'new_new_str1'
+    assert tableview.model().data_edit_count() == 0
+    assert tableview.model().has_unsaved_data_edits() is False
 
 
 def test_select_all_and_clear(tablewidget, qtbot, TABLE_DATAF):
