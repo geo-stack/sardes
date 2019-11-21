@@ -19,11 +19,11 @@ import pandas as pd
 from qtpy.QtCore import (QEvent, Qt, Signal, Slot, QItemSelection,
                          QItemSelectionModel, QRect, QTimer)
 from qtpy.QtGui import QCursor, QPen
-from qtpy.QtWidgets import (QApplication, QComboBox, QDateEdit, QDateTimeEdit,
-                            QDoubleSpinBox, QHeaderView, QLabel, QLineEdit,
-                            QMenu, QMessageBox, QSpinBox, QStyledItemDelegate,
-                            QTableView, QTextEdit, QListView, QStyle,
-                            QStyleOption, QWidget, QGridLayout)
+from qtpy.QtWidgets import (
+    QApplication, QCheckBox, QComboBox, QDateEdit, QDateTimeEdit,
+    QDoubleSpinBox, QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox,
+    QSpinBox, QStyledItemDelegate, QTableView, QTextEdit, QListView, QStyle,
+    QStyleOption, QWidget, QGridLayout)
 
 # ---- Local imports
 from sardes import __appname__
