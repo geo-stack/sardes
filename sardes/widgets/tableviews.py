@@ -1159,6 +1159,12 @@ class SardesTableWidget(SardesPaneWidget):
         self._setup_status_bar()
 
     # ---- Public methods
+    def clear_model_data(self):
+        """
+        Clear the data of this table widget's model.
+        """
+        self.model().clear_data()
+
     def get_table_title(self):
         """Return the title of this widget's table."""
         return self.tableview.source_model.TABLE_TITLE
