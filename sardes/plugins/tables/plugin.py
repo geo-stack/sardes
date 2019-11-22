@@ -148,7 +148,7 @@ class Tables(SardesPlugin):
         else:
             for table_id, table in self._tables.items():
                 self._table_updates[table_id] = []
-                table.fetch_model_data()
+                table.clear_model_data()
 
     def _handle_database_changed(self, data_names):
         """
