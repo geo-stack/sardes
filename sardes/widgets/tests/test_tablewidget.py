@@ -180,6 +180,12 @@ def test_tablewidget_init(tablewidget, TABLE_DATAF):
     assert tableview.model().data_edit_count() == 0
 
 
+def test_clear_data(tablewidget):
+    """Test that clearing data is working as expected."""
+    tablewidget.clear_model_data()
+    assert tablewidget.tableview.row_count() == 0
+
+
 def test_tablewidget_horiz_headers(tablewidget):
     """
     Test the labels of the table horizontal header.
