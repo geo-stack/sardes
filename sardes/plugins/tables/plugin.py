@@ -144,9 +144,11 @@ class Tables(SardesPlugin):
         if is_connected_to_db:
             for table_id, table in self._tables.items():
                 self._table_updates[table_id] = table.model().req_data_names()
+                table.setEnabled(True)
             self._update_current_table()
         else:
             for table_id, table in self._tables.items():
+                table.setEnabled(False)
                 self._table_updates[table_id] = []
                 table.clear_model_data()
 
