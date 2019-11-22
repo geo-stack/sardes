@@ -27,6 +27,7 @@ from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.database.accessor_demo import DatabaseAccessorDemo
 from sardes.plugins.tables import SARDES_PLUGIN_CLASS
 from sardes.database.accessor_demo import SONDE_MODELS_LIB
+from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 
 
 # =============================================================================
@@ -76,7 +77,7 @@ def test_tables_plugin_init(mainwindow, qtbot):
     # Table Observation Wells.
     for current_index in range(mainwindow.plugin.table_count()):
         tabwidget.setCurrentIndex(current_index)
-        qtbot.wait(1000)
+        qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
         assert tabwidget.currentWidget() == plugin.current_table()
         for index in range(mainwindow.plugin.table_count()):
             table = tabwidget.widget(index)
@@ -89,6 +90,28 @@ def test_tables_plugin_init(mainwindow, qtbot):
                 assert (len(plugin._table_updates[table_id]) ==
                         len(table.model().req_data_names()))
             assert tabwidget.tabText(index) == table.get_table_title()
+
+
+def test_disconnect_from_database(mainwindow, qtbot):
+    """
+    Test that the data are cleared as expected when disconnecting from the
+    database.
+    """
+    # Circle through all tables so that their data are fetched from the
+    # database.
+    tabwidget = mainwindow.plugin.tabwidget
+    for index in range(mainwindow.plugin.table_count()):
+        tabwidget.setCurrentIndex(index)
+        qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
+        table = tabwidget.widget(index)
+        assert table.tableview.row_count() > 0
+
+    # Disconnect from the database.
+    mainwindow.db_connection_manager.disconnect_from_db()
+    qtbot.wait(300)
+    for index in range(mainwindow.plugin.table_count()):
+        table = tabwidget.widget(index)
+        assert table.tableview.row_count() == 0
 
 
 # =============================================================================
