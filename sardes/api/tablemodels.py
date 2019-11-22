@@ -159,6 +159,16 @@ class SardesTableModelBase(QAbstractTableModel):
             return QVariant()
 
     # ---- Table data
+    def clear_data(self):
+        """
+        Clear the data of this model.
+        """
+        self._data_that_need_to_be_updated = self.req_data_names()
+        for name in self.req_data_names():
+            dataf = pd.DataFrame([])
+            dataf.name = name
+            self.set_model_data(dataf)
+
     def req_data_names(self):
         """
         Required the names of all data and libraries that this table
