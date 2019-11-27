@@ -70,7 +70,7 @@ class SardesTableModelBase(QAbstractTableModel):
     RowAdded = 1
     RowRemoved = 2
 
-    def __init__(self, db_connection_manager=None):
+    def __init__(self, db_connection_manager):
         super().__init__()
         self._data_columns_mapper = OrderedDict(self.__data_columns_mapper__)
 
