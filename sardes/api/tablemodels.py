@@ -57,7 +57,8 @@ class SardesTableModelBase(QAbstractTableModel):
     """
     Basic functionality for Sardes table models.
 
-    WARNING: Don't override any methods or attributes present here.
+    WARNING: Don't override any methods or attributes present here unless you
+    know what you are doing.
     """
     sig_data_edited = Signal(bool, bool)
     sig_data_about_to_be_updated = Signal()
