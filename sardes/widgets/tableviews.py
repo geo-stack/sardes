@@ -530,7 +530,7 @@ class SardesTableView(QTableView):
         edit_item_action = create_action(
             self, _("Edit"),
             icon='edit_database_item',
-            tip=_("Edit the currently focused item in this table."),
+            tip=_("Edit the data of the currently focused cell."),
             triggered=self._edit_current_item,
             shortcut=['Enter', 'Return'],
             context=Qt.WidgetShortcut)
