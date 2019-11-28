@@ -13,7 +13,7 @@ from collections import OrderedDict
 # ---- Third party imports
 import pandas as pd
 from qtpy.QtCore import (QAbstractTableModel, QModelIndex, Qt, QVariant,
-                         Signal)
+                         Signal, QSortFilterProxyModel)
 from qtpy.QtGui import QColor
 from qtpy.QtWidgets import QStyleOption
 
@@ -106,10 +106,7 @@ class SardesTableModelBase(QAbstractTableModel):
             'column', inplace=True, drop=True, append=True)
 
         # Sorting and filtering.
-        self._sort_by_columns = None
-        self._sort_order = Qt.AscendingOrder
         self._filter_by_columns = None
-        self._old_model_indexes = self.visual_dataf.index.copy()
 
         self.set_database_connection_manager(db_connection_manager)
 
@@ -127,7 +124,7 @@ class SardesTableModelBase(QAbstractTableModel):
         return list(self._data_columns_mapper.keys())
 
     def columnCount(self, parent=QModelIndex()):
-        """Qt method override. Return the number of column of the table."""
+        """Return the number of columns in this model's data."""
         return len(self.columns)
 
     # ---- Horizontal Headers
@@ -219,7 +216,6 @@ class SardesTableModelBase(QAbstractTableModel):
             self.beginResetModel()
             self.dataf = dataf
             self.visual_dataf = dataf.copy()
-            self._old_model_indexes = self.visual_dataf.index.copy()
 
             # Add missing columns to the dataframe.
             for column in self.columns:
@@ -244,7 +240,7 @@ class SardesTableModelBase(QAbstractTableModel):
         if not self._data_that_need_to_be_updated:
             self.sig_data_updated.emit()
 
-    def rowCount(self, parent=QModelIndex()):
+    def rowCount(self, *args, **kargs):
         """Qt method override. Return the number visible rows in the table."""
         return len(self.visual_dataf)
 
@@ -352,73 +348,11 @@ class SardesTableModelBase(QAbstractTableModel):
 
         self.visual_dataf = self.logical_to_visual_data(self.visual_dataf)
 
-        # Sort the data.
-        if self._sort_by_columns is not None:
-            self._sort_visual_data()
-
-        # Filter the data.
-        if self._filter_by_columns is not None:
-            self._filter_visual_data()
-
         self.dataChanged.emit(
             self.index(0, 0),
             self.index(len(self.visual_dataf) - 1,
                        len(self.visual_dataf.columns) - 1)
             )
-
-    def _filter_visual_data(self):
-        """
-        Apply the filters to the visual data.
-        """
-        self.beginResetModel()
-        self.endResetModel()
-        self._old_model_indexes = self.visual_dataf.index.copy()
-
-    def _sort_visual_data(self):
-        """
-        Sort the visual data.
-
-        https://stackoverflow.com/a/42039683/4481445
-        """
-        self.layoutAboutToBeChanged.emit()
-        old_persistent_indexes = self.persistentIndexList()
-
-        if self._sort_by_columns is None:
-            # Clear sorting.
-            orig_ids = self.dataf.index.copy()
-            orig_ids = orig_ids[orig_ids.isin(self._old_model_indexes)]
-            self.visual_dataf = self.visual_dataf.loc[orig_ids, :]
-        else:
-            # Sort the data by columns.
-            self.visual_dataf.sort_values(
-                by=self._sort_by_columns,
-                ascending=(self._sort_order == Qt.AscendingOrder),
-                inplace=True)
-
-        # Update the persistent indexes.
-        new_persistent_indexes = [
-            self.index(self.visual_dataf.index
-                       .get_loc(self._old_model_indexes[index.row()]),
-                       index.column(),
-                       index.parent())
-            for index in old_persistent_indexes]
-        self.changePersistentIndexList(
-            old_persistent_indexes, new_persistent_indexes)
-        self._old_model_indexes = self.visual_dataf.index.copy()
-
-        self.layoutChanged.emit()
-
-    def sort(self, column, order=Qt.AscendingOrder):
-        """
-        Implement Qt sort method so that sorting by columns is done with pandas
-        instead of using  QSortFilterProxyModel, which is very slow for large
-        datasets.
-
-        https://bugreports.qt.io/browse/QTBUG-45208
-        """
-        self._sort_by_columns = None if column == -1 else self.columns[column]
-        self._sort_order = order
-        self._sort_visual_data()
 
     # ---- Data edits
     @property
@@ -626,3 +560,149 @@ class SardesTableModel(SardesTableModelBase):
             to_replace={True: 'Yes', False: 'No'}, inplace=False)
         """
         return visual_dataf
+
+
+class SardesSortFilterModel(QSortFilterProxyModel):
+    """
+    A proxy model to sort and filter Sardes data.
+    """
+
+    def __init__(self, source_model):
+        super().__init__()
+        self.setSourceModel(source_model)
+        source_model.sig_data_updated.connect(self.invalidate)
+
+        # Sorting and filtering.
+        self._sort_by_columns = []
+        self._columns_sort_order = []
+        self._filter_by_columns = None
+        self._proxy_dataf_index = []
+
+    def __getattr__(self, name):
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            return getattr(self.sourceModel(), name)
+
+    def rowCount(self, parent=QModelIndex()):
+        """Return the number of rows in this model's data."""
+        return len(self._proxy_dataf_index)
+
+    def columnCount(self, parent=QModelIndex()):
+        """Return the number of columns in this model's data."""
+        return self.sourceModel().columnCount(parent)
+
+    def invalidate(self):
+        """
+        Invalidates the current sorting and filtering.
+        """
+        self.layoutAboutToBeChanged.emit()
+        self._sort()
+        self.layoutChanged.emit()
+
+    def _sort(self):
+        """
+        Sort the visual data.
+
+        https://stackoverflow.com/a/42039683/4481445
+        """
+        visual_dataf = self.sourceModel().visual_dataf
+        if not self._sort_by_columns:
+            # Clear sorting.
+            self._proxy_dataf_index = visual_dataf.index.copy()
+        else:
+            # Sort the data by columns.
+            self._proxy_dataf_index = visual_dataf.sort_values(
+                by=[self.columns[index] for index in self._sort_by_columns],
+                ascending=self._columns_sort_order,
+                axis=0,
+                inplace=False).index
+
+    def sort(self, column_logical_index, order=Qt.AscendingOrder):
+        """
+        Override Qt method so that sorting by columns is done with pandas
+        instead, which is a lot faster for large datasets.
+
+        https://bugreports.qt.io/browse/QTBUG-45208
+        """
+        if column_logical_index == -1:
+            self._sort_by_columns = []
+            self._columns_sort_order = []
+        else:
+            try:
+                index = self._sort_by_columns.index(column_logical_index)
+            except ValueError:
+                pass
+            else:
+                del self._sort_by_columns[index]
+                del self._columns_sort_order[index]
+            self._sort_by_columns.insert(0, column_logical_index)
+            self._columns_sort_order.insert(0, order == Qt.AscendingOrder)
+        self.invalidate()
+
+    def get_columns_sorting_state(self):
+        """
+        Return the list of column logical indexes and the list of corresponding
+        sort orders (0 for ascending, 1 for descending) by which the data
+        were sorted in this model.
+        """
+        return self._sort_by_columns, self._columns_sort_order
+
+    def set_columns_sorting_state(self, sort_by_columns, columns_sort_order):
+        """
+        Set the list of column logical indexes and the list of corresponding
+        sort orders (0 for ascending, 1 for descending) by which the data
+        need to be sorted in this model.
+        """
+        self._sort_by_columns = sort_by_columns
+        self._columns_sort_order = columns_sort_order
+        self.invalidate()
+
+    # ---- Proxy to/from source mapping
+    def mapToSource(self, proxy_index):
+        """
+        Return the model index in the source model that corresponds to the
+        proxy_index in the proxy model.
+        """
+        if not proxy_index.isValid() or not len(self._proxy_dataf_index):
+            return QModelIndex()
+
+        source_index_row = self.sourceModel().visual_dataf.index.get_loc(
+            self._proxy_dataf_index[proxy_index.row()])
+        return self.sourceModel().index(source_index_row, proxy_index.column())
+
+    def mapFromSource(self, source_index):
+        """
+        Return the model index in the proxy model that corresponds to the
+        source_index from the source model.
+        """
+        if not source_index.isValid() or not len(self._proxy_dataf_index):
+            return QModelIndex()
+
+        proxy_index_row = self._proxy_dataf_index.get_loc(
+            self.sourceModel().visual_dataf.index[source_index.row()])
+        return self.index(proxy_index_row, source_index.column())
+
+    def dataf_index_at(self, proxy_index):
+        return self.sourceModel().dataf_index_at(
+            self.mapToSource(proxy_index))
+
+    def get_dataf_value_at(self, proxy_index):
+        return self.sourceModel().get_dataf_value_at(
+            self.mapToSource(proxy_index))
+
+    def get_value_at(self, proxy_index):
+        return self.sourceModel().get_value_at(
+            self.mapToSource(proxy_index))
+
+    def is_data_edited_at(self, proxy_index):
+        return self.sourceModel().is_data_edited_at(
+            self.mapToSource(proxy_index))
+
+    def get_edited_data_at(self, proxy_index):
+        return self.sourceModel().get_edited_data_at(
+            self.mapToSource(proxy_index))
+
+    def set_data_edits_at(self, proxy_indexes, edited_values):
+        return self.sourceModel().set_data_edits_at(
+            [self.mapToSource(idx) for idx in proxy_indexes], edited_values)
