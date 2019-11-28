@@ -676,17 +676,6 @@ class SardesTableView(QTableView):
                 context=Qt.WidgetShortcut
                 ))
 
-    # ---- Data sorting
-    def get_columns_sorting_state(self):
-        """
-        Return a 2-items tuple where the first item is the logical index
-        of the currently sorted column (this value is -1 if there is None)
-        and the second item is the sorting order (0 for ascending and
-        1 for descending).
-        """
-        return (self.horizontalHeader().sortIndicatorSection(),
-                self.horizontalHeader().sortIndicatorOrder())
-
     def clear_sort(self):
         """
         Clear all sorts applied to the columns of this table.
@@ -1284,6 +1273,14 @@ class SardesTableWidget(SardesPaneWidget):
         Restore the state of this table horizontal header from hexstate.
         """
         self.tableview.restore_horiz_header_state(hexstate)
+
+    def get_columns_sorting_state(self):
+        """
+        Return the list of column names and the list of corresponding
+        sort orders (0 for ascending, 1 for descending) by which the data
+        were sorted in the model of this table widget.
+        """
+        return self.model().get_columns_sorting_state()
 
     # ---- Columns option toolbutton
     def _create_columns_options_button(self):
