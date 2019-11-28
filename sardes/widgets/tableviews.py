@@ -61,6 +61,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         self.editor = None
         self.unique_constraint = unique_constraint
         self.is_required = is_required
+        self._widget = QListView()
 
     # ---- Qt methods override
     def createEditor(self, parent, option, model_index):
@@ -83,8 +84,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         Override Qt method to paint a custom focus rectangle and to force the
         table to get the style from QListView, which looks more modern.
         """
-        widget = QListView()
-        style = widget.style()
+        style = self._widget.style()
 
         # We remove the State_HasFocus from the option so that Qt doesn't
         # paint it. We paint our own focus rectangle instead.
@@ -101,7 +101,8 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         # control. This is necessary, for example, to color the background of
         # the cells with un-saved edits.
         painter.fillRect(option.rect, index.data(Qt.BackgroundRole))
-        style.drawControl(QStyle.CE_ItemViewItem, option, painter, widget)
+        style.drawControl(
+            QStyle.CE_ItemViewItem, option, painter, self._widget)
 
         # Finally, we paint a focus rectangle ourselves.
         if has_focus:
