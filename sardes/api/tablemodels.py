@@ -614,7 +614,7 @@ class SardesSortFilterModel(QSortFilterProxyModel):
             # Sort the data by columns.
             self._proxy_dataf_index = visual_dataf.sort_values(
                 by=[self.columns[index] for index in self._sort_by_columns],
-                ascending=self._columns_sort_order,
+                ascending=[not bool(v) for v in self._columns_sort_order],
                 axis=0,
                 inplace=False).index
 
@@ -637,7 +637,7 @@ class SardesSortFilterModel(QSortFilterProxyModel):
                 del self._sort_by_columns[index]
                 del self._columns_sort_order[index]
             self._sort_by_columns.insert(0, column_logical_index)
-            self._columns_sort_order.insert(0, order == Qt.AscendingOrder)
+            self._columns_sort_order.insert(0, int(order))
         self.invalidate()
 
     def get_columns_sorting_state(self):
