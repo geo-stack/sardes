@@ -490,14 +490,14 @@ class SardesTableView(QTableView):
         """
         Setup the item delegates for each column of this table view.
         """
-        for i, column in enumerate(self.source_model.columns):
-            item_delegate = self.source_model.create_delegate_for_column(
+        for i, column in enumerate(self.model().columns):
+            item_delegate = self.model().create_delegate_for_column(
                 self, column)
             self.setItemDelegateForColumn(i, item_delegate)
 
     def _setup_column_visibility_actions(self):
         self._toggle_column_visibility_actions = []
-        for i, label in enumerate(self.source_model.horizontal_header_labels):
+        for i, label in enumerate(self.model().horizontal_header_labels):
             action = create_action(
                 self, label,
                 toggled=(lambda toggle,
