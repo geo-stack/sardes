@@ -395,22 +395,18 @@ class SardesHeaderView(QHeaderView):
         self.setSectionsMovable(True)
         self.sectionDoubleClicked.connect(self._handle_section_doubleclick)
 
-        # Sort indicators variables to allow sorting on mouse double click
-        # events instead of single click events.
-        self._sort_indicator_section = -1
-        self._sort_indicator_order = Qt.AscendingOrder
-        self._update_sort_indicator()
-        self.sortIndicatorChanged.connect(self._update_sort_indicator)
+        # A dictionary whose keys corresponds to the section logical index
+        # for which a sort indicator need to be painted and whose values
+        # correspond to the sort order for each key.
+        self._sections_sorting_state = {}
 
     def clear_sort(self):
         """
         Clear all sorts applied to the columns of the tabl associated with this
         header view.
         """
-        self._sort_indicator_section = -1
-        self._sort_indicator_order = 0
+        self._sections_sorting_state = {}
         self.setSortIndicatorShown(False)
-        self._update_sort_indicator()
         self.parent().model().sort(-1)
 
     def sort_by_column(self, section, order):
@@ -419,16 +415,24 @@ class SardesHeaderView(QHeaderView):
         by ordering the data of the specified section (column) in the
         specified sorting order.
         """
-        self._sort_indicator_section = section
-        self._sort_indicator_order = order
-        self._update_sort_indicator()
+        self._sections_sorting_state[section] = order
         self.setSortIndicatorShown(True)
         self.parent().sortByColumn(section, order)
+
+    def paintSection(self, painter, rect, logicalIndex):
+        self.blockSignals(True)
+        if logicalIndex in self._sections_sorting_state:
+            self.setSortIndicator(
+                logicalIndex, self._sections_sorting_state[logicalIndex])
+        else:
+            self.setSortIndicator(-1, 0)
+        self.blockSignals(False)
+        super().paintSection(painter, rect, logicalIndex)
 
     # ---- Utils
     def visual_rect_at(self, section):
         """
-        Return the visual rect of for the specified section.
+        Return the visual rect of the given section.
         """
         return QRect(self.sectionViewportPosition(section), 0,
                      self.sectionSize(section), self.size().height())
@@ -439,20 +443,10 @@ class SardesHeaderView(QHeaderView):
         """
         Sort data on the column that was double clicked with the mouse.
         """
-        order = (Qt.AscendingOrder if
-                 section != self._sort_indicator_section else
-                 int(not bool(self._sort_indicator_order)))
+        order = (Qt.AscendingOrder if section not in
+                 self._sections_sorting_state else
+                 int(not bool(self._sections_sorting_state[section])))
         self.sort_by_column(section, order)
-
-    def _update_sort_indicator(self):
-        """
-        Force the sort indicator section and order to override Qt behaviour
-        on single mouse click.
-        """
-        self.blockSignals(True)
-        self.setSortIndicator(
-            self._sort_indicator_section, self._sort_indicator_order)
-        self.blockSignals(False)
 
 
 class SardesTableView(QTableView):
