@@ -710,11 +710,15 @@ class SardesTableView(QTableView):
              self.selectionModel().selectedIndexes()]
             ))
 
-        selected_dataf = self.source_model.dataf.loc[dataf_indexes]
-        if self.model()._sort_by_columns is not None:
+        # Because we converted this to a set, we need to sort the
+        # indexes again.
+        selected_dataf = self.model().dataf.loc[dataf_indexes]
+        if self.model()._sort_by_columns:
             selected_dataf.sort_values(
-                by=self.model()._sort_by_columns,
-                ascending=(self.model()._sort_order == Qt.AscendingOrder),
+                by=[self.model().columns[index] for index in
+                    self.model()._sort_by_columns],
+                ascending=[not bool(v) for v in
+                           self.model()._columns_sort_order],
                 inplace=True)
         return selected_dataf
 
