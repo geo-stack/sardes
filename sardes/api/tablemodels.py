@@ -683,6 +683,17 @@ class SardesSortFilterModel(QSortFilterProxyModel):
             self.sourceModel().visual_dataf.index[source_index.row()])
         return self.index(proxy_index_row, source_index.column())
 
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        """
+        Override Qt method so that the labels of the vertical header always
+        start at 1 and are monotically increasing, regardless of the sorting
+        and filtering applied to the data.
+        """
+        if role == Qt.DisplayRole and orientation == Qt.Vertical:
+            return section + 1
+        else:
+            return self.sourceModel().headerData(section, orientation, role)
+
     def dataf_index_at(self, proxy_index):
         return self.sourceModel().dataf_index_at(
             self.mapToSource(proxy_index))
