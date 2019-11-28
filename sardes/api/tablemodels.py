@@ -571,6 +571,7 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         super().__init__()
         self.setSourceModel(source_model)
         source_model.sig_data_updated.connect(self.invalidate)
+        source_model.dataChanged.connect(self.invalidate)
 
         # Sorting and filtering.
         self._sort_by_columns = []
