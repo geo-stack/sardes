@@ -1284,6 +1284,18 @@ class SardesTableWidget(SardesPaneWidget):
         """
         return self.model().get_columns_sorting_state()
 
+    def set_columns_sorting_state(self, sort_by_columns, columns_sort_order):
+        """
+        Set the list of column names and the list of corresponding
+        sort orders (0 for ascending, 1 for descending) by which the data
+        need to be sorted in the model of this table widget.
+        """
+        self.tableview.horizontalHeader()._sections_sorting_state = {
+            column: order for column, order in
+            zip(sort_by_columns, columns_sort_order)}
+        self.model().set_columns_sorting_state(
+            sort_by_columns, columns_sort_order)
+
     # ---- Columns option toolbutton
     def _create_columns_options_button(self):
         """
