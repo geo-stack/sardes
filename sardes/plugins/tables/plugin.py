@@ -81,8 +81,13 @@ class Tables(SardesPlugin):
         for table_id, table in self._tables.items():
             CONF.set(table_id, 'horiz_header/state',
                      table.get_table_horiz_header_state())
-            CONF.set(table_id, 'horiz_header/sorting',
-                     table.tableview.get_columns_sorting_state())
+
+            sort_by_columns, columns_sort_order = (
+                table.get_columns_sorting_state())
+            CONF.set(table_id, 'horiz_header/sort_by_columns',
+                     sort_by_columns)
+            CONF.set(table_id, 'horiz_header/columns_sort_order',
+                     columns_sort_order)
 
     def register_plugin(self):
         """
@@ -118,8 +123,12 @@ class Tables(SardesPlugin):
         # Restore the state of the tables' horizontal header from the configs.
         table.restore_table_horiz_header_state(
             CONF.get(table.get_table_id(), 'horiz_header/state', None))
-        table.tableview.sort_by_column(
-            *CONF.get(table.get_table_id(), 'horiz_header/sorting', (-1, 0)))
+
+        sort_by_columns = CONF.get(
+            table.get_table_id(), 'horiz_header/sort_by_columns', [])
+        columns_sort_order = CONF.get(
+            table.get_table_id(), 'horiz_header/columns_sort_order', [])
+        table.set_columns_sorting_state(sort_by_columns, columns_sort_order)
 
         # Connect signals.
         table.tableview.sig_data_edited.connect(self._update_tab_names)

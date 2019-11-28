@@ -28,6 +28,7 @@ from qtpy.QtWidgets import (
 # ---- Local imports
 from sardes import __appname__
 from sardes.api.panes import SardesPaneWidget
+from sardes.api.tablemodels import SardesSortFilterModel
 from sardes.config.locale import _
 from sardes.config.gui import get_iconsize
 from sardes.utils.data_operations import intervals_extract
@@ -49,7 +50,8 @@ class SardesItemDelegateBase(QStyledItemDelegate):
     """
     Basic functionality for Sardes item delegates.
 
-    WARNING: Don't override any methods or attributes present here.
+    WARNING: Don't override any methods or attributes present here unless you
+    know what you are doing.
     """
 
     def __init__(self, model_view, unique_constraint=False,
@@ -60,6 +62,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         self.editor = None
         self.unique_constraint = unique_constraint
         self.is_required = is_required
+        self._widget = QListView()
 
     # ---- Qt methods override
     def createEditor(self, parent, option, model_index):
@@ -82,8 +85,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         Override Qt method to paint a custom focus rectangle and to force the
         table to get the style from QListView, which looks more modern.
         """
-        widget = QListView()
-        style = widget.style()
+        style = self._widget.style()
 
         # We remove the State_HasFocus from the option so that Qt doesn't
         # paint it. We paint our own focus rectangle instead.
@@ -100,7 +102,8 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         # control. This is necessary, for example, to color the background of
         # the cells with un-saved edits.
         painter.fillRect(option.rect, index.data(Qt.BackgroundRole))
-        style.drawControl(QStyle.CE_ItemViewItem, option, painter, widget)
+        style.drawControl(
+            QStyle.CE_ItemViewItem, option, painter, self._widget)
 
         # Finally, we paint a focus rectangle ourselves.
         if has_focus:
@@ -393,22 +396,18 @@ class SardesHeaderView(QHeaderView):
         self.setSectionsMovable(True)
         self.sectionDoubleClicked.connect(self._handle_section_doubleclick)
 
-        # Sort indicators variables to allow sorting on mouse double click
-        # events instead of single click events.
-        self._sort_indicator_section = -1
-        self._sort_indicator_order = Qt.AscendingOrder
-        self._update_sort_indicator()
-        self.sortIndicatorChanged.connect(self._update_sort_indicator)
+        # A dictionary whose keys corresponds to the section logical index
+        # for which a sort indicator need to be painted and whose values
+        # correspond to the sort order for each key.
+        self._sections_sorting_state = {}
 
     def clear_sort(self):
         """
         Clear all sorts applied to the columns of the tabl associated with this
         header view.
         """
-        self._sort_indicator_section = -1
-        self._sort_indicator_order = 0
+        self._sections_sorting_state = {}
         self.setSortIndicatorShown(False)
-        self._update_sort_indicator()
         self.parent().model().sort(-1)
 
     def sort_by_column(self, section, order):
@@ -417,16 +416,24 @@ class SardesHeaderView(QHeaderView):
         by ordering the data of the specified section (column) in the
         specified sorting order.
         """
-        self._sort_indicator_section = section
-        self._sort_indicator_order = order
-        self._update_sort_indicator()
+        self._sections_sorting_state[section] = order
         self.setSortIndicatorShown(True)
         self.parent().sortByColumn(section, order)
+
+    def paintSection(self, painter, rect, logicalIndex):
+        self.blockSignals(True)
+        if logicalIndex in self._sections_sorting_state:
+            self.setSortIndicator(
+                logicalIndex, self._sections_sorting_state[logicalIndex])
+        else:
+            self.setSortIndicator(-1, 0)
+        self.blockSignals(False)
+        super().paintSection(painter, rect, logicalIndex)
 
     # ---- Utils
     def visual_rect_at(self, section):
         """
-        Return the visual rect of for the specified section.
+        Return the visual rect of the given section.
         """
         return QRect(self.sectionViewportPosition(section), 0,
                      self.sectionSize(section), self.size().height())
@@ -437,20 +444,10 @@ class SardesHeaderView(QHeaderView):
         """
         Sort data on the column that was double clicked with the mouse.
         """
-        order = (Qt.AscendingOrder if
-                 section != self._sort_indicator_section else
-                 int(not bool(self._sort_indicator_order)))
+        order = (Qt.AscendingOrder if section not in
+                 self._sections_sorting_state else
+                 int(not bool(self._sections_sorting_state[section])))
         self.sort_by_column(section, order)
-
-    def _update_sort_indicator(self):
-        """
-        Force the sort indicator section and order to override Qt behaviour
-        on single mouse click.
-        """
-        self.blockSignals(True)
-        self.setSortIndicator(
-            self._sort_indicator_section, self._sort_indicator_order)
-        self.blockSignals(False)
 
 
 class SardesTableView(QTableView):
@@ -488,20 +485,21 @@ class SardesTableView(QTableView):
         """
         self.source_model = table_model
         self.source_model.sig_data_edited.connect(self.sig_data_edited.emit)
-        self.setModel(self.source_model)
+        self.proxy_model = SardesSortFilterModel(self.source_model)
+        self.setModel(self.proxy_model)
 
     def _setup_item_delegates(self):
         """
         Setup the item delegates for each column of this table view.
         """
-        for i, column in enumerate(self.source_model.columns):
-            item_delegate = self.source_model.create_delegate_for_column(
+        for i, column in enumerate(self.model().columns):
+            item_delegate = self.model().create_delegate_for_column(
                 self, column)
             self.setItemDelegateForColumn(i, item_delegate)
 
     def _setup_column_visibility_actions(self):
         self._toggle_column_visibility_actions = []
-        for i, label in enumerate(self.source_model.horizontal_header_labels):
+        for i, label in enumerate(self.model().horizontal_header_labels):
             action = create_action(
                 self, label,
                 toggled=(lambda toggle,
@@ -532,7 +530,7 @@ class SardesTableView(QTableView):
         edit_item_action = create_action(
             self, _("Edit"),
             icon='edit_database_item',
-            tip=_("Edit the currently focused item in this table."),
+            tip=_("Edit the data of the currently focused cell."),
             triggered=self._edit_current_item,
             shortcut=['Enter', 'Return'],
             context=Qt.WidgetShortcut)
@@ -680,17 +678,6 @@ class SardesTableView(QTableView):
                 context=Qt.WidgetShortcut
                 ))
 
-    # ---- Data sorting
-    def get_columns_sorting_state(self):
-        """
-        Return a 2-items tuple where the first item is the logical index
-        of the currently sorted column (this value is -1 if there is None)
-        and the second item is the sorting order (0 for ascending and
-        1 for descending).
-        """
-        return (self.horizontalHeader().sortIndicatorSection(),
-                self.horizontalHeader().sortIndicatorOrder())
-
     def clear_sort(self):
         """
         Clear all sorts applied to the columns of this table.
@@ -723,11 +710,15 @@ class SardesTableView(QTableView):
              self.selectionModel().selectedIndexes()]
             ))
 
-        selected_dataf = self.source_model.dataf.loc[dataf_indexes]
-        if self.model()._sort_by_columns is not None:
+        # Because we converted this to a set, we need to sort the
+        # indexes again.
+        selected_dataf = self.model().dataf.loc[dataf_indexes]
+        if self.model()._sort_by_columns:
             selected_dataf.sort_values(
-                by=self.model()._sort_by_columns,
-                ascending=(self.model()._sort_order == Qt.AscendingOrder),
+                by=[self.model().columns[index] for index in
+                    self.model()._sort_by_columns],
+                ascending=[not bool(v) for v in
+                           self.model()._columns_sort_order],
                 inplace=True)
         return selected_dataf
 
@@ -1288,6 +1279,26 @@ class SardesTableWidget(SardesPaneWidget):
         Restore the state of this table horizontal header from hexstate.
         """
         self.tableview.restore_horiz_header_state(hexstate)
+
+    def get_columns_sorting_state(self):
+        """
+        Return the list of column names and the list of corresponding
+        sort orders (0 for ascending, 1 for descending) by which the data
+        were sorted in the model of this table widget.
+        """
+        return self.model().get_columns_sorting_state()
+
+    def set_columns_sorting_state(self, sort_by_columns, columns_sort_order):
+        """
+        Set the list of column names and the list of corresponding
+        sort orders (0 for ascending, 1 for descending) by which the data
+        need to be sorted in the model of this table widget.
+        """
+        self.tableview.horizontalHeader()._sections_sorting_state = {
+            column: order for column, order in
+            zip(sort_by_columns, columns_sort_order)}
+        self.model().set_columns_sorting_state(
+            sort_by_columns, columns_sort_order)
 
     # ---- Columns option toolbutton
     def _create_columns_options_button(self):
