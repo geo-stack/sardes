@@ -28,6 +28,7 @@ from qtpy.QtWidgets import (
 # ---- Local imports
 from sardes import __appname__
 from sardes.api.panes import SardesPaneWidget
+from sardes.api.tablemodels import SardesSortFilterModel
 from sardes.config.locale import _
 from sardes.config.gui import get_iconsize
 from sardes.utils.data_operations import intervals_extract
@@ -484,7 +485,8 @@ class SardesTableView(QTableView):
         """
         self.source_model = table_model
         self.source_model.sig_data_edited.connect(self.sig_data_edited.emit)
-        self.setModel(self.source_model)
+        self.proxy_model = SardesSortFilterModel(self.source_model)
+        self.setModel(self.proxy_model)
 
     def _setup_item_delegates(self):
         """
