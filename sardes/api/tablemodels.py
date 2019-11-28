@@ -704,5 +704,9 @@ class SardesSortFilterModel(QSortFilterProxyModel):
             self.mapToSource(proxy_index))
 
     def set_data_edits_at(self, proxy_indexes, edited_values):
+        if not isinstance(proxy_indexes, list):
+            proxy_indexes = [proxy_indexes, ]
+        if not isinstance(edited_values, list):
+            edited_values = [edited_values, ]
         return self.sourceModel().set_data_edits_at(
             [self.mapToSource(idx) for idx in proxy_indexes], edited_values)
