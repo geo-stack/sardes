@@ -421,6 +421,10 @@ class SardesHeaderView(QHeaderView):
         self.parent().sortByColumn(section, order)
 
     def paintSection(self, painter, rect, logicalIndex):
+        """
+        Override Qt method to force the painting of the sort indicator
+        on multiple columns.
+        """
         self.blockSignals(True)
         if logicalIndex in self._sections_sorting_state:
             self.setSortIndicator(
