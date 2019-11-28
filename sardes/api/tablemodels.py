@@ -592,13 +592,38 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         """Return the number of columns in this model's data."""
         return self.sourceModel().columnCount(parent)
 
+    # ---- Invalidate
     def invalidate(self):
         """
         Invalidates the current sorting and filtering.
         """
         self.layoutAboutToBeChanged.emit()
+
+        self._old_persistent_indexes = self.persistentIndexList()
+        self._old_persistent_data = [
+            (self._proxy_dataf_index[index.row()],
+             index.column(),
+             index.parent()) for index in self._old_persistent_indexes]
+
         self._sort()
+        self._update_persistent_indexes()
+
         self.layoutChanged.emit()
+
+    def _update_persistent_indexes(self):
+        """
+        Update the persistent indexes so that, for instance, the selections
+        are preserved correctly after a change.
+        """
+        new_persistent_indexes = self._old_persistent_indexes.copy()
+        for i, (row, column, parent) in enumerate(self._old_persistent_data):
+            try:
+                new_persistent_indexes[i] = self.index(
+                    self._proxy_dataf_index.get_loc(row), column, parent)
+            except KeyError:
+                new_persistent_indexes[i] = QModelIndex()
+        self.changePersistentIndexList(
+            self._old_persistent_indexes, new_persistent_indexes)
 
     def _sort(self):
         """
@@ -618,6 +643,7 @@ class SardesSortFilterModel(QSortFilterProxyModel):
                 axis=0,
                 inplace=False).index
 
+    # ---- Public methods
     def sort(self, column_logical_index, order=Qt.AscendingOrder):
         """
         Override Qt method so that sorting by columns is done with pandas
