@@ -49,7 +49,8 @@ class SardesItemDelegateBase(QStyledItemDelegate):
     """
     Basic functionality for Sardes item delegates.
 
-    WARNING: Don't override any methods or attributes present here.
+    WARNING: Don't override any methods or attributes present here unless you
+    know what you are doing.
     """
 
     def __init__(self, model_view, unique_constraint=False,
