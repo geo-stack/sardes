@@ -778,8 +778,8 @@ def test_extend_selection_to_border(tablewidget, qtbot):
 
 def test_horiz_header_single_mouse_click(tablewidget, qtbot):
     """
-    Test that single mouse clicking on a header section select the
-    corresponding column and do NOT sort the data.
+    Test that single mouse clicking on a header section selects the
+    corresponding column and does NOT sort the data.
     """
     tableview = tablewidget.tableview
     horiz_header = tablewidget.tableview.horizontalHeader()
@@ -793,8 +793,7 @@ def test_horiz_header_single_mouse_click(tablewidget, qtbot):
 
     assert tableview.get_selected_columns() == [0]
     assert get_values_for_column(model.index(0, 0)) == ['str1', 'str2', 'str3']
-    assert horiz_header.sortIndicatorOrder() == 0
-    assert horiz_header.sortIndicatorSection() == -1
+    assert horiz_header._sections_sorting_state == {}
 
 
 def test_horiz_header_double_mouse_click(tablewidget, qtbot):
@@ -821,8 +820,7 @@ def test_horiz_header_double_mouse_click(tablewidget, qtbot):
 
     assert tableview.get_selected_columns() == [clicked_column_index]
     assert get_values_for_column(model.index(0, 0)) == ['str2', 'str1', 'str3']
-    assert horiz_header.sortIndicatorOrder() == 0
-    assert horiz_header.sortIndicatorSection() == clicked_column_index
+    assert horiz_header._sections_sorting_state == {3: 0}
 
     # Double mouse click again on the fourth section and assert that the
     # data were sorted in DESCENDING order according to that column.
@@ -831,8 +829,7 @@ def test_horiz_header_double_mouse_click(tablewidget, qtbot):
 
     assert tableview.get_selected_columns() == [clicked_column_index]
     assert get_values_for_column(model.index(0, 0)) == ['str3', 'str1', 'str2']
-    assert horiz_header.sortIndicatorOrder() == 1
-    assert horiz_header.sortIndicatorSection() == clicked_column_index
+    assert horiz_header._sections_sorting_state == {3: 1}
 
 
 def test_column_sorting(tablewidget, qtbot):
@@ -858,8 +855,7 @@ def test_column_sorting(tablewidget, qtbot):
     # keyboard shorcut Ctrl+<.
     qtbot.keyPress(tableview, Qt.Key_Less, modifier=Qt.ControlModifier)
     assert get_values_for_column(model.index(0, 0)) == ['str2', 'str1', 'str3']
-    assert horiz_header.sortIndicatorOrder() == 0
-    assert horiz_header.sortIndicatorSection() == 3
+    assert horiz_header._sections_sorting_state == {3: 0}
     assert selection_model.currentIndex().data() == '1'
     assert get_selected_data(tablewidget) == ['1', '2.222', '29']
 
@@ -867,8 +863,7 @@ def test_column_sorting(tablewidget, qtbot):
     # keyboard shorcut Ctrl+>.
     qtbot.keyPress(tableview, Qt.Key_Greater, modifier=Qt.ControlModifier)
     assert get_values_for_column(model.index(0, 0)) == ['str3', 'str1', 'str2']
-    assert horiz_header.sortIndicatorOrder() == 1
-    assert horiz_header.sortIndicatorSection() == 3
+    assert horiz_header._sections_sorting_state == {3: 1}
     assert selection_model.currentIndex().data() == '1'
     assert get_selected_data(tablewidget) == ['1', '2.222', '29']
 
@@ -876,8 +871,7 @@ def test_column_sorting(tablewidget, qtbot):
     qtbot.keyPress(tableview, Qt.Key_Period, modifier=Qt.ControlModifier)
     tableview._actions['sort'][-1].trigger()
     assert get_values_for_column(model.index(0, 0)) == ['str1', 'str2', 'str3']
-    assert horiz_header.sortIndicatorOrder() == 0
-    assert horiz_header.sortIndicatorSection() == -1
+    assert horiz_header._sections_sorting_state == {}
     assert selection_model.currentIndex().data() == '1'
     assert get_selected_data(tablewidget) == ['1', '2.222', '29']
 
