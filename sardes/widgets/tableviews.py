@@ -388,6 +388,7 @@ class SardesHeaderView(QHeaderView):
     click events (instead of single mouse clicks) and allow to clear the
     sorting of it's associated table view.
     """
+    sig_sort_by_column = Signal(int, int)
 
     def __init__(self, parent, orientation=Qt.Horizontal):
         super().__init__(orientation, parent)
@@ -433,7 +434,8 @@ class SardesHeaderView(QHeaderView):
         order = (Qt.AscendingOrder if section not in
                  self._sections_sorting_state else
                  int(not bool(self._sections_sorting_state[section])))
-        self.sort_by_column(section, order)
+        self._sections_sorting_state[section] = order
+        self.sig_sort_by_column.emit(section, order)
 
 
 class SardesTableView(QTableView):
