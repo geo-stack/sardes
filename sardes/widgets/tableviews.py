@@ -394,22 +394,13 @@ class SardesHeaderView(QHeaderView):
         self.setHighlightSections(True)
         self.setSectionsClickable(True)
         self.setSectionsMovable(True)
+        self.setSortIndicatorShown(True)
         self.sectionDoubleClicked.connect(self._handle_section_doubleclick)
 
         # A dictionary whose keys corresponds to the section logical index
         # for which a sort indicator need to be painted and whose values
         # correspond to the sort order for each key.
         self._sections_sorting_state = {}
-
-    def sort_by_column(self, section, order):
-        """
-        Sort the rows of the table associated with this header view
-        by ordering the data of the specified section (column) in the
-        specified sorting order.
-        """
-        self._sections_sorting_state[section] = order
-        self.setSortIndicatorShown(True)
-        self.parent().sortByColumn(section, order)
 
     def paintSection(self, painter, rect, logicalIndex):
         """
@@ -684,8 +675,7 @@ class SardesTableView(QTableView):
         Sort the rows of this table by ordering the data of the specified
         column in the specified sorting order.
         """
-        self.horizontalHeader().sort_by_column(
-            column_logical_index, sorting_order)
+        self.model().sort(column_logical_index, sorting_order)
 
     def sort_by_current_column(self, sorting_order):
         """
