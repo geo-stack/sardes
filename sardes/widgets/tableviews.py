@@ -451,9 +451,12 @@ class SardesTableView(QTableView):
         self.setSortingEnabled(False)
         self.setAlternatingRowColors(False)
         self.setCornerButtonEnabled(True)
-        self.setHorizontalHeader(SardesHeaderView(parent=self))
         self.setEditTriggers(self.DoubleClicked)
         self.setMouseTracking(True)
+
+        # Setup horizontal header.
+        self.setHorizontalHeader(SardesHeaderView(parent=self))
+        self.horizontalHeader().sig_sort_by_column.connect(self.sort_by_column)
 
         self._actions = {}
         self._setup_table_model(table_model)
@@ -475,6 +478,8 @@ class SardesTableView(QTableView):
         self.source_model.sig_data_edited.connect(self.sig_data_edited.emit)
         self.proxy_model = SardesSortFilterModel(self.source_model)
         self.setModel(self.proxy_model)
+        self.proxy_model.sig_data_sorted.connect(
+            self._update_horizontal_header_sort_state)
 
     def _setup_item_delegates(self):
         """
@@ -623,20 +628,20 @@ class SardesTableView(QTableView):
             icon='sort_ascending',
             tip=_("Reorder rows by sorting the data of the current column "
                   "in ascending order."),
-            triggered=lambda _:
-                self.sort_by_current_column(Qt.AscendingOrder),
             shortcut="Ctrl+<",
-            context=Qt.WidgetShortcut)
+            context=Qt.WidgetShortcut,
+            triggered=lambda _:
+                self.sort_by_current_column(Qt.AscendingOrder))
 
         sort_descending_action = create_action(
             self, _("Sort Descending"),
             icon='sort_descending',
             tip=_("Reorder rows by sorting the data of the current column "
                   "in descending order."),
-            triggered=lambda _:
-                self.sort_by_current_column(Qt.DescendingOrder),
             shortcut="Ctrl+>",
-            context=Qt.WidgetShortcut)
+            context=Qt.WidgetShortcut,
+            triggered=lambda _:
+                self.sort_by_current_column(Qt.DescendingOrder))
 
         sort_clear_action = create_action(
             self, _("Clear Sort"),
@@ -665,6 +670,15 @@ class SardesTableView(QTableView):
                 shortcut='Ctrl+Shift+{}'.format(key),
                 context=Qt.WidgetShortcut
                 ))
+
+    # ---- Sorting
+    def _update_horizontal_header_sort_state(self):
+        sort_by_columns, columns_sort_order = (
+            self.model().get_columns_sorting_state())
+        self.horizontalHeader()._sections_sorting_state = {
+            column: order for column, order in
+            zip(sort_by_columns, columns_sort_order)}
+        self.horizontalHeader().update()
 
     def clear_sort(self):
         """
@@ -1281,9 +1295,6 @@ class SardesTableWidget(SardesPaneWidget):
         sort orders (0 for ascending, 1 for descending) by which the data
         need to be sorted in the model of this table widget.
         """
-        self.tableview.horizontalHeader()._sections_sorting_state = {
-            column: order for column, order in
-            zip(sort_by_columns, columns_sort_order)}
         self.model().set_columns_sorting_state(
             sort_by_columns, columns_sort_order)
 
