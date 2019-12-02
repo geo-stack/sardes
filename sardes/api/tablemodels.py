@@ -568,6 +568,7 @@ class SardesSortFilterModel(QSortFilterProxyModel):
     """
     A proxy model to sort and filter Sardes data.
     """
+    sig_data_sorted = Signal()
 
     def __init__(self, source_model):
         super().__init__()
@@ -598,7 +599,7 @@ class SardesSortFilterModel(QSortFilterProxyModel):
     # ---- Invalidate
     def invalidate(self):
         """
-        Invalidates the current sorting and filtering.
+        Invalidate the current sorting and filtering.
         """
         self.layoutAboutToBeChanged.emit()
 
@@ -645,9 +646,10 @@ class SardesSortFilterModel(QSortFilterProxyModel):
                 ascending=[not bool(v) for v in self._columns_sort_order],
                 axis=0,
                 inplace=False).index
+        self.sig_data_sorted.emit()
 
     # ---- Public methods
-    def sort(self, column_logical_index, order=Qt.AscendingOrder):
+    def sort(self, column_logical_index, sort_order):
         """
         Override Qt method so that sorting by columns is done with pandas
         instead, which is a lot faster for large datasets.
@@ -665,8 +667,9 @@ class SardesSortFilterModel(QSortFilterProxyModel):
             else:
                 del self._sort_by_columns[index]
                 del self._columns_sort_order[index]
-            self._sort_by_columns.insert(0, column_logical_index)
-            self._columns_sort_order.insert(0, int(order))
+            if sort_order != -1:
+                self._sort_by_columns.insert(0, column_logical_index)
+                self._columns_sort_order.insert(0, int(sort_order))
         self.invalidate()
 
     def get_columns_sorting_state(self):
