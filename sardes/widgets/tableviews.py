@@ -401,15 +401,6 @@ class SardesHeaderView(QHeaderView):
         # correspond to the sort order for each key.
         self._sections_sorting_state = {}
 
-    def clear_sort(self):
-        """
-        Clear all sorts applied to the columns of the tabl associated with this
-        header view.
-        """
-        self._sections_sorting_state = {}
-        self.setSortIndicatorShown(False)
-        self.parent().model().sort(-1)
-
     def sort_by_column(self, section, order):
         """
         Sort the rows of the table associated with this header view
@@ -686,7 +677,7 @@ class SardesTableView(QTableView):
         """
         Clear all sorts applied to the columns of this table.
         """
-        self.horizontalHeader().clear_sort()
+        self.model().sort(-1, -1)
 
     def sort_by_column(self, column_logical_index, sorting_order):
         """
