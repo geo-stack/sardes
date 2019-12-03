@@ -22,7 +22,7 @@ import pandas as pd
 from pandas import Series
 
 # ---- Local imports
-from sardes.api.database_accessor import DatabaseAccessorBase
+from sardes.api.database_accessor import DatabaseAccessor
 from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
 
 
@@ -135,7 +135,7 @@ SONDES_DATA = pd.DataFrame([
 # =============================================================================
 # Database accessor implementation
 # =============================================================================
-class DatabaseAccessorDemo(DatabaseAccessorBase):
+class DatabaseAccessorDemo(DatabaseAccessor):
     """
     Sardes accessor test and debug class.
 
@@ -165,7 +165,7 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         """
         self._connection = None
 
-    # ---- Observation wells
+    # ---- Observation Wells
     @property
     def observation_wells(self):
         """
@@ -190,7 +190,7 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         sleep(0.3)
         return deepcopy(OBS_WELLS_DF)
 
-    # ---- Sondes
+    # ---- Sonde Brands and Models Library
     def get_sonde_models_lib(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -206,6 +206,7 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
 
         return sonde_models.sort_values('sonde_brand_model')
 
+    # ---- Sondes Inventory
     def get_sondes_data(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
