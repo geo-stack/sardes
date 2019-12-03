@@ -15,18 +15,18 @@ Object-Relational Mapping and Accessor implementation of the RSESQ database.
 from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKTElement
 import pandas as pd
-from sqlalchemy import create_engine
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import create_engine, extract, func
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.types import TEXT, VARCHAR, Boolean
-from sqlalchemy import ForeignKey
+from sqlalchemy.inspection import inspect
 from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.types import TEXT, VARCHAR, Boolean
 
 # ---- Local imports
-from sardes.api.database_accessor import DatabaseAccessorBase
+from sardes.api.database_accessor import DatabaseAccessor
 from sardes.database.utils import map_table_column_names, format_sqlobject_repr
 from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
 
@@ -190,13 +190,14 @@ class TimeSeriesRaw(Base):
 # =============================================================================
 # ---- Accessor
 # =============================================================================
-class DatabaseAccessorRSESQ(DatabaseAccessorBase):
+class DatabaseAccessorRSESQ(DatabaseAccessor):
     """
     Manage the connection and requests to a RSESQ database.
     """
 
     def __init__(self, database, username, password, hostname, port,
                  client_encoding='utf8'):
+        super().__init__()
         self._database = database
         self._username = username
         self._password = password
@@ -265,7 +266,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             )
         return location
 
-    # ---- Observation wells
+    # ---- Observation Wells
     @property
     def observation_wells(self):
         """
@@ -396,7 +397,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         obs_wells = obs_wells.where(obs_wells.notnull(), None)
         return obs_wells
 
-    # ---- Sondes
+    # ---- Sonde Brands and Models Library
     def _get_sonde(self, sonde_id):
         """
         Return the sqlalchemy Sondes object corresponding to the
@@ -436,6 +437,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
 
         return sonde_models
 
+    # ---- Sondes Inventory
     def get_sondes_data(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
