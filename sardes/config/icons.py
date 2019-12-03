@@ -27,6 +27,9 @@ LOCAL_ICONS = {
     'sort_clear': 'sort_clear'}
 
 FA_ICONS = {
+    'add_row': [
+        ('mdi.table-row-plus-after',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'bug': [
         ('mdi.bug',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
