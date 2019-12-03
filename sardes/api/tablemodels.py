@@ -38,11 +38,11 @@ class ValueChanged(object):
     A class that represent a change of a value at a given model index.
     """
 
-    def __init__(self, index, column, value, edited_value):
+    def __init__(self, index, column, edited_value, previous_value):
         super() .__init__()
         self.index = index
         self.column = column
-        self.value = value
+        self.previous_value = previous_value
         self.edited_value = edited_value
 
     def type(self):
@@ -51,6 +51,141 @@ class ValueChanged(object):
         edit correspond to, as defined in :class:`SardesTableModelBase`.
         """
         return SardesTableModelBase.ValueChanged
+
+
+class SardesTableData(object):
+    """
+    A container to hold data of a logical table and manage edits.
+    """
+
+    def __init__(self, data):
+        self.data = data.copy()
+
+        # A list containing the edits made by the user to the data
+        # in chronological order.
+        self._data_edits_stack = []
+
+        self._new_rows = []
+        self._deleted_rows = []
+
+        # A pandas multiindex dataframe that contains the original data at
+        # the rows and columns where the data was edited. This is tracked
+        # independently of the data edits stack for performance purposes
+        # when displaying the data in a GUI.
+        self._original_data = pd.DataFrame(
+            [], columns=['row', 'column', 'value'])
+        self._original_data.set_index(
+            'row', inplace=True, drop=True)
+        self._original_data.set_index(
+            'column', inplace=True, drop=True, append=True)
+
+    def __len__(self):
+        return len(self.data)
+
+    def set(self, row, col, edited_value):
+        """
+        Store the new value at the given index and column and add the edit
+        to the stack.
+        """
+        previous_value = self.data.iloc[row, col]
+        self._data_edits_stack.append(ValueChanged(
+            self.data.index[row],
+            self.data.columns[col],
+            edited_value,
+            previous_value))
+
+        # We update the list of original data. We store this in an independent
+        # list for performance reasons when displaying the data in a GUI.
+        if (row, col) in self._original_data.index:
+            original_value = self._original_data.loc[(row, col), 'value']
+            self._original_data.drop((row, col), inplace=True)
+        else:
+            original_value = self.data.iloc[row, col]
+
+        if original_value != edited_value:
+            self._original_data.loc[(row, col), 'value'] = original_value
+
+        # We apply the new value to the data.
+        self.data.iloc[row, col] = edited_value
+
+    def get(self, row, col):
+        """
+        Return the value at the given row and column indexes.
+        """
+        return self.data.iloc[row, col]
+
+    def copy(self):
+        """
+        Return a copy of the data.
+        """
+        return self.data.copy()
+
+    def row_count(self):
+        return len(self.data)
+
+    # ---- Edits
+    def edits(self):
+        """
+        Return a list of all edits made to the data since last save.
+        """
+        return self._data_edits_stack
+
+    def edit_count(self):
+        """
+        Return the number of edits in the stack.
+        """
+        return len(self._data_edits_stack)
+
+    def has_unsaved_edits(self):
+        """
+        Return whether any edits were made to the table's data since last save.
+        """
+        return bool(len(self._original_data))
+
+    def is_value_in_column(self, col, value):
+        """
+        Check if the specified value is in the given column of the data.
+        """
+        isin_indexes = self.data[self.data.iloc[:, col].isin([value])]
+        return bool(len(isin_indexes))
+
+    def is_value_edited_at(self, row, col):
+        """
+        Return whether edits were made at the specified model index
+        since last save.
+        """
+        return (row, col) in self._original_data.index
+
+    def cancel_edits(self):
+        """
+        Cancel all the edits that were made to the table data since last save.
+        """
+        while self.edit_count():
+            self.undo_edit()
+
+    def undo_edit(self):
+        """
+        Undo the last data edit that was added to the stack.
+        """
+        if len(self._data_edits_stack) == 0:
+            return
+
+        # Undo the last edit.
+        last_edit = self._data_edits_stack.pop(-1)
+        row = self.data.index.get_loc(last_edit.index)
+        col = self.data.columns.get_loc(last_edit.column)
+
+        if (row, col) in self._original_data.index:
+            original_value = self._original_data.loc[(row, col), 'value']
+            self._original_data.drop((row, col), inplace=True)
+        else:
+            original_value = self.data.iloc[row, col]
+
+        if last_edit.previous_value != original_value:
+            self._original_data.loc[(row, col), 'value'] = original_value
+
+        # We apply the previous value to the data.
+        self.data.iloc[row, col] = last_edit.previous_value
 
 
 class SardesTableModelBase(QAbstractTableModel):
