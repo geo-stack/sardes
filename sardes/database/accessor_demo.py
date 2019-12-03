@@ -281,13 +281,6 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         return tseries_group
 
     # ---- Manual mesurements
-    def get_manual_measurements_index_dtype(self):
-        """
-        Return the data type of the indexes used to reference the manual
-        measurements the database.
-        """
-        return type(MANUAL_MEASUREMENTS.index[0]).__name__
-
     def get_manual_measurements(self):
         """
         Return a :class:`pandas.DataFrame` containing the water level manual
