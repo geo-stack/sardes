@@ -194,7 +194,7 @@ class DatabaseConnectionManager(QObject):
             self._exec_task_callback)
 
         self._is_connecting = False
-        self._data_changed = []
+        self._data_changed = set()
 
     def is_connected(self):
         """Return whether a connection to a database is currently active."""
@@ -219,7 +219,7 @@ class DatabaseConnectionManager(QObject):
         """
         Set the data related to name in the database.
         """
-        self._data_changed.append(args[0])
+        self._data_changed.add(args[0])
         self._add_task('set', callback, *args)
         if not postpone_exec:
             self.run_tasks()
@@ -347,8 +347,8 @@ class DatabaseConnectionManager(QObject):
         completed.
         """
         if len(self._data_changed):
-            self.sig_database_data_changed.emit(self._data_changed)
-            self._data_changed = []
+            self.sig_database_data_changed.emit(list(self._data_changed))
+            self._data_changed = set()
         if len(self._pending_tasks) > 0:
             self._run_tasks()
         else:
