@@ -146,7 +146,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
             # We store the edits even if the validation fails, so that
             # when we return to this delegate to edits, the last value
             # entered by the user is preserved.
-            self.model().set_data_edits_at(self.model_index, editor_value)
+            self.model().set_data_edit_at(self.model_index, editor_value)
             if error_message is not None:
                 self.model_view.raise_edits_error(
                     self.model_index, error_message)
@@ -194,7 +194,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         created at least once.
         """
         if not self.is_required:
-            model_index.model().set_data_edits_at(model_index, None)
+            model_index.model().set_data_edit_at(model_index, None)
 
 
 class NotEditableDelegate(SardesItemDelegateBase):
@@ -702,27 +702,6 @@ class SardesTableView(QTableView):
             self.selectionModel().currentIndex().column(), sorting_order)
 
     # ---- Data selection
-    def get_selected_rows_data(self):
-        """
-        Return the data relative to the currently selected rows in this table.
-        """
-        dataf_indexes = list(set(
-            [self.model().dataf_index_at(index) for index in
-             self.selectionModel().selectedIndexes()]
-            ))
-
-        # Because we converted this to a set, we need to sort the
-        # indexes again.
-        selected_dataf = self.model().dataf.loc[dataf_indexes]
-        if self.model()._sort_by_columns:
-            selected_dataf.sort_values(
-                by=[self.model().columns[index] for index in
-                    self.model()._sort_by_columns],
-                ascending=[not bool(v) for v in
-                           self.model()._columns_sort_order],
-                inplace=True)
-        return selected_dataf
-
     def get_current_row_data(self):
         """
         Return the data relative to the row with the current item (the item
@@ -922,7 +901,10 @@ class SardesTableView(QTableView):
         Return the number of rows of this table that have at least one
         selected items.
         """
-        return len(self.get_selected_rows_data())
+        return len(set(
+            [index.row() for index in
+             self.selectionModel().selectedIndexes()]
+            ))
 
     def visible_row_count(self):
         """Return this table number of visible rows."""
@@ -1040,7 +1022,7 @@ class SardesTableView(QTableView):
         Cancel all the edits that were made to the table data of this view
         since last save.
         """
-        self.model().cancel_all_data_edits()
+        self.model().cancel_data_edits()
 
     def _undo_last_data_edit(self):
         """
