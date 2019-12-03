@@ -185,7 +185,7 @@ def test_save_data_edits(mainwindow, qtbot):
     qtbot.wait(1000)
     model_index = table_obs_well.tableview.model().index(0, 0)
     assert model_index.data() == '0343128'
-    table_obs_well.tableview.model().set_data_edits_at(
+    table_obs_well.tableview.model().set_data_edit_at(
         model_index, '0343128_modif')
     assert model_index.data() == '0343128_modif'
 
