@@ -19,17 +19,16 @@ from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
 
 class DatabaseAccessorBase(ABC):
     """
-    Sardes database accessor class.
+    Basic functionality for Sardes database accessor.
 
-    All database accessors *must* inherit this class and reimplement
-    its interface.
+    WARNING: Don't override any methods or attributes present here unless you
+    know what you are doing.
     """
 
-    def __init__(self, *args, **kargs):
+    def __init__(self):
         self._connection = None
         self._connection_error = None
 
-    # ---- Database getter and setter
     def get(self, name, *args, **kargs):
         """
         Get the data related to name from the database.
@@ -42,6 +41,15 @@ class DatabaseAccessorBase(ABC):
         Save the data related to name in the database.
         """
         getattr(self, 'set_' + name)(*args, **kargs)
+
+
+class DatabaseAccessor(DatabaseAccessorBase):
+    """
+    Sardes database accessor class.
+
+    All database accessors *must* inherit this class and reimplement
+    its interface.
+    """
 
     # ---- Database connection
     @abstractmethod
@@ -70,7 +78,7 @@ class DatabaseAccessorBase(ABC):
         """
         pass
 
-    # ---- Observation wells
+    # ---- Observation Wells
     @property
     @abstractmethod
     def observation_wells(self):
@@ -168,7 +176,7 @@ class DatabaseAccessorBase(ABC):
         """
         return DataFrame([])
 
-    # ---- Sondes
+    # ---- Sonde Brands and Models Library
     def get_sonde_models_lib(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -198,6 +206,7 @@ class DatabaseAccessorBase(ABC):
         """
         return DataFrame([])
 
+    # ---- Sondes Inventory
     def get_sondes_data(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -341,7 +350,7 @@ class DatabaseAccessorBase(ABC):
         """
         pass
 
-    # ---- Manual mesurements
+    # ---- Manual Measurements
     def get_manual_measurements(self):
         """
         Return a :class:`pandas.DataFrame` containing the water level manual
