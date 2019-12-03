@@ -38,11 +38,11 @@ class ValueChanged(object):
     A class that represent a change of a value at a given model index.
     """
 
-    def __init__(self, index, column, value, edited_value):
+    def __init__(self, index, column, edited_value, previous_value):
         super() .__init__()
         self.index = index
         self.column = column
-        self.value = value
+        self.previous_value = previous_value
         self.edited_value = edited_value
 
     def type(self):
@@ -51,6 +51,141 @@ class ValueChanged(object):
         edit correspond to, as defined in :class:`SardesTableModelBase`.
         """
         return SardesTableModelBase.ValueChanged
+
+
+class SardesTableData(object):
+    """
+    A container to hold data of a logical table and manage edits.
+    """
+
+    def __init__(self, data):
+        self.data = data.copy()
+
+        # A list containing the edits made by the user to the data
+        # in chronological order.
+        self._data_edits_stack = []
+
+        self._new_rows = []
+        self._deleted_rows = []
+
+        # A pandas multiindex dataframe that contains the original data at
+        # the rows and columns where the data was edited. This is tracked
+        # independently of the data edits stack for performance purposes
+        # when displaying the data in a GUI.
+        self._original_data = pd.DataFrame(
+            [], columns=['row', 'column', 'value'])
+        self._original_data.set_index(
+            'row', inplace=True, drop=True)
+        self._original_data.set_index(
+            'column', inplace=True, drop=True, append=True)
+
+    def __len__(self):
+        return len(self.data)
+
+    def set(self, row, col, edited_value):
+        """
+        Store the new value at the given index and column and add the edit
+        to the stack.
+        """
+        previous_value = self.data.iloc[row, col]
+        self._data_edits_stack.append(ValueChanged(
+            self.data.index[row],
+            self.data.columns[col],
+            edited_value,
+            previous_value))
+
+        # We update the list of original data. We store this in an independent
+        # list for performance reasons when displaying the data in a GUI.
+        if (row, col) in self._original_data.index:
+            original_value = self._original_data.loc[(row, col), 'value']
+            self._original_data.drop((row, col), inplace=True)
+        else:
+            original_value = self.data.iloc[row, col]
+
+        if original_value != edited_value:
+            self._original_data.loc[(row, col), 'value'] = original_value
+
+        # We apply the new value to the data.
+        self.data.iloc[row, col] = edited_value
+
+    def get(self, row, col):
+        """
+        Return the value at the given row and column indexes.
+        """
+        return self.data.iloc[row, col]
+
+    def copy(self):
+        """
+        Return a copy of the data.
+        """
+        return self.data.copy()
+
+    def row_count(self):
+        return len(self.data)
+
+    # ---- Edits
+    def edits(self):
+        """
+        Return a list of all edits made to the data since last save.
+        """
+        return self._data_edits_stack
+
+    def edit_count(self):
+        """
+        Return the number of edits in the stack.
+        """
+        return len(self._data_edits_stack)
+
+    def has_unsaved_edits(self):
+        """
+        Return whether any edits were made to the table's data since last save.
+        """
+        return bool(len(self._original_data))
+
+    def is_value_in_column(self, col, value):
+        """
+        Check if the specified value is in the given column of the data.
+        """
+        isin_indexes = self.data[self.data.iloc[:, col].isin([value])]
+        return bool(len(isin_indexes))
+
+    def is_value_edited_at(self, row, col):
+        """
+        Return whether edits were made at the specified model index
+        since last save.
+        """
+        return (row, col) in self._original_data.index
+
+    def cancel_edits(self):
+        """
+        Cancel all the edits that were made to the table data since last save.
+        """
+        while self.edit_count():
+            self.undo_edit()
+
+    def undo_edit(self):
+        """
+        Undo the last data edit that was added to the stack.
+        """
+        if len(self._data_edits_stack) == 0:
+            return
+
+        # Undo the last edit.
+        last_edit = self._data_edits_stack.pop(-1)
+        row = self.data.index.get_loc(last_edit.index)
+        col = self.data.columns.get_loc(last_edit.column)
+
+        if (row, col) in self._original_data.index:
+            original_value = self._original_data.loc[(row, col), 'value']
+            self._original_data.drop((row, col), inplace=True)
+        else:
+            original_value = self.data.iloc[row, col]
+
+        if last_edit.previous_value != original_value:
+            self._original_data.loc[(row, col), 'value'] = original_value
+
+        # We apply the previous value to the data.
+        self.data.iloc[row, col] = last_edit.previous_value
 
 
 class SardesTableModelBase(QAbstractTableModel):
@@ -74,13 +209,13 @@ class SardesTableModelBase(QAbstractTableModel):
         super().__init__()
         self._data_columns_mapper = OrderedDict(self.__data_columns_mapper__)
 
-        # A pandas dataframe containing the data that are shown in the
-        # database.
-        self.dataf = pd.DataFrame([])
+        # The sardes table data object that is used to store the table data
+        # and handle edits.
+        self._datat = None
 
         # A pandas dataframe containing the data that need to be shown in the
         # table, including the data edits.
-        self.visual_dataf = pd.DataFrame([], columns=self.columns)
+        self.visual_dataf = None
 
         # A dictionary containing the dataframes of all the librairies
         # required by this table to display its data correctly.
@@ -89,24 +224,13 @@ class SardesTableModelBase(QAbstractTableModel):
         # A list containing the names of the data that needs to be updated,
         # so that we can emit sig_data_updated only when all data have been
         # updated.
-        self._data_that_need_to_be_updated = []
+        self._data_that_need_to_be_updated = self.req_data_names()
 
-        # A list containing the edits made by the user to the
-        # content of this table's model data in chronological order.
-        self._data_edit_stack = []
-        self._new_rows = []
-        self._deleted_rows = []
-
-        # A pandas dataframe that contains the edited values at their
-        # corresponding data index and column.
-        self._edited_dataf = pd.DataFrame(
-            [], columns=['index', 'column', 'edited_value'])
-        self._edited_dataf.set_index('index', inplace=True, drop=True)
-        self._edited_dataf.set_index(
-            'column', inplace=True, drop=True, append=True)
-
-        # Sorting and filtering.
-        self._filter_by_columns = None
+        # Setup the data.
+        for name in self.req_data_names():
+            dataf = pd.DataFrame([])
+            dataf.name = name
+            self.set_model_data(dataf)
 
         self.set_database_connection_manager(db_connection_manager)
 
@@ -157,6 +281,13 @@ class SardesTableModelBase(QAbstractTableModel):
             return QVariant()
 
     # ---- Table data
+    @property
+    def dataf(self):
+        """
+        Return the pandas dataframe of the sardes table data object.
+        """
+        return self._datat.copy()
+
     def clear_data(self):
         """
         Clear the data of this model.
@@ -212,45 +343,41 @@ class SardesTableModelBase(QAbstractTableModel):
             Note that the column labels of the dataframe must match the
             values that are mapped in _data_columns_mapper.
         """
+        dataf_name = dataf.name
         if dataf.name == self.TABLE_DATA_NAME:
             self.beginResetModel()
-            self.dataf = dataf
-            self.visual_dataf = dataf.copy()
 
             # Add missing columns to the dataframe.
             for column in self.columns:
-                if column not in self.dataf.columns:
-                    self.dataf[column] = None
+                if column not in dataf.columns:
+                    dataf[column] = None
+            # Reorder columns to mirror the column logical indexes
+            # of the table model so that we can access them with pandas iloc.
+            dataf = dataf[self.columns]
 
-            self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
-            self._data_edit_stack = []
-            self._new_rows = []
-            self._deleted_rows = []
-            self._update_visual_data()
+            self._datat = SardesTableData(dataf)
 
             self.endResetModel()
             self.sig_data_edited.emit(False, False)
         elif dataf.name in self.REQ_LIB_NAMES:
             self.libraries[dataf.name] = dataf
-            self._update_visual_data()
+        dataf.name = dataf_name
 
         # Update the state of data update and emit a signal if the updating
         # is completed.
         self._data_that_need_to_be_updated.remove(dataf.name)
         if not self._data_that_need_to_be_updated:
+            self._update_visual_data()
             self.sig_data_updated.emit()
 
     def rowCount(self, *args, **kargs):
         """Qt method override. Return the number visible rows in the table."""
-        return len(self.visual_dataf)
+        return len(self._datat)
 
     def data(self, index, role=Qt.DisplayRole):
         """Qt method override."""
         if role in [Qt.DisplayRole, Qt.ToolTipRole]:
-            value = self.visual_dataf.iloc[
-                index.row(),
-                self.visual_dataf.columns.get_loc(self.dataf_column_at(index))
-                ]
+            value = self.get_visual_data_at(index)
             if pd.isna(value) or value is None:
                 value = ''
             elif pd.api.types.is_bool(value):
@@ -272,52 +399,24 @@ class SardesTableModelBase(QAbstractTableModel):
         """Qt method override."""
         return Qt.ItemIsEnabled | Qt.ItemIsEditable | Qt.ItemIsSelectable
 
-    def get_dataf_value_at(self, model_index):
+    def get_visual_data_at(self, model_index):
         """
-        Return the unedited value of the model's data at the specified model
-        index.
+        Return the value to display in the table at the given model index.
         """
-        try:
-            return self.dataf.loc[self.dataf_index_at(model_index),
-                                  self.dataf_column_at(model_index)]
-        except KeyError:
-            return None
+        return self.visual_dataf.iloc[model_index.row(), model_index.column()]
 
     def get_value_at(self, model_index):
         """
-        Return the edited, visible, value of the model's data at the
-        specified model index.
+        Return the value of the model's data at the specified model index.
         """
-        # We check first if the data was edited by the user if 'ignore_edits'
-        # is True.
-        value = self.get_edited_data_at(model_index)
-        if isinstance(value, NoDataEdit):
-            # This means that the value was not edited by the user, so we
-            # fetch the value directly from the model's data.
-            value = self.get_dataf_value_at(model_index)
-        return value
+        return self._datat.get(model_index.row(), model_index.column())
 
     def is_value_in_column(self, model_index, value):
         """
         Check if the specified value is in the data of this model at the
         column specified by the model index.
         """
-        dataf_column = self.dataf_column_at(model_index)
-
-        # First we check if value is found in the edited data.
-        if any(self._edited_dataf
-               .loc[(slice(None), slice(dataf_column)), 'edited_value']
-               .isin([value])):
-            return True
-        else:
-            # Else we check if the value is found in the unedited data
-            # of this model's data.
-            isin_indexes = self.dataf[self.dataf[dataf_column].isin([value])]
-            return any([
-                not self.is_data_edited_at(self.index(
-                    self.dataf.index.get_loc(index), model_index.column()))
-                for index in isin_indexes.index
-                ])
+        return self._datat.is_value_in_column(model_index.column(), value)
 
     # ---- Visual Data
     def dataf_index_at(self, model_index):
@@ -339,14 +438,9 @@ class SardesTableModelBase(QAbstractTableModel):
         Update the visual dataframe that is used to display the value in
         this tables.
         """
-        self.visual_dataf = self.dataf.copy()
-        if self.dataf.empty:
+        self.visual_dataf = self._datat.copy()
+        if self.visual_dataf.empty:
             return
-
-        # Fist we apply the edited values to the dataframe.
-        for index, column in self._edited_dataf.index:
-            self.visual_dataf.loc[index, column] = (
-                self._edited_dataf.loc[(index, column), 'edited_value'])
 
         self.visual_dataf = self.logical_to_visual_data(self.visual_dataf)
 
@@ -357,6 +451,18 @@ class SardesTableModelBase(QAbstractTableModel):
             )
 
     # ---- Data edits
+    def data_edits(self):
+        """
+        Return a list of all edits made to the data since last save.
+        """
+        return self._datat.edits()
+
+    def data_edit_count(self):
+        """
+        Return the number of edits in the stack.
+        """
+        return self._datat.edit_count()
+
     @property
     def confirm_before_saving_edits(self):
         """
@@ -373,140 +479,67 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         self.db_connection_manager._confirm_before_saving_edits = bool(x)
 
-    def data_edit_count(self):
-        """
-        Return the number of edits in the stack.
-        """
-        return len(self._data_edit_stack)
-
     def has_unsaved_data_edits(self):
         """
         Return whether any edits were made to the table's data since last save.
         """
-        return bool(len(self._edited_dataf))
+        return self._datat.has_unsaved_edits()
 
     def is_data_edited_at(self, model_index):
         """
         Return whether edits were made at the specified model index
         since last save.
         """
-        return (self.dataf_index_at(model_index),
-                self.columns[model_index.column()]
-                ) in self._edited_dataf.index
+        return self._datat.is_value_edited_at(
+            model_index.row(), model_index.column())
 
-    def cancel_all_data_edits(self):
+    def cancel_data_edits(self):
         """
         Cancel all the edits that were made to the table data since last save.
         """
-        self._data_edit_stack = []
-        self._edited_dataf.drop(self._edited_dataf.index, inplace=True)
+        self._datat.cancel_edits()
         self._update_visual_data()
         self.sig_data_edited.emit(False, False)
 
-    def get_edited_data_at(self, model_index):
+    def set_data_edit_at(self, model_index, edited_value):
         """
-        Return the edited value, if any, that was made at the specified
-        model index since last save.
-        """
-        dataf_index = self.dataf_index_at(model_index)
-        dataf_column = self.dataf_column_at(model_index)
-        try:
-            return self._edited_dataf.loc[
-                (dataf_index, dataf_column), 'edited_value']
-        except KeyError:
-            return NoDataEdit(dataf_index, dataf_column)
-
-    def set_data_edits_at(self, model_indexes, edited_values):
-        """
-        Store the values that were edited at the specified model indexes.
+        Store the value that was edited at the given model index.
         A signal is also emitted to indicate that the data were edited,
         so that the GUI can be updated accordingly.
         """
-        if not isinstance(model_indexes, list):
-            model_indexes = [model_indexes, ]
-        if not isinstance(edited_values, list):
-            edited_values = [edited_values, ]
-
-        edits = []
-        for model_index, edited_value in zip(model_indexes, edited_values):
-            dataf_value = self.get_dataf_value_at(model_index)
-            dataf_index = self.dataf_index_at(model_index)
-            dataf_column = self.dataf_column_at(model_index)
-            edits.append(ValueChanged(
-                dataf_index, dataf_column, dataf_value, edited_value))
-
-            # We add the model index to the list of indexes whose value have
-            # been edited if the edited value differ from the value saved in
-            # the model's data.
-            if (dataf_index, dataf_column) in self._edited_dataf.index:
-                self._edited_dataf.drop(
-                    (dataf_index, dataf_column), inplace=True)
-            if dataf_value != edited_value:
-                self._edited_dataf.loc[(dataf_index, dataf_column),
-                                       'edited_value'
-                                       ] = edited_value
-        # We store the edited values until it is commited and
-        # saved to the database.
-        self._data_edit_stack.append(edits)
+        self._datat.set(model_index.row(), model_index.column(), edited_value)
 
         # We make the appropriate calls to update the model and GUI.
         self._update_visual_data()
         self.sig_data_edited.emit(
-            self.has_unsaved_data_edits(), bool(self.data_edit_count()))
+            self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
 
     def undo_last_data_edit(self):
         """
         Undo the last data edits that was added to the stack.
         An update of the view is forced if  update_model_view is True.
         """
-        if len(self._data_edit_stack) == 0:
-            return
+        self._datat.undo_edit()
 
-        # Undo the last edits. Note that the last edits can comprise
-        # more than one edit.
-        last_edits = self._data_edit_stack.pop(-1)
-        for last_edit in last_edits:
-            if (last_edit.index, last_edit.column) in self._edited_dataf.index:
-                self._edited_dataf.drop((last_edit.index, last_edit.column),
-                                        inplace=True)
-
-            # Check if there was a previous edit for this model index
-            # in the stack and add it to the list of edited data if that is
-            # the case and if the edited value is different than the source
-            # value.
-            for edits in reversed(self._data_edit_stack):
-                try:
-                    edit = edits[[(edit.index, edit.column) for edit in edits]
-                                 .index((last_edit.index, last_edit.column))]
-                except ValueError:
-                    continue
-                else:
-                    if edit.edited_value != edit.value:
-                        self._edited_dataf.loc[
-                            (edit.index, edit.column), 'edited_value'
-                            ] = edit.edited_value
-                    break
-
+        # We make the appropriate calls to update the model and GUI.
         self._update_visual_data()
         self.sig_data_edited.emit(
-            self.has_unsaved_data_edits(), bool(self.data_edit_count()))
+            self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
 
     def save_data_edits(self):
         """
         Save all data edits to the database.
         """
         self.sig_data_about_to_be_saved.emit()
-        for edits in self._data_edit_stack:
-            for edit in edits:
-                callback = (self.sig_data_saved.emit
-                            if edit == self._data_edit_stack[-1][-1]
-                            else None)
-                if edit.type() == self.ValueChanged:
-                    self.db_connection_manager.set(
-                        self.TABLE_DATA_NAME,
-                        edit.index, edit.column, edit.edited_value,
-                        callback=callback,
-                        postpone_exec=True)
+        for edit in self._datat.edits():
+            callback = (self.sig_data_saved.emit
+                        if edit == self._datat.edits()[-1] else None)
+            if edit.type() == self.ValueChanged:
+                self.db_connection_manager.set(
+                    self.TABLE_DATA_NAME,
+                    edit.index, edit.column, edit.edited_value,
+                    callback=callback,
+                    postpone_exec=True)
         self.db_connection_manager.run_tasks()
 
 
@@ -534,7 +567,7 @@ class SardesTableModel(SardesTableModelBase):
     TABLE_DATA_NAME = ''
     REQ_LIB_NAMES = []
 
-    def __init__(self, db_connection_manager=None):
+    def __init__(self, db_connection_manager):
         super().__init__(db_connection_manager)
 
     def create_delegate_for_column(self, view, column):
@@ -730,10 +763,6 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         return self.sourceModel().dataf_index_at(
             self.mapToSource(proxy_index))
 
-    def get_dataf_value_at(self, proxy_index):
-        return self.sourceModel().get_dataf_value_at(
-            self.mapToSource(proxy_index))
-
     def get_value_at(self, proxy_index):
         return self.sourceModel().get_value_at(
             self.mapToSource(proxy_index))
@@ -742,14 +771,6 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         return self.sourceModel().is_data_edited_at(
             self.mapToSource(proxy_index))
 
-    def get_edited_data_at(self, proxy_index):
-        return self.sourceModel().get_edited_data_at(
-            self.mapToSource(proxy_index))
-
-    def set_data_edits_at(self, proxy_indexes, edited_values):
-        if not isinstance(proxy_indexes, list):
-            proxy_indexes = [proxy_indexes, ]
-        if not isinstance(edited_values, list):
-            edited_values = [edited_values, ]
-        return self.sourceModel().set_data_edits_at(
-            [self.mapToSource(idx) for idx in proxy_indexes], edited_values)
+    def set_data_edit_at(self, proxy_indexes, edited_value):
+        return self.sourceModel().set_data_edit_at(
+            self.mapToSource(proxy_indexes), edited_value)

@@ -14,7 +14,6 @@ Tests for the SardesTableWidget class.
 # ---- Standard imports
 import os.path as osp
 import uuid
-from unittest.mock import Mock
 
 # ---- Third party imports
 import numpy as np
@@ -29,7 +28,7 @@ from sardes.api.tablemodels import SardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableWidget, NotEditableDelegate, StringEditDelegate,
-    NumEditDelegate, BoolEditDelegate, QMessageBox, MSEC_MIN_PROGRESS_DISPLAY,
+    NumEditDelegate, BoolEditDelegate, MSEC_MIN_PROGRESS_DISPLAY,
     QMessageBox, QCheckBox)
 from sardes.database.database_manager import DatabaseConnectionManager
 
@@ -64,6 +63,12 @@ def tablemodel(qtbot, TABLE_DATAF):
             dataf.name = name
             callback(dataf)
 
+        def set(self, name, index, column, edited_value,
+                callback, postpone_exec):
+            TABLE_DATAF.loc[index, column] = edited_value
+            if callback is not None:
+                callback()
+
     class SardesTableModelMock(SardesTableModel):
         TABLE_DATA_NAME = 'test_table_dataf_name'
         __data_columns_mapper__ = [
@@ -83,20 +88,11 @@ def tablemodel(qtbot, TABLE_DATAF):
             else:
                 return NotEditableDelegate(view)
 
-        def save_data_edits(self):
-            """
-            Save all data edits to the database.
-            """
-            for edits in self._data_edit_stack:
-                for edit in edits:
-                    if edit.type() == self.ValueChanged:
-                        TABLE_DATAF.loc[
-                            edit.index, edit.column
-                            ] = edit.edited_value
-            self.fetch_data()
+    tablemodel = SardesTableModelMock(ConnectionManagerMock())
+    # We need to connect the database manager data changed signal to the
+    # method to fetch data because this is handled on the plugin this.
+    tablemodel.sig_data_saved.connect(tablemodel.fetch_data)
 
-    tablemodel = SardesTableModelMock()
-    tablemodel.db_connection_manager = ConnectionManagerMock()
     return tablemodel
 
 
@@ -112,7 +108,7 @@ def tablewidget(qtbot, tablemodel):
 
     tablewidget.show()
     qtbot.waitForWindowShown(tablewidget)
-    # qtbot.addWidget(tablewidget)
+    qtbot.addWidget(tablewidget)
 
     # Assert everything is working as expected when table is empty.
     assert tablewidget
@@ -158,7 +154,7 @@ def test_tablewidget_init(tablewidget, TABLE_DATAF):
     model = tableview.model()
 
     # Assert that the content of the table is as expected.
-    assert_frame_equal(tableview.source_model.dataf, TABLE_DATAF)
+    assert_frame_equal(tableview.model().dataf, TABLE_DATAF)
     assert tableview.visible_row_count() == len(TABLE_DATAF)
 
     # Assert that all columns are visible.
@@ -239,24 +235,12 @@ def test_get_current_row_data(tablewidget, qtbot, TABLE_DATAF):
                            sorted_dataf.iloc[[row]])
 
 
-def test_get_selected_rows_data(tablewidget, qtbot, TABLE_DATAF):
+def test_selected_row_count(tablewidget, qtbot, TABLE_DATAF):
     """
-    Test the data returned for the rows with selection.
-
-    Regression test for cgq-qgc/sardes#117
+    Test selected row count.
     """
-    tableview = tablewidget.tableview
-
-    # Let's sort the data first since this can cause some problems as
-    # pointed out in cgq-qgc/sardes#117
-    tableview.sort_by_column(3, Qt.AscendingOrder)
-    sorted_dataf = TABLE_DATAF.copy().sort_values(by='col3', ascending=True)
-
-    # Select all cells with keyboard shortcut Ctrl+A.
-    tableview.selectAll()
-    selected_rows_data = tableview.get_selected_rows_data()
-    assert len(selected_rows_data) == len(sorted_dataf)
-    assert_frame_equal(selected_rows_data, sorted_dataf)
+    tablewidget.tableview.selectAll()
+    assert tablewidget.tableview.selected_row_count() == len(TABLE_DATAF)
 
 
 def test_toggle_column_visibility(tablewidget, qtbot):
@@ -461,7 +445,7 @@ def test_cancel_edits(tablewidget, qtbot):
     assert tableview.model().has_unsaved_data_edits() is False
     for i in range(4):
         model_index = tableview.model().index(0, i)
-        tableview.model().set_data_edits_at(model_index, expected_value[i])
+        tableview.model().set_data_edit_at(model_index, expected_value[i])
         assert model_index.data() == expected_data[i]
         assert tableview.model().get_value_at(model_index) == expected_value[i]
     assert tableview.model().data_edit_count() == i + 1
@@ -471,7 +455,7 @@ def test_cancel_edits(tablewidget, qtbot):
     expected_data = ['str1', 'Yes', '1.111', '3']
     expected_value = ['str1', True, 1.111, 3]
 
-    tableview.model().cancel_all_data_edits()
+    tableview.model().cancel_data_edits()
     for i in range(4):
         model_index = tableview.model().index(0, i)
         assert model_index.data() == expected_data[i]
@@ -491,9 +475,9 @@ def test_undo_when_not_unsaved_data_edits(tablewidget, qtbot):
     # Do 3 successive edits on a cell, where the second edit bring back the
     # value of the cell to that of the original value.
     model_index = model.index(0, 0)
-    model.set_data_edits_at(model_index, 'new_str1')
-    model.set_data_edits_at(model_index, 'str1')
-    model.set_data_edits_at(model_index, 'new_new_str1')
+    model.set_data_edit_at(model_index, 'new_str1')
+    model.set_data_edit_at(model_index, 'str1')
+    model.set_data_edit_at(model_index, 'new_new_str1')
 
     assert model.data_edit_count() == 3
     assert model_index.data() == 'new_new_str1'
@@ -536,7 +520,7 @@ def test_undo_edits(tablewidget, qtbot):
     expected_value = ['new_str1', False, 1.234, 7]
     for i in range(4):
         model_index = tableview.model().index(0, i)
-        tableview.model().set_data_edits_at(model_index, expected_value[i])
+        tableview.model().set_data_edit_at(model_index, expected_value[i])
         assert model_index.data() == expected_data[i]
         assert tableview.model().get_value_at(model_index) == expected_value[i]
         assert tableview.model().data_edit_count()
@@ -565,7 +549,7 @@ def test_save_edits(tablewidget, qtbot, mocker):
     assert tableview.model().has_unsaved_data_edits() is False
     for i in range(4):
         model_index = tableview.model().index(0, i)
-        tableview.model().set_data_edits_at(model_index, expected_value[i])
+        tableview.model().set_data_edit_at(model_index, expected_value[i])
         assert model_index.data() == expected_data[i]
         assert tableview.model().get_value_at(model_index) == expected_value[i]
     assert tableview.model().data_edit_count() == i + 1
@@ -587,8 +571,8 @@ def test_save_edits(tablewidget, qtbot, mocker):
 
     # Save all edits.
     patcher.return_value = QMessageBox.Save
-    qtbot.keyPress(tablewidget, Qt.Key_Enter, modifier=Qt.ControlModifier)
-    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
+    with qtbot.waitSignal(tableview.model().sig_data_updated, timeout=5000):
+        tablewidget.tableview._save_data_edits(force=False)
 
     assert patcher.call_count == 2
     assert tableview.model().data_edit_count() == 0
@@ -600,13 +584,14 @@ def test_save_edits(tablewidget, qtbot, mocker):
 
     # Do another edit.
     model_index = tableview.model().index(0, 0)
-    tableview.model().set_data_edits_at(model_index, 'new_new_str1')
+    tableview.model().set_data_edit_at(model_index, 'new_new_str1')
     assert tableview.model().data_edit_count() == 1
     assert tableview.model().has_unsaved_data_edits() is True
 
     # Save the edits and assert that the warning dialog was not shown.
-    qtbot.keyPress(tablewidget, Qt.Key_Enter, modifier=Qt.ControlModifier)
-    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
+    # with qtbot.waitSignal(tableview.model().sig_data_updated, timeout=5000):
+    with qtbot.waitSignal(tableview.model().sig_data_updated, timeout=5000):
+        tablewidget.tableview._save_data_edits(force=False)
 
     assert patcher.call_count == 2
     assert model_index.data() == 'new_new_str1'
@@ -944,7 +929,7 @@ def test_auto_column_sorting(tablewidget, qtbot):
 
     # Edit the value of the selected index and assert the values were
     # automatically sorted.
-    tableview.model().set_data_edits_at(selection_model.currentIndex(), 'str4')
+    tableview.model().set_data_edit_at(selection_model.currentIndex(), 'str4')
     assert get_values_for_column(model.index(0, 0)) == ['str2', 'str3', 'str4']
     assert selection_model.currentIndex().data() == 'str4'
     assert get_selected_data(tablewidget) == ['2.222', '29', 'str4']
