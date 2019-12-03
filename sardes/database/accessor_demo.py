@@ -12,7 +12,6 @@ Accessor implementation of a Demo database.
 """
 
 # ---- Standard imports
-from copy import deepcopy
 import datetime as dt
 from time import sleep
 
@@ -188,7 +187,9 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         to the observation wells that are saved in the database.
         """
         sleep(0.3)
-        return deepcopy(OBS_WELLS_DF)
+        df = OBS_WELLS_DF.copy()
+        df.index_dtype = type(OBS_WELLS_DF.index[0]).__name__
+        return df
 
     # ---- Sonde Brands and Models Library
     def get_sonde_models_lib(self):
@@ -197,7 +198,7 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         to sonde brands and models.
         """
         sleep(0.1)
-        sonde_models = deepcopy(SONDE_MODELS_LIB)
+        sonde_models = SONDE_MODELS_LIB.copy()
 
         # Combine the brand and model into a same field.
         sonde_models['sonde_brand_model'] = (
@@ -213,10 +214,12 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         to the sondes used to monitor groundwater properties in the wells.
         """
         sleep(0.3)
-        return (deepcopy(SONDES_DATA)
-                .sort_values(['sonde_brand_model', 'sonde_serial_no'])
-                .drop('sonde_brand_model', axis=1)
-                )
+        df = (SONDES_DATA
+              .copy()
+              .sort_values(['sonde_brand_model', 'sonde_serial_no'])
+              .drop('sonde_brand_model', axis=1))
+        df.index_dtype = type(SONDES_DATA.index[0]).__name__
+        return df
 
     def set_sondes_data(self, sonde_id, attribute_name, attribute_value):
         """
@@ -278,6 +281,13 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         return tseries_group
 
     # ---- Manual mesurements
+    def get_manual_measurements_index_dtype(self):
+        """
+        Return the data type of the indexes used to reference the manual
+        measurements the database.
+        """
+        return type(MANUAL_MEASUREMENTS.index[0]).__name__
+
     def get_manual_measurements(self):
         """
         Return a :class:`pandas.DataFrame` containing the water level manual
@@ -285,8 +295,9 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         network.
         """
         sleep(0.1)
-        manual_measurements = deepcopy(MANUAL_MEASUREMENTS)
-        return manual_measurements
+        df = MANUAL_MEASUREMENTS.copy()
+        df.index_dtype = type(MANUAL_MEASUREMENTS.index[0]).__name__
+        return df
 
 
 if __name__ == '__main__':
