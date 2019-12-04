@@ -20,7 +20,8 @@ class SardesPluginBase(QObject):
     """
     Basic functionality for Sardes plugins.
 
-    WARNING: Don't override any methods or attributes present here!
+    WARNING: Don't override any methods or attributes present here unless you
+    know what you are doing.
     """
 
     def __init__(self, parent=None):
