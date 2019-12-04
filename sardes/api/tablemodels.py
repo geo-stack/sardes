@@ -58,8 +58,10 @@ class SardesTableData(object):
     A container to hold data of a logical table and manage edits.
     """
 
-    def __init__(self, data):
+    def __init__(self, data, name, index_dtype):
         self.data = data.copy()
+        self.name = name
+        self.index_dtype = index_dtype
 
         # A list containing the edits made by the user to the data
         # in chronological order.
@@ -230,6 +232,7 @@ class SardesTableModelBase(QAbstractTableModel):
         for name in self.req_data_names():
             dataf = pd.DataFrame([])
             dataf.name = name
+            dataf.index_dtype = None
             self.set_model_data(dataf)
 
         self.set_database_connection_manager(db_connection_manager)
@@ -296,6 +299,7 @@ class SardesTableModelBase(QAbstractTableModel):
         for name in self.req_data_names():
             dataf = pd.DataFrame([])
             dataf.name = name
+            dataf.index_dtype = None
             self.set_model_data(dataf)
 
     def req_data_names(self):
@@ -344,7 +348,8 @@ class SardesTableModelBase(QAbstractTableModel):
             values that are mapped in _data_columns_mapper.
         """
         dataf_name = dataf.name
-        if dataf.name == self.TABLE_DATA_NAME:
+        if dataf_name == self.TABLE_DATA_NAME:
+            dataf_index_dtype = dataf.index_dtype
             self.beginResetModel()
 
             # Add missing columns to the dataframe.
@@ -355,17 +360,16 @@ class SardesTableModelBase(QAbstractTableModel):
             # of the table model so that we can access them with pandas iloc.
             dataf = dataf[self.columns]
 
-            self._datat = SardesTableData(dataf)
+            self._datat = SardesTableData(dataf, dataf_name, dataf_index_dtype)
 
             self.endResetModel()
             self.sig_data_edited.emit(False, False)
-        elif dataf.name in self.REQ_LIB_NAMES:
-            self.libraries[dataf.name] = dataf
-        dataf.name = dataf_name
+        elif dataf_name in self.REQ_LIB_NAMES:
+            self.libraries[dataf_name] = dataf
 
         # Update the state of data update and emit a signal if the updating
         # is completed.
-        self._data_that_need_to_be_updated.remove(dataf.name)
+        self._data_that_need_to_be_updated.remove(dataf_name)
         if not self._data_that_need_to_be_updated:
             self._update_visual_data()
             self.sig_data_updated.emit()
