@@ -395,7 +395,6 @@ class SardesHeaderView(QHeaderView):
         self.setHighlightSections(True)
         self.setSectionsClickable(True)
         self.setSectionsMovable(True)
-        self.setSortIndicatorShown(True)
         self.sectionDoubleClicked.connect(self._handle_section_doubleclick)
 
         # A dictionary whose keys corresponds to the section logical index
@@ -408,6 +407,7 @@ class SardesHeaderView(QHeaderView):
         Override Qt method to force the painting of the sort indicator
         on multiple columns.
         """
+        self.setSortIndicatorShown(True)
         self.blockSignals(True)
         if logicalIndex in self._sections_sorting_state:
             self.setSortIndicator(
