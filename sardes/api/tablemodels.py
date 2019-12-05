@@ -577,16 +577,6 @@ class SardesTableModelBase(QAbstractTableModel):
         self.sig_data_edited.emit(
             self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
 
-    def undo_last_data_edit(self):
-        """
-        Undo the last data edits that was added to the stack.
-        An update of the view is forced if  update_model_view is True.
-        """
-        self._datat.undo_edit()
-
-        # We make the appropriate calls to update the model and GUI.
-        self._update_visual_data()
-
     def add_new_row(self):
         """
         Add a new empty at the end of the table.
@@ -602,6 +592,32 @@ class SardesTableModelBase(QAbstractTableModel):
             )
 
         # We make the appropriate calls to update the model and GUI.
+        self.sig_data_edited.emit(
+            self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
+
+    def undo_last_data_edit(self):
+        """
+        Undo the last data edits that was added to the stack.
+        An update of the view is forced if  update_model_view is True.
+        """
+        last_edit = self._datat.edits()[-1]
+        if last_edit.type() == SardesTableModelBase.ValueChanged:
+            self._datat.undo_edit()
+            self._update_visual_data()
+            self.dataChanged.emit(
+                self.index(last_edit.row, last_edit.col),
+                self.index(last_edit.row, last_edit.col),
+                )
+        elif last_edit.type() == SardesTableModelBase.RowAdded:
+            self.beginRemoveRows(
+                QModelIndex(), last_edit.row, last_edit.row)
+            self._datat.undo_edit()
+            self._update_visual_data()
+            self.endRemoveRows()
+            self.dataChanged.emit(
+                self.index(last_edit.row, 0),
+                self.index(last_edit.row, self.columnCount() - 1),
+                )
         self.sig_data_edited.emit(
             self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
 
