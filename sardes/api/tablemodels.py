@@ -807,9 +807,12 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         if not source_index.isValid() or not len(self._proxy_dataf_index):
             return QModelIndex()
 
-        proxy_index_row = self._proxy_dataf_index.get_loc(
-            self.sourceModel().visual_dataf.index[source_index.row()])
-        return self.index(proxy_index_row, source_index.column())
+        try:
+            proxy_index_row = self._proxy_dataf_index.get_loc(
+                self.sourceModel().visual_dataf.index[source_index.row()])
+            return self.index(proxy_index_row, source_index.column())
+        except KeyError:
+            return QModelIndex()
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """
