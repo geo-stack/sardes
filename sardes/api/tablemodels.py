@@ -215,22 +215,33 @@ class SardesTableData(object):
         if len(self._data_edits_stack) == 0:
             return
 
-        # Undo the last edit.
         last_edit = self._data_edits_stack.pop(-1)
-        row = self.data.index.get_loc(last_edit.index)
-        col = self.data.columns.get_loc(last_edit.column)
+        if last_edit.type() == SardesTableModelBase.ValueChanged:
+            # Update the original data.
+            row = last_edit.row
+            col = last_edit.column
+            if (row, col) in self._original_data.index:
+                original_value = self._original_data.loc[(row, col), 'value']
+                self._original_data.drop((row, col), inplace=True)
+            else:
+                original_value = self.data.iloc[row, col]
 
-        if (row, col) in self._original_data.index:
-            original_value = self._original_data.loc[(row, col), 'value']
-            self._original_data.drop((row, col), inplace=True)
+            if (last_edit.previous_value != original_value or
+                    row in self._new_rows):
+                self._original_data.loc[(row, col), 'value'] = original_value
+
+            # We apply the previous value to the data.
+            self.data.iloc[row, col] = last_edit.previous_value
+        elif last_edit.type() == SardesTableModelBase.RowAdded:
+            # Update the original data.
+            row = last_edit.row
+            for col in range(len(self.data.columns)):
+                self._original_data.drop((row, col), inplace=True)
+
+            # We remove the row from the data.
+            self.data.drop(last_edit.index, inplace=True)
         else:
-            original_value = self.data.iloc[row, col]
-
-        if last_edit.previous_value != original_value:
-            self._original_data.loc[(row, col), 'value'] = original_value
-
-        # We apply the previous value to the data.
-        self.data.iloc[row, col] = last_edit.previous_value
+            raise ValueError
 
 
 class SardesTableModelBase(QAbstractTableModel):
