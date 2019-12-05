@@ -531,6 +531,14 @@ class SardesTableView(QTableView):
             lambda current, previous: edit_item_action.setEnabled(
                 self.is_data_editable_at(current)))
 
+        new_row_action = create_action(
+            self, _("New Item"),
+            icon='add_row',
+            tip=_("Create a new item."),
+            triggered=self._add_new_row,
+            shortcut=['Ctrl++', 'Ctrl+='],
+            context=Qt.WidgetShortcut)
+
         clear_item_action = create_action(
             self, _("Clear"),
             icon='erase_data',
@@ -576,8 +584,8 @@ class SardesTableView(QTableView):
             lambda v1, v2: undo_edits_action.setEnabled(v2))
 
         self._actions['edit'] = [
-            edit_item_action, clear_item_action, undo_edits_action,
-            save_edits_action, cancel_edits_action]
+            edit_item_action, new_row_action, clear_item_action,
+            undo_edits_action, save_edits_action, cancel_edits_action]
         self.addActions(self._actions['edit'])
 
         # Setup selection actions.
@@ -1061,6 +1069,12 @@ class SardesTableView(QTableView):
 
         self.selectionModel().clearSelection()
         self.model().save_data_edits()
+
+    def _add_new_row(self):
+        """
+        Add a new empty row at the end of this table.
+        """
+        self.model().add_new_row()
 
     def raise_edits_error(self, model_index, message):
         """"
