@@ -791,9 +791,13 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         if not proxy_index.isValid() or not len(self._proxy_dataf_index):
             return QModelIndex()
 
-        source_index_row = self.sourceModel().visual_dataf.index.get_loc(
-            self._proxy_dataf_index[proxy_index.row()])
-        return self.sourceModel().index(source_index_row, proxy_index.column())
+        try:
+            source_index_row = self.sourceModel().visual_dataf.index.get_loc(
+                self._proxy_dataf_index[proxy_index.row()])
+            return self.sourceModel().index(
+                source_index_row, proxy_index.column())
+        except KeyError:
+            return QModelIndex()
 
     def mapFromSource(self, source_index):
         """
