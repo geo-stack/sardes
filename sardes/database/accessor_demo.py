@@ -310,6 +310,15 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         return tseries_group
 
     # ---- Manual mesurements
+    def add_manual_measurements(self, measurement_id, attribute_values):
+        """
+        Add a new manual measurements to the database using the provided ID
+        and attribute values.
+        """
+        for column in MANUAL_MEASUREMENTS.columns:
+            MANUAL_MEASUREMENTS.loc[measurement_id, column] = (
+                attribute_values.get(column, None))
+
     def get_manual_measurements(self):
         """
         Return a :class:`pandas.DataFrame` containing the water level manual
