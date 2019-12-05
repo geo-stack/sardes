@@ -398,8 +398,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
         # Save the dtype of the indexes and the name of the table.
         obs_wells.index_dtype = type(
-            inspect(ObservationWell).primary_key[0].type
-            ).__name__
+            inspect(ObservationWell).primary_key[0].type).__name__
         obs_wells.name = 'observation_wells_data'
         return obs_wells
 
@@ -441,6 +440,11 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         # Set the index to the observation well ids.
         sonde_models.set_index('sonde_model_id', inplace=True, drop=True)
 
+        # Save the dtype of the indexes and the name of the table.
+        sonde_models.index_dtype = type(
+            inspect(SondeModels).primary_key[0].type).__name__
+        sonde_models.name = 'sonde_models_lib'
+
         return sonde_models
 
     # ---- Sondes Inventory
@@ -480,8 +484,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
         # Save the dtype of the indexes and the name of the table.
         sondes.index_dtype = type(
-            inspect(Sondes).primary_key[0].type
-            ).__name__
+            inspect(Sondes).primary_key[0].type).__name__
         sondes.name = 'sondes_data'
         return sondes
 
@@ -680,8 +683,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
         # Save the dtype of the indexes and the name of the table.
         measurements.index_dtype = type(
-            inspect(ManualMeasurements).primary_key[0].type
-            ).__name__
+            inspect(ManualMeasurements).primary_key[0].type).__name__
         measurements.name = 'manual_measurements'
         return measurements
 

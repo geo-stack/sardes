@@ -106,7 +106,6 @@ class DatabaseConnectionWorker(QObject):
         else:
             print("failed because not connected to a database.")
             data = DataFrame([])
-        data.name = name
         self._cache[name] = data
         return data,
 
