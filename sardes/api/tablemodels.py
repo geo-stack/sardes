@@ -573,6 +573,7 @@ class SardesTableModelBase(QAbstractTableModel):
 
         # We make the appropriate calls to update the model and GUI.
         self._update_visual_data()
+        self.dataChanged.emit(model_index, model_index)
         self.sig_data_edited.emit(
             self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
 
