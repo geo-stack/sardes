@@ -35,15 +35,17 @@ class NoDataEdit(object):
 
 class ValueChanged(object):
     """
-    A class that represent a change of a value at a given model index.
+    A class that represents a change of a value at a given model index.
     """
 
-    def __init__(self, index, column, edited_value, previous_value):
+    def __init__(self, index, column, edited_value, previous_value, row, col):
         super() .__init__()
         self.index = index
         self.column = column
         self.previous_value = previous_value
         self.edited_value = edited_value
+        self.row = row
+        self.col = col
 
     def type(self):
         """
@@ -101,6 +103,7 @@ class SardesTableData(object):
             'column', inplace=True, drop=True, append=True)
 
     def __len__(self):
+        """Return the len of the data."""
         return len(self.data)
 
     def set(self, row, col, edited_value):
@@ -110,10 +113,10 @@ class SardesTableData(object):
         """
         previous_value = self.data.iloc[row, col]
         self._data_edits_stack.append(ValueChanged(
-            self.data.index[row],
-            self.data.columns[col],
-            edited_value,
-            previous_value))
+            self.data.index[row], self.data.columns[col],
+            edited_value, previous_value,
+            row, col
+            ))
 
         # We update the list of original data. We store this in an independent
         # list for performance reasons when displaying the data in a GUI.
