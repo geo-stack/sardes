@@ -174,7 +174,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
             - obs_well_notes: str
                 Any notes related to the observation well.
         """
-        return DataFrame([])
+        raise NotImplementedError
 
     # ---- Sonde Brands and Models Library
     def get_sonde_models_lib(self):
@@ -204,7 +204,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
             - sonde_model: str
                 A sonde model.
         """
-        return DataFrame([])
+        raise NotImplementedError
 
     # ---- Sondes Inventory
     def get_sondes_data(self):
@@ -258,7 +258,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
             - sonde_model: str
                 The model of the sonde.
         """
-        return DataFrame([])
+        raise NotImplementedError
 
     def set_sondes_data(self, sonde_id, attribute_name, value):
         """
@@ -380,7 +380,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
                 The value of the water level that was measured manually
                 in the well.
         """
-        pass
+        raise NotImplementedError
 
     def set_manual_measurements(self, *args, **kargs):
         pass
