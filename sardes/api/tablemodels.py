@@ -560,8 +560,14 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         Cancel all the edits that were made to the table data since last save.
         """
+        self.beginResetModel()
         self._datat.cancel_edits()
         self._update_visual_data()
+        self.endResetModel()
+        self.dataChanged.emit(
+            self.index(0, 0),
+            self.index(self.rowCount() - 1, self.columnCount() - 1)
+            )
         self.sig_data_edited.emit(False, False)
 
     def set_data_edit_at(self, model_index, edited_value):
