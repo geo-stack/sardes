@@ -85,7 +85,15 @@ class DatabaseConnectionWorker(QObject):
         print("Connection with database closed.")
         return None,
 
-    # ---- Get data
+    # ---- Add, Get, Set data
+    def _add(self, name, *args, **kargs):
+        """
+        Add a new item to the data related to name in the database.
+        """
+        if name in self._cache:
+            del self._cache[name]
+        self.db_accessor.add(name, *args, **kargs)
+
     def _get(self, name, *args, **kargs):
         """
         Get the data related to name from the database.
@@ -206,6 +214,15 @@ class DatabaseConnectionManager(QObject):
         return self._is_connecting
 
     # ---- Public methods
+    def add(self, *args, callback=None, postpone_exec=False):
+        """
+        Add a new item to the data related to name in the database.
+        """
+        self._data_changed.add(args[0])
+        self._add_task('add', callback, *args)
+        if not postpone_exec:
+            self.run_tasks()
+
     def get(self, *args, callback=None, postpone_exec=False):
         """
         Get the data related to name from the database.
