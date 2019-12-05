@@ -220,7 +220,7 @@ class SardesTableData(object):
         if last_edit.type() == SardesTableModelBase.ValueChanged:
             # Update the original data.
             row = last_edit.row
-            col = last_edit.column
+            col = last_edit.col
             if (row, col) in self._original_data.index:
                 original_value = self._original_data.loc[(row, col), 'value']
                 self._original_data.drop((row, col), inplace=True)
