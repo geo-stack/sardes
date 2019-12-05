@@ -9,6 +9,7 @@
 
 # ---- Standard imports
 from collections import OrderedDict
+import uuid
 
 # ---- Third party imports
 import pandas as pd
