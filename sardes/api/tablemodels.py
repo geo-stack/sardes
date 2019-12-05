@@ -635,6 +635,15 @@ class SardesTableModelBase(QAbstractTableModel):
                     edit.index, edit.column, edit.edited_value,
                     callback=callback,
                     postpone_exec=True)
+            elif edit.type() == self.RowAdded:
+                self.db_connection_manager.add(
+                    self.TABLE_DATA_NAME,
+                    edit.index,
+                    edit.values,
+                    callback=callback,
+                    postpone_exec=True)
+            else:
+                raise TypeError('Edit type not recognized.')
         self.db_connection_manager.run_tasks()
 
 
