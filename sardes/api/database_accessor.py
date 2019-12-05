@@ -406,4 +406,4 @@ class DatabaseAccessor(DatabaseAccessorBase):
         raise NotImplementedError
 
     def set_manual_measurements(self, *args, **kargs):
-        pass
+        raise NotImplementedError

@@ -225,6 +225,15 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         return df
 
     # ---- Sondes Inventory
+    def add_sondes_data(self, sonde_id, attribute_values):
+        """
+        Add a new sonde to the database using the provided sonde ID
+        and attribute values.
+        """
+        for column in SONDES_DATA.columns:
+            SONDES_DATA.loc[sonde_id, column] = (
+                attribute_values.get(column, None))
+
     def get_sondes_data(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
