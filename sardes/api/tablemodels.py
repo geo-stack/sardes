@@ -504,14 +504,7 @@ class SardesTableModelBase(QAbstractTableModel):
         self.visual_dataf = self._datat.copy()
         if self.visual_dataf.empty:
             return
-
         self.visual_dataf = self.logical_to_visual_data(self.visual_dataf)
-
-        self.dataChanged.emit(
-            self.index(0, 0),
-            self.index(len(self.visual_dataf) - 1,
-                       len(self.visual_dataf.columns) - 1)
-            )
 
     # ---- Data edits
     def data_edits(self):
