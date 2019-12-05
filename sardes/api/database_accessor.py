@@ -42,6 +42,13 @@ class DatabaseAccessorBase(ABC):
         """
         getattr(self, 'set_' + name)(*args, **kargs)
 
+    def add(self, name, primary_key, values={}):
+        """
+        Add a new item to the data related to name in the database using
+        the given primary_key and values.
+        """
+        getattr(self, 'add_' + name)(primary_key, values)
+
 
 class DatabaseAccessor(DatabaseAccessorBase):
     """
@@ -82,17 +89,30 @@ class DatabaseAccessor(DatabaseAccessorBase):
     @property
     @abstractmethod
     def observation_wells(self):
+    def add_observation_wells_data(self, sampling_feature_id,
+                                   attribute_values):
         """
         Return the list of observation wells that are saved in the
         database.
+        Add a new observation well to the database using the provided
+        sampling feature ID and attribute values.
 
         Returns
         -------
         list of str
             A list of strings corresponding to the name given to the
             observation wells that are saved in the database.
+        Parameters
+        ----------
+        sampling_feature_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the observation well
+            in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values for the new
+            observation well.
         """
         pass
+        raise NotImplementedError
 
     def set_observation_wells_data(self, sampling_feature_id, attribute_name,
                                    value):
