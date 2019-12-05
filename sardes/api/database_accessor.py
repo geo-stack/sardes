@@ -89,11 +89,15 @@ class DatabaseAccessor(DatabaseAccessorBase):
     @property
     @abstractmethod
     def observation_wells(self):
-    def add_observation_wells_data(self, sampling_feature_id,
-                                   attribute_values):
         """
         Return the list of observation wells that are saved in the
         database.
+        """
+        pass
+
+    def add_observation_wells_data(self, sampling_feature_id,
+                                   attribute_values):
+        """
         Add a new observation well to the database using the provided
         sampling feature ID and attribute values.
 
@@ -111,7 +115,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
             A dictionary containing the attribute values for the new
             observation well.
         """
-        pass
         raise NotImplementedError
 
     def set_observation_wells_data(self, sampling_feature_id, attribute_name,
