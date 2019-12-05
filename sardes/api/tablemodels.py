@@ -144,8 +144,6 @@ class SardesTableData(object):
         """
         return self.data.copy()
 
-    def row_count(self):
-        return len(self.data)
 
     # ---- Edits
     def edits(self):
