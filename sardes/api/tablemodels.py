@@ -53,6 +53,25 @@ class ValueChanged(object):
         return SardesTableModelBase.ValueChanged
 
 
+class RowAdded(object):
+    """
+    A class that represents a new row added to the data.
+    """
+
+    def __init__(self, index, values, row):
+        super() .__init__()
+        self.index = index
+        self.values = values
+        self.row = row
+
+    def type(self):
+        """
+        Return an integer that indicates the type of data edit this
+        edit correspond to, as defined in :class:`SardesTableModelBase`.
+        """
+        return SardesTableModelBase.RowAdded
+
+
 class SardesTableData(object):
     """
     A container to hold data of a logical table and manage edits.
