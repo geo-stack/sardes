@@ -436,5 +436,21 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
-    def set_manual_measurements(self, *args, **kargs):
+    def set_manual_measurements(self, measurement_id, attribute_name, value):
+        """
+        Save in the database the new attribute value for the manual
+        measureement  corresponding to the specified measurement id.
+
+        Parameters
+        ----------
+        measurement_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the manual measurement
+            in the database.
+        attribute_name: str
+            Name of the attribute of the manual measurement for which the
+            value need to be updated in the database.
+        value: object
+            Value that need to be updated for the corresponding attribute and
+            manual measurement id.
+        """
         raise NotImplementedError
