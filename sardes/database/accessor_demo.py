@@ -167,11 +167,18 @@ class DatabaseAccessorDemo(DatabaseAccessor):
     # ---- Observation Wells
     @property
     def observation_wells(self):
+    def add_observation_wells_data(self, sampling_feature_id,
+                                   attribute_values):
         """
         Return the list of observation wells that are saved in the
         database.
+        Add a new observation well to the database using the provided
+        sampling feature ID and attribute values.
         """
         return OBS_WELLS_DF['obs_well_id'].values
+        for column in OBS_WELLS_DF.columns:
+            OBS_WELLS_DF.loc[sampling_feature_id, column] = (
+                attribute_values.get(column, None))
 
     def set_observation_wells_data(self, sampling_feature_id, attribute_name,
                                    attribute_value):
