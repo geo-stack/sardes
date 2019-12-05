@@ -396,10 +396,11 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         # Replace nan by None.
         obs_wells = obs_wells.where(obs_wells.notnull(), None)
 
-        # Save the dtype of the indexes.
+        # Save the dtype of the indexes and the name of the table.
         obs_wells.index_dtype = type(
             inspect(ObservationWell).primary_key[0].type
             ).__name__
+        obs_wells.name = 'observation_wells_data'
         return obs_wells
 
     # ---- Sonde Brands and Models Library
@@ -477,10 +478,11 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         # Set the index to the observation well ids.
         sondes.set_index('sonde_uuid', inplace=True, drop=True)
 
-        # Save the dtype of the indexes.
+        # Save the dtype of the indexes and the name of the table.
         sondes.index_dtype = type(
             inspect(Sondes).primary_key[0].type
             ).__name__
+        sondes.name = 'sondes_data'
         return sondes
 
     def set_sondes_data(self, sonde_id, attribute_name, attribute_value):
@@ -676,10 +678,11 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         measurements.set_index(
             'manual_measurement_id', inplace=True, drop=True)
 
-        # Save the dtype of the indexes.
+        # Save the dtype of the indexes and the name of the table.
         measurements.index_dtype = type(
             inspect(ManualMeasurements).primary_key[0].type
             ).__name__
+        measurements.name = 'manual_measurements'
         return measurements
 
 

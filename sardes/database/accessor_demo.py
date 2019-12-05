@@ -189,6 +189,7 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         sleep(0.3)
         df = OBS_WELLS_DF.copy()
         df.index_dtype = type(OBS_WELLS_DF.index[0]).__name__
+        df.name = 'observation_wells_data'
         return df
 
     # ---- Sonde Brands and Models Library
@@ -219,6 +220,7 @@ class DatabaseAccessorDemo(DatabaseAccessor):
               .sort_values(['sonde_brand_model', 'sonde_serial_no'])
               .drop('sonde_brand_model', axis=1))
         df.index_dtype = type(SONDES_DATA.index[0]).__name__
+        df.name = 'sondes_data'
         return df
 
     def set_sondes_data(self, sonde_id, attribute_name, attribute_value):
@@ -290,6 +292,7 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         sleep(0.1)
         df = MANUAL_MEASUREMENTS.copy()
         df.index_dtype = type(MANUAL_MEASUREMENTS.index[0]).__name__
+        df.name = 'manual_measurements'
         return df
 
 
