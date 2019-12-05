@@ -47,11 +47,13 @@ INDEXES = [uuid.uuid4() for i in range(len(VALUES))]
 
 @pytest.fixture
 def TABLE_DATAF():
-    return pd.DataFrame(
+    dataf = pd.DataFrame(
         np.array(VALUES),
         index=INDEXES,
         columns=COLUMNS
         )
+    dataf.index_dtype = type(INDEXES[0]).__name__
+    return dataf
 
 
 @pytest.fixture
@@ -59,7 +61,10 @@ def tablemodel(qtbot, TABLE_DATAF):
 
     class ConnectionManagerMock(DatabaseConnectionManager):
         def get(self, name, callback, postpone_exec):
+            # Note that we voluntarily exclude the last column from the data
+            # to see if the code can handle that case correctly.
             dataf = TABLE_DATAF.copy()[COLUMNS[:-1]]
+            dataf.index_dtype = TABLE_DATAF.index_dtype
             dataf.name = name
             callback(dataf)
 
