@@ -389,6 +389,22 @@ class DatabaseAccessor(DatabaseAccessorBase):
         pass
 
     # ---- Manual Measurements
+    def add_manual_measurements(self, measurement_id, attribute_values):
+        """
+        Add a new manual measurement to the database using the provided ID
+        and attribute values.
+
+        Parameters
+        ----------
+        measurement_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the manual measurement
+            in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values for the new
+            manual measurement.
+        """
+        raise NotImplementedError
+
     def get_manual_measurements(self):
         """
         Return a :class:`pandas.DataFrame` containing the water level manual
