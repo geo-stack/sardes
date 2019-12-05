@@ -231,6 +231,20 @@ class DatabaseAccessor(DatabaseAccessorBase):
         raise NotImplementedError
 
     # ---- Sondes Inventory
+    def add_sondes_data(self, sonde_id, attribute_values):
+        """
+        Add a new sonde to the database using the provided sonde ID
+        and attribute values.
+
+        Parameters
+        ----------
+        sonde_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the sonde in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values for the new sonde.
+        """
+        raise NotImplementedError
+
     def get_sondes_data(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
