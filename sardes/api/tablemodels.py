@@ -582,6 +582,22 @@ class SardesTableModelBase(QAbstractTableModel):
 
         # We make the appropriate calls to update the model and GUI.
         self._update_visual_data()
+
+    def add_new_row(self):
+        """
+        Add a new empty at the end of the table.
+        """
+        self.beginInsertRows(
+            QModelIndex(), len(self._datat), len(self._datat))
+        self._datat.add_new_row()
+        self._update_visual_data()
+        self.endInsertRows()
+        self.dataChanged.emit(
+            self.index(self.rowCount() - 1, self.columnCount() - 1),
+            self.index(self.rowCount() - 1, self.columnCount() - 1)
+            )
+
+        # We make the appropriate calls to update the model and GUI.
         self.sig_data_edited.emit(
             self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
 
