@@ -144,6 +144,29 @@ class SardesTableData(object):
         """
         return self.data.copy()
 
+    def add_new_row(self, values={}):
+        """
+        Add a new row with the provided values at the end of the data.
+        """
+        if self.index_dtype == 'UUID':
+            new_index = uuid.uuid4()
+        else:
+            # We assume the indexes are integers.
+            new_index = (0 if not len(self.data.index) else
+                         max(self.data.index) + 1)
+        row = len(self.data)
+        self._new_rows.append(row)
+        self._data_edits_stack.append(RowAdded(new_index, values, row))
+
+        # We need to add each column of the new row to the orginal data so
+        # that they are highlighted correctly in the table.
+        for col in range(len(self.data.columns)):
+            self._original_data.loc[(row, col), 'value'] = values.get(
+                self.data.columns[col], None)
+
+        # We add the new row to the data.
+        self.data = self.data.append(pd.DataFrame(
+            values, columns=self.data.columns, index=[new_index]))
 
     # ---- Edits
     def edits(self):
