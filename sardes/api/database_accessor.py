@@ -92,6 +92,12 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         Return the list of observation wells that are saved in the
         database.
+
+        Returns
+        -------
+        list of str
+            A list of strings corresponding to the name given to the
+            observation wells that are saved in the database.
         """
         pass
 
@@ -101,11 +107,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
         Add a new observation well to the database using the provided
         sampling feature ID and attribute values.
 
-        Returns
-        -------
-        list of str
-            A list of strings corresponding to the name given to the
-            observation wells that are saved in the database.
         Parameters
         ----------
         sampling_feature_id: int, :class:`uuid.UUID`
