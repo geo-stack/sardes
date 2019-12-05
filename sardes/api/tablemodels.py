@@ -428,6 +428,10 @@ class SardesTableModelBase(QAbstractTableModel):
         if not self._data_that_need_to_be_updated:
             self._update_visual_data()
             self.sig_data_updated.emit()
+            self.dataChanged.emit(
+                self.index(0, 0),
+                self.index(self.rowCount() - 1, self.columnCount() - 1)
+                )
 
     def rowCount(self, *args, **kargs):
         """Qt method override. Return the number visible rows in the table."""
