@@ -439,7 +439,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
     def set_manual_measurements(self, measurement_id, attribute_name, value):
         """
         Save in the database the new attribute value for the manual
-        measureement  corresponding to the specified measurement id.
+        measurement  corresponding to the specified id.
 
         Parameters
         ----------
