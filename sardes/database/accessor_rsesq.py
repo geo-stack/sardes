@@ -14,7 +14,9 @@ Object-Relational Mapping and Accessor implementation of the RSESQ database.
 # ---- Third party imports
 from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKTElement
+import numpy as np
 import pandas as pd
+from psycopg2.extensions import register_adapter, AsIs
 from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.dialects.postgresql import UUID
@@ -29,6 +31,25 @@ from sqlalchemy.orm import sessionmaker, relationship
 from sardes.api.database_accessor import DatabaseAccessorBase
 from sardes.database.utils import map_table_column_names, format_sqlobject_repr
 from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
+
+
+# =============================================================================
+# ---- Register Adapters
+# =============================================================================
+# This is required to avoid a "can't adapt type 'numpy.int64' or
+# 'numpy.float64'" psycopg2.ProgrammingError.
+# See https://stackoverflow.com/questions/50626058
+
+def addapt_numpy_float64(numpy_float64):
+    return AsIs(numpy_float64)
+
+
+def addapt_numpy_int64(numpy_int64):
+    return AsIs(numpy_int64)
+
+
+register_adapter(np.float64, addapt_numpy_float64)
+register_adapter(np.int64, addapt_numpy_int64)
 
 
 # =============================================================================
