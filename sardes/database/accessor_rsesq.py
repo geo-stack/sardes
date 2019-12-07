@@ -56,19 +56,21 @@ class Location(Base):
         return format_sqlobject_repr(self)
 
 
-class ManualMeasurements(Base):
+class GenericNumericalValue(Base):
     """
-    An object used to map the 'manual measurements' table of the
+    An object used to map the 'generique' table of the
     RSESQ database.
     """
     __tablename__ = 'generique'
     __table_args__ = ({"schema": "resultats"})
 
-    manual_measurement_id = Column('generic_res_id', Integer, primary_key=True)
-    obs_well_id = Column('no_piezometre', String)
-    manual_measurement_date = Column('la_date', DateTime)
-    manual_measurement_time = Column('heure', DateTime)
-    manual_measurement = Column('lecture_profondeur', Float)
+    gen_num_value_id = Column('generic_res_id', Integer, primary_key=True)
+    gen_num_value = Column('valeur_num', Float)
+    # Relation to table resultats.observation
+    observation_uuid = Column('observation_uuid', UUID(as_uuid=True))
+    # Relation to table librairies.xm_observed_property
+    obs_property_id = Column('obs_property_id', Integer)
+    gen_num_value_notes = Column('gen_note', String)
 
     def __repr__(self):
         return format_sqlobject_repr(self)
