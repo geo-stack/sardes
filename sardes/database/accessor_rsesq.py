@@ -111,6 +111,8 @@ class Observation(Base):
     observation_uuid = Column('observation_uuid', String, primary_key=True)
     sampling_feature_uuid = Column('elemcarac_uuid', String)
     process_uuid = Column('process_uuid', String)
+    obs_datetime = Column('date_relv_hg', DateTime)
+    param_id = Column('param_id', Integer)
 
     def __repr__(self):
         return format_sqlobject_repr(self)
