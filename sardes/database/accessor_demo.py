@@ -61,15 +61,15 @@ OBS_WELLS_DF = pd.DataFrame(
              'longitude', 'is_station_active', 'obs_well_notes']
     )
 
-MONITORED_PROPERTIES = ['NIV_EAU', 'TEMP', 'COND_ELEC']
+MONITORED_PROPERTIES = ['NIV_EAU', 'TEMP_EAU', 'COND_ELEC']
 MONITORED_PROPERTY_NAMES = {
     'COND_ELEC': "Water electrical conductivity",
     'NIV_EAU': "Water level",
-    'TEMP': "Water level temperature"}
+    'TEMP_EAU': "Water level temperature"}
 MONITORED_PROPERTY_UNITS = {
     'COND_ELEC': "",
     'NIV_EAU': "m",
-    'TEMP': "\u00B0C"}
+    'TEMP_EAU': "\u00B0C"}
 
 DATE_RANGE = pd.date_range(start='1/1/2015', end='1/1/2019')
 NYEAR = DATE_RANGE[-1].year - DATE_RANGE[0].year + 1
@@ -78,7 +78,7 @@ YEARLY_RADS = np.linspace(0, 2 * NYEAR * np.pi, len(DATE_RANGE))
 TSERIES = {}
 TSERIES_VALUES = 25 * np.sin(YEARLY_RADS) + 5
 TSERIES_VALUES += 3 * np.random.rand(len(TSERIES_VALUES))
-TSERIES['TEMP'] = Series(TSERIES_VALUES, index=DATE_RANGE)
+TSERIES['TEMP_EAU'] = Series(TSERIES_VALUES, index=DATE_RANGE)
 
 TSERIES_VALUES = np.hstack((np.linspace(100, 95, len(YEARLY_RADS) // 2),
                             np.linspace(95, 98, len(YEARLY_RADS) // 2)))
@@ -249,7 +249,7 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
 
     def get_monitored_property_color(self, monitored_property):
         return {'NIV_EAU': 'blue',
-                'TEMP': 'red',
+                'TEMP_EAU': 'red',
                 'COND_ELEC': 'cyan'
                 }[monitored_property]
 

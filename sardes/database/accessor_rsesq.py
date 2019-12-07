@@ -527,7 +527,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
 
     def get_monitored_property_color(self, monitored_property):
         return {'NIV_EAU': 'blue',
-                'TEMP': 'red',
+                'TEMP_EAU': 'red',
                 'COND_ELEC': 'cyan'
                 }[monitored_property]
 
