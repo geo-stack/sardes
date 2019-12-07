@@ -134,6 +134,7 @@ class Observation(Base):
     sampling_feature_uuid = Column('elemcarac_uuid', String)
     process_uuid = Column('process_uuid', String)
     obs_datetime = Column('date_relv_hg', DateTime)
+    # Relation with table librairies.lib_obs_parameter
     param_id = Column('param_id', Integer)
 
     def __repr__(self):
@@ -652,12 +653,13 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         """
         # Define a query to fetch the water level manual measurements
         # from the database.
-        query = (self._session.query(
-            GenericNumericalValue.gen_num_value.label('value'),
-            GenericNumericalValue.gen_num_value_notes.label('notes'),
-            GenericNumericalValue.observation_uuid,
-            Observation.obs_datetime.label('datetime'),
-            Observation.sampling_feature_uuid)
+        query = (
+            self._session.query(
+                GenericNumericalValue.gen_num_value.label('value'),
+                GenericNumericalValue.gen_num_value_notes.label('notes'),
+                GenericNumericalValue.gen_num_value_id,
+                Observation.obs_datetime.label('datetime'),
+                Observation.sampling_feature_uuid)
             .filter(GenericNumericalValue.obs_property_id == 2)
             .filter(GenericNumericalValue.observation_uuid ==
                     Observation.observation_uuid)
@@ -674,8 +676,40 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
 
         # Set the index to the observation well ids.
         measurements.set_index(
-            'observation_uuid', inplace=True, drop=True)
+            'gen_num_value_id', inplace=True, drop=True)
         return measurements
+
+    def set_manual_measurements(self, gen_num_value_id, attribute_name,
+                                attribute_value):
+        """
+        Save in the database the new attribute value for the manual
+        measurement corresponding to the specified id.
+        """
+        measurement = (
+            self._session.query(GenericNumericalValue)
+            .filter(GenericNumericalValue.gen_num_value_id == gen_num_value_id)
+            .one()
+            )
+        if attribute_name == 'sampling_feature_uuid':
+            observation = self._get_observation(measurement.observation_uuid)
+            observation.sampling_feature_uuid = attribute_value
+        elif attribute_name == 'datetime':
+            observation = self._get_observation(measurement.observation_uuid)
+            observation.obs_datetime = attribute_name
+        elif attribute_name == 'value':
+            measurement.gen_num_value = float(attribute_value)
+        elif attribute_name == 'notes':
+            measurement.gen_num_value_notes = attribute_value
+        self._session.commit()
+
+    # ---- Private methods
+    def _get_observation(self, observation_uuid):
+        """
+        Return the observation related to the given uuid.
+        """
+        return (self._session.query(Observation)
+                .filter(Observation.observation_uuid == observation_uuid)
+                .one())
 
 
 if __name__ == "__main__":
