@@ -174,22 +174,23 @@ class TimeSeriesChannels(Base):
     __table_args__ = ({"schema": "resultats"})
 
     channel_uuid = Column('canal_uuid', String, primary_key=True)
+    channel_id = Column('canal_id', Integer)
     observation_uuid = Column('observation_uuid', String)
+    # Relation with table librairies.xm_observed_property
     obs_property_id = Column('obs_property_id', Integer)
 
     def __repr__(self):
         return format_sqlobject_repr(self)
 
 
-class TimeSeriesRaw(Base):
-    __tablename__ = 'temporel_non_corrige'
+class TimeSeriesData(Base):
+    __tablename__ = 'temporel_corrige'
     __table_args__ = ({"schema": "resultats"})
 
-    raw_temporal_data_uuid = Column(
-        'temp_non_cor_uuid', String, primary_key=True)
-    channel_uuid = Column('canal_uuid', String)
-    datetime = Column('date_temps', DateTime)
-    value = Column('valeur', Float)
+    datetime = Column('date_heure', DateTime, primary_key=True)
+    value = Column('valeur', Float, primary_key=True)
+    # Relation with table resultats.canal_temporel
+    channel_id = Column('canal_id', Integer, primary_key=True)
 
 
 # =============================================================================
@@ -552,16 +553,15 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
 
         # Define a query to fetch the timseries data from the database.
         query = (
-            self._session.query(TimeSeriesRaw.value,
-                                TimeSeriesRaw.datetime,
-                                TimeSeriesRaw.channel_uuid)
+            self._session.query(TimeSeriesData.value,
+                                TimeSeriesData.datetime,
+                                TimeSeriesData.channel_id)
+            .filter(TimeSeriesChannels.obs_property_id == obs_property_id)
             .filter(Observation.sampling_feature_uuid == sampling_feature_uuid)
             .filter(Observation.observation_uuid ==
                     TimeSeriesChannels.observation_uuid)
-            .filter(TimeSeriesChannels.obs_property_id == obs_property_id)
-            .filter(TimeSeriesRaw.channel_uuid ==
-                    TimeSeriesChannels.channel_uuid)
-            .order_by(TimeSeriesRaw.datetime, TimeSeriesRaw.channel_uuid)
+            .filter(TimeSeriesData.channel_id == TimeSeriesChannels.channel_id)
+            .order_by(TimeSeriesData.datetime, TimeSeriesData.channel_id)
             ).with_labels()
 
         # Fetch the data from the database and store them in a pandas
@@ -569,7 +569,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         data = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
         columns_map = map_table_column_names(
-            Observation, TimeSeriesChannels, TimeSeriesRaw, with_labels=True)
+            Observation, TimeSeriesChannels, TimeSeriesData, with_labels=True)
         data.rename(columns_map, axis='columns', inplace=True)
 
         data['datetime'] = pd.to_datetime(
@@ -599,11 +599,11 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         data.set_index(['datetime'], drop=True, inplace=True)
 
         # Split the data in channels.
-        for channel_uuid in data['channel_uuid'].unique():
-            channel_data = data[data['channel_uuid'] == channel_uuid]
+        for channel_id in data['channel_id'].unique():
+            channel_data = data[data['channel_id'] == channel_id]
             tseries_group.add_timeseries(TimeSeries(
                 pd.Series(channel_data['value'], index=channel_data.index),
-                tseries_id=channel_uuid,
+                tseries_id=channel_id,
                 tseries_name=(
                     self.get_monitored_property_name(monitored_property)),
                 tseries_units=(
@@ -668,5 +668,10 @@ if __name__ == "__main__":
     sonde_data = accessor.get_sondes_data()
     sonde_models = accessor.get_sonde_models_lib()
     manual_measurements = accessor.get_manual_measurements()
+
+    sampling_feature_uuid = accessor._get_obs_well_sampling_feature_uuid(
+        '01030001')
+    wlevel = accessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, 'NIV_EAU').timeseries[0]
 
     accessor.close_connection()
