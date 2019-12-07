@@ -664,19 +664,8 @@ if __name__ == "__main__":
 
     accessor.connect()
     obs_wells = accessor.get_observation_wells_data()
+    sonde_data = accessor.get_sondes_data()
+    sonde_models = accessor.get_sonde_models_lib()
     manual_measurements = accessor.get_manual_measurements()
 
-    print(accessor.observation_wells)
-    print(accessor.monitored_properties)
-    for monitored_propery in accessor.monitored_properties:
-        print(accessor.get_monitored_property_name(monitored_propery))
-        print(accessor.get_monitored_property_units(monitored_propery))
-
-    from time import time
-    for i in range(5):
-        t1 = time()
-        print(str(i + 1) + '/10', end='')
-        wldata = accessor.get_timeseries_for_obs_well('01370001', 'NIV_EAU')
-        t2 = time()
-        print(": %0.5f sec" % (t2 - t1))
     accessor.close_connection()
