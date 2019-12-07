@@ -628,46 +628,31 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         measurements made in the observation wells for the entire monitoring
         network.
         """
-        # Define a query to fetch the timseries data from the database.
-        query = (
-            self._session.query(ManualMeasurements,
-                                ObservationWell.sampling_feature_uuid)
-            .filter(ManualMeasurements.obs_well_id ==
-                    ObservationWell.obs_well_id)
-            .order_by(ManualMeasurements.obs_well_id,
-                      ManualMeasurements.manual_measurement_date,
-                      ManualMeasurements.manual_measurement_time)
+        # Define a query to fetch the water level manual measurements
+        # from the database.
+        query = (self._session.query(
+            GenericNumericalValue.gen_num_value.label('value'),
+            GenericNumericalValue.gen_num_value_notes.label('notes'),
+            GenericNumericalValue.observation_uuid,
+            Observation.obs_datetime.label('datetime'),
+            Observation.sampling_feature_uuid)
+            .filter(GenericNumericalValue.obs_property_id == 2)
+            .filter(GenericNumericalValue.observation_uuid ==
+                    Observation.observation_uuid)
+            .order_by(Observation.sampling_feature_uuid,
+                      Observation.obs_datetime)
             ).with_labels()
         measurements = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
 
         # Rename the column names to that expected by the api.
         columns_map = map_table_column_names(
-            ManualMeasurements, ObservationWell, with_labels=True)
+            GenericNumericalValue, Observation, with_labels=True)
         measurements.rename(columns_map, axis='columns', inplace=True)
-
-        # Strip timezone info since it is not set correctly in the
-        # BD anyway.
-        measurements['manual_measurement_date'] = (
-            measurements['manual_measurement_date'].dt.tz_localize(None))
-        measurements['manual_measurement_time'] = (
-            measurements['manual_measurement_time'].dt.tz_localize(None))
-
-        # Join the date and hour into a single datetime column.
-        measurements['datetime'] = pd.to_datetime(
-            measurements['manual_measurement_date'].dt.date.astype(str) +
-            ' ' +
-            measurements['manual_measurement_time'].dt.time.astype(str))
-
-        # Drop the columns that are not required by the API.
-        measurements.drop(['manual_measurement_date',
-                           'manual_measurement_time',
-                           'obs_well_id'],
-                          axis=1, inplace=True)
 
         # Set the index to the observation well ids.
         measurements.set_index(
-            'manual_measurement_id', inplace=True, drop=True)
+            'observation_uuid', inplace=True, drop=True)
         return measurements
 
 
