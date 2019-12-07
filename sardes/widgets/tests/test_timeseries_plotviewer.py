@@ -39,7 +39,7 @@ def tseriesviewer(qtbot, dbaccessor):
     wlevel_tseries = dbaccessor.get_timeseries_for_obs_well('', 'NIV_EAU')
     viewer.create_axe(wlevel_tseries)
 
-    wtemp_tseries = dbaccessor.get_timeseries_for_obs_well('', 'TEMP')
+    wtemp_tseries = dbaccessor.get_timeseries_for_obs_well('', 'TEMP_EAU')
     viewer.create_axe(wtemp_tseries)
 
     qtbot.addWidget(viewer)

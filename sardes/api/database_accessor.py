@@ -363,13 +363,15 @@ class DatabaseAccessorBase(ABC):
             ~~~~~~~~~~~~~~~~
             - sampling_feature_uuid: object
                 A unique identifier that is used to reference the observation
-                well in the database.
+                well in the database in which the manual measurement was made.
             - datetime: :class:`datetime.Datetime`
-                A datetime object corresponding to the time when the manual
-                measurement was made in the well.
-            - manual_measurement: float
+                A datetime object corresponding to the date and time when the
+                manual measurement was made in the well.
+            - value: float
                 The value of the water level that was measured manually
                 in the well.
+            - notes: str
+                Any notes related to the manual measurement.
         """
         pass
 
