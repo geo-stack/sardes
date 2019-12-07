@@ -123,7 +123,7 @@ class ObsWellsTableWidget(SardesTableWidget):
             # Get the timeseries data for that observation well.
             self.db_connection_manager.get_timeseries_for_obs_well(
                 current_obs_well.index.values[0],
-                ['NIV_EAU', 'TEMP'],
+                ['NIV_EAU', 'TEMP_EAU'],
                 self._show_timeseries)
 
     def _show_timeseries(self, tseries_groups):
