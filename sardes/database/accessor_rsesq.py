@@ -66,9 +66,9 @@ class GenericNumericalValue(Base):
 
     gen_num_value_id = Column('generic_res_id', Integer, primary_key=True)
     gen_num_value = Column('valeur_num', Float)
-    # Relation to table resultats.observation
+    # Relation with table resultats.observation
     observation_uuid = Column('observation_uuid', UUID(as_uuid=True))
-    # Relation to table librairies.xm_observed_property
+    # Relation with table librairies.xm_observed_property
     obs_property_id = Column('obs_property_id', Integer)
     gen_num_value_notes = Column('gen_note', String)
 
@@ -86,6 +86,7 @@ class SamplingFeature(Base):
 
     sampling_feature_uuid = Column(
         'elemcarac_uuid', UUID(as_uuid=True), primary_key=True)
+    # Relation with table librairies.elem_interest
     interest_id = Column('interet_id', String)
     loc_id = Column(Integer, ForeignKey('rsesq.localisation.loc_id'))
 
