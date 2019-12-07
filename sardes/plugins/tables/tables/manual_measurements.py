@@ -53,7 +53,8 @@ class ManualMeasurementsTableModel(SardesTableModel):
     __data_columns_mapper__ = [
         ('sampling_feature_uuid', _('Well ID')),
         ('datetime', _('Date/Time')),
-        ('manual_measurement', _('Water Level')),
+        ('value', _('Water Level')),
+        ('notes', _('Notes')),
         ]
 
     # Provide the name of the data and of the required libraries that
