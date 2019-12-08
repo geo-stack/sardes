@@ -695,7 +695,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             observation.sampling_feature_uuid = attribute_value
         elif attribute_name == 'datetime':
             observation = self._get_observation(measurement.observation_uuid)
-            observation.obs_datetime = attribute_name
+            observation.obs_datetime = attribute_value
         elif attribute_name == 'value':
             measurement.gen_num_value = float(attribute_value)
         elif attribute_name == 'notes':
