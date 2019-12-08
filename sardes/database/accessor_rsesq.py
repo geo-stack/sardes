@@ -14,7 +14,9 @@ Object-Relational Mapping and Accessor implementation of the RSESQ database.
 # ---- Third party imports
 from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKTElement
+import numpy as np
 import pandas as pd
+from psycopg2.extensions import register_adapter, AsIs
 from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.dialects.postgresql import UUID
@@ -29,6 +31,25 @@ from sqlalchemy.orm import sessionmaker, relationship
 from sardes.api.database_accessor import DatabaseAccessorBase
 from sardes.database.utils import map_table_column_names, format_sqlobject_repr
 from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
+
+
+# =============================================================================
+# ---- Register Adapters
+# =============================================================================
+# This is required to avoid a "can't adapt type 'numpy.int64' or
+# 'numpy.float64'" psycopg2.ProgrammingError.
+# See https://stackoverflow.com/questions/50626058
+
+def addapt_numpy_float64(numpy_float64):
+    return AsIs(numpy_float64)
+
+
+def addapt_numpy_int64(numpy_int64):
+    return AsIs(numpy_int64)
+
+
+register_adapter(np.float64, addapt_numpy_float64)
+register_adapter(np.int64, addapt_numpy_int64)
 
 
 # =============================================================================
@@ -113,6 +134,7 @@ class Observation(Base):
     sampling_feature_uuid = Column('elemcarac_uuid', String)
     process_uuid = Column('process_uuid', String)
     obs_datetime = Column('date_relv_hg', DateTime)
+    # Relation with table librairies.lib_obs_parameter
     param_id = Column('param_id', Integer)
 
     def __repr__(self):
@@ -631,17 +653,17 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         """
         # Define a query to fetch the water level manual measurements
         # from the database.
-        query = (self._session.query(
-            GenericNumericalValue.gen_num_value.label('value'),
-            GenericNumericalValue.gen_num_value_notes.label('notes'),
-            GenericNumericalValue.observation_uuid,
-            Observation.obs_datetime.label('datetime'),
-            Observation.sampling_feature_uuid)
+        query = (
+            self._session.query(
+                GenericNumericalValue.gen_num_value.label('value'),
+                GenericNumericalValue.gen_num_value_notes.label('notes'),
+                GenericNumericalValue.gen_num_value_id,
+                Observation.obs_datetime.label('datetime'),
+                Observation.sampling_feature_uuid)
             .filter(GenericNumericalValue.obs_property_id == 2)
             .filter(GenericNumericalValue.observation_uuid ==
                     Observation.observation_uuid)
-            .order_by(Observation.sampling_feature_uuid,
-                      Observation.obs_datetime)
+            .order_by(GenericNumericalValue.gen_num_value_id)
             ).with_labels()
         measurements = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
@@ -653,8 +675,40 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
 
         # Set the index to the observation well ids.
         measurements.set_index(
-            'observation_uuid', inplace=True, drop=True)
+            'gen_num_value_id', inplace=True, drop=True)
         return measurements
+
+    def set_manual_measurements(self, gen_num_value_id, attribute_name,
+                                attribute_value):
+        """
+        Save in the database the new attribute value for the manual
+        measurement corresponding to the specified id.
+        """
+        measurement = (
+            self._session.query(GenericNumericalValue)
+            .filter(GenericNumericalValue.gen_num_value_id == gen_num_value_id)
+            .one()
+            )
+        if attribute_name == 'sampling_feature_uuid':
+            observation = self._get_observation(measurement.observation_uuid)
+            observation.sampling_feature_uuid = attribute_value
+        elif attribute_name == 'datetime':
+            observation = self._get_observation(measurement.observation_uuid)
+            observation.obs_datetime = attribute_value
+        elif attribute_name == 'value':
+            measurement.gen_num_value = float(attribute_value)
+        elif attribute_name == 'notes':
+            measurement.gen_num_value_notes = attribute_value
+        self._session.commit()
+
+    # ---- Private methods
+    def _get_observation(self, observation_uuid):
+        """
+        Return the observation related to the given uuid.
+        """
+        return (self._session.query(Observation)
+                .filter(Observation.observation_uuid == observation_uuid)
+                .one())
 
 
 if __name__ == "__main__":

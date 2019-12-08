@@ -14,7 +14,7 @@ from qtpy.QtWidgets import QComboBox
 from sardes.api.tablemodels import SardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
-    SardesItemDelegate, SardesTableWidget,
+    SardesItemDelegate, SardesTableWidget, TextEditDelegate,
     NotEditableDelegate, DateTimeDelegate, NumEditDelegate)
 
 
@@ -73,8 +73,10 @@ class ManualMeasurementsTableModel(SardesTableModel):
             return ObsWellIdEditDelegate(view)
         elif column == 'datetime':
             return DateTimeDelegate(view, display_format="yyyy-MM-dd hh:mm")
-        elif column == 'manual_measurement':
+        elif column == 'value':
             return NumEditDelegate(view, decimals=3, bottom=-99999, top=99999)
+        elif column == 'notes':
+            return TextEditDelegate(view)
         else:
             return NotEditableDelegate(view)
 

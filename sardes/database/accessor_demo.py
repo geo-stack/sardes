@@ -287,6 +287,15 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         manual_measurements = deepcopy(MANUAL_MEASUREMENTS)
         return manual_measurements
 
+    def set_manual_measurements(self, measurement_id, attribute_name,
+                                attribute_value):
+        """
+        Save in the database the new attribute value for the manual
+        measurement corresponding to the specified id.
+        """
+        MANUAL_MEASUREMENTS.loc[
+            measurement_id, attribute_name] = attribute_value
+
 
 if __name__ == '__main__':
     accessor = DatabaseAccessorDemo()
