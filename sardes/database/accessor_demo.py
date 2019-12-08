@@ -60,15 +60,15 @@ OBS_WELLS_DF = pd.DataFrame(
              'longitude', 'is_station_active', 'obs_well_notes']
     )
 
-MONITORED_PROPERTIES = ['NIV_EAU', 'TEMP', 'COND_ELEC']
+MONITORED_PROPERTIES = ['NIV_EAU', 'TEMP_EAU', 'COND_ELEC']
 MONITORED_PROPERTY_NAMES = {
     'COND_ELEC': "Water electrical conductivity",
     'NIV_EAU': "Water level",
-    'TEMP': "Water level temperature"}
+    'TEMP_EAU': "Water level temperature"}
 MONITORED_PROPERTY_UNITS = {
     'COND_ELEC': "",
     'NIV_EAU': "m",
-    'TEMP': "\u00B0C"}
+    'TEMP_EAU': "\u00B0C"}
 
 DATE_RANGE = pd.date_range(start='1/1/2015', end='1/1/2019')
 NYEAR = DATE_RANGE[-1].year - DATE_RANGE[0].year + 1
@@ -77,7 +77,7 @@ YEARLY_RADS = np.linspace(0, 2 * NYEAR * np.pi, len(DATE_RANGE))
 TSERIES = {}
 TSERIES_VALUES = 25 * np.sin(YEARLY_RADS) + 5
 TSERIES_VALUES += 3 * np.random.rand(len(TSERIES_VALUES))
-TSERIES['TEMP'] = Series(TSERIES_VALUES, index=DATE_RANGE)
+TSERIES['TEMP_EAU'] = Series(TSERIES_VALUES, index=DATE_RANGE)
 
 TSERIES_VALUES = np.hstack((np.linspace(100, 95, len(YEARLY_RADS) // 2),
                             np.linspace(95, 98, len(YEARLY_RADS) // 2)))
@@ -89,14 +89,14 @@ TSERIES_VALUES += 0.25 * np.random.rand(len(TSERIES_VALUES))
 TSERIES['NIV_EAU'] = Series(TSERIES_VALUES, index=DATE_RANGE)
 
 MANUAL_MEASUREMENTS = pd.DataFrame([
-    [OBS_WELLS_DF.index[0], dt.datetime(2010, 8, 10, 16, 10, 34), 5.23],
-    [OBS_WELLS_DF.index[0], dt.datetime(2010, 11, 10, 12, 55, 22), 4.36],
-    [OBS_WELLS_DF.index[0], dt.datetime(2011, 8, 2, 18, 50, 17), 4.91],
-    [OBS_WELLS_DF.index[1], dt.datetime(2009, 8, 2, 18, 34, 38), 28.34],
-    [OBS_WELLS_DF.index[2], dt.datetime(2015, 8, 2, 18, 37, 23), 14.87],
-    [OBS_WELLS_DF.index[2], dt.datetime(2016, 2, 4, 13, 26, 3), 2.03]
+    [OBS_WELLS_DF.index[0], dt.datetime(2010, 8, 10, 16, 10, 34), 5.23, ''],
+    [OBS_WELLS_DF.index[0], dt.datetime(2010, 11, 10, 12, 55, 22), 4.36, ''],
+    [OBS_WELLS_DF.index[0], dt.datetime(2011, 8, 2, 18, 50, 17), 4.91, ''],
+    [OBS_WELLS_DF.index[1], dt.datetime(2009, 8, 2, 18, 34, 38), 28.34, ''],
+    [OBS_WELLS_DF.index[2], dt.datetime(2015, 8, 2, 18, 37, 23), 14.87, ''],
+    [OBS_WELLS_DF.index[2], dt.datetime(2016, 2, 4, 13, 26, 3), 2.03, '']
     ],
-    columns=['sampling_feature_uuid', 'datetime', 'manual_measurement']
+    columns=['sampling_feature_uuid', 'datetime', 'value', 'notes']
     )
 
 SONDE_MODELS_LIB = pd.DataFrame([
@@ -282,7 +282,7 @@ class DatabaseAccessorDemo(DatabaseAccessor):
 
     def get_monitored_property_color(self, monitored_property):
         return {'NIV_EAU': 'blue',
-                'TEMP': 'red',
+                'TEMP_EAU': 'red',
                 'COND_ELEC': 'cyan'
                 }[monitored_property]
 
@@ -332,6 +332,15 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         df.index_dtype = type(MANUAL_MEASUREMENTS.index[0]).__name__
         df.name = 'manual_measurements'
         return df
+
+    def set_manual_measurements(self, measurement_id, attribute_name,
+                                attribute_value):
+        """
+        Save in the database the new attribute value for the manual
+        measurement corresponding to the specified id.
+        """
+        MANUAL_MEASUREMENTS.loc[
+            measurement_id, attribute_name] = attribute_value
 
 
 if __name__ == '__main__':

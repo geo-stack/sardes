@@ -14,8 +14,10 @@ Object-Relational Mapping and Accessor implementation of the RSESQ database.
 # ---- Third party imports
 from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKTElement
+import numpy as np
 import pandas as pd
-from sqlalchemy import create_engine, extract, func
+from psycopg2.extensions import register_adapter, AsIs
+from sqlalchemy import create_engine
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.inspection import inspect
@@ -29,6 +31,25 @@ from sqlalchemy.types import TEXT, VARCHAR, Boolean
 from sardes.api.database_accessor import DatabaseAccessor
 from sardes.database.utils import map_table_column_names, format_sqlobject_repr
 from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
+
+
+# =============================================================================
+# ---- Register Adapters
+# =============================================================================
+# This is required to avoid a "can't adapt type 'numpy.int64' or
+# 'numpy.float64'" psycopg2.ProgrammingError.
+# See https://stackoverflow.com/questions/50626058
+
+def addapt_numpy_float64(numpy_float64):
+    return AsIs(numpy_float64)
+
+
+def addapt_numpy_int64(numpy_int64):
+    return AsIs(numpy_int64)
+
+
+register_adapter(np.float64, addapt_numpy_float64)
+register_adapter(np.int64, addapt_numpy_int64)
 
 
 # =============================================================================
@@ -56,19 +77,21 @@ class Location(Base):
         return format_sqlobject_repr(self)
 
 
-class ManualMeasurements(Base):
+class GenericNumericalValue(Base):
     """
-    An object used to map the 'manual measurements' table of the
+    An object used to map the 'generique' table of the
     RSESQ database.
     """
     __tablename__ = 'generique'
     __table_args__ = ({"schema": "resultats"})
 
-    manual_measurement_id = Column('generic_res_id', Integer, primary_key=True)
-    obs_well_id = Column('no_piezometre', String)
-    manual_measurement_date = Column('la_date', DateTime)
-    manual_measurement_time = Column('heure', DateTime)
-    manual_measurement = Column('lecture_profondeur', Float)
+    gen_num_value_id = Column('generic_res_id', Integer, primary_key=True)
+    gen_num_value = Column('valeur_num', Float)
+    # Relation with table resultats.observation
+    observation_uuid = Column('observation_uuid', UUID(as_uuid=True))
+    # Relation with table librairies.xm_observed_property
+    obs_property_id = Column('obs_property_id', Integer)
+    gen_num_value_notes = Column('gen_note', String)
 
     def __repr__(self):
         return format_sqlobject_repr(self)
@@ -84,6 +107,7 @@ class SamplingFeature(Base):
 
     sampling_feature_uuid = Column(
         'elemcarac_uuid', UUID(as_uuid=True), primary_key=True)
+    # Relation with table librairies.elem_interest
     interest_id = Column('interet_id', String)
     loc_id = Column(Integer, ForeignKey('rsesq.localisation.loc_id'))
 
@@ -109,6 +133,9 @@ class Observation(Base):
     observation_uuid = Column('observation_uuid', String, primary_key=True)
     sampling_feature_uuid = Column('elemcarac_uuid', String)
     process_uuid = Column('process_uuid', String)
+    obs_datetime = Column('date_relv_hg', DateTime)
+    # Relation with table librairies.lib_obs_parameter
+    param_id = Column('param_id', Integer)
 
     def __repr__(self):
         return format_sqlobject_repr(self)
@@ -169,22 +196,23 @@ class TimeSeriesChannels(Base):
     __table_args__ = ({"schema": "resultats"})
 
     channel_uuid = Column('canal_uuid', String, primary_key=True)
+    channel_id = Column('canal_id', Integer)
     observation_uuid = Column('observation_uuid', String)
+    # Relation with table librairies.xm_observed_property
     obs_property_id = Column('obs_property_id', Integer)
 
     def __repr__(self):
         return format_sqlobject_repr(self)
 
 
-class TimeSeriesRaw(Base):
-    __tablename__ = 'temporel_non_corrige'
+class TimeSeriesData(Base):
+    __tablename__ = 'temporel_corrige'
     __table_args__ = ({"schema": "resultats"})
 
-    raw_temporal_data_uuid = Column(
-        'temp_non_cor_uuid', String, primary_key=True)
-    channel_uuid = Column('canal_uuid', String)
-    datetime = Column('date_temps', DateTime)
-    value = Column('valeur', Float)
+    datetime = Column('date_heure', DateTime, primary_key=True)
+    value = Column('valeur', Float, primary_key=True)
+    # Relation with table resultats.canal_temporel
+    channel_id = Column('canal_id', Integer, primary_key=True)
 
 
 # =============================================================================
@@ -538,7 +566,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
     def get_monitored_property_color(self, monitored_property):
         return {'NIV_EAU': 'blue',
-                'TEMP': 'red',
+                'TEMP_EAU': 'red',
                 'COND_ELEC': 'cyan'
                 }[monitored_property]
 
@@ -563,16 +591,15 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
         # Define a query to fetch the timseries data from the database.
         query = (
-            self._session.query(TimeSeriesRaw.value,
-                                TimeSeriesRaw.datetime,
-                                TimeSeriesRaw.channel_uuid)
+            self._session.query(TimeSeriesData.value,
+                                TimeSeriesData.datetime,
+                                TimeSeriesData.channel_id)
+            .filter(TimeSeriesChannels.obs_property_id == obs_property_id)
             .filter(Observation.sampling_feature_uuid == sampling_feature_uuid)
             .filter(Observation.observation_uuid ==
                     TimeSeriesChannels.observation_uuid)
-            .filter(TimeSeriesChannels.obs_property_id == obs_property_id)
-            .filter(TimeSeriesRaw.channel_uuid ==
-                    TimeSeriesChannels.channel_uuid)
-            .order_by(TimeSeriesRaw.datetime, TimeSeriesRaw.channel_uuid)
+            .filter(TimeSeriesData.channel_id == TimeSeriesChannels.channel_id)
+            .order_by(TimeSeriesData.datetime, TimeSeriesData.channel_id)
             ).with_labels()
 
         # Fetch the data from the database and store them in a pandas
@@ -580,7 +607,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         data = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
         columns_map = map_table_column_names(
-            Observation, TimeSeriesChannels, TimeSeriesRaw, with_labels=True)
+            Observation, TimeSeriesChannels, TimeSeriesData, with_labels=True)
         data.rename(columns_map, axis='columns', inplace=True)
 
         data['datetime'] = pd.to_datetime(
@@ -610,11 +637,11 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         data.set_index(['datetime'], drop=True, inplace=True)
 
         # Split the data in channels.
-        for channel_uuid in data['channel_uuid'].unique():
-            channel_data = data[data['channel_uuid'] == channel_uuid]
+        for channel_id in data['channel_id'].unique():
+            channel_data = data[data['channel_id'] == channel_id]
             tseries_group.add_timeseries(TimeSeries(
                 pd.Series(channel_data['value'], index=channel_data.index),
-                tseries_id=channel_uuid,
+                tseries_id=channel_id,
                 tseries_name=(
                     self.get_monitored_property_name(monitored_property)),
                 tseries_units=(
@@ -640,52 +667,64 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         measurements made in the observation wells for the entire monitoring
         network.
         """
-        # Define a query to fetch the timseries data from the database.
+        # Define a query to fetch the water level manual measurements
+        # from the database.
         query = (
-            self._session.query(ManualMeasurements,
-                                ObservationWell.sampling_feature_uuid)
-            .filter(ManualMeasurements.obs_well_id ==
-                    ObservationWell.obs_well_id)
-            .order_by(ManualMeasurements.obs_well_id,
-                      ManualMeasurements.manual_measurement_date,
-                      ManualMeasurements.manual_measurement_time)
+            self._session.query(
+                GenericNumericalValue.gen_num_value.label('value'),
+                GenericNumericalValue.gen_num_value_notes.label('notes'),
+                GenericNumericalValue.gen_num_value_id,
+                Observation.obs_datetime.label('datetime'),
+                Observation.sampling_feature_uuid)
+            .filter(GenericNumericalValue.obs_property_id == 2)
+            .filter(GenericNumericalValue.observation_uuid ==
+                    Observation.observation_uuid)
+            .order_by(GenericNumericalValue.gen_num_value_id)
             ).with_labels()
         measurements = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
 
         # Rename the column names to that expected by the api.
         columns_map = map_table_column_names(
-            ManualMeasurements, ObservationWell, with_labels=True)
+            GenericNumericalValue, Observation, with_labels=True)
         measurements.rename(columns_map, axis='columns', inplace=True)
-
-        # Strip timezone info since it is not set correctly in the
-        # BD anyway.
-        measurements['manual_measurement_date'] = (
-            measurements['manual_measurement_date'].dt.tz_localize(None))
-        measurements['manual_measurement_time'] = (
-            measurements['manual_measurement_time'].dt.tz_localize(None))
-
-        # Join the date and hour into a single datetime column.
-        measurements['datetime'] = pd.to_datetime(
-            measurements['manual_measurement_date'].dt.date.astype(str) +
-            ' ' +
-            measurements['manual_measurement_time'].dt.time.astype(str))
-
-        # Drop the columns that are not required by the API.
-        measurements.drop(['manual_measurement_date',
-                           'manual_measurement_time',
-                           'obs_well_id'],
-                          axis=1, inplace=True)
 
         # Set the index to the observation well ids.
         measurements.set_index(
-            'manual_measurement_id', inplace=True, drop=True)
-
-        # Save the dtype of the indexes and the name of the table.
-        measurements.index_dtype = type(
-            inspect(ManualMeasurements).primary_key[0].type).__name__
-        measurements.name = 'manual_measurements'
+            'gen_num_value_id', inplace=True, drop=True)
         return measurements
+
+    def set_manual_measurements(self, gen_num_value_id, attribute_name,
+                                attribute_value):
+        """
+        Save in the database the new attribute value for the manual
+        measurement corresponding to the specified id.
+        """
+        measurement = (
+            self._session.query(GenericNumericalValue)
+            .filter(GenericNumericalValue.gen_num_value_id == gen_num_value_id)
+            .one()
+            )
+        if attribute_name == 'sampling_feature_uuid':
+            observation = self._get_observation(measurement.observation_uuid)
+            observation.sampling_feature_uuid = attribute_value
+        elif attribute_name == 'datetime':
+            observation = self._get_observation(measurement.observation_uuid)
+            observation.obs_datetime = attribute_value
+        elif attribute_name == 'value':
+            measurement.gen_num_value = float(attribute_value)
+        elif attribute_name == 'notes':
+            measurement.gen_num_value_notes = attribute_value
+        self._session.commit()
+
+    # ---- Private methods
+    def _get_observation(self, observation_uuid):
+        """
+        Return the observation related to the given uuid.
+        """
+        return (self._session.query(Observation)
+                .filter(Observation.observation_uuid == observation_uuid)
+                .one())
 
 
 if __name__ == "__main__":
@@ -696,19 +735,13 @@ if __name__ == "__main__":
 
     accessor.connect()
     obs_wells = accessor.get_observation_wells_data()
+    sonde_data = accessor.get_sondes_data()
+    sonde_models = accessor.get_sonde_models_lib()
     manual_measurements = accessor.get_manual_measurements()
 
-    print(accessor.observation_wells)
-    print(accessor.monitored_properties)
-    for monitored_propery in accessor.monitored_properties:
-        print(accessor.get_monitored_property_name(monitored_propery))
-        print(accessor.get_monitored_property_units(monitored_propery))
+    sampling_feature_uuid = accessor._get_obs_well_sampling_feature_uuid(
+        '01030001')
+    wlevel = accessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, 'NIV_EAU').timeseries[0]
 
-    from time import time
-    for i in range(5):
-        t1 = time()
-        print(str(i + 1) + '/10', end='')
-        wldata = accessor.get_timeseries_for_obs_well('01370001', 'NIV_EAU')
-        t2 = time()
-        print(": %0.5f sec" % (t2 - t1))
     accessor.close_connection()
