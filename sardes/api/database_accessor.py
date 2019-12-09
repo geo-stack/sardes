@@ -85,6 +85,14 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         pass
 
+    # --- Indexes
+    def get_new_index(self, name, *args, **kargs):
+        """
+        Return a new index that can be used subsequently to add new item
+        to the data related to name in the database.
+        """
+        raise NotImplementedError
+
     # ---- Observation Wells
     @property
     @abstractmethod
