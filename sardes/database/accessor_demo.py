@@ -151,7 +151,7 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         """
         return self._connection is not None
 
-    def connect(self):
+    def _connect(self):
         """
         Create a new connection object to communicate with the database.
         """
@@ -163,6 +163,26 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         Close the currently active connection with the database.
         """
         self._connection = None
+
+    # --- Indexes
+    def _create_index(self, name):
+        """
+        Return a new index that can be used subsequently to add a new item
+        related to name in the database.
+
+        Note that you need to take into account temporary indexes that might
+        have been requested by the database manager but haven't been
+        commited yet to the database.
+        """
+        if name == 'observation_wells_data':
+            max_commited_id = max(OBS_WELLS_DF.index)
+        elif name == 'sondes_data':
+            max_commited_id = max(SONDES_DATA.index)
+        elif name == 'manual_measurements':
+            max_commited_id = max(MANUAL_MEASUREMENTS.index)
+        else:
+            raise NotImplementedError
+        return max(self.temp_indexes(name) + [max_commited_id]) + 1
 
     # ---- Observation Wells
     @property
@@ -200,7 +220,6 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         df = OBS_WELLS_DF.copy()
 
         # Save the dtype of the indexes and the name of the table.
-        df.index_dtype = type(OBS_WELLS_DF.index[0]).__name__
         df.name = 'observation_wells_data'
         return df
 
@@ -220,7 +239,6 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         df = df.sort_values('sonde_brand_model')
 
         # Save the dtype of the indexes and the name of the table.
-        df.index_dtype = type(SONDE_MODELS_LIB.index[0]).__name__
         df.name = 'sonde_models_lib'
         return df
 
@@ -246,7 +264,6 @@ class DatabaseAccessorDemo(DatabaseAccessor):
               .drop('sonde_brand_model', axis=1))
 
         # Save the dtype of the indexes and the name of the table.
-        df.index_dtype = type(SONDES_DATA.index[0]).__name__
         df.name = 'sondes_data'
         return df
 
@@ -329,7 +346,6 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         df = MANUAL_MEASUREMENTS.copy()
 
         # Save the dtype of the indexes and the name of the table.
-        df.index_dtype = type(MANUAL_MEASUREMENTS.index[0]).__name__
         df.name = 'manual_measurements'
         return df
 
