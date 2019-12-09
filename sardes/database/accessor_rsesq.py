@@ -262,7 +262,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         else:
             return not self._connection.closed
 
-    def connect(self):
+    def _connect(self):
         """
         Create a new connection object to communicate with the database.
         """
@@ -280,6 +280,27 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         """
         self._engine.dispose()
         self._connection = None
+
+    # --- Indexes
+    def _create_index(self, name):
+        """
+        Return a new index that can be used subsequently to add a new item
+        related to name in the database.
+
+        Note that you need to take into account temporary indexes that might
+        have been requested by the database manager but haven't been
+        commited yet to the database.
+        """
+        if name in ['observation_wells_data', 'sondes_data']:
+            return uuid.uuid4()
+        elif name == 'manual_measurements':
+            max_commited_id = (
+                self._session.query(
+                    func.max(GenericNumericalValue.gen_num_value_id))
+                .one())
+            return max(self.temp_indexes(name) + [max_commited_id]) + 1
+        else:
+            raise NotImplementedError
 
     # ---- Locations
     def _get_location(self, loc_id):
