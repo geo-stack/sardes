@@ -28,7 +28,9 @@ class DatabaseAccessorBase(ABC):
     def __init__(self):
         self._connection = None
         self._connection_error = None
+        self._temp_indexes = {}
 
+    # ---- Public API
     def get(self, name, *args, **kargs):
         """
         Get the data related to name from the database.
@@ -48,6 +50,49 @@ class DatabaseAccessorBase(ABC):
         the given primary_key and values.
         """
         getattr(self, 'add_' + name)(primary_key, values)
+        self.del_temp_index(name, primary_key)
+
+    def create_index(self, name):
+        """
+        Return a new index that can be used subsequently to add a new item
+        related to name in the database.
+        """
+        new_index = self._create_index(name)
+        self.add_temp_index(name, new_index)
+        return new_index
+
+    def connect(self):
+        """
+        Create a new connection object to communicate with the database.
+        """
+        self._temp_indexes = {}
+        return self._connect()
+
+    # ---- Temp indexes
+    def temp_indexes(self, name):
+        """
+        Return a list of temporary indexes that were requested by the manager,
+        but but haven't been commited yet to the database.
+        """
+        return self._temp_indexes.get(name, [])
+
+    def add_temp_index(self, name, index):
+        """
+        Add index to the list of temporary indexes for the data related
+        to name.
+        """
+        self._temp_indexes[name] = self._temp_indexes.get(name, []) + [index]
+
+    def del_temp_index(self, name, index):
+        """
+        Remove index from the list of temporary indexes for the data related
+        to name.
+        """
+        if name in self._temp_indexes:
+            try:
+                self._temp_indexes[name].remove(index)
+            except ValueError:
+                pass
 
 
 class DatabaseAccessor(DatabaseAccessorBase):
@@ -72,7 +117,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
         pass
 
     @abstractmethod
-    def connect(self):
+    def _connect(self):
         """
         Create a new connection object to communicate with the database.
         """
@@ -86,10 +131,14 @@ class DatabaseAccessor(DatabaseAccessorBase):
         pass
 
     # --- Indexes
-    def get_new_index(self, name, *args, **kargs):
+    def _create_index(self, name):
         """
-        Return a new index that can be used subsequently to add new item
-        to the data related to name in the database.
+        Return a new index that can be used subsequently to add a new item
+        related to name in the database.
+
+        Note that you need to take into account temporary indexes that might
+        have been requested by the database manager but haven't been
+        commited yet to the database.
         """
         raise NotImplementedError
 
