@@ -1074,7 +1074,8 @@ class SardesTableView(QTableView):
         """
         Add a new empty row at the end of this table.
         """
-        self.model().add_new_row()
+        new_model_index_range = self.model().add_new_row()
+        self.setCurrentIndex(new_model_index_range[0])
 
     def raise_edits_error(self, model_index, message):
         """"

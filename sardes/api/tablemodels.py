@@ -586,14 +586,17 @@ class SardesTableModelBase(QAbstractTableModel):
         self._datat.add_new_row()
         self._update_visual_data()
         self.endInsertRows()
-        self.dataChanged.emit(
-            self.index(self.rowCount() - 1, self.columnCount() - 1),
+        new_model_index_range = (
+            self.index(self.rowCount() - 1, 0),
             self.index(self.rowCount() - 1, self.columnCount() - 1)
             )
+        self.dataChanged.emit(*new_model_index_range)
 
         # We make the appropriate calls to update the model and GUI.
         self.sig_data_edited.emit(
             self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
+
+        return new_model_index_range
 
     def undo_last_data_edit(self):
         """
@@ -869,6 +872,11 @@ class SardesSortFilterModel(QSortFilterProxyModel):
             return section + 1
         else:
             return self.sourceModel().headerData(section, orientation, role)
+
+    def add_new_row(self):
+        new_model_indexes = self.sourceModel().add_new_row()
+        return (self.mapFromSource(new_model_indexes[0]),
+                self.mapFromSource(new_model_indexes[1]))
 
     def dataf_index_at(self, proxy_index):
         return self.sourceModel().dataf_index_at(
