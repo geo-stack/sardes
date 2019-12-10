@@ -520,9 +520,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         """
         query = (
             self._session.query(Sondes)
-            .filter(SondeModels.sonde_model_id == Sondes.sonde_model_id)
-            .order_by(SondeModels.sonde_brand,
-                      SondeModels.sonde_model,
+            .order_by(Sondes.sonde_model_id,
                       Sondes.sonde_serial_no)
             ).with_labels()
         sondes = pd.read_sql_query(
