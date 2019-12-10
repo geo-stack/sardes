@@ -36,7 +36,12 @@ class DatabaseAccessorBase(ABC):
         Get the data related to name from the database.
         """
         method_to_exec = getattr(self, 'get_' + name)
-        return method_to_exec(*args, **kargs)
+        result = method_to_exec(*args, **kargs)
+        try:
+            result.name = name
+        except AttributeError:
+            pass
+        return result
 
     def set(self, name, *args, **kargs):
         """
