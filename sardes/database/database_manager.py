@@ -117,6 +117,13 @@ class DatabaseConnectionWorker(QObject):
         self._cache[name] = data
         return data,
 
+    def _create_index(self, name):
+        """
+        Return a new index that can be used subsequently to add new item
+        to the data related to name in the database.
+        """
+        return self.db_accessor.create_index(name)
+
     def _set(self, name, *args, **kargs):
         """
         Save the data related to name in the database.
@@ -230,6 +237,13 @@ class DatabaseConnectionManager(QObject):
         self._add_task('get', callback, *args)
         if not postpone_exec:
             self.run_tasks()
+
+    def create_index(self, name):
+        """
+        Return a new index that can be used subsequently to add new item
+        to the data related to name in the database.
+        """
+        return self._db_connection_worker._create_index(name)
 
     def set(self, *args, callback=None, postpone_exec=False):
         """
