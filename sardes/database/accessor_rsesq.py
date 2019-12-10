@@ -20,7 +20,7 @@ from geoalchemy2.elements import WKTElement
 import numpy as np
 import pandas as pd
 from psycopg2.extensions import register_adapter, AsIs
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, extract, func
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.inspection import inspect
@@ -492,6 +492,27 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         return sonde_models
 
     # ---- Sondes Inventory
+    def add_sondes_data(self, sonde_uuid, attribute_values):
+        """
+        Add a new sonde to the database using the provided sonde ID
+        and attribute values.
+        """
+        # We now create a new measurement in table 'resultats.generique'.
+        sonde = Sondes(
+            sonde_uuid=sonde_uuid,
+            sonde_serial_no=attribute_values.get('sonde_serial_no', ''),
+            date_reception=attribute_values.get('date_reception', None),
+            date_withdrawal=attribute_values.get('date_withdrawal', None),
+            in_repair=attribute_values.get('in_repair', None),
+            out_of_order=attribute_values.get('out_of_order', None),
+            lost=attribute_values.get('lost', None),
+            off_network=attribute_values.get('off_network', None),
+            sonde_notes=attribute_values.get('sonde_notes', None),
+            sonde_model_id=attribute_values.get('sonde_notes', None),
+            )
+        self._session.add(sonde)
+        self._session.commit()
+
     def get_sondes_data(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
