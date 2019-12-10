@@ -80,10 +80,9 @@ class SardesTableData(object):
     A container to hold data of a logical table and manage edits.
     """
 
-    def __init__(self, data, name, index_dtype):
+    def __init__(self, data, name):
         self.data = data.copy()
         self.name = name
-        self.index_dtype = index_dtype
 
         # A list containing the edits made by the user to the data
         # in chronological order.
@@ -145,16 +144,10 @@ class SardesTableData(object):
         """
         return self.data.copy()
 
-    def add_new_row(self, values={}):
+    def add_new_row(self, new_index, values={}):
         """
         Add a new row with the provided values at the end of the data.
         """
-        if self.index_dtype == 'UUID':
-            new_index = uuid.uuid4()
-        else:
-            # We assume the indexes are integers.
-            new_index = (0 if not len(self.data.index) else
-                         max(self.data.index) + 1)
         row = len(self.data)
         self._new_rows.append(row)
         self._data_edits_stack.append(RowAdded(new_index, values, row))
@@ -287,7 +280,6 @@ class SardesTableModelBase(QAbstractTableModel):
         for name in self.req_data_names():
             dataf = pd.DataFrame([])
             dataf.name = name
-            dataf.index_dtype = None
             self.set_model_data(dataf)
 
         self.set_database_connection_manager(db_connection_manager)
@@ -354,7 +346,6 @@ class SardesTableModelBase(QAbstractTableModel):
         for name in self.req_data_names():
             dataf = pd.DataFrame([])
             dataf.name = name
-            dataf.index_dtype = None
             self.set_model_data(dataf)
 
     def req_data_names(self):
@@ -404,7 +395,6 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         dataf_name = dataf.name
         if dataf_name == self.TABLE_DATA_NAME:
-            dataf_index_dtype = dataf.index_dtype
             self.beginResetModel()
 
             # Add missing columns to the dataframe.
@@ -415,7 +405,7 @@ class SardesTableModelBase(QAbstractTableModel):
             # of the table model so that we can access them with pandas iloc.
             dataf = dataf[self.columns]
 
-            self._datat = SardesTableData(dataf, dataf_name, dataf_index_dtype)
+            self._datat = SardesTableData(dataf, dataf_name)
 
             self.endResetModel()
             self.sig_data_edited.emit(False, False)
@@ -583,7 +573,8 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         self.beginInsertRows(
             QModelIndex(), len(self._datat), len(self._datat))
-        self._datat.add_new_row()
+        self._datat.add_new_row(
+            self.db_connection_manager.create_index(self.TABLE_DATA_NAME))
         self._update_visual_data()
         self.endInsertRows()
         new_model_index_range = (
