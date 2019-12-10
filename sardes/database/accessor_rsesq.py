@@ -110,6 +110,7 @@ class SamplingFeature(Base):
 
     sampling_feature_uuid = Column(
         'elemcarac_uuid', UUID(as_uuid=True), primary_key=True)
+    sampling_feature_id = Column('elemcarac_id', Integer)
     # Relation with table librairies.elem_interest
     interest_id = Column('interet_id', String)
     loc_id = Column(Integer, ForeignKey('rsesq.localisation.loc_id'))
@@ -360,8 +361,47 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             )
         return obs_well
 
+
+    def add_observation_wells_data(self, sampling_feature_uuid,
+                                   attribute_values):
+        """
+        Add a new observation well to the database using the provided ID
+        and attribute values.
+        """
+        # We need first to create a new location in table rsesq.localisation.
+        new_loc_id = (
+            self._session.query(func.max(Location.loc_id))
+            .one())
+        new_loc_id = new_loc_id[0] + 1
+        location = Location(loc_id=new_loc_id)
+        self._session.add(location)
+
+        # We then add the new observation well.
+        new_sampling_feature_id = (
+            self._session.query(func.max(SamplingFeature.sampling_feature_id))
+            .one())
+        new_sampling_feature_id = new_sampling_feature_id[0] + 1
+
+        obs_well = ObservationWell(
+            sampling_feature_uuid=sampling_feature_uuid,
+            sampling_feature_id=new_sampling_feature_id,
+            interest_id=1,
+            loc_id=new_loc_id
+            )
+        self._session.add(obs_well)
+
+        # We then set the attribute values provided in argument for this
+        # new observation well if any.
+        for attribute_name, attribute_value in attribute_values.items():
+            self.set_observation_wells_data(
+                sampling_feature_uuid,
+                attribute_name,
+                attribute_value,
+                auto_commit=False)
+        self._session.commit()
+
     def set_observation_wells_data(self, sampling_feature_id, attribute_name,
-                                   attribute_value):
+                                   attribute_value, auto_commit=True):
         """
         Save in the database the new attribute value for the observation well
         corresponding to the specified sampling feature ID.
@@ -377,12 +417,15 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             setattr(obs_well, attribute_name, attribute_value)
         elif attribute_name in note_attrs:
             index = note_attrs.index(attribute_name)
-            label = [
+            labels = [
                 'nom_commu', 'aquifere', 'nappe', 'code_aqui', 'zone_rechar',
                 'influences', 'station_active', 'remarque'][index]
-
-            notes = [n.strip() for n in obs_well.obs_well_notes.split(r'||')]
-            notes[index] = '{}: {}'.format(label, attribute_value)
+            try:
+                notes = [
+                    n.strip() for n in obs_well.obs_well_notes.split(r'||')]
+            except AttributeError:
+                notes = [''] * len(labels)
+            notes[index] = '{}: {}'.format(labels[index], attribute_value)
             obs_well.obs_well_notes = r' || '.join(notes)
         elif attribute_name in ['latitude', 'longitude']:
             location = self._get_location(obs_well.loc_id)
@@ -390,16 +433,20 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
             # We also need to update the postgis geometry object for the
             # location.
-            location.loc_geom = WKTElement(
-                'POINT({} {})'.format(location.longitude, location.latitude),
-                srid=4326)
+            if (location.longitude is not None and
+                    location.latitude is not None):
+                location.loc_geom = WKTElement(
+                    'POINT({} {})'.format(location.longitude,
+                                          location.latitude),
+                    srid=4326)
         elif attribute_name in ['municipality']:
             location = self._get_location(obs_well.loc_id)
             location.loc_notes = (
                 ' || municipalité : {}'.format(attribute_value))
 
         # Commit changes to the BD.
-        self._session.commit()
+        if auto_commit:
+            self._session.commit()
 
     def get_observation_wells_data(self):
         """

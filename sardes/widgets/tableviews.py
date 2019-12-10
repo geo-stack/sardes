@@ -269,7 +269,8 @@ class SardesItemDelegate(SardesItemDelegateBase):
             data = '' if (pd.isna(data) or data is None) else data
             self.editor.setText(data)
         elif isinstance(self.editor, (QSpinBox, QDoubleSpinBox)):
-            self.editor.setValue(data)
+            if data is not None:
+                self.editor.setValue(data)
         elif isinstance(self.editor, QComboBox):
             for i in range(self.editor.count()):
                 if self.editor.itemData(i) == data:
