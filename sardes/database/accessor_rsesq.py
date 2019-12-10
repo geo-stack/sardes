@@ -134,6 +134,7 @@ class Observation(Base):
     __table_args__ = ({"schema": "rsesq"})
 
     observation_uuid = Column('observation_uuid', String, primary_key=True)
+    observation_id = Column('observation_id', Integer)
     sampling_feature_uuid = Column('elemcarac_uuid', String)
     process_uuid = Column('process_uuid', String)
     obs_datetime = Column('date_relv_hg', DateTime)
@@ -300,7 +301,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             max_commited_id = (
                 self._session.query(
                     func.max(GenericNumericalValue.gen_num_value_id))
-                .one())
+                .one())[0]
             return max(self.temp_indexes(name) + [max_commited_id]) + 1
         else:
             raise NotImplementedError
@@ -672,6 +673,40 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             raise p
 
     # ---- Manual mesurements
+    def add_manual_measurements(self, gen_num_value_id, attribute_values):
+        """
+        Add a new manual measurements to the database using the provided ID
+        and attribute values.
+        """
+        # We need first to create a new observation in table rsesq.observation.
+        new_observation_id = (
+            self._session.query(func.max(Observation.observation_id))
+            .one())
+        new_observation_id = new_observation_id[0] + 1
+
+        observation = Observation(
+            observation_uuid=uuid.uuid4(),
+            observation_id=new_observation_id,
+            sampling_feature_uuid=attribute_values.get(
+                'sampling_feature_uuid', None),
+            process_uuid=None,
+            obs_datetime=attribute_values.get('datetime', None),
+            param_id=4
+            )
+        self._session.add(observation)
+
+        # We now create a new measurement in table 'resultats.generique'.
+        measurement = GenericNumericalValue(
+            gen_num_value_id=gen_num_value_id,
+            gen_num_value=attribute_values.get('value', None),
+            observation_uuid=observation.observation_uuid,
+            obs_property_id=2,
+            gen_num_value_notes=attribute_values.get('notes', None)
+            )
+        self._session.add(measurement)
+
+        self._session.commit()
+
     def get_manual_measurements(self):
         """
         Return a :class:`pandas.DataFrame` containing the water level manual
