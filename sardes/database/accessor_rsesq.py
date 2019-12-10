@@ -11,6 +11,9 @@
 Object-Relational Mapping and Accessor implementation of the RSESQ database.
 """
 
+# ---- Standard imports
+import uuid
+
 # ---- Third party imports
 from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKTElement
@@ -678,7 +681,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         try:
             return self._connection.execute(sql_request, **kwargs)
         except ProgrammingError as p:
-            print("Permission error for user {}".format(self.user))
+            print(p)
             raise p
 
     # ---- Manual mesurements
@@ -711,8 +714,11 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         measurements.rename(columns_map, axis='columns', inplace=True)
 
         # Set the index to the observation well ids.
-        measurements.set_index(
-            'gen_num_value_id', inplace=True, drop=True)
+        measurements.set_index('gen_num_value_id', inplace=True, drop=True)
+
+        # Save the dtype of the indexes and the name of the table.
+        measurements.name = 'manual_measurements'
+
         return measurements
 
     def set_manual_measurements(self, gen_num_value_id, attribute_name,
