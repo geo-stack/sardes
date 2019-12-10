@@ -52,7 +52,6 @@ def TABLE_DATAF():
         index=INDEXES,
         columns=COLUMNS
         )
-    dataf.index_dtype = type(INDEXES[0]).__name__
     return dataf
 
 
@@ -64,7 +63,6 @@ def tablemodel(qtbot, TABLE_DATAF):
             # Note that we voluntarily exclude the last column from the data
             # to see if the code can handle that case correctly.
             dataf = TABLE_DATAF.copy()[COLUMNS[:-1]]
-            dataf.index_dtype = TABLE_DATAF.index_dtype
             dataf.name = name
             callback(dataf)
 
