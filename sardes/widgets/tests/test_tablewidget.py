@@ -31,6 +31,7 @@ from sardes.widgets.tableviews import (
     NumEditDelegate, BoolEditDelegate, MSEC_MIN_PROGRESS_DISPLAY,
     QMessageBox, QCheckBox)
 from sardes.database.database_manager import DatabaseConnectionManager
+from sardes.api.database_accessor import DatabaseAccessor
 
 
 # =============================================================================
@@ -58,19 +59,29 @@ def TABLE_DATAF():
 @pytest.fixture
 def tablemodel(qtbot, TABLE_DATAF):
 
-    class ConnectionManagerMock(DatabaseConnectionManager):
-        def get(self, name, callback, postpone_exec):
-            # Note that we voluntarily exclude the last column from the data
-            # to see if the code can handle that case correctly.
-            dataf = TABLE_DATAF.copy()[COLUMNS[:-1]]
-            dataf.name = name
-            callback(dataf)
+    class DatabaseAccessorTest(DatabaseAccessor):
+        def is_connected(self):
+            return self._connection is not None
 
-        def set(self, name, index, column, edited_value,
-                callback, postpone_exec):
+        def _connect(self):
+            self._connection = True
+
+        def close_connection(self):
+            self._connection = None
+
+        def _create_index(self, name):
+            return uuid.uuid4()
+
+        def get_test_table_dataf_name(self, *args, **kargs):
+            return TABLE_DATAF.copy()
+
+        def set_test_table_dataf_name(self, index, column, edited_value):
             TABLE_DATAF.loc[index, column] = edited_value
-            if callback is not None:
-                callback()
+
+        def add_test_table_dataf_name(self, index, attribute_values):
+            for column in TABLE_DATAF.columns:
+                TABLE_DATAF.loc[index, column] = (
+                    attribute_values.get(column, None))
 
     class SardesTableModelMock(SardesTableModel):
         TABLE_DATA_NAME = 'test_table_dataf_name'
@@ -91,7 +102,9 @@ def tablemodel(qtbot, TABLE_DATAF):
             else:
                 return NotEditableDelegate(view)
 
-    tablemodel = SardesTableModelMock(ConnectionManagerMock())
+    tablemodel = SardesTableModelMock(DatabaseConnectionManager())
+    tablemodel.db_connection_manager.connect_to_db(DatabaseAccessorTest())
+
     # We need to connect the database manager data changed signal to the
     # method to fetch data because this is handled on the plugin this.
     tablemodel.sig_data_saved.connect(tablemodel.fetch_data)
