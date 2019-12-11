@@ -85,7 +85,15 @@ class DatabaseConnectionWorker(QObject):
         print("Connection with database closed.")
         return None,
 
-    # ---- Get data
+    # ---- Add, Get, Set data
+    def _add(self, name, *args, **kargs):
+        """
+        Add a new item to the data related to name in the database.
+        """
+        if name in self._cache:
+            del self._cache[name]
+        self.db_accessor.add(name, *args, **kargs)
+
     def _get(self, name, *args, **kargs):
         """
         Get the data related to name from the database.
@@ -106,9 +114,15 @@ class DatabaseConnectionWorker(QObject):
         else:
             print("failed because not connected to a database.")
             data = DataFrame([])
-        data.name = name
         self._cache[name] = data
         return data,
+
+    def _create_index(self, name):
+        """
+        Return a new index that can be used subsequently to add new item
+        to the data related to name in the database.
+        """
+        return self.db_accessor.create_index(name)
 
     def _set(self, name, *args, **kargs):
         """
@@ -194,7 +208,7 @@ class DatabaseConnectionManager(QObject):
             self._exec_task_callback)
 
         self._is_connecting = False
-        self._data_changed = []
+        self._data_changed = set()
 
     def is_connected(self):
         """Return whether a connection to a database is currently active."""
@@ -207,6 +221,15 @@ class DatabaseConnectionManager(QObject):
         return self._is_connecting
 
     # ---- Public methods
+    def add(self, *args, callback=None, postpone_exec=False):
+        """
+        Add a new item to the data related to name in the database.
+        """
+        self._data_changed.add(args[0])
+        self._add_task('add', callback, *args)
+        if not postpone_exec:
+            self.run_tasks()
+
     def get(self, *args, callback=None, postpone_exec=False):
         """
         Get the data related to name from the database.
@@ -215,11 +238,18 @@ class DatabaseConnectionManager(QObject):
         if not postpone_exec:
             self.run_tasks()
 
+    def create_index(self, name):
+        """
+        Return a new index that can be used subsequently to add new item
+        to the data related to name in the database.
+        """
+        return self._db_connection_worker._create_index(name)
+
     def set(self, *args, callback=None, postpone_exec=False):
         """
         Set the data related to name in the database.
         """
-        self._data_changed.append(args[0])
+        self._data_changed.add(args[0])
         self._add_task('set', callback, *args)
         if not postpone_exec:
             self.run_tasks()
@@ -347,8 +377,8 @@ class DatabaseConnectionManager(QObject):
         completed.
         """
         if len(self._data_changed):
-            self.sig_database_data_changed.emit(self._data_changed)
-            self._data_changed = []
+            self.sig_database_data_changed.emit(list(self._data_changed))
+            self._data_changed = set()
         if len(self._pending_tasks) > 0:
             self._run_tasks()
         else:

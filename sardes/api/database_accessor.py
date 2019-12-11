@@ -19,29 +19,94 @@ from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
 
 class DatabaseAccessorBase(ABC):
     """
-    Sardes database accessor class.
+    Basic functionality for Sardes database accessor.
 
-    All database accessors *must* inherit this class and reimplement
-    its interface.
+    WARNING: Don't override any methods or attributes present here unless you
+    know what you are doing.
     """
 
-    def __init__(self, *args, **kargs):
+    def __init__(self):
         self._connection = None
         self._connection_error = None
+        self._temp_indexes = {}
 
-    # ---- Database getter and setter
+    # ---- Public API
     def get(self, name, *args, **kargs):
         """
         Get the data related to name from the database.
         """
         method_to_exec = getattr(self, 'get_' + name)
-        return method_to_exec(*args, **kargs)
+        result = method_to_exec(*args, **kargs)
+        try:
+            result.name = name
+        except AttributeError:
+            pass
+        return result
 
     def set(self, name, *args, **kargs):
         """
         Save the data related to name in the database.
         """
         getattr(self, 'set_' + name)(*args, **kargs)
+
+    def add(self, name, primary_key, values={}):
+        """
+        Add a new item to the data related to name in the database using
+        the given primary_key and values.
+        """
+        getattr(self, 'add_' + name)(primary_key, values)
+        self.del_temp_index(name, primary_key)
+
+    def create_index(self, name):
+        """
+        Return a new index that can be used subsequently to add a new item
+        related to name in the database.
+        """
+        new_index = self._create_index(name)
+        self.add_temp_index(name, new_index)
+        return new_index
+
+    def connect(self):
+        """
+        Create a new connection object to communicate with the database.
+        """
+        self._temp_indexes = {}
+        return self._connect()
+
+    # ---- Temp indexes
+    def temp_indexes(self, name):
+        """
+        Return a list of temporary indexes that were requested by the manager,
+        but but haven't been commited yet to the database.
+        """
+        return self._temp_indexes.get(name, [])
+
+    def add_temp_index(self, name, index):
+        """
+        Add index to the list of temporary indexes for the data related
+        to name.
+        """
+        self._temp_indexes[name] = self._temp_indexes.get(name, []) + [index]
+
+    def del_temp_index(self, name, index):
+        """
+        Remove index from the list of temporary indexes for the data related
+        to name.
+        """
+        if name in self._temp_indexes:
+            try:
+                self._temp_indexes[name].remove(index)
+            except ValueError:
+                pass
+
+
+class DatabaseAccessor(DatabaseAccessorBase):
+    """
+    Sardes database accessor class.
+
+    All database accessors *must* inherit this class and reimplement
+    its interface.
+    """
 
     # ---- Database connection
     @abstractmethod
@@ -57,7 +122,7 @@ class DatabaseAccessorBase(ABC):
         pass
 
     @abstractmethod
-    def connect(self):
+    def _connect(self):
         """
         Create a new connection object to communicate with the database.
         """
@@ -70,9 +135,20 @@ class DatabaseAccessorBase(ABC):
         """
         pass
 
-    # ---- Observation wells
+    # --- Indexes
+    def _create_index(self, name):
+        """
+        Return a new index that can be used subsequently to add a new item
+        related to name in the database.
+
+        Note that you need to take into account temporary indexes that might
+        have been requested by the database manager but haven't been
+        commited yet to the database.
+        """
+        raise NotImplementedError
+
+    # ---- Observation Wells
     @property
-    @abstractmethod
     def observation_wells(self):
         """
         Return the list of observation wells that are saved in the
@@ -84,7 +160,24 @@ class DatabaseAccessorBase(ABC):
             A list of strings corresponding to the name given to the
             observation wells that are saved in the database.
         """
-        pass
+        raise NotImplementedError
+
+    def add_observation_wells_data(self, sampling_feature_id,
+                                   attribute_values):
+        """
+        Add a new observation well to the database using the provided
+        sampling feature ID and attribute values.
+
+        Parameters
+        ----------
+        sampling_feature_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the observation well
+            in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values for the new
+            observation well.
+        """
+        raise NotImplementedError
 
     def set_observation_wells_data(self, sampling_feature_id, attribute_name,
                                    value):
@@ -166,9 +259,9 @@ class DatabaseAccessorBase(ABC):
             - obs_well_notes: str
                 Any notes related to the observation well.
         """
-        return DataFrame([])
+        raise NotImplementedError
 
-    # ---- Sondes
+    # ---- Sonde Brands and Models Library
     def get_sonde_models_lib(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -196,7 +289,22 @@ class DatabaseAccessorBase(ABC):
             - sonde_model: str
                 A sonde model.
         """
-        return DataFrame([])
+        raise NotImplementedError
+
+    # ---- Sondes Inventory
+    def add_sondes_data(self, sonde_id, attribute_values):
+        """
+        Add a new sonde to the database using the provided sonde ID
+        and attribute values.
+
+        Parameters
+        ----------
+        sonde_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the sonde in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values for the new sonde.
+        """
+        raise NotImplementedError
 
     def get_sondes_data(self):
         """
@@ -249,7 +357,7 @@ class DatabaseAccessorBase(ABC):
             - sonde_model: str
                 The model of the sonde.
         """
-        return DataFrame([])
+        raise NotImplementedError
 
     def set_sondes_data(self, sonde_id, attribute_name, value):
         """
@@ -273,7 +381,6 @@ class DatabaseAccessorBase(ABC):
 
     # ---- Monitored properties
     @property
-    @abstractmethod
     def monitored_properties(self):
         """
         Returns the list of properties for which time data is stored in the
@@ -285,9 +392,8 @@ class DatabaseAccessorBase(ABC):
             A list of strings corresponding to the properties for which time
             data is stored in the database.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def get_monitored_property_name(self, monitored_property):
         """
         Return the common human readable name for the corresponding
@@ -299,9 +405,8 @@ class DatabaseAccessorBase(ABC):
             A string corresponding to the common human readable name used to
             reference this monitored property in the GUI and the graphs.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def get_monitored_property_units(self, monitored_property):
         """
         Return the units in which the time data for this monitored property
@@ -313,10 +418,9 @@ class DatabaseAccessorBase(ABC):
             A string corresponding to the units in which the time data for
             this monitored property are saved in the database.
         """
-        pass
+        raise NotImplementedError
 
     # ---- Timeseries
-    @abstractmethod
     def get_timeseries_for_obs_well(self, obs_well_id, monitored_property):
         """
         Return a :class:`TimeSeriesGroup` containing the :class:`TimeSeries`
@@ -339,9 +443,25 @@ class DatabaseAccessorBase(ABC):
             holding the data acquired in the observation well for the
             specified monitored property.
         """
-        pass
+        raise NotImplementedError
 
-    # ---- Manual mesurements
+    # ---- Manual Measurements
+    def add_manual_measurements(self, measurement_id, attribute_values):
+        """
+        Add a new manual measurement to the database using the provided ID
+        and attribute values.
+
+        Parameters
+        ----------
+        measurement_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the manual measurement
+            in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values for the new
+            manual measurement.
+        """
+        raise NotImplementedError
+
     def get_manual_measurements(self):
         """
         Return a :class:`pandas.DataFrame` containing the water level manual
@@ -373,7 +493,23 @@ class DatabaseAccessorBase(ABC):
             - notes: str
                 Any notes related to the manual measurement.
         """
-        pass
+        raise NotImplementedError
 
-    def set_manual_measurements(self, *args, **kargs):
-        pass
+    def set_manual_measurements(self, measurement_id, attribute_name, value):
+        """
+        Save in the database the new attribute value for the manual
+        measurement  corresponding to the specified id.
+
+        Parameters
+        ----------
+        measurement_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the manual measurement
+            in the database.
+        attribute_name: str
+            Name of the attribute of the manual measurement for which the
+            value need to be updated in the database.
+        value: object
+            Value that need to be updated for the corresponding attribute and
+            manual measurement id.
+        """
+        raise NotImplementedError

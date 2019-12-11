@@ -12,7 +12,6 @@ Accessor implementation of a Demo database.
 """
 
 # ---- Standard imports
-from copy import deepcopy
 import datetime as dt
 from time import sleep
 
@@ -22,7 +21,7 @@ import pandas as pd
 from pandas import Series
 
 # ---- Local imports
-from sardes.api.database_accessor import DatabaseAccessorBase
+from sardes.api.database_accessor import DatabaseAccessor
 from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
 
 
@@ -135,7 +134,7 @@ SONDES_DATA = pd.DataFrame([
 # =============================================================================
 # Database accessor implementation
 # =============================================================================
-class DatabaseAccessorDemo(DatabaseAccessorBase):
+class DatabaseAccessorDemo(DatabaseAccessor):
     """
     Sardes accessor test and debug class.
 
@@ -152,7 +151,7 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         """
         return self._connection is not None
 
-    def connect(self):
+    def _connect(self):
         """
         Create a new connection object to communicate with the database.
         """
@@ -165,7 +164,27 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         """
         self._connection = None
 
-    # ---- Observation wells
+    # --- Indexes
+    def _create_index(self, name):
+        """
+        Return a new index that can be used subsequently to add a new item
+        related to name in the database.
+
+        Note that you need to take into account temporary indexes that might
+        have been requested by the database manager but haven't been
+        commited yet to the database.
+        """
+        if name == 'observation_wells_data':
+            max_commited_id = max(OBS_WELLS_DF.index)
+        elif name == 'sondes_data':
+            max_commited_id = max(SONDES_DATA.index)
+        elif name == 'manual_measurements':
+            max_commited_id = max(MANUAL_MEASUREMENTS.index)
+        else:
+            raise NotImplementedError
+        return max(self.temp_indexes(name) + [max_commited_id]) + 1
+
+    # ---- Observation Wells
     @property
     def observation_wells(self):
         """
@@ -173,6 +192,16 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         database.
         """
         return OBS_WELLS_DF['obs_well_id'].values
+
+    def add_observation_wells_data(self, sampling_feature_id,
+                                   attribute_values):
+        """
+        Add a new observation well to the database using the provided
+        sampling feature ID and attribute values.
+        """
+        for column in OBS_WELLS_DF.columns:
+            OBS_WELLS_DF.loc[sampling_feature_id, column] = (
+                attribute_values.get(column, None))
 
     def set_observation_wells_data(self, sampling_feature_id, attribute_name,
                                    attribute_value):
@@ -188,23 +217,36 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         to the observation wells that are saved in the database.
         """
         sleep(0.3)
-        return deepcopy(OBS_WELLS_DF)
+        df = OBS_WELLS_DF.copy()
 
-    # ---- Sondes
+        return df
+
+    # ---- Sonde Brands and Models Library
     def get_sonde_models_lib(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
         to sonde brands and models.
         """
         sleep(0.1)
-        sonde_models = deepcopy(SONDE_MODELS_LIB)
+        df = SONDE_MODELS_LIB.copy()
 
         # Combine the brand and model into a same field.
-        sonde_models['sonde_brand_model'] = (
-            sonde_models[['sonde_brand', 'sonde_model']]
+        df['sonde_brand_model'] = (
+            df[['sonde_brand', 'sonde_model']]
             .apply(lambda x: ' '.join(x), axis=1))
+        df = df.sort_values('sonde_brand_model')
 
-        return sonde_models.sort_values('sonde_brand_model')
+        return df
+
+    # ---- Sondes Inventory
+    def add_sondes_data(self, sonde_id, attribute_values):
+        """
+        Add a new sonde to the database using the provided sonde ID
+        and attribute values.
+        """
+        for column in SONDES_DATA.columns:
+            SONDES_DATA.loc[sonde_id, column] = (
+                attribute_values.get(column, None))
 
     def get_sondes_data(self):
         """
@@ -212,10 +254,12 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         to the sondes used to monitor groundwater properties in the wells.
         """
         sleep(0.3)
-        return (deepcopy(SONDES_DATA)
-                .sort_values(['sonde_brand_model', 'sonde_serial_no'])
-                .drop('sonde_brand_model', axis=1)
-                )
+        df = (SONDES_DATA
+              .copy()
+              .sort_values(['sonde_brand_model', 'sonde_serial_no'])
+              .drop('sonde_brand_model', axis=1))
+
+        return df
 
     def set_sondes_data(self, sonde_id, attribute_name, attribute_value):
         """
@@ -277,6 +321,15 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         return tseries_group
 
     # ---- Manual mesurements
+    def add_manual_measurements(self, measurement_id, attribute_values):
+        """
+        Add a new manual measurements to the database using the provided ID
+        and attribute values.
+        """
+        for column in MANUAL_MEASUREMENTS.columns:
+            MANUAL_MEASUREMENTS.loc[measurement_id, column] = (
+                attribute_values.get(column, None))
+
     def get_manual_measurements(self):
         """
         Return a :class:`pandas.DataFrame` containing the water level manual
@@ -284,8 +337,9 @@ class DatabaseAccessorDemo(DatabaseAccessorBase):
         network.
         """
         sleep(0.1)
-        manual_measurements = deepcopy(MANUAL_MEASUREMENTS)
-        return manual_measurements
+        df = MANUAL_MEASUREMENTS.copy()
+
+        return df
 
     def set_manual_measurements(self, measurement_id, attribute_name,
                                 attribute_value):

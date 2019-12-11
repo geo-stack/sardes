@@ -31,6 +31,7 @@ from sardes.widgets.tableviews import (
     NumEditDelegate, BoolEditDelegate, MSEC_MIN_PROGRESS_DISPLAY,
     QMessageBox, QCheckBox)
 from sardes.database.database_manager import DatabaseConnectionManager
+from sardes.api.database_accessor import DatabaseAccessor
 
 
 # =============================================================================
@@ -47,27 +48,40 @@ INDEXES = [uuid.uuid4() for i in range(len(VALUES))]
 
 @pytest.fixture
 def TABLE_DATAF():
-    return pd.DataFrame(
+    dataf = pd.DataFrame(
         np.array(VALUES),
         index=INDEXES,
         columns=COLUMNS
         )
+    return dataf
 
 
 @pytest.fixture
 def tablemodel(qtbot, TABLE_DATAF):
 
-    class ConnectionManagerMock(DatabaseConnectionManager):
-        def get(self, name, callback, postpone_exec):
-            dataf = TABLE_DATAF.copy()[COLUMNS[:-1]]
-            dataf.name = name
-            callback(dataf)
+    class DatabaseAccessorTest(DatabaseAccessor):
+        def is_connected(self):
+            return self._connection is not None
 
-        def set(self, name, index, column, edited_value,
-                callback, postpone_exec):
+        def _connect(self):
+            self._connection = True
+
+        def close_connection(self):
+            self._connection = None
+
+        def _create_index(self, name):
+            return uuid.uuid4()
+
+        def get_test_table_dataf_name(self, *args, **kargs):
+            return TABLE_DATAF.copy()
+
+        def set_test_table_dataf_name(self, index, column, edited_value):
             TABLE_DATAF.loc[index, column] = edited_value
-            if callback is not None:
-                callback()
+
+        def add_test_table_dataf_name(self, index, attribute_values):
+            for column in TABLE_DATAF.columns:
+                TABLE_DATAF.loc[index, column] = (
+                    attribute_values.get(column, None))
 
     class SardesTableModelMock(SardesTableModel):
         TABLE_DATA_NAME = 'test_table_dataf_name'
@@ -88,7 +102,9 @@ def tablemodel(qtbot, TABLE_DATAF):
             else:
                 return NotEditableDelegate(view)
 
-    tablemodel = SardesTableModelMock(ConnectionManagerMock())
+    tablemodel = SardesTableModelMock(DatabaseConnectionManager())
+    tablemodel.db_connection_manager.connect_to_db(DatabaseAccessorTest())
+
     # We need to connect the database manager data changed signal to the
     # method to fetch data because this is handled on the plugin this.
     tablemodel.sig_data_saved.connect(tablemodel.fetch_data)
@@ -430,6 +446,38 @@ def test_clearing_non_required_cell(tablewidget, qtbot):
     qtbot.keyPress(tableview, Qt.Key_D, modifier=Qt.ControlModifier)
     assert model_index.data() == ''
     assert tableview.model().get_value_at(model_index) is None
+
+
+def test_add_new_row(tablewidget, qtbot, mocker, TABLE_DATAF):
+    """
+    Test that adding a new row to the table is working as expected.
+    """
+    tableview = tablewidget.tableview
+    selection_model = tablewidget.tableview.selectionModel()
+    assert len(TABLE_DATAF) == 3
+
+    # Add 3 new rows.
+    nrow = len(TABLE_DATAF)
+    for i in range(3):
+        qtbot.keyPress(tableview, Qt.Key_Plus, modifier=Qt.ControlModifier)
+        nrow += 1
+    assert tableview.row_count() == 6
+    assert len(TABLE_DATAF) == 3
+    assert selection_model.currentIndex() == tableview.model().index(5, 0)
+
+    # Undo the last row added.
+    qtbot.keyPress(tablewidget, Qt.Key_Z, modifier=Qt.ControlModifier)
+    nrow += -1
+    assert tableview.row_count() == 5
+    assert len(TABLE_DATAF) == 3
+    assert selection_model.currentIndex() == tableview.model().index(4, 0)
+
+    # Save the results.
+    mocker.patch.object(QMessageBox, 'exec_', return_value=QMessageBox.Save)
+    qtbot.keyPress(tablewidget, Qt.Key_Enter, modifier=Qt.ControlModifier)
+    qtbot.wait(100)
+    assert tableview.row_count() == 5
+    assert len(TABLE_DATAF) == 5
 
 
 def test_cancel_edits(tablewidget, qtbot):

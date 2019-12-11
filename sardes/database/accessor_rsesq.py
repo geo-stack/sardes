@@ -11,24 +11,27 @@
 Object-Relational Mapping and Accessor implementation of the RSESQ database.
 """
 
+# ---- Standard imports
+import uuid
+
 # ---- Third party imports
 from geoalchemy2 import Geometry
 from geoalchemy2.elements import WKTElement
 import numpy as np
 import pandas as pd
 from psycopg2.extensions import register_adapter, AsIs
-from sqlalchemy import create_engine
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import create_engine, extract, func
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.types import TEXT, VARCHAR, Boolean
-from sqlalchemy import ForeignKey
+from sqlalchemy.inspection import inspect
 from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.types import TEXT, VARCHAR, Boolean
 
 # ---- Local imports
-from sardes.api.database_accessor import DatabaseAccessorBase
+from sardes.api.database_accessor import DatabaseAccessor
 from sardes.database.utils import map_table_column_names, format_sqlobject_repr
 from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
 
@@ -107,6 +110,7 @@ class SamplingFeature(Base):
 
     sampling_feature_uuid = Column(
         'elemcarac_uuid', UUID(as_uuid=True), primary_key=True)
+    sampling_feature_id = Column('elemcarac_id', Integer)
     # Relation with table librairies.elem_interest
     interest_id = Column('interet_id', String)
     loc_id = Column(Integer, ForeignKey('rsesq.localisation.loc_id'))
@@ -131,6 +135,7 @@ class Observation(Base):
     __table_args__ = ({"schema": "rsesq"})
 
     observation_uuid = Column('observation_uuid', String, primary_key=True)
+    observation_id = Column('observation_id', Integer)
     sampling_feature_uuid = Column('elemcarac_uuid', String)
     process_uuid = Column('process_uuid', String)
     obs_datetime = Column('date_relv_hg', DateTime)
@@ -218,13 +223,14 @@ class TimeSeriesData(Base):
 # =============================================================================
 # ---- Accessor
 # =============================================================================
-class DatabaseAccessorRSESQ(DatabaseAccessorBase):
+class DatabaseAccessorRSESQ(DatabaseAccessor):
     """
     Manage the connection and requests to a RSESQ database.
     """
 
     def __init__(self, database, username, password, hostname, port,
                  client_encoding='utf8'):
+        super().__init__()
         self._database = database
         self._username = username
         self._password = password
@@ -261,7 +267,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         else:
             return not self._connection.closed
 
-    def connect(self):
+    def _connect(self):
         """
         Create a new connection object to communicate with the database.
         """
@@ -280,6 +286,27 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         self._engine.dispose()
         self._connection = None
 
+    # --- Indexes
+    def _create_index(self, name):
+        """
+        Return a new index that can be used subsequently to add a new item
+        related to name in the database.
+
+        Note that you need to take into account temporary indexes that might
+        have been requested by the database manager but haven't been
+        commited yet to the database.
+        """
+        if name in ['observation_wells_data', 'sondes_data']:
+            return uuid.uuid4()
+        elif name == 'manual_measurements':
+            max_commited_id = (
+                self._session.query(
+                    func.max(GenericNumericalValue.gen_num_value_id))
+                .one())[0]
+            return max(self.temp_indexes(name) + [max_commited_id]) + 1
+        else:
+            raise NotImplementedError
+
     # ---- Locations
     def _get_location(self, loc_id):
         """
@@ -293,7 +320,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             )
         return location
 
-    # ---- Observation wells
+    # ---- Observation Wells
     @property
     def observation_wells(self):
         """
@@ -334,8 +361,47 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             )
         return obs_well
 
+
+    def add_observation_wells_data(self, sampling_feature_uuid,
+                                   attribute_values):
+        """
+        Add a new observation well to the database using the provided ID
+        and attribute values.
+        """
+        # We need first to create a new location in table rsesq.localisation.
+        new_loc_id = (
+            self._session.query(func.max(Location.loc_id))
+            .one())
+        new_loc_id = new_loc_id[0] + 1
+        location = Location(loc_id=new_loc_id)
+        self._session.add(location)
+
+        # We then add the new observation well.
+        new_sampling_feature_id = (
+            self._session.query(func.max(SamplingFeature.sampling_feature_id))
+            .one())
+        new_sampling_feature_id = new_sampling_feature_id[0] + 1
+
+        obs_well = ObservationWell(
+            sampling_feature_uuid=sampling_feature_uuid,
+            sampling_feature_id=new_sampling_feature_id,
+            interest_id=1,
+            loc_id=new_loc_id
+            )
+        self._session.add(obs_well)
+
+        # We then set the attribute values provided in argument for this
+        # new observation well if any.
+        for attribute_name, attribute_value in attribute_values.items():
+            self.set_observation_wells_data(
+                sampling_feature_uuid,
+                attribute_name,
+                attribute_value,
+                auto_commit=False)
+        self._session.commit()
+
     def set_observation_wells_data(self, sampling_feature_id, attribute_name,
-                                   attribute_value):
+                                   attribute_value, auto_commit=True):
         """
         Save in the database the new attribute value for the observation well
         corresponding to the specified sampling feature ID.
@@ -351,12 +417,15 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
             setattr(obs_well, attribute_name, attribute_value)
         elif attribute_name in note_attrs:
             index = note_attrs.index(attribute_name)
-            label = [
+            labels = [
                 'nom_commu', 'aquifere', 'nappe', 'code_aqui', 'zone_rechar',
                 'influences', 'station_active', 'remarque'][index]
-
-            notes = [n.strip() for n in obs_well.obs_well_notes.split(r'||')]
-            notes[index] = '{}: {}'.format(label, attribute_value)
+            try:
+                notes = [
+                    n.strip() for n in obs_well.obs_well_notes.split(r'||')]
+            except AttributeError:
+                notes = [''] * len(labels)
+            notes[index] = '{}: {}'.format(labels[index], attribute_value)
             obs_well.obs_well_notes = r' || '.join(notes)
         elif attribute_name in ['latitude', 'longitude']:
             location = self._get_location(obs_well.loc_id)
@@ -364,16 +433,20 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
 
             # We also need to update the postgis geometry object for the
             # location.
-            location.loc_geom = WKTElement(
-                'POINT({} {})'.format(location.longitude, location.latitude),
-                srid=4326)
+            if (location.longitude is not None and
+                    location.latitude is not None):
+                location.loc_geom = WKTElement(
+                    'POINT({} {})'.format(location.longitude,
+                                          location.latitude),
+                    srid=4326)
         elif attribute_name in ['municipality']:
             location = self._get_location(obs_well.loc_id)
             location.loc_notes = (
                 ' || municipalité : {}'.format(attribute_value))
 
         # Commit changes to the BD.
-        self._session.commit()
+        if auto_commit:
+            self._session.commit()
 
     def get_observation_wells_data(self):
         """
@@ -422,9 +495,10 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
 
         # Replace nan by None.
         obs_wells = obs_wells.where(obs_wells.notnull(), None)
+
         return obs_wells
 
-    # ---- Sondes
+    # ---- Sonde Brands and Models Library
     def _get_sonde(self, sonde_id):
         """
         Return the sqlalchemy Sondes object corresponding to the
@@ -464,6 +538,28 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
 
         return sonde_models
 
+    # ---- Sondes Inventory
+    def add_sondes_data(self, sonde_uuid, attribute_values):
+        """
+        Add a new sonde to the database using the provided sonde ID
+        and attribute values.
+        """
+        # We now create a new measurement in table 'resultats.generique'.
+        sonde = Sondes(
+            sonde_uuid=sonde_uuid,
+            sonde_serial_no=attribute_values.get('sonde_serial_no', ''),
+            date_reception=attribute_values.get('date_reception', None),
+            date_withdrawal=attribute_values.get('date_withdrawal', None),
+            in_repair=attribute_values.get('in_repair', None),
+            out_of_order=attribute_values.get('out_of_order', None),
+            lost=attribute_values.get('lost', None),
+            off_network=attribute_values.get('off_network', None),
+            sonde_notes=attribute_values.get('sonde_notes', None),
+            sonde_model_id=attribute_values.get('sonde_notes', None),
+            )
+        self._session.add(sonde)
+        self._session.commit()
+
     def get_sondes_data(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -471,9 +567,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         """
         query = (
             self._session.query(Sondes)
-            .filter(SondeModels.sonde_model_id == Sondes.sonde_model_id)
-            .order_by(SondeModels.sonde_brand,
-                      SondeModels.sonde_model,
+            .order_by(Sondes.sonde_model_id,
                       Sondes.sonde_serial_no)
             ).with_labels()
         sondes = pd.read_sql_query(
@@ -641,10 +735,44 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         try:
             return self._connection.execute(sql_request, **kwargs)
         except ProgrammingError as p:
-            print("Permission error for user {}".format(self.user))
+            print(p)
             raise p
 
     # ---- Manual mesurements
+    def add_manual_measurements(self, gen_num_value_id, attribute_values):
+        """
+        Add a new manual measurements to the database using the provided ID
+        and attribute values.
+        """
+        # We need first to create a new observation in table rsesq.observation.
+        new_observation_id = (
+            self._session.query(func.max(Observation.observation_id))
+            .one())
+        new_observation_id = new_observation_id[0] + 1
+
+        observation = Observation(
+            observation_uuid=uuid.uuid4(),
+            observation_id=new_observation_id,
+            sampling_feature_uuid=attribute_values.get(
+                'sampling_feature_uuid', None),
+            process_uuid=None,
+            obs_datetime=attribute_values.get('datetime', None),
+            param_id=4
+            )
+        self._session.add(observation)
+
+        # We now create a new measurement in table 'resultats.generique'.
+        measurement = GenericNumericalValue(
+            gen_num_value_id=gen_num_value_id,
+            gen_num_value=attribute_values.get('value', None),
+            observation_uuid=observation.observation_uuid,
+            obs_property_id=2,
+            gen_num_value_notes=attribute_values.get('notes', None)
+            )
+        self._session.add(measurement)
+
+        self._session.commit()
+
     def get_manual_measurements(self):
         """
         Return a :class:`pandas.DataFrame` containing the water level manual
@@ -674,8 +802,8 @@ class DatabaseAccessorRSESQ(DatabaseAccessorBase):
         measurements.rename(columns_map, axis='columns', inplace=True)
 
         # Set the index to the observation well ids.
-        measurements.set_index(
-            'gen_num_value_id', inplace=True, drop=True)
+        measurements.set_index('gen_num_value_id', inplace=True, drop=True)
+
         return measurements
 
     def set_manual_measurements(self, gen_num_value_id, attribute_name,

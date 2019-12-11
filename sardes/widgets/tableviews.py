@@ -269,7 +269,8 @@ class SardesItemDelegate(SardesItemDelegateBase):
             data = '' if (pd.isna(data) or data is None) else data
             self.editor.setText(data)
         elif isinstance(self.editor, (QSpinBox, QDoubleSpinBox)):
-            self.editor.setValue(data)
+            if data is not None:
+                self.editor.setValue(data)
         elif isinstance(self.editor, QComboBox):
             for i in range(self.editor.count()):
                 if self.editor.itemData(i) == data:
@@ -395,7 +396,6 @@ class SardesHeaderView(QHeaderView):
         self.setHighlightSections(True)
         self.setSectionsClickable(True)
         self.setSectionsMovable(True)
-        self.setSortIndicatorShown(True)
         self.sectionDoubleClicked.connect(self._handle_section_doubleclick)
 
         # A dictionary whose keys corresponds to the section logical index
@@ -408,6 +408,7 @@ class SardesHeaderView(QHeaderView):
         Override Qt method to force the painting of the sort indicator
         on multiple columns.
         """
+        self.setSortIndicatorShown(True)
         self.blockSignals(True)
         if logicalIndex in self._sections_sorting_state:
             self.setSortIndicator(
@@ -531,6 +532,14 @@ class SardesTableView(QTableView):
             lambda current, previous: edit_item_action.setEnabled(
                 self.is_data_editable_at(current)))
 
+        new_row_action = create_action(
+            self, _("New Item"),
+            icon='add_row',
+            tip=_("Create a new item."),
+            triggered=self._add_new_row,
+            shortcut=['Ctrl++', 'Ctrl+='],
+            context=Qt.WidgetShortcut)
+
         clear_item_action = create_action(
             self, _("Clear"),
             icon='erase_data',
@@ -576,8 +585,8 @@ class SardesTableView(QTableView):
             lambda v1, v2: undo_edits_action.setEnabled(v2))
 
         self._actions['edit'] = [
-            edit_item_action, clear_item_action, undo_edits_action,
-            save_edits_action, cancel_edits_action]
+            edit_item_action, new_row_action, clear_item_action,
+            undo_edits_action, save_edits_action, cancel_edits_action]
         self.addActions(self._actions['edit'])
 
         # Setup selection actions.
@@ -1061,6 +1070,13 @@ class SardesTableView(QTableView):
 
         self.selectionModel().clearSelection()
         self.model().save_data_edits()
+
+    def _add_new_row(self):
+        """
+        Add a new empty row at the end of this table.
+        """
+        new_model_index_range = self.model().add_new_row()
+        self.setCurrentIndex(new_model_index_range[0])
 
     def raise_edits_error(self, model_index, message):
         """"
