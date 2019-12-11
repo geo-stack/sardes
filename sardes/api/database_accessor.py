@@ -149,7 +149,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
     # ---- Observation Wells
     @property
-    @abstractmethod
     def observation_wells(self):
         """
         Return the list of observation wells that are saved in the
@@ -161,7 +160,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
             A list of strings corresponding to the name given to the
             observation wells that are saved in the database.
         """
-        pass
+        raise NotImplementedError
 
     def add_observation_wells_data(self, sampling_feature_id,
                                    attribute_values):
@@ -382,7 +381,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
     # ---- Monitored properties
     @property
-    @abstractmethod
     def monitored_properties(self):
         """
         Returns the list of properties for which time data is stored in the
@@ -394,9 +392,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
             A list of strings corresponding to the properties for which time
             data is stored in the database.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def get_monitored_property_name(self, monitored_property):
         """
         Return the common human readable name for the corresponding
@@ -408,9 +405,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
             A string corresponding to the common human readable name used to
             reference this monitored property in the GUI and the graphs.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def get_monitored_property_units(self, monitored_property):
         """
         Return the units in which the time data for this monitored property
@@ -422,10 +418,9 @@ class DatabaseAccessor(DatabaseAccessorBase):
             A string corresponding to the units in which the time data for
             this monitored property are saved in the database.
         """
-        pass
+        raise NotImplementedError
 
     # ---- Timeseries
-    @abstractmethod
     def get_timeseries_for_obs_well(self, obs_well_id, monitored_property):
         """
         Return a :class:`TimeSeriesGroup` containing the :class:`TimeSeries`
@@ -448,7 +443,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
             holding the data acquired in the observation well for the
             specified monitored property.
         """
-        pass
+        raise NotImplementedError
 
     # ---- Manual Measurements
     def add_manual_measurements(self, measurement_id, attribute_values):
