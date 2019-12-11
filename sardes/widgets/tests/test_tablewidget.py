@@ -448,6 +448,38 @@ def test_clearing_non_required_cell(tablewidget, qtbot):
     assert tableview.model().get_value_at(model_index) is None
 
 
+def test_add_new_row(tablewidget, qtbot, mocker, TABLE_DATAF):
+    """
+    Test that adding a new row to the table is working as expected.
+    """
+    tableview = tablewidget.tableview
+    selection_model = tablewidget.tableview.selectionModel()
+    assert len(TABLE_DATAF) == 3
+
+    # Add 3 new rows.
+    nrow = len(TABLE_DATAF)
+    for i in range(3):
+        qtbot.keyPress(tableview, Qt.Key_Plus, modifier=Qt.ControlModifier)
+        nrow += 1
+    assert tableview.row_count() == 6
+    assert len(TABLE_DATAF) == 3
+    assert selection_model.currentIndex() == tableview.model().index(5, 0)
+
+    # Undo the last row added.
+    qtbot.keyPress(tablewidget, Qt.Key_Z, modifier=Qt.ControlModifier)
+    nrow += -1
+    assert tableview.row_count() == 5
+    assert len(TABLE_DATAF) == 3
+    assert selection_model.currentIndex() == tableview.model().index(4, 0)
+
+    # Save the results.
+    mocker.patch.object(QMessageBox, 'exec_', return_value=QMessageBox.Save)
+    qtbot.keyPress(tablewidget, Qt.Key_Enter, modifier=Qt.ControlModifier)
+    qtbot.wait(100)
+    assert tableview.row_count() == 5
+    assert len(TABLE_DATAF) == 5
+
+
 def test_cancel_edits(tablewidget, qtbot):
     """
     Test cancelling all edits made to the table's data.
