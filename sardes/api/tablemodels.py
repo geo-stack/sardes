@@ -9,7 +9,6 @@
 
 # ---- Standard imports
 from collections import OrderedDict
-import uuid
 
 # ---- Third party imports
 import pandas as pd
@@ -816,6 +815,16 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         Set the list of column logical indexes and the list of corresponding
         sort orders (0 for ascending, 1 for descending) by which the data
         need to be sorted in this model.
+
+        Parameters
+        ----------
+        sort_by_columns : list of int
+            A list of integers corresponding to the logical indexes of the
+            columns by which the data need to be sorted.
+        columns_sort_order : list of int
+            A list of integers corresponding to the sort order (0 for ascending
+            and 1 for descending) that need to be used to sort the data by
+            the corresponding columns in sort_by_columns.
         """
         self._sort_by_columns = sort_by_columns
         self._columns_sort_order = columns_sort_order
