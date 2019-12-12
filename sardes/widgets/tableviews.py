@@ -434,6 +434,9 @@ class SardesHeaderView(QHeaderView):
         """
         Override Qt method to force the painting of the sort indicator
         on multiple columns.
+
+        Based on the qt source code at:
+        https://code.woboq.org/qt5/qtbase/src/widgets/itemviews/qheaderview.cpp.html
         """
         state = QStyle.State_None
         if self.isEnabled():
