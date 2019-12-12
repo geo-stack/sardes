@@ -402,7 +402,8 @@ class SardesHeaderView(QHeaderView):
         self.pressed = -1
 
     def mousePressEvent(self, e):
-        self.pressed = self.logicalIndexAt(e.pos())
+        if e.button() == Qt.LeftButton:
+            self.pressed = self.logicalIndexAt(e.pos())
         super().mousePressEvent(e)
 
     def mouseReleaseEvent(self, e):
