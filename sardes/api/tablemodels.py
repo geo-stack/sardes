@@ -870,6 +870,15 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         """
         if role == Qt.DisplayRole and orientation == Qt.Vertical:
             return section + 1
+        elif role == Qt.InitialSortOrderRole and orientation == Qt.Horizontal:
+            try:
+                index = self._sort_by_columns.index(section)
+            except ValueError:
+                return None
+            else:
+                return (Qt.AscendingOrder if
+                        self._columns_sort_order[index] == 0 else
+                        Qt.DescendingOrder)
         else:
             return self.sourceModel().headerData(section, orientation, role)
 
