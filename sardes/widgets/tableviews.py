@@ -17,13 +17,13 @@ from math import floor, ceil
 # ---- Third party imports
 import pandas as pd
 from qtpy.QtCore import (QEvent, Qt, Signal, Slot, QItemSelection,
-                         QItemSelectionModel, QRect, QTimer)
+                         QItemSelectionModel, QRect, QTimer, QModelIndex)
 from qtpy.QtGui import QCursor, QPen
 from qtpy.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDateEdit, QDateTimeEdit,
     QDoubleSpinBox, QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox,
     QSpinBox, QStyledItemDelegate, QTableView, QTextEdit, QListView, QStyle,
-    QStyleOption, QWidget, QGridLayout)
+    QStyleOption, QWidget, QGridLayout, QStyleOptionHeader)
 
 # ---- Local imports
 from sardes import __appname__
@@ -397,28 +397,152 @@ class SardesHeaderView(QHeaderView):
         self.setSectionsClickable(True)
         self.setSectionsMovable(True)
         self.sectionDoubleClicked.connect(self._handle_section_doubleclick)
+        self.setSortIndicatorShown(False)
+        self.hover = -1
+        self.pressed = -1
 
-        # A dictionary whose keys corresponds to the section logical index
-        # for which a sort indicator need to be painted and whose values
-        # correspond to the sort order for each key.
-        self._sections_sorting_state = {}
+    def mousePressEvent(self, e):
+        """
+        Override Qt method to save the logical index of the section that
+        was pressed with the left button of the mouse.
+        """
+        if e.button() == Qt.LeftButton:
+            self.pressed = self.logicalIndexAt(e.pos())
+        super().mousePressEvent(e)
+
+    def mouseReleaseEvent(self, e):
+        """
+        Override Qt method to clear the pressed variable.
+        """
+        self.pressed = -1
+        super().mouseReleaseEvent(e)
+
+    def event(self, e):
+        """
+        Override Qt method to save the logical index of the section that
+        is hovered by the bouse cursor.
+        """
+        if e.type() == QEvent.HoverEnter:
+            self.hover = self.logicalIndexAt(e.pos())
+        elif e.type() in [QEvent.Leave, QEvent.HoverLeave]:
+            self.hover = -1
+        elif e.type() == QEvent.HoverMove:
+            self.hover = self.logicalIndexAt(e.pos())
+        return super().event(e)
 
     def paintSection(self, painter, rect, logicalIndex):
         """
         Override Qt method to force the painting of the sort indicator
         on multiple columns.
+
+        Based on the qt source code at:
+        https://code.woboq.org/qt5/qtbase/src/widgets/itemviews/qheaderview.cpp.html
         """
-        self.setSortIndicatorShown(True)
-        self.blockSignals(True)
-        if logicalIndex in self._sections_sorting_state:
-            self.setSortIndicator(
-                logicalIndex, self._sections_sorting_state[logicalIndex])
-        else:
-            self.setSortIndicator(-1, 0)
-        self.blockSignals(False)
-        super().paintSection(painter, rect, logicalIndex)
+        state = QStyle.State_None
+        if self.isEnabled():
+            state |= QStyle.State_Enabled
+        if self.window().isActiveWindow():
+            state |= QStyle.State_Active
+        if self.sectionsClickable():
+            if logicalIndex == self.hover:
+                state |= QStyle.State_MouseOver
+            if logicalIndex == self.pressed:
+                state |= QStyle.State_Sunken
+                state |= QStyle.State_On
+            else:
+                sm = self.parent().selectionModel()
+                if sm.columnIntersectsSelection(logicalIndex, QModelIndex()):
+                    state |= QStyle.State_On
+                if sm.isColumnSelected(logicalIndex, QModelIndex()):
+                    state |= QStyle.State_Sunken
+
+        opt = QStyleOptionHeader()
+        self.initStyleOption(opt)
+        opt.rect = rect
+        opt.section = logicalIndex
+        opt.orientation = Qt.Horizontal
+        opt.state |= state
+
+        # Text options.
+        text_alignment = self.model().headerData(
+            logicalIndex, Qt.Horizontal, Qt.TextAlignmentRole)
+        opt.textAlignment = (text_alignment if
+                             text_alignment.isValid() else
+                             Qt.AlignHCenter)
+
+        opt.text = self.model().headerData(
+            logicalIndex, Qt.Horizontal, Qt.DisplayRole)
+
+        # Elide text.
+        margin = 2 * self.style().pixelMetric(
+            QStyle.PM_HeaderMargin, opt, self)
+        text_rect = self.style().subElementRect(
+            QStyle.SE_HeaderLabel, opt, self)
+        opt.text = opt.fontMetrics.elidedText(
+            opt.text, Qt.ElideRight, text_rect.width() - margin)
+
+        # Sort indicator.
+        sort_order = self.model().headerData(
+            logicalIndex, Qt.Horizontal, Qt.InitialSortOrderRole)
+        if sort_order is not None:
+            opt.sortIndicator = (QStyleOptionHeader.SortDown if
+                                 sort_order == 0 else
+                                 QStyleOptionHeader.SortUp)
+
+        # Section position.
+        visual_index = self.visualIndex(logicalIndex)
+        if visual_index != -1:
+            first = self.logicalIndex(0) == logicalIndex
+            last = (self.logicalIndex(self.visible_section_count() - 1) ==
+                    logicalIndex)
+            if first and last:
+                opt.position = QStyleOptionHeader.OnlyOneSection
+            elif first:
+                opt.position = QStyleOptionHeader.Beginning
+            elif last:
+                opt.position = QStyleOptionHeader.End
+            else:
+                opt.position = QStyleOptionHeader.Middle
+
+            # Selected position.
+            sm = self.parent().selectionModel()
+            previous_selected = sm.isColumnSelected(
+                self.logicalIndex(visual_index - 1), QModelIndex())
+            next_selected = sm.isColumnSelected(
+                self.logicalIndex(visual_index + 1), QModelIndex())
+
+            if previous_selected and next_selected:
+                opt.selectedPosition = (QStyleOptionHeader
+                                        .NextAndPreviousAreSelected)
+            elif previous_selected:
+                opt.selectedPosition = QStyleOptionHeader.PreviousIsSelected
+            elif next_selected:
+                opt.selectedPosition = QStyleOptionHeader.NextIsSelected
+            else:
+                opt.selectedPosition = QStyleOptionHeader.NotAdjacent
+
+        # Draw the section.
+        self.style().drawControl(QStyle.CE_Header, opt, painter, self)
 
     # ---- Utils
+    def sort_indicator_order(self):
+        """
+        Returns a list of the order for the sort indicator for the columns
+        that have a sort indicator.
+        """
+        return self.model()._columns_sort_order
+
+    def sort_indicator_sections(self):
+        """
+        Returns a list of the logical index of the sections that have a
+        sort indicator
+        """
+        return self.model()._sort_by_columns
+
+    def visible_section_count(self):
+        """Return the number of visible sections."""
+        return self.count() - self.hiddenSectionCount()
+
     def visual_rect_at(self, section):
         """
         Return the visual rect of the given section.
@@ -432,11 +556,11 @@ class SardesHeaderView(QHeaderView):
         """
         Sort data on the column that was double clicked with the mouse.
         """
-        order = (Qt.AscendingOrder if section not in
-                 self._sections_sorting_state else
-                 int(not bool(self._sections_sorting_state[section])))
-        self._sections_sorting_state[section] = order
-        self.sig_sort_by_column.emit(section, order)
+        sort_order = self.model().headerData(
+            section, Qt.Horizontal, Qt.InitialSortOrderRole)
+        sort_order = (Qt.AscendingOrder if sort_order is None else
+                      int(not bool(sort_order)))
+        self.sig_sort_by_column.emit(section, sort_order)
 
 
 class SardesTableView(QTableView):
@@ -480,7 +604,7 @@ class SardesTableView(QTableView):
         self.proxy_model = SardesSortFilterModel(self.source_model)
         self.setModel(self.proxy_model)
         self.proxy_model.sig_data_sorted.connect(
-            self._update_horizontal_header_sort_state)
+            self.horizontalHeader().update)
 
     def _setup_item_delegates(self):
         """
@@ -681,14 +805,6 @@ class SardesTableView(QTableView):
                 ))
 
     # ---- Sorting
-    def _update_horizontal_header_sort_state(self):
-        sort_by_columns, columns_sort_order = (
-            self.model().get_columns_sorting_state())
-        self.horizontalHeader()._sections_sorting_state = {
-            column: order for column, order in
-            zip(sort_by_columns, columns_sort_order)}
-        self.horizontalHeader().update()
-
     def clear_sort(self):
         """
         Clear all sorts applied to the columns of this table.
@@ -930,7 +1046,7 @@ class SardesTableView(QTableView):
 
     def visible_column_count(self):
         """Return this table number of visible columns."""
-        return self.column_count() - self.hidden_column_count()
+        return self.horizontalHeader().visible_section_count()
 
     def get_horiz_header_state(self):
         """
