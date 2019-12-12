@@ -402,15 +402,26 @@ class SardesHeaderView(QHeaderView):
         self.pressed = -1
 
     def mousePressEvent(self, e):
+        """
+        Override Qt method to save the logical index of the section that
+        was pressed with the left button of the mouse.
+        """
         if e.button() == Qt.LeftButton:
             self.pressed = self.logicalIndexAt(e.pos())
         super().mousePressEvent(e)
 
     def mouseReleaseEvent(self, e):
+        """
+        Override Qt method to clear the pressed variable.
+        """
         self.pressed = -1
         super().mouseReleaseEvent(e)
 
     def event(self, e):
+        """
+        Override Qt method to save the logical index of the section that
+        is hovered by the bouse cursor.
+        """
         if e.type() == QEvent.HoverEnter:
             self.hover = self.logicalIndexAt(e.pos())
         elif e.type() in [QEvent.Leave, QEvent.HoverLeave]:
