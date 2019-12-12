@@ -510,6 +510,20 @@ class SardesHeaderView(QHeaderView):
         self.style().drawControl(QStyle.CE_Header, opt, painter, self)
 
     # ---- Utils
+    def sort_indicator_order(self):
+        """
+        Returns a list of the order for the sort indicator for the columns
+        that have a sort indicator.
+        """
+        return self.model()._columns_sort_order
+
+    def sort_indicator_sections(self):
+        """
+        Returns a list of the logical index of the sections that have a
+        sort indicator
+        """
+        return self.model()._sort_by_columns
+
     def visible_section_count(self):
         """Return the number of visible sections."""
         return self.count() - self.hiddenSectionCount()
