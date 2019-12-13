@@ -848,12 +848,12 @@ class SardesSortFilterModel(QSortFilterProxyModel):
             return QModelIndex()
 
         try:
-            source_index_row = self.sourceModel().visual_dataf.index.get_loc(
-                self._proxy_dataf_index[proxy_index.row()])
+            source_index_row = self._map_row_to_source[proxy_index.row()]
+        except IndexError:
+            return QModelIndex()
+        else:
             return self.sourceModel().index(
                 source_index_row, proxy_index.column())
-        except KeyError:
-            return QModelIndex()
 
     def mapFromSource(self, source_index):
         """
@@ -864,11 +864,11 @@ class SardesSortFilterModel(QSortFilterProxyModel):
             return QModelIndex()
 
         try:
-            proxy_index_row = self._proxy_dataf_index.get_loc(
-                self.sourceModel().visual_dataf.index[source_index.row()])
-            return self.index(proxy_index_row, source_index.column())
-        except KeyError:
+            proxy_index_row = self._map_row_from_source[source_index.row()]
+        except IndexError:
             return QModelIndex()
+        else:
+            return self.index(proxy_index_row, source_index.column())
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """
