@@ -711,6 +711,8 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         self._columns_sort_order = []
         self._filter_by_columns = None
         self._proxy_dataf_index = []
+        self._map_row_to_source = []
+        self._map_row_from_source = []
 
     def __getattr__(self, name):
         try:
@@ -776,6 +778,12 @@ class SardesSortFilterModel(QSortFilterProxyModel):
                 ascending=[not bool(v) for v in self._columns_sort_order],
                 axis=0,
                 inplace=False).index
+        self._map_row_to_source = [
+            self.sourceModel().visual_dataf.index.get_loc(index) for
+            index in self._proxy_dataf_index]
+        self._map_row_from_source = [
+            self._proxy_dataf_index.get_loc(index) for
+            index in self.sourceModel().visual_dataf.index]
         self.sig_data_sorted.emit()
 
     # ---- Public methods
