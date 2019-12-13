@@ -736,10 +736,8 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         self.layoutAboutToBeChanged.emit()
 
         self._old_persistent_indexes = self.persistentIndexList()
-        self._old_persistent_data = [
-            (self._proxy_dataf_index[index.row()],
-             index.column(),
-             index.parent()) for index in self._old_persistent_indexes]
+        self._old_persistent_source_indexes = [
+            self.mapToSource(index) for index in self.persistentIndexList()]
 
         self._sort()
         self._update_persistent_indexes()
@@ -751,13 +749,8 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         Update the persistent indexes so that, for instance, the selections
         are preserved correctly after a change.
         """
-        new_persistent_indexes = self._old_persistent_indexes.copy()
-        for i, (row, column, parent) in enumerate(self._old_persistent_data):
-            try:
-                new_persistent_indexes[i] = self.index(
-                    self._proxy_dataf_index.get_loc(row), column, parent)
-            except KeyError:
-                new_persistent_indexes[i] = QModelIndex()
+        new_persistent_indexes = [self.mapFromSource(index) for index in
+                                  self._old_persistent_source_indexes]
         self.changePersistentIndexList(
             self._old_persistent_indexes, new_persistent_indexes)
 
