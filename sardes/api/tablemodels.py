@@ -711,6 +711,8 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         self._columns_sort_order = []
         self._filter_by_columns = None
         self._proxy_dataf_index = []
+        self._map_row_to_source = []
+        self._map_row_from_source = []
 
     def __getattr__(self, name):
         try:
@@ -734,10 +736,8 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         self.layoutAboutToBeChanged.emit()
 
         self._old_persistent_indexes = self.persistentIndexList()
-        self._old_persistent_data = [
-            (self._proxy_dataf_index[index.row()],
-             index.column(),
-             index.parent()) for index in self._old_persistent_indexes]
+        self._old_persistent_source_indexes = [
+            self.mapToSource(index) for index in self.persistentIndexList()]
 
         self._sort()
         self._update_persistent_indexes()
@@ -749,13 +749,8 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         Update the persistent indexes so that, for instance, the selections
         are preserved correctly after a change.
         """
-        new_persistent_indexes = self._old_persistent_indexes.copy()
-        for i, (row, column, parent) in enumerate(self._old_persistent_data):
-            try:
-                new_persistent_indexes[i] = self.index(
-                    self._proxy_dataf_index.get_loc(row), column, parent)
-            except KeyError:
-                new_persistent_indexes[i] = QModelIndex()
+        new_persistent_indexes = [self.mapFromSource(index) for index in
+                                  self._old_persistent_source_indexes]
         self.changePersistentIndexList(
             self._old_persistent_indexes, new_persistent_indexes)
 
@@ -776,6 +771,12 @@ class SardesSortFilterModel(QSortFilterProxyModel):
                 ascending=[not bool(v) for v in self._columns_sort_order],
                 axis=0,
                 inplace=False).index
+        self._map_row_to_source = [
+            self.sourceModel().visual_dataf.index.get_loc(index) for
+            index in self._proxy_dataf_index]
+        self._map_row_from_source = [
+            self._proxy_dataf_index.get_loc(index) for
+            index in self.sourceModel().visual_dataf.index]
         self.sig_data_sorted.emit()
 
     # ---- Public methods
@@ -840,12 +841,12 @@ class SardesSortFilterModel(QSortFilterProxyModel):
             return QModelIndex()
 
         try:
-            source_index_row = self.sourceModel().visual_dataf.index.get_loc(
-                self._proxy_dataf_index[proxy_index.row()])
+            source_index_row = self._map_row_to_source[proxy_index.row()]
+        except IndexError:
+            return QModelIndex()
+        else:
             return self.sourceModel().index(
                 source_index_row, proxy_index.column())
-        except KeyError:
-            return QModelIndex()
 
     def mapFromSource(self, source_index):
         """
@@ -856,11 +857,11 @@ class SardesSortFilterModel(QSortFilterProxyModel):
             return QModelIndex()
 
         try:
-            proxy_index_row = self._proxy_dataf_index.get_loc(
-                self.sourceModel().visual_dataf.index[source_index.row()])
-            return self.index(proxy_index_row, source_index.column())
-        except KeyError:
+            proxy_index_row = self._map_row_from_source[source_index.row()]
+        except IndexError:
             return QModelIndex()
+        else:
+            return self.index(proxy_index_row, source_index.column())
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """
