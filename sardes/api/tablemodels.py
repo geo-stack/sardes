@@ -470,6 +470,13 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         return self._datat.is_value_in_column(model_index.column(), value)
 
+    def is_null(self, model_index):
+        """
+        Return whether the value at the given model index is null.
+        """
+        return pd.isnull(self._datat.get(
+            model_index.row(), model_index.column()))
+
     # ---- Visual Data
     def dataf_index_at(self, model_index):
         """
@@ -903,3 +910,9 @@ class SardesSortFilterModel(QSortFilterProxyModel):
     def set_data_edit_at(self, proxy_indexes, edited_value):
         return self.sourceModel().set_data_edit_at(
             self.mapToSource(proxy_indexes), edited_value)
+
+    def is_null(self, proxy_indexes):
+        """
+        Return whether the value at the given model index is null.
+        """
+        return self.sourceModel().is_null(self.mapToSource(proxy_indexes))

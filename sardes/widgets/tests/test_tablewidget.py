@@ -338,6 +338,8 @@ def test_edit_non_editable_cell(tablewidget, qtbot):
         tableview.viewport(),
         Qt.LeftButton,
         pos=tableview.visualRect(model_index).center())
+    assert not tableview.edit_item_action.isEnabled()
+    assert not tableview.clear_item_action.isEnabled()
 
     item_delegate = tableview.itemDelegate(model_index)
     assert model_index.data() == 'not editable'
@@ -373,6 +375,7 @@ def test_edit_editable_cell(tablewidget, qtbot):
             tableview.viewport(),
             Qt.LeftButton,
             pos=tableview.visualRect(tableview.model().index(0, i)).center())
+        assert tableview.edit_item_action.isEnabled()
 
         model_index = tableview.selectionModel().currentIndex()
         item_delegate = tableview.itemDelegate(model_index)
@@ -419,11 +422,13 @@ def test_clearing_required_cell(tablewidget, qtbot):
         tableview.viewport(),
         Qt.LeftButton,
         pos=tableview.visualRect(model_index).center())
+    assert not tableview.clear_item_action.isEnabled()
 
     # Try to clear the content of the selected cell.
     qtbot.keyPress(tableview, Qt.Key_Delete, modifier=Qt.ControlModifier)
     assert model_index.data() == 'str1'
     assert tableview.model().get_value_at(model_index) == 'str1'
+    assert not tableview.clear_item_action.isEnabled()
 
 
 def test_clearing_non_required_cell(tablewidget, qtbot):
@@ -441,11 +446,13 @@ def test_clearing_non_required_cell(tablewidget, qtbot):
         tableview.viewport(),
         Qt.LeftButton,
         pos=tableview.visualRect(model_index).center())
+    assert tableview.clear_item_action.isEnabled()
 
     # Try to clear the content of the selected cell.
     qtbot.keyPress(tableview, Qt.Key_D, modifier=Qt.ControlModifier)
     assert model_index.data() == ''
     assert tableview.model().get_value_at(model_index) is None
+    assert not tableview.clear_item_action.isEnabled()
 
 
 def test_add_new_row(tablewidget, qtbot, mocker, TABLE_DATAF):

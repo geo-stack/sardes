@@ -588,6 +588,11 @@ class SardesTableView(QTableView):
         self._setup_item_delegates()
         self._setup_shortcuts()
 
+        # Connect update actions state slot to signals.
+        self.selectionModel().currentChanged.connect(
+            self._update_actions_state)
+        self.sig_data_edited.connect(self._update_actions_state)
+
         # List of QAction to toggle the visibility this table's columns.
         self._setup_column_visibility_actions()
 
@@ -645,16 +650,13 @@ class SardesTableView(QTableView):
         self.addActions(self._actions['io'])
 
         # Setup edit actions.
-        edit_item_action = create_action(
+        self.edit_item_action = create_action(
             self, _("Edit"),
             icon='edit_database_item',
             tip=_("Edit the data of the currently focused cell."),
             triggered=self._edit_current_item,
             shortcut=['Enter', 'Return'],
             context=Qt.WidgetShortcut)
-        self.selectionModel().currentChanged.connect(
-            lambda current, previous: edit_item_action.setEnabled(
-                self.is_data_editable_at(current)))
 
         new_row_action = create_action(
             self, _("New Item"),
@@ -664,53 +666,45 @@ class SardesTableView(QTableView):
             shortcut=['Ctrl++', 'Ctrl+='],
             context=Qt.WidgetShortcut)
 
-        clear_item_action = create_action(
+        self.clear_item_action = create_action(
             self, _("Clear"),
             icon='erase_data',
             tip=_("Set the currently focused item to NULL."),
             triggered=self._clear_current_item,
             shortcut='Ctrl+D',
             context=Qt.WidgetShortcut)
-        self.selectionModel().currentChanged.connect(
-            lambda current, previous: clear_item_action.setEnabled(
-                not self.is_data_required_at(current)))
 
-        save_edits_action = create_action(
+        self.save_edits_action = create_action(
             self, _("Save edits"),
             icon='commit_changes',
             tip=_('Save all edits made to the table in the database.'),
             triggered=lambda: self._save_data_edits(force=False),
             shortcut=['Ctrl+Enter', 'Ctrl+Return'],
             context=Qt.WidgetShortcut)
-        save_edits_action.setEnabled(False)
-        self.sig_data_edited.connect(
-            lambda v1, v2: save_edits_action.setEnabled(v1))
+        self.save_edits_action.setEnabled(False)
 
-        cancel_edits_action = create_action(
+        self.cancel_edits_action = create_action(
             self, _("Cancel edits"),
             icon='cancel_changes',
             tip=_('Cancel all edits made to the table since last save.'),
             triggered=self._cancel_data_edits,
             shortcut='Ctrl+Delete',
             context=Qt.WidgetShortcut)
-        cancel_edits_action.setEnabled(False)
-        self.sig_data_edited.connect(
-            lambda v1, v2: cancel_edits_action.setEnabled(v1))
+        self.cancel_edits_action.setEnabled(False)
 
-        undo_edits_action = create_action(
+        self.undo_edits_action = create_action(
             self, _("Undo"),
             icon='undo',
             tip=_('Undo last edit made to the table.'),
             triggered=self._undo_last_data_edit,
             shortcut='Ctrl+Z',
             context=Qt.WidgetShortcut)
-        undo_edits_action.setEnabled(False)
-        self.sig_data_edited.connect(
-            lambda v1, v2: undo_edits_action.setEnabled(v2))
+        self.undo_edits_action.setEnabled(False)
 
         self._actions['edit'] = [
-            edit_item_action, new_row_action, clear_item_action,
-            undo_edits_action, save_edits_action, cancel_edits_action]
+            self.edit_item_action, new_row_action, self.clear_item_action,
+            self.undo_edits_action, self.save_edits_action,
+            self.cancel_edits_action]
         self.addActions(self._actions['edit'])
 
         # Setup selection actions.
@@ -803,6 +797,25 @@ class SardesTableView(QTableView):
                 shortcut='Ctrl+Shift+{}'.format(key),
                 context=Qt.WidgetShortcut
                 ))
+
+    def _update_actions_state(self, *args, **kargs):
+        """
+        Update the state of this table Qt actions.
+        """
+        current_index = self.selectionModel().currentIndex()
+        if current_index.isValid():
+            is_required = self.is_data_required_at(current_index)
+            is_null = self.model().is_null(current_index)
+            is_editable = self.is_data_editable_at(current_index)
+            self.clear_item_action.setEnabled(
+                not is_required and not is_null and is_editable)
+            self.edit_item_action.setEnabled(is_editable)
+
+        has_unsaved_data_edits = self.model().has_unsaved_data_edits()
+        data_edit_count = self.model().data_edit_count()
+        self.save_edits_action.setEnabled(has_unsaved_data_edits)
+        self.undo_edits_action.setEnabled(bool(data_edit_count))
+        self.cancel_edits_action.setEnabled(has_unsaved_data_edits)
 
     # ---- Sorting
     def clear_sort(self):
