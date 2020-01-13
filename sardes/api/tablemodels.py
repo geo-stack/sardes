@@ -19,6 +19,7 @@ from qtpy.QtWidgets import QStyleOption
 
 # ---- Local imports
 from sardes.config.locale import _
+from sardes.utils.data_operations import nan_values_equal
 
 
 class NoDataEdit(object):
@@ -219,8 +220,9 @@ class SardesTableData(object):
             else:
                 original_value = self.data.iloc[row, col]
 
-            if (last_edit.previous_value != original_value or
-                    row in self._new_rows):
+            values_equal = nan_values_equal(
+                last_edit.previous_value, original_value)
+            if not values_equal or row in self._new_rows:
                 self._original_data.loc[(row, col), 'value'] = original_value
 
             # We apply the previous value to the data.
