@@ -255,9 +255,24 @@ class SardesTableModelBase(QAbstractTableModel):
     RowAdded = 1
     RowRemoved = 2
 
-    def __init__(self, db_connection_manager):
+    def __init__(self, table_title='', table_id='', data_columns_mapper=[]):
+        """
+        Parameters
+        ----------
+        table_title : str
+            The label that will be used to reference this table in the GUI.
+        table_id : str
+            A unique ID that will be used to reference this table in the code
+            and in the user configurations.
+        data_columns_mapper : list of tuple
+            A list of tuple that maps the keys of the columns dataframe
+            with their corresponding human readable label to use in the GUI.
+            The default is [].
+        """
         super().__init__()
-        self._data_columns_mapper = OrderedDict(self.__data_columns_mapper__)
+        self._table_title = table_title
+        self._table_id = table_id
+        self._data_columns_mapper = OrderedDict(data_columns_mapper)
 
         # The sardes table data object that is used to store the table data
         # and handle edits.
@@ -271,22 +286,8 @@ class SardesTableModelBase(QAbstractTableModel):
         # required by this table to display its data correctly.
         self.libraries = {}
 
-        # A list containing the names of the data that needs to be updated,
-        # so that we can emit sig_data_updated only when all data have been
-        # updated.
-        self._data_that_need_to_be_updated = self.req_data_names()
-
         # Setup the data.
-        for name in self.req_data_names():
-            dataf = pd.DataFrame([])
-            dataf.name = name
-            self.set_model_data(dataf)
-
-        self.set_database_connection_manager(db_connection_manager)
-
-    def set_database_connection_manager(self, db_connection_manager):
-        """Setup the database connection manager for this table model."""
-        self.db_connection_manager = db_connection_manager
+        self.set_model_data(pd.DataFrame([]))
 
     # ---- Columns
     @property
@@ -342,43 +343,9 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         Clear the data of this model.
         """
-        self._data_that_need_to_be_updated = self.req_data_names()
-        for name in self.req_data_names():
-            dataf = pd.DataFrame([])
-            dataf.name = name
-            self.set_model_data(dataf)
-
-    def req_data_names(self):
-        """
-        Required the names of all data and libraries that this table
-        requires.
-        """
-        return self.REQ_LIB_NAMES + [self.TABLE_DATA_NAME]
-
-    def update_data(self, names):
-        """
-        Update this model's data and library according to the list of
-        data name in names.
-        """
-        if not names:
-            return
-
-        self.sig_data_about_to_be_updated.emit()
-        self._data_that_need_to_be_updated = names
-        for name in names:
-            self.db_connection_manager.get(
-                name,
-                callback=self.set_model_data,
-                postpone_exec=True)
-        self.db_connection_manager.run_tasks()
-
-    def fetch_data(self):
-        """
-        Fetch the data and libraries for this model.
-        """
-        # Note that we need to fetch the libraries before we fetch the
-        # table's data.
-        self.update_data(self.REQ_LIB_NAMES + [self.TABLE_DATA_NAME])
+        self.set_model_data(pd.DataFrame([]))
+        for lib_name in self.libraries.keys():
+            self.set_model_library(pd.DataFrame([]), lib_name)
 
     def set_model_data(self, dataf):
         """
@@ -393,35 +360,36 @@ class SardesTableModelBase(QAbstractTableModel):
             Note that the column labels of the dataframe must match the
             values that are mapped in _data_columns_mapper.
         """
-        dataf_name = dataf.name
-        if dataf_name == self.TABLE_DATA_NAME:
-            self.beginResetModel()
+        self.beginResetModel()
 
-            # Add missing columns to the dataframe.
-            for column in self.columns:
-                if column not in dataf.columns:
-                    dataf[column] = None
-            # Reorder columns to mirror the column logical indexes
-            # of the table model so that we can access them with pandas iloc.
-            dataf = dataf[self.columns]
+        # Add missing columns to the dataframe.
+        for column in self.columns:
+            if column not in dataf.columns:
+                dataf[column] = None
+        # Reorder columns to mirror the column logical indexes
+        # of the table model so that we can access them with pandas iloc.
+        dataf = dataf[self.columns]
 
-            self._datat = SardesTableData(dataf, dataf_name)
+        self._datat = SardesTableData(dataf)
 
-            self.endResetModel()
-            self.sig_data_edited.emit(False, False)
-        elif dataf_name in self.REQ_LIB_NAMES:
-            self.libraries[dataf_name] = dataf
+        self.endResetModel()
+        self.sig_data_edited.emit(False, False)
+        self._update_visual_data()
+        self.dataChanged.emit(
+            self.index(0, 0),
+            self.index(self.rowCount() - 1, self.columnCount() - 1)
+            )
 
-        # Update the state of data update and emit a signal if the updating
-        # is completed.
-        self._data_that_need_to_be_updated.remove(dataf_name)
-        if not self._data_that_need_to_be_updated:
-            self._update_visual_data()
-            self.sig_data_updated.emit()
-            self.dataChanged.emit(
-                self.index(0, 0),
-                self.index(self.rowCount() - 1, self.columnCount() - 1)
-                )
+    def set_model_library(self, dataf, name):
+        """
+        Set the data for the given library name.
+        """
+        self.libraries[name] = dataf
+        self._update_visual_data()
+        self.dataChanged.emit(
+            self.index(0, 0),
+            self.index(self.rowCount() - 1, self.columnCount() - 1)
+            )
 
     def rowCount(self, *args, **kargs):
         """Qt method override. Return the number visible rows in the table."""
@@ -622,31 +590,6 @@ class SardesTableModelBase(QAbstractTableModel):
         self.sig_data_edited.emit(
             self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
 
-    def save_data_edits(self):
-        """
-        Save all data edits to the database.
-        """
-        self.sig_data_about_to_be_saved.emit()
-        for edit in self._datat.edits():
-            callback = (self.sig_data_saved.emit
-                        if edit == self._datat.edits()[-1] else None)
-            if edit.type() == self.ValueChanged:
-                self.db_connection_manager.set(
-                    self.TABLE_DATA_NAME,
-                    edit.index, edit.column, edit.edited_value,
-                    callback=callback,
-                    postpone_exec=True)
-            elif edit.type() == self.RowAdded:
-                self.db_connection_manager.add(
-                    self.TABLE_DATA_NAME,
-                    edit.index,
-                    edit.values,
-                    callback=callback,
-                    postpone_exec=True)
-            else:
-                raise TypeError('Edit type not recognized.')
-        self.db_connection_manager.run_tasks()
-
 
 class SardesTableModel(SardesTableModelBase):
     """
@@ -656,24 +599,9 @@ class SardesTableModel(SardesTableModelBase):
     All table *must* inherit this class and reimplement its interface.
 
     """
-    # A list of tuple that maps the keys of the columns dataframe with their
-    # corresponding human readable label to use in the GUI.
-    __data_columns_mapper__ = []
 
-    # The label that will be used to reference this table in the GUI.
-    TABLE_TITLE = ''
-
-    # A unique ID that will be used to reference this table in the code and
-    # in the user configurations.
-    TABLE_ID = ''
-
-    # Provide the name of the data and of the required libraries that
-    # this table need to fetch from the database.
-    TABLE_DATA_NAME = ''
-    REQ_LIB_NAMES = []
-
-    def __init__(self, db_connection_manager):
-        super().__init__(db_connection_manager)
+    def __init__(self, *args, **kargs):
+        super().__init__(*args, **kargs)
 
     def create_delegate_for_column(self, view, column):
         """
@@ -683,7 +611,6 @@ class SardesTableModel(SardesTableModelBase):
         """
         raise NotImplementedError
 
-    # ---- Visua data
     def logical_to_visual_data(self, visual_dataf):
         """
         Transform logical data to visual data.
