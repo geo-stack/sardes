@@ -80,9 +80,8 @@ class SardesTableData(object):
     A container to hold data of a logical table and manage edits.
     """
 
-    def __init__(self, data, name):
+    def __init__(self, data):
         self.data = data.copy()
-        self.name = name
 
         # A list containing the edits made by the user to the data
         # in chronological order.
