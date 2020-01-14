@@ -39,33 +39,7 @@ class SondesInventoryTableModel(SardesTableModel):
     A table model to display the list of level and baro loggers that are
     used in the monitoring network.
     """
-    # The label that will be used to reference this table in the GUI.
-    TABLE_TITLE = _('Sondes Inventory')
 
-    # An id that will be used to reference this table in the code and
-    # in the user configurations.
-    TABLE_ID = 'table_sondes_inventory'
-
-    # A list of tuple that maps the keys of the columns dataframe with their
-    # corresponding human readable label to use in the GUI.
-    __data_columns_mapper__ = [
-        ('sonde_model_id', _('Model')),
-        ('sonde_serial_no', _('Serial Number')),
-        ('date_reception', _('Date Reception')),
-        ('date_withdrawal', _('Date Withdrawal')),
-        ('in_repair', _('In Repair')),
-        ('out_of_order', _('Out of order')),
-        ('lost', _('Lost')),
-        ('off_network', _('Off Network')),
-        ('sonde_notes', _('Notes')),
-        ]
-
-    # Provide the name of the data and of the required libraries that
-    # this table need to fetch from the database.
-    TABLE_DATA_NAME = 'sondes_data'
-    REQ_LIB_NAMES = ['sonde_models_lib']
-
-    # ---- Delegates
     def create_delegate_for_column(self, view, column):
         """
         Create the item delegate that the view need to use when editing the
@@ -104,6 +78,19 @@ class SondesInventoryTableModel(SardesTableModel):
 
 
 class SondesInventoryTableWidget(SardesTableWidget):
-    def __init__(self, db_connection_manager, parent=None):
-        table_model = SondesInventoryTableModel(db_connection_manager)
+    def __init__(self, parent=None):
+        table_model = SondesInventoryTableModel(
+            table_title=_('Sondes Inventory'),
+            table_id='table_sondes_inventory',
+            data_columns_mapper=[
+                ('sonde_model_id', _('Model')),
+                ('sonde_serial_no', _('Serial Number')),
+                ('date_reception', _('Date Reception')),
+                ('date_withdrawal', _('Date Withdrawal')),
+                ('in_repair', _('In Repair')),
+                ('out_of_order', _('Out of order')),
+                ('lost', _('Lost')),
+                ('off_network', _('Off Network')),
+                ('sonde_notes', _('Notes'))]
+            )
         super().__init__(table_model, parent)
