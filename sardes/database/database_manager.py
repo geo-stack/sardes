@@ -383,3 +383,120 @@ class DatabaseConnectionManager(QObject):
             self._run_tasks()
         else:
             self.sig_run_tasks_finished.emit()
+
+
+class TableModelsManager(QObject):
+    """
+    A manager to handle data updating and saving of Sardes table models.
+    """
+
+    def __init__(self, db_manager):
+        super().__init__()
+        self._table_models = {}
+        self._models_req_data = {}
+        self._queued_model_updates = {}
+
+        # Setup the database manager.
+        self.db_manager = db_manager
+        db_manager.sig_database_connection_changed.connect(
+            self._handle_db_connection_changed)
+        db_manager.sig_database_data_changed.connect(
+            self._handle_db_data_changed)
+
+    # ---- Public API
+    def register_table_model(self, table_model, data_name, lib_names=None):
+        """
+        Register a new sardes table model to the manager.
+        """
+        lib_names = lib_names or []
+        table_id = table_model._table_id
+        self._table_models[table_id] = table_model
+        self._models_req_data[table_id] = [data_name] + lib_names
+        self._queued_model_updates[table_id] = [data_name] + lib_names
+
+    def update_table_model(self, table_id):
+        """
+        Update the given table model data and libraries.
+        """
+        if table_id not in self._table_models:
+            raise Warning("Warning: Table model '{}' is not registered."
+                          .format(table_id))
+            return
+
+        if len(self._queued_model_updates[table_id]):
+            self._table_models[table_id].sig_data_about_to_be_updated.emit()
+            for name in self._queued_model_updates[table_id]:
+                self.db_manager.get(
+                    name,
+                    callback=lambda dataf, name=name:
+                        self.set_model_data_or_lib(dataf, name, table_id),
+                    postpone_exec=True)
+            self.db_manager.run_tasks()
+
+    def set_model_data_or_lib(self, dataf, name, table_id):
+        """
+        Set the data or library of the given table model.
+        """
+        if name == self._models_req_data[table_id][0]:
+            # Update the table model data.
+            self._table_models[table_id].set_model_data(dataf)
+        elif name in self._models_req_data[table_id][1:]:
+            # Update the table model library.
+            self._table_models[table_id].set_model_library(dataf, name)
+
+        self._queued_model_updates[table_id].remove(name)
+        if not len(self._queued_model_updates[table_id]):
+            self._table_models[table_id].sig_data_updated.emit()
+
+    def save_table_model_edits(self, table_id):
+        """
+        Save all data edits to the database.
+        """
+        table_model = self._table_models[table_id]
+        table_model.sig_data_about_to_be_saved.emit()
+        table_model_data_name = self._models_req_data[table_id][0]
+        for edit in table_model._datat.edits():
+            callback = (table_model.sig_data_saved.emit
+                        if edit == table_model._datat.edits()[-1] else None)
+            if edit.type() == table_model.ValueChanged:
+                self.db_manager.set(
+                    table_model_data_name,
+                    edit.index, edit.column, edit.edited_value,
+                    callback=callback,
+                    postpone_exec=True)
+            elif edit.type() == self.RowAdded:
+                self.db_manager.add(
+                    table_model_data_name,
+                    edit.index, edit.values,
+                    callback=callback,
+                    postpone_exec=True)
+            else:
+                raise TypeError('Edit type not recognized.')
+        self.db_manager.run_tasks()
+
+    # ---- Private API
+    def _handle_db_data_changed(self):
+        """
+        Handle when changes are made to the database.
+
+        Note that changes made to the database outside of Sardes are not
+        taken into account here.
+        """
+        data_changed = list(self._data_changed)
+        for table_id, table in self._table_models.items():
+            req_data_names = (self._tables_lib_names[table_id] +
+                              [self._tables_data_name[table_id]])
+            self._queued_model_updates[table_id].extend(
+                [name for name in data_changed if name in req_data_names])
+            self._queued_model_updates[table_id] = list(set(
+                self._queued_model_updates[table_id]))
+
+    def _handle_db_connection_changed(self, is_connected):
+        if is_connected:
+            for table_id, table in self._table_models.items():
+                self._queued_model_updates[table_id] = (
+                    self._models_req_data[table_id].copy())
+        else:
+            for table_id, table in self._tables.items():
+                self._queued_model_updates[table_id] = []
+                table.clear_model_data()
