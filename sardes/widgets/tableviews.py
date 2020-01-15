@@ -184,7 +184,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         else:
             return None
 
-    def clear_model_data(self, model_index):
+    def clear_model_data_at(self, model_index):
         """
         Set the data of the model index associated with this delegate to
         a null value.
@@ -215,7 +215,7 @@ class NotEditableDelegate(SardesItemDelegateBase):
     def setModelData(self, editor, model, index):
         pass
 
-    def clear_model_data(self, model_index):
+    def clear_model_data_at(self, model_index):
         """
         Override base class method to prevent clearing the model data.
         a null value.
@@ -1164,7 +1164,7 @@ class SardesTableView(QTableView):
         """
         current_index = self.selectionModel().currentIndex()
         if current_index.isValid():
-            self.itemDelegate(current_index).clear_model_data(current_index)
+            self.itemDelegate(current_index).clear_model_data_at(current_index)
 
     def _edit_current_item(self):
         """
@@ -1321,18 +1321,12 @@ class SardesTableWidget(SardesPaneWidget):
         """
         return self.tableview.model()
 
-    def fetch_model_data(self):
+    def update_model_data(self):
         """
-        Fetch the data and libraries of this table widget's model.
+        Fetch the data from the database and update the model's data and
+        library of this table widget.
         """
-        return self.model().fetch_data()
-
-    def update_model_data(self, names):
-        """
-        Update the model's data and library of this table widget according
-        to the list of data name in names.
-        """
-        return self.model().update_data(names)
+        return self.model().update_data()
 
     # ---- Setup
     def _setup_upper_toolbar(self):

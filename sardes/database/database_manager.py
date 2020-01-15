@@ -282,9 +282,9 @@ class TableModelsManager(QObject):
                 self._queued_model_updates[table_id] = (
                     self._models_req_data[table_id].copy())
         else:
-            for table_id, table in self._tables.items():
+            for table_id, table in self._table_models.items():
                 self._queued_model_updates[table_id] = []
-                table.clear_model_data()
+                table.clear_data()
 
 
 class DatabaseConnectionManager(QObject):
