@@ -9,6 +9,7 @@
 
 # ---- Standard imports
 from collections import OrderedDict
+import uuid
 
 # ---- Third party imports
 import pandas as pd
@@ -530,14 +531,22 @@ class SardesTableModelBase(QAbstractTableModel):
         self.sig_data_edited.emit(
             self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
 
-    def add_new_row(self):
+    def add_new_row(self, new_row_index=None):
         """
         Add a new empty at the end of the table.
         """
         self.beginInsertRows(
             QModelIndex(), len(self._datat), len(self._datat))
-        self._datat.add_new_row(
-            self.db_connection_manager.create_index(self.TABLE_DATA_NAME))
+
+        if new_row_index is None:
+            # Create a new index for the new item that will be added to this
+            # model's data table.
+            if str(self._datat.data.index.dtype) == 'object':
+                new_row_index = uuid.uuid4()
+            elif str(self._datat.data.index.dtype) == 'int64':
+                new_row_index = max(self._datat.data.index) + 1
+
+        self._datat.add_new_row(new_row_index)
         self._update_visual_data()
         self.endInsertRows()
         new_model_index_range = (
@@ -639,8 +648,9 @@ class SardesTableModel(SardesTableModelBase):
     def create_delegate_for_column(self, view, column):
         """
         Create the item delegate that the view need to use when editing the
-        data of this model for the specified column. If None is returned,
-        the items of the column will not be editable.
+        data of this model for the specified column. By default, all columns
+        are not editable. You need to expands this method to specify a
+        different delegate to a column.
         """
         raise NotImplementedError
 

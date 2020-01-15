@@ -232,7 +232,7 @@ class TableModelsManager(QObject):
                     edit.index, edit.column, edit.edited_value,
                     callback=callback,
                     postpone_exec=True)
-            elif edit.type() == self.RowAdded:
+            elif edit.type() == table_model.RowAdded:
                 self.db_manager.add(
                     table_model_data_name,
                     edit.index, edit.values,
