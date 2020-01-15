@@ -184,7 +184,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         else:
             return None
 
-    def clear_model_data(self, model_index):
+    def clear_model_data_at(self, model_index):
         """
         Set the data of the model index associated with this delegate to
         a null value.
@@ -215,7 +215,7 @@ class NotEditableDelegate(SardesItemDelegateBase):
     def setModelData(self, editor, model, index):
         pass
 
-    def clear_model_data(self, model_index):
+    def clear_model_data_at(self, model_index):
         """
         Override base class method to prevent clearing the model data.
         a null value.
@@ -817,6 +817,30 @@ class SardesTableView(QTableView):
         self.undo_edits_action.setEnabled(bool(data_edit_count))
         self.cancel_edits_action.setEnabled(has_unsaved_data_edits)
 
+    # ---- Options
+    @property
+    def confirm_before_saving_edits(self):
+        """
+        Return wheter we should ask confirmation to the user before saving
+        the data edits to the database.
+        """
+        if self.model().db_connection_manager is not None:
+            return (self.model().db_connection_manager
+                    ._confirm_before_saving_edits)
+        else:
+            return self._confirm_before_saving_edits
+
+    @confirm_before_saving_edits.setter
+    def confirm_before_saving_edits(self, x):
+        """
+        Set wheter we should ask confirmation to the user before saving
+        the data edits to the database.
+        """
+        self._confirm_before_saving_edits = bool(x)
+        if self.model().db_connection_manager is not None:
+            (self.model().db_connection_manager
+             ._confirm_before_saving_edits) = bool(x)
+
     # ---- Sorting
     def clear_sort(self):
         """
@@ -1140,7 +1164,7 @@ class SardesTableView(QTableView):
         """
         current_index = self.selectionModel().currentIndex()
         if current_index.isValid():
-            self.itemDelegate(current_index).clear_model_data(current_index)
+            self.itemDelegate(current_index).clear_model_data_at(current_index)
 
     def _edit_current_item(self):
         """
@@ -1174,7 +1198,7 @@ class SardesTableView(QTableView):
         Save the data edits to the database. If 'force' is 'False', a message
         is first shown before proceeding.
         """
-        if force is False and self.model().confirm_before_saving_edits:
+        if force is False and self.confirm_before_saving_edits:
             msgbox = QMessageBox(
                 QMessageBox.Warning,
                 _('Save changes'),
@@ -1194,8 +1218,7 @@ class SardesTableView(QTableView):
             if reply == QMessageBox.Cancel:
                 return
             else:
-                self.model().confirm_before_saving_edits = (
-                    not chkbox.isChecked())
+                self.confirm_before_saving_edits = not chkbox.isChecked()
 
         self.selectionModel().clearSelection()
         self.model().save_data_edits()
@@ -1286,11 +1309,11 @@ class SardesTableWidget(SardesPaneWidget):
 
     def get_table_title(self):
         """Return the title of this widget's table."""
-        return self.tableview.source_model.TABLE_TITLE
+        return self.tableview.source_model._table_title
 
     def get_table_id(self):
         """Return the ID of this widget's table."""
-        return self.tableview.source_model.TABLE_ID
+        return self.tableview.source_model._table_id
 
     def model(self):
         """
@@ -1298,18 +1321,12 @@ class SardesTableWidget(SardesPaneWidget):
         """
         return self.tableview.model()
 
-    def fetch_model_data(self):
+    def update_model_data(self):
         """
-        Fetch the data and libraries of this table widget's model.
+        Fetch the data from the database and update the model's data and
+        library of this table widget.
         """
-        return self.model().fetch_data()
-
-    def update_model_data(self, names):
-        """
-        Update the model's data and library of this table widget according
-        to the list of data name in names.
-        """
-        return self.model().update_data(names)
+        return self.model().update_data()
 
     # ---- Setup
     def _setup_upper_toolbar(self):

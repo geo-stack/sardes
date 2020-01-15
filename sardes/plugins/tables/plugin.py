@@ -97,26 +97,36 @@ class Tables(SardesPlugin):
         super().register_plugin()
         connection_manager = self.main.db_connection_manager
         connection_manager.sig_database_connection_changed.connect(
-            self._handle_database_connection_changed)
+            self._update_current_table)
         connection_manager.sig_database_data_changed.connect(
-            self._handle_database_changed)
+            self._update_current_table)
 
     # ---- Private methods
     def _setup_tables(self):
         self._tables = {}
-        self._table_updates = {}
-        self._create_and_register_table(ObsWellsTableWidget)
-        self._create_and_register_table(SondesInventoryTableWidget)
-        self._create_and_register_table(ManualMeasurementsTableWidget)
+        self._create_and_register_table(
+            ObsWellsTableWidget,
+            'observation_wells_data',
+            [])
+        self._create_and_register_table(
+            SondesInventoryTableWidget,
+            'sondes_data',
+            ['sonde_models_lib'])
+        self._create_and_register_table(
+            ManualMeasurementsTableWidget,
+            'manual_measurements',
+            ['observation_wells_data'])
 
         # Setup the current active tab from the value saved in the configs.
         self.tabwidget.setCurrentIndex(
             self.get_option('last_focused_tab', 0))
 
-    def _create_and_register_table(self, TableClass):
-        table = TableClass(self.main.db_connection_manager)
+    def _create_and_register_table(self, TableClass, data_name, lib_names):
+        table = TableClass()
+        self.main.db_connection_manager.register_table_model(
+            table.model(), data_name, lib_names)
+
         self._tables[table.get_table_id()] = table
-        self._table_updates[table.get_table_id()] = []
         self.tabwidget.addTab(
             table, get_icon('table'), table.get_table_title())
 
@@ -146,42 +156,9 @@ class Tables(SardesPlugin):
                 tab_text += '*'
             self.tabwidget.setTabText(index, tab_text)
 
-    def _handle_database_connection_changed(self, is_connected_to_db):
-        """
-        Handle when a change is made to the database manager connection.
-        """
-        if is_connected_to_db:
-            for table_id, table in self._tables.items():
-                self._table_updates[table_id] = table.model().req_data_names()
-                table.setEnabled(True)
-            self._update_current_table()
-        else:
-            for table_id, table in self._tables.items():
-                table.setEnabled(False)
-                self._table_updates[table_id] = []
-                table.clear_model_data()
-
-    def _handle_database_changed(self, data_names):
-        """
-        Handle when changes are made to the database by the manager.
-
-        Note that changes made to the database outside of Sardes are not
-        taken into account here.
-        """
-        for table_id, table in self._tables.items():
-            self._table_updates[table_id].extend(
-                [name for name in data_names if
-                 name in table.model().req_data_names()])
-            self._table_updates[table_id] = list(set(
-                self._table_updates[table_id]))
-        self._update_current_table()
-
-    def _update_current_table(self):
-        """
-        Update the current table required data that were changed
-        since that table was last updated.
-        """
+    def _update_current_table(self, *args, **kargs):
+        """Update the current table data and state."""
         if self.current_table().isVisible():
-            self.current_table().update_model_data(
-                self._table_updates[self.current_table().get_table_id()])
-            self._table_updates[self.current_table().get_table_id()] = []
+            self.current_table().setEnabled(
+                self.main.db_connection_manager.is_connected())
+            self.current_table().update_model_data()

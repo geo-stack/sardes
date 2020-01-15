@@ -41,28 +41,7 @@ class ManualMeasurementsTableModel(SardesTableModel):
     A table model to display the list of manual groundwater level measurements
     made in the observation wells of the monitoring network.
     """
-    # The label that will be used to reference this table in the GUI.
-    TABLE_TITLE = _('Manual Measurements')
 
-    # An id that will be used to reference this table in the code and
-    # in the user configurations.
-    TABLE_ID = 'table_manual_measurements'
-
-    # A list of tuple that maps the keys of the columns dataframe with their
-    # corresponding human readable label to use in the GUI.
-    __data_columns_mapper__ = [
-        ('sampling_feature_uuid', _('Well ID')),
-        ('datetime', _('Date/Time')),
-        ('value', _('Water Level')),
-        ('notes', _('Notes')),
-        ]
-
-    # Provide the name of the data and of the required libraries that
-    # this table need to fetch from the database.
-    TABLE_DATA_NAME = 'manual_measurements'
-    REQ_LIB_NAMES = ['observation_wells_data']
-
-    # ---- Delegates
     def create_delegate_for_column(self, view, column):
         """
         Create the item delegate that the view need to use when editing the
@@ -99,6 +78,14 @@ class ManualMeasurementsTableModel(SardesTableModel):
 
 
 class ManualMeasurementsTableWidget(SardesTableWidget):
-    def __init__(self, db_connection_manager, parent=None):
-        table_model = ManualMeasurementsTableModel(db_connection_manager)
+    def __init__(self, parent=None):
+        table_model = ManualMeasurementsTableModel(
+            table_title=_('Manual Measurements'),
+            table_id='table_manual_measurements',
+            data_columns_mapper=[
+                ('sampling_feature_uuid', _('Well ID')),
+                ('datetime', _('Date/Time')),
+                ('value', _('Water Level')),
+                ('notes', _('Notes'))]
+            )
         super().__init__(table_model, parent)

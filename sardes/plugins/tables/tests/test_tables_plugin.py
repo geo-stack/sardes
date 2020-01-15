@@ -70,9 +70,11 @@ def test_tables_plugin_init(mainwindow, qtbot):
     """Test that the databse connection manager is initialized correctly."""
     tabwidget = mainwindow.plugin.tabwidget
     plugin = mainwindow.plugin
+    models_manager = mainwindow.db_connection_manager.table_models_manager
 
     assert mainwindow.plugin
     assert mainwindow.plugin.table_count() == 3
+    assert len(models_manager._table_models) == 3
 
     # Table Observation Wells.
     for current_index in range(mainwindow.plugin.table_count()):
@@ -84,11 +86,11 @@ def test_tables_plugin_init(mainwindow, qtbot):
             table_id = table.get_table_id()
             if index <= current_index:
                 assert table.tableview.row_count() > 0
-                assert len(plugin._table_updates[table_id]) == 0
+                assert len(models_manager._queued_model_updates[table_id]) == 0
             else:
                 assert table.tableview.row_count() == 0
-                assert (len(plugin._table_updates[table_id]) ==
-                        len(table.model().req_data_names()))
+                assert (len(models_manager._queued_model_updates[table_id]) ==
+                        len(models_manager._models_req_data[table_id]))
             assert tabwidget.tabText(index) == table.get_table_title()
 
 

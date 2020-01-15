@@ -27,36 +27,7 @@ class ObsWellsTableModel(SardesTableModel):
     A table model to display the list of observation wells that are saved
     in the database.
     """
-    # The label that will be used to reference this table in the GUI.
-    TABLE_TITLE = _('Observation Wells')
 
-    # An id that will be used to reference this table in the code and
-    # in the user configurations.
-    TABLE_ID = 'table_observation_wells'
-
-    # A list of tuple that maps the keys of the columns dataframe with their
-    # corresponding human readable label to use in the GUI.
-    __data_columns_mapper__ = [
-        ('obs_well_id', _('Well ID')),
-        ('common_name', _('Common Name')),
-        ('municipality', _('Municipality')),
-        ('aquifer_type', _('Aquifer')),
-        ('aquifer_code', _('Aquifer Code')),
-        ('confinement', _('Confinement')),
-        ('in_recharge_zone', _('Recharge Zone')),
-        ('is_influenced', _('Influenced')),
-        ('latitude', _('Latitude')),
-        ('longitude', _('Longitude')),
-        ('is_station_active', _('Active')),
-        ('obs_well_notes', _('Notes'))
-        ]
-
-    # Provide the name of the data and of the required libraries that
-    # this table need to fetch from the database.
-    TABLE_DATA_NAME = 'observation_wells_data'
-    REQ_LIB_NAMES = []
-
-    # ---- Delegates
     def create_delegate_for_column(self, view, column):
         """
         Create the item delegate that the view need to use when editing the
@@ -82,8 +53,27 @@ class ObsWellsTableModel(SardesTableModel):
 
 class ObsWellsTableWidget(SardesTableWidget):
 
-    def __init__(self, db_connection_manager, parent=None):
-        table_model = ObsWellsTableModel(db_connection_manager)
+    def __init__(self, parent=None):
+        table_model = ObsWellsTableModel(
+            table_title=_('Observation Wells'),
+            table_id='table_observation_wells',
+            data_columns_mapper=[
+                ('obs_well_id', _('Well ID')),
+                ('common_name', _('Common Name')),
+                ('municipality', _('Municipality')),
+                ('aquifer_type', _('Aquifer')),
+                ('aquifer_code', _('Aquifer Code')),
+                ('confinement', _('Confinement')),
+                ('in_recharge_zone', _('Recharge Zone')),
+                ('is_influenced', _('Influenced')),
+                ('latitude', _('Latitude')),
+                ('longitude', _('Longitude')),
+                ('first_date', _('First Date')),
+                ('last_date', _('Last Date')),
+                ('mean_water_level', _('Mean level (m)')),
+                ('is_station_active', _('Active')),
+                ('obs_well_notes', _('Notes'))]
+            )
         super().__init__(table_model, parent)
 
         self.add_toolbar_separator()

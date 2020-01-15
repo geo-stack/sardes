@@ -84,11 +84,6 @@ def tablemodel(qtbot, TABLE_DATAF):
                     attribute_values.get(column, None))
 
     class SardesTableModelMock(SardesTableModel):
-        TABLE_DATA_NAME = 'test_table_dataf_name'
-        __data_columns_mapper__ = [
-            (col, header) for col, header in zip(COLUMNS, HEADERS)]
-
-        # ---- Public methods
         def create_delegate_for_column(self, view, column):
             if column == 'col0':
                 return StringEditDelegate(view, unique_constraint=True,
@@ -102,12 +97,23 @@ def tablemodel(qtbot, TABLE_DATAF):
             else:
                 return NotEditableDelegate(view)
 
-    tablemodel = SardesTableModelMock(DatabaseConnectionManager())
-    tablemodel.db_connection_manager.connect_to_db(DatabaseAccessorTest())
+    # Setup table and database connection manager.
+    tablemodel = SardesTableModelMock(
+        table_title='Sardes Test Table',
+        table_id='sardes_test_table',
+        data_columns_mapper=[
+            (col, header) for col, header in zip(COLUMNS, HEADERS)]
+        )
 
-    # We need to connect the database manager data changed signal to the
-    # method to fetch data because this is handled on the plugin this.
-    tablemodel.sig_data_saved.connect(tablemodel.fetch_data)
+    db_connection_manager = DatabaseConnectionManager()
+    db_connection_manager.register_table_model(
+        tablemodel, 'test_table_dataf_name')
+    db_connection_manager.connect_to_db(DatabaseAccessorTest())
+
+    # We need to connect manually the database manager data changed signal
+    # to the method to update data because this is handled on the plugin side.
+    db_connection_manager.sig_database_data_changed.connect(
+        tablemodel.update_data)
 
     return tablemodel
 
@@ -135,7 +141,7 @@ def tablewidget(qtbot, tablemodel):
     # Fetch the model data explicitely. We need to do this because
     # the table view that we use for testing is not connected to a
     # database connection manager.
-    tablewidget.fetch_model_data()
+    tablewidget.update_model_data()
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
 
     return tablewidget
