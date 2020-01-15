@@ -289,6 +289,10 @@ class SardesTableModelBase(QAbstractTableModel):
         # Setup the data.
         self.set_model_data(pd.DataFrame([]))
 
+        # The manager that handle fetching data and pushing data edits to
+        # the database.
+        self.db_connection_manager = None
+
     # ---- Columns
     @property
     def columns(self):
@@ -382,7 +386,7 @@ class SardesTableModelBase(QAbstractTableModel):
 
     def set_model_library(self, dataf, name):
         """
-        Set the data for the given library name.
+        Set the data for the given library name and update the model.
         """
         self.libraries[name] = dataf
         self._update_visual_data()
@@ -484,22 +488,6 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         return self._datat.edit_count()
 
-    @property
-    def confirm_before_saving_edits(self):
-        """
-        Return wheter we should ask confirmation to the user before saving
-        the data edits to the database.
-        """
-        return self.db_connection_manager._confirm_before_saving_edits
-
-    @confirm_before_saving_edits.setter
-    def confirm_before_saving_edits(self, x):
-        """
-        Set wheter we should ask confirmation to the user before saving
-        the data edits to the database.
-        """
-        self.db_connection_manager._confirm_before_saving_edits = bool(x)
-
     def has_unsaved_data_edits(self):
         """
         Return whether any edits were made to the table's data since last save.
@@ -589,6 +577,51 @@ class SardesTableModelBase(QAbstractTableModel):
                 )
         self.sig_data_edited.emit(
             self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
+
+    # ---- Database connection
+    def set_database_connection_manager(self, db_connection_manager):
+        """Setup the database connection manager for this table model."""
+        self.db_connection_manager = db_connection_manager
+
+    def save_data_edits(self):
+        """
+        Save all data edits to the database.
+        """
+        if self.db_connection_manager is not None:
+            self.db_connection_manager.save_table_model_edits(self._table_id)
+        else:
+            self._raise_db_connmanager_attr_error()
+
+    @property
+    def confirm_before_saving_edits(self):
+        """
+        Return wheter we should ask confirmation to the user before saving
+        the data edits to the database.
+        """
+        if self.db_connection_manager is not None:
+            return self.db_connection_manager._confirm_before_saving_edits
+        else:
+            self._raise_db_connmanager_attr_error()
+
+    @confirm_before_saving_edits.setter
+    def confirm_before_saving_edits(self, x):
+        """
+        Set wheter we should ask confirmation to the user before saving
+        the data edits to the database.
+        """
+        if self.db_connection_manager is not None:
+            self.db_connection_manager._confirm_before_saving_edits = bool(x)
+        else:
+            self._raise_db_connmanager_attr_error()
+
+    def _raise_db_connmanager_attr_error(self):
+        """
+        Raise an attribute error after trying to access an attribute of the
+        database connection manager while the later is None.
+        """
+        raise AttributeError(
+            "The database connections manager for the table "
+            "model {} is not set.".format(self._table_id))
 
 
 class SardesTableModel(SardesTableModelBase):
