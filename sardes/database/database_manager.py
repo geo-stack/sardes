@@ -265,16 +265,18 @@ class TableModelsManager(QObject):
         Note that changes made to the database outside of Sardes are not
         taken into account here.
         """
-        data_changed = list(self._data_changed)
+        data_changed = list(self.db_manager._data_changed)
         for table_id, table in self._table_models.items():
-            req_data_names = (self._tables_lib_names[table_id] +
-                              [self._tables_data_name[table_id]])
+            req_data_names = self._models_req_data[table_id]
             self._queued_model_updates[table_id].extend(
                 [name for name in data_changed if name in req_data_names])
             self._queued_model_updates[table_id] = list(set(
                 self._queued_model_updates[table_id]))
 
     def _handle_db_connection_changed(self, is_connected):
+        """
+        Handle when the connection to the database changes.
+        """
         if is_connected:
             for table_id, table in self._table_models.items():
                 self._queued_model_updates[table_id] = (
@@ -295,7 +297,6 @@ class DatabaseConnectionManager(QObject):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._confirm_before_saving_edits = True
         self._is_connecting = False
         self._data_changed = set()
 
@@ -328,6 +329,7 @@ class DatabaseConnectionManager(QObject):
 
         # Setup the table models manager.
         self.table_models_manager = TableModelsManager(self)
+        self._confirm_before_saving_edits = True
 
     def is_connected(self):
         """Return whether a connection to a database is currently active."""
@@ -508,6 +510,7 @@ class DatabaseConnectionManager(QObject):
         """
         Register a new sardes table model to the manager.
         """
+        table_model.set_database_connection_manager(self)
         self.table_models_manager.register_table_model(
             table_model, data_name, lib_names)
 
