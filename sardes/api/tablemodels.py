@@ -592,6 +592,15 @@ class SardesTableModelBase(QAbstractTableModel):
         """Setup the database connection manager for this table model."""
         self.db_connection_manager = db_connection_manager
 
+    def update_data(self):
+        """
+        Update this model's data and library.
+        """
+        if self.db_connection_manager is not None:
+            self.db_connection_manager.update_table_model(self._table_id)
+        else:
+            self._raise_db_connmanager_attr_error()
+
     def save_data_edits(self):
         """
         Save all data edits to the database.
