@@ -687,12 +687,8 @@ class SardesSortFilterModel(QSortFilterProxyModel):
     """
     sig_data_sorted = Signal()
 
-    def __init__(self, source_model):
+    def __init__(self, source_model, multi_columns_sort=True):
         super().__init__()
-        self.setSourceModel(source_model)
-        source_model.sig_data_updated.connect(self.invalidate)
-        source_model.dataChanged.connect(self.invalidate)
-
         # Sorting and filtering.
         self._sort_by_columns = []
         self._columns_sort_order = []
@@ -700,6 +696,12 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         self._proxy_dataf_index = []
         self._map_row_to_source = []
         self._map_row_from_source = []
+        self._multi_columns_sort = multi_columns_sort
+
+        # Setup source model.
+        self.setSourceModel(source_model)
+        source_model.sig_data_updated.connect(self.invalidate)
+        source_model.dataChanged.connect(self.invalidate)
 
     def __getattr__(self, name):
         try:
@@ -778,13 +780,17 @@ class SardesSortFilterModel(QSortFilterProxyModel):
             self._sort_by_columns = []
             self._columns_sort_order = []
         else:
-            try:
-                index = self._sort_by_columns.index(column_logical_index)
-            except ValueError:
-                pass
+            if not self._multi_columns_sort:
+                self._sort_by_columns = []
+                self._columns_sort_order = []
             else:
-                del self._sort_by_columns[index]
-                del self._columns_sort_order[index]
+                try:
+                    index = self._sort_by_columns.index(column_logical_index)
+                except ValueError:
+                    pass
+                else:
+                    del self._sort_by_columns[index]
+                    del self._columns_sort_order[index]
             if sort_order != -1:
                 self._sort_by_columns.insert(0, column_logical_index)
                 self._columns_sort_order.insert(0, int(sort_order))
