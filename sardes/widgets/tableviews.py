@@ -817,6 +817,30 @@ class SardesTableView(QTableView):
         self.undo_edits_action.setEnabled(bool(data_edit_count))
         self.cancel_edits_action.setEnabled(has_unsaved_data_edits)
 
+    # ---- Options
+    @property
+    def confirm_before_saving_edits(self):
+        """
+        Return wheter we should ask confirmation to the user before saving
+        the data edits to the database.
+        """
+        if self.model().db_connection_manager is not None:
+            return (self.model().db_connection_manager
+                    ._confirm_before_saving_edits)
+        else:
+            return self._confirm_before_saving_edits
+
+    @confirm_before_saving_edits.setter
+    def confirm_before_saving_edits(self, x):
+        """
+        Set wheter we should ask confirmation to the user before saving
+        the data edits to the database.
+        """
+        self._confirm_before_saving_edits = bool(x)
+        if self.model().db_connection_manager is not None:
+            (self.model().db_connection_manager
+             ._confirm_before_saving_edits) = bool(x)
+
     # ---- Sorting
     def clear_sort(self):
         """
@@ -1174,7 +1198,7 @@ class SardesTableView(QTableView):
         Save the data edits to the database. If 'force' is 'False', a message
         is first shown before proceeding.
         """
-        if force is False and self.model().confirm_before_saving_edits:
+        if force is False and self.confirm_before_saving_edits:
             msgbox = QMessageBox(
                 QMessageBox.Warning,
                 _('Save changes'),
@@ -1194,8 +1218,7 @@ class SardesTableView(QTableView):
             if reply == QMessageBox.Cancel:
                 return
             else:
-                self.model().confirm_before_saving_edits = (
-                    not chkbox.isChecked())
+                self.confirm_before_saving_edits = not chkbox.isChecked()
 
         self.selectionModel().clearSelection()
         self.model().save_data_edits()
