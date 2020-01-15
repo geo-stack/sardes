@@ -123,7 +123,7 @@ class Tables(SardesPlugin):
 
     def _create_and_register_table(self, TableClass, data_name, lib_names):
         table = TableClass()
-        self.main.table_models_manager.register_table_model(
+        self.main.db_connection_manager.register_table_model(
             table.model(), data_name, lib_names)
 
         self._tables[table.get_table_id()] = table
@@ -161,5 +161,5 @@ class Tables(SardesPlugin):
         if self.current_table().isVisible():
             self.current_table().setEnabled(
                 self.main.db_connection_manager.is_connected())
-            self.main.table_models_manager.update_table_model(
+            self.main.db_connection_manager.update_table_model(
                 self.current_table().get_table_id())

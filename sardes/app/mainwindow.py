@@ -47,8 +47,7 @@ from sardes.config.icons import get_icon
 from sardes.config.locale import (get_available_translations, get_lang_conf,
                                   LANGUAGE_CODES, set_lang_conf)
 from sardes.config.main import CONFIG_DIR
-from sardes.database.database_manager import (
-    DatabaseConnectionManager, TableModelsManager)
+from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.utils.qthelpers import (
     create_action, create_mainwindow_toolbar, create_toolbar_stretcher,
     create_toolbutton, qbytearray_to_hexstate, hexstate_to_qbytearray)
@@ -79,12 +78,6 @@ class MainWindow(QMainWindow):
         print("Setting up the database connection manager...", end=' ')
         splash.showMessage(_("Setting up the database connection manager..."))
         self.db_connection_manager = DatabaseConnectionManager()
-        print("done")
-
-        # Setup the table model manager.
-        print("Setting up the table models manager...", end=' ')
-        self.table_models_manager = TableModelsManager(
-            self.db_connection_manager)
         print("done")
 
         self.setup()
