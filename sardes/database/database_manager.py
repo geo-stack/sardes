@@ -178,6 +178,14 @@ class TableModelsManager(QObject):
         self._table_models = {}
         self._models_req_data = {}
         self._queued_model_updates = {}
+        self._running_model_updates = {}
+        # _queued_model_updates contains the lists of data and library names
+        # that need to be updated for each table registered to this manager
+        # when the update_table_model is called.
+        #
+        # _running_model_updates contains the lists of data and library names
+        # that are currently being updated after the update_table_model was
+        # called.
 
         # Setup the database manager.
         self.db_manager = db_manager
@@ -196,6 +204,7 @@ class TableModelsManager(QObject):
         self._table_models[table_id] = table_model
         self._models_req_data[table_id] = [data_name] + lib_names
         self._queued_model_updates[table_id] = [data_name] + lib_names
+        self._running_model_updates[table_id] = []
 
     def update_table_model(self, table_id):
         """
@@ -208,7 +217,10 @@ class TableModelsManager(QObject):
 
         if len(self._queued_model_updates[table_id]):
             self._table_models[table_id].sig_data_about_to_be_updated.emit()
-            for name in self._queued_model_updates[table_id]:
+            self._running_model_updates[table_id] = (
+                self._queued_model_updates[table_id].copy())
+            self._queued_model_updates[table_id] = []
+            for name in self._running_model_updates[table_id]:
                 self.db_manager.get(
                     name,
                     callback=lambda dataf, name=name:
@@ -254,8 +266,8 @@ class TableModelsManager(QObject):
             # Update the table model library.
             self._table_models[table_id].set_model_library(dataf, name)
 
-        self._queued_model_updates[table_id].remove(name)
-        if not len(self._queued_model_updates[table_id]):
+        self._running_model_updates[table_id].remove(name)
+        if not len(self._running_model_updates[table_id]):
             self._table_models[table_id].sig_data_updated.emit()
 
     def _handle_db_data_changed(self):
