@@ -179,6 +179,13 @@ class TableModelsManager(QObject):
         self._models_req_data = {}
         self._queued_model_updates = {}
         self._running_model_updates = {}
+        # _queued_model_updates contains the lists of data and library names
+        # that need to be updated for each table registered to this manager
+        # when the update_table_model is called.
+        #
+        # _running_model_updates contains the lists of data and library names
+        # that are currently being updated after the update_table_model was
+        # called.
 
         # Setup the database manager.
         self.db_manager = db_manager
