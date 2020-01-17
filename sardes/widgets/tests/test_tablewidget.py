@@ -178,6 +178,8 @@ def test_tablewidget_init(tablewidget, TABLE_DATAF):
     # Assert that the content of the table is as expected.
     assert_frame_equal(tableview.model().dataf, TABLE_DATAF)
     assert tableview.visible_row_count() == len(TABLE_DATAF)
+    assert (tablewidget.selected_line_count.text() ==
+            "{} out of {} row(s) selected ".format(0, len(TABLE_DATAF)))
 
     # Assert that all columns are visible.
     for action in tableview.get_column_visibility_actions():
