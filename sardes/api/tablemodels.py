@@ -384,6 +384,7 @@ class SardesTableModelBase(QAbstractTableModel):
             self.index(0, 0),
             self.index(self.rowCount() - 1, self.columnCount() - 1)
             )
+        self.modelReset.emit()
 
     def set_model_library(self, dataf, name):
         """
