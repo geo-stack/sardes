@@ -1322,6 +1322,14 @@ class SardesTableWidget(SardesPaneWidget):
         """
         self.model().clear_data()
 
+    @property
+    def db_connection_manager(self):
+        """
+        Return the database connection manager associated with the model
+        of this table widget.
+        """
+        return self.model().db_connection_manager
+
     def get_table_title(self):
         """Return the title of this widget's table."""
         return self.tableview.source_model._table_title
@@ -1385,14 +1393,6 @@ class SardesTableWidget(SardesPaneWidget):
             self._update_line_count)
         self.tableview.model().modelReset.connect(
             self._update_line_count)
-
-    @property
-    def db_connection_manager(self):
-        """
-        Return the database connection manager associated with the model
-        of this table widget.
-        """
-        return self.tableview.source_model.db_connection_manager
 
     # ---- Line count
     def _update_line_count(self):
