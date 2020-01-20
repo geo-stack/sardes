@@ -1320,11 +1320,38 @@ class SardesTableView(QTableView):
 
 class SardesTableWidget(SardesPaneWidget):
 
-    def __init__(self, table_model, parent=None):
+    def __init__(self, table_model, parent=None, multi_columns_sort=True,
+                 sections_movable=True, sections_hidable=True,
+                 disabled_actions=None):
+        """
+        Parameters
+        ----------
+        table_model : SardesTableModel
+            The source model that we want to display in the tableview of this
+            table widget.
+        parent : QtWidgets.Widgets
+            A Qt widget to be set as the parent of this table view.
+        multi_columns_sort : bool, optional
+            If multi_columns_sort is True, data are sortable by multiple
+            columns, otherwise data can be sorted only by a single column.
+        sections_movable : bool, optional
+            If sections_movable is True, the header sections may be moved
+            by the user, otherwise they are fixed in place.
+            The default is True.
+        sections_hidable : bool, optional
+            If sections_hidable is True, columns can be hidden by the user,
+            otherwise the columns cannot be hidden and are always visible.
+        disabled_actions : list of str
+            A list of strings corresponding to a group of actions that should
+            not be enabled in the view of this table widget.
+            Qt.Horizontal.
+        """
         super().__init__(parent)
         self.setAutoFillBackground(True)
 
-        self.tableview = SardesTableView(table_model)
+        self.tableview = SardesTableView(
+            table_model, self, multi_columns_sort, sections_movable,
+            sections_hidable, disabled_actions)
         self.tableview.setAutoFillBackground(True)
         self.tableview.viewport().setStyleSheet(
             "background-color: rgb(%d, %d, %d);" %
@@ -1411,7 +1438,9 @@ class SardesTableWidget(SardesPaneWidget):
         self._upper_toolbar_separator = toolbar.addWidget(
             create_toolbar_stretcher())
 
-        toolbar.addWidget(self._create_columns_options_button())
+        columns_options_action = toolbar.addWidget(
+            self._create_columns_options_button())
+        columns_options_action.setVisible(self.sections_hidable)
 
     def _setup_status_bar(self):
         """
@@ -1498,6 +1527,13 @@ class SardesTableWidget(SardesPaneWidget):
             sort_by_columns, columns_sort_order)
 
     # ---- Columns option toolbutton
+    @property
+    def sections_hidable(self):
+        """
+        Return wheter it is possible to hide sections of the tableview.
+        """
+        return self.tableview.sections_hidable
+
     def _create_columns_options_button(self):
         """
         Create and return a toolbutton with a menu that contains actions
