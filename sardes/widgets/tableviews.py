@@ -391,11 +391,26 @@ class SardesHeaderView(QHeaderView):
     """
     sig_sort_by_column = Signal(int, int)
 
-    def __init__(self, parent, orientation=Qt.Horizontal):
+    def __init__(self, parent, sections_movable=True,
+                 orientation=Qt.Horizontal):
+        """
+        Parameters
+        ----------
+        parent : QtWidgets.Widgets
+            A Qt widget to be set as the parent of this header view.
+        sections_movable : bool, optional
+            If sections_movable is True, the header sections may be moved
+            by the user, otherwise they are fixed in place.
+            The default is True.
+        orientation : Qt.Orientation, optional
+            Determine the orientation of this header. The default is
+            Qt.Horizontal.
+        -------
+        """
         super().__init__(orientation, parent)
         self.setHighlightSections(True)
         self.setSectionsClickable(True)
-        self.setSectionsMovable(True)
+        self.setSectionsMovable(sections_movable)
         self.sectionDoubleClicked.connect(self._handle_section_doubleclick)
         self.setSortIndicatorShown(False)
         self.hover = -1
