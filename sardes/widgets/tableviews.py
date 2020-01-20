@@ -405,7 +405,6 @@ class SardesHeaderView(QHeaderView):
         orientation : Qt.Orientation, optional
             Determine the orientation of this header. The default is
             Qt.Horizontal.
-        -------
         """
         super().__init__(orientation, parent)
         self.setHighlightSections(True)
@@ -586,20 +585,48 @@ class SardesTableView(QTableView):
     sig_data_edited = Signal(bool, bool)
     sig_show_event = Signal()
 
-    def __init__(self, table_model, parent=None):
+    def __init__(self, table_model, parent=None, multi_columns_sort=True,
+                 sections_movable=True, sections_hidable=True,
+                 disabled_actions=None):
+        """
+        Parameters
+        ----------
+        table_model : SardesSortFilterModel
+            The sort filter proxy model that this table view is displaying.
+        parent : QtWidgets.Widgets
+            A Qt widget to be set as the parent of this table view.
+        multi_columns_sort : bool, optional
+            If multi_columns_sort is True, data are sortable by multiple
+            columns, otherwise data can be sorted only by a single column.
+        sections_movable : bool, optional
+            If sections_movable is True, the header sections may be moved
+            by the user, otherwise they are fixed in place.
+            The default is True.
+        sections_hidable : bool, optional
+            If sections_hidable is True, columns can be hidden by the user,
+            otherwise the columns cannot be hidden and are always visible.
+        disabled_actions : list of str
+            A list of strings corresponding to a group of actions that should
+            not be enabled in this table view.
+            Qt.Horizontal.
+        """
         super().__init__(parent)
         self.setSortingEnabled(False)
         self.setAlternatingRowColors(False)
         self.setCornerButtonEnabled(True)
         self.setEditTriggers(self.DoubleClicked)
         self.setMouseTracking(True)
+        self._sections_movable = sections_movable
+        self._sections_hidable = sections_hidable
+        self._disabled_actions = disabled_actions or []
 
         # Setup horizontal header.
-        self.setHorizontalHeader(SardesHeaderView(parent=self))
+        self.setHorizontalHeader(SardesHeaderView(
+            parent, sections_movable))
         self.horizontalHeader().sig_sort_by_column.connect(self.sort_by_column)
 
         self._actions = {}
-        self._setup_table_model(table_model)
+        self._setup_table_model(table_model, multi_columns_sort)
         self._setup_item_delegates()
         self._setup_shortcuts()
 
@@ -615,13 +642,14 @@ class SardesTableView(QTableView):
         self.sig_show_event.emit()
         super().showEvent(*args, **kargs)
 
-    def _setup_table_model(self, table_model):
+    def _setup_table_model(self, table_model, multi_columns_sort):
         """
         Setup the data model for this table view.
         """
         self.source_model = table_model
         self.source_model.sig_data_edited.connect(self.sig_data_edited.emit)
-        self.proxy_model = SardesSortFilterModel(self.source_model)
+        self.proxy_model = SardesSortFilterModel(
+            self.source_model, multi_columns_sort)
         self.setModel(self.proxy_model)
         self.proxy_model.sig_data_sorted.connect(
             self.horizontalHeader().update)
@@ -652,150 +680,154 @@ class SardesTableView(QTableView):
         """
         Setup the various shortcuts available for this tableview.
         """
-        # Setup IO actions
-        copy_to_clipboard_action = create_action(
-            self, _("Copy"),
-            icon='copy_clipboard',
-            tip=_("Put a copy of the selection on the Clipboard "
-                  "so you can paste it somewhere else."),
-            triggered=self.copy_to_clipboard,
-            shortcut='Ctrl+C')
+        if 'io' not in self._disabled_actions:
+            # Setup IO actions
+            copy_to_clipboard_action = create_action(
+                self, _("Copy"),
+                icon='copy_clipboard',
+                tip=_("Put a copy of the selection on the Clipboard "
+                      "so you can paste it somewhere else."),
+                triggered=self.copy_to_clipboard,
+                shortcut='Ctrl+C')
 
-        self._actions['io'] = [copy_to_clipboard_action]
-        self.addActions(self._actions['io'])
+            self._actions['io'] = [copy_to_clipboard_action]
+            self.addActions(self._actions['io'])
+        if 'edit' not in self._disabled_actions:
+            # Setup edit actions.
+            self.edit_item_action = create_action(
+                self, _("Edit"),
+                icon='edit_database_item',
+                tip=_("Edit the data of the currently focused cell."),
+                triggered=self._edit_current_item,
+                shortcut=['Enter', 'Return'],
+                context=Qt.WidgetShortcut)
 
-        # Setup edit actions.
-        self.edit_item_action = create_action(
-            self, _("Edit"),
-            icon='edit_database_item',
-            tip=_("Edit the data of the currently focused cell."),
-            triggered=self._edit_current_item,
-            shortcut=['Enter', 'Return'],
-            context=Qt.WidgetShortcut)
+            new_row_action = create_action(
+                self, _("New Item"),
+                icon='add_row',
+                tip=_("Create a new item."),
+                triggered=self._add_new_row,
+                shortcut=['Ctrl++', 'Ctrl+='],
+                context=Qt.WidgetShortcut)
 
-        new_row_action = create_action(
-            self, _("New Item"),
-            icon='add_row',
-            tip=_("Create a new item."),
-            triggered=self._add_new_row,
-            shortcut=['Ctrl++', 'Ctrl+='],
-            context=Qt.WidgetShortcut)
+            self.clear_item_action = create_action(
+                self, _("Clear"),
+                icon='erase_data',
+                tip=_("Set the currently focused item to NULL."),
+                triggered=self._clear_current_item,
+                shortcut='Ctrl+D',
+                context=Qt.WidgetShortcut)
 
-        self.clear_item_action = create_action(
-            self, _("Clear"),
-            icon='erase_data',
-            tip=_("Set the currently focused item to NULL."),
-            triggered=self._clear_current_item,
-            shortcut='Ctrl+D',
-            context=Qt.WidgetShortcut)
+            self.save_edits_action = create_action(
+                self, _("Save edits"),
+                icon='commit_changes',
+                tip=_('Save all edits made to the table in the database.'),
+                triggered=lambda: self._save_data_edits(force=False),
+                shortcut=['Ctrl+Enter', 'Ctrl+Return'],
+                context=Qt.WidgetShortcut)
+            self.save_edits_action.setEnabled(False)
 
-        self.save_edits_action = create_action(
-            self, _("Save edits"),
-            icon='commit_changes',
-            tip=_('Save all edits made to the table in the database.'),
-            triggered=lambda: self._save_data_edits(force=False),
-            shortcut=['Ctrl+Enter', 'Ctrl+Return'],
-            context=Qt.WidgetShortcut)
-        self.save_edits_action.setEnabled(False)
+            self.cancel_edits_action = create_action(
+                self, _("Cancel edits"),
+                icon='cancel_changes',
+                tip=_('Cancel all edits made to the table since last save.'),
+                triggered=self._cancel_data_edits,
+                shortcut='Ctrl+Delete',
+                context=Qt.WidgetShortcut)
+            self.cancel_edits_action.setEnabled(False)
 
-        self.cancel_edits_action = create_action(
-            self, _("Cancel edits"),
-            icon='cancel_changes',
-            tip=_('Cancel all edits made to the table since last save.'),
-            triggered=self._cancel_data_edits,
-            shortcut='Ctrl+Delete',
-            context=Qt.WidgetShortcut)
-        self.cancel_edits_action.setEnabled(False)
+            self.undo_edits_action = create_action(
+                self, _("Undo"),
+                icon='undo',
+                tip=_('Undo last edit made to the table.'),
+                triggered=self._undo_last_data_edit,
+                shortcut='Ctrl+Z',
+                context=Qt.WidgetShortcut)
+            self.undo_edits_action.setEnabled(False)
 
-        self.undo_edits_action = create_action(
-            self, _("Undo"),
-            icon='undo',
-            tip=_('Undo last edit made to the table.'),
-            triggered=self._undo_last_data_edit,
-            shortcut='Ctrl+Z',
-            context=Qt.WidgetShortcut)
-        self.undo_edits_action.setEnabled(False)
+            self._actions['edit'] = [
+                self.edit_item_action, new_row_action, self.clear_item_action,
+                self.undo_edits_action, self.save_edits_action,
+                self.cancel_edits_action]
+            self.addActions(self._actions['edit'])
+        if 'selection' not in self._disabled_actions:
+            # Setup selection actions.
+            select_all_action = create_action(
+                self, _("Select All"),
+                icon='select_all',
+                tip=_("Selects all items in the table."),
+                triggered=self.selectAll,
+                shortcut='Ctrl+A',
+                context=Qt.WidgetShortcut)
 
-        self._actions['edit'] = [
-            self.edit_item_action, new_row_action, self.clear_item_action,
-            self.undo_edits_action, self.save_edits_action,
-            self.cancel_edits_action]
-        self.addActions(self._actions['edit'])
+            select_clear_action = create_action(
+                self, _("Clear All"),
+                icon='select_clear',
+                tip=_("Clears the selection in the table."),
+                triggered=lambda _: self.selectionModel().clearSelection(),
+                shortcut='Escape',
+                context=Qt.WidgetShortcut)
 
-        # Setup selection actions.
-        select_all_action = create_action(
-            self, _("Select All"),
-            icon='select_all',
-            tip=_("Selects all items in the table."),
-            triggered=self.selectAll,
-            shortcut='Ctrl+A',
-            context=Qt.WidgetShortcut)
+            select_row_action = create_action(
+                self, _("Select Row"),
+                icon='select_row',
+                tip=_("Select the entire row of the current selection. "
+                      "If the current selection spans multiple rows, "
+                      "all rows that intersect the selection will be "
+                      "selected."),
+                triggered=self.select_row,
+                shortcut='Shift+Space',
+                context=Qt.WidgetShortcut)
 
-        select_clear_action = create_action(
-            self, _("Clear All"),
-            icon='select_clear',
-            tip=_("Clears the selection in the table."),
-            triggered=lambda _: self.selectionModel().clearSelection(),
-            shortcut='Escape',
-            context=Qt.WidgetShortcut)
+            select_column_action = create_action(
+                self, _("Select Column"),
+                icon='select_column',
+                tip=_("Select the entire column of the current selection. "
+                      "If the current selection spans multiple columns, all "
+                      "columns that intersect the selection will "
+                      "be selected."),
+                triggered=self.select_column,
+                shortcut='Ctrl+Space',
+                context=Qt.WidgetShortcut)
 
-        select_row_action = create_action(
-            self, _("Select Row"),
-            icon='select_row',
-            tip=_("Select the entire row of the current selection. "
-                  "If the current selection spans multiple rows, "
-                  "all rows that intersect the selection will be selected."),
-            triggered=self.select_row,
-            shortcut='Shift+Space',
-            context=Qt.WidgetShortcut)
+            self._actions['selection'] = [
+                select_all_action, select_clear_action, select_row_action,
+                select_column_action]
+            self.addActions(self._actions['selection'])
+        if 'sort' not in self._disabled_actions:
+            # Setup sort actions.
+            sort_ascending_action = create_action(
+                self, _("Sort Ascending"),
+                icon='sort_ascending',
+                tip=_("Reorder rows by sorting the data of the current column "
+                      "in ascending order."),
+                shortcut="Ctrl+<",
+                context=Qt.WidgetShortcut,
+                triggered=lambda _:
+                    self.sort_by_current_column(Qt.AscendingOrder))
 
-        select_column_action = create_action(
-            self, _("Select Column"),
-            icon='select_column',
-            tip=_("Select the entire column of the current selection. "
-                  "If the current selection spans multiple columns, all "
-                  "columns that intersect the selection will be selected."),
-            triggered=self.select_column,
-            shortcut='Ctrl+Space',
-            context=Qt.WidgetShortcut)
+            sort_descending_action = create_action(
+                self, _("Sort Descending"),
+                icon='sort_descending',
+                tip=_("Reorder rows by sorting the data of the current column "
+                      "in descending order."),
+                shortcut="Ctrl+>",
+                context=Qt.WidgetShortcut,
+                triggered=lambda _:
+                    self.sort_by_current_column(Qt.DescendingOrder))
 
-        self._actions['selection'] = [
-            select_all_action, select_clear_action, select_row_action,
-            select_column_action]
-        self.addActions(self._actions['selection'])
+            sort_clear_action = create_action(
+                self, _("Clear Sort"),
+                icon='sort_clear',
+                tip=_("Clear all sorts applied to the columns of the table."),
+                triggered=lambda _: self.clear_sort(),
+                shortcut="Ctrl+.",
+                context=Qt.WidgetShortcut)
 
-        # Setup sort actions.
-        sort_ascending_action = create_action(
-            self, _("Sort Ascending"),
-            icon='sort_ascending',
-            tip=_("Reorder rows by sorting the data of the current column "
-                  "in ascending order."),
-            shortcut="Ctrl+<",
-            context=Qt.WidgetShortcut,
-            triggered=lambda _:
-                self.sort_by_current_column(Qt.AscendingOrder))
-
-        sort_descending_action = create_action(
-            self, _("Sort Descending"),
-            icon='sort_descending',
-            tip=_("Reorder rows by sorting the data of the current column "
-                  "in descending order."),
-            shortcut="Ctrl+>",
-            context=Qt.WidgetShortcut,
-            triggered=lambda _:
-                self.sort_by_current_column(Qt.DescendingOrder))
-
-        sort_clear_action = create_action(
-            self, _("Clear Sort"),
-            icon='sort_clear',
-            tip=_("Clear all sorts applied to the columns of the table."),
-            triggered=lambda _: self.clear_sort(),
-            shortcut="Ctrl+.",
-            context=Qt.WidgetShortcut)
-
-        self._actions['sort'] = [sort_ascending_action, sort_descending_action,
-                                 sort_clear_action]
-        self.addActions(self._actions['sort'])
+            self._actions['sort'] = [sort_ascending_action,
+                                     sort_descending_action,
+                                     sort_clear_action]
+            self.addActions(self._actions['sort'])
 
         # Setup move actions.
         for key in ['Up', 'Down', 'Left', 'Right']:
@@ -817,22 +849,30 @@ class SardesTableView(QTableView):
         """
         Update the state of this table Qt actions.
         """
-        current_index = self.selectionModel().currentIndex()
-        if current_index.isValid():
-            is_required = self.is_data_required_at(current_index)
-            is_null = self.model().is_null(current_index)
-            is_editable = self.is_data_editable_at(current_index)
-            self.clear_item_action.setEnabled(
-                not is_required and not is_null and is_editable)
-            self.edit_item_action.setEnabled(is_editable)
+        if 'edit' not in self._disabled_actions:
+            current_index = self.selectionModel().currentIndex()
+            if current_index.isValid():
+                is_required = self.is_data_required_at(current_index)
+                is_null = self.model().is_null(current_index)
+                is_editable = self.is_data_editable_at(current_index)
+                self.clear_item_action.setEnabled(
+                    not is_required and not is_null and is_editable)
+                self.edit_item_action.setEnabled(is_editable)
 
-        has_unsaved_data_edits = self.model().has_unsaved_data_edits()
-        data_edit_count = self.model().data_edit_count()
-        self.save_edits_action.setEnabled(has_unsaved_data_edits)
-        self.undo_edits_action.setEnabled(bool(data_edit_count))
-        self.cancel_edits_action.setEnabled(has_unsaved_data_edits)
+            has_unsaved_data_edits = self.model().has_unsaved_data_edits()
+            data_edit_count = self.model().data_edit_count()
+            self.save_edits_action.setEnabled(has_unsaved_data_edits)
+            self.undo_edits_action.setEnabled(bool(data_edit_count))
+            self.cancel_edits_action.setEnabled(has_unsaved_data_edits)
 
     # ---- Options
+    @property
+    def sections_hidable(self):
+        """
+        Return wheter it is possible to hide sections.
+        """
+        return self._sections_hidable
+
     @property
     def confirm_before_saving_edits(self):
         """
