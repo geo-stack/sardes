@@ -90,12 +90,11 @@ class DataIO(SardesPlugin):
 
     # ---- Private API
     def _show_data_import_wizard(self):
-        # self._update_data_import_wizard()
+        self._update_data_import_wizard()
         self.data_import_wizard.show()
 
     def _update_data_import_wizard(self):
-        self.main.db_connection_manager.update_table_model(
-            'data_import_wizard')
+        self.main.db_connection_manager.update_model('data_import_wizard')
 
 
 class ImportDataTableModel(SardesTableModel):
@@ -204,7 +203,6 @@ class DataImportWizard(QDialog):
             super().show()
 
     def _load_next_queud_data_file(self):
-        print('_load_next_queud_data_file')
         filename = self._queued_filenames.pop(0)
         self.working_directory = osp.dirname(filename)
         self.filename_label.setText(osp.basename(filename))
@@ -228,6 +226,7 @@ class DataImportWizard(QDialog):
                 dataf, [(col, col) for col in dataf.columns])
             self.table_widget.tableview._setup_item_delegates()
             self.table_widget.tableview.resizeColumnsToContents()
+        self._update_sonde_model()
         self._update_button_state()
 
     # ---- Sardes Model Public API
@@ -237,6 +236,7 @@ class DataImportWizard(QDialog):
 
     def set_model_data(self, dataf):
         self._sonde_brand_model = dataf
+        self._update_sonde_model()
 
     def set_model_library(self, dataf, name):
         self._sonde_models_lib = dataf
@@ -244,6 +244,7 @@ class DataImportWizard(QDialog):
 
     # ---- Private API
     def _update_sonde_model(self):
+        """Update the sonde model shown in dialog."""
         serial_number = self.serial_number_label.text()
         if self._sonde_models_lib is not None and serial_number != '':
             model = (self._sonde_brand_model[
@@ -256,6 +257,7 @@ class DataImportWizard(QDialog):
             self.model_label.setText('')
 
     def _update_button_state(self):
+        """Update the state of the dialog's buttons."""
         self.next_btn.setEnabled(len(self._queued_filenames) > 0)
 
     @Slot(QAbstractButton)
