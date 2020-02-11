@@ -81,7 +81,7 @@ class DataIO(SardesPlugin):
         manager to update the tables' data.
         """
         super().register_plugin()
-        self.main.db_connection_manager.register_table_model(
+        self.main.db_connection_manager.register_model(
             self.data_import_wizard, 'sondes_data', ['sonde_models_lib'])
 
         # Set the import wizard working dir.
@@ -230,6 +230,7 @@ class DataImportWizard(QDialog):
             self.table_widget.tableview.resizeColumnsToContents()
         self._update_button_state()
 
+    # ---- Sardes Model Public API
     def set_database_connection_manager(self, db_connection_manager):
         """Setup the namespace for the database connection manager."""
         self.db_connection_manager = db_connection_manager
@@ -241,6 +242,7 @@ class DataImportWizard(QDialog):
         self._sonde_models_lib = dataf
         self._update_sonde_model()
 
+    # ---- Private API
     def _update_sonde_model(self):
         serial_number = self.serial_number_label.text()
         if self._sonde_models_lib is not None and serial_number != '':
