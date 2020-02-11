@@ -179,12 +179,18 @@ class DataImportWizard(QDialog):
 
     @property
     def working_directory(self):
+        """
+        Return the directory that by the QFileDialog to get open file names.
+        """
         return (self._working_dir if
                 osp.exists(self._working_dir) else
                 get_home_dir())
 
     @working_directory.setter
     def working_directory(self, new_working_dir):
+        """
+        Set the directory that by the QFileDialog to get open file names.
+        """
         if new_working_dir is not None and osp.exists(new_working_dir):
             self._working_dir = new_working_dir
 
