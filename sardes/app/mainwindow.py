@@ -129,6 +129,17 @@ class MainWindow(QMainWindow):
         self.internal_plugins.append(self.databases_plugin)
         print("done")
 
+        # Import Data Wizard.
+        from sardes.plugins.dataio import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        splash.showMessage(_("Loading the {} plugin...")
+                           .format(SARDES_PLUGIN_CLASS.get_plugin_title()))
+        plugin = SARDES_PLUGIN_CLASS(self)
+        plugin.register_plugin()
+        self.internal_plugins.append(plugin)
+        print("done")
+
     def setup_thirdparty_plugins(self):
         """Setup Sardes third party plugins."""
         installed_thirdparty_plugins = []
