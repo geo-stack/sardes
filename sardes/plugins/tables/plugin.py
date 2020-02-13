@@ -95,10 +95,7 @@ class Tables(SardesPlugin):
         manager to update the tables' data.
         """
         super().register_plugin()
-        connection_manager = self.main.db_connection_manager
-        connection_manager.sig_database_connection_changed.connect(
-            self._update_current_table)
-        connection_manager.sig_database_data_changed.connect(
+        self.main.db_connection_manager.sig_models_data_changed.connect(
             self._update_current_table)
 
     # ---- Private methods
