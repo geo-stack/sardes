@@ -43,7 +43,7 @@ steps:
   displayName: 'Run codecov'
 
 - script: |
-    python -m pip install pyinstaller==3.4 pywin32 tornado
+    python -m pip install pyinstaller==3.6 pywin32 tornado
     set PYTHONPATH=$(Build.SourcesDirectory);%PYTHONPATH%
     cd ./releases
     pyinstaller.exe sardes.spec
