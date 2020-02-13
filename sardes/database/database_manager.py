@@ -172,6 +172,7 @@ class SardesModelsManager(QObject):
     """
     A manager to handle data updating and saving of Sardes table models.
     """
+    sig_models_data_changed = Signal()
 
     def __init__(self, db_manager):
         super().__init__()
@@ -284,6 +285,7 @@ class SardesModelsManager(QObject):
                 [name for name in data_changed if name in req_data_names])
             self._queued_model_updates[table_id] = list(set(
                 self._queued_model_updates[table_id]))
+        self.sig_models_data_changed.emit()
 
     def _handle_db_connection_changed(self, is_connected):
         """
@@ -297,6 +299,7 @@ class SardesModelsManager(QObject):
             for table_id, table in self._table_models.items():
                 self._queued_model_updates[table_id] = []
                 table.clear_data()
+        self.sig_models_data_changed.emit()
 
 
 class DatabaseConnectionManager(QObject):
@@ -306,6 +309,7 @@ class DatabaseConnectionManager(QObject):
     sig_database_connection_changed = Signal(bool)
     sig_database_data_changed = Signal(list)
     sig_run_tasks_finished = Signal()
+    sig_models_data_changed = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -341,6 +345,8 @@ class DatabaseConnectionManager(QObject):
 
         # Setup the table models manager.
         self.models_manager = SardesModelsManager(self)
+        self.models_manager.sig_models_data_changed.connect(
+            self.sig_models_data_changed.emit)
         self._confirm_before_saving_edits = True
 
     def is_connected(self):
