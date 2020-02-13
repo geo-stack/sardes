@@ -115,7 +115,7 @@ class DataImportWizard(QDialog):
     sig_data_about_to_be_updated = Signal()
     sig_data_updated = Signal()
 
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(_('Data Import Wizard'))
         self.setWindowFlags(
