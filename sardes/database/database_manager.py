@@ -168,7 +168,7 @@ class DatabaseConnectionWorker(QObject):
         return mprop_list,
 
 
-class TableModelsManager(QObject):
+class SardesModelsManager(QObject):
     """
     A manager to handle data updating and saving of Sardes table models.
     """
@@ -181,10 +181,10 @@ class TableModelsManager(QObject):
         self._running_model_updates = {}
         # _queued_model_updates contains the lists of data and library names
         # that need to be updated for each table registered to this manager
-        # when the update_table_model is called.
+        # when the update_model is called.
         #
         # _running_model_updates contains the lists of data and library names
-        # that are currently being updated after the update_table_model was
+        # that are currently being updated after the update_model was
         # called.
 
         # Setup the database manager.
@@ -195,7 +195,7 @@ class TableModelsManager(QObject):
             self._handle_db_data_changed)
 
     # ---- Public API
-    def register_table_model(self, table_model, data_name, lib_names=None):
+    def register_model(self, table_model, data_name, lib_names=None):
         """
         Register a new sardes table model to the manager.
         """
@@ -206,9 +206,9 @@ class TableModelsManager(QObject):
         self._queued_model_updates[table_id] = [data_name] + lib_names
         self._running_model_updates[table_id] = []
 
-    def update_table_model(self, table_id):
+    def update_model(self, table_id):
         """
-        Update the given table model data and libraries.
+        Update the given sardes data model and libraries.
         """
         if table_id not in self._table_models:
             raise Warning("Warning: Table model '{}' is not registered."
@@ -228,7 +228,7 @@ class TableModelsManager(QObject):
                     postpone_exec=True)
             self.db_manager.run_tasks()
 
-    def save_table_model_edits(self, table_id):
+    def save_model_edits(self, table_id):
         """
         Save all data edits to the database.
         """
@@ -340,7 +340,7 @@ class DatabaseConnectionManager(QObject):
             self._exec_task_callback)
 
         # Setup the table models manager.
-        self.table_models_manager = TableModelsManager(self)
+        self.models_manager = SardesModelsManager(self)
         self._confirm_before_saving_edits = True
 
     def is_connected(self):
@@ -518,22 +518,22 @@ class DatabaseConnectionManager(QObject):
             self.sig_run_tasks_finished.emit()
 
     # ---- Tables
-    def register_table_model(self, table_model, data_name, lib_names=None):
+    def register_model(self, table_model, data_name, lib_names=None):
         """
         Register a new sardes table model to the manager.
         """
         table_model.set_database_connection_manager(self)
-        self.table_models_manager.register_table_model(
+        self.models_manager.register_model(
             table_model, data_name, lib_names)
 
-    def update_table_model(self, table_id):
+    def update_model(self, table_id):
         """
-        Update the given table model data and libraries.
+        Update the given sardes data model and libraries.
         """
-        self.table_models_manager.update_table_model(table_id)
+        self.models_manager.update_model(table_id)
 
-    def save_table_model_edits(self, table_id):
+    def save_model_edits(self, table_id):
         """
         Save all data edits to the database.
         """
-        self.table_models_manager.save_table_model_edits(table_id)
+        self.models_manager.save_model_edits(table_id)

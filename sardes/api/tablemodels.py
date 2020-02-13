@@ -352,7 +352,7 @@ class SardesTableModelBase(QAbstractTableModel):
         for lib_name in self.libraries.keys():
             self.set_model_library(pd.DataFrame([]), lib_name)
 
-    def set_model_data(self, dataf):
+    def set_model_data(self, dataf, dataf_columns_mapper=None):
         """
         Set the content of this table model to the data contained in dataf.
 
@@ -366,6 +366,9 @@ class SardesTableModelBase(QAbstractTableModel):
             values that are mapped in _data_columns_mapper.
         """
         self.beginResetModel()
+
+        if dataf_columns_mapper is not None:
+            self._data_columns_mapper = OrderedDict(dataf_columns_mapper)
 
         # Add missing columns to the dataframe.
         for column in self.columns:
@@ -598,7 +601,7 @@ class SardesTableModelBase(QAbstractTableModel):
         Update this model's data and library.
         """
         if self.db_connection_manager is not None:
-            self.db_connection_manager.update_table_model(self._table_id)
+            self.db_connection_manager.update_model(self._table_id)
         else:
             self._raise_db_connmanager_attr_error()
 
@@ -607,7 +610,7 @@ class SardesTableModelBase(QAbstractTableModel):
         Save all data edits to the database.
         """
         if self.db_connection_manager is not None:
-            self.db_connection_manager.save_table_model_edits(self._table_id)
+            self.db_connection_manager.save_model_edits(self._table_id)
         else:
             self._raise_db_connmanager_attr_error()
 

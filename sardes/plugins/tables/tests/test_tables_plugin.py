@@ -70,7 +70,7 @@ def test_tables_plugin_init(mainwindow, qtbot):
     """Test that the databse connection manager is initialized correctly."""
     tabwidget = mainwindow.plugin.tabwidget
     plugin = mainwindow.plugin
-    models_manager = mainwindow.db_connection_manager.table_models_manager
+    models_manager = mainwindow.db_connection_manager.models_manager
 
     assert mainwindow.plugin
     assert mainwindow.plugin.table_count() == 3

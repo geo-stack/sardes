@@ -1,4 +1,5 @@
 appconfigs
+HydroSensorReader
 keyring == 19.2.*
 matplotlib == 2.2.*
 numpy == 1.16.*

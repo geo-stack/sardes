@@ -123,7 +123,7 @@ class Tables(SardesPlugin):
 
     def _create_and_register_table(self, TableClass, data_name, lib_names):
         table = TableClass()
-        self.main.db_connection_manager.register_table_model(
+        self.main.db_connection_manager.register_model(
             table.model(), data_name, lib_names)
 
         self._tables[table.get_table_id()] = table

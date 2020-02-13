@@ -92,6 +92,12 @@ FA_ICONS = {
     'file_download': [
         ('mdi.file-download',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'file_import': [
+        ('mdi.file-import',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
+    'file_export': [
+        ('mdi.file-export',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'home': [
         ('mdi.home',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
