@@ -218,7 +218,6 @@ class SardesModelsManager(QObject):
 
         if len(self._queued_model_updates[table_id]):
             self._table_models[table_id].sig_data_about_to_be_updated.emit()
-            print(self._queued_model_updates[table_id])
             for name in self._queued_model_updates[table_id]:
                 self._running_model_updates[table_id].append(name)
                 self.db_manager.get(
