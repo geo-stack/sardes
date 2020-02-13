@@ -217,15 +217,15 @@ class SardesModelsManager(QObject):
 
         if len(self._queued_model_updates[table_id]):
             self._table_models[table_id].sig_data_about_to_be_updated.emit()
-            self._running_model_updates[table_id] = (
-                self._queued_model_updates[table_id].copy())
-            self._queued_model_updates[table_id] = []
-            for name in self._running_model_updates[table_id]:
+            print(self._queued_model_updates[table_id])
+            for name in self._queued_model_updates[table_id]:
+                self._running_model_updates[table_id].append(name)
                 self.db_manager.get(
                     name,
                     callback=lambda dataf, name=name:
                         self._set_model_data_or_lib(dataf, name, table_id),
                     postpone_exec=True)
+            self._queued_model_updates[table_id] = []
             self.db_manager.run_tasks()
 
     def save_model_edits(self, table_id):
