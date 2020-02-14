@@ -5,7 +5,7 @@ matplotlib == 2.2.*
 numpy == 1.16.*
 pandas == 0.25.*
 psycopg2
-pyqt5 == 5.9.*
+pyqt5 == 5.12.*
 qtawesome
 qtpy
 sqlalchemy
