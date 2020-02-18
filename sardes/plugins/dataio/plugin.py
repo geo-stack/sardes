@@ -242,6 +242,10 @@ class DataImportWizard(QDialog):
         self._sonde_models_lib = dataf
         self._update_sonde_model()
 
+    def clear_data(self):
+        """Clear the data of this wizard table."""
+        self.table_model.clear_data()
+
     # ---- Private API
     def _update_sonde_model(self):
         """Update the sonde model shown in dialog."""
