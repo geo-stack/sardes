@@ -235,10 +235,18 @@ class DataImportWizard(QDialog):
         self.db_connection_manager = db_connection_manager
 
     def set_model_data(self, dataf):
+        """
+        Set the data needed by the wizard and update the info displayed
+        in the GUI.
+        """
         self._sonde_brand_model = dataf
         self._update_sonde_model()
 
     def set_model_library(self, dataf, name):
+        """
+        Set the data for the given library name and update the info
+        displayed in the GUI.
+        """
         self._sonde_models_lib = dataf
         self._update_sonde_model()
 
