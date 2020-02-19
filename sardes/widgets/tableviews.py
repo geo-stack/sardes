@@ -58,7 +58,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
                  is_required=False):
         super() .__init__(parent=model_view)
         self.model_view = model_view
-        self.model_index = None
+        self._model_index = None
         self.editor = None
         self.unique_constraint = unique_constraint
         self.is_required = is_required
@@ -150,6 +150,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
             if error_message is not None:
                 self.model_view.raise_edits_error(
                     self.model_index, error_message)
+            self.model_view._ensure_visible(self.model_index)
 
     # ---- Public methods
     def model(self):
@@ -157,6 +158,29 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         Return the model whose data this item delegate is used to edit.
         """
         return self.model_view.model()
+
+    @property
+    def model_index(self):
+        """
+        Return the model index associated with this item delegate.
+        """
+        try:
+            return self.model().mapFromSource(self._model_index)
+        except AttributeError:
+            return self._model_index
+
+    @model_index.setter
+    def model_index(self, index):
+        """
+        Set the model index associated with this item delegate.
+        """
+        # We store a reference of the source model index because the
+        # index from the sort filter proxy model changes if the sort filter
+        # proxy model gets invalidated.
+        try:
+            self._model_index = self.model().mapToSource(index)
+        except AttributeError:
+            self._model_index = index
 
     def get_model_data(self):
         """
