@@ -122,10 +122,10 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         are commited to the model.
         """
         if self.editor and event.type() == QEvent.KeyPress:
-            """Commit edits on Enter of Ctrl+Enter key press."""
+            """Commit edits on Enter or Return key press."""
             key_cond = event.key() in (Qt.Key_Return, Qt.Key_Enter)
-            mod_cond = (not event.modifiers() or
-                        event.modifiers() & Qt.ControlModifier)
+            # Shift + Enter is used to insert a line break in a cell.
+            mod_cond = not event.modifiers() & Qt.ShiftModifier
             if key_cond and mod_cond:
                 self.commit_data()
                 return True
