@@ -1244,6 +1244,7 @@ class SardesTableView(QTableView):
         current_index = self.selectionModel().currentIndex()
         if current_index.isValid():
             self.itemDelegate(current_index).clear_model_data_at(current_index)
+        self._ensure_visible(current_index)
 
     def _edit_current_item(self):
         """
