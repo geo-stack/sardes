@@ -1285,6 +1285,16 @@ class SardesTableView(QTableView):
         new_model_index_range = self.model().add_new_row()
         self.setCurrentIndex(new_model_index_range[0])
 
+    def _ensure_visible(self, model_index):
+        """
+        Scroll to the item located at the given model index if it is not
+        currently visible in the scrollarea.
+        """
+        item_rect = self.visualRect(model_index)
+        view_rect = self.geometry()
+        if not view_rect.contains(item_rect):
+            self.scrollTo(model_index, hint=self.PositionAtCenter)
+
     def raise_edits_error(self, model_index, message):
         """"
         Raise a modal dialog that shows the specifed error message that
