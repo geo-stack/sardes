@@ -107,9 +107,10 @@ class DatabaseConnectionWorker(QObject):
             try:
                 data = self.db_accessor.get(name, *args, **kargs)
                 print("done")
-            except AttributeError as e:
-                print("failed")
+            except Exception as e:
+                print("failed because of the following error.")
                 print(e)
+                print('-' * 20)
                 data = DataFrame([])
         else:
             print("failed because not connected to a database.")
