@@ -107,14 +107,16 @@ class DatabaseConnectionWorker(QObject):
             try:
                 data = self.db_accessor.get(name, *args, **kargs)
                 print("done")
-            except AttributeError as e:
-                print("failed")
+            except Exception as e:
+                print("failed because of the following error.")
                 print(e)
+                print('-' * 20)
                 data = DataFrame([])
+            else:
+                self._cache[name] = data
         else:
             print("failed because not connected to a database.")
             data = DataFrame([])
-        self._cache[name] = data
         return data,
 
     def _create_index(self, name):
