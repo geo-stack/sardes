@@ -1271,7 +1271,11 @@ class SardesTableView(QTableView):
         Undo the last data edits that was added to the table.
         An update of the view is forced if  update_model_view is True.
         """
-        self.model().undo_last_data_edit()
+        model_index = self.model().undo_last_data_edit()
+        self.selectionModel().clearSelection()
+        self._ensure_visible(model_index)
+        self.selectionModel().setCurrentIndex(
+            model_index, self.selectionModel().NoUpdate)
 
     def _save_data_edits(self, force=True):
         """
