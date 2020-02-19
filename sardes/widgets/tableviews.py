@@ -1313,6 +1313,7 @@ class SardesTableView(QTableView):
         """
         new_model_index_range = self.model().add_new_row()
         self.setCurrentIndex(new_model_index_range[0])
+        self._ensure_visible(new_model_index_range[0])
 
     def _ensure_visible(self, model_index):
         """
