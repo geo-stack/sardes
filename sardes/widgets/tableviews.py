@@ -28,7 +28,7 @@ from qtpy.QtWidgets import (
 # ---- Local imports
 from sardes import __appname__
 from sardes.api.panes import SardesPaneWidget
-from sardes.api.tablemodels import SardesSortFilterModel
+from sardes.api.tablemodels import SardesSortFilterModel, SardesTableModelBase
 from sardes.config.locale import _
 from sardes.config.gui import get_iconsize
 from sardes.utils.data_operations import intervals_extract
@@ -1271,7 +1271,22 @@ class SardesTableView(QTableView):
         Undo the last data edits that was added to the table.
         An update of the view is forced if  update_model_view is True.
         """
-        model_index = self.model().undo_last_data_edit()
+        last_edit = self.model().data_edits()[-1]
+        if last_edit.type() == SardesTableModelBase.ValueChanged:
+            self.model().undo_last_data_edit()
+            model_index = self.model().mapFromSource(
+                self.model().sourceModel().index(last_edit.row, last_edit.col))
+        if last_edit.type() == SardesTableModelBase.RowAdded:
+            added_row = self.model().mapFromSource(
+                self.model().sourceModel().index(last_edit.row, last_edit.col)
+                ).row()
+            self.model().undo_last_data_edit()
+
+            # Since the model index corresponding to the added row doesn't
+            # exist once the operation is undone, we need to select the
+            # index just above or below that index in the proxy model.
+            model_index = self.model().index(max(added_row - 1, 0), 0)
+
         self.selectionModel().clearSelection()
         self._ensure_visible(model_index)
         self.selectionModel().setCurrentIndex(

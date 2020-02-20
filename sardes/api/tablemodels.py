@@ -592,8 +592,6 @@ class SardesTableModelBase(QAbstractTableModel):
         self.sig_data_edited.emit(
             self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
 
-        return self.index(last_edit.row, last_edit.col)
-
     # ---- Database connection
     def set_database_connection_manager(self, db_connection_manager):
         """Setup the database connection manager for this table model."""
@@ -903,9 +901,6 @@ class SardesSortFilterModel(QSortFilterProxyModel):
     def set_data_edit_at(self, proxy_indexes, edited_value):
         return self.sourceModel().set_data_edit_at(
             self.mapToSource(proxy_indexes), edited_value)
-
-    def undo_last_data_edit(self):
-        return self.mapFromSource(self.sourceModel().undo_last_data_edit())
 
     def is_null(self, proxy_indexes):
         """
