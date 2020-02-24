@@ -50,6 +50,21 @@ class ObsWellsTableModel(SardesTableModel):
         else:
             return NotEditableDelegate(self)
 
+    # ---- Visual Data
+    def logical_to_visual_data(self, visual_dataf):
+        """
+        Transform logical data to visual data.
+        """
+        try:
+            obs_wells_stats = self.libraries['observation_wells_statistics']
+        except KeyError:
+            pass
+        else:
+            for column in ['first_date', 'last_date', 'mean_water_level']:
+                if column in obs_wells_stats.columns:
+                    visual_dataf[column] = obs_wells_stats[column]
+        return visual_dataf
+
 
 class ObsWellsTableWidget(SardesTableWidget):
 
