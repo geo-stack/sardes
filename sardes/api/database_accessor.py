@@ -148,6 +148,38 @@ class DatabaseAccessor(DatabaseAccessorBase):
         raise NotImplementedError
 
     # ---- Observation Wells
+    def get_observation_wells_statistics(self):
+        """
+        Return a :class:`pandas.DataFrame` containing statistics related to
+        the water level data acquired in the observation wells of the
+        monitoring network.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A :class:`pandas.DataFrame` containing statistics related to
+            the water level data acquired in the observation wells of the
+            monitoring network.
+
+            The row indexes of the dataframe must correspond to the
+            observation well IDs, which are unique identifiers used to
+            reference the wells in the database.
+
+            The dataframe can contain any of the following optinal columns.
+
+            Optional Columns
+            ~~~~~~~~~~~~~~~~
+            - first_date: datetime
+                The date of the first water level measurements made in each
+                observation well.
+            - last_date: datetime
+                The date of the last water level measurements made in each
+                observation well.
+            - mean_water_level: float
+                The average water level value calculated over the whole
+                monitoring period for each well.
+        """
+        raise NotImplementedError
 
     def add_observation_wells_data(self, sampling_feature_id,
                                    attribute_values):
