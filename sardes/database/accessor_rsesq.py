@@ -23,11 +23,10 @@ from psycopg2.extensions import register_adapter, AsIs
 from sqlalchemy import create_engine, extract, func
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.inspection import inspect
 from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.engine.url import URL
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.types import TEXT, VARCHAR, Boolean
 
 # ---- Local imports
@@ -128,6 +127,21 @@ class ObservationWell(SamplingFeature):
     __mapper_args__ = {'polymorphic_identity': 1}
     obs_well_id = Column('elemcarac_nom', VARCHAR(length=250))
     obs_well_notes = Column('elemcarac_note', TEXT(length=None))
+
+
+class ObservationWellStatistics(Base):
+    """
+    An object used to map the 'obs_well_statistics' materialized view in the
+    RSESQ database.
+    """
+    __tablename__ = 'obs_well_statistics'
+    __table_args__ = ({"schema": "resultats"})
+
+    sampling_feature_uuid = Column(
+        'sampling_feature_uuid', UUID(as_uuid=True), primary_key=True)
+    last_date = Column('last_date', DateTime)
+    first_date = Column('first_date', DateTime)
+    mean_water_level = Column('mean_water_level', Float)
 
 
 class Observation(Base):
@@ -321,19 +335,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         return location
 
     # ---- Observation Wells
-    @property
-    def observation_wells(self):
-        """
-        Return the list of observation wells that are saved in the
-        database.
-        """
-        obs_well_ids = (
-            self._session.query(ObservationWell.obs_well_id)
-            .order_by(ObservationWell.obs_well_id)
-            .all()
-            )
-        return [obj.obs_well_id for obj in obs_well_ids]
-
     def _get_obs_well_sampling_feature_uuid(self, obs_well_id):
         """
         Return the sampling feature UUID corresponding the the observation
@@ -361,6 +362,77 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             )
         return obs_well
 
+    def _create_observation_wells_statistics(self):
+        """
+        Create a materialized view where statistics related to the water level
+        data acquired in the observation wells of the monitoring network are
+        saved.
+        """
+        select_query = (
+            self._session.query(Observation.sampling_feature_uuid
+                                .label('sampling_feature_uuid'),
+                                func.max(TimeSeriesData.datetime)
+                                .label('last_date'),
+                                func.min(TimeSeriesData.datetime)
+                                .label('first_date'),
+                                func.avg(TimeSeriesData.value)
+                                .label('mean_water_level'))
+            .filter(Observation.observation_uuid ==
+                    TimeSeriesChannels.observation_uuid)
+            .filter(TimeSeriesData.channel_id ==
+                    TimeSeriesChannels.channel_id)
+            .filter(TimeSeriesChannels.obs_property_id == 2)
+            .group_by(Observation.sampling_feature_uuid)
+            )
+        select_statement = str(select_query.statement.compile(
+            self._engine, compile_kwargs={"literal_binds": True}))
+        self.execute(
+            "CREATE MATERIALIZED VIEW resultats.obs_well_statistics AS " +
+            select_statement)
+        self.execute(
+            "CREATE UNIQUE INDEX obs_well_statistics_index ON "
+            "resultats.obs_well_statistics(sampling_feature_uuid)")
+
+    def _refresh_observation_wells_statistics(self):
+        """
+        Refresh the materialized view containing statistics about the
+        water level data.
+        """
+        if not self._engine.dialect.has_table(
+                self._connection, 'obs_well_statistics', schema='resultats'):
+            self.create_observation_wells_statistics()
+        else:
+            self.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY "
+                         "resultats.obs_well_statistics")
+
+    def get_observation_wells_statistics(self):
+        """
+        Return a :class:`pandas.DataFrame` containing statistics related to
+        the water level data acquired in the observation wells of the
+        monitoring network.
+        """
+        # Create a materialized view containing the statistics if it
+        # doesn't exists. Calculation of these statistics take about
+        # 10 seconds locally, so we are caching the results in a
+        # materialized view and only refresh it when really needed.
+        if not self._engine.dialect.has_table(
+                self._connection, 'obs_well_statistics', schema='resultats'):
+            self._create_observation_wells_statistics()
+
+        # Fetch data from the materialized view.
+        query = self._session.query(ObservationWellStatistics)
+        data = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
+        data.set_index('sampling_feature_uuid', inplace=True, drop=True)
+
+        # We drop the time from the datetime since we don't need it.
+        data['last_date'] = data['last_date'].dt.date
+        data['first_date'] = data['first_date'].dt.date
+
+        # Round mean value.
+        data['mean_water_level'] = data['mean_water_level'].round(decimals=3)
+
+        return data
 
     def add_observation_wells_data(self, sampling_feature_uuid,
                                    attribute_values):

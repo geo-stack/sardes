@@ -185,13 +185,17 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         return max(self.temp_indexes(name) + [max_commited_id]) + 1
 
     # ---- Observation Wells
-    @property
-    def observation_wells(self):
+    def get_observation_wells_statistics(self):
         """
-        Return the list of observation wells that are saved in the
-        database.
+        Return a :class:`pandas.DataFrame` containing statistics related to
+        the water level data acquired in the observation wells of the
+        monitoring network.
         """
-        return OBS_WELLS_DF['obs_well_id'].values
+        obs_well_stats = pd.DataFrame([], index=OBS_WELLS_DF.index)
+        obs_well_stats['first_date'] = np.min(TSERIES['NIV_EAU'].index)
+        obs_well_stats['last_date'] = np.max(TSERIES['NIV_EAU'].index)
+        obs_well_stats['mean_water_level'] = np.mean(TSERIES['NIV_EAU'])
+        return obs_well_stats
 
     def add_observation_wells_data(self, sampling_feature_id,
                                    attribute_values):
@@ -356,6 +360,6 @@ if __name__ == '__main__':
     accessor.connect()
     obs_wells = accessor.get_observation_wells_data()
     wlevel = accessor.get_timeseries_for_obs_well('dfsdf', 'NIV_EAU')
+    obs_well_stats = accessor.get_observation_wells_statistics()
     print(wlevel[0])
-    print(accessor.observation_wells)
     print(accessor.monitored_properties)
