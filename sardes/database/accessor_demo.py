@@ -185,14 +185,6 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         return max(self.temp_indexes(name) + [max_commited_id]) + 1
 
     # ---- Observation Wells
-    @property
-    def observation_wells(self):
-        """
-        Return the list of observation wells that are saved in the
-        database.
-        """
-        return OBS_WELLS_DF['obs_well_id'].values
-
     def add_observation_wells_data(self, sampling_feature_id,
                                    attribute_values):
         """

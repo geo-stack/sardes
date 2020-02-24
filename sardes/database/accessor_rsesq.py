@@ -321,19 +321,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         return location
 
     # ---- Observation Wells
-    @property
-    def observation_wells(self):
-        """
-        Return the list of observation wells that are saved in the
-        database.
-        """
-        obs_well_ids = (
-            self._session.query(ObservationWell.obs_well_id)
-            .order_by(ObservationWell.obs_well_id)
-            .all()
-            )
-        return [obj.obs_well_id for obj in obs_well_ids]
-
     def _get_obs_well_sampling_feature_uuid(self, obs_well_id):
         """
         Return the sampling feature UUID corresponding the the observation
