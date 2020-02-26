@@ -456,7 +456,7 @@ def test_clearing_non_required_cell(tablewidget, qtbot):
     assert tableview.clear_item_action.isEnabled()
 
     # Try to clear the content of the selected cell.
-    qtbot.keyPress(tableview, Qt.Key_D, modifier=Qt.ControlModifier)
+    qtbot.keyPress(tableview, Qt.Key_Delete)
     assert model_index.data() == ''
     assert tableview.model().get_value_at(model_index) is None
     assert not tableview.clear_item_action.isEnabled()

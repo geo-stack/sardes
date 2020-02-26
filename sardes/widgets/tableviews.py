@@ -28,7 +28,7 @@ from qtpy.QtWidgets import (
 # ---- Local imports
 from sardes import __appname__
 from sardes.api.panes import SardesPaneWidget
-from sardes.api.tablemodels import SardesSortFilterModel
+from sardes.api.tablemodels import SardesSortFilterModel, SardesTableModelBase
 from sardes.config.locale import _
 from sardes.config.gui import get_iconsize
 from sardes.utils.data_operations import intervals_extract
@@ -58,7 +58,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
                  is_required=False):
         super() .__init__(parent=model_view)
         self.model_view = model_view
-        self.model_index = None
+        self._model_index = None
         self.editor = None
         self.unique_constraint = unique_constraint
         self.is_required = is_required
@@ -122,10 +122,10 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         are commited to the model.
         """
         if self.editor and event.type() == QEvent.KeyPress:
-            """Commit edits on Enter of Ctrl+Enter key press."""
+            """Commit edits on Enter or Return key press."""
             key_cond = event.key() in (Qt.Key_Return, Qt.Key_Enter)
-            mod_cond = (not event.modifiers() or
-                        event.modifiers() & Qt.ControlModifier)
+            # Shift + Enter is used to insert a line break in a cell.
+            mod_cond = not event.modifiers() & Qt.ShiftModifier
             if key_cond and mod_cond:
                 self.commit_data()
                 return True
@@ -150,6 +150,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
             if error_message is not None:
                 self.model_view.raise_edits_error(
                     self.model_index, error_message)
+            self.model_view._ensure_visible(self.model_index)
 
     # ---- Public methods
     def model(self):
@@ -157,6 +158,29 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         Return the model whose data this item delegate is used to edit.
         """
         return self.model_view.model()
+
+    @property
+    def model_index(self):
+        """
+        Return the model index associated with this item delegate.
+        """
+        try:
+            return self.model().mapFromSource(self._model_index)
+        except AttributeError:
+            return self._model_index
+
+    @model_index.setter
+    def model_index(self, index):
+        """
+        Set the model index associated with this item delegate.
+        """
+        # We store a reference of the source model index because the
+        # index from the sort filter proxy model changes if the sort filter
+        # proxy model gets invalidated.
+        try:
+            self._model_index = self.model().mapToSource(index)
+        except AttributeError:
+            self._model_index = index
 
     def get_model_data(self):
         """
@@ -715,7 +739,7 @@ class SardesTableView(QTableView):
                 icon='erase_data',
                 tip=_("Set the currently focused item to NULL."),
                 triggered=self._clear_current_item,
-                shortcut='Ctrl+D',
+                shortcut='Delete',
                 context=Qt.WidgetShortcut)
 
             self.save_edits_action = create_action(
@@ -1220,6 +1244,7 @@ class SardesTableView(QTableView):
         current_index = self.selectionModel().currentIndex()
         if current_index.isValid():
             self.itemDelegate(current_index).clear_model_data_at(current_index)
+        self._ensure_visible(current_index)
 
     def _edit_current_item(self):
         """
@@ -1246,7 +1271,26 @@ class SardesTableView(QTableView):
         Undo the last data edits that was added to the table.
         An update of the view is forced if  update_model_view is True.
         """
-        self.model().undo_last_data_edit()
+        last_edit = self.model().data_edits()[-1]
+        if last_edit.type() == SardesTableModelBase.ValueChanged:
+            self.model().undo_last_data_edit()
+            model_index = self.model().mapFromSource(
+                self.model().sourceModel().index(last_edit.row, last_edit.col))
+        if last_edit.type() == SardesTableModelBase.RowAdded:
+            added_row = self.model().mapFromSource(
+                self.model().sourceModel().index(last_edit.row, last_edit.col)
+                ).row()
+            self.model().undo_last_data_edit()
+
+            # Since the model index corresponding to the added row doesn't
+            # exist once the operation is undone, we need to select the
+            # index just above or below that index in the proxy model.
+            model_index = self.model().index(max(added_row - 1, 0), 0)
+
+        self.selectionModel().clearSelection()
+        self._ensure_visible(model_index)
+        self.selectionModel().setCurrentIndex(
+            model_index, self.selectionModel().NoUpdate)
 
     def _save_data_edits(self, force=True):
         """
@@ -1284,6 +1328,17 @@ class SardesTableView(QTableView):
         """
         new_model_index_range = self.model().add_new_row()
         self.setCurrentIndex(new_model_index_range[0])
+        self._ensure_visible(new_model_index_range[0])
+
+    def _ensure_visible(self, model_index):
+        """
+        Scroll to the item located at the given model index if it is not
+        currently visible in the scrollarea.
+        """
+        item_rect = self.visualRect(model_index)
+        view_rect = self.geometry()
+        if not view_rect.contains(item_rect):
+            self.scrollTo(model_index, hint=self.PositionAtCenter)
 
     def raise_edits_error(self, model_index, message):
         """"

@@ -67,6 +67,7 @@ class RowAdded(object):
         self.index = index
         self.values = values
         self.row = row
+        self.col = 0
 
     def type(self):
         """
@@ -579,7 +580,7 @@ class SardesTableModelBase(QAbstractTableModel):
         Undo the last data edits that was added to the stack.
         An update of the view is forced if  update_model_view is True.
         """
-        last_edit = self._datat.edits()[-1]
+        last_edit = self.data_edits()[-1]
         if last_edit.type() == SardesTableModelBase.ValueChanged:
             self._datat.undo_edit()
             self._update_visual_data()
