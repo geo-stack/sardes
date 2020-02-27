@@ -398,6 +398,23 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
+    # ---- Sonde installations
+    def add_sonde_installations(self, installation_id, attribute_values):
+        """
+        Add a new sonde installation to the database using the provided ID
+        and attribute values.
+
+        Parameters
+        ----------
+        installation_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the sonde installation
+            in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values for the new
+            sonde installation.
+        """
+        raise NotImplementedError
+
     def set_sonde_installations(self, installation_id, attribute_name, value):
         """
         Save in the database the new attribute value for the sonde
