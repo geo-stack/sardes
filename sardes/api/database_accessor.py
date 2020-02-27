@@ -398,6 +398,25 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
+    def set_sonde_installations(self, installation_id, attribute_name, value):
+        """
+        Save in the database the new attribute value for the sonde
+        installation corresponding to the specified id.
+
+        Parameters
+        ----------
+        installation_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the sonde installation
+            in the database.
+        attribute_name: str
+            Name of the attribute of the sonde installation for which the
+            value need to be updated in the database.
+        value: object
+            Value that need to be updated for the corresponding attribute and
+            sonde installation id.
+        """
+        raise NotImplementedError
+
     def get_sonde_installations(self):
         """
         Return a :class:`pandas.DataFrame` containing information related to
