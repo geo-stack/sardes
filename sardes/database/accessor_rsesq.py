@@ -1078,13 +1078,10 @@ if __name__ == "__main__":
 
     accessor.connect()
     obs_wells = accessor.get_observation_wells_data()
-    sonde_data = accessor.get_sondes_data()
-    sonde_models = accessor.get_sonde_models_lib()
+    obs_wells_stats = accessor.get_observation_wells_statistics()
+    sondes_data = accessor.get_sondes_data()
+    sonde_models_lib = accessor.get_sonde_models_lib()
     manual_measurements = accessor.get_manual_measurements()
-
-    sampling_feature_uuid = accessor._get_obs_well_sampling_feature_uuid(
-        '01030001')
-    wlevel = accessor.get_timeseries_for_obs_well(
-        sampling_feature_uuid, 'NIV_EAU').timeseries[0]
+    sonde_installations = accessor.get_sonde_installations()
 
     accessor.close_connection()
