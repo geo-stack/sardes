@@ -543,7 +543,8 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         if self.db_connection_manager is not None:
             try:
-                return self.db_connection_manager.create_index(self._table_id)
+                return self.db_connection_manager.create_new_model_index(
+                    self._table_id)
             except NotImplementedError:
                 pass
         if str(self._datat.data.index.dtype) == 'object':

@@ -525,6 +525,14 @@ class DatabaseConnectionManager(QObject):
             self.sig_run_tasks_finished.emit()
 
     # ---- Tables
+    def create_new_model_index(self, table_id):
+        """
+        Return a new index that can be used subsequently to add new item
+        to a Sardes model.
+        """
+        name = self.models_manager._models_req_data[table_id][0]
+        return self.create_index(name)
+
     def register_model(self, table_model, data_name, lib_names=None):
         """
         Register a new sardes table model to the manager.
