@@ -398,6 +398,41 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
+    def get_sonde_installations(self):
+        """
+        Return a :class:`pandas.DataFrame` containing information related to
+        sonde installations made in the observation wells of the monitoring
+        network.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A :class:`pandas.DataFrame` containing information related to
+            sonde installations made in the observation wells of the monitoring
+            network.
+
+            The row indexes of the dataframe must correspond to the
+            IDs used to reference each installation in the database.
+
+            The dataframe must contain the following columns.
+
+            Required Columns
+            ~~~~~~~~~~~~~~~~
+            - sampling_feature_uuid: object
+                A unique identifier that is used to reference the observation
+                well in which the sonde are installed.
+            - sonde_uuid: object
+                A unique identifier used to reference each sonde in the
+                database.
+            - start_date: datetime
+                The date and time at which the sonde was installed in the well.
+            - end_date: datetime
+                The date and time at which the sonde was removed from the well.
+            - install_depth: float
+                The depth at which the sonde was installed in the well.
+        """
+        raise NotImplementedError
+
     # ---- Monitored properties
     @property
     def monitored_properties(self):
