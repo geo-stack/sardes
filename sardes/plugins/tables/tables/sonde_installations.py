@@ -77,12 +77,10 @@ class SondeInstallationsTableModel(SardesTableModel):
                 )
         except KeyError:
             pass
+
         try:
             sondes_data = self.libraries['sondes_data']
             sonde_models_lib = self.libraries['sonde_models_lib']
-        except KeyError:
-            pass
-        else:
             sondes_data['sonde_brand_model'] = sonde_models_lib.loc[
                 sondes_data['sonde_model_id']]['sonde_brand_model'].values
             sondes_data['sonde_brand_model_serial'] = (
@@ -92,6 +90,9 @@ class SondeInstallationsTableModel(SardesTableModel):
                 visual_dataf['sonde_uuid']
                 .replace(sondes_data['sonde_brand_model_serial'].to_dict())
                 )
+        except KeyError:
+            pass
+
         visual_dataf['start_date'] = (visual_dataf['start_date']
                                       .dt.strftime('%Y-%m-%d %H:%M'))
         visual_dataf['end_date'] = (visual_dataf['end_date']
