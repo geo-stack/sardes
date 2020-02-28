@@ -192,13 +192,38 @@ class Sondes(Base):
         ForeignKey('librairies.lib_instrument_mddep.instrument_id'))
 
 
-class SondeInstallations(Base):
-    __tablename__ = 'sonde_installation'
+class SondeInstallation(Base):
+    """
+    An object used to map the 'processus.sonde_pompe_installation' table
+    of the RSESQ database.
+    """
+    __tablename__ = 'sonde_pompe_installation'
     __table_args__ = ({"schema": "processus"})
 
-    installation_id = Column('deploiement_id', String, primary_key=True)
-    logger_id = Column('no_sonde', String)
-    obs_well_id = Column('no_piezometre', String)
+    install_id = Column('deploiement_id', Integer, primary_key=True)
+    sonde_serial_no = Column('no_sonde', String)
+    start_date = Column('date_debut', DateTime)
+    end_date = Column('date_fin', DateTime)
+    install_depth = Column('profondeur', Float)
+    sampling_feature_uuid = Column('elemcarac_uuid', UUID(as_uuid=True))
+
+
+class Processes(Base):
+    __tablename__ = 'processus'
+    __table_args__ = ({"schema": "processus"})
+
+    process_type = Column('process_type', String)
+    process_id = Column('process_id', Integer)
+    process_uuid = Column('process_uuid', UUID(as_uuid=True), primary_key=True)
+
+
+class ProcessesInstalls(Base):
+    __tablename__ = 'processus_deploiement'
+    __table_args__ = ({"schema": "processus"})
+
+    process_id = Column('process_id', Integer)
+    install_id = Column('deploiement_id', String)
+    process_uuid = Column('process_uuid', UUID(as_uuid=True), primary_key=True)
 
 
 class SondeModels(Base):
@@ -316,6 +341,12 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             max_commited_id = (
                 self._session.query(
                     func.max(GenericNumericalValue.gen_num_value_id))
+                .one())[0]
+            return max(self.temp_indexes(name) + [max_commited_id]) + 1
+        elif name == 'sonde_installations':
+            max_commited_id = (
+                self._session.query(
+                    func.max(SondeInstallation.install_id))
                 .one())[0]
             return max(self.temp_indexes(name) + [max_commited_id]) + 1
         else:
@@ -675,6 +706,134 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         setattr(sonde, attribute_name, attribute_value)
         self._session.commit()
 
+    # ---- Sonde installations
+    def _get_sonde_installation(self, install_id):
+        """
+        Return the sqlalchemy SondeInstallation object corresponding to the
+        specified sonde ID.
+        """
+        sonde_installation = (
+            self._session.query(SondeInstallation)
+            .filter(SondeInstallation.install_id == install_id)
+            .one()
+            )
+        return sonde_installation
+
+    def add_sonde_installations(self, new_install_id, attribute_values):
+        """
+        Add a new sonde installation to the database using the provided ID
+        and attribute values.
+        """
+        # We create a new sonde installation.
+        sonde_installation = SondeInstallation(install_id=new_install_id)
+        self._session.add(sonde_installation)
+
+        # We then set the attribute values for this new installation.
+        for name, value in attribute_values.items():
+            self.set_sonde_installations(
+                new_install_id, name, value, auto_commit=False)
+
+        # Add the new process to table processus.processus_deploiement. A new
+        # entry will then be automatically added to table processus.processus.
+        new_process_id = (
+            self._session.query(
+                func.max(Processes.process_id))
+            .one())[0] + 1
+        new_process_uuid = uuid.uuid4()
+
+        new_process_install = ProcessesInstalls(
+            process_id=new_process_id,
+            install_id=new_install_id,
+            process_uuid=new_process_uuid
+            )
+        self._session.add(new_process_install)
+
+        # Input the process type for the new process that was automatically
+        # generated.
+        process = (
+            self._session.query(Processes)
+            .filter(Processes.process_uuid == new_process_uuid)
+            .one()
+            )
+        process.process_type = 'sonde installation'
+
+        # Commit changes to database.
+        self._session.commit()
+
+    def set_sonde_installations(self, installation_id, attribute_name,
+                                attribute_value, auto_commit=True):
+        """
+        Save in the database the new attribute value for the sonde
+        installation corresponding to the specified id.
+        """
+        sonde_installation = self._get_sonde_installation(installation_id)
+
+        if attribute_name in ['sonde_uuid']:
+            attribute_name = 'sonde_serial_no'
+            if attribute_value is not None:
+                attribute_value = (
+                    self._get_sonde(attribute_value).sonde_serial_no)
+
+        setattr(sonde_installation, attribute_name, attribute_value)
+
+        # Commit changes to the BD.
+        if auto_commit:
+            self._session.commit()
+
+    def get_sonde_installations(self):
+        """
+        Return a :class:`pandas.DataFrame` containing information related to
+        sonde installations made in the observation wells of the monitoring
+        network.
+        """
+        # Define the query to fetch the data.
+        query = (
+            self._session.query(
+                SondeInstallation.install_id,
+                SondeInstallation.start_date,
+                SondeInstallation.end_date,
+                SondeInstallation.install_depth,
+                SondeInstallation.sampling_feature_uuid,
+                SondeInstallation.sonde_serial_no)
+            .filter(SondeInstallation.install_id ==
+                    ProcessesInstalls.install_id)
+            .filter(Processes.process_uuid == ProcessesInstalls.process_uuid)
+            .filter(Processes.process_type == 'sonde installation')
+            ).with_labels()
+        data = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
+
+        # Rename the column names to that expected by the api.
+        columns_map = map_table_column_names(
+            SondeInstallation, Sondes, ProcessesInstalls, Processes,
+            with_labels=True)
+        data.rename(columns_map, axis='columns', inplace=True)
+
+        # Set the index of the dataframe.
+        data.set_index('install_id', inplace=True, drop=True)
+
+        # Strip timezone info since it is not set correctly in the
+        # BD anyway.
+        data['start_date'] = data['start_date'].dt.tz_localize(None)
+        data['end_date'] = data['end_date'].dt.tz_localize(None)
+
+        # Replace sonde serial number with the corresponding sonde uuid.
+        sondes_data = self.get_sondes_data()
+        for index in data.index:
+            sonde_serial_no = data.loc[index]['sonde_serial_no']
+            if sonde_serial_no is None:
+                data.loc[index, 'sonde_uuid'] = None
+            else:
+                sondes_data_slice = sondes_data[
+                    sondes_data['sonde_serial_no'] == sonde_serial_no]
+                if len(sondes_data_slice) > 0:
+                    data.loc[index, 'sonde_uuid'] = sondes_data_slice.index[0]
+                else:
+                    data.drop(labels=index, axis=0, inplace=True)
+        data.drop(labels='sonde_serial_no', axis=1, inplace=True)
+
+        return data
+
     # ---- Monitored properties
     @property
     def monitored_properties(self):
@@ -919,13 +1078,10 @@ if __name__ == "__main__":
 
     accessor.connect()
     obs_wells = accessor.get_observation_wells_data()
-    sonde_data = accessor.get_sondes_data()
-    sonde_models = accessor.get_sonde_models_lib()
+    obs_wells_stats = accessor.get_observation_wells_statistics()
+    sondes_data = accessor.get_sondes_data()
+    sonde_models_lib = accessor.get_sonde_models_lib()
     manual_measurements = accessor.get_manual_measurements()
-
-    sampling_feature_uuid = accessor._get_obs_well_sampling_feature_uuid(
-        '01030001')
-    wlevel = accessor.get_timeseries_for_obs_well(
-        sampling_feature_uuid, 'NIV_EAU').timeseries[0]
+    sonde_installations = accessor.get_sonde_installations()
 
     accessor.close_connection()

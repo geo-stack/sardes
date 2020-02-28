@@ -113,21 +113,32 @@ SONDE_MODELS_LIB = pd.DataFrame([
     )
 
 SONDES_DATA = pd.DataFrame([
-    [0, 'Solinst Barologger M1.5 Gold', '1022034',
+    [SONDE_MODELS_LIB.index[0], 'Solinst Barologger M1.5 Gold', '1022034',
      dt.date(2007, 3, 26), dt.date(2017, 11, 27),
      False, True, True, False,
      'Notes for sonde Solinst Barologger M1.5 Gold 1022034'],
-    [1, 'Solinst LT M10 Gold', '1062392',
+    [SONDE_MODELS_LIB.index[1], 'Solinst LT M10 Gold', '1062392',
      dt.date(2011, 5, 10), dt.date(2017, 11, 27),
      False, True, True, False,
      'Notes for sonde Solinst LT M10 Gold 1062392'],
-    [2, 'Solinst LT M10 Edge', '2004771',
+    [SONDE_MODELS_LIB.index[2], 'Solinst LT M10 Edge', '2004771',
      dt.date(2012, 1, 1), None,
      False, False, False, False,
      'Notes for sonde Solinst LT M10 Edge 2004771']],
     columns=['sonde_model_id', 'sonde_brand_model', 'sonde_serial_no',
              'date_reception', 'date_withdrawal', 'in_repair',
              'out_of_order', 'lost', 'off_network', 'sonde_notes']
+    )
+
+SONDE_INSTALLATIONS = pd.DataFrame([
+    [dt.datetime(2015, 7, 27, 23, 0), None, 1,
+     OBS_WELLS_DF.index[0], SONDES_DATA.index[0]],
+    [dt.datetime(2015, 7, 27, 23, 0), None, 9.82,
+     OBS_WELLS_DF.index[0], SONDES_DATA.index[1]],
+    [dt.datetime(2016, 3, 4, 12, 0), dt.datetime(2019, 3, 4, 12, 0), 9.82,
+     OBS_WELLS_DF.index[1], SONDES_DATA.index[2]]],
+    columns=['start_date', 'end_date', 'install_depth',
+             'sampling_feature_uuid', 'sonde_uuid']
     )
 
 
@@ -271,6 +282,33 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         corresponding to the specified sonde UID.
         """
         SONDES_DATA.loc[sonde_id, attribute_name] = attribute_value
+
+    # ---- Sonde installations
+    def add_sonde_installations(self, install_id, attr_values):
+        """
+        Add a new sonde installation to the database using the provided ID
+        and attribute values.
+        """
+        for column in SONDE_INSTALLATIONS.columns:
+            SONDE_INSTALLATIONS.loc[install_id, column] = (
+                attr_values.get(column, None))
+
+    def set_sonde_installations(self, install_id, attr_name, attr_value,
+                                auto_commit=True):
+        """
+        Save in the database the new attribute value for the sonde
+        installation corresponding to the specified id.
+        """
+        SONDE_INSTALLATIONS.loc[install_id, attr_name] = attr_value
+
+    def get_sonde_installations(self):
+        """
+        Return a :class:`pandas.DataFrame` containing information related to
+        sonde installations made in the observation wells of the monitoring
+        network.
+        """
+        sleep(0.3)
+        return SONDE_INSTALLATIONS.copy()
 
     # ---- Monitored properties
     @property

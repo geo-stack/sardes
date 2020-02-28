@@ -409,7 +409,7 @@ class SardesTableModelBase(QAbstractTableModel):
         """Qt method override."""
         if role in [Qt.DisplayRole, Qt.ToolTipRole]:
             value = self.get_visual_data_at(index)
-            if pd.isna(value) or value is None:
+            if pd.isnull(value) or value in ['NaT']:
                 value = ''
             elif pd.api.types.is_bool(value):
                 value = _('Yes') if value else _('No')
@@ -536,6 +536,22 @@ class SardesTableModelBase(QAbstractTableModel):
         self.sig_data_edited.emit(
             self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
 
+    def _create_new_row_index(self):
+        """
+        Return a new index that can be used to add a new item this
+        model's data table.
+        """
+        if self.db_connection_manager is not None:
+            try:
+                return self.db_connection_manager.create_new_model_index(
+                    self._table_id)
+            except NotImplementedError:
+                pass
+        if str(self._datat.data.index.dtype) == 'object':
+            return uuid.uuid4()
+        elif str(self._datat.data.index.dtype) == 'int64':
+            return max(self._datat.data.index) + 1
+
     def add_new_row(self, new_row_index=None):
         """
         Add a new empty at the end of the table.
@@ -544,13 +560,7 @@ class SardesTableModelBase(QAbstractTableModel):
             QModelIndex(), len(self._datat), len(self._datat))
 
         if new_row_index is None:
-            # Create a new index for the new item that will be added to this
-            # model's data table.
-            if str(self._datat.data.index.dtype) == 'object':
-                new_row_index = uuid.uuid4()
-            elif str(self._datat.data.index.dtype) == 'int64':
-                new_row_index = max(self._datat.data.index) + 1
-
+            new_row_index = self._create_new_row_index()
         self._datat.add_new_row(new_row_index)
         self._update_visual_data()
         self.endInsertRows()

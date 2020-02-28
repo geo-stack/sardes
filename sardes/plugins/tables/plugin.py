@@ -13,7 +13,7 @@ from sardes.config.icons import get_icon
 from sardes.config.locale import _
 from sardes.plugins.tables.tables import (
     ObsWellsTableWidget, SondesInventoryTableWidget,
-    ManualMeasurementsTableWidget)
+    ManualMeasurementsTableWidget, SondeInstallationsTableWidget)
 
 # ---- Third party imports
 from qtpy.QtCore import Qt, QSize
@@ -113,6 +113,12 @@ class Tables(SardesPlugin):
             ManualMeasurementsTableWidget,
             'manual_measurements',
             ['observation_wells_data'])
+        self._create_and_register_table(
+            SondeInstallationsTableWidget,
+            'sonde_installations',
+            ['observation_wells_data',
+             'sondes_data',
+             'sonde_models_lib'])
 
         # Setup the current active tab from the value saved in the configs.
         self.tabwidget.setCurrentIndex(
