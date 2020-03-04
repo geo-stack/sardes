@@ -624,6 +624,28 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
         return obs_wells
 
+    # ---- Repere
+    def get_wells_repere_data(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the information related
+        to observation wells repere data.
+        """
+        query = (
+            self._session.query(Repere)
+            ).with_labels()
+        repere = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
+
+        # Rename the column names to that expected by the api.
+        columns_map = map_table_column_names(
+            Repere, with_labels=True)
+        repere.rename(columns_map, axis='columns', inplace=True)
+
+        # Set the index to the observation well ids.
+        repere.set_index('repere_uuid', inplace=True, drop=True)
+
+        return repere
+
     # ---- Sonde Brands and Models Library
     def _get_sonde(self, sonde_id):
         """
