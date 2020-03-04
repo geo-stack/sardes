@@ -1115,6 +1115,48 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
                 .one())
 
 
+# =============================================================================
+# ---- Utilities
+# =============================================================================
+def update_repere_table(filename, accessor):
+    # accessor.execute("DROP TABLE IF EXISTS dbo.Product")
+    if accessor._engine.dialect.has_table(
+            accessor._connection, 'repere', schema='rsesq'):
+        Repere.__table__.drop(accessor._engine)
+    Base.metadata.create_all(accessor._engine, tables=[Repere.__table__])
+
+    obs_wells = accessor.get_observation_wells_data()
+    repere_data = pd.read_excel(filename)
+    for row in range(len(repere_data)):
+        row_data = repere_data.iloc[row]
+        date_debut = row_data['date_debut']
+        heure_debut = row_data['heure_debut']
+        date_fin = row_data['date_fin']
+        heure_fin = row_data['heure_fin']
+
+        datetime_debut = datetime.datetime(
+            date_debut.year, date_debut.month,
+            date_debut.day, heure_debut.hour)
+        datetime_fin = datetime.datetime(
+            date_fin.year, date_fin.month,
+            date_fin.day, heure_fin.hour)
+
+        obs_well_uuid = obs_wells[
+            obs_wells['obs_well_id'] == row_data['no_piezometre']].index[0]
+
+        repere = Repere(
+            repere_uuid=uuid.uuid4(),
+            sampling_feature_uuid=obs_well_uuid,
+            top_casing_alt=row_data['alt_hors_sol'],
+            casing_length=row_data['longueur_hors_sol'],
+            date_debut=datetime_debut,
+            date_fin=datetime_fin,
+            is_alt_geodesic=row_data['elevation_geodesique'],
+            )
+        accessor._session.add(repere)
+    accessor._session.commit()
+
+
 if __name__ == "__main__":
     from sardes.config.database import get_dbconfig
 
@@ -1128,5 +1170,7 @@ if __name__ == "__main__":
     sonde_models_lib = accessor.get_sonde_models_lib()
     manual_measurements = accessor.get_manual_measurements()
     sonde_installations = accessor.get_sonde_installations()
+    repere_data = accessor.get_wells_repere_data()
+
 
     accessor.close_connection()
