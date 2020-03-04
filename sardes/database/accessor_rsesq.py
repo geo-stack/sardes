@@ -79,6 +79,29 @@ class Location(Base):
         return format_sqlobject_repr(self)
 
 
+class Repere(Base):
+    """
+    An object used to map the 'Repere' table of the RSESQ database.
+    """
+    __tablename__ = 'repere'
+    __table_args__ = ({"schema": "rsesq"})
+
+    repere_uuid = Column('repere_uuid', UUID(as_uuid=True), primary_key=True)
+    sampling_feature_uuid = Column(
+        'elemcarac_uuid',
+        UUID(as_uuid=True),
+        ForeignKey('rsesq.elements_caracteristique.elemcarac_uuid',
+                   ondelete='CASCADE'))
+    top_casing_alt = Column('alt_hors_sol', Float)
+    casing_length = Column('longueur_hors_sol', Float)
+    date_debut = Column('date_debut', DateTime)
+    date_fin = Column('date_fin', DateTime)
+    is_alt_geodesic = Column('elevation_geodesique', Boolean)
+
+    def __repr__(self):
+        return format_sqlobject_repr(self)
+
+
 class GenericNumericalValue(Base):
     """
     An object used to map the 'generique' table of the
