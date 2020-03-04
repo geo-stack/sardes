@@ -12,6 +12,7 @@ Object-Relational Mapping and Accessor implementation of the RSESQ database.
 """
 
 # ---- Standard imports
+import datetime
 import uuid
 
 # ---- Third party imports
@@ -25,6 +26,7 @@ from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.types import TEXT, VARCHAR, Boolean
