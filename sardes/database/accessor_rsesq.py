@@ -1114,7 +1114,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             .filter(GenericNumericalValue.obs_property_id == 2)
             .filter(GenericNumericalValue.observation_uuid ==
                     Observation.observation_uuid)
-            .order_by(GenericNumericalValue.gen_num_value_id)
             ).with_labels()
         measurements = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
