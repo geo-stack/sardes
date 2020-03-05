@@ -1084,6 +1084,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             param_id=4
             )
         self._session.add(observation)
+        self._session.commit()
 
         # We now create a new measurement in table 'resultats.generique'.
         measurement = GenericNumericalValue(
