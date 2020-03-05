@@ -96,9 +96,10 @@ class Repere(Base):
                    ondelete='CASCADE'))
     top_casing_alt = Column('alt_hors_sol', Float)
     casing_length = Column('longueur_hors_sol', Float)
-    date_debut = Column('date_debut', DateTime)
-    date_fin = Column('date_fin', DateTime)
+    start_date = Column('date_debut', DateTime)
+    end_date = Column('date_fin', DateTime)
     is_alt_geodesic = Column('elevation_geodesique', Boolean)
+    repere_note = Column('repere_note', String(250))
 
     def __repr__(self):
         return format_sqlobject_repr(self)
@@ -627,7 +628,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         return obs_wells
 
     # ---- Repere
-    def get_wells_repere_data(self):
+    def get_repere_data(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
         to observation wells repere data.
@@ -1172,7 +1173,7 @@ if __name__ == "__main__":
     sonde_models_lib = accessor.get_sonde_models_lib()
     manual_measurements = accessor.get_manual_measurements()
     sonde_installations = accessor.get_sonde_installations()
-    repere_data = accessor.get_wells_repere_data()
+    repere_data = accessor.get_repere_data()
 
 
     accessor.close_connection()
