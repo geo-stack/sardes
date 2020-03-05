@@ -683,18 +683,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         return repere
 
     # ---- Sonde Brands and Models Library
-    def _get_sonde(self, sonde_id):
-        """
-        Return the sqlalchemy Sondes object corresponding to the
-        specified sonde ID.
-        """
-        sonde = (
-            self._session.query(Sondes)
-            .filter(Sondes.sonde_uuid == sonde_id)
-            .one()
-            )
-        return sonde
-
     def get_sonde_models_lib(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -723,6 +711,18 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         return sonde_models
 
     # ---- Sondes Inventory
+    def _get_sonde(self, sonde_id):
+        """
+        Return the sqlalchemy Sondes object corresponding to the
+        specified sonde ID.
+        """
+        sonde = (
+            self._session.query(Sondes)
+            .filter(Sondes.sonde_uuid == sonde_id)
+            .one()
+            )
+        return sonde
+
     def add_sondes_data(self, sonde_uuid, attribute_values):
         """
         Add a new sonde to the database using the provided sonde ID
@@ -739,7 +739,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             lost=attribute_values.get('lost', None),
             off_network=attribute_values.get('off_network', None),
             sonde_notes=attribute_values.get('sonde_notes', None),
-            sonde_model_id=attribute_values.get('sonde_notes', None),
+            sonde_model_id=attribute_values.get('sonde_model_id', None),
             )
         self._session.add(sonde)
         self._session.commit()
@@ -778,14 +778,16 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
         return sondes
 
-    def set_sondes_data(self, sonde_id, attribute_name, attribute_value):
+    def set_sondes_data(self, sonde_id, attribute_name, attribute_value,
+                        auto_commit=True):
         """
         Save in the database the new attribute value for the sonde
         corresponding to the specified sonde UID.
         """
         sonde = self._get_sonde(sonde_id)
         setattr(sonde, attribute_name, attribute_value)
-        self._session.commit()
+        if auto_commit:
+            self._session.commit()
 
     # ---- Sonde installations
     def _get_sonde_installation(self, install_id):
@@ -1254,6 +1256,62 @@ def update_manual_measurements(filename, accessor):
             }
         gen_num_value_id = accessor._create_index('manual_measurements')
         accessor.add_manual_measurements(gen_num_value_id, attribute_values)
+
+
+def update_sondes_data(filename, accessor):
+    """
+    Update the sondes data in the database from an Excel file.
+    """
+    sondes_data = accessor.get_sondes_data()
+    sonde_models_lib = accessor.get_sonde_models_lib()
+    xls_sondes_data = pd.read_excel(filename)
+
+    for i in range(len(xls_sondes_data)):
+        row_data = xls_sondes_data.iloc[i]
+
+        # Retrieve sonde data from the xls file.
+        sonde_attributes = {
+            'sonde_serial_no': row_data['No_Sonde'],
+            'date_reception': (
+                None if pd.isnull(row_data['Date-Réception']) else
+                row_data['Date-Réception']),
+            'date_withdrawal': (
+                None if pd.isnull(row_data['Date_retrait']) else
+                row_data['Date_retrait']),
+            'in_repair': row_data['En_Réparation'],
+            'out_of_order': row_data['Hors-service'],
+            'lost': row_data['Perdue'],
+            'off_network': row_data['Hors réseau'],
+            'sonde_notes': (
+                None if pd.isnull(row_data['Remarque']) else
+                row_data['Remarque']),
+            }
+
+        try:
+            model = row_data['Modèle'].replace(',', '.')
+            company = row_data['Compagnie'].replace(',', '.')
+            sonde_attributes['sonde_model_id'] = (sonde_models_lib[
+                sonde_models_lib['sonde_brand_model'] == company + ' ' + model]
+                .index[0])
+        except AttributeError:
+            continue
+
+        # Update or load new sonde data in the database.
+        try:
+            sonde_uuid = (sondes_data[
+                sondes_data['sonde_serial_no'] == row_data['No_Sonde']]
+                .index[0])
+            sonde = accessor._get_sonde(sonde_uuid)
+            for name, value in sonde_attributes.items():
+                setattr(sonde, name, value)
+            accessor._session.commit()
+            print('Updating sonde ', sonde_attributes['sonde_serial_no'],
+                  model, company)
+        except IndexError:
+            sonde_uuid = accessor._create_index('sondes_data')
+            accessor.add_sondes_data(sonde_uuid, sonde_attributes)
+            print('Adding sonde ', sonde_attributes['sonde_serial_no'],
+                  model, company)
 
 
 if __name__ == "__main__":
