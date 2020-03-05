@@ -12,6 +12,7 @@ Accessor implementation of a Demo database.
 """
 
 # ---- Standard imports
+from random import randrange
 import datetime as dt
 from time import sleep
 
@@ -141,6 +142,23 @@ SONDE_INSTALLATIONS = pd.DataFrame([
              'sampling_feature_uuid', 'sonde_uuid']
     )
 
+REPERE_DATA = []
+for i in range(len(OBS_WELLS_DF)):
+    REPERE_DATA.append([
+        OBS_WELLS_DF.index[i],
+        randrange(99999) / 100,
+        randrange(20, 200) / 100,
+        dt.datetime(randrange(2000, 2006), randrange(12) + 1,
+                    randrange(28) + 1, randrange(24) + 1),
+        None,
+        bool(randrange(2)),
+        'Note #{}'.format(i)
+        ])
+REPERE = pd.DataFrame(
+    REPERE_DATA,
+    columns=['sampling_feature_uuid', 'top_casing_alt', 'casing_length',
+             'start_date', 'end_date', 'is_alt_geodesic', 'repere_note'])
+
 
 # =============================================================================
 # Database accessor implementation
@@ -235,6 +253,30 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         df = OBS_WELLS_DF.copy()
 
         return df
+
+    # ---- Repere
+    def add_repere_data(self, repere_id, attribute_values):
+        """
+        Add a new observation well repere data to the database using the
+        provided repere ID and attribute values.
+        """
+        for column in REPERE.columns:
+            REPERE.loc[repere_id, column] = attribute_values.get(column, None)
+
+    def set_repere_data(self, repere_id, attribute_name, attribute_value):
+        """
+        Save in the database the new attribute value for the observation well
+        repere data corresponding to the specified ID.
+        """
+        REPERE.loc[repere_id, attribute_name] = attribute_value
+
+    def get_repere_data(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the information related
+        to observation wells repere data.
+        """
+        sleep(0.3)
+        return REPERE.copy()
 
     # ---- Sonde Brands and Models Library
     def get_sonde_models_lib(self):

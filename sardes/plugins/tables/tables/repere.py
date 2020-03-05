@@ -7,6 +7,8 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+# ---- Thirs party imports
+import pandas as pd
 
 # ---- Local imports
 from sardes.api.tablemodels import SardesTableModel
@@ -60,10 +62,13 @@ class RepereTableModel(SardesTableModel):
                 )
         except KeyError:
             pass
-        visual_dataf['start_date'] = (visual_dataf['start_date']
-                                      .dt.strftime('%Y-%m-%d %H:%M'))
-        visual_dataf['end_date'] = (visual_dataf['end_date']
-                                    .dt.strftime('%Y-%m-%d %H:%M'))
+
+        visual_dataf['start_date'] = (
+            pd.to_datetime(visual_dataf['start_date'], format="%Y-%m-%d %H:%M")
+            .dt.strftime('%Y-%m-%d %H:%M'))
+        visual_dataf['end_date'] = (
+            pd.to_datetime(visual_dataf['end_date'], format="%Y-%m-%d %H:%M")
+            .dt.strftime('%Y-%m-%d %H:%M'))
         return visual_dataf
 
 
