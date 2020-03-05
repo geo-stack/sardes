@@ -1141,6 +1141,18 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             measurement.gen_num_value_notes = attribute_value
         self._session.commit()
 
+    def _del_manual_measurements(self, gen_num_value_id):
+        """
+        Delete the manual measurement corresponding to the specified id from
+        the database.
+        """
+        measurement = self._get_generic_num_value(gen_num_value_id)
+        observation = self._get_observation(measurement.observation_uuid)
+        # We only need to delete the observation since there is
+        # ON DELETE CASCADE condition that is set in the database.
+        self._session.delete(observation)
+        self._session.commit()
+
     # ---- Private methods
     def _get_observation(self, observation_uuid):
         """
