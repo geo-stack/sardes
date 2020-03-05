@@ -21,22 +21,6 @@ from sardes.plugins.tables.tables.delegates import (
     ObsWellIdEditDelegate, SondesSelectionDelegate)
 
 
-class SondeModelEditDelegate(SardesItemDelegate):
-    """
-    A delegate to select the brand of a sonde from a predefined list.
-    """
-
-    def create_editor(self, parent):
-        editor = QComboBox(parent)
-
-        # Populate the combobox with the available brand in the library.
-        sonde_models_lib = self.model().libraries['sonde_models_lib']
-        for index in sonde_models_lib.index:
-            editor.addItem(sonde_models_lib.loc[index, 'sonde_brand_model'],
-                           userData=index)
-        return editor
-
-
 class SondeInstallationsTableModel(SardesTableModel):
     """
     A table model to display the list of sondes currently installed or
