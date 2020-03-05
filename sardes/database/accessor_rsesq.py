@@ -113,7 +113,7 @@ class GenericNumericalValue(Base):
     __tablename__ = 'generique'
     __table_args__ = ({"schema": "resultats"})
 
-    gen_num_value_id = Column('generic_res_id', Integer, primary_key=True)
+    gen_num_value_id = Column('generic_res_uuid', Integer, primary_key=True)
     gen_num_value = Column('valeur_num', Float)
     # Relation with table resultats.observation
     observation_uuid = Column('observation_uuid', UUID(as_uuid=True))
@@ -361,14 +361,9 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         have been requested by the database manager but haven't been
         commited yet to the database.
         """
-        if name in ['observation_wells_data', 'sondes_data']:
+        if name in ['observation_wells_data', 'sondes_data',
+                    'manual_measurements']:
             return uuid.uuid4()
-        elif name == 'manual_measurements':
-            max_commited_id = (
-                self._session.query(
-                    func.max(GenericNumericalValue.gen_num_value_id))
-                .one())[0]
-            return max(self.temp_indexes(name) + [max_commited_id]) + 1
         elif name == 'sonde_installations':
             max_commited_id = (
                 self._session.query(
