@@ -149,7 +149,7 @@ for i in range(len(OBS_WELLS_DF)):
         randrange(99999) / 100,
         randrange(20, 200) / 100,
         dt.datetime(randrange(2000, 2006), randrange(12) + 1,
-                    randrange(28) + 1, randrange(24) + 1),
+                    randrange(28) + 1, randrange(23) + 1),
         None,
         bool(randrange(2)),
         'Note #{}'.format(i)

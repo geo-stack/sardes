@@ -113,7 +113,7 @@ class GenericNumericalValue(Base):
     __tablename__ = 'generique'
     __table_args__ = ({"schema": "resultats"})
 
-    gen_num_value_id = Column('generic_res_id', Integer, primary_key=True)
+    gen_num_value_id = Column('generic_res_uuid', Integer, primary_key=True)
     gen_num_value = Column('valeur_num', Float)
     # Relation with table resultats.observation
     observation_uuid = Column('observation_uuid', UUID(as_uuid=True))
@@ -361,14 +361,9 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         have been requested by the database manager but haven't been
         commited yet to the database.
         """
-        if name in ['observation_wells_data', 'sondes_data']:
+        if name in ['observation_wells_data', 'sondes_data',
+                    'manual_measurements']:
             return uuid.uuid4()
-        elif name == 'manual_measurements':
-            max_commited_id = (
-                self._session.query(
-                    func.max(GenericNumericalValue.gen_num_value_id))
-                .one())[0]
-            return max(self.temp_indexes(name) + [max_commited_id]) + 1
         elif name == 'sonde_installations':
             max_commited_id = (
                 self._session.query(
@@ -1056,6 +1051,18 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             raise p
 
     # ---- Manual mesurements
+    def _get_generic_num_value(self, gen_num_value_id):
+        """
+        Return the sqlalchemy GenericNumericalValue object corresponding
+        to the given ID.
+        """
+        generic_num_value = (
+            self._session.query(GenericNumericalValue)
+            .filter(GenericNumericalValue.gen_num_value_id == gen_num_value_id)
+            .one()
+            )
+        return generic_num_value
+
     def add_manual_measurements(self, gen_num_value_id, attribute_values):
         """
         Add a new manual measurements to the database using the provided ID
@@ -1077,6 +1084,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             param_id=4
             )
         self._session.add(observation)
+        self._session.commit()
 
         # We now create a new measurement in table 'resultats.generique'.
         measurement = GenericNumericalValue(
@@ -1087,7 +1095,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             gen_num_value_notes=attribute_values.get('notes', None)
             )
         self._session.add(measurement)
-
         self._session.commit()
 
     def get_manual_measurements(self):
@@ -1108,7 +1115,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             .filter(GenericNumericalValue.obs_property_id == 2)
             .filter(GenericNumericalValue.observation_uuid ==
                     Observation.observation_uuid)
-            .order_by(GenericNumericalValue.gen_num_value_id)
             ).with_labels()
         measurements = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
@@ -1129,11 +1135,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         Save in the database the new attribute value for the manual
         measurement corresponding to the specified id.
         """
-        measurement = (
-            self._session.query(GenericNumericalValue)
-            .filter(GenericNumericalValue.gen_num_value_id == gen_num_value_id)
-            .one()
-            )
+        measurement = self._get_generic_num_value(gen_num_value_id)
         if attribute_name == 'sampling_feature_uuid':
             observation = self._get_observation(measurement.observation_uuid)
             observation.sampling_feature_uuid = attribute_value
@@ -1144,6 +1146,18 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             measurement.gen_num_value = float(attribute_value)
         elif attribute_name == 'notes':
             measurement.gen_num_value_notes = attribute_value
+        self._session.commit()
+
+    def _del_manual_measurements(self, gen_num_value_id):
+        """
+        Delete the manual measurement corresponding to the specified id from
+        the database.
+        """
+        measurement = self._get_generic_num_value(gen_num_value_id)
+        observation = self._get_observation(measurement.observation_uuid)
+        # We only need to delete the observation since there is
+        # ON DELETE CASCADE condition that is set in the database.
+        self._session.delete(observation)
         self._session.commit()
 
     # ---- Private methods
@@ -1160,7 +1174,10 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 # ---- Utilities
 # =============================================================================
 def update_repere_table(filename, accessor):
-    # accessor.execute("DROP TABLE IF EXISTS dbo.Product")
+    """
+    Update the observation wells repere data in the database from an
+    Excel file.
+    """
     if accessor._engine.dialect.has_table(
             accessor._connection, 'repere', schema='rsesq'):
         Repere.__table__.drop(accessor._engine)
@@ -1200,6 +1217,45 @@ def update_repere_table(filename, accessor):
     accessor._session.commit()
 
 
+def update_manual_measurements(filename, accessor):
+    """
+    Update the manual measurements in the database from an Excel file.
+    """
+    manual_measurements = accessor.get_manual_measurements()
+    obs_wells = accessor.get_observation_wells_data()
+
+    # Delete all observations related to water level manual measurements.
+    for index in manual_measurements.index:
+        accessor._del_manual_measurements(index)
+
+    # Load the updated data.
+    meas_data = pd.read_excel(filename)
+    for row in range(len(meas_data)):
+        row_data = meas_data.iloc[row]
+
+        meas_date = row_data['date']
+        meas_time = row_data['heure']
+        meas_date_time = datetime.datetime(
+            meas_date.year, meas_date.month, meas_date.day,
+            meas_time.hour, meas_time.minute)
+
+        try:
+            obs_well_uuid = obs_wells[
+                obs_wells['obs_well_id'] == row_data['no_piezometre']].index[0]
+        except IndexError:
+            # This means that the observation well does not exist in the DB,
+            # so we skip it.
+            continue
+
+        attribute_values = {
+            'value': row_data['lecture_profondeur'],
+            'sampling_feature_uuid': obs_well_uuid,
+            'datetime': meas_date_time
+            }
+        gen_num_value_id = accessor._create_index('manual_measurements')
+        accessor.add_manual_measurements(gen_num_value_id, attribute_values)
+
+
 if __name__ == "__main__":
     from sardes.config.database import get_dbconfig
 
@@ -1215,5 +1271,10 @@ if __name__ == "__main__":
     sonde_installations = accessor.get_sonde_installations()
     repere_data = accessor.get_repere_data()
 
+    sampling_feature_uuid = accessor._get_obs_well_sampling_feature_uuid(
+        '01030001')
+    wlevel_group = accessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, 'NIV_EAU')
+    wlevel_data = wlevel_group.get_merged_timeseries()
 
     accessor.close_connection()
