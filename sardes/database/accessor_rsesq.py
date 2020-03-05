@@ -1174,6 +1174,10 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 # ---- Utilities
 # =============================================================================
 def update_repere_table(filename, accessor):
+    """
+    Update the observation wells repere data in the database from an
+    Excel file.
+    """
     if accessor._engine.dialect.has_table(
             accessor._connection, 'repere', schema='rsesq'):
         Repere.__table__.drop(accessor._engine)
@@ -1211,6 +1215,45 @@ def update_repere_table(filename, accessor):
             )
         accessor._session.add(repere)
     accessor._session.commit()
+
+
+def update_manual_measurements(filename, accessor):
+    """
+    Update the manual measurements in the database from an Excel file.
+    """
+    manual_measurements = accessor.get_manual_measurements()
+    obs_wells = accessor.get_observation_wells_data()
+
+    # Delete all observations related to water level manual measurements.
+    for index in manual_measurements.index:
+        accessor._del_manual_measurements(index)
+
+    # Load the updated data.
+    meas_data = pd.read_excel(filename)
+    for row in range(len(meas_data)):
+        row_data = meas_data.iloc[row]
+
+        meas_date = row_data['date']
+        meas_time = row_data['heure']
+        meas_date_time = datetime.datetime(
+            meas_date.year, meas_date.month, meas_date.day,
+            meas_time.hour, meas_time.minute)
+
+        try:
+            obs_well_uuid = obs_wells[
+                obs_wells['obs_well_id'] == row_data['no_piezometre']].index[0]
+        except IndexError:
+            # This means that the observation well does not exist in the DB,
+            # so we skip it.
+            continue
+
+        attribute_values = {
+            'value': row_data['lecture_profondeur'],
+            'sampling_feature_uuid': obs_well_uuid,
+            'datetime': meas_date_time
+            }
+        gen_num_value_id = accessor._create_index('manual_measurements')
+        accessor.add_manual_measurements(gen_num_value_id, attribute_values)
 
 
 if __name__ == "__main__":
