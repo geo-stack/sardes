@@ -1051,6 +1051,18 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             raise p
 
     # ---- Manual mesurements
+    def _get_generic_num_value(self, gen_num_value_id):
+        """
+        Return the sqlalchemy GenericNumericalValue object corresponding
+        to the given ID.
+        """
+        generic_num_value = (
+            self._session.query(GenericNumericalValue)
+            .filter(GenericNumericalValue.gen_num_value_id == gen_num_value_id)
+            .one()
+            )
+        return generic_num_value
+
     def add_manual_measurements(self, gen_num_value_id, attribute_values):
         """
         Add a new manual measurements to the database using the provided ID
@@ -1123,11 +1135,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         Save in the database the new attribute value for the manual
         measurement corresponding to the specified id.
         """
-        measurement = (
-            self._session.query(GenericNumericalValue)
-            .filter(GenericNumericalValue.gen_num_value_id == gen_num_value_id)
-            .one()
-            )
+        measurement = self._get_generic_num_value(gen_num_value_id)
         if attribute_name == 'sampling_feature_uuid':
             observation = self._get_observation(measurement.observation_uuid)
             observation.sampling_feature_uuid = attribute_value
