@@ -1143,6 +1143,8 @@ def update_repere_table(filename, accessor):
         datetime_fin = datetime.datetime(
             date_fin.year, date_fin.month,
             date_fin.day, heure_fin.hour)
+        if datetime_fin > datetime.datetime.now():
+            datetime_fin = None
 
         obs_well_uuid = obs_wells[
             obs_wells['obs_well_id'] == row_data['no_piezometre']].index[0]
@@ -1152,8 +1154,8 @@ def update_repere_table(filename, accessor):
             sampling_feature_uuid=obs_well_uuid,
             top_casing_alt=row_data['alt_hors_sol'],
             casing_length=row_data['longueur_hors_sol'],
-            date_debut=datetime_debut,
-            date_fin=datetime_fin,
+            start_date=datetime_debut,
+            end_date=datetime_fin,
             is_alt_geodesic=row_data['elevation_geodesique'],
             )
         accessor._session.add(repere)
