@@ -683,18 +683,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         return repere
 
     # ---- Sonde Brands and Models Library
-    def _get_sonde(self, sonde_id):
-        """
-        Return the sqlalchemy Sondes object corresponding to the
-        specified sonde ID.
-        """
-        sonde = (
-            self._session.query(Sondes)
-            .filter(Sondes.sonde_uuid == sonde_id)
-            .one()
-            )
-        return sonde
-
     def get_sonde_models_lib(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -723,6 +711,18 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         return sonde_models
 
     # ---- Sondes Inventory
+    def _get_sonde(self, sonde_id):
+        """
+        Return the sqlalchemy Sondes object corresponding to the
+        specified sonde ID.
+        """
+        sonde = (
+            self._session.query(Sondes)
+            .filter(Sondes.sonde_uuid == sonde_id)
+            .one()
+            )
+        return sonde
+
     def add_sondes_data(self, sonde_uuid, attribute_values):
         """
         Add a new sonde to the database using the provided sonde ID
