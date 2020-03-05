@@ -1082,7 +1082,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             gen_num_value_notes=attribute_values.get('notes', None)
             )
         self._session.add(measurement)
-
         self._session.commit()
 
     def get_manual_measurements(self):
@@ -1167,7 +1166,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 # ---- Utilities
 # =============================================================================
 def update_repere_table(filename, accessor):
-    # accessor.execute("DROP TABLE IF EXISTS dbo.Product")
     if accessor._engine.dialect.has_table(
             accessor._connection, 'repere', schema='rsesq'):
         Repere.__table__.drop(accessor._engine)
