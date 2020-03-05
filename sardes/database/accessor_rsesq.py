@@ -778,14 +778,16 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
         return sondes
 
-    def set_sondes_data(self, sonde_id, attribute_name, attribute_value):
+    def set_sondes_data(self, sonde_id, attribute_name, attribute_value,
+                        auto_commit=True):
         """
         Save in the database the new attribute value for the sonde
         corresponding to the specified sonde UID.
         """
         sonde = self._get_sonde(sonde_id)
         setattr(sonde, attribute_name, attribute_value)
-        self._session.commit()
+        if auto_commit:
+            self._session.commit()
 
     # ---- Sonde installations
     def _get_sonde_installation(self, install_id):
