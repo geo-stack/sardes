@@ -330,12 +330,15 @@ class SardesTableModelBase(QAbstractTableModel):
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """Qt method override."""
-        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            return self.get_horizontal_header_label_at(section)
-        if role == Qt.DisplayRole and orientation == Qt.Vertical:
-            return section + 1
-        else:
-            return QVariant()
+        if role == Qt.DisplayRole:
+            if orientation == Qt.Horizontal:
+                return self.get_horizontal_header_label_at(section)
+            elif orientation == Qt.Vertical:
+                return section + 1
+        elif role == Qt.ToolTipRole:
+            if orientation == Qt.Horizontal:
+                return self.get_horizontal_header_label_at(section)
+        return QVariant()
 
     # ---- Table data
     @property
