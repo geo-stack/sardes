@@ -1258,6 +1258,62 @@ def update_manual_measurements(filename, accessor):
         accessor.add_manual_measurements(gen_num_value_id, attribute_values)
 
 
+def update_sondes_data(filename, accessor):
+    """
+    Update the sondes data in the database from an Excel file.
+    """
+    sondes_data = accessor.get_sondes_data()
+    sonde_models_lib = accessor.get_sonde_models_lib()
+    xls_sondes_data = pd.read_excel(filename)
+
+    for i in range(len(xls_sondes_data)):
+        row_data = xls_sondes_data.iloc[i]
+
+        # Retrieve sonde data from the xls file.
+        sonde_attributes = {
+            'sonde_serial_no': row_data['No_Sonde'],
+            'date_reception': (
+                None if pd.isnull(row_data['Date-Réception']) else
+                row_data['Date-Réception']),
+            'date_withdrawal': (
+                None if pd.isnull(row_data['Date_retrait']) else
+                row_data['Date_retrait']),
+            'in_repair': row_data['En_Réparation'],
+            'out_of_order': row_data['Hors-service'],
+            'lost': row_data['Perdue'],
+            'off_network': row_data['Hors réseau'],
+            'sonde_notes': (
+                None if pd.isnull(row_data['Remarque']) else
+                row_data['Remarque']),
+            }
+
+        try:
+            model = row_data['Modèle'].replace(',', '.')
+            company = row_data['Compagnie'].replace(',', '.')
+            sonde_attributes['sonde_model_id'] = (sonde_models_lib[
+                sonde_models_lib['sonde_brand_model'] == company + ' ' + model]
+                .index[0])
+        except AttributeError:
+            continue
+
+        # Update or load new sonde data in the database.
+        try:
+            sonde_uuid = (sondes_data[
+                sondes_data['sonde_serial_no'] == row_data['No_Sonde']]
+                .index[0])
+            sonde = accessor._get_sonde(sonde_uuid)
+            for name, value in sonde_attributes.items():
+                setattr(sonde, name, value)
+            accessor._session.commit()
+            print('Updating sonde ', sonde_attributes['sonde_serial_no'],
+                  model, company)
+        except IndexError:
+            sonde_uuid = accessor._create_index('sondes_data')
+            accessor.add_sondes_data(sonde_uuid, sonde_attributes)
+            print('Adding sonde ', sonde_attributes['sonde_serial_no'],
+                  model, company)
+
+
 if __name__ == "__main__":
     from sardes.config.database import get_dbconfig
 
