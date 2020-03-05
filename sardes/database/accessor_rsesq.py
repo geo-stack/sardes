@@ -628,6 +628,44 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         return obs_wells
 
     # ---- Repere
+    def _get_repere_data(self, repere_id):
+        """
+        Return the sqlalchemy Repere object corresponding to the
+        given repere ID.
+        """
+        repere = (
+            self._session.query(Repere)
+            .filter(Repere.repere_uuid == repere_id)
+            .one()
+            )
+        return repere
+
+    def add_repere_data(self, repere_id, attribute_values):
+        """
+        Add a new observation well repere data to the database using the
+        provided repere ID and attribute values.
+        """
+        # We create a new repere item.
+        repere = Repere(repere_uuid=repere_id)
+        self._session.add(repere)
+
+        # We then set the attribute values for this new installation.
+        for name, value in attribute_values.items():
+            setattr(repere, name, value)
+
+        self._session.commit()
+
+    def set_repere_data(self, repere_id, attribute_name, attribute_value,
+                        auto_commit=True):
+        """
+        Save in the database the new attribute value for the observation well
+        repere data corresponding to the specified ID.
+        """
+        repere = self._get_repere_data(repere_id)
+        setattr(repere, attribute_name, attribute_value)
+        if auto_commit:
+            self._session.commit()
+
     def get_repere_data(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
