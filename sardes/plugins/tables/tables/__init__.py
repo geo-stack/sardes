@@ -11,3 +11,4 @@ from .observation_wells import ObsWellsTableWidget
 from .sondes_inventory import SondesInventoryTableWidget
 from .manual_measurements import ManualMeasurementsTableWidget
 from .sonde_installations import SondeInstallationsTableWidget
+from .repere import RepereTableWidget

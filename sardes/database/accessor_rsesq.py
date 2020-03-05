@@ -12,6 +12,7 @@ Object-Relational Mapping and Accessor implementation of the RSESQ database.
 """
 
 # ---- Standard imports
+import datetime
 import uuid
 
 # ---- Third party imports
@@ -25,6 +26,7 @@ from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.exc import DBAPIError, ProgrammingError
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.types import TEXT, VARCHAR, Boolean
@@ -74,6 +76,30 @@ class Location(Base):
     loc_notes = Column('remarque', String)
     loc_id = Column(String, primary_key=True)
     loc_geom = Column('geom', Geometry('POINT', 4326))
+
+    def __repr__(self):
+        return format_sqlobject_repr(self)
+
+
+class Repere(Base):
+    """
+    An object used to map the 'Repere' table of the RSESQ database.
+    """
+    __tablename__ = 'repere'
+    __table_args__ = ({"schema": "rsesq"})
+
+    repere_uuid = Column('repere_uuid', UUID(as_uuid=True), primary_key=True)
+    sampling_feature_uuid = Column(
+        'elemcarac_uuid',
+        UUID(as_uuid=True),
+        ForeignKey('rsesq.elements_caracteristique.elemcarac_uuid',
+                   ondelete='CASCADE'))
+    top_casing_alt = Column('alt_hors_sol', Float)
+    casing_length = Column('longueur_hors_sol', Float)
+    start_date = Column('date_debut', DateTime)
+    end_date = Column('date_fin', DateTime)
+    is_alt_geodesic = Column('elevation_geodesique', Boolean)
+    repere_note = Column('repere_note', String(250))
 
     def __repr__(self):
         return format_sqlobject_repr(self)
@@ -601,6 +627,66 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
         return obs_wells
 
+    # ---- Repere
+    def _get_repere_data(self, repere_id):
+        """
+        Return the sqlalchemy Repere object corresponding to the
+        given repere ID.
+        """
+        repere = (
+            self._session.query(Repere)
+            .filter(Repere.repere_uuid == repere_id)
+            .one()
+            )
+        return repere
+
+    def add_repere_data(self, repere_id, attribute_values):
+        """
+        Add a new observation well repere data to the database using the
+        provided repere ID and attribute values.
+        """
+        # We create a new repere item.
+        repere = Repere(repere_uuid=repere_id)
+        self._session.add(repere)
+
+        # We then set the attribute values for this new installation.
+        for name, value in attribute_values.items():
+            setattr(repere, name, value)
+
+        self._session.commit()
+
+    def set_repere_data(self, repere_id, attribute_name, attribute_value,
+                        auto_commit=True):
+        """
+        Save in the database the new attribute value for the observation well
+        repere data corresponding to the specified ID.
+        """
+        repere = self._get_repere_data(repere_id)
+        setattr(repere, attribute_name, attribute_value)
+        if auto_commit:
+            self._session.commit()
+
+    def get_repere_data(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the information related
+        to observation wells repere data.
+        """
+        query = (
+            self._session.query(Repere)
+            ).with_labels()
+        repere = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
+
+        # Rename the column names to that expected by the api.
+        columns_map = map_table_column_names(
+            Repere, with_labels=True)
+        repere.rename(columns_map, axis='columns', inplace=True)
+
+        # Set the index to the observation well ids.
+        repere.set_index('repere_uuid', inplace=True, drop=True)
+
+        return repere
+
     # ---- Sonde Brands and Models Library
     def _get_sonde(self, sonde_id):
         """
@@ -1070,6 +1156,50 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
                 .one())
 
 
+# =============================================================================
+# ---- Utilities
+# =============================================================================
+def update_repere_table(filename, accessor):
+    # accessor.execute("DROP TABLE IF EXISTS dbo.Product")
+    if accessor._engine.dialect.has_table(
+            accessor._connection, 'repere', schema='rsesq'):
+        Repere.__table__.drop(accessor._engine)
+    Base.metadata.create_all(accessor._engine, tables=[Repere.__table__])
+
+    obs_wells = accessor.get_observation_wells_data()
+    repere_data = pd.read_excel(filename)
+    for row in range(len(repere_data)):
+        row_data = repere_data.iloc[row]
+        date_debut = row_data['date_debut']
+        heure_debut = row_data['heure_debut']
+        date_fin = row_data['date_fin']
+        heure_fin = row_data['heure_fin']
+
+        datetime_debut = datetime.datetime(
+            date_debut.year, date_debut.month,
+            date_debut.day, heure_debut.hour)
+        datetime_fin = datetime.datetime(
+            date_fin.year, date_fin.month,
+            date_fin.day, heure_fin.hour)
+        if datetime_fin > datetime.datetime.now():
+            datetime_fin = None
+
+        obs_well_uuid = obs_wells[
+            obs_wells['obs_well_id'] == row_data['no_piezometre']].index[0]
+
+        repere = Repere(
+            repere_uuid=uuid.uuid4(),
+            sampling_feature_uuid=obs_well_uuid,
+            top_casing_alt=row_data['alt_hors_sol'],
+            casing_length=row_data['longueur_hors_sol'],
+            start_date=datetime_debut,
+            end_date=datetime_fin,
+            is_alt_geodesic=row_data['elevation_geodesique'],
+            )
+        accessor._session.add(repere)
+    accessor._session.commit()
+
+
 if __name__ == "__main__":
     from sardes.config.database import get_dbconfig
 
@@ -1083,5 +1213,7 @@ if __name__ == "__main__":
     sonde_models_lib = accessor.get_sonde_models_lib()
     manual_measurements = accessor.get_manual_measurements()
     sonde_installations = accessor.get_sonde_installations()
+    repere_data = accessor.get_repere_data()
+
 
     accessor.close_connection()

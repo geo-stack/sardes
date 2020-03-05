@@ -12,7 +12,7 @@ from sardes.api.plugins import SardesPlugin
 from sardes.config.icons import get_icon
 from sardes.config.locale import _
 from sardes.plugins.tables.tables import (
-    ObsWellsTableWidget, SondesInventoryTableWidget,
+    ObsWellsTableWidget, RepereTableWidget, SondesInventoryTableWidget,
     ManualMeasurementsTableWidget, SondeInstallationsTableWidget)
 
 # ---- Third party imports
@@ -119,6 +119,10 @@ class Tables(SardesPlugin):
             ['observation_wells_data',
              'sondes_data',
              'sonde_models_lib'])
+        self._create_and_register_table(
+            RepereTableWidget,
+            'repere_data',
+            ['observation_wells_data'])
 
         # Setup the current active tab from the value saved in the configs.
         self.tabwidget.setCurrentIndex(

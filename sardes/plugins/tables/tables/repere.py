@@ -7,25 +7,22 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
-# ---- Third party imports
-from qtpy.QtWidgets import QComboBox
+# ---- Thirs party imports
+import pandas as pd
 
 # ---- Local imports
 from sardes.api.tablemodels import SardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
-    SardesItemDelegate, SardesTableWidget, StringEditDelegate,
-    BoolEditDelegate, NotEditableDelegate, TextEditDelegate, DateTimeDelegate,
-    NumEditDelegate)
-from sardes.plugins.tables.tables.delegates import (
-    ObsWellIdEditDelegate, SondesSelectionDelegate)
+    SardesTableWidget, BoolEditDelegate, NotEditableDelegate, TextEditDelegate,
+    DateTimeDelegate, NumEditDelegate)
+from sardes.plugins.tables.tables.delegates import ObsWellIdEditDelegate
 
 
-class SondeInstallationsTableModel(SardesTableModel):
+class RepereTableModel(SardesTableModel):
     """
-    A table model to display the list of sondes currently installed or
-    that were installed at some point in the observation wells for the
-    entire monitoring network.
+    A table model to display the repere data related to the observation
+    wells of the monitoring network.
     """
 
     def create_delegate_for_column(self, view, column):
@@ -36,15 +33,19 @@ class SondeInstallationsTableModel(SardesTableModel):
         """
         if column in ['sampling_feature_uuid']:
             return ObsWellIdEditDelegate(view, is_required=True)
-        elif column == 'install_depth':
+        elif column == 'top_casing_alt':
             return NumEditDelegate(view, decimals=3, bottom=-99999, top=99999)
+        elif column == 'casing_length':
+            return NumEditDelegate(view, decimals=3, bottom=0, top=99999)
         elif column in ['start_date']:
             return DateTimeDelegate(view, is_required=True,
                                     display_format="yyyy-MM-dd hh:mm")
         elif column in ['end_date']:
             return DateTimeDelegate(view, display_format="yyyy-MM-dd hh:mm")
-        elif column in ['sonde_uuid']:
-            return SondesSelectionDelegate(view)
+        elif column in ['is_alt_geodesic']:
+            return BoolEditDelegate(view, is_required=True)
+        elif column in ['repere_note']:
+            return TextEditDelegate(view, is_required=True)
         else:
             return NotEditableDelegate(view)
 
@@ -62,39 +63,28 @@ class SondeInstallationsTableModel(SardesTableModel):
         except KeyError:
             pass
 
-        try:
-            sondes_data = self.libraries['sondes_data']
-            sonde_models_lib = self.libraries['sonde_models_lib']
-            sondes_data['sonde_brand_model'] = sonde_models_lib.loc[
-                sondes_data['sonde_model_id']]['sonde_brand_model'].values
-            sondes_data['sonde_brand_model_serial'] = (
-                sondes_data[['sonde_brand_model', 'sonde_serial_no']]
-                .apply(lambda x: ' - '.join(x), axis=1))
-            visual_dataf['sonde_uuid'] = (
-                visual_dataf['sonde_uuid']
-                .replace(sondes_data['sonde_brand_model_serial'].to_dict())
-                )
-        except KeyError:
-            pass
-
-        visual_dataf['start_date'] = (visual_dataf['start_date']
-                                      .dt.strftime('%Y-%m-%d %H:%M'))
-        visual_dataf['end_date'] = (visual_dataf['end_date']
-                                    .dt.strftime('%Y-%m-%d %H:%M'))
-
+        visual_dataf['start_date'] = (
+            pd.to_datetime(visual_dataf['start_date'], format="%Y-%m-%d %H:%M")
+            .dt.strftime('%Y-%m-%d %H:%M'))
+        visual_dataf['end_date'] = (
+            pd.to_datetime(visual_dataf['end_date'], format="%Y-%m-%d %H:%M")
+            .dt.strftime('%Y-%m-%d %H:%M'))
         return visual_dataf
 
 
-class SondeInstallationsTableWidget(SardesTableWidget):
+class RepereTableWidget(SardesTableWidget):
     def __init__(self, parent=None):
-        table_model = SondeInstallationsTableModel(
-            table_title=_('Sonde Installations'),
-            table_id='table_sonde_installations',
+        table_model = RepereTableModel(
+            table_title=_('Repere'),
+            table_id='table_repere',
             data_columns_mapper=[
                 ('sampling_feature_uuid', _('Well')),
-                ('sonde_uuid', _('Brand Model Serial')),
+                ('top_casing_alt', _('Top Casing Alt. (m)')),
+                ('casing_length', _('Length Casing (m)')),
                 ('start_date', _('Date From')),
                 ('end_date', _('Date To')),
-                ('install_depth', _('Depth (m)'))]
+                ('is_alt_geodesic', _('Geodesic')),
+                ('repere_note', _('Notes')),
+                ]
             )
         super().__init__(table_model, parent)

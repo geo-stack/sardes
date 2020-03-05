@@ -73,8 +73,8 @@ def test_tables_plugin_init(mainwindow, qtbot):
     models_manager = mainwindow.db_connection_manager.models_manager
 
     assert mainwindow.plugin
-    assert mainwindow.plugin.table_count() == 4
-    assert len(models_manager._table_models) == 4
+    assert mainwindow.plugin.table_count() == 5
+    assert len(models_manager._table_models) == 5
 
     # Table Observation Wells.
     for current_index in range(mainwindow.plugin.table_count()):

@@ -280,6 +280,79 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
+    # ---- Repere
+    def add_repere_data(self, repere_id, attribute_values):
+        """
+        Add a new observation well repere data to the database using the
+        provided repere ID and attribute values.
+
+        Parameters
+        ----------
+        repere_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the observation well
+            repere data in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values for the new
+            observation well repere data.
+        """
+        raise NotImplementedError
+
+    def set_repere_data(self, repere_id, attribute_name, attribute_value):
+        """
+        Save in the database the new attribute value for the observation well
+        repere data corresponding to the specified ID.
+
+        Parameters
+        ----------
+        repere_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the observation well
+            repere data in the database.
+        attribute_name: str
+            Name of the attribute of the observation well repere data for
+            which the value need to be updated in the database.
+        value: object
+            Value that need to be updated for the corresponding attribute and
+            repere data.
+        """
+        raise NotImplementedError
+
+    def get_repere_data(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the information related
+        to observation wells repere data.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A :class:`pandas.DataFrame` containing the information related
+            to observation wells repere data.
+
+            The row indexes of the dataframe must correspond to the IDs
+            used to reference the repere data in the database.
+
+            The dataframe can contain any of the columns that are listed below.
+
+            Columns
+            ~~~~~~~~~~~~~~~~
+            - sampling_feature_uuid: int, :class:`uuid.UUID`
+                A unique identifier that is used to reference the observation
+                well for which the repere data are associated.
+            - top_casing_alt: float
+                The altitude values given in meters of the top of the
+                observation wells' casing.
+            - casing_length: str
+                The lenght of the casing above ground level given in meters.
+            - start_date: datetime
+                The date and time after which repere data are valid.
+            - end_date: datetime
+                The date and time before which repere data are valid.
+            - is_alt_geodesic: bool
+                Whether the top_casing_alt value is geodesic.
+            - repere_note: bool
+                Any note related to the repere data.
+        """
+        raise NotImplementedError
+
     # ---- Sonde Brands and Models Library
     def get_sonde_models_lib(self):
         """
