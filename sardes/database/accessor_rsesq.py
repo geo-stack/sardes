@@ -739,7 +739,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             lost=attribute_values.get('lost', None),
             off_network=attribute_values.get('off_network', None),
             sonde_notes=attribute_values.get('sonde_notes', None),
-            sonde_model_id=attribute_values.get('sonde_notes', None),
+            sonde_model_id=attribute_values.get('sonde_model_id', None),
             )
         self._session.add(sonde)
         self._session.commit()
