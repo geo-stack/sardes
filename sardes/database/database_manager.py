@@ -134,18 +134,7 @@ class DatabaseConnectionWorker(QObject):
             del self._cache[name]
         self.db_accessor.set(name, *args, **kargs)
 
-    # ---- Monitored properties
-    def get_monitored_properties(self):
-        """
-        Return the list of of properties for which time data is stored in the
-        database.
-        """
-        try:
-            monitored_properties = self.db_accessor.monitored_properties
-        except AttributeError:
-            monitored_properties = []
-        return monitored_properties,
-
+    # ---- Timeseries
     def _get_timeseries_for_obs_well(self, obs_well_id, monitored_properties):
         """
         Get the time data acquired in the observation well for each
@@ -421,18 +410,7 @@ class DatabaseConnectionManager(QObject):
         """Close this database connection manager."""
         self._db_connection_worker._disconnect_from_db()
 
-    # ---- Monitored properties
-    def get_monitored_properties(self, callback=None):
-        """
-        Get the list of of properties for which time data is stored in the
-        database.
-        """
-        monitored_properties = (
-            self._db_connection_worker.get_monitored_properties())
-        if callback is not None:
-            callback(monitored_properties)
-        return monitored_properties
-
+    # ---- Timeseries
     def get_timeseries_for_obs_well(self, obs_well_id, monitored_properties,
                                     callback):
         """
