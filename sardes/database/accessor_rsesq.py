@@ -364,14 +364,8 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         commited yet to the database.
         """
         if name in ['observation_wells_data', 'sondes_data',
-                    'manual_measurements']:
+                    'manual_measurements', 'sonde_installations']:
             return uuid.uuid4()
-        elif name == 'sonde_installations':
-            max_commited_id = (
-                self._session.query(
-                    func.max(SondeInstallation.install_id))
-                .one())[0]
-            return max(self.temp_indexes(name) + [max_commited_id]) + 1
         else:
             raise NotImplementedError
 
