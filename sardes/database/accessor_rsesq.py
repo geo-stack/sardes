@@ -1318,6 +1318,62 @@ def update_sondes_data(filename, accessor):
                   model, company)
 
 
+def update_sonde_installations(filename, accessor):
+    """
+    Update the sonde installations in the database from an Excel file.
+    """
+    obs_wells = accessor.get_observation_wells_data()
+    sonde_installs = accessor.get_sonde_installations()
+
+    xls_installations = pd.read_excel(filename)
+    for row in range(len(xls_installations)):
+        row_data = xls_installations.iloc[row]
+        date_debut = row_data['Date_debut']
+        heure_debut = row_data['Heure_debut']
+        date_fin = row_data['Date_fin']
+        heure_fin = row_data['Heure_fin']
+
+        datetime_debut = datetime.datetime(
+            date_debut.year, date_debut.month,
+            date_debut.day, heure_debut.hour, heure_debut.minute)
+        try:
+            datetime_fin = datetime.datetime(
+                date_fin.year, date_fin.month,
+                date_fin.day, heure_fin.hour, heure_fin.minute)
+        except AttributeError:
+            datetime_fin = None
+
+        obs_well_uuid = obs_wells[
+            obs_wells['obs_well_id'] == row_data['No_piezometre']].index[0]
+
+        sonde_uuid = (sondes_data[
+            sondes_data['sonde_serial_no'] == row_data['No_sonde']]
+            .index[0])
+
+        install_attributes = {
+            'sonde_uuid': sonde_uuid,
+            'start_date': datetime_debut,
+            'end_date': datetime_fin,
+            'install_depth': row_data['Profondeur'],
+            'sampling_feature_uuid': obs_well_uuid,
+            }
+
+        # Update or load new sonde installation in the database.
+        installs = (sonde_installs[
+            sonde_installs['sonde_uuid'] == sonde_uuid])
+        try:
+            install_uuid = (installs[
+                installs['start_date'] == datetime_debut].index[0])
+        except IndexError:
+            install_uuid = accessor._create_index('sonde_installations')
+            accessor.add_sonde_installations(install_uuid, install_attributes)
+        else:
+            for name, value in install_attributes.items():
+                accessor.set_sonde_installations(install_uuid, name, value,
+                                                 auto_commit=False)
+                accessor._session.commit()
+
+
 if __name__ == "__main__":
     from sardes.config.database import get_dbconfig
 
