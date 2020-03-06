@@ -227,11 +227,13 @@ class SondeInstallation(Base):
     __table_args__ = ({"schema": "processus"})
 
     install_id = Column('deploiement_id', Integer, primary_key=True)
+    install_uuid = Column('deploiement_uuid', UUID(as_uuid=True))
     sonde_serial_no = Column('no_sonde', String)
     start_date = Column('date_debut', DateTime)
     end_date = Column('date_fin', DateTime)
     install_depth = Column('profondeur', Float)
     sampling_feature_uuid = Column('elemcarac_uuid', UUID(as_uuid=True))
+    operator = Column('operateur', String)
 
 
 class Processes(Base):
