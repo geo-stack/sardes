@@ -227,11 +227,13 @@ class SondeInstallation(Base):
     __table_args__ = ({"schema": "processus"})
 
     install_id = Column('deploiement_id', Integer, primary_key=True)
+    install_uuid = Column('deploiement_uuid', UUID(as_uuid=True))
     sonde_serial_no = Column('no_sonde', String)
     start_date = Column('date_debut', DateTime)
     end_date = Column('date_fin', DateTime)
     install_depth = Column('profondeur', Float)
     sampling_feature_uuid = Column('elemcarac_uuid', UUID(as_uuid=True))
+    operator = Column('operateur', String)
 
 
 class Processes(Base):
@@ -362,14 +364,8 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         commited yet to the database.
         """
         if name in ['observation_wells_data', 'sondes_data',
-                    'manual_measurements']:
+                    'manual_measurements', 'sonde_installations']:
             return uuid.uuid4()
-        elif name == 'sonde_installations':
-            max_commited_id = (
-                self._session.query(
-                    func.max(SondeInstallation.install_id))
-                .one())[0]
-            return max(self.temp_indexes(name) + [max_commited_id]) + 1
         else:
             raise NotImplementedError
 
@@ -790,31 +786,39 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             self._session.commit()
 
     # ---- Sonde installations
-    def _get_sonde_installation(self, install_id):
+    def _get_sonde_installation(self, install_uuid):
         """
         Return the sqlalchemy SondeInstallation object corresponding to the
         specified sonde ID.
         """
         sonde_installation = (
             self._session.query(SondeInstallation)
-            .filter(SondeInstallation.install_id == install_id)
+            .filter(SondeInstallation.install_uuid == install_uuid)
             .one()
             )
         return sonde_installation
 
-    def add_sonde_installations(self, new_install_id, attribute_values):
+    def add_sonde_installations(self, new_install_uuid, attribute_values):
         """
         Add a new sonde installation to the database using the provided ID
         and attribute values.
         """
         # We create a new sonde installation.
-        sonde_installation = SondeInstallation(install_id=new_install_id)
+        new_install_id = (
+            self._session.query(
+                func.max(SondeInstallation.install_id))
+            .one())[0] + 1
+        new_process_uuid = uuid.uuid4()
+
+        sonde_installation = SondeInstallation(
+            install_id=new_install_id,
+            install_uuid=new_install_uuid)
         self._session.add(sonde_installation)
 
         # We then set the attribute values for this new installation.
         for name, value in attribute_values.items():
             self.set_sonde_installations(
-                new_install_id, name, value, auto_commit=False)
+                new_install_uuid, name, value, auto_commit=False)
 
         # Add the new process to table processus.processus_deploiement. A new
         # entry will then be automatically added to table processus.processus.
@@ -843,13 +847,13 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         # Commit changes to database.
         self._session.commit()
 
-    def set_sonde_installations(self, installation_id, attribute_name,
+    def set_sonde_installations(self, install_uuid, attribute_name,
                                 attribute_value, auto_commit=True):
         """
         Save in the database the new attribute value for the sonde
         installation corresponding to the specified id.
         """
-        sonde_installation = self._get_sonde_installation(installation_id)
+        sonde_installation = self._get_sonde_installation(install_uuid)
 
         if attribute_name in ['sonde_uuid']:
             attribute_name = 'sonde_serial_no'
@@ -872,7 +876,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         # Define the query to fetch the data.
         query = (
             self._session.query(
-                SondeInstallation.install_id,
+                SondeInstallation.install_uuid,
                 SondeInstallation.start_date,
                 SondeInstallation.end_date,
                 SondeInstallation.install_depth,
@@ -893,7 +897,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         data.rename(columns_map, axis='columns', inplace=True)
 
         # Set the index of the dataframe.
-        data.set_index('install_id', inplace=True, drop=True)
+        data.set_index('install_uuid', inplace=True, drop=True)
 
         # Strip timezone info since it is not set correctly in the
         # BD anyway.
