@@ -16,27 +16,33 @@ from pandas import DatetimeIndex, Series
 import numpy as np
 
 # ---- Local imports
+from sardes.config.locale import _
 
 
 class DataType(Enum):
     """
     This enum type describes the type of data constituing the time series.
     """
-    WaterLevel = (0, 'blue')
-    WaterTemp = (1, 'red')
-    WaterEC = (2, 'cyan')
+    WaterLevel = (0, 'blue', _("Water level"))
+    WaterTemp = (1, 'red', _("Water temperature"))
+    WaterEC = (2, 'cyan', _("Water electrical conductivity"))
 
     def __new__(cls, *args, **kwds):
         obj = object.__new__(cls)
         obj._value_ = args[0]
         return obj
 
-    def __init__(self, _: int, color: str):
+    def __init__(self, _: int, color: str, label: str):
         self._color = color
+        self._label = label
 
     @property
     def color(self):
         return self._color
+
+    @property
+    def label(self):
+        return self._label
 
 
 class TimeSeriesGroup(Mapping):
@@ -338,3 +344,4 @@ if __name__ == '__main__':
     print(DataType.WaterLevel.value)
     print(DataType.WaterLevel.name)
     print(DataType.WaterLevel.color)
+    print(DataType.WaterLevel.label)
