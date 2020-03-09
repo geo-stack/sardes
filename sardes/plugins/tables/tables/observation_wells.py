@@ -102,15 +102,14 @@ class ObsWellsTableWidget(SardesTableWidget):
         """
         return self.tableview.get_current_row_data()
 
-    def _create_show_data_button(self):
-        toolbutton = create_toolbutton(
+    def _create_extra_toolbuttons(self):
+        show_plot_btn = create_toolbutton(
             self,
             icon='show_plot',
-            text=_("Show data"),
+            text=_("Plot data"),
             tip=_('Show the data of the timeseries acquired in the currently '
                   'selected observation well in an interactive '
                   'plot viewer.'),
-            shortcut='Ctrl+P',
             triggered=lambda _: self._show_timeseries_plot_viewer(),
             iconsize=get_iconsize()
             )
