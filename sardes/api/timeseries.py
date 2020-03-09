@@ -9,9 +9,10 @@
 
 # ---- Standard library imports
 from collections.abc import Mapping
+from enum import Enum
 
 # ---- Third party imports
-from pandas import DatetimeIndex
+from pandas import DatetimeIndex, Series
 import numpy as np
 
 # ---- Local imports
@@ -41,9 +42,10 @@ class TimeSeriesGroup(Mapping):
         inverted y-axis (positive towards bottom).
     """
 
-    def __init__(self, prop_id, prop_name, prop_units, yaxis_inverted=False):
+    def __init__(self, data_type, prop_name, prop_units,
+                 yaxis_inverted=False):
         self._timeseries = []
-        self.prop_id = prop_id
+        self.data_type = DataType(data_type)
         self.prop_name = prop_name
         self.prop_units = prop_units
         self.yaxis_inverted = yaxis_inverted
@@ -61,6 +63,9 @@ class TimeSeriesGroup(Mapping):
         for tseries in self._timeseries:
             yield tseries
 
+    def __str__(self):
+        return self.get_merged_timeseries().__str__()
+
     # ---- Timeseries
     @property
     def timeseries(self):
@@ -76,6 +81,24 @@ class TimeSeriesGroup(Mapping):
         self._timeseries.append(tseries)
 
     # ---- Utilities
+    def get_merged_timeseries(self):
+        """
+        Return a pandas dataframe containing the data from all the timeseries
+        that were added to this group.
+        """
+        if len(self.timeseries) > 1:
+            tseries_merged = self.timeseries[0]._data.append(
+                [ts._data for ts in self.timeseries[1:]],
+                ignore_index=False, verify_integrity=True)
+        elif len(self.timeseries) == 1:
+            tseries_merged = self.timeseries[0]._data.copy()
+        elif len(self.timeseries) == 0:
+            tseries_merged = Series([])
+        tseries_merged = tseries_merged.to_frame()
+        tseries_merged.columns = [self.data_type.name]
+        return tseries_merged
+
+    # ---- Data selection
     def clear_selected_data(self):
         """
         Clear all selected data in the timeseries of this timeseries group.
