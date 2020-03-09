@@ -37,6 +37,14 @@ class TimeSeriesGroup(Mapping):
 
     Parameters
     ----------
+    data_type: DataType
+        The type of data constituing the time series that are contained in
+        this group.
+    prop_name: str
+        The common human readable name describing the data constituing
+        the time series that are contained in this group.
+    prop_units: str
+        The units in which the data are saved.
     yaxis_inverted: bool
         A boolean to indicate whether the data should be plotted on an
         inverted y-axis (positive towards bottom).
