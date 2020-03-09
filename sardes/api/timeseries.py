@@ -22,9 +22,21 @@ class DataType(Enum):
     """
     This enum type describes the type of data constituing the time series.
     """
-    WaterLevel = 0
-    WaterTemp = 1
-    WaterEC = 2
+    WaterLevel = (0, 'blue')
+    WaterTemp = (1, 'red')
+    WaterEC = (2, 'cyan')
+
+    def __new__(cls, *args, **kwds):
+        obj = object.__new__(cls)
+        obj._value_ = args[0]
+        return obj
+
+    def __init__(self, _: int, color: str):
+        self._color = color
+
+    @property
+    def color(self):
+        return self._color
 
 
 class TimeSeriesGroup(Mapping):
@@ -319,3 +331,10 @@ def merge_timeseries_groups(tseries_groups):
             dataf = dataf.merge(
                 tseries, left_index=True, right_index=True, how='outer')
     return dataf
+
+
+if __name__ == '__main__':
+    print(DataType.WaterLevel)
+    print(DataType.WaterLevel.value)
+    print(DataType.WaterLevel.name)
+    print(DataType.WaterLevel.color)
