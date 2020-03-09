@@ -17,6 +17,15 @@ import numpy as np
 # ---- Local imports
 
 
+class DataType(Enum):
+    """
+    This enum type describes the type of data constituing the time series.
+    """
+    NIV_EAU = 0
+    TEMP_EAU = 1
+    COND_ELEC = 2
+
+
 class TimeSeriesGroup(Mapping):
     """
     Sardes time series group class.
