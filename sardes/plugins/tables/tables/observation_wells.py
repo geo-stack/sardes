@@ -143,7 +143,66 @@ class ObsWellsTableWidget(SardesTableWidget):
                 [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
                 self.plot_timeseries_data)
 
-    def _show_timeseries(self, tseries_groups):
+    @Slot()
+    def _view_current_obs_well_data(self):
+        """
+        Handle when a request has been made to show the data of the currently
+        selected well in a table.
+        """
+        self.tableview.setFocus()
+        current_obs_well = self.get_current_obs_well_data()
+        if current_obs_well is not None:
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+
+            # Get the timeseries data for that observation well.
+            self.db_connection_manager.get_timeseries_for_obs_well(
+                current_obs_well.name,
+                [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
+                self.view_timeseries_data)
+
+    def view_timeseries_data(self, tseries_groups):
+        """
+        Create and show a table to visualize the timeseries data contained
+        in tseries_groups.
+        """
+
+        class DataTableModel(SardesTableModel):
+            def create_delegate_for_column(self, view, column):
+                return NotEditableDelegate(self)
+
+        # Setup the table model and widget.
+        table_model = DataTableModel(
+            table_title='Timeseries Data',
+            table_id='tseries_data',
+            data_columns_mapper=[])
+        table_widget = SardesTableWidget(
+            table_model, parent=self, multi_columns_sort=False,
+            sections_movable=False, sections_hidable=False,
+            disabled_actions=['edit'])
+
+        dataf = merge_timeseries_groups(tseries_groups)
+        dataf.insert(0, 'Datetime', dataf.index)
+        dataf_columns_mapper = [(col, col) for col in dataf.columns]
+        table_model.set_model_data(dataf, dataf_columns_mapper)
+        table_widget.tableview._setup_item_delegates()
+
+        # Set the title of the window.
+        current_obs_well_data = self.get_current_obs_well_data()
+        table_widget.setWindowTitle(_("Observation well {} ({})").format(
+            current_obs_well_data['obs_well_id'],
+            current_obs_well_data['municipality'])
+            )
+
+        # Columns width and minimum window size.
+        horizontal_header = table_widget.tableview.horizontalHeader()
+        for section in range(horizontal_header.count()):
+            horizontal_header.resizeSection(section, 100)
+        table_widget.resize(475, 600)
+
+        QApplication.restoreOverrideCursor()
+        table_widget.show()
+
+    def plot_timeseries_data(self, tseries_groups):
         """
         Create and show a timeseries plot viewer to visualize interactively
         the timeseries data contained in tseries_groups.
