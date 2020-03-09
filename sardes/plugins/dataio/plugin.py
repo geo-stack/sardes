@@ -33,6 +33,9 @@ from sardes.widgets.tableviews import NotEditableDelegate, SardesTableWidget
 """Data Input/Output plugin"""
 
 
+NOT_FOUND_MSG = _('Not found in database')
+
+
 class DataIO(SardesPlugin):
 
     CONF_SECTION = 'data_io'
@@ -82,7 +85,10 @@ class DataIO(SardesPlugin):
         """
         super().register_plugin()
         self.main.db_connection_manager.register_model(
-            self.data_import_wizard, 'sondes_data', ['sonde_models_lib'])
+            self.data_import_wizard,
+            'sondes_data',
+            ['sonde_models_lib', 'sonde_installations',
+             'observation_wells_data'])
 
         # Set the import wizard working dir.
         self.data_import_wizard.working_directory = self.get_option(
@@ -123,26 +129,32 @@ class DataImportWizard(QDialog):
         self.setModal(False)
 
         self._table_id = 'data_import_wizard'
-        self._sonde_brand_model = None
+        self._sonde_data = None
         self._sonde_models_lib = None
+        self._sonde_installations = None
+        self._observation_wells_data = None
+
+        self._sonde_serial_no = None
+        self._sonde_model_id = None
+        self._sonde_uuid = None
+        self._obs_well_uuid = None
 
         # Setup file info.
         self.filename_label = QLabel()
         self.serial_number_label = QLabel()
         self.model_label = QLabel()
         self.obs_well_label = QLabel()
-        self.project_id_label = QLabel()
         self.location_label = QLabel()
         self.visit_date = QLabel()
 
-        form_layout = QFormLayout()
-        form_layout.addRow(_('File') + ' :', self.filename_label)
-        form_layout.addRow(_('Serial Number') + ' :', self.serial_number_label)
-        form_layout.addRow(_('Model') + ' :', self.model_label)
-        form_layout.addRow(_('Well') + ' :', self.obs_well_label)
-        form_layout.addRow(_('Project ID') + ' :', self.project_id_label)
-        form_layout.addRow(_('Location') + ' :', self.location_label)
-        form_layout.addRow(_('Visit Date') + ' :', self.visit_date)
+        self.form_layout = QFormLayout()
+        self.form_layout.addRow(_('File') + ' :', self.filename_label)
+        self.form_layout.addRow(
+            _('Serial Number') + ' :', self.serial_number_label)
+        self.form_layout.addRow(_('Model') + ' :', self.model_label)
+        self.form_layout.addRow(_('Well') + ' :', self.obs_well_label)
+        self.form_layout.addRow(_('Location') + ' :', self.location_label)
+        self.form_layout.addRow(_('Visit Date') + ' :', self.visit_date)
 
         # Setup the table widget.
         self.table_model = ImportDataTableModel(
@@ -169,7 +181,7 @@ class DataImportWizard(QDialog):
 
         # Setup the layout.
         layout = QVBoxLayout(self)
-        layout.addLayout(form_layout)
+        layout.addLayout(self.form_layout)
         layout.addWidget(self.table_widget)
         layout.addWidget(button_box)
 
@@ -199,10 +211,11 @@ class DataImportWizard(QDialog):
             self.working_directory, '*.csv ; *.lev ; *.xle')
 
         if len(self._queued_filenames):
-            self._load_next_queud_data_file()
+            self._load_next_queued_data_file()
             super().show()
 
-    def _load_next_queud_data_file(self):
+    def _load_next_queued_data_file(self):
+        QApplication.setOverrideCursor(Qt.WaitCursor)
         filename = self._queued_filenames.pop(0)
         self.working_directory = osp.dirname(filename)
         self.filename_label.setText(osp.basename(filename))
@@ -213,8 +226,7 @@ class DataImportWizard(QDialog):
             pass
         else:
             sites = solinst_file.sites
-            self.serial_number_label.setText(sites.instrument_serial_number)
-            self.project_id_label.setText(sites.project_name)
+            self._sonde_serial_no = sites.instrument_serial_number
             self.location_label.setText(sites.site_name)
             self.visit_date.setText(
                 sites.visit_date.strftime("%Y-%m-%d %H:%M:%S"))
@@ -226,8 +238,9 @@ class DataImportWizard(QDialog):
                 dataf, [(col, col) for col in dataf.columns])
             self.table_widget.tableview._setup_item_delegates()
             self.table_widget.tableview.resizeColumnsToContents()
-        self._update_sonde_model()
+        self._update_sonde_info()
         self._update_button_state()
+        QApplication.restoreOverrideCursor()
 
     # ---- Sardes Model Public API
     def set_database_connection_manager(self, db_connection_manager):
@@ -239,34 +252,99 @@ class DataImportWizard(QDialog):
         Set the data needed by the wizard and update the info displayed
         in the GUI.
         """
-        self._sonde_brand_model = dataf
-        self._update_sonde_model()
+        self._sonde_data = dataf
+        self._update_sonde_info()
 
     def set_model_library(self, dataf, name):
         """
         Set the data for the given library name and update the info
         displayed in the GUI.
         """
-        self._sonde_models_lib = dataf
-        self._update_sonde_model()
+        setattr(self, '_' + name, dataf)
+        self._update_sonde_info()
 
     def clear_data(self):
         """Clear the data of this wizard table."""
         self.table_model.clear_data()
 
     # ---- Private API
-    def _update_sonde_model(self):
-        """Update the sonde model shown in dialog."""
-        serial_number = self.serial_number_label.text()
-        if self._sonde_models_lib is not None and serial_number != '':
-            model = (self._sonde_brand_model[
-                self._sonde_brand_model['sonde_serial_no'] == serial_number
-                ]['sonde_model_id'].values[0])
-            sonde_brand_model = self._sonde_models_lib.loc[
-                model, 'sonde_brand_model']
-            self.model_label.setText(sonde_brand_model)
+    def _update_sonde_info(self):
+        self._update_sonde_serial_number()
+        self._update_sonde_model()
+        self._update_well()
+        self._update_well_municipality()
+
+    def _update_sonde_serial_number(self):
+        """Update the sonde serial number."""
+        if self._sonde_serial_no != '' and self._sonde_serial_no is not None:
+            self.serial_number_label.setText(self._sonde_serial_no)
         else:
-            self.model_label.setText('')
+            self.serial_number_label.setText(
+                '<font color=red>%s</font>' % NOT_FOUND_MSG)
+
+    def _update_well_municipality(self):
+        """Update the location of the well in which the sonde is installed."""
+        if self._sonde_serial_no != '' and self._sonde_serial_no is not None:
+            try:
+                sonde_uuid = (
+                    self._sonde_data
+                    [self._sonde_data['sonde_serial_no'] ==
+                     self._sonde_serial_no]
+                    .index[0])
+                sampling_feature_uuid = (
+                    self._sonde_installations
+                    [self._sonde_installations['sonde_uuid'] == sonde_uuid]
+                    ['sampling_feature_uuid']
+                    .values[0])
+                location = self._observation_wells_data.loc[
+                    sampling_feature_uuid, 'municipality']
+            except (KeyError, IndexError):
+                location = '<font color=red>%s</font>' % NOT_FOUND_MSG
+        else:
+            location = '<font color=red>%s</font>' % NOT_FOUND_MSG
+        self.location_label.setText(location)
+
+    def _update_sonde_model(self):
+        """Update the sonde model."""
+        if self._sonde_serial_no != '' and self._sonde_serial_no is not None:
+            try:
+                sonde_model_id = (
+                    self._sonde_data
+                    [self._sonde_data['sonde_serial_no'] ==
+                     self._sonde_serial_no]
+                    ['sonde_model_id']
+                    .values[0])
+                sonde_brand_model = self._sonde_models_lib.loc[
+                    sonde_model_id, 'sonde_brand_model']
+            except (KeyError, IndexError):
+                sonde_brand_model = '<font color=red>%s</font>' % NOT_FOUND_MSG
+        else:
+            sonde_brand_model = '<font color=red>%s</font>' % NOT_FOUND_MSG
+        self.model_label.setText(sonde_brand_model)
+
+    def _update_well(self):
+        """
+        Update the well id in which the sensor is installed.
+        """
+        if self._sonde_serial_no != '' and self._sonde_serial_no is not None:
+            try:
+                sonde_uuid = (
+                    self._sonde_data
+                    [self._sonde_data['sonde_serial_no'] ==
+                     self._sonde_serial_no]
+                    .index[0])
+                sampling_feature_uuid = (
+                    self._sonde_installations
+                    [self._sonde_installations['sonde_uuid'] == sonde_uuid]
+                    ['sampling_feature_uuid']
+                    .values[0])
+                well_id = self._observation_wells_data.loc[
+                    sampling_feature_uuid, 'obs_well_id']
+            except (KeyError, IndexError):
+                well_id = '<font color=red>%s</font>' % NOT_FOUND_MSG
+        else:
+            well_id = '<font color=red>%s</font>' % NOT_FOUND_MSG
+        self.obs_well_label.setText(well_id)
 
     def _update_button_state(self):
         """Update the state of the dialog's buttons."""
@@ -280,4 +358,4 @@ class DataImportWizard(QDialog):
         if button == self.close_button:
             self.close()
         elif button == self.next_btn:
-            self._load_next_queud_data_file()
+            self._load_next_queued_data_file()
