@@ -352,6 +352,7 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         :class:`TimeSeries` objects holding the data acquired in the
         observation well for the specified monitored property.
         """
+        data_type = DataType(data_type)
         if data_type in TSERIES:
             data_units = {
                 DataType.WaterEC: "",
