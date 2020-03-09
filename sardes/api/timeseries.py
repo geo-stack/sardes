@@ -327,7 +327,8 @@ def merge_timeseries_groups(tseries_groups):
     """
     dataf = None
     for tseries_group in tseries_groups:
-        # Handle water level data.
+        if tseries_group is None:
+            continue
         tseries = tseries_group.get_merged_timeseries()
         if tseries.empty:
             continue
