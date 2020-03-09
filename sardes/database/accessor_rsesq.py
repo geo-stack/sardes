@@ -34,7 +34,7 @@ from sqlalchemy.types import TEXT, VARCHAR, Boolean
 # ---- Local imports
 from sardes.api.database_accessor import DatabaseAccessor
 from sardes.database.utils import map_table_column_names, format_sqlobject_repr
-from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
+from sardes.api.timeseries import DataType, TimeSeriesGroup, TimeSeries
 
 
 # =============================================================================
@@ -921,22 +921,8 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
         return data
 
-    # ---- Monitored properties
-    @property
-    def monitored_properties(self):
-        """
-        Returns the list of properties for which time data is stored in the
-        database.
-        """
-        obs_prop_ids = (
-            self._session.query(ObservationProperty.obs_property_name)
-            .filter(TimeSeriesChannels.obs_property_id ==
-                    ObservationProperty.obs_property_id)
-            .distinct(ObservationProperty.obs_property_name)
-            .all())
-        return [obj.obs_property_name for obj in obs_prop_ids]
-
-    def get_monitored_property_name(self, monitored_property):
+    # ---- Observation properties
+    def _get_monitored_property_name(self, monitored_property):
         """
         Return the common human readable name for the corresponding
         monitored property.
@@ -948,42 +934,34 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             .one()
             .obs_property_desc)
 
-    def get_monitored_property_units(self, monitored_property):
+
+    # ---- Timeseries
+    def _get_observation_property(self, obs_property_id):
         """
-        Return the units in which the time data for this monitored property
-        are saved in the database.
+        Return the sqlalchemy ObservationProperty object corresponding to the
+        given ID.
         """
         return (
             self._session.query(ObservationProperty)
-            .filter(ObservationProperty.obs_property_name ==
-                    monitored_property)
-            .one()
-            .obs_property_units)
+            .filter(ObservationProperty.obs_property_id == obs_property_id)
+            .one())
 
-    def get_monitored_property_color(self, monitored_property):
-        return {'NIV_EAU': 'blue',
-                'TEMP_EAU': 'red',
-                'COND_ELEC': 'cyan'
-                }[monitored_property]
-
-    # ---- Timeseries
-    def get_timeseries_for_obs_well(self, sampling_feature_uuid,
-                                    monitored_property):
+    def get_timeseries_for_obs_well(self, sampling_feature_uuid, data_type):
         """
         Return a :class:`TimeSeriesGroup` object containing the
         :class:`TimeSeries` objects holding the data acquired for the
         specified monitored property in the observation well corresponding
         to the specified sampling feature ID. .
         """
+        data_type = DataType(data_type)
+
         # Get the observation property id that is used to reference in the
         # database the corresponding monitored property.
-        obs_property_id = (
-            self._session.query(ObservationProperty.obs_property_id)
-            .filter(ObservationProperty.obs_property_name ==
-                    monitored_property)
-            .one()
-            .obs_property_id
-            )
+        obs_property_id = {
+            DataType.WaterLevel: 2,
+            DataType.WaterTemp: 1,
+            DataType.WaterEC: 3}[data_type]
+        obs_prop = self._get_observation_property(obs_property_id)
 
         # Define a query to fetch the timseries data from the database.
         query = (
@@ -1012,11 +990,13 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         # For each channel, store the data in a time series object and
         # add it to the monitored property object.
         tseries_group = TimeSeriesGroup(
-            monitored_property,
-            self.get_monitored_property_name(monitored_property),
-            self.get_monitored_property_units(monitored_property),
-            yaxis_inverted=(monitored_property == 'NIV_EAU')
+            data_type,
+            data_type.label,
+            obs_prop.obs_property_units,
+            yaxis_inverted=(data_type == DataType.WaterLevel)
             )
+        tseries_group.sampling_feature_name = (
+            self._get_observation_well(sampling_feature_uuid).obs_well_id)
 
         # Check for duplicates along the time axis and drop the duplicated
         # entries if any.
@@ -1025,7 +1005,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         if nbr_duplicated:
             print(("Warning: {} duplicated {} entrie(s) were found while "
                    "fetching these data."
-                   ).format(nbr_duplicated, monitored_property))
+                   ).format(nbr_duplicated, data_type))
             data.drop_duplicates(subset='datetime', inplace=True)
         tseries_group.nbr_duplicated = nbr_duplicated
 
@@ -1038,12 +1018,9 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             tseries_group.add_timeseries(TimeSeries(
                 pd.Series(channel_data['value'], index=channel_data.index),
                 tseries_id=channel_id,
-                tseries_name=(
-                    self.get_monitored_property_name(monitored_property)),
-                tseries_units=(
-                    self.get_monitored_property_units(monitored_property)),
-                tseries_color=(
-                    self.get_monitored_property_color(monitored_property))
+                tseries_name=data_type.label,
+                tseries_units=obs_prop.obs_property_units,
+                tseries_color=data_type.color
                 ))
 
         return tseries_group
@@ -1392,7 +1369,7 @@ if __name__ == "__main__":
     sampling_feature_uuid = accessor._get_obs_well_sampling_feature_uuid(
         '01030001')
     wlevel_group = accessor.get_timeseries_for_obs_well(
-        sampling_feature_uuid, 'NIV_EAU')
+        sampling_feature_uuid, 0)
     wlevel_data = wlevel_group.get_merged_timeseries()
 
     accessor.close_connection()
