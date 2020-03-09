@@ -92,7 +92,8 @@ class ObsWellsTableWidget(SardesTableWidget):
         super().__init__(table_model, parent)
 
         self.add_toolbar_separator()
-        self.add_toolbar_widget(self._create_show_data_button())
+        for button in self._create_extra_toolbuttons():
+            self.add_toolbar_widget(button)
 
     # ---- Timeseries
     def get_current_obs_well_data(self):
@@ -113,7 +114,16 @@ class ObsWellsTableWidget(SardesTableWidget):
             triggered=lambda _: self._show_timeseries_plot_viewer(),
             iconsize=get_iconsize()
             )
-        return toolbutton
+        show_data_btn = create_toolbutton(
+            self,
+            icon='show_data_table',
+            text=_("View data"),
+            tip=_('Show the data of the timeseries acquired in the currently '
+                  'selected observation well in a table.'),
+            triggered=lambda _: self._show_timeseries_table(),
+            iconsize=get_iconsize()
+            )
+        return [show_plot_btn, show_data_btn]
 
     def _show_timeseries_plot_viewer(self, *args, **kargs):
         """
