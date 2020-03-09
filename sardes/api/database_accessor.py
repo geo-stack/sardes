@@ -542,49 +542,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
-    # ---- Monitored properties
-    @property
-    def monitored_properties(self):
-        """
-        Returns the list of properties for which time data is stored in the
-        database.
-
-        Returns
-        -------
-        list of str
-            A list of strings corresponding to the properties for which time
-            data is stored in the database.
-        """
-        raise NotImplementedError
-
-    def get_monitored_property_name(self, monitored_property):
-        """
-        Return the common human readable name for the corresponding
-        monitored property.
-
-        Returns
-        -------
-        str
-            A string corresponding to the common human readable name used to
-            reference this monitored property in the GUI and the graphs.
-        """
-        raise NotImplementedError
-
-    def get_monitored_property_units(self, monitored_property):
-        """
-        Return the units in which the time data for this monitored property
-        are saved in the database.
-
-        Returns
-        -------
-        str
-            A string corresponding to the units in which the time data for
-            this monitored property are saved in the database.
-        """
-        raise NotImplementedError
-
     # ---- Timeseries
-    def get_timeseries_for_obs_well(self, obs_well_id, monitored_property):
+    def get_timeseries_for_obs_well(self, obs_well_id, data_type):
         """
         Return a :class:`TimeSeriesGroup` containing the :class:`TimeSeries`
         holding the data acquired in the observation well for the
@@ -595,9 +554,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
         obs_well_id: object
             A unique identifier that is used to reference the observation well
             in the database.
-        monitored_property: object
-            The identifier used to reference the property for which we want
-            to extract the time data from the database.
+        data_type: :class:`sardes.api.timeseries.DataType`
+            The type of time data that we want to extract from the database.
 
         Returns
         -------
