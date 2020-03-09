@@ -16,6 +16,7 @@ import os
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
+from flaky import flaky
 import pytest
 from qtpy.QtCore import QPoint, QSize
 
@@ -44,6 +45,7 @@ def test_mainwindow_init(mainwindow):
     assert mainwindow
 
 
+@flaky(max_runs=3)
 def test_mainwindow_settings(qtbot, mocker):
     """
     Test that the window size and position are store and restore correctly
