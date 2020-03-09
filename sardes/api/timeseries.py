@@ -22,9 +22,9 @@ class DataType(Enum):
     """
     This enum type describes the type of data constituing the time series.
     """
-    NIV_EAU = 0
-    TEMP_EAU = 1
-    COND_ELEC = 2
+    WaterLevel = 0
+    WaterTemp = 1
+    WaterEC = 2
 
 
 class TimeSeriesGroup(Mapping):
