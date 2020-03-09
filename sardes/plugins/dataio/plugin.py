@@ -170,13 +170,13 @@ class DataImportWizard(QDialog):
         # Setup the dialog button box.
         self.next_btn = QPushButton(_('Next'))
         self.next_btn.setDefault(True)
-        self.close_button = QPushButton(_('Close'))
-        self.close_button.setDefault(False)
-        self.close_button.setAutoDefault(False)
+        self.close_btn = QPushButton(_('Close'))
+        self.close_btn.setDefault(False)
+        self.close_btn.setAutoDefault(False)
 
         button_box = QDialogButtonBox()
         button_box.addButton(self.next_btn, button_box.ApplyRole)
-        button_box.addButton(self.close_button, button_box.RejectRole)
+        button_box.addButton(self.close_btn, button_box.RejectRole)
         button_box.layout().insertSpacing(1, 100)
         button_box.clicked.connect(self._handle_button_click_event)
 
@@ -355,7 +355,7 @@ class DataImportWizard(QDialog):
         """
         Handle when a button is clicked on the dialog button box.
         """
-        if button == self.close_button:
+        if button == self.close_btn:
             self.close()
         elif button == self.next_btn:
             self._load_next_queued_data_file()
