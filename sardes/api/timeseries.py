@@ -297,3 +297,25 @@ class TimeSeries(Mapping):
         """
         if len(indexes):
             self._undo_stack.append(self._data.iloc[indexes, 0].copy())
+
+
+# =============================================================================
+# ---- Utilities
+# =============================================================================
+def merge_timeseries_groups(tseries_groups):
+    """
+    Merge the time data contained in multiple timeseries groups in a single
+    dataframe.
+    """
+    dataf = None
+    for tseries_group in tseries_groups:
+        # Handle water level data.
+        tseries = tseries_group.get_merged_timeseries()
+        if tseries.empty:
+            continue
+        if dataf is None:
+            dataf = tseries
+        else:
+            dataf = dataf.merge(
+                tseries, left_index=True, right_index=True, how='outer')
+    return dataf
