@@ -8,11 +8,13 @@
 # -----------------------------------------------------------------------------
 
 # ---- Standard imports
+import datetime
 import os.path as osp
 
 # ---- Third party imports
 from appconfigs.base import get_home_dir
 import hydsensread as hsr
+import pandas as pd
 from qtpy.QtCore import Qt, QSize, Slot, Signal
 from qtpy.QtWidgets import (QApplication, QFileDialog, QTabWidget,
                             QDialog, QGridLayout, QLabel, QPushButton,
@@ -136,6 +138,7 @@ class DataImportWizard(QDialog):
         self._observation_wells_data = None
 
         self._sonde_serial_no = None
+        self._avg_datetime = None
         self._sonde_model_id = None
         self._sonde_uuid = None
         self._obs_well_uuid = None
@@ -173,8 +176,12 @@ class DataImportWizard(QDialog):
         self.close_btn = QPushButton(_('Close'))
         self.close_btn.setDefault(False)
         self.close_btn.setAutoDefault(False)
+        self.load_btn = QPushButton(_('Load Data'))
+        self.load_btn.setDefault(False)
+        self.load_btn.setAutoDefault(False)
 
         button_box = QDialogButtonBox()
+        button_box.addButton(self.load_btn, button_box.ActionRole)
         button_box.addButton(self.next_btn, button_box.ApplyRole)
         button_box.addButton(self.close_btn, button_box.RejectRole)
         button_box.layout().insertSpacing(1, 100)
@@ -227,13 +234,14 @@ class DataImportWizard(QDialog):
             pass
         else:
             sites = solinst_file.sites
-            self._sonde_serial_no = sites.instrument_serial_number
+            self._sonde_serial_no = sites.instrument_serial_number or None
             self.location_label.setText(sites.site_name)
             self.visit_date.setText(
                 sites.visit_date.strftime("%Y-%m-%d %H:%M:%S"))
 
             dataf = solinst_file.records
             dataf.insert(0, 'Datetime', dataf.index)
+            self._avg_datetime = dataf.index.mean()
 
             self.table_model.set_model_data(
                 dataf, [(col, col) for col in dataf.columns])
@@ -255,6 +263,7 @@ class DataImportWizard(QDialog):
         """
         self._sonde_data = dataf
         self._update_sonde_info()
+        self._update_button_state()
 
     def set_model_library(self, dataf, name):
         """
@@ -263,6 +272,7 @@ class DataImportWizard(QDialog):
         """
         setattr(self, '_' + name, dataf)
         self._update_sonde_info()
+        self._update_button_state()
 
     def clear_data(self):
         """Clear the data of this wizard table."""
@@ -270,85 +280,123 @@ class DataImportWizard(QDialog):
 
     # ---- Private API
     def _update_sonde_info(self):
+        self._sonde_uuid = self._fetch_sonde_uuid()
+        self._sonde_model_id = self._fetch_sonde_model_id()
+        self._obs_well_uuid = self._fetch_obs_well_uuid()
+
         self._update_sonde_serial_number()
         self._update_sonde_model()
         self._update_well()
         self._update_well_municipality()
 
+    def _fetch_sonde_uuid(self):
+        """
+        Fetch and return the sonde uuid corresponding to sonde serial number
+        of the currently opened data file.
+        """
+        if self._sonde_serial_no is None:
+            return None
+        try:
+            sonde_uuid = (
+                self._sonde_data
+                [self._sonde_data['sonde_serial_no'] == self._sonde_serial_no]
+                .index[0])
+            return sonde_uuid
+        except (KeyError, IndexError):
+            return None
+
+    def _fetch_sonde_model_id(self):
+        """
+        Fetch and return the model id of the sonde associated
+        with the currently opened data file.
+        """
+        if self._sonde_serial_no is None:
+            return None
+        try:
+            sonde_model_id = (
+                self._sonde_data
+                [self._sonde_data['sonde_serial_no'] == self._sonde_serial_no]
+                ['sonde_model_id']
+                .values[0])
+            return sonde_model_id
+        except (KeyError, IndexError):
+            return None
+
+    def _fetch_obs_well_uuid(self):
+        """
+        Fetch and return the observation well uuid where the sonde associated
+        with the currently opened data file was installed.
+        """
+        if self._sonde_uuid is None:
+            return None
+        try:
+            installs = (
+                self._sonde_installations
+                [self._sonde_installations['sonde_uuid'] == self._sonde_uuid]
+                )
+            for i in range(len(installs)):
+                install = installs.iloc[i]
+                start_date = install['start_date']
+                end_date = (install['end_date'] if
+                            not pd.isnull(install['end_date']) else
+                            datetime.datetime.now())
+                if (start_date <= self._avg_datetime and
+                        end_date >= self._avg_datetime):
+                    return install['sampling_feature_uuid']
+            else:
+                return None
+        except (KeyError, IndexError):
+            return None
+
     def _update_sonde_serial_number(self):
         """Update the sonde serial number."""
-        if self._sonde_serial_no != '' and self._sonde_serial_no is not None:
-            self.serial_number_label.setText(self._sonde_serial_no)
-        else:
-            self.serial_number_label.setText(NOT_FOUND_MSG_COLORED)
+        self.serial_number_label.setText(
+            self._sonde_serial_no if self._sonde_serial_no is not None else
+            NOT_FOUND_MSG_COLORED)
 
     def _update_well_municipality(self):
         """Update the location of the well in which the sonde is installed."""
-        if self._sonde_serial_no != '' and self._sonde_serial_no is not None:
+        if self._obs_well_uuid is not None:
             try:
-                sonde_uuid = (
-                    self._sonde_data
-                    [self._sonde_data['sonde_serial_no'] ==
-                     self._sonde_serial_no]
-                    .index[0])
-                sampling_feature_uuid = (
-                    self._sonde_installations
-                    [self._sonde_installations['sonde_uuid'] == sonde_uuid]
-                    ['sampling_feature_uuid']
-                    .values[0])
                 location = self._observation_wells_data.loc[
-                    sampling_feature_uuid, 'municipality']
+                    self._obs_well_uuid, 'municipality']
+                self.location_label.setText(location)
             except (KeyError, IndexError):
-                location = NOT_FOUND_MSG_COLORED
+                self.location_label.setText(NOT_FOUND_MSG_COLORED)
         else:
-            location = NOT_FOUND_MSG_COLORED
-        self.location_label.setText(location)
+            self.location_label.setText(NOT_FOUND_MSG_COLORED)
 
     def _update_sonde_model(self):
         """Update the sonde model."""
-        if self._sonde_serial_no != '' and self._sonde_serial_no is not None:
+        if self._sonde_model_id is not None:
             try:
-                sonde_model_id = (
-                    self._sonde_data
-                    [self._sonde_data['sonde_serial_no'] ==
-                     self._sonde_serial_no]
-                    ['sonde_model_id']
-                    .values[0])
                 sonde_brand_model = self._sonde_models_lib.loc[
-                    sonde_model_id, 'sonde_brand_model']
+                    self._sonde_model_id, 'sonde_brand_model']
+                self.model_label.setText(sonde_brand_model)
             except (KeyError, IndexError):
-                sonde_brand_model = NOT_FOUND_MSG_COLORED
+                self.model_label.setText(NOT_FOUND_MSG_COLORED)
+                self._sonde_model_id = None
         else:
-            sonde_brand_model = NOT_FOUND_MSG_COLORED
-        self.model_label.setText(sonde_brand_model)
+            self.model_label.setText(NOT_FOUND_MSG_COLORED)
 
     def _update_well(self):
         """
         Update the well id in which the sensor is installed.
         """
-        if self._sonde_serial_no != '' and self._sonde_serial_no is not None:
+        if self._obs_well_uuid is not None:
             try:
-                sonde_uuid = (
-                    self._sonde_data
-                    [self._sonde_data['sonde_serial_no'] ==
-                     self._sonde_serial_no]
-                    .index[0])
-                sampling_feature_uuid = (
-                    self._sonde_installations
-                    [self._sonde_installations['sonde_uuid'] == sonde_uuid]
-                    ['sampling_feature_uuid']
-                    .values[0])
                 well_id = self._observation_wells_data.loc[
-                    sampling_feature_uuid, 'obs_well_id']
+                    self._obs_well_uuid, 'obs_well_id']
+                self.obs_well_label.setText(well_id)
             except (KeyError, IndexError):
-                well_id = NOT_FOUND_MSG_COLORED
+                self.obs_well_label.setText(NOT_FOUND_MSG_COLORED)
         else:
-            well_id = NOT_FOUND_MSG_COLORED
-        self.obs_well_label.setText(well_id)
+            self.obs_well_label.setText(NOT_FOUND_MSG_COLORED)
 
     def _update_button_state(self):
         """Update the state of the dialog's buttons."""
         self.next_btn.setEnabled(len(self._queued_filenames) > 0)
+        self.load_btn.setEnabled(self._obs_well_uuid is not None)
 
     @Slot(QAbstractButton)
     def _handle_button_click_event(self, button):
