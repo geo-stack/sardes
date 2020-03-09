@@ -34,6 +34,7 @@ from sardes.widgets.tableviews import NotEditableDelegate, SardesTableWidget
 
 
 NOT_FOUND_MSG = _('Not found in database')
+NOT_FOUND_MSG_COLORED = '<font color=red>%s</font>' % NOT_FOUND_MSG
 
 
 class DataIO(SardesPlugin):
@@ -279,8 +280,7 @@ class DataImportWizard(QDialog):
         if self._sonde_serial_no != '' and self._sonde_serial_no is not None:
             self.serial_number_label.setText(self._sonde_serial_no)
         else:
-            self.serial_number_label.setText(
-                '<font color=red>%s</font>' % NOT_FOUND_MSG)
+            self.serial_number_label.setText(NOT_FOUND_MSG_COLORED)
 
     def _update_well_municipality(self):
         """Update the location of the well in which the sonde is installed."""
@@ -299,9 +299,9 @@ class DataImportWizard(QDialog):
                 location = self._observation_wells_data.loc[
                     sampling_feature_uuid, 'municipality']
             except (KeyError, IndexError):
-                location = '<font color=red>%s</font>' % NOT_FOUND_MSG
+                location = NOT_FOUND_MSG_COLORED
         else:
-            location = '<font color=red>%s</font>' % NOT_FOUND_MSG
+            location = NOT_FOUND_MSG_COLORED
         self.location_label.setText(location)
 
     def _update_sonde_model(self):
@@ -317,9 +317,9 @@ class DataImportWizard(QDialog):
                 sonde_brand_model = self._sonde_models_lib.loc[
                     sonde_model_id, 'sonde_brand_model']
             except (KeyError, IndexError):
-                sonde_brand_model = '<font color=red>%s</font>' % NOT_FOUND_MSG
+                sonde_brand_model = NOT_FOUND_MSG_COLORED
         else:
-            sonde_brand_model = '<font color=red>%s</font>' % NOT_FOUND_MSG
+            sonde_brand_model = NOT_FOUND_MSG_COLORED
         self.model_label.setText(sonde_brand_model)
 
     def _update_well(self):
@@ -341,9 +341,9 @@ class DataImportWizard(QDialog):
                 well_id = self._observation_wells_data.loc[
                     sampling_feature_uuid, 'obs_well_id']
             except (KeyError, IndexError):
-                well_id = '<font color=red>%s</font>' % NOT_FOUND_MSG
+                well_id = NOT_FOUND_MSG_COLORED
         else:
-            well_id = '<font color=red>%s</font>' % NOT_FOUND_MSG
+            well_id = NOT_FOUND_MSG_COLORED
         self.obs_well_label.setText(well_id)
 
     def _update_button_state(self):
