@@ -9,12 +9,40 @@
 
 # ---- Standard library imports
 from collections.abc import Mapping
+from enum import Enum
 
 # ---- Third party imports
-from pandas import DatetimeIndex
+from pandas import DatetimeIndex, Series
 import numpy as np
 
 # ---- Local imports
+from sardes.config.locale import _
+
+
+class DataType(Enum):
+    """
+    This enum type describes the type of data constituing the time series.
+    """
+    WaterLevel = (0, 'blue', _("Water level"))
+    WaterTemp = (1, 'red', _("Water temperature"))
+    WaterEC = (2, 'cyan', _("Water electrical conductivity"))
+
+    def __new__(cls, *args, **kwds):
+        obj = object.__new__(cls)
+        obj._value_ = args[0]
+        return obj
+
+    def __init__(self, _: int, color: str, label: str):
+        self._color = color
+        self._label = label
+
+    @property
+    def color(self):
+        return self._color
+
+    @property
+    def label(self):
+        return self._label
 
 
 class TimeSeriesGroup(Mapping):
@@ -27,14 +55,23 @@ class TimeSeriesGroup(Mapping):
 
     Parameters
     ----------
+    data_type: DataType
+        The type of data constituing the time series that are contained in
+        this group.
+    prop_name: str
+        The common human readable name describing the data constituing
+        the time series that are contained in this group.
+    prop_units: str
+        The units in which the data are saved.
     yaxis_inverted: bool
         A boolean to indicate whether the data should be plotted on an
         inverted y-axis (positive towards bottom).
     """
 
-    def __init__(self, prop_id, prop_name, prop_units, yaxis_inverted=False):
+    def __init__(self, data_type, prop_name, prop_units,
+                 yaxis_inverted=False):
         self._timeseries = []
-        self.prop_id = prop_id
+        self.data_type = DataType(data_type)
         self.prop_name = prop_name
         self.prop_units = prop_units
         self.yaxis_inverted = yaxis_inverted
@@ -52,6 +89,9 @@ class TimeSeriesGroup(Mapping):
         for tseries in self._timeseries:
             yield tseries
 
+    def __str__(self):
+        return self.get_merged_timeseries().__str__()
+
     # ---- Timeseries
     @property
     def timeseries(self):
@@ -67,6 +107,24 @@ class TimeSeriesGroup(Mapping):
         self._timeseries.append(tseries)
 
     # ---- Utilities
+    def get_merged_timeseries(self):
+        """
+        Return a pandas dataframe containing the data from all the timeseries
+        that were added to this group.
+        """
+        if len(self.timeseries) > 1:
+            tseries_merged = self.timeseries[0]._data.append(
+                [ts._data for ts in self.timeseries[1:]],
+                ignore_index=False, verify_integrity=True)
+        elif len(self.timeseries) == 1:
+            tseries_merged = self.timeseries[0]._data.copy()
+        elif len(self.timeseries) == 0:
+            tseries_merged = Series([])
+        tseries_merged = tseries_merged.to_frame()
+        tseries_merged.columns = [self.data_type.name]
+        return tseries_merged
+
+    # ---- Data selection
     def clear_selected_data(self):
         """
         Clear all selected data in the timeseries of this timeseries group.
@@ -257,3 +315,34 @@ class TimeSeries(Mapping):
         """
         if len(indexes):
             self._undo_stack.append(self._data.iloc[indexes, 0].copy())
+
+
+# =============================================================================
+# ---- Utilities
+# =============================================================================
+def merge_timeseries_groups(tseries_groups):
+    """
+    Merge the time data contained in multiple timeseries groups in a single
+    dataframe.
+    """
+    dataf = None
+    for tseries_group in tseries_groups:
+        if tseries_group is None:
+            continue
+        tseries = tseries_group.get_merged_timeseries()
+        if tseries.empty:
+            continue
+        if dataf is None:
+            dataf = tseries
+        else:
+            dataf = dataf.merge(
+                tseries, left_index=True, right_index=True, how='outer')
+    return dataf
+
+
+if __name__ == '__main__':
+    print(DataType.WaterLevel)
+    print(DataType.WaterLevel.value)
+    print(DataType.WaterLevel.name)
+    print(DataType.WaterLevel.color)
+    print(DataType.WaterLevel.label)
