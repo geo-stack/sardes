@@ -12,7 +12,7 @@ from collections.abc import Mapping
 from enum import Enum
 
 # ---- Third party imports
-from pandas import DatetimeIndex, Series
+from pandas import DatetimeIndex, DataFrame
 import numpy as np
 
 # ---- Local imports
@@ -112,17 +112,37 @@ class TimeSeriesGroup(Mapping):
         Return a pandas dataframe containing the data from all the timeseries
         that were added to this group.
         """
-        if len(self.timeseries) > 1:
-            tseries_merged = self.timeseries[0]._data.append(
-                [ts._data for ts in self.timeseries[1:]],
-                ignore_index=False, verify_integrity=True)
-        elif len(self.timeseries) == 1:
-            tseries_merged = self.timeseries[0]._data.copy()
+        cidfmt = '__{}__'
+        if len(self.timeseries) >= 1:
+            merged_tseries = self.timeseries[0]._data.to_frame()
+            column_name = self.data_type.name
+            merged_tseries.columns = [column_name]
+            merged_tseries[cidfmt.format(column_name)] = self.timeseries[0].id
+
+            # Append or merge the remaining timeseries with the first one.
+            duplicate_count = 1
+            for tseries in self.timeseries[1:]:
+                try:
+                    tseries_to_append = tseries._data.to_frame()
+                    column_name = self.data_type.name
+                    tseries_to_append.columns = [column_name]
+                    tseries_to_append[cidfmt.format(column_name)] = tseries.id
+                    merged_tseries = merged_tseries.append(
+                        tseries_to_append, ignore_index=False,
+                        verify_integrity=True, sort=True)
+                except ValueError:
+                    tseries_to_append = tseries._data.to_frame()
+                    column_name = '{}{}'.format(
+                        self.data_type.name, duplicate_count)
+                    tseries_to_append.columns = [column_name]
+                    tseries_to_append[cidfmt.format(column_name)] = tseries.id
+                    merged_tseries = merged_tseries.merge(
+                        tseries_to_append, left_index=True, right_index=True,
+                        how='outer', sort=True)
+                    duplicate_count += 1
         elif len(self.timeseries) == 0:
-            tseries_merged = Series([])
-        tseries_merged = tseries_merged.to_frame()
-        tseries_merged.columns = [self.data_type.name]
-        return tseries_merged
+            merged_tseries = DataFrame([])
+        return merged_tseries
 
     # ---- Data selection
     def clear_selected_data(self):
@@ -336,7 +356,8 @@ def merge_timeseries_groups(tseries_groups):
             dataf = tseries
         else:
             dataf = dataf.merge(
-                tseries, left_index=True, right_index=True, how='outer')
+                tseries, left_index=True, right_index=True, how='outer',
+                sort=True)
     return dataf
 
 

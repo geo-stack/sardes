@@ -182,7 +182,9 @@ class ObsWellsTableWidget(SardesTableWidget):
 
         dataf = merge_timeseries_groups(tseries_groups)
         dataf.insert(0, 'Datetime', dataf.index)
-        dataf_columns_mapper = [(col, col) for col in dataf.columns]
+        dataf_columns_mapper = [(col, col) for col in dataf.columns if
+                                not col.startswith('__') and
+                                not col.endswith('__')]
         table_model.set_model_data(dataf, dataf_columns_mapper)
         table_widget.tableview._setup_item_delegates()
 
