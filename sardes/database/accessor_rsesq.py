@@ -1156,6 +1156,29 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 # =============================================================================
 # ---- Utilities
 # =============================================================================
+def test_duplicate_timeseries_data(accessor):
+    """
+    For each monitoring properties, check if there is more than one values
+    saved in the database for each date.
+    """
+    varnames = [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC]
+    duplicate_data = {}
+    obs_wells = accessor.get_observation_wells_data()
+
+    for var in varnames:
+        print('Testing', var.name, 'for duplicate data...')
+        duplicate_data[var] = []
+
+        for obs_well_uuid in obs_wells.index:
+            tseries_group = accessor.get_timeseries_for_obs_well(
+                obs_well_uuid, var)
+            if tseries_group.nbr_duplicated > 0:
+                duplicate_data[var].append(
+                    (tseries_group.sampling_feature_name,
+                     tseries_group.nbr_duplicated))
+    return duplicate_data
+
+
 def update_repere_table(filename, accessor):
     """
     Update the observation wells repere data in the database from an
