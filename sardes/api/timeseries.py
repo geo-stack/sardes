@@ -112,34 +112,26 @@ class TimeSeriesGroup(Mapping):
         Return a pandas dataframe containing the data from all the timeseries
         that were added to this group.
         """
-        cidfmt = '__{}__'
         if len(self.timeseries) >= 1:
             merged_tseries = self.timeseries[0]._data.to_frame()
-            column_name = self.data_type.name
-            merged_tseries.columns = [column_name]
-            merged_tseries[cidfmt.format(column_name)] = self.timeseries[0].id
+            merged_tseries.columns = [self.data_type.name]
+            # Add series ID to the dataframe.
+            merged_tseries['obs_id'] = self.timeseries[0].id
+            # Add sonde ID to the dataframe.
+            merged_tseries['sonde_id'] = self.timeseries[0].sonde_id
+            # Reset index, but preserve the datetime data.
+            merged_tseries.reset_index(drop=False, inplace=True)
 
             # Append or merge the remaining timeseries with the first one.
-            duplicate_count = 1
             for tseries in self.timeseries[1:]:
-                try:
-                    tseries_to_append = tseries._data.to_frame()
-                    column_name = self.data_type.name
-                    tseries_to_append.columns = [column_name]
-                    tseries_to_append[cidfmt.format(column_name)] = tseries.id
-                    merged_tseries = merged_tseries.append(
-                        tseries_to_append, ignore_index=False,
-                        verify_integrity=True, sort=True)
-                except ValueError:
-                    tseries_to_append = tseries._data.to_frame()
-                    column_name = '{}{}'.format(
-                        self.data_type.name, duplicate_count)
-                    tseries_to_append.columns = [column_name]
-                    tseries_to_append[cidfmt.format(column_name)] = tseries.id
-                    merged_tseries = merged_tseries.merge(
-                        tseries_to_append, left_index=True, right_index=True,
-                        how='outer', sort=True)
-                    duplicate_count += 1
+                tseries_to_append = tseries._data.to_frame()
+                tseries_to_append.columns = [self.data_type.name]
+                tseries_to_append['obs_id'] = tseries.id
+                tseries_to_append['sonde_id'] = tseries.sonde_id
+                tseries_to_append.reset_index(drop=False, inplace=True)
+                merged_tseries = merged_tseries.append(
+                    tseries_to_append, ignore_index=True,
+                    verify_integrity=True, sort=True)
         elif len(self.timeseries) == 0:
             merged_tseries = DataFrame([])
         return merged_tseries
@@ -172,21 +164,26 @@ class TimeSeries(Mapping):
     tseries_id
         A unique ID used to reference this time series between Sardes GUI and
         the database by the database accessor.
-    tseries_name
+    tseries_name: str
         A common human readable name used to reference this time series in the
         GUI and the graphs.
-    tseries_units
+    tseries_units: str
         The units of the data this timeseries is referencing to.
+    sonde_id
+        An ID used to reference the sonde with which the data of this time
+        series were acquired.
     """
 
     def __init__(self, data, tseries_id, tseries_name=None,
-                 tseries_units=None, tseries_color=None):
+                 tseries_units=None, tseries_color=None,
+                 sonde_id=None):
         super().__init__()
         self._data = data
         self.name = tseries_name
         self.id = tseries_id
         self.units = tseries_units
         self.color = tseries_color
+        self.sonde_id = sonde_id
 
         self._undo_stack = []
         self._selected_data_indexes = DatetimeIndex([])
@@ -356,8 +353,16 @@ def merge_timeseries_groups(tseries_groups):
             dataf = tseries
         else:
             dataf = dataf.merge(
-                tseries, left_index=True, right_index=True, how='outer',
-                sort=True)
+                tseries,
+                left_on=['datetime', 'obs_id', 'sonde_id'],
+                right_on=['datetime', 'obs_id', 'sonde_id'],
+                how='outer', sort=True)
+
+    # Reorder the columns so that the data are displayed nicely.
+    grp_names = [grp.data_type.name for grp in tseries_groups if
+                 grp.data_type.name in dataf.columns]
+    dataf = dataf[['datetime', 'sonde_id'] + grp_names + ['obs_id']]
+
     return dataf
 
 

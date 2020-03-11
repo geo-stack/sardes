@@ -298,6 +298,14 @@ class TimeSeriesData(Base):
         'canal_id', Integer, ForeignKey('resultats.canal_temporel.canal_id'),
         primary_key=True,)
 
+    @hybrid_property
+    def dateyear(self):
+        return self.datetime.year
+
+    @dateyear.expression
+    def dateyear(cls):
+        return extract('year', TimeSeriesData.datetime)
+
 
 # =============================================================================
 # ---- Accessor
@@ -965,6 +973,20 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             .one())
 
     # ---- Timeseries
+    def _get_sonde_id_from_obs_id(self, observation_id):
+        """
+        Return the sonde ID associated with the given observation ID.
+        """
+        return (
+            self._session.query(SondeInstallation)
+            .filter(Observation.observation_id == observation_id)
+            .filter(Observation.process_uuid ==
+                    ProcessesInstalls.process_uuid)
+            .filter(ProcessesInstalls.install_id ==
+                    SondeInstallation.install_id)
+            .one()
+            .sonde_serial_no)
+
     def get_timeseries_for_obs_well(self, sampling_feature_uuid, data_type):
         """
         Return a :class:`TimeSeriesGroup` object containing the
@@ -986,7 +1008,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         query = (
             self._session.query(TimeSeriesData.value,
                                 TimeSeriesData.datetime,
-                                TimeSeriesData.channel_id)
+                                Observation.observation_id)
             .filter(TimeSeriesChannels.obs_property_id == obs_property_id)
             .filter(Observation.sampling_feature_uuid == sampling_feature_uuid)
             .filter(Observation.observation_uuid ==
@@ -1034,14 +1056,15 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         data.set_index(['datetime'], drop=True, inplace=True)
 
         # Split the data in channels.
-        for channel_id in data['channel_id'].unique():
-            channel_data = data[data['channel_id'] == channel_id]
+        for observation_id in data['observation_id'].unique():
+            channel_data = data[data['observation_id'] == observation_id]
             tseries_group.add_timeseries(TimeSeries(
                 pd.Series(channel_data['value'], index=channel_data.index),
-                tseries_id=channel_id,
+                tseries_id=observation_id,
                 tseries_name=data_type.label,
                 tseries_units=obs_prop.obs_property_units,
-                tseries_color=data_type.color
+                tseries_color=data_type.color,
+                sonde_id=self._get_sonde_id_from_obs_id(observation_id)
                 ))
 
         return tseries_group
@@ -1405,8 +1428,11 @@ if __name__ == "__main__":
         '02340006')
     wlevel_group = accessor.get_timeseries_for_obs_well(
         sampling_feature_uuid, 0)
+    wlevel_tseries = wlevel_group.get_merged_timeseries()
+
     wtemp_group = accessor.get_timeseries_for_obs_well(
         sampling_feature_uuid, 1)
+    wtemp_tseries = wtemp_group.get_merged_timeseries()
 
     merged_data = merge_timeseries_groups([wlevel_group, wtemp_group])
 
