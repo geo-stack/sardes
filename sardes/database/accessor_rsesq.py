@@ -34,7 +34,7 @@ from sqlalchemy.types import TEXT, VARCHAR, Boolean
 # ---- Local imports
 from sardes.api.database_accessor import DatabaseAccessor
 from sardes.database.utils import map_table_column_names, format_sqlobject_repr
-from sardes.api.timeseries import DataType, TimeSeriesGroup, TimeSeries
+from sardes.api.timeseries import DataType, TimeSeriesGroup, TimeSeries, merge_timeseries_groups
 
 
 # =============================================================================
@@ -264,27 +264,39 @@ class SondeModels(Base):
 
 
 class TimeSeriesChannels(Base):
+    """
+    An object used to map the 'resultats.canal_temporel' table
+    of the RSESQ database.
+    """
     __tablename__ = 'canal_temporel'
     __table_args__ = ({"schema": "resultats"})
 
     channel_uuid = Column('canal_uuid', String, primary_key=True)
     channel_id = Column('canal_id', Integer)
-    observation_uuid = Column('observation_uuid', String)
-    # Relation with table librairies.xm_observed_property
-    obs_property_id = Column('obs_property_id', Integer)
+    observation_uuid = Column(
+        'observation_uuid', String,
+        ForeignKey('rsesq.observation.observation_uuid'))
+    obs_property_id = Column(
+        'obs_property_id', Integer,
+        ForeignKey('librairies.xm_observed_property.obs_property_id'))
 
     def __repr__(self):
         return format_sqlobject_repr(self)
 
 
 class TimeSeriesData(Base):
+    """
+    An object used to map the 'resultats.temporel_corrige' table
+    of the RSESQ database.
+    """
     __tablename__ = 'temporel_corrige'
     __table_args__ = ({"schema": "resultats"})
 
     datetime = Column('date_heure', DateTime, primary_key=True)
     value = Column('valeur', Float, primary_key=True)
-    # Relation with table resultats.canal_temporel
-    channel_id = Column('canal_id', Integer, primary_key=True)
+    channel_id = Column(
+        'canal_id', Integer, ForeignKey('resultats.canal_temporel.canal_id'),
+        primary_key=True,)
 
 
 # =============================================================================
@@ -921,7 +933,15 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
         return data
 
-    # ---- Observation properties
+    # ---- Observations
+    def _get_observation(self, observation_uuid):
+        """
+        Return the observation related to the given uuid.
+        """
+        return (self._session.query(Observation)
+                .filter(Observation.observation_uuid == observation_uuid)
+                .one())
+
     def _get_monitored_property_name(self, monitored_property):
         """
         Return the common human readable name for the corresponding
@@ -934,8 +954,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             .one()
             .obs_property_desc)
 
-
-    # ---- Timeseries
     def _get_observation_property(self, obs_property_id):
         """
         Return the sqlalchemy ObservationProperty object corresponding to the
@@ -946,6 +964,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             .filter(ObservationProperty.obs_property_id == obs_property_id)
             .one())
 
+    # ---- Timeseries
     def get_timeseries_for_obs_well(self, sampling_feature_uuid, data_type):
         """
         Return a :class:`TimeSeriesGroup` object containing the
@@ -1003,10 +1022,12 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         duplicated = data.duplicated(subset='datetime')
         nbr_duplicated = len(duplicated[duplicated])
         if nbr_duplicated:
+            observation_well = self._get_observation_well(
+                sampling_feature_uuid)
             print(("Warning: {} duplicated {} entrie(s) were found while "
-                   "fetching these data."
-                   ).format(nbr_duplicated, data_type))
-            data.drop_duplicates(subset='datetime', inplace=True)
+                   "fetching these data for well {}."
+                   ).format(nbr_duplicated, data_type,
+                            observation_well.obs_well_id))
         tseries_group.nbr_duplicated = nbr_duplicated
 
         # Set the index.
@@ -1143,19 +1164,33 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         self._session.delete(observation)
         self._session.commit()
 
-    # ---- Private methods
-    def _get_observation(self, observation_uuid):
-        """
-        Return the observation related to the given uuid.
-        """
-        return (self._session.query(Observation)
-                .filter(Observation.observation_uuid == observation_uuid)
-                .one())
-
 
 # =============================================================================
 # ---- Utilities
 # =============================================================================
+def test_duplicate_timeseries_data(accessor):
+    """
+    For each monitoring properties, check if there is more than one values
+    saved in the database for each date.
+    """
+    varnames = [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC]
+    duplicate_data = {}
+    obs_wells = accessor.get_observation_wells_data()
+
+    for var in varnames:
+        print('Testing', var.name, 'for duplicate data...')
+        duplicate_data[var] = []
+
+        for obs_well_uuid in obs_wells.index:
+            tseries_group = accessor.get_timeseries_for_obs_well(
+                obs_well_uuid, var)
+            if tseries_group.nbr_duplicated > 0:
+                duplicate_data[var].append(
+                    (tseries_group.sampling_feature_name,
+                     tseries_group.nbr_duplicated))
+    return duplicate_data
+
+
 def update_repere_table(filename, accessor):
     """
     Update the observation wells repere data in the database from an
@@ -1367,9 +1402,12 @@ if __name__ == "__main__":
     repere_data = accessor.get_repere_data()
 
     sampling_feature_uuid = accessor._get_obs_well_sampling_feature_uuid(
-        '01030001')
+        '02340006')
     wlevel_group = accessor.get_timeseries_for_obs_well(
         sampling_feature_uuid, 0)
-    wlevel_data = wlevel_group.get_merged_timeseries()
+    wtemp_group = accessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, 1)
+
+    merged_data = merge_timeseries_groups([wlevel_group, wtemp_group])
 
     accessor.close_connection()
