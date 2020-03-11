@@ -933,7 +933,15 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
         return data
 
-    # ---- Observation properties
+    # ---- Observations
+    def _get_observation(self, observation_uuid):
+        """
+        Return the observation related to the given uuid.
+        """
+        return (self._session.query(Observation)
+                .filter(Observation.observation_uuid == observation_uuid)
+                .one())
+
     def _get_monitored_property_name(self, monitored_property):
         """
         Return the common human readable name for the corresponding
@@ -946,8 +954,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             .one()
             .obs_property_desc)
 
-
-    # ---- Timeseries
     def _get_observation_property(self, obs_property_id):
         """
         Return the sqlalchemy ObservationProperty object corresponding to the
@@ -958,6 +964,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             .filter(ObservationProperty.obs_property_id == obs_property_id)
             .one())
 
+    # ---- Timeseries
     def get_timeseries_for_obs_well(self, sampling_feature_uuid, data_type):
         """
         Return a :class:`TimeSeriesGroup` object containing the
@@ -1154,15 +1161,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         # ON DELETE CASCADE condition that is set in the database.
         self._session.delete(observation)
         self._session.commit()
-
-    # ---- Private methods
-    def _get_observation(self, observation_uuid):
-        """
-        Return the observation related to the given uuid.
-        """
-        return (self._session.query(Observation)
-                .filter(Observation.observation_uuid == observation_uuid)
-                .one())
 
 
 # =============================================================================
