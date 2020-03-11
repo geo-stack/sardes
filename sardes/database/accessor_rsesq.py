@@ -298,6 +298,14 @@ class TimeSeriesData(Base):
         'canal_id', Integer, ForeignKey('resultats.canal_temporel.canal_id'),
         primary_key=True,)
 
+    @hybrid_property
+    def dateyear(self):
+        return self.datetime.year
+
+    @dateyear.expression
+    def dateyear(cls):
+        return extract('year', TimeSeriesData.datetime)
+
 
 # =============================================================================
 # ---- Accessor
