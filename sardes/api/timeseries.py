@@ -112,34 +112,30 @@ class TimeSeriesGroup(Mapping):
         Return a pandas dataframe containing the data from all the timeseries
         that were added to this group.
         """
-        cidfmt = '__{}__'
         if len(self.timeseries) >= 1:
             merged_tseries = self.timeseries[0]._data.to_frame()
-            column_name = self.data_type.name
-            merged_tseries.columns = [column_name]
-            merged_tseries[cidfmt.format(column_name)] = self.timeseries[0].id
+            merged_tseries.columns = [self.data_type.name]
+            # Add series ID to the dataframe.
+            merged_tseries['obs_id'] = self.timeseries[0].id
+            # Add sonde ID to the dataframe.
+            merged_tseries['sonde_id'] = self.timeseries[0].sonde_id
+            # Reset index, but preserve the datetime data.
+            merged_tseries.reset_index(drop=False, inplace=True)
+
+            print(self.timeseries[0].id, self.timeseries[0].sonde_id)
 
             # Append or merge the remaining timeseries with the first one.
-            duplicate_count = 1
             for tseries in self.timeseries[1:]:
-                try:
-                    tseries_to_append = tseries._data.to_frame()
-                    column_name = self.data_type.name
-                    tseries_to_append.columns = [column_name]
-                    tseries_to_append[cidfmt.format(column_name)] = tseries.id
-                    merged_tseries = merged_tseries.append(
-                        tseries_to_append, ignore_index=False,
-                        verify_integrity=True, sort=True)
-                except ValueError:
-                    tseries_to_append = tseries._data.to_frame()
-                    column_name = '{}{}'.format(
-                        self.data_type.name, duplicate_count)
-                    tseries_to_append.columns = [column_name]
-                    tseries_to_append[cidfmt.format(column_name)] = tseries.id
-                    merged_tseries = merged_tseries.merge(
-                        tseries_to_append, left_index=True, right_index=True,
-                        how='outer', sort=True)
-                    duplicate_count += 1
+                tseries_to_append = tseries._data.to_frame()
+                tseries_to_append.columns = [self.data_type.name]
+                tseries_to_append['obs_id'] = tseries.id
+                tseries_to_append['sonde_id'] = tseries.sonde_id
+                tseries_to_append.reset_index(drop=False, inplace=True)
+
+                print(tseries.id, tseries.sonde_id)
+                merged_tseries = merged_tseries.append(
+                    tseries_to_append, ignore_index=True,
+                    verify_integrity=True, sort=True)
         elif len(self.timeseries) == 0:
             merged_tseries = DataFrame([])
         return merged_tseries
