@@ -181,7 +181,7 @@ class ObsWellsTableWidget(SardesTableWidget):
             disabled_actions=['edit'])
 
         dataf = merge_timeseries_groups(tseries_groups)
-        dataf.insert(0, 'Datetime', dataf.index)
+        # Set model data.
         dataf_columns_mapper = [(col, col) for col in dataf.columns if
                                 not col.startswith('__') and
                                 not col.endswith('__')]
