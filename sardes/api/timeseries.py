@@ -172,21 +172,26 @@ class TimeSeries(Mapping):
     tseries_id
         A unique ID used to reference this time series between Sardes GUI and
         the database by the database accessor.
-    tseries_name
+    tseries_name: str
         A common human readable name used to reference this time series in the
         GUI and the graphs.
-    tseries_units
+    tseries_units: str
         The units of the data this timeseries is referencing to.
+    sonde_id
+        An ID used to reference the sonde with which the data of this time
+        series were acquired.
     """
 
     def __init__(self, data, tseries_id, tseries_name=None,
-                 tseries_units=None, tseries_color=None):
+                 tseries_units=None, tseries_color=None,
+                 sonde_id=None):
         super().__init__()
         self._data = data
         self.name = tseries_name
         self.id = tseries_id
         self.units = tseries_units
         self.color = tseries_color
+        self.sonde_id = sonde_id
 
         self._undo_stack = []
         self._selected_data_indexes = DatetimeIndex([])
