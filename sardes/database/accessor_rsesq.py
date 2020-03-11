@@ -34,7 +34,7 @@ from sqlalchemy.types import TEXT, VARCHAR, Boolean
 # ---- Local imports
 from sardes.api.database_accessor import DatabaseAccessor
 from sardes.database.utils import map_table_column_names, format_sqlobject_repr
-from sardes.api.timeseries import DataType, TimeSeriesGroup, TimeSeries
+from sardes.api.timeseries import DataType, TimeSeriesGroup, TimeSeries, merge_timeseries_groups
 
 
 # =============================================================================
@@ -1022,10 +1022,12 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         duplicated = data.duplicated(subset='datetime')
         nbr_duplicated = len(duplicated[duplicated])
         if nbr_duplicated:
+            observation_well = self._get_observation_well(
+                sampling_feature_uuid)
             print(("Warning: {} duplicated {} entrie(s) were found while "
-                   "fetching these data."
-                   ).format(nbr_duplicated, data_type))
-            data.drop_duplicates(subset='datetime', inplace=True)
+                   "fetching these data for well {}."
+                   ).format(nbr_duplicated, data_type,
+                            observation_well.obs_well_id))
         tseries_group.nbr_duplicated = nbr_duplicated
 
         # Set the index.
