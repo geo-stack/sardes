@@ -1390,9 +1390,12 @@ if __name__ == "__main__":
     repere_data = accessor.get_repere_data()
 
     sampling_feature_uuid = accessor._get_obs_well_sampling_feature_uuid(
-        '01030001')
+        '02340006')
     wlevel_group = accessor.get_timeseries_for_obs_well(
         sampling_feature_uuid, 0)
-    wlevel_data = wlevel_group.get_merged_timeseries()
+    wtemp_group = accessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, 1)
+
+    merged_data = merge_timeseries_groups([wlevel_group, wtemp_group])
 
     accessor.close_connection()
