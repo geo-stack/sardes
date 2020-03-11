@@ -285,13 +285,18 @@ class TimeSeriesChannels(Base):
 
 
 class TimeSeriesData(Base):
+    """
+    An object used to map the 'resultats.temporel_corrige' table
+    of the RSESQ database.
+    """
     __tablename__ = 'temporel_corrige'
     __table_args__ = ({"schema": "resultats"})
 
     datetime = Column('date_heure', DateTime, primary_key=True)
     value = Column('valeur', Float, primary_key=True)
-    # Relation with table resultats.canal_temporel
-    channel_id = Column('canal_id', Integer, primary_key=True)
+    channel_id = Column(
+        'canal_id', Integer, ForeignKey('resultats.canal_temporel.canal_id'),
+        primary_key=True,)
 
 
 # =============================================================================
