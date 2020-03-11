@@ -357,8 +357,16 @@ def merge_timeseries_groups(tseries_groups):
             dataf = tseries
         else:
             dataf = dataf.merge(
-                tseries, left_index=True, right_index=True, how='outer',
-                sort=True)
+                tseries,
+                left_on=['datetime', 'obs_id', 'sonde_id'],
+                right_on=['datetime', 'obs_id', 'sonde_id'],
+                how='outer', sort=True)
+
+    # Reorder the columns so that the data are displayed nicely.
+    grp_names = [grp.data_type.name for grp in tseries_groups if
+                 grp.data_type.name in dataf.columns]
+    dataf = dataf[['datetime', 'sonde_id'] + grp_names + ['obs_id']]
+
     return dataf
 
 
