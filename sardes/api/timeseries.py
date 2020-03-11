@@ -122,8 +122,6 @@ class TimeSeriesGroup(Mapping):
             # Reset index, but preserve the datetime data.
             merged_tseries.reset_index(drop=False, inplace=True)
 
-            print(self.timeseries[0].id, self.timeseries[0].sonde_id)
-
             # Append or merge the remaining timeseries with the first one.
             for tseries in self.timeseries[1:]:
                 tseries_to_append = tseries._data.to_frame()
@@ -131,8 +129,6 @@ class TimeSeriesGroup(Mapping):
                 tseries_to_append['obs_id'] = tseries.id
                 tseries_to_append['sonde_id'] = tseries.sonde_id
                 tseries_to_append.reset_index(drop=False, inplace=True)
-
-                print(tseries.id, tseries.sonde_id)
                 merged_tseries = merged_tseries.append(
                     tseries_to_append, ignore_index=True,
                     verify_integrity=True, sort=True)
