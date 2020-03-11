@@ -176,7 +176,7 @@ class ObsWellsTableWidget(SardesTableWidget):
             table_id='tseries_data',
             data_columns_mapper=[])
         table_widget = SardesTableWidget(
-            table_model, parent=self, multi_columns_sort=False,
+            table_model, parent=self, multi_columns_sort=True,
             sections_movable=False, sections_hidable=False,
             disabled_actions=['edit'])
 
