@@ -264,14 +264,21 @@ class SondeModels(Base):
 
 
 class TimeSeriesChannels(Base):
+    """
+    An object used to map the 'resultats.canal_temporel' table
+    of the RSESQ database.
+    """
     __tablename__ = 'canal_temporel'
     __table_args__ = ({"schema": "resultats"})
 
     channel_uuid = Column('canal_uuid', String, primary_key=True)
     channel_id = Column('canal_id', Integer)
-    observation_uuid = Column('observation_uuid', String)
-    # Relation with table librairies.xm_observed_property
-    obs_property_id = Column('obs_property_id', Integer)
+    observation_uuid = Column(
+        'observation_uuid', String,
+        ForeignKey('rsesq.observation.observation_uuid'))
+    obs_property_id = Column(
+        'obs_property_id', Integer,
+        ForeignKey('librairies.xm_observed_property.obs_property_id'))
 
     def __repr__(self):
         return format_sqlobject_repr(self)
