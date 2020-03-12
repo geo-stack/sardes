@@ -159,6 +159,15 @@ class DatabaseConnectionWorker(QObject):
             print(error)
         return mprop_list,
 
+    def _save_timeseries_data_edits(self, tseries_edits):
+        """
+        Save in the database a set of edits that were made to to timeseries
+        data that were already saved in the database.
+        """
+        print("Saving timeseries data edits...", end=' ')
+        self.db_accessor.save_timeseries_data_edits(tseries_edits)
+        print("done")
+
 
 class SardesModelsManager(QObject):
     """
@@ -422,6 +431,14 @@ class DatabaseConnectionManager(QObject):
             monitored_properties = [monitored_properties, ]
         self._add_task('get_timeseries_for_obs_well', callback,
                        obs_well_id, monitored_properties)
+        self.run_tasks()
+
+    def save_timeseries_data_edits(self, tseries_edits, callback):
+        """
+        Save in the database a set of edits that were made to timeseries
+        data that were already saved in the database.
+        """
+        self._add_task('save_timeseries_data_edits', callback, tseries_edits)
         self.run_tasks()
 
     # ---- Tasks handlers
