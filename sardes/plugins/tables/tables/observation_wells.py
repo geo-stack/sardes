@@ -67,6 +67,20 @@ class ObsWellsTableModel(SardesTableModel):
         return visual_dataf
 
 
+class DataTableModel(SardesTableModel):
+    def __init__(self, obs_well_uuid):
+        super().__init__('Timeseries Data', 'tseries_data', [])
+        self._obs_well_uuid = obs_well_uuid
+
+    def create_delegate_for_column(self, view, column):
+        for dtype in DataType:
+            if column.startswith(dtype.name):
+                return NumEditDelegate(
+                    view, decimals=6, bottom=-99999, top=99999)
+        else:
+            return NotEditableDelegate(view)
+
+
 class ObsWellsTableWidget(SardesTableWidget):
 
     def __init__(self, parent=None):
@@ -165,10 +179,6 @@ class ObsWellsTableWidget(SardesTableWidget):
         Create and show a table to visualize the timeseries data contained
         in tseries_groups.
         """
-
-        class DataTableModel(SardesTableModel):
-            def create_delegate_for_column(self, view, column):
-                return NotEditableDelegate(self)
 
         # Setup the table model and widget.
         table_model = DataTableModel(
