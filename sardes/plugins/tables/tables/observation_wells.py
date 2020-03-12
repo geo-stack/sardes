@@ -73,10 +73,9 @@ class DataTableModel(SardesTableModel):
         self._obs_well_uuid = obs_well_uuid
 
     def create_delegate_for_column(self, view, column):
-        for dtype in DataType:
-            if column.startswith(dtype.name):
-                return NumEditDelegate(
-                    view, decimals=6, bottom=-99999, top=99999)
+        if column in DataType:
+            return NumEditDelegate(
+                view, decimals=6, bottom=-99999, top=99999)
         else:
             return NotEditableDelegate(view)
 
@@ -94,10 +93,16 @@ class DataTableModel(SardesTableModel):
             self.set_model_tseries_groups)
 
     def set_model_tseries_groups(self, tseries_groups):
+        """
+        Format the data contained in the list of timeseries group and
+        set the content of this table model data.
+        """
         dataf = merge_timeseries_groups(tseries_groups)
-        dataf_columns_mapper = [(col, col) for col in dataf.columns if
-                                not col.startswith('__') and
-                                not col.endswith('__')]
+        dataf_columns_mapper = [('datetime', _('Datetime')),
+                                ('sonde_id', _('Sonde Serial Number'))]
+        dataf_columns_mapper.extend([(dtype, dtype.label) for dtype in
+                                     DataType if dtype in dataf.columns])
+        dataf_columns_mapper.append(('obs_id', _('Observation ID')))
         self.set_model_data(dataf, dataf_columns_mapper)
         self.sig_data_updated.emit()
 
