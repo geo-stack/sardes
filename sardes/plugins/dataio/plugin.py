@@ -224,7 +224,6 @@ class DataImportWizard(QDialog):
 
             self.table_model.set_model_data(
                 dataf, [(col, col) for col in dataf.columns])
-            self.table_widget.tableview._setup_item_delegates()
             self.table_widget.tableview.resizeColumnsToContents()
         self._update_sonde_model()
         self._update_button_state()

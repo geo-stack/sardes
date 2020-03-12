@@ -671,6 +671,8 @@ class SardesTableView(QTableView):
         """
         self.source_model = table_model
         self.source_model.sig_data_edited.connect(self.sig_data_edited.emit)
+        self.source_model.sig_columns_mapper_changed.connect(
+            self._setup_item_delegates)
         self.proxy_model = SardesSortFilterModel(
             self.source_model, multi_columns_sort)
         self.setModel(self.proxy_model)

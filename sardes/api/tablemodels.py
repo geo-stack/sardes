@@ -252,6 +252,7 @@ class SardesTableModelBase(QAbstractTableModel):
     sig_data_updated = Signal()
     sig_data_about_to_be_saved = Signal()
     sig_data_saved = Signal()
+    sig_columns_mapper_changed = Signal()
 
     ValueChanged = 0
     RowAdded = 1
@@ -392,6 +393,9 @@ class SardesTableModelBase(QAbstractTableModel):
             self.index(self.rowCount() - 1, self.columnCount() - 1)
             )
         self.modelReset.emit()
+        
+        if dataf_columns_mapper is not None:
+            self.sig_columns_mapper_changed.emit()
 
     def set_model_library(self, dataf, name):
         """
