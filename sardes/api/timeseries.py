@@ -125,8 +125,10 @@ class TimeSeriesGroup(Mapping):
             merged_tseries['obs_id'] = self.timeseries[0].id
             # Add sonde ID to the dataframe.
             merged_tseries['sonde_id'] = self.timeseries[0].sonde_id
+            # Add datetime to the dataframe.
+            merged_tseries['datetime'] = merged_tseries.index
             # Reset index, but preserve the datetime data.
-            merged_tseries.reset_index(drop=False, inplace=True)
+            merged_tseries.reset_index(drop=True, inplace=True)
 
             # Append or merge the remaining timeseries with the first one.
             for tseries in self.timeseries[1:]:
@@ -134,7 +136,8 @@ class TimeSeriesGroup(Mapping):
                 tseries_to_append.columns = [self.data_type.name]
                 tseries_to_append['obs_id'] = tseries.id
                 tseries_to_append['sonde_id'] = tseries.sonde_id
-                tseries_to_append.reset_index(drop=False, inplace=True)
+                tseries_to_append['datetime'] = tseries_to_append.index
+                tseries_to_append.reset_index(drop=True, inplace=True)
                 merged_tseries = merged_tseries.append(
                     tseries_to_append, ignore_index=True,
                     verify_integrity=True, sort=True)
