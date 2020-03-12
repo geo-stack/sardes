@@ -152,7 +152,7 @@ class DataImportWizard(QDialog):
         self.table_widget = SardesTableWidget(
             self.table_model, multi_columns_sort=False,
             sections_movable=False, sections_hidable=False,
-            disabled_actions=['edit'])
+            disabled_actions=SardesTableWidget.EDIT_ACTIONS)
 
         # Setup the dialog button box.
         self.next_btn = QPushButton(_('Next'))
