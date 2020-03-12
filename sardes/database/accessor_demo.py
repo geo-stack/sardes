@@ -359,11 +359,11 @@ class DatabaseAccessorDemo(DatabaseAccessor):
                 DataType.WaterLevel: "m",
                 DataType.WaterTemp: "\u00B0C"}[data_type]
             tseries_group = TimeSeriesGroup(
-                data_type, data_type.label, data_units)
+                data_type, data_type.title, data_units)
             tseries_group.add_timeseries(TimeSeries(
                 TSERIES[data_type],
                 tseries_id="CHANNEL_UUID",
-                tseries_name=data_type.label,
+                tseries_name=data_type.title,
                 tseries_units=data_units,
                 tseries_color=data_type.color
                 ))

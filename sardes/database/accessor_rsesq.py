@@ -1032,7 +1032,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         # add it to the monitored property object.
         tseries_group = TimeSeriesGroup(
             data_type,
-            data_type.label,
+            data_type.title,
             obs_prop.obs_property_units,
             yaxis_inverted=(data_type == DataType.WaterLevel)
             )
@@ -1061,7 +1061,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             tseries_group.add_timeseries(TimeSeries(
                 pd.Series(channel_data['value'], index=channel_data.index),
                 tseries_id=observation_id,
-                tseries_name=data_type.label,
+                tseries_name=data_type.title,
                 tseries_units=obs_prop.obs_property_units,
                 tseries_color=data_type.color,
                 sonde_id=self._get_sonde_id_from_obs_id(observation_id)

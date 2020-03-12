@@ -23,22 +23,28 @@ class DataType(Enum):
     """
     This enum type describes the type of data constituing the time series.
     """
-    WaterLevel = (0, 'blue', _("Water level"))
-    WaterTemp = (1, 'red', _("Water temperature"))
-    WaterEC = (2, 'cyan', _("Water electrical conductivity"))
+    WaterLevel = (0, 'blue', _("Water level"), _("Level"))
+    WaterTemp = (1, 'red', _("Water temperature"), _("Temperature"))
+    WaterEC = (2, 'cyan', _("Water electrical conductivity"),
+               _("Conductivity"))
 
     def __new__(cls, *args, **kwds):
         obj = object.__new__(cls)
         obj._value_ = args[0]
         return obj
 
-    def __init__(self, _: int, color: str, label: str):
+    def __init__(self, _: int, color: str, title: str, label: str):
         self._color = color
+        self._title = title
         self._label = label
 
     @property
     def color(self):
         return self._color
+
+    @property
+    def title(self):
+        return self._title
 
     @property
     def label(self):
