@@ -133,11 +133,15 @@ class SardesTableData(object):
         # We apply the new value to the data.
         self.data.iloc[row, col] = edited_value
 
-    def get(self, row, col):
+    def get(self, row, col=None):
         """
-        Return the value at the given row and column indexes.
+        Return the value at the given row and column indexes or the
+        pandas series at the given row if no column index is given.
         """
-        return self.data.iloc[row, col]
+        if col is not None:
+            return self.data.iloc[row, col]
+        else:
+            return self.data.iloc[row]
 
     def copy(self):
         """
@@ -393,7 +397,7 @@ class SardesTableModelBase(QAbstractTableModel):
             self.index(self.rowCount() - 1, self.columnCount() - 1)
             )
         self.modelReset.emit()
-        
+
         if dataf_columns_mapper is not None:
             self.sig_columns_mapper_changed.emit()
 
