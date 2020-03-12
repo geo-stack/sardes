@@ -566,6 +566,35 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
+    def save_timeseries_data_edits(self, tseries_edits):
+        """
+        Save in the database a set of edits that were made to to timeseries
+        data that were already saved in the database.
+
+        Parameters
+        ----------
+        tseries_edits: list of dict
+            A list of dictionary, where each dictionary contains the
+            information needed to edit the data of a timeseries that is already
+            saved in the database.
+
+            Each dictionary must contain the following information:
+            - datetime: datetime
+                The datetime corresponding to the value that needs to be
+                edited in the timeseries.
+            - obs_id: object
+               The id of the observation used that is used to reference
+               the timeseries in the database.
+            - start_date: datetime
+                The date and time at which the sonde was installed in the well.
+            - value: float
+                The edited numerical value that needs to be saved
+                in the database.
+            - data_type: DataType
+                The type of data of the timeseries that is being edited.
+        """
+        raise NotImplementedError
+
     # ---- Manual Measurements
     def add_manual_measurements(self, measurement_id, attribute_values):
         """
