@@ -106,6 +106,29 @@ class DataTableModel(SardesTableModel):
         self.set_model_data(dataf, dataf_columns_mapper)
         self.sig_data_updated.emit()
 
+    def save_data_edits(self):
+        """
+        Save all data edits to the database.
+        """
+        self.sig_data_about_to_be_saved.emit()
+
+        tseries_edits = []
+        for edit in self._datat.edits():
+            row_data = self._datat.get(edit.row)
+            tseries_edits.append(
+                {'datetime': row_data['datetime'],
+                 'obs_id': row_data['obs_id'],
+                 'data_type': edit.column,
+                 'value': edit.edited_value})
+        self.db_connection_manager.save_timeseries_data_edits(
+            tseries_edits, self._handle_data_edits_saved)
+
+    def _handle_data_edits_saved(self):
+        """
+        Handle when data edits were all saved in the database.
+        """
+        self.update_data()
+
 
 class ObsWellsTableWidget(SardesTableWidget):
 
