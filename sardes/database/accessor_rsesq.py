@@ -943,13 +943,26 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         return data
 
     # ---- Observations
-    def _get_observation(self, observation_uuid):
+    def _get_observation_property_id(self, data_type):
         """
-        Return the observation related to the given uuid.
+        Return the observation property ID for the given data type.
         """
-        return (self._session.query(Observation)
-                .filter(Observation.observation_uuid == observation_uuid)
-                .one())
+        return {DataType.WaterLevel: 2,
+                DataType.WaterTemp: 1,
+                DataType.WaterEC: 3}[DataType(data_type)]
+
+    def _get_observation(self, obs_id_or_uuid):
+        """
+        Return the observation related to the given uuid or id.
+        """
+        if isinstance(obs_id_or_uuid, uuid.UUID):
+            return (self._session.query(Observation)
+                    .filter(Observation.observation_uuid == obs_id_or_uuid)
+                    .one())
+        else:
+            return (self._session.query(Observation)
+                    .filter(Observation.observation_id == obs_id_or_uuid)
+                    .one())
 
     def _get_monitored_property_name(self, monitored_property):
         """
