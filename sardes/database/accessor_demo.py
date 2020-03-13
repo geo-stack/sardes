@@ -363,6 +363,7 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         :class:`TimeSeries` objects holding the data acquired in the
         observation well for the specified monitored property.
         """
+        data_type = DataType(data_type)
         try:
             tseries_data = TSERIES[obs_well_id][DataType(data_type)]
         except KeyError:

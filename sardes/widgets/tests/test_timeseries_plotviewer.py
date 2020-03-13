@@ -36,10 +36,10 @@ def dbaccessor():
 def tseriesviewer(qtbot, dbaccessor):
     viewer = TimeSeriesPlotViewer()
 
-    wlevel_tseries = dbaccessor.get_timeseries_for_obs_well('', 0)
+    wlevel_tseries = dbaccessor.get_timeseries_for_obs_well(1, 0)
     viewer.create_axe(wlevel_tseries)
 
-    wtemp_tseries = dbaccessor.get_timeseries_for_obs_well('', 1)
+    wtemp_tseries = dbaccessor.get_timeseries_for_obs_well(1, 1)
     viewer.create_axe(wtemp_tseries)
 
     qtbot.addWidget(viewer)
