@@ -345,7 +345,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
                            database=self._database)
 
         return create_engine(database_url,
-                             isolation_level="AUTOCOMMIT",
                              client_encoding=self._client_encoding,
                              echo=False)
 
