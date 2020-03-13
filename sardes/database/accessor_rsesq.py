@@ -1119,12 +1119,12 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
                 observation = self._get_observation(obs_id)
                 obs_uuid_stack[obs_id] = observation.observation_uuid
 
-            # Fetch the timeseries data from the database.
+            # Fetch the timeseries data orm object.
             tseries_data = self._get_timeseriesdata(
-                date_time, obs_id, data_type)
-            # Set the new value.
+                date_time, obs_uuid_stack[obs_id], data_type)
+            # Save the edited value.
             tseries_data.value = tseries_edits.loc[
-                (date_time, obs_uuid_stack[obs_id], data_type), 'value']
+                (date_time, obs_id, data_type), 'value']
         self._session.commit()
 
     def execute(self, sql_request, **kwargs):
