@@ -23,7 +23,7 @@ class DataType(Enum):
     """
     This enum type describes the type of data constituing the time series.
     """
-    WaterLevel = (0, 'blue', _("Water level"), _("Level"))
+    WaterLevel = (0, 'blue', _("Water level"), _("Water Level"))
     WaterTemp = (1, 'red', _("Water temperature"), _("Temperature"))
     WaterEC = (2, 'cyan', _("Water electrical conductivity"),
                _("Conductivity"))
