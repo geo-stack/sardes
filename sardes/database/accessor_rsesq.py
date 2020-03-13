@@ -1080,6 +1080,24 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
         return tseries_group
 
+    def _get_timeseriesdata(self, obs_id, data_type, datetime):
+        """
+        Return the sqlalchemy TimeSeriesData object corresponding to a
+        timeseries data of the database.
+        """
+        obs_property_id = self._get_observation_property_id(data_type)
+        observation = self._get_observation(obs_id)
+        return (
+            self._session.query(TimeSeriesData)
+            .filter(TimeSeriesChannels.obs_property_id == obs_property_id)
+            .filter(TimeSeriesChannels.observation_uuid ==
+                    observation.observation_uuid)
+            .filter(TimeSeriesData.channel_id ==
+                    TimeSeriesChannels.channel_id)
+            .filter(TimeSeriesData.datetime == datetime)
+            .one()
+            )
+
     def execute(self, sql_request, **kwargs):
         """Execute a SQL statement construct and return a ResultProxy."""
         try:
