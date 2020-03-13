@@ -388,9 +388,9 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         Save in the database a set of edits that were made to to timeseries
         data that were already saved in the database.
         """
-        for edit in tseries_edits:
-            TSERIES[edit['obs_id']][edit['data_type']].loc[
-                edit['datetime']] = edit['value']
+        for (date_time, obs_id, data_type) in tseries_edits.index:
+            value = tseries_edits.loc[(date_time, obs_id, data_type), 'value']
+            TSERIES[obs_id][data_type].loc[date_time] = value
 
     # ---- Manual mesurements
     def add_manual_measurements(self, measurement_id, attribute_values):

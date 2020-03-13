@@ -573,25 +573,12 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
         Parameters
         ----------
-        tseries_edits: list of dict
-            A list of dictionary, where each dictionary contains the
-            information needed to edit the data of a timeseries that is already
-            saved in the database.
-
-            Each dictionary must contain the following information:
-            - datetime: datetime
-                The datetime corresponding to the value that needs to be
-                edited in the timeseries.
-            - obs_id: object
-               The id of the observation used that is used to reference
-               the timeseries in the database.
-            - start_date: datetime
-                The date and time at which the sonde was installed in the well.
-            - value: float
-                The edited numerical value that needs to be saved
-                in the database.
-            - data_type: DataType
-                The type of data of the timeseries that is being edited.
+        tseries_edits: pandas.DataFrame
+            A multi-indexes pandas dataframe that contains the edited
+            numerical values that need to be saved in the database.
+            The indexes of the dataframe correspond, respectively, to the
+            datetime (datetime), observation ID (str) and the data type
+            (DataType) corresponding to the edited value.
         """
         raise NotImplementedError
 
