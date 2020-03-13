@@ -161,6 +161,7 @@ class ObsWellsTableWidget(SardesTableWidget):
                 ('obs_well_notes', _('Notes'))]
             )
         super().__init__(table_model, parent)
+        self.data_tables = {}
 
         self.add_toolbar_separator()
         for button in self._create_extra_toolbuttons():
@@ -220,8 +221,10 @@ class ObsWellsTableWidget(SardesTableWidget):
         """
         self.tableview.setFocus()
         current_obs_well_data = self.get_current_obs_well_data()
-        if current_obs_well_data is not None:
-            # Setup the table model and widget.
+        if current_obs_well_data is None:
+            return
+        if current_obs_well_data.name not in self.data_tables:
+            # Setup a new table model and widget.
             table_model = DataTableModel(current_obs_well_data.name)
             table_model.set_database_connection_manager(
                 self.db_connection_manager)
@@ -229,6 +232,10 @@ class ObsWellsTableWidget(SardesTableWidget):
                 table_model, parent=self, multi_columns_sort=True,
                 sections_movable=False, sections_hidable=False,
                 disabled_actions=['new_row'])
+            table_widget.setAttribute(Qt.WA_DeleteOnClose)
+            table_widget.destroyed.connect(
+                lambda: self._handle_data_table_destroyed(
+                    current_obs_well_data.name))
 
             # Set the title of the window.
             table_widget.setWindowTitle(_("Observation well {} ({})").format(
@@ -241,8 +248,21 @@ class ObsWellsTableWidget(SardesTableWidget):
             horizontal_header.setDefaultSectionSize(100)
             table_widget.resize(475, 600)
 
-            table_widget.show()
+            self.data_tables[current_obs_well_data.name] = table_widget
             table_model.update_data()
+        data_table = self.data_tables[current_obs_well_data.name]
+        data_table.show()
+        data_table.raise_()
+        if data_table.windowState() == Qt.WindowMinimized:
+            # Window is minimised. Restore it.
+            data_table.setWindowState(Qt.WindowNoState)
+        data_table.setFocus()
+
+    def _handle_data_table_destroyed(self, obs_well_uuid):
+        """
+        Handle when a timeseries data table is destroyed.
+        """
+        del self.data_tables[obs_well_uuid]
 
     def plot_timeseries_data(self, tseries_groups):
         """
