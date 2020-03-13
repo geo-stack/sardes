@@ -1255,21 +1255,24 @@ def test_duplicate_timeseries_data(accessor):
     saved in the database for each date.
     """
     varnames = [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC]
-    duplicate_data = {}
+    duplicate_count = {}
+    duplicated_data = {}
     obs_wells = accessor.get_observation_wells_data()
 
     for var in varnames:
         print('Testing', var.name, 'for duplicate data...')
-        duplicate_data[var] = []
+        duplicate_count[var] = []
+        duplicated_data[var] = []
 
         for obs_well_uuid in obs_wells.index:
             tseries_group = accessor.get_timeseries_for_obs_well(
                 obs_well_uuid, var)
             if tseries_group.nbr_duplicated > 0:
-                duplicate_data[var].append(
-                    (tseries_group.sampling_feature_name,
+                duplicate_count[var].append(
+                    (tseries_group.obs_well_id,
                      tseries_group.nbr_duplicated))
-    return duplicate_data
+                duplicated_data[var].extend(tseries_group.duplicated_data)
+    return duplicate_count, duplicated_data
 
 
 def update_repere_table(filename, accessor):
