@@ -117,8 +117,10 @@ class GenericNumericalValue(Base):
     gen_num_value = Column('valeur_num', Float)
     # Relation with table resultats.observation
     observation_uuid = Column('observation_uuid', UUID(as_uuid=True))
-    # Relation with table librairies.xm_observed_property
-    obs_property_id = Column('obs_property_id', Integer)
+    obs_property_id = Column(
+        'obs_property_id',
+        Integer,
+        ForeignKey('librairies.xm_observed_property.obs_property_id'))
     gen_num_value_notes = Column('gen_note', String)
 
     def __repr__(self):
