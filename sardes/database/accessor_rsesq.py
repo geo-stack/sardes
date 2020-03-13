@@ -1012,10 +1012,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
         # Get the observation property id that is used to reference in the
         # database the corresponding monitored property.
-        obs_property_id = {
-            DataType.WaterLevel: 2,
-            DataType.WaterTemp: 1,
-            DataType.WaterEC: 3}[data_type]
+        obs_property_id = self._get_observation_property_id(data_type)
         obs_prop = self._get_observation_property(obs_property_id)
 
         # Define a query to fetch the timseries data from the database.
