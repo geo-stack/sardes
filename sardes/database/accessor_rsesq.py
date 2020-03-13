@@ -1061,14 +1061,21 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
                    "fetching these data for well {}."
                    ).format(nbr_duplicated, data_type,
                             observation_well.obs_well_id))
+            tseries_group.obs_well_id = observation_well.obs_well_id
         tseries_group.nbr_duplicated = nbr_duplicated
 
         # Set the index.
         data.set_index(['datetime'], drop=True, inplace=True)
 
         # Split the data in channels.
+        tseries_group.duplicated_data = []
         for observation_id in data['observation_id'].unique():
             channel_data = data[data['observation_id'] == observation_id]
+            duplicated = channel_data.index.duplicated()
+            for dtime in channel_data.index[duplicated]:
+                tseries_group.duplicated_data.append(
+                    [observation_well.obs_well_id, dtime])
+                print(observation_id, dtime)
             tseries_group.add_timeseries(TimeSeries(
                 pd.Series(channel_data['value'], index=channel_data.index),
                 tseries_id=observation_id,
