@@ -1087,23 +1087,45 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
         return tseries_group
 
-    def _get_timeseriesdata(self, obs_id, data_type, datetime):
+    def _get_timeseriesdata(self, date_time, obs_id_or_uuid, data_type):
         """
         Return the sqlalchemy TimeSeriesData object corresponding to a
         timeseries data of the database.
         """
         obs_property_id = self._get_observation_property_id(data_type)
-        observation = self._get_observation(obs_id)
+        if isinstance(obs_id_or_uuid, uuid.UUID):
+            observation_uuid = obs_id_or_uuid
+        else:
+            observation = self._get_observation(obs_id_or_uuid)
+            observation_uuid = observation.observation_uuid
         return (
             self._session.query(TimeSeriesData)
             .filter(TimeSeriesChannels.obs_property_id == obs_property_id)
-            .filter(TimeSeriesChannels.observation_uuid ==
-                    observation.observation_uuid)
+            .filter(TimeSeriesChannels.observation_uuid == observation_uuid)
             .filter(TimeSeriesData.channel_id ==
                     TimeSeriesChannels.channel_id)
-            .filter(TimeSeriesData.datetime == datetime)
+            .filter(TimeSeriesData.datetime == date_time)
             .one()
             )
+
+    def save_timeseries_data_edits(self, tseries_edits):
+        """
+        Save in the database a set of edits that were made to to timeseries
+        data that were already saved in the database.
+        """
+        obs_uuid_stack = {}
+        for (date_time, obs_id, data_type) in tseries_edits.index:
+            if obs_id not in obs_uuid_stack:
+                observation = self._get_observation(obs_id)
+                obs_uuid_stack[obs_id] = observation.observation_uuid
+
+            # Fetch the timeseries data from the database.
+            tseries_data = self._get_timeseriesdata(
+                date_time, obs_id, data_type)
+            # Set the new value.
+            tseries_data.value = tseries_edits.loc[
+                (date_time, obs_uuid_stack[obs_id], data_type), 'value']
+        self._session.commit()
 
     def execute(self, sql_request, **kwargs):
         """Execute a SQL statement construct and return a ResultProxy."""
