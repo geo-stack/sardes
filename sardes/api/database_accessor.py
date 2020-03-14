@@ -582,6 +582,20 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
+    def del_timeseries_data(self, tseries_dels):
+        """
+        Delete data in the database for the observation IDs, datetime and
+        data type specified in tseries_dels.
+
+        Parameters
+        ----------
+        tseries_dels: pandas.DataFrame
+            A pandas dataframe that contains the observation IDs, datetime,
+            and datatype for which timeseries data need to be deleted
+            from the database.
+        """
+        raise NotImplementedError
+
     # ---- Manual Measurements
     def add_manual_measurements(self, measurement_id, attribute_values):
         """
