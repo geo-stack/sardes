@@ -271,7 +271,7 @@ class ObsWellsTableWidget(SardesTableWidget):
             # Columns width and minimum window size.
             horizontal_header = table_widget.tableview.horizontalHeader()
             horizontal_header.setDefaultSectionSize(100)
-            table_widget.resize(475, 600)
+            table_widget.resize(600, 600)
 
             self.data_tables[current_obs_well_data.name] = table_widget
             table_model.update_data()
