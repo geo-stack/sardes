@@ -242,10 +242,6 @@ class NotEditableDelegate(SardesItemDelegateBase):
         pass
 
     def clear_model_data_at(self, model_index):
-        """
-        Override base class method to prevent clearing the model data.
-        a null value.
-        """
         pass
 
 
