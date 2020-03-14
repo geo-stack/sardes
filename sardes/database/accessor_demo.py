@@ -393,6 +393,16 @@ class DatabaseAccessorDemo(DatabaseAccessor):
             value = tseries_edits.loc[(date_time, obs_id, data_type), 'value']
             TSERIES[obs_id][data_type].loc[date_time] = value
 
+    def del_timeseries_data(self, tseries_dels):
+        """
+        Delete data in the database for the observation IDs, datetime and
+        data type specified in tseries_dels.
+        """
+        for i in range(len(tseries_dels)):
+            data = tseries_dels.iloc[i, ]
+            TSERIES[data['obs_id']][data['data_type']].drop(
+                data['datetime'], inplace=True)
+
     # ---- Manual mesurements
     def add_manual_measurements(self, measurement_id, attribute_values):
         """
