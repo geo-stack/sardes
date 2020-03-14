@@ -630,9 +630,8 @@ class SardesTableView(QTableView):
             If sections_hidable is True, columns can be hidden by the user,
             otherwise the columns cannot be hidden and are always visible.
         disabled_actions : list of str
-            A list of strings corresponding to a group of actions that should
-            not be enabled in this table view.
-            Qt.Horizontal.
+            A list of strings corresponding to actions that should
+            not be enabled in this table view Qt.Horizontal.
         """
         super().__init__(parent)
         self.setSortingEnabled(False)
@@ -672,6 +671,8 @@ class SardesTableView(QTableView):
         """
         self.source_model = table_model
         self.source_model.sig_data_edited.connect(self.sig_data_edited.emit)
+        self.source_model.sig_columns_mapper_changed.connect(
+            self._setup_item_delegates)
         self.proxy_model = SardesSortFilterModel(
             self.source_model, multi_columns_sort)
         self.setModel(self.proxy_model)
@@ -716,8 +717,10 @@ class SardesTableView(QTableView):
 
             self._actions['io'] = [copy_to_clipboard_action]
             self.addActions(self._actions['io'])
-        if 'edit' not in self._disabled_actions:
-            # Setup edit actions.
+
+        # ---- Setup edit actions.
+        self._actions['edit'] = []
+        if 'edit_item' not in self._disabled_actions:
             self.edit_item_action = create_action(
                 self, _("Edit"),
                 icon='edit_database_item',
@@ -725,7 +728,8 @@ class SardesTableView(QTableView):
                 triggered=self._edit_current_item,
                 shortcut=['Enter', 'Return'],
                 context=Qt.WidgetShortcut)
-
+            self._actions['edit'].append(self.edit_item_action)
+        if 'new_row' not in self._disabled_actions:
             new_row_action = create_action(
                 self, _("New Item"),
                 icon='add_row',
@@ -733,7 +737,8 @@ class SardesTableView(QTableView):
                 triggered=self._add_new_row,
                 shortcut=['Ctrl++', 'Ctrl+='],
                 context=Qt.WidgetShortcut)
-
+            self._actions['edit'].append(new_row_action)
+        if 'clear_item' not in self._disabled_actions:
             self.clear_item_action = create_action(
                 self, _("Clear"),
                 icon='erase_data',
@@ -741,7 +746,8 @@ class SardesTableView(QTableView):
                 triggered=self._clear_current_item,
                 shortcut='Delete',
                 context=Qt.WidgetShortcut)
-
+            self._actions['edit'].append(self.clear_item_action)
+        if 'save_edits' not in self._disabled_actions:
             self.save_edits_action = create_action(
                 self, _("Save edits"),
                 icon='commit_changes',
@@ -750,7 +756,8 @@ class SardesTableView(QTableView):
                 shortcut=['Ctrl+Enter', 'Ctrl+Return'],
                 context=Qt.WidgetShortcut)
             self.save_edits_action.setEnabled(False)
-
+            self._actions['edit'].append(self.save_edits_action)
+        if 'cancel_edits' not in self._disabled_actions:
             self.cancel_edits_action = create_action(
                 self, _("Cancel edits"),
                 icon='cancel_changes',
@@ -759,7 +766,8 @@ class SardesTableView(QTableView):
                 shortcut='Ctrl+Delete',
                 context=Qt.WidgetShortcut)
             self.cancel_edits_action.setEnabled(False)
-
+            self._actions['edit'].append(self.cancel_edits_action)
+        if 'undo_edits' not in self._disabled_actions:
             self.undo_edits_action = create_action(
                 self, _("Undo"),
                 icon='undo',
@@ -768,14 +776,11 @@ class SardesTableView(QTableView):
                 shortcut='Ctrl+Z',
                 context=Qt.WidgetShortcut)
             self.undo_edits_action.setEnabled(False)
+            self._actions['edit'].append(self.undo_edits_action)
+        self.addActions(self._actions['edit'])
 
-            self._actions['edit'] = [
-                self.edit_item_action, new_row_action, self.clear_item_action,
-                self.undo_edits_action, self.save_edits_action,
-                self.cancel_edits_action]
-            self.addActions(self._actions['edit'])
+        # ---- Setup selection actions.
         if 'selection' not in self._disabled_actions:
-            # Setup selection actions.
             select_all_action = create_action(
                 self, _("Select All"),
                 icon='select_all',
@@ -873,20 +878,24 @@ class SardesTableView(QTableView):
         """
         Update the state of this table Qt actions.
         """
-        if 'edit' not in self._disabled_actions:
-            current_index = self.selectionModel().currentIndex()
-            if current_index.isValid():
-                is_required = self.is_data_required_at(current_index)
-                is_null = self.model().is_null(current_index)
-                is_editable = self.is_data_editable_at(current_index)
+        current_index = self.selectionModel().currentIndex()
+        if current_index.isValid():
+            is_required = self.is_data_required_at(current_index)
+            is_null = self.model().is_null(current_index)
+            is_editable = self.is_data_editable_at(current_index)
+            if 'clear_item' not in self._disabled_actions:
                 self.clear_item_action.setEnabled(
                     not is_required and not is_null and is_editable)
+            if 'edit_item' not in self._disabled_actions:
                 self.edit_item_action.setEnabled(is_editable)
 
-            has_unsaved_data_edits = self.model().has_unsaved_data_edits()
-            data_edit_count = self.model().data_edit_count()
+        has_unsaved_data_edits = self.model().has_unsaved_data_edits()
+        data_edit_count = self.model().data_edit_count()
+        if 'save_edits' not in self._disabled_actions:
             self.save_edits_action.setEnabled(has_unsaved_data_edits)
+        if 'undo_edits' not in self._disabled_actions:
             self.undo_edits_action.setEnabled(bool(data_edit_count))
+        if 'cancel_edits' not in self._disabled_actions:
             self.cancel_edits_action.setEnabled(has_unsaved_data_edits)
 
     # ---- Options
@@ -1231,6 +1240,8 @@ class SardesTableView(QTableView):
         menu = QMenu(self)
         sections = list(self._actions.keys())
         for section in sections:
+            if not len(self._actions[section]):
+                continue
             for action in self._actions[section]:
                 menu.addAction(action)
             if section != sections[-1]:
@@ -1374,6 +1385,8 @@ class SardesTableView(QTableView):
 
 
 class SardesTableWidget(SardesPaneWidget):
+    EDIT_ACTIONS = ['edit_item', 'new_row', 'clear_item', 'save_edits',
+                    'cancel_edits', 'undo_edits']
 
     def __init__(self, table_model, parent=None, multi_columns_sort=True,
                  sections_movable=True, sections_hidable=True,

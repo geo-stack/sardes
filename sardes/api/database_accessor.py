@@ -566,6 +566,22 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
+    def save_timeseries_data_edits(self, tseries_edits):
+        """
+        Save in the database a set of edits that were made to to timeseries
+        data that were already saved in the database.
+
+        Parameters
+        ----------
+        tseries_edits: pandas.DataFrame
+            A multi-indexes pandas dataframe that contains the edited
+            numerical values that need to be saved in the database.
+            The indexes of the dataframe correspond, respectively, to the
+            datetime (datetime), observation ID (str) and the data type
+            (DataType) corresponding to the edited value.
+        """
+        raise NotImplementedError
+
     # ---- Manual Measurements
     def add_manual_measurements(self, measurement_id, attribute_values):
         """

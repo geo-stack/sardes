@@ -23,22 +23,28 @@ class DataType(Enum):
     """
     This enum type describes the type of data constituing the time series.
     """
-    WaterLevel = (0, 'blue', _("Water level"))
-    WaterTemp = (1, 'red', _("Water temperature"))
-    WaterEC = (2, 'cyan', _("Water electrical conductivity"))
+    WaterLevel = (0, 'blue', _("Water level"), _("Water Level"))
+    WaterTemp = (1, 'red', _("Water temperature"), _("Temperature"))
+    WaterEC = (2, 'cyan', _("Water electrical conductivity"),
+               _("Conductivity"))
 
     def __new__(cls, *args, **kwds):
         obj = object.__new__(cls)
         obj._value_ = args[0]
         return obj
 
-    def __init__(self, _: int, color: str, label: str):
+    def __init__(self, _: int, color: str, title: str, label: str):
         self._color = color
+        self._title = title
         self._label = label
 
     @property
     def color(self):
         return self._color
+
+    @property
+    def title(self):
+        return self._title
 
     @property
     def label(self):
@@ -114,21 +120,24 @@ class TimeSeriesGroup(Mapping):
         """
         if len(self.timeseries) >= 1:
             merged_tseries = self.timeseries[0]._data.to_frame()
-            merged_tseries.columns = [self.data_type.name]
+            merged_tseries.columns = [self.data_type]
             # Add series ID to the dataframe.
             merged_tseries['obs_id'] = self.timeseries[0].id
             # Add sonde ID to the dataframe.
             merged_tseries['sonde_id'] = self.timeseries[0].sonde_id
+            # Add datetime to the dataframe.
+            merged_tseries['datetime'] = merged_tseries.index
             # Reset index, but preserve the datetime data.
-            merged_tseries.reset_index(drop=False, inplace=True)
+            merged_tseries.reset_index(drop=True, inplace=True)
 
             # Append or merge the remaining timeseries with the first one.
             for tseries in self.timeseries[1:]:
                 tseries_to_append = tseries._data.to_frame()
-                tseries_to_append.columns = [self.data_type.name]
+                tseries_to_append.columns = [self.data_type]
                 tseries_to_append['obs_id'] = tseries.id
                 tseries_to_append['sonde_id'] = tseries.sonde_id
-                tseries_to_append.reset_index(drop=False, inplace=True)
+                tseries_to_append['datetime'] = tseries_to_append.index
+                tseries_to_append.reset_index(drop=True, inplace=True)
                 merged_tseries = merged_tseries.append(
                     tseries_to_append, ignore_index=True,
                     verify_integrity=True, sort=True)
@@ -359,8 +368,8 @@ def merge_timeseries_groups(tseries_groups):
                 how='outer', sort=True)
 
     # Reorder the columns so that the data are displayed nicely.
-    grp_names = [grp.data_type.name for grp in tseries_groups if
-                 grp.data_type.name in dataf.columns]
+    grp_names = [grp.data_type for grp in tseries_groups if
+                 grp.data_type in dataf.columns]
     dataf = dataf[['datetime', 'sonde_id'] + grp_names + ['obs_id']]
 
     return dataf

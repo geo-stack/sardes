@@ -117,8 +117,10 @@ class GenericNumericalValue(Base):
     gen_num_value = Column('valeur_num', Float)
     # Relation with table resultats.observation
     observation_uuid = Column('observation_uuid', UUID(as_uuid=True))
-    # Relation with table librairies.xm_observed_property
-    obs_property_id = Column('obs_property_id', Integer)
+    obs_property_id = Column(
+        'obs_property_id',
+        Integer,
+        ForeignKey('librairies.xm_observed_property.obs_property_id'))
     gen_num_value_notes = Column('gen_note', String)
 
     def __repr__(self):
@@ -343,7 +345,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
                            database=self._database)
 
         return create_engine(database_url,
-                             isolation_level="AUTOCOMMIT",
                              client_encoding=self._client_encoding,
                              echo=False)
 
@@ -942,13 +943,26 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         return data
 
     # ---- Observations
-    def _get_observation(self, observation_uuid):
+    def _get_observation_property_id(self, data_type):
         """
-        Return the observation related to the given uuid.
+        Return the observation property ID for the given data type.
         """
-        return (self._session.query(Observation)
-                .filter(Observation.observation_uuid == observation_uuid)
-                .one())
+        return {DataType.WaterLevel: 2,
+                DataType.WaterTemp: 1,
+                DataType.WaterEC: 3}[DataType(data_type)]
+
+    def _get_observation(self, obs_id_or_uuid):
+        """
+        Return the observation related to the given uuid or id.
+        """
+        if isinstance(obs_id_or_uuid, uuid.UUID):
+            return (self._session.query(Observation)
+                    .filter(Observation.observation_uuid == obs_id_or_uuid)
+                    .one())
+        else:
+            return (self._session.query(Observation)
+                    .filter(Observation.observation_id == obs_id_or_uuid)
+                    .one())
 
     def _get_monitored_property_name(self, monitored_property):
         """
@@ -998,10 +1012,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
         # Get the observation property id that is used to reference in the
         # database the corresponding monitored property.
-        obs_property_id = {
-            DataType.WaterLevel: 2,
-            DataType.WaterTemp: 1,
-            DataType.WaterEC: 3}[data_type]
+        obs_property_id = self._get_observation_property_id(data_type)
         obs_prop = self._get_observation_property(obs_property_id)
 
         # Define a query to fetch the timseries data from the database.
@@ -1032,7 +1043,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         # add it to the monitored property object.
         tseries_group = TimeSeriesGroup(
             data_type,
-            data_type.label,
+            data_type.title,
             obs_prop.obs_property_units,
             yaxis_inverted=(data_type == DataType.WaterLevel)
             )
@@ -1050,24 +1061,71 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
                    "fetching these data for well {}."
                    ).format(nbr_duplicated, data_type,
                             observation_well.obs_well_id))
+            tseries_group.obs_well_id = observation_well.obs_well_id
         tseries_group.nbr_duplicated = nbr_duplicated
 
         # Set the index.
         data.set_index(['datetime'], drop=True, inplace=True)
 
         # Split the data in channels.
+        tseries_group.duplicated_data = []
         for observation_id in data['observation_id'].unique():
             channel_data = data[data['observation_id'] == observation_id]
+            duplicated = channel_data.index.duplicated()
+            for dtime in channel_data.index[duplicated]:
+                tseries_group.duplicated_data.append(
+                    [observation_well.obs_well_id, dtime])
+                print(observation_id, dtime)
             tseries_group.add_timeseries(TimeSeries(
                 pd.Series(channel_data['value'], index=channel_data.index),
                 tseries_id=observation_id,
-                tseries_name=data_type.label,
+                tseries_name=data_type.title,
                 tseries_units=obs_prop.obs_property_units,
                 tseries_color=data_type.color,
                 sonde_id=self._get_sonde_id_from_obs_id(observation_id)
                 ))
 
         return tseries_group
+
+    def _get_timeseriesdata(self, date_time, obs_id_or_uuid, data_type):
+        """
+        Return the sqlalchemy TimeSeriesData object corresponding to a
+        timeseries data of the database.
+        """
+        obs_property_id = self._get_observation_property_id(data_type)
+        if isinstance(obs_id_or_uuid, uuid.UUID):
+            observation_uuid = obs_id_or_uuid
+        else:
+            observation = self._get_observation(obs_id_or_uuid)
+            observation_uuid = observation.observation_uuid
+        return (
+            self._session.query(TimeSeriesData)
+            .filter(TimeSeriesChannels.obs_property_id == obs_property_id)
+            .filter(TimeSeriesChannels.observation_uuid == observation_uuid)
+            .filter(TimeSeriesData.channel_id ==
+                    TimeSeriesChannels.channel_id)
+            .filter(TimeSeriesData.datetime == date_time)
+            .one()
+            )
+
+    def save_timeseries_data_edits(self, tseries_edits):
+        """
+        Save in the database a set of edits that were made to to timeseries
+        data that were already saved in the database.
+        """
+        obs_uuid_stack = {}
+        for (date_time, obs_id, data_type) in tseries_edits.index:
+            if obs_id not in obs_uuid_stack:
+                observation = self._get_observation(obs_id)
+                obs_uuid_stack[obs_id] = observation.observation_uuid
+
+            # Fetch the timeseries data orm object.
+            tseries_data = self._get_timeseriesdata(
+                date_time, obs_uuid_stack[obs_id], data_type)
+            # Save the edited value.
+            tseries_data.value = tseries_edits.loc[
+                (date_time, obs_id, data_type), 'value']
+        self._session.commit()
 
     def execute(self, sql_request, **kwargs):
         """Execute a SQL statement construct and return a ResultProxy."""
@@ -1197,21 +1255,24 @@ def test_duplicate_timeseries_data(accessor):
     saved in the database for each date.
     """
     varnames = [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC]
-    duplicate_data = {}
+    duplicate_count = {}
+    duplicated_data = {}
     obs_wells = accessor.get_observation_wells_data()
 
     for var in varnames:
         print('Testing', var.name, 'for duplicate data...')
-        duplicate_data[var] = []
+        duplicate_count[var] = []
+        duplicated_data[var] = []
 
         for obs_well_uuid in obs_wells.index:
             tseries_group = accessor.get_timeseries_for_obs_well(
                 obs_well_uuid, var)
             if tseries_group.nbr_duplicated > 0:
-                duplicate_data[var].append(
-                    (tseries_group.sampling_feature_name,
+                duplicate_count[var].append(
+                    (tseries_group.obs_well_id,
                      tseries_group.nbr_duplicated))
-    return duplicate_data
+                duplicated_data[var].extend(tseries_group.duplicated_data)
+    return duplicate_count, duplicated_data
 
 
 def update_repere_table(filename, accessor):

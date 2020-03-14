@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Third party imports
+import pandas as pd
 from qtpy.QtCore import Qt, Slot
 from qtpy.QtWidgets import QApplication
 
@@ -67,6 +68,75 @@ class ObsWellsTableModel(SardesTableModel):
         return visual_dataf
 
 
+class DataTableModel(SardesTableModel):
+    def __init__(self, obs_well_uuid):
+        super().__init__('Timeseries Data', 'tseries_data', [])
+        self._obs_well_uuid = obs_well_uuid
+
+    def create_delegate_for_column(self, view, column):
+        if column in DataType:
+            return NumEditDelegate(
+                view, decimals=6, bottom=-99999, top=99999)
+        else:
+            return NotEditableDelegate(view)
+
+    # ---- Database connection
+    def update_data(self):
+        """
+        Update this model's data and library.
+        """
+        self.sig_data_about_to_be_updated.emit()
+
+        # Get the timeseries data for that observation well.
+        self.db_connection_manager.get_timeseries_for_obs_well(
+            self._obs_well_uuid,
+            [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
+            self.set_model_tseries_groups)
+
+    def set_model_tseries_groups(self, tseries_groups):
+        """
+        Format the data contained in the list of timeseries group and
+        set the content of this table model data.
+        """
+        dataf = merge_timeseries_groups(tseries_groups)
+        dataf_columns_mapper = [('datetime', _('Datetime')),
+                                ('sonde_id', _('Sonde Serial Number'))]
+        dataf_columns_mapper.extend([(dtype, dtype.label) for dtype in
+                                     DataType if dtype in dataf.columns])
+        dataf_columns_mapper.append(('obs_id', _('Observation ID')))
+        self.set_model_data(dataf, dataf_columns_mapper)
+        self.sig_data_updated.emit()
+
+    def save_data_edits(self):
+        """
+        Save all data edits to the database.
+        """
+        self.sig_data_about_to_be_saved.emit()
+
+        tseries_edits = pd.DataFrame(
+            [], columns=['datetime', 'obs_id', 'data_type', 'value'])
+        tseries_edits.set_index(
+            'datetime', inplace=True, drop=True)
+        tseries_edits.set_index(
+            'obs_id', inplace=True, drop=True, append=True)
+        tseries_edits.set_index(
+            'data_type', inplace=True, drop=True, append=True)
+
+        for edit in self._datat.edits():
+            row_data = self._datat.get(edit.row)
+            indexes = (row_data['datetime'], row_data['obs_id'], edit.column)
+            tseries_edits.loc[indexes, 'value'] = edit.edited_value
+
+        self.db_connection_manager.save_timeseries_data_edits(
+            tseries_edits, self._handle_data_edits_saved)
+
+    def _handle_data_edits_saved(self):
+        """
+        Handle when data edits were all saved in the database.
+        """
+        self.update_data()
+
+
 class ObsWellsTableWidget(SardesTableWidget):
 
     def __init__(self, parent=None):
@@ -91,6 +161,7 @@ class ObsWellsTableWidget(SardesTableWidget):
                 ('obs_well_notes', _('Notes'))]
             )
         super().__init__(table_model, parent)
+        self.data_tables = {}
 
         self.add_toolbar_separator()
         for button in self._create_extra_toolbuttons():
@@ -105,7 +176,7 @@ class ObsWellsTableWidget(SardesTableWidget):
         return self.tableview.get_current_row_data().iloc[0]
 
     def _create_extra_toolbuttons(self):
-        show_plot_btn = create_toolbutton(
+        self.show_plot_btn = create_toolbutton(
             self,
             icon='show_plot',
             text=_("Plot data"),
@@ -115,16 +186,16 @@ class ObsWellsTableWidget(SardesTableWidget):
             triggered=lambda _: self._plot_current_obs_well_data(),
             iconsize=get_iconsize()
             )
-        show_data_btn = create_toolbutton(
+        self.show_data_btn = create_toolbutton(
             self,
             icon='show_data_table',
             text=_("View data"),
             tip=_('Show the data of the timeseries acquired in the currently '
                   'selected observation well in a table.'),
-            triggered=lambda _: self._view_current_obs_well_data(),
+            triggered=lambda _: self.view_timeseries_data(),
             iconsize=get_iconsize()
             )
-        return [show_plot_btn, show_data_btn]
+        return [self.show_plot_btn, self.show_data_btn]
 
     @Slot()
     def _plot_current_obs_well_data(self):
@@ -143,66 +214,55 @@ class ObsWellsTableWidget(SardesTableWidget):
                 [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
                 self.plot_timeseries_data)
 
-    @Slot()
-    def _view_current_obs_well_data(self):
-        """
-        Handle when a request has been made to show the data of the currently
-        selected well in a table.
-        """
-        self.tableview.setFocus()
-        current_obs_well = self.get_current_obs_well_data()
-        if current_obs_well is not None:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-
-            # Get the timeseries data for that observation well.
-            self.db_connection_manager.get_timeseries_for_obs_well(
-                current_obs_well.name,
-                [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
-                self.view_timeseries_data)
-
-    def view_timeseries_data(self, tseries_groups):
+    def view_timeseries_data(self):
         """
         Create and show a table to visualize the timeseries data contained
         in tseries_groups.
         """
-
-        class DataTableModel(SardesTableModel):
-            def create_delegate_for_column(self, view, column):
-                return NotEditableDelegate(self)
-
-        # Setup the table model and widget.
-        table_model = DataTableModel(
-            table_title='Timeseries Data',
-            table_id='tseries_data',
-            data_columns_mapper=[])
-        table_widget = SardesTableWidget(
-            table_model, parent=self, multi_columns_sort=True,
-            sections_movable=False, sections_hidable=False,
-            disabled_actions=['edit'])
-
-        dataf = merge_timeseries_groups(tseries_groups)
-        # Set model data.
-        dataf_columns_mapper = [(col, col) for col in dataf.columns if
-                                not col.startswith('__') and
-                                not col.endswith('__')]
-        table_model.set_model_data(dataf, dataf_columns_mapper)
-        table_widget.tableview._setup_item_delegates()
-
-        # Set the title of the window.
+        self.tableview.setFocus()
         current_obs_well_data = self.get_current_obs_well_data()
-        table_widget.setWindowTitle(_("Observation well {} ({})").format(
-            current_obs_well_data['obs_well_id'],
-            current_obs_well_data['municipality'])
-            )
+        if current_obs_well_data is None:
+            return
+        if current_obs_well_data.name not in self.data_tables:
+            # Setup a new table model and widget.
+            table_model = DataTableModel(current_obs_well_data.name)
+            table_model.set_database_connection_manager(
+                self.db_connection_manager)
+            table_widget = SardesTableWidget(
+                table_model, parent=self, multi_columns_sort=True,
+                sections_movable=False, sections_hidable=False,
+                disabled_actions=['new_row'])
+            table_widget.setAttribute(Qt.WA_DeleteOnClose)
+            table_widget.destroyed.connect(
+                lambda: self._handle_data_table_destroyed(
+                    current_obs_well_data.name))
 
-        # Columns width and minimum window size.
-        horizontal_header = table_widget.tableview.horizontalHeader()
-        for section in range(horizontal_header.count()):
-            horizontal_header.resizeSection(section, 100)
-        table_widget.resize(475, 600)
+            # Set the title of the window.
+            table_widget.setWindowTitle(_("Observation well {} ({})").format(
+                current_obs_well_data['obs_well_id'],
+                current_obs_well_data['municipality'])
+                )
 
-        QApplication.restoreOverrideCursor()
-        table_widget.show()
+            # Columns width and minimum window size.
+            horizontal_header = table_widget.tableview.horizontalHeader()
+            horizontal_header.setDefaultSectionSize(100)
+            table_widget.resize(475, 600)
+
+            self.data_tables[current_obs_well_data.name] = table_widget
+            table_model.update_data()
+        data_table = self.data_tables[current_obs_well_data.name]
+        data_table.show()
+        data_table.raise_()
+        if data_table.windowState() == Qt.WindowMinimized:
+            # Window is minimised. Restore it.
+            data_table.setWindowState(Qt.WindowNoState)
+        data_table.setFocus()
+
+    def _handle_data_table_destroyed(self, obs_well_uuid):
+        """
+        Handle when a timeseries data table is destroyed.
+        """
+        del self.data_tables[obs_well_uuid]
 
     def plot_timeseries_data(self, tseries_groups):
         """
