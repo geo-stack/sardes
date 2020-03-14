@@ -168,7 +168,7 @@ class SardesTableData(object):
         """
         return self.data.copy()
 
-    def add_new_row(self, new_index, values={}):
+    def add_row(self, new_index, values={}):
         """
         Add a new row with the provided values at the end of the data.
         """
@@ -592,7 +592,7 @@ class SardesTableModelBase(QAbstractTableModel):
 
         if new_row_index is None:
             new_row_index = self._create_new_row_index()
-        self._datat.add_new_row(new_row_index)
+        self._datat.add_row(new_row_index)
         self._update_visual_data()
         self.endInsertRows()
         new_model_index_range = (
