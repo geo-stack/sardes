@@ -736,6 +736,15 @@ class SardesTableView(QTableView):
                 shortcut=['Ctrl++', 'Ctrl+='],
                 context=Qt.WidgetShortcut)
             self._actions['edit'].append(new_row_action)
+        if 'delete_row' not in self._disabled_actions:
+            self.delete_row_action = create_action(
+                self, _("Delete Item"),
+                icon='remove_row',
+                tip=_("Delete the current item."),
+                triggered=self._delete_current_row,
+                shortcut='Ctrl+-',
+                context=Qt.WidgetShortcut)
+            self._actions['edit'].append(self.delete_row_action)
         if 'clear_item' not in self._disabled_actions:
             self.clear_item_action = create_action(
                 self, _("Clear"),
@@ -886,6 +895,8 @@ class SardesTableView(QTableView):
                     not is_required and not is_null and is_editable)
             if 'edit_item' not in self._disabled_actions:
                 self.edit_item_action.setEnabled(is_editable)
+            if 'delete_row' not in self._disabled_actions:
+                self.delete_row_action.setEnabled(is_editable)
 
         has_unsaved_data_edits = self.model().has_unsaved_data_edits()
         data_edit_count = self.model().data_edit_count()
@@ -1278,13 +1289,8 @@ class SardesTableView(QTableView):
     def _undo_last_data_edit(self):
         """
         Undo the last data edits that was added to the table.
-        An update of the view is forced if  update_model_view is True.
         """
         last_edit = self.model().data_edits()[-1]
-        if last_edit.type() == SardesTableModelBase.ValueChanged:
-            self.model().undo_last_data_edit()
-            model_index = self.model().mapFromSource(
-                self.model().sourceModel().index(last_edit.row, last_edit.col))
         if last_edit.type() == SardesTableModelBase.RowAdded:
             added_row = self.model().mapFromSource(
                 self.model().sourceModel().index(last_edit.row, last_edit.col)
@@ -1295,6 +1301,10 @@ class SardesTableView(QTableView):
             # exist once the operation is undone, we need to select the
             # index just above or below that index in the proxy model.
             model_index = self.model().index(max(added_row - 1, 0), 0)
+        else:
+            self.model().undo_last_data_edit()
+            model_index = self.model().mapFromSource(
+                self.model().sourceModel().index(last_edit.row, last_edit.col))
 
         self.selectionModel().clearSelection()
         self._ensure_visible(model_index)
@@ -1338,6 +1348,14 @@ class SardesTableView(QTableView):
         new_model_index_range = self.model().add_new_row()
         self.setCurrentIndex(new_model_index_range[0])
         self._ensure_visible(new_model_index_range[0])
+
+    def _delete_current_row(self, model_index):
+        """
+        Delete the currently selected row.
+        """
+        current_index = self.selectionModel().currentIndex()
+        if current_index.isValid():
+            self.model().delete_row(current_index)
 
     def _ensure_visible(self, model_index):
         """
