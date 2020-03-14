@@ -62,6 +62,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         self.editor = None
         self.unique_constraint = unique_constraint
         self.is_required = is_required
+        self.is_editable = True
         self._widget = QListView()
 
     # ---- Qt methods override
@@ -229,6 +230,7 @@ class NotEditableDelegate(SardesItemDelegateBase):
 
     def __init__(self, model_view):
         super().__init__(model_view, is_required=True)
+        self.is_editable = False
 
     def createEditor(self, *args, **kargs):
         return None
@@ -1222,8 +1224,8 @@ class SardesTableView(QTableView):
         """
         Return whether the item at the specified model index is editable.
         """
-        return not isinstance(
-            self.itemDelegate(model_index), NotEditableDelegate)
+        return (self.itemDelegate(model_index).is_editable and
+                not self.model().is_data_deleted_at(model_index))
 
     def is_data_required_at(self, model_index):
         """
