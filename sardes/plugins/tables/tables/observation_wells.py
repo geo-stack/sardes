@@ -176,7 +176,7 @@ class ObsWellsTableWidget(SardesTableWidget):
         return self.tableview.get_current_row_data().iloc[0]
 
     def _create_extra_toolbuttons(self):
-        show_plot_btn = create_toolbutton(
+        self.show_plot_btn = create_toolbutton(
             self,
             icon='show_plot',
             text=_("Plot data"),
@@ -186,7 +186,7 @@ class ObsWellsTableWidget(SardesTableWidget):
             triggered=lambda _: self._plot_current_obs_well_data(),
             iconsize=get_iconsize()
             )
-        show_data_btn = create_toolbutton(
+        self.show_data_btn = create_toolbutton(
             self,
             icon='show_data_table',
             text=_("View data"),
@@ -195,7 +195,7 @@ class ObsWellsTableWidget(SardesTableWidget):
             triggered=lambda _: self.view_timeseries_data(),
             iconsize=get_iconsize()
             )
-        return [show_plot_btn, show_data_btn]
+        return [self.show_plot_btn, self.show_data_btn]
 
     @Slot()
     def _plot_current_obs_well_data(self):
