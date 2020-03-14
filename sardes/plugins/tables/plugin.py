@@ -129,7 +129,7 @@ class Tables(SardesPlugin):
             self.get_option('last_focused_tab', 0))
 
     def _create_and_register_table(self, TableClass, data_name, lib_names):
-        table = TableClass()
+        table = TableClass(disabled_actions=['delete_row'])
         self.main.db_connection_manager.register_model(
             table.model(), data_name, lib_names)
 

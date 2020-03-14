@@ -139,7 +139,7 @@ class DataTableModel(SardesTableModel):
 
 class ObsWellsTableWidget(SardesTableWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self, *args, **kargs):
         table_model = ObsWellsTableModel(
             table_title=_('Observation Wells'),
             table_id='table_observation_wells',
@@ -160,7 +160,7 @@ class ObsWellsTableWidget(SardesTableWidget):
                 ('is_station_active', _('Active')),
                 ('obs_well_notes', _('Notes'))]
             )
-        super().__init__(table_model, parent)
+        super().__init__(table_model, *args, **kargs)
         self.data_tables = {}
 
         self.add_toolbar_separator()
