@@ -57,6 +57,25 @@ class ValueChanged(object):
         return SardesTableModelBase.ValueChanged
 
 
+class RowDeleted(object):
+    """
+    A class that represents a row being deleted from the data.
+    """
+
+    def __init__(self, index, row, col=0):
+        super() .__init__()
+        self.index = index
+        self.row = row
+        self.col = col
+
+    def type(self):
+        """
+        Return an integer that indicates the type of data edit this
+        edit correspond to, as defined in :class:`SardesTableModelBase`.
+        """
+        return SardesTableModelBase.RowDeleted
+
+
 class RowAdded(object):
     """
     A class that represents a new row added to the data.
@@ -261,6 +280,7 @@ class SardesTableModelBase(QAbstractTableModel):
     ValueChanged = 0
     RowAdded = 1
     RowRemoved = 2
+    RowDeleted = 3
 
     def __init__(self, table_title='', table_id='', data_columns_mapper=[]):
         """
