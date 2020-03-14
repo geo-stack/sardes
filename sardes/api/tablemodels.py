@@ -186,6 +186,14 @@ class SardesTableData(object):
         self.data = self.data.append(pd.DataFrame(
             values, columns=self.data.columns, index=[new_index]))
 
+    def delete_row(self, row, col):
+        """
+        Delete row from data at row.
+        """
+        self._deleted_rows.append(row)
+        self._data_edits_stack.append(RowDeleted(
+            self.data.index[row], row, col))
+
     # ---- Edits
     def edits(self):
         """
@@ -203,7 +211,7 @@ class SardesTableData(object):
         """
         Return whether any edits were made to the table's data since last save.
         """
-        return bool(len(self._original_data))
+        return bool(len(self._original_data) + len(self._deleted_rows))
 
     def is_value_in_column(self, col, value):
         """
@@ -211,6 +219,12 @@ class SardesTableData(object):
         """
         isin_indexes = self.data[self.data.iloc[:, col].isin([value])]
         return bool(len(isin_indexes))
+
+    def is_data_deleted_at(self, row):
+        """
+        Return whether the row at row is deleted.
+        """
+        return row in self._deleted_rows
 
     def is_value_edited_at(self, row, col):
         """
@@ -259,6 +273,8 @@ class SardesTableData(object):
 
             # We remove the row from the data.
             self.data.drop(last_edit.index, inplace=True)
+        elif last_edit.type() == SardesTableModelBase.RowDeleted:
+            self._deleted_rows.remove(last_edit.row)
         else:
             raise ValueError
 
@@ -450,6 +466,8 @@ class SardesTableModelBase(QAbstractTableModel):
         elif role == Qt.ForegroundRole:
             return QVariant()
         elif role == Qt.BackgroundRole:
+            if self.is_data_deleted_at(index):
+                return QColor('#FF9999')
             if self.is_data_edited_at(index):
                 return QColor('#CCFF99')
             else:
@@ -531,6 +549,12 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         return self._datat.has_unsaved_edits()
 
+    def is_data_deleted_at(self, model_index):
+        """
+        Return whether the row at model index is deleted.
+        """
+        return self._datat.is_data_deleted_at(model_index.row())
+
     def is_data_edited_at(self, model_index):
         """
         Return whether edits were made at the specified model index
@@ -607,6 +631,19 @@ class SardesTableModelBase(QAbstractTableModel):
 
         return new_model_index_range
 
+    def delete_row(self, model_index):
+        """
+        Delete row at model index.
+        """
+        self._datat.delete_row(model_index.row(), model_index.column())
+        new_model_index_range = (
+            self.index(model_index.row(), 0),
+            self.index(model_index.row(), self.columnCount() - 1)
+            )
+        self.dataChanged.emit(*new_model_index_range)
+        self.sig_data_edited.emit(
+            self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
+
     def undo_last_data_edit(self):
         """
         Undo the last data edits that was added to the stack.
@@ -629,6 +666,12 @@ class SardesTableModelBase(QAbstractTableModel):
             self.dataChanged.emit(
                 self.index(last_edit.row, 0),
                 self.index(last_edit.row, self.columnCount() - 1),
+                )
+        elif last_edit.type() == SardesTableModelBase.RowDeleted:
+            self._datat.undo_edit()
+            self.dataChanged.emit(
+                self.index(last_edit.row, last_edit.col),
+                self.index(last_edit.row, self.columnCount() - 1)
                 )
         self.sig_data_edited.emit(
             self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
@@ -927,12 +970,20 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         return (self.mapFromSource(new_model_indexes[0]),
                 self.mapFromSource(new_model_indexes[1]))
 
+    def delete_row(self, proxy_index):
+        return self.sourceModel().delete_row(
+            self.mapToSource(proxy_index))
+
     def dataf_index_at(self, proxy_index):
         return self.sourceModel().dataf_index_at(
             self.mapToSource(proxy_index))
 
     def get_value_at(self, proxy_index):
         return self.sourceModel().get_value_at(
+            self.mapToSource(proxy_index))
+
+    def is_data_deleted_at(self, proxy_index):
+        return self.sourceModel().is_data_deleted_at(
             self.mapToSource(proxy_index))
 
     def is_data_edited_at(self, proxy_index):
