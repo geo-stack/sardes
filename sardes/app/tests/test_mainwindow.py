@@ -22,6 +22,7 @@ from qtpy.QtCore import QPoint, QSize
 
 # ---- Local imports
 from sardes.config.gui import INIT_MAINWINDOW_SIZE
+from sardes.config.main import CONF
 from sardes.app.mainwindow import MainWindow, QMessageBox
 
 
@@ -51,6 +52,8 @@ def test_mainwindow_settings(qtbot, mocker):
     Test that the window size and position are store and restore correctly
     in and from our configs.
     """
+    CONF.set('main', 'window/geometry', None)
+
     mainwindow1 = MainWindow()
     qtbot.addWidget(mainwindow1)
     mainwindow1.show()
@@ -74,12 +77,17 @@ def test_mainwindow_settings(qtbot, mocker):
     mainwindow1.showMaximized()
     qtbot.wait(100)
 
+    assert mainwindow1.isMaximized()
     assert mainwindow1.size() != QSize(*expected_normal_window_size)
     assert mainwindow1.pos() != QPoint(*expected_normal_window_pos)
-    assert mainwindow1.isMaximized()
 
     # Close the main window.
+    assert CONF.get('main', 'window/geometry', None) is None
+    mainwindow1_size = mainwindow1.size()
+    mainwindow1_pos = mainwindow1.pos()
     mainwindow1.close()
+    assert CONF.get('main', 'window/geometry', None) is not None
+    qtbot.wait(100)
 
     # Create a new instance of the main window and assert that the size,
     # position and maximized state were restored from the previous
@@ -88,9 +96,10 @@ def test_mainwindow_settings(qtbot, mocker):
     qtbot.addWidget(mainwindow2)
     mainwindow2.show()
     qtbot.waitForWindowShown(mainwindow2)
+    qtbot.wait(100)
 
-    assert mainwindow2.size() != QSize(*expected_normal_window_size)
-    assert mainwindow2.pos() != QPoint(*expected_normal_window_pos)
+    assert mainwindow2.size() == mainwindow1_size
+    assert mainwindow2.pos() == mainwindow1_pos
     assert mainwindow2.isMaximized()
 
 

@@ -57,6 +57,14 @@ class DatabaseAccessorBase(ABC):
         getattr(self, 'add_' + name)(primary_key, values)
         self.del_temp_index(name, primary_key)
 
+    def delete(self, name, primary_key):
+        """
+        Delte the item related to name in the database using the given
+        primary_key.
+        """
+        getattr(self, 'delete_' + name)(primary_key)
+        self.del_temp_index(name, primary_key)
+
     def create_index(self, name):
         """
         Return a new index that can be used subsequently to add a new item
@@ -563,6 +571,36 @@ class DatabaseAccessor(DatabaseAccessorBase):
             A :class:`TimeSeriesGroup` containing the :class:`TimeSeries`
             holding the data acquired in the observation well for the
             specified monitored property.
+        """
+        raise NotImplementedError
+
+    def save_timeseries_data_edits(self, tseries_edits):
+        """
+        Save in the database a set of edits that were made to to timeseries
+        data that were already saved in the database.
+
+        Parameters
+        ----------
+        tseries_edits: pandas.DataFrame
+            A multi-indexes pandas dataframe that contains the edited
+            numerical values that need to be saved in the database.
+            The indexes of the dataframe correspond, respectively, to the
+            datetime (datetime), observation ID (str) and the data type
+            (DataType) corresponding to the edited value.
+        """
+        raise NotImplementedError
+
+    def delete_timeseries_data(self, tseries_dels):
+        """
+        Delete data in the database for the observation IDs, datetime and
+        data type specified in tseries_dels.
+
+        Parameters
+        ----------
+        tseries_dels: pandas.DataFrame
+            A pandas dataframe that contains the observation IDs, datetime,
+            and datatype for which timeseries data need to be deleted
+            from the database.
         """
         raise NotImplementedError
 

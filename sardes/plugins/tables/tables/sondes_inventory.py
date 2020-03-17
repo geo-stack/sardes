@@ -78,7 +78,7 @@ class SondesInventoryTableModel(SardesTableModel):
 
 
 class SondesInventoryTableWidget(SardesTableWidget):
-    def __init__(self, parent=None):
+    def __init__(self, *args, **kargs):
         table_model = SondesInventoryTableModel(
             table_title=_('Sondes Inventory'),
             table_id='table_sondes_inventory',
@@ -93,4 +93,4 @@ class SondesInventoryTableWidget(SardesTableWidget):
                 ('off_network', _('Off Network')),
                 ('sonde_notes', _('Notes'))]
             )
-        super().__init__(table_model, parent)
+        super().__init__(table_model, *args, **kargs)

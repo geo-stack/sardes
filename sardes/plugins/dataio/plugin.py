@@ -168,7 +168,7 @@ class DataImportWizard(QDialog):
         self.table_widget = SardesTableWidget(
             self.table_model, multi_columns_sort=False,
             sections_movable=False, sections_hidable=False,
-            disabled_actions=['edit'])
+            disabled_actions=SardesTableWidget.EDIT_ACTIONS)
 
         # Setup the dialog button box.
         self.next_btn = QPushButton(_('Next'))
@@ -245,7 +245,6 @@ class DataImportWizard(QDialog):
 
             self.table_model.set_model_data(
                 dataf, [(col, col) for col in dataf.columns])
-            self.table_widget.tableview._setup_item_delegates()
             self.table_widget.tableview.resizeColumnsToContents()
         self._update_sonde_info()
         self._update_button_state()

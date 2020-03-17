@@ -59,7 +59,7 @@ class ManualMeasurementsTableModel(SardesTableModel):
 
 
 class ManualMeasurementsTableWidget(SardesTableWidget):
-    def __init__(self, parent=None):
+    def __init__(self, *args, **kargs):
         table_model = ManualMeasurementsTableModel(
             table_title=_('Manual Measurements'),
             table_id='table_manual_measurements',
@@ -69,4 +69,4 @@ class ManualMeasurementsTableWidget(SardesTableWidget):
                 ('value', _('Water Level')),
                 ('notes', _('Notes'))]
             )
-        super().__init__(table_model, parent)
+        super().__init__(table_model, *args, **kargs)

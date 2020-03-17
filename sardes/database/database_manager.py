@@ -119,6 +119,14 @@ class DatabaseConnectionWorker(QObject):
             data = DataFrame([])
         return data,
 
+    def _delete(self, name, *args, **kargs):
+        """
+        Delete an item related to name from the database.
+        """
+        if name in self._cache:
+            del self._cache[name]
+        self.db_accessor.delete(name, *args, **kargs)
+
     def _create_index(self, name):
         """
         Return a new index that can be used subsequently to add new item
@@ -158,6 +166,24 @@ class DatabaseConnectionWorker(QObject):
             print(type(error).__name__, end=': ')
             print(error)
         return mprop_list,
+
+    def _save_timeseries_data_edits(self, tseries_edits):
+        """
+        Save in the database a set of edits that were made to to timeseries
+        data that were already saved in the database.
+        """
+        print("Saving timeseries data edits...", end=' ')
+        self.db_accessor.save_timeseries_data_edits(tseries_edits)
+        print("...timeseries data edits saved sucessfully.")
+
+    def _delete_timeseries_data(self, tseries_dels):
+        """
+        Delete data in the database for the observation IDs, datetime and
+        data type specified in tseries_dels.
+        """
+        print("Deleting timeseries data...", end=' ')
+        self.db_accessor.delete_timeseries_data(tseries_dels)
+        print("...timeseries data deleted sucessfully.")
 
 
 class SardesModelsManager(QObject):
@@ -240,6 +266,12 @@ class SardesModelsManager(QObject):
                 self.db_manager.add(
                     table_model_data_name,
                     edit.index, edit.values,
+                    callback=callback,
+                    postpone_exec=True)
+            elif edit.type() == table_model.RowDeleted:
+                self.db_manager.delete(
+                    table_model_data_name,
+                    edit.index,
                     callback=callback,
                     postpone_exec=True)
             else:
@@ -368,6 +400,15 @@ class DatabaseConnectionManager(QObject):
         if not postpone_exec:
             self.run_tasks()
 
+    def delete(self, *args, callback=None, postpone_exec=False):
+        """
+        Delete an item related to name from the database.
+        """
+        self._data_changed.add(args[0])
+        self._add_task('delete', callback, *args)
+        if not postpone_exec:
+            self.run_tasks()
+
     def create_index(self, name):
         """
         Return a new index that can be used subsequently to add new item
@@ -423,6 +464,26 @@ class DatabaseConnectionManager(QObject):
         self._add_task('get_timeseries_for_obs_well', callback,
                        obs_well_id, monitored_properties)
         self.run_tasks()
+
+    def save_timeseries_data_edits(self, tseries_edits, callback=None,
+                                   postpone_exec=False):
+        """
+        Save in the database a set of edits that were made to timeseries
+        data that were already saved in the database.
+        """
+        self._add_task('save_timeseries_data_edits', callback, tseries_edits)
+        if not postpone_exec:
+            self.run_tasks()
+
+    def delete_timeseries_data(self, tseries_dels, callback=None,
+                               postpone_exec=False):
+        """
+        Delete data in the database for the observation IDs, datetime and
+        data type specified in tseries_dels.
+        """
+        self._add_task('delete_timeseries_data', callback, tseries_dels)
+        if not postpone_exec:
+            self.run_tasks()
 
     # ---- Tasks handlers
     @Slot(object, object)

@@ -66,18 +66,25 @@ NYEAR = DATE_RANGE[-1].year - DATE_RANGE[0].year + 1
 YEARLY_RADS = np.linspace(0, 2 * NYEAR * np.pi, len(DATE_RANGE))
 
 TSERIES = {}
-TSERIES_VALUES = 25 * np.sin(YEARLY_RADS) + 5
-TSERIES_VALUES += 3 * np.random.rand(len(TSERIES_VALUES))
-TSERIES[DataType.WaterTemp] = Series(TSERIES_VALUES, index=DATE_RANGE)
+for obs_well_id in OBS_WELLS_DF.index:
+    TSERIES[obs_well_id] = {}
 
-TSERIES_VALUES = np.hstack((np.linspace(100, 95, len(YEARLY_RADS) // 2),
-                            np.linspace(95, 98, len(YEARLY_RADS) // 2)))
-TSERIES_VALUES += 1 * np.sin(YEARLY_RADS)
-TSERIES_VALUES += 2 * np.sin(YEARLY_RADS * 2)
-TSERIES_VALUES += 1 * np.sin(YEARLY_RADS * 4)
-TSERIES_VALUES += 0.5 * np.sin(YEARLY_RADS * 8)
-TSERIES_VALUES += 0.25 * np.random.rand(len(TSERIES_VALUES))
-TSERIES[DataType.WaterLevel] = Series(TSERIES_VALUES, index=DATE_RANGE)
+    # Generate water temperature synthetic data.
+    WTEMP_TSERIES = 25 * np.sin(YEARLY_RADS) + 5
+    WTEMP_TSERIES += 3 * np.random.rand(len(WTEMP_TSERIES))
+    TSERIES[obs_well_id][DataType.WaterTemp] = Series(
+        WTEMP_TSERIES, index=DATE_RANGE)
+
+    # Generate water level synthetic data.
+    WLEVEL_TSERIES = np.hstack((np.linspace(100, 95, len(YEARLY_RADS) // 2),
+                                np.linspace(95, 98, len(YEARLY_RADS) // 2)))
+    WLEVEL_TSERIES += 1 * np.sin(YEARLY_RADS)
+    WLEVEL_TSERIES += 2 * np.sin(YEARLY_RADS * 2)
+    WLEVEL_TSERIES += 1 * np.sin(YEARLY_RADS * 4)
+    WLEVEL_TSERIES += 0.5 * np.sin(YEARLY_RADS * 8)
+    WLEVEL_TSERIES += 0.25 * np.random.rand(len(WLEVEL_TSERIES))
+    TSERIES[obs_well_id][DataType.WaterLevel] = Series(
+        WLEVEL_TSERIES, index=DATE_RANGE)
 
 MANUAL_MEASUREMENTS = pd.DataFrame([
     [OBS_WELLS_DF.index[0], dt.datetime(2010, 8, 10, 16, 10, 34), 5.23, ''],
@@ -210,14 +217,18 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         the water level data acquired in the observation wells of the
         monitoring network.
         """
-        obs_well_stats = pd.DataFrame([], index=OBS_WELLS_DF.index)
-        obs_well_stats['first_date'] = np.min(
-            TSERIES[DataType.WaterLevel].index)
-        obs_well_stats['last_date'] = np.max(
-            TSERIES[DataType.WaterLevel].index)
-        obs_well_stats['mean_water_level'] = np.mean(
-            TSERIES[DataType.WaterLevel])
-        return obs_well_stats
+        stats_data = []
+        for obs_well_id in OBS_WELLS_DF.index:
+            stats_data.append([
+                np.min(TSERIES[obs_well_id][DataType.WaterLevel].index),
+                np.max(TSERIES[obs_well_id][DataType.WaterLevel].index),
+                np.mean(TSERIES[obs_well_id][DataType.WaterLevel]),
+                ])
+        stats_df = pd.DataFrame(
+            stats_data,
+            columns=['first_date', 'last_date', 'mean_water_level'],
+            index=OBS_WELLS_DF.index)
+        return stats_df
 
     def add_observation_wells_data(self, sampling_feature_id,
                                    attribute_values):
@@ -353,23 +364,44 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         observation well for the specified monitored property.
         """
         data_type = DataType(data_type)
-        if data_type in TSERIES:
-            data_units = {
-                DataType.WaterEC: "",
-                DataType.WaterLevel: "m",
-                DataType.WaterTemp: "\u00B0C"}[data_type]
-            tseries_group = TimeSeriesGroup(
-                data_type, data_type.label, data_units)
-            tseries_group.add_timeseries(TimeSeries(
-                TSERIES[data_type],
-                tseries_id="CHANNEL_UUID",
-                tseries_name=data_type.label,
-                tseries_units=data_units,
-                tseries_color=data_type.color
-                ))
-            return tseries_group
-        else:
-            return None
+        try:
+            tseries_data = TSERIES[obs_well_id][DataType(data_type)]
+        except KeyError:
+            tseries_data = pd.Series([])
+        data_units = {
+            DataType.WaterEC: "",
+            DataType.WaterLevel: "m",
+            DataType.WaterTemp: "\u00B0C"}[data_type]
+        tseries_group = TimeSeriesGroup(
+            data_type, data_type.title, data_units)
+        tseries_group.add_timeseries(TimeSeries(
+            tseries_data,
+            tseries_id=obs_well_id,
+            tseries_name=data_type.title,
+            tseries_units=data_units,
+            tseries_color=data_type.color,
+            sonde_id='1062392'
+            ))
+        return tseries_group
+
+    def save_timeseries_data_edits(self, tseries_edits):
+        """
+        Save in the database a set of edits that were made to to timeseries
+        data that were already saved in the database.
+        """
+        for (date_time, obs_id, data_type) in tseries_edits.index:
+            value = tseries_edits.loc[(date_time, obs_id, data_type), 'value']
+            TSERIES[obs_id][data_type].loc[date_time] = value
+
+    def delete_timeseries_data(self, tseries_dels):
+        """
+        Delete data in the database for the observation IDs, datetime and
+        data type specified in tseries_dels.
+        """
+        for i in range(len(tseries_dels)):
+            data = tseries_dels.iloc[i, ]
+            TSERIES[data['obs_id']][data['data_type']].drop(
+                data['datetime'], inplace=True)
 
     # ---- Manual mesurements
     def add_manual_measurements(self, measurement_id, attribute_values):
