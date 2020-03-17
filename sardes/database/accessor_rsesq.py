@@ -181,8 +181,8 @@ class Observation(Base):
     sampling_feature_uuid = Column('elemcarac_uuid', String)
     process_uuid = Column('process_uuid', String)
     obs_datetime = Column('date_relv_hg', DateTime)
-    # Relation with table librairies.lib_obs_parameter
-    param_id = Column('param_id', Integer)
+    param_id = Column(
+        'param_id', Integer, ForeignKey('librairies.lib_obs_parameter'))
 
     def __repr__(self):
         return format_sqlobject_repr(self)
