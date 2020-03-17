@@ -57,6 +57,14 @@ class DatabaseAccessorBase(ABC):
         getattr(self, 'add_' + name)(primary_key, values)
         self.del_temp_index(name, primary_key)
 
+    def delete(self, name, primary_key):
+        """
+        Delte the item related to name in the database using the given
+        primary_key.
+        """
+        getattr(self, 'delete_' + name)(primary_key)
+        self.del_temp_index(name, primary_key)
+
     def create_index(self, name):
         """
         Return a new index that can be used subsequently to add a new item
