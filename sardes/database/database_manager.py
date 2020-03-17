@@ -176,13 +176,13 @@ class DatabaseConnectionWorker(QObject):
         self.db_accessor.save_timeseries_data_edits(tseries_edits)
         print("...timeseries data edits saved sucessfully.")
 
-    def _del_timeseries_data(self, tseries_dels):
+    def _delete_timeseries_data(self, tseries_dels):
         """
         Delete data in the database for the observation IDs, datetime and
         data type specified in tseries_dels.
         """
         print("Deleting timeseries data...", end=' ')
-        self.db_accessor.del_timeseries_data(tseries_dels)
+        self.db_accessor.delete_timeseries_data(tseries_dels)
         print("...timeseries data deleted sucessfully.")
 
 
@@ -475,13 +475,13 @@ class DatabaseConnectionManager(QObject):
         if not postpone_exec:
             self.run_tasks()
 
-    def del_timeseries_data(self, tseries_dels, callback=None,
-                            postpone_exec=False):
+    def delete_timeseries_data(self, tseries_dels, callback=None,
+                               postpone_exec=False):
         """
         Delete data in the database for the observation IDs, datetime and
         data type specified in tseries_dels.
         """
-        self._add_task('del_timeseries_data', callback, tseries_dels)
+        self._add_task('delete_timeseries_data', callback, tseries_dels)
         if not postpone_exec:
             self.run_tasks()
 

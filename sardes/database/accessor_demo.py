@@ -393,7 +393,7 @@ class DatabaseAccessorDemo(DatabaseAccessor):
             value = tseries_edits.loc[(date_time, obs_id, data_type), 'value']
             TSERIES[obs_id][data_type].loc[date_time] = value
 
-    def del_timeseries_data(self, tseries_dels):
+    def delete_timeseries_data(self, tseries_dels):
         """
         Delete data in the database for the observation IDs, datetime and
         data type specified in tseries_dels.

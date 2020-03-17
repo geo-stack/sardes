@@ -143,7 +143,7 @@ class DataTableModel(SardesTableModel):
                         {'obs_id': obs_id,
                          'datetime': date_time,
                          'data_type': data_type}, ignore_index=True)
-        self.db_connection_manager.del_timeseries_data(
+        self.db_connection_manager.delete_timeseries_data(
             tseries_dels,
             postpone_exec=True)
         self.db_connection_manager.save_timeseries_data_edits(
