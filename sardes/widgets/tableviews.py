@@ -1407,7 +1407,7 @@ class SardesTableView(QTableView):
 
 
 class SardesTableWidget(SardesPaneWidget):
-    EDIT_ACTIONS = ['edit_item', 'new_row', 'delte_row', 'clear_item',
+    EDIT_ACTIONS = ['edit_item', 'new_row', 'delete_row', 'clear_item',
                     'save_edits', 'cancel_edits', 'undo_edits']
 
     def __init__(self, table_model, parent=None, multi_columns_sort=True,
@@ -1518,6 +1518,9 @@ class SardesTableWidget(SardesPaneWidget):
 
         sections = list(self.tableview._actions.keys())
         for section in sections:
+            actions = self.tableview._actions[section]
+            if not len(actions):
+                continue
             for action in self.tableview._actions[section]:
                 toolbar.addAction(action)
             if section != sections[-1]:
