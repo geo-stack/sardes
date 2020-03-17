@@ -87,6 +87,7 @@ def test_mainwindow_settings(qtbot, mocker):
     mainwindow1_pos = mainwindow1.pos()
     mainwindow1.close()
     assert CONF.get('main', 'window/geometry', None) is not None
+    qtbot.wait(100)
 
     # Create a new instance of the main window and assert that the size,
     # position and maximized state were restored from the previous
