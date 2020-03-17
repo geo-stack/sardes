@@ -78,6 +78,9 @@ def tablemodel(qtbot, TABLE_DATAF):
         def set_test_table_dataf_name(self, index, column, edited_value):
             TABLE_DATAF.loc[index, column] = edited_value
 
+        def delete_test_table_dataf_name(self, index):
+            TABLE_DATAF.drop(index, axis='index', inplace=True)
+
         def add_test_table_dataf_name(self, index, attribute_values):
             for column in TABLE_DATAF.columns:
                 TABLE_DATAF.loc[index, column] = (
@@ -462,7 +465,7 @@ def test_clearing_non_required_cell(tablewidget, qtbot):
     assert not tableview.clear_item_action.isEnabled()
 
 
-def test_add_new_row(tablewidget, qtbot, mocker, TABLE_DATAF):
+def test_add_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     """
     Test that adding a new row to the table is working as expected.
     """
@@ -492,6 +495,50 @@ def test_add_new_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     qtbot.wait(100)
     assert tableview.row_count() == 5
     assert len(TABLE_DATAF) == 5
+
+
+def test_delete_row(tablewidget, qtbot, mocker, TABLE_DATAF):
+    """
+    Test that deleting a row in the table is working as expected.
+    """
+    tableview = tablewidget.tableview
+    assert len(TABLE_DATAF) == 3
+    assert tableview.row_count() == 3
+
+    # Select a table cell whose content is not editable and try to edit it.
+    model_index = tableview.model().index(1, 2)
+    qtbot.mouseClick(
+        tableview.viewport(),
+        Qt.LeftButton,
+        pos=tableview.visualRect(model_index).center())
+
+    # Delete the row where the table cursor is.
+    qtbot.keyPress(tableview, Qt.Key_Minus, modifier=Qt.ControlModifier)
+    assert len(TABLE_DATAF) == 3
+    assert tableview.row_count() == 3
+    assert tableview.model().data_edit_count() == 1
+    assert tableview.model().has_unsaved_data_edits() is True
+
+    # Undo the last row delete operation.
+    qtbot.keyPress(tablewidget, Qt.Key_Z, modifier=Qt.ControlModifier)
+    assert len(TABLE_DATAF) == 3
+    assert tableview.row_count() == 3
+    assert tableview.model().data_edit_count() == 0
+    assert tableview.model().has_unsaved_data_edits() is False
+
+    # Delete back the row where the table cursor is.
+    qtbot.keyPress(tableview, Qt.Key_Minus, modifier=Qt.ControlModifier)
+    assert len(TABLE_DATAF) == 3
+    assert tableview.row_count() == 3
+    assert tableview.model().data_edit_count() == 1
+    assert tableview.model().has_unsaved_data_edits() is True
+
+    # Save the results.
+    mocker.patch.object(QMessageBox, 'exec_', return_value=QMessageBox.Save)
+    qtbot.keyPress(tablewidget, Qt.Key_Enter, modifier=Qt.ControlModifier)
+    qtbot.wait(100)
+    assert len(TABLE_DATAF) == 2
+    assert tableview.row_count() == 2
 
 
 def test_cancel_edits(tablewidget, qtbot):

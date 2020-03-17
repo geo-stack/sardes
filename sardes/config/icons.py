@@ -138,6 +138,9 @@ FA_ICONS = {
     'preferences': [
         ('mdi.settings',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'remove_row': [
+        ('mdi.table-row-remove',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'drag_select': [
         ('mdi.shape-square-plus',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],

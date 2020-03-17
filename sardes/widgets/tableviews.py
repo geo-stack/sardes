@@ -62,6 +62,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         self.editor = None
         self.unique_constraint = unique_constraint
         self.is_required = is_required
+        self.is_editable = True
         self._widget = QListView()
 
     # ---- Qt methods override
@@ -229,6 +230,7 @@ class NotEditableDelegate(SardesItemDelegateBase):
 
     def __init__(self, model_view):
         super().__init__(model_view, is_required=True)
+        self.is_editable = False
 
     def createEditor(self, *args, **kargs):
         return None
@@ -240,10 +242,6 @@ class NotEditableDelegate(SardesItemDelegateBase):
         pass
 
     def clear_model_data_at(self, model_index):
-        """
-        Override base class method to prevent clearing the model data.
-        a null value.
-        """
         pass
 
 
@@ -738,6 +736,15 @@ class SardesTableView(QTableView):
                 shortcut=['Ctrl++', 'Ctrl+='],
                 context=Qt.WidgetShortcut)
             self._actions['edit'].append(new_row_action)
+        if 'delete_row' not in self._disabled_actions:
+            self.delete_row_action = create_action(
+                self, _("Delete Item"),
+                icon='remove_row',
+                tip=_("Delete the current item."),
+                triggered=self._delete_current_row,
+                shortcut='Ctrl+-',
+                context=Qt.WidgetShortcut)
+            self._actions['edit'].append(self.delete_row_action)
         if 'clear_item' not in self._disabled_actions:
             self.clear_item_action = create_action(
                 self, _("Clear"),
@@ -883,11 +890,14 @@ class SardesTableView(QTableView):
             is_required = self.is_data_required_at(current_index)
             is_null = self.model().is_null(current_index)
             is_editable = self.is_data_editable_at(current_index)
+            is_data_deleted = self.model().is_data_deleted_at(current_index)
             if 'clear_item' not in self._disabled_actions:
                 self.clear_item_action.setEnabled(
                     not is_required and not is_null and is_editable)
             if 'edit_item' not in self._disabled_actions:
                 self.edit_item_action.setEnabled(is_editable)
+            if 'delete_row' not in self._disabled_actions:
+                self.delete_row_action.setEnabled(not is_data_deleted)
 
         has_unsaved_data_edits = self.model().has_unsaved_data_edits()
         data_edit_count = self.model().data_edit_count()
@@ -1222,8 +1232,11 @@ class SardesTableView(QTableView):
         """
         Return whether the item at the specified model index is editable.
         """
-        return not isinstance(
-            self.itemDelegate(model_index), NotEditableDelegate)
+        try:
+            return (self.itemDelegate(model_index).is_editable and
+                    not self.model().is_data_deleted_at(model_index))
+        except AttributeError:
+            return False
 
     def is_data_required_at(self, model_index):
         """
@@ -1280,13 +1293,8 @@ class SardesTableView(QTableView):
     def _undo_last_data_edit(self):
         """
         Undo the last data edits that was added to the table.
-        An update of the view is forced if  update_model_view is True.
         """
         last_edit = self.model().data_edits()[-1]
-        if last_edit.type() == SardesTableModelBase.ValueChanged:
-            self.model().undo_last_data_edit()
-            model_index = self.model().mapFromSource(
-                self.model().sourceModel().index(last_edit.row, last_edit.col))
         if last_edit.type() == SardesTableModelBase.RowAdded:
             added_row = self.model().mapFromSource(
                 self.model().sourceModel().index(last_edit.row, last_edit.col)
@@ -1297,6 +1305,10 @@ class SardesTableView(QTableView):
             # exist once the operation is undone, we need to select the
             # index just above or below that index in the proxy model.
             model_index = self.model().index(max(added_row - 1, 0), 0)
+        else:
+            self.model().undo_last_data_edit()
+            model_index = self.model().mapFromSource(
+                self.model().sourceModel().index(last_edit.row, last_edit.col))
 
         self.selectionModel().clearSelection()
         self._ensure_visible(model_index)
@@ -1341,6 +1353,14 @@ class SardesTableView(QTableView):
         self.setCurrentIndex(new_model_index_range[0])
         self._ensure_visible(new_model_index_range[0])
 
+    def _delete_current_row(self, model_index):
+        """
+        Delete the currently selected row.
+        """
+        current_index = self.selectionModel().currentIndex()
+        if current_index.isValid():
+            self.model().delete_row(current_index)
+
     def _ensure_visible(self, model_index):
         """
         Scroll to the item located at the given model index if it is not
@@ -1372,6 +1392,8 @@ class SardesTableView(QTableView):
         Extend Qt method to ensure that the cell of this table that is
         going to be edited is visible.
         """
+        if not self.is_data_editable_at(model_index):
+            return False
         if trigger is None:
             # Scroll to item if it is not currently visible in the scrollarea.
             item_rect = self.visualRect(model_index)
@@ -1385,8 +1407,8 @@ class SardesTableView(QTableView):
 
 
 class SardesTableWidget(SardesPaneWidget):
-    EDIT_ACTIONS = ['edit_item', 'new_row', 'clear_item', 'save_edits',
-                    'cancel_edits', 'undo_edits']
+    EDIT_ACTIONS = ['edit_item', 'new_row', 'delte_row', 'clear_item',
+                    'save_edits', 'cancel_edits', 'undo_edits']
 
     def __init__(self, table_model, parent=None, multi_columns_sort=True,
                  sections_movable=True, sections_hidable=True,

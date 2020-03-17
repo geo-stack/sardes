@@ -122,13 +122,35 @@ class DataTableModel(SardesTableModel):
         tseries_edits.set_index(
             'data_type', inplace=True, drop=True, append=True)
 
+        tseries_dels = pd.DataFrame(
+            [], columns=['obs_id', 'datetime', 'data_type'])
+
         for edit in self._datat.edits():
             row_data = self._datat.get(edit.row)
-            indexes = (row_data['datetime'], row_data['obs_id'], edit.column)
-            tseries_edits.loc[indexes, 'value'] = edit.edited_value
-
+            date_time = row_data['datetime']
+            obs_id = row_data['obs_id']
+            if edit.type() == SardesTableModel.ValueChanged:
+                indexes = (date_time, obs_id, edit.column)
+                tseries_edits.loc[indexes, 'value'] = edit.edited_value
+            elif edit.type() == SardesTableModel.RowDeleted:
+                row_data = self._datat.get(edit.row)
+                data_types = [dt for dt in DataType if dt in row_data.keys()]
+                for data_type in data_types:
+                    indexes = (date_time, obs_id, data_type)
+                    if indexes in tseries_edits.index:
+                        tseries_edits.drop(indexes, inplace=True)
+                    tseries_dels = tseries_dels.append(
+                        {'obs_id': obs_id,
+                         'datetime': date_time,
+                         'data_type': data_type}, ignore_index=True)
+        self.db_connection_manager.del_timeseries_data(
+            tseries_dels,
+            postpone_exec=True)
         self.db_connection_manager.save_timeseries_data_edits(
-            tseries_edits, self._handle_data_edits_saved)
+            tseries_edits,
+            callback=self._handle_data_edits_saved,
+            postpone_exec=True)
+        self.db_connection_manager.run_tasks()
 
     def _handle_data_edits_saved(self):
         """
@@ -139,7 +161,7 @@ class DataTableModel(SardesTableModel):
 
 class ObsWellsTableWidget(SardesTableWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self, *args, **kargs):
         table_model = ObsWellsTableModel(
             table_title=_('Observation Wells'),
             table_id='table_observation_wells',
@@ -160,7 +182,7 @@ class ObsWellsTableWidget(SardesTableWidget):
                 ('is_station_active', _('Active')),
                 ('obs_well_notes', _('Notes'))]
             )
-        super().__init__(table_model, parent)
+        super().__init__(table_model, *args, **kargs)
         self.data_tables = {}
 
         self.add_toolbar_separator()
@@ -173,7 +195,10 @@ class ObsWellsTableWidget(SardesTableWidget):
         Return the observation well data relative to the currently selected
         rows in the table.
         """
-        return self.tableview.get_current_row_data().iloc[0]
+        try:
+            return self.tableview.get_current_row_data().iloc[0]
+        except AttributeError:
+            return None
 
     def _create_extra_toolbuttons(self):
         self.show_plot_btn = create_toolbutton(
@@ -246,7 +271,7 @@ class ObsWellsTableWidget(SardesTableWidget):
             # Columns width and minimum window size.
             horizontal_header = table_widget.tableview.horizontalHeader()
             horizontal_header.setDefaultSectionSize(100)
-            table_widget.resize(475, 600)
+            table_widget.resize(600, 600)
 
             self.data_tables[current_obs_well_data.name] = table_widget
             table_model.update_data()

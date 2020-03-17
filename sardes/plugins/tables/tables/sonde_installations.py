@@ -86,7 +86,7 @@ class SondeInstallationsTableModel(SardesTableModel):
 
 
 class SondeInstallationsTableWidget(SardesTableWidget):
-    def __init__(self, parent=None):
+    def __init__(self, *args, **kargs):
         table_model = SondeInstallationsTableModel(
             table_title=_('Sonde Installations'),
             table_id='table_sonde_installations',
@@ -97,4 +97,4 @@ class SondeInstallationsTableWidget(SardesTableWidget):
                 ('end_date', _('Date To')),
                 ('install_depth', _('Depth (m)'))]
             )
-        super().__init__(table_model, parent)
+        super().__init__(table_model, *args, **kargs)

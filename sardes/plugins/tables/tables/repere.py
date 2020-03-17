@@ -73,7 +73,7 @@ class RepereTableModel(SardesTableModel):
 
 
 class RepereTableWidget(SardesTableWidget):
-    def __init__(self, parent=None):
+    def __init__(self, *args, **kargs):
         table_model = RepereTableModel(
             table_title=_('Repere'),
             table_id='table_repere',
@@ -87,4 +87,4 @@ class RepereTableWidget(SardesTableWidget):
                 ('repere_note', _('Notes')),
                 ]
             )
-        super().__init__(table_model, parent)
+        super().__init__(table_model, *args, **kargs)
