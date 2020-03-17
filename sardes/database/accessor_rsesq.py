@@ -1108,6 +1108,42 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             .one()
             )
 
+    def _query_timeseriesdata(self, date_times, obs_id, data_type):
+        """
+        Return the sqlalchemy TimeSeriesData object corresponding to a
+        timeseries data of the database.
+        """
+        obs_property_id = self._get_observation_property_id(data_type)
+        observation = self._get_observation(obs_id)
+        return (
+            self._session.query(TimeSeriesData)
+            .filter(TimeSeriesChannels.obs_property_id == obs_property_id)
+            .filter(TimeSeriesChannels.observation_uuid ==
+                    observation.observation_uuid)
+            .filter(TimeSeriesData.channel_id ==
+                    TimeSeriesChannels.channel_id)
+            .filter(TimeSeriesData.datetime.in_(date_times))
+            )
+
+    def _clean_observation_if_null(self, obs_id):
+        """
+        Delete observation with to the given ID from the database
+        if it is empty.
+        """
+        observation = self._get_observation(obs_id)
+        if observation.param_id == 7:
+            count = (self._session.query(TimeSeriesData)
+                     .filter(TimeSeriesChannels.observation_uuid ==
+                             observation.observation_uuid)
+                     .filter(TimeSeriesData.channel_id ==
+                             TimeSeriesChannels.channel_id)
+                     .count())
+            if count == 0:
+                print("Deleting observation {} because it is now empty."
+                      .format(observation.observation_id))
+                self._session.delete(observation)
+                self._session.commit()
+
     def save_timeseries_data_edits(self, tseries_edits):
         """
         Save in the database a set of edits that were made to to timeseries
@@ -1126,6 +1162,26 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             tseries_data.value = tseries_edits.loc[
                 (date_time, obs_id, data_type), 'value']
         self._session.commit()
+
+    def del_timeseries_data(self, tseries_dels):
+        """
+        Delete data in the database for the observation IDs, datetime and
+        data type specified in tseries_dels.
+        """
+        for obs_id in tseries_dels['obs_id'].unique():
+            sub_data = tseries_dels[tseries_dels['obs_id'] == obs_id]
+            for data_type in sub_data['data_type'].unique():
+                date_times = list(pd.to_datetime(
+                    sub_data[sub_data['data_type'] == data_type]
+                    ['datetime']))
+                query = self._query_timeseriesdata(
+                    date_times, obs_id, data_type)
+                for tseries_data in query:
+                    self._session.delete(tseries_data)
+                self._session.commit()
+
+            # We delete the observation from database if it is empty.
+            self._clean_observation_if_null(obs_id)
 
     def execute(self, sql_request, **kwargs):
         """Execute a SQL statement construct and return a ResultProxy."""
