@@ -18,8 +18,11 @@ RED = '#CC0000'
 INIT_MAINWINDOW_SIZE = (900, 450)
 
 
-def get_iconsize():
-    return 24
+def get_iconsize(size='normal'):
+    if size == 'normal':
+        return 24
+    elif size == 'small':
+        return 18
 
 
 def get_layout_horizontal_spacing():
