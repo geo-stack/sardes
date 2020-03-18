@@ -65,6 +65,7 @@ class DataImportWizard(QDialog):
         self._sonde_serial_no = None
         self._obs_well_uuid = None
         self._sonde_depth = None
+        self._install_id = None
 
         # Setup file info.
         self.filename_label = QLabel()
@@ -255,7 +256,8 @@ class DataImportWizard(QDialog):
         # Update sonde brand model serial info.
         sonde_uuid = self._get_sonde_uuid()
         sonde_model_id = self._get_sonde_model_id()
-        if sonde_uuid is not None:
+        sonde_models_lib = self._libraries['sonde_models_lib']
+        if sonde_uuid is not None and sonde_models_lib is not None:
             try:
                 sonde_brand_model = self._libraries['sonde_models_lib'].loc[
                     sonde_model_id, 'sonde_brand_model']
@@ -269,13 +271,15 @@ class DataImportWizard(QDialog):
 
         # Update well id and municipality.
         install_data = self._get_installation_data()
-        if install_data is not None:
+        observation_wells_data = self._libraries['observation_wells_data']
+        if install_data is not None and observation_wells_data is not None:
+            self._install_id = install_data.name
             self._obs_well_uuid = install_data['sampling_feature_uuid']
             self._sonde_depth = install_data['install_depth']
             try:
-                well_name = self._libraries['observation_wells_data'].loc[
+                well_name = observation_wells_data.loc[
                     self._obs_well_uuid, 'obs_well_id']
-                municipality = self._libraries['observation_wells_data'].loc[
+                municipality = observation_wells_data.loc[
                     self._obs_well_uuid, 'municipality']
             except (KeyError, IndexError):
                 self.obs_well_label.setText(NOT_FOUND_MSG_COLORED)
@@ -293,6 +297,7 @@ class DataImportWizard(QDialog):
         else:
             self._obs_well_uuid = None
             self._sonde_depth = None
+            self._install_id = None
             self.obs_well_label.setText(NOT_FOUND_MSG_COLORED)
             self.install_depth.setText(NOT_FOUND_MSG_COLORED)
             self.install_period.setText(NOT_FOUND_MSG_COLORED)
@@ -339,13 +344,13 @@ class DataImportWizard(QDialog):
         range of the data.
         """
         sonde_uuid = self._get_sonde_uuid()
-        if sonde_uuid is None:
+        sonde_installations = self._libraries['sonde_installations']
+        if sonde_uuid is None or sonde_installations is None:
             return None
         try:
             installs = (
-                self._libraries['sonde_installations']
-                [self._libraries['sonde_installations']['sonde_uuid'] ==
-                 sonde_uuid]
+                sonde_installations
+                [sonde_installations['sonde_uuid'] == sonde_uuid]
                 )
         except (KeyError, IndexError):
             return None
@@ -406,6 +411,7 @@ if __name__ == '__main__':
     dataimportwizard._queued_filenames = [
         'C:/Users/User/sardes/sardes/plugins/dataio/'
         'tests/solinst_level_testfile.csv']
+    dbconnmanager.update_model('data_import_wizard')
 
     dataimportwizard.show()
 
