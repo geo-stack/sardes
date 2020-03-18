@@ -30,7 +30,7 @@ from sardes.api.timeseries import DataType, TimeSeriesGroup, TimeSeries
 # Module variable definition
 # =============================================================================
 OBS_WELLS_DATA = []
-OBS_WELL_ID = ['0343128', '0466773', '0622056', '0652184', '0702303']
+OBS_WELL_ID = ['03037041', '0466773', '0622056', '0652184', '0702303']
 for i in range(5):
     AQUIFER_CODE = str(int(np.random.rand(1) * 5))
     AQUIFER_CONFINEMENT, AQUIFER_TYPE = [
