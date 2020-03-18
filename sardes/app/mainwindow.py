@@ -113,9 +113,9 @@ class MainWindow(QMainWindow):
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
         print("Loading the {} plugin...".format(plugin_title), end=' ')
         splash.showMessage(_("Loading the {} plugin...").format(plugin_title))
-        plugin = SARDES_PLUGIN_CLASS(self)
-        plugin.register_plugin()
-        self.internal_plugins.append(plugin)
+        self.tables_plugin = SARDES_PLUGIN_CLASS(self)
+        self.tables_plugin.register_plugin()
+        self.internal_plugins.append(self.tables_plugin)
         print("done")
 
         # Database plugin.
