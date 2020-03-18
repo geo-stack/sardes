@@ -7,9 +7,6 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
-# ---- Standard imports
-
-# ---- Third party imports
 
 # ---- Local imports
 from .widgets import DataImportWizard
@@ -37,6 +34,8 @@ class DataIO(SardesPlugin):
     def setup_plugin(self):
         """Setup this plugin."""
         self.data_import_wizard = DataImportWizard(self.main)
+        self.data_import_wizard.sig_view_data.connect(
+            self.main.tables_plugin.view_timeseries_data)
 
     def create_mainwindow_toolbars(self):
         toolbar = create_mainwindow_toolbar("Data Import Wizard toolbar")

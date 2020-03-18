@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Standard imports
+import sys
 import datetime
 import os.path as osp
 
@@ -15,21 +16,18 @@ import os.path as osp
 from appconfigs.base import get_home_dir
 import hydsensread as hsr
 import pandas as pd
-from qtpy.QtCore import Qt, QSize, Slot, Signal
-from qtpy.QtWidgets import (QApplication, QFileDialog, QTabWidget,
-                            QDialog, QGridLayout, QLabel, QPushButton,
+from qtpy.QtCore import Qt, Slot, Signal
+from qtpy.QtWidgets import (QApplication, QFileDialog,
+                            QDialog, QLabel, QPushButton,
                             QDialogButtonBox, QVBoxLayout, QAbstractButton,
                             QFormLayout, QGroupBox)
 
 # ---- Local imports
-from sardes.config.main import CONF
-from sardes.api.plugins import SardesPlugin
+from sardes.config.gui import get_iconsize
+from sardes.config.locale import _
 from sardes.api.tablemodels import SardesTableModel
 from sardes.api.timeseries import DataType
-from sardes.config.icons import get_icon
-from sardes.config.locale import _
-from sardes.utils.qthelpers import (
-    create_mainwindow_toolbar, create_toolbutton)
+from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import NotEditableDelegate, SardesTableWidget
 
 
@@ -42,6 +40,7 @@ READ_ERROR_MSG_COLORED = '<font color=red>%s</font>' % READ_ERROR_MSG
 class DataImportWizard(QDialog):
     sig_data_about_to_be_updated = Signal()
     sig_data_updated = Signal()
+    sig_view_data = Signal(object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -82,11 +81,11 @@ class DataImportWizard(QDialog):
         self.install_period = QLabel()
 
         sonde_groupbox = QGroupBox(_('Sonde Installation Info'))
-        sonde_layout = QFormLayout(sonde_groupbox)
-        sonde_layout.addRow(_('Sonde') + ' :', self.sonde_label)
-        sonde_layout.addRow(_('Well') + ' :', self.obs_well_label)
-        sonde_layout.addRow(_('Depth') + ' :', self.install_depth)
-        sonde_layout.addRow(_('Period') + ' :', self.install_period)
+        sonde_form = QFormLayout(sonde_groupbox)
+        sonde_form.addRow(_('Sonde') + ' :', self.sonde_label)
+        sonde_form.addRow(_('Well') + ' :', self.obs_well_label)
+        sonde_form.addRow(_('Depth') + ' :', self.install_depth)
+        sonde_form.addRow(_('Period') + ' :', self.install_period)
 
         # Setup the table widget.
         class ImportDataTableModel(SardesTableModel):
@@ -103,6 +102,19 @@ class DataImportWizard(QDialog):
             disabled_actions=SardesTableWidget.EDIT_ACTIONS)
         horizontal_header = self.table_widget.tableview.horizontalHeader()
         horizontal_header.setDefaultSectionSize(100)
+
+        # Add extra toolbar buttons.
+        self.show_data_btn = create_toolbutton(
+            self,
+            icon='show_data_table',
+            text=_("View data"),
+            tip=_('Show the data of the timeseries acquired in the currently '
+                  'selected observation well in a table.'),
+            triggered=lambda _: self._view_timeseries_data(),
+            iconsize=get_iconsize()
+            )
+        self.table_widget.add_toolbar_separator()
+        self.table_widget.add_toolbar_widget(self.show_data_btn)
 
         # Setup the dialog button box.
         self.next_btn = QPushButton(_('Next'))
@@ -126,6 +138,7 @@ class DataImportWizard(QDialog):
         layout.addWidget(file_groupbox)
         layout.addWidget(sonde_groupbox)
         layout.addWidget(self.table_widget)
+        layout.setStretch(layout.count() - 1, 1)
         layout.addWidget(button_box)
 
         self._working_dir = get_home_dir()
@@ -149,10 +162,10 @@ class DataImportWizard(QDialog):
             self._working_dir = new_working_dir
 
     def show(self):
-        self._queued_filenames, _ = QFileDialog.getOpenFileNames(
-            self.parent(), 'Select data files',
-            self.working_directory, '*.csv ; *.lev ; *.xle')
-
+        if not len(self._queued_filenames):
+            self._queued_filenames, _ = QFileDialog.getOpenFileNames(
+                self.parent(), 'Select data files',
+                self.working_directory, '*.csv ; *.lev ; *.xle')
         if len(self._queued_filenames):
             self._load_next_queued_data_file()
             super().show()
@@ -288,13 +301,13 @@ class DataImportWizard(QDialog):
         Return the sonde uuid corresponding to sonde serial number of the
         currently opened data file.
         """
-        if self._sonde_serial_no is None:
+        sonde_serial_no = self._sonde_serial_no
+        sonde_data = self._libraries['sonde_data']
+        if sonde_serial_no is None or sonde_data is None:
             return None
         try:
             sonde_uuid = (
-                self._libraries['sonde_data']
-                [self._libraries['sonde_data']['sonde_serial_no'] ==
-                 self._sonde_serial_no]
+                sonde_data[sonde_data['sonde_serial_no'] == sonde_serial_no]
                 .index[0])
             return sonde_uuid
         except (KeyError, IndexError):
@@ -305,13 +318,14 @@ class DataImportWizard(QDialog):
         Return the model id of the sonde associated with the currently
         opened data file.
         """
-        if self._sonde_serial_no is None:
+        sonde_serial_no = self._sonde_serial_no
+        sonde_data = self._libraries['sonde_data']
+        if sonde_serial_no is None or sonde_data is None:
             return None
         try:
             sonde_model_id = (
-                self._libraries['sonde_data']
-                [self._libraries['sonde_data']['sonde_serial_no'] ==
-                 self._sonde_serial_no]
+                sonde_data
+                [sonde_data['sonde_serial_no'] == sonde_serial_no]
                 ['sonde_model_id']
                 .values[0])
             return sonde_model_id
@@ -361,3 +375,35 @@ class DataImportWizard(QDialog):
             self.close()
         elif button == self.next_btn:
             self._load_next_queued_data_file()
+
+    def _view_timeseries_data(self):
+        """
+        Show the timeseries data that are already saved in the database
+        for the observation well where the sonde related to this data file
+        is installed.
+        """
+        if self._obs_well_uuid is not None:
+            self.sig_view_data.emit(self._obs_well_uuid)
+
+
+if __name__ == '__main__':
+    from sardes.database.database_manager import DatabaseConnectionManager
+    from sardes.database.accessor_demo import DatabaseAccessorDemo
+
+    app = QApplication(sys.argv)
+
+    dbconnmanager = DatabaseConnectionManager()
+    dbconnmanager.connect_to_db(DatabaseAccessorDemo())
+
+    dataimportwizard = DataImportWizard()
+    dbconnmanager.register_model(
+        dataimportwizard,
+        'sondes_data',
+        ['sonde_models_lib', 'sonde_installations',
+         'observation_wells_data'])
+    dataimportwizard._queued_filenames = [
+        'C:/Users/User/sardes/sardes/plugins/dataio/tests/solinst_level_testfile.csv']
+
+    dataimportwizard.show()
+
+    sys.exit(app.exec_())
