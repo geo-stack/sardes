@@ -37,6 +37,11 @@ READ_ERROR_MSG = _('File reading error')
 READ_ERROR_MSG_COLORED = '<font color=red>%s</font>' % READ_ERROR_MSG
 
 
+class ImportDataTableModel(SardesTableModel):
+    def create_delegate_for_column(self, view, column):
+        return NotEditableDelegate(self)
+
+
 class DataImportWizard(QDialog):
     sig_data_about_to_be_updated = Signal()
     sig_data_updated = Signal()
@@ -88,10 +93,6 @@ class DataImportWizard(QDialog):
         sonde_form.addRow(_('Period') + ' :', self.install_period)
 
         # Setup the table widget.
-        class ImportDataTableModel(SardesTableModel):
-            def create_delegate_for_column(self, view, column):
-                return NotEditableDelegate(self)
-
         self.table_model = ImportDataTableModel(
             table_title='Logger Data',
             table_id='logger_data',
@@ -365,6 +366,7 @@ class DataImportWizard(QDialog):
         """Update the state of the dialog's buttons."""
         self.next_btn.setEnabled(len(self._queued_filenames) > 0)
         self.load_btn.setEnabled(self._obs_well_uuid is not None)
+        self.show_data_btn.setEnabled(self._obs_well_uuid is not None)
 
     @Slot(QAbstractButton)
     def _handle_button_click_event(self, button):
@@ -402,7 +404,8 @@ if __name__ == '__main__':
         ['sonde_models_lib', 'sonde_installations',
          'observation_wells_data'])
     dataimportwizard._queued_filenames = [
-        'C:/Users/User/sardes/sardes/plugins/dataio/tests/solinst_level_testfile.csv']
+        'C:/Users/User/sardes/sardes/plugins/dataio/'
+        'tests/solinst_level_testfile.csv']
 
     dataimportwizard.show()
 
