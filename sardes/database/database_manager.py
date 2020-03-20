@@ -172,7 +172,7 @@ class DatabaseConnectionWorker(QObject):
         Save in the database a set of edits that were made to to timeseries
         data that were already saved in the database.
         """
-        print("Saving timeseries data edits...", end=' ')
+        print("Saving timeseries data edits...")
         self.db_accessor.save_timeseries_data_edits(tseries_edits)
         print("...timeseries data edits saved sucessfully.")
 
@@ -181,7 +181,7 @@ class DatabaseConnectionWorker(QObject):
         Delete data in the database for the observation IDs, datetime and
         data type specified in tseries_dels.
         """
-        print("Deleting timeseries data...", end=' ')
+        print("Deleting timeseries data...")
         self.db_accessor.delete_timeseries_data(tseries_dels)
         print("...timeseries data deleted sucessfully.")
 
