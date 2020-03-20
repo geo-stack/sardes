@@ -29,61 +29,70 @@ from sardes.api.timeseries import DataType, TimeSeriesGroup, TimeSeries
 # =============================================================================
 # Module variable definition
 # =============================================================================
-OBS_WELLS_DATA = []
-OBS_WELL_ID = ['0343128', '0466773', '0622056', '0652184', '0702303']
-for i in range(5):
-    AQUIFER_CODE = str(int(np.random.rand(1) * 5))
-    AQUIFER_CONFINEMENT, AQUIFER_TYPE = [
-        ('Confined', 'Rock'),
-        ('Confined', 'Sediments'),
-        ('Semi-Confined', 'Rock'),
-        ('Semi-Confined', 'Sediments'),
-        ('Unconfined', 'Rock'),
-        ('Unconfined', 'Sediments')][int(AQUIFER_CODE)]
-    OBS_WELLS_DATA.append([
-        OBS_WELL_ID[i],
-        'PO{:01d}'.format(i + 1),
-        'Municipality {:01d}'.format(i + 1),
-        AQUIFER_TYPE,
-        AQUIFER_CONFINEMENT,
-        AQUIFER_CODE,
-        str(bool(np.floor(np.random.rand(1) * 2))),
-        str(bool(np.floor(np.random.rand(1) * 2))),
-        round(45 + np.random.rand(1)[0] * 2, 6),
-        round(-75 + np.random.rand(1)[0] * 2, 6),
-        bool(np.floor(np.random.rand(1) * 2)),
-        'Notes for observation well #{}'.format(OBS_WELL_ID)])
 OBS_WELLS_DF = pd.DataFrame(
-    OBS_WELLS_DATA,
+    [['03037041', "St-Paul-d'Abbotsford", "Saint-Paul-d'Abbotsford",
+      'MT', 'Confined', 3, 'No', 'No', 45.445178, -72.828773, True, None],
+     ['02200001', "Réserve de Duchénier", "Saint-Narcisse-de-Rimouski",
+      'ROC', 'Unconfined', 2, 'Yes', 'No', 48.20282, -68.52795, True, None],
+     ['02167001', 'Matane', 'Matane',
+      'MT', 'Captive', 3, 'No', 'Yes', 48.81151, -67.53562, True, None],
+     ['02600001', "L'Islet", "L'Islet",
+      'ROC', 'Unconfined', 2, 'Yes', 'No', 47.093526, -70.338989, True, None],
+     ['03040002', 'PO-01', 'Calixa-Lavallée',
+      'ROC', 'Confined', 1, 'No', 'No', 45.74581, -73.28024, True, None]],
     columns=['obs_well_id', 'common_name', 'municipality',
              'aquifer_type', 'confinement', 'aquifer_code',
              'in_recharge_zone', 'is_influenced', 'latitude',
              'longitude', 'is_station_active', 'obs_well_notes']
     )
 
-DATE_RANGE = pd.date_range(start='1/1/2015', end='1/1/2019')
+DATE_RANGE = pd.date_range(start='1/1/2014', end='31/12/2018')
 NYEAR = DATE_RANGE[-1].year - DATE_RANGE[0].year + 1
-YEARLY_RADS = np.linspace(0, 2 * NYEAR * np.pi, len(DATE_RANGE))
+YEARLY_RADS = np.array([i * (2 * np.pi) / 365.25 for
+                        i in range(len(DATE_RANGE))])
 
+OBSERVATIONS = pd.DataFrame(
+    [],
+    columns=['start_date', 'end_date',
+             'obs_well_uuid', 'sonde_installation_uuid'])
 TSERIES = {}
-for obs_well_id in OBS_WELLS_DF.index:
-    TSERIES[obs_well_id] = {}
+for obs_id, obs_well_id in enumerate(OBS_WELLS_DF.index):
+    OBSERVATIONS = OBSERVATIONS.append(
+        pd.DataFrame([[DATE_RANGE[0].to_pydatetime(),
+                       DATE_RANGE[-1].to_pydatetime(),
+                       obs_well_id, None]],
+                     index=[obs_id],
+                     columns=OBSERVATIONS.columns),
+        ignore_index=False)
+
+    TSERIES[obs_id] = {}
 
     # Generate water temperature synthetic data.
-    WTEMP_TSERIES = 25 * np.sin(YEARLY_RADS) + 5
+    # Note that we set the seed of the random number generator everytime
+    # to make the random numbers predictables.
+    np.random.seed(obs_id)
+    WTEMP_TSERIES = 25 * np.cos(YEARLY_RADS + np.pi) + 5
+    np.random.seed(obs_id)
     WTEMP_TSERIES += 3 * np.random.rand(len(WTEMP_TSERIES))
     TSERIES[obs_well_id][DataType.WaterTemp] = Series(
         WTEMP_TSERIES, index=DATE_RANGE)
 
     # Generate water level synthetic data.
-    WLEVEL_TSERIES = np.hstack((np.linspace(100, 95, len(YEARLY_RADS) // 2),
-                                np.linspace(95, 98, len(YEARLY_RADS) // 2)))
-    WLEVEL_TSERIES += 1 * np.sin(YEARLY_RADS)
-    WLEVEL_TSERIES += 2 * np.sin(YEARLY_RADS * 2)
-    WLEVEL_TSERIES += 1 * np.sin(YEARLY_RADS * 4)
-    WLEVEL_TSERIES += 0.5 * np.sin(YEARLY_RADS * 8)
-    WLEVEL_TSERIES += 0.25 * np.random.rand(len(WLEVEL_TSERIES))
-    TSERIES[obs_well_id][DataType.WaterLevel] = Series(
+    N = len(YEARLY_RADS)
+    WLEVEL_TSERIES = np.array([3 + i * 1 / 365.25 for i in range(730)])
+    WLEVEL_TSERIES = np.hstack([
+        WLEVEL_TSERIES,
+        np.array([WLEVEL_TSERIES[-1] - (i + 1) * 1 / 365.25
+                  for i in range(N - 730)])
+        ])
+    WLEVEL_TSERIES += 0.25 * np.sin(YEARLY_RADS)
+    WLEVEL_TSERIES += 0.5 * np.sin(YEARLY_RADS * 2)
+    WLEVEL_TSERIES += 0.25 * np.sin(YEARLY_RADS * 4)
+    WLEVEL_TSERIES += 0.25 * np.sin(YEARLY_RADS * 8)
+    # We set the seed to make the random numbers predictables.
+    np.random.seed(obs_id)
+    WLEVEL_TSERIES += 0.1 * np.random.rand(len(WLEVEL_TSERIES))
+    TSERIES[obs_id][DataType.WaterLevel] = Series(
         WLEVEL_TSERIES, index=DATE_RANGE)
 
 MANUAL_MEASUREMENTS = pd.DataFrame([
@@ -101,7 +110,8 @@ SONDE_MODELS_LIB = pd.DataFrame([
     ['Solinst', 'Barologger M1.5 Gold'],
     ['Solinst', 'LT M10 Gold'],
     ['Solinst', 'LT M10 Edge'],
-    ['Solinst', 'Barologger M1,5'],
+    ['Solinst', 'Barologger M1.5'],
+    ['Solinst', 'LT M10'],
     ['Solinst', 'LT M20 Gold'],
     ['Solinst', 'L M10'],
     ['Telog 1', 'Druck'],
@@ -110,31 +120,60 @@ SONDE_MODELS_LIB = pd.DataFrame([
     columns=['sonde_brand', 'sonde_model']
     )
 
-SONDES_DATA = pd.DataFrame([
-    [SONDE_MODELS_LIB.index[0], 'Solinst Barologger M1.5 Gold', '1022034',
-     dt.date(2007, 3, 26), dt.date(2017, 11, 27),
-     False, True, True, False,
-     'Notes for sonde Solinst Barologger M1.5 Gold 1022034'],
-    [SONDE_MODELS_LIB.index[1], 'Solinst LT M10 Gold', '1062392',
-     dt.date(2011, 5, 10), dt.date(2017, 11, 27),
-     False, True, True, False,
-     'Notes for sonde Solinst LT M10 Gold 1062392'],
-    [SONDE_MODELS_LIB.index[2], 'Solinst LT M10 Edge', '2004771',
-     dt.date(2012, 1, 1), None,
-     False, False, False, False,
-     'Notes for sonde Solinst LT M10 Edge 2004771']],
+SONDES_DATA = pd.DataFrame(
+    [[SONDE_MODELS_LIB.index[1], 'Solinst LT M10 Gold', '1016042',
+      dt.date(2006, 3, 30), pd.NaT,
+      False, False, False, False, None],
+     [SONDE_MODELS_LIB.index[1], 'Solinst LT M10 Gold', '1031928',
+      dt.date(2008, 6, 4), pd.NaT,
+      False, False, False, False, None],
+     [SONDE_MODELS_LIB.index[1], 'Solinst LT M10 Gold', '1021777',
+      dt.date(2007, 3, 26), pd.NaT,
+      False, False, False, False, None],
+     [SONDE_MODELS_LIB.index[0], 'Solinst Barologger M1.5 Gold', '1016387',
+      dt.date(2006, 3, 30), pd.NaT,
+      False, False, False, False, None],
+     [SONDE_MODELS_LIB.index[3], 'Solinst Barologger M1.5', '2022144',
+      dt.date(2013, 9, 1), pd.NaT,
+      False, False, False, False, "Achetée par l'INRS"],
+     [SONDE_MODELS_LIB.index[2], 'Solinst LT M10 Edge', '2007039',
+      dt.date(2013, 9, 1), dt.date(2014, 6, 3),
+      True, True, False, False, "Achetée par l'INRS"],
+     [SONDE_MODELS_LIB.index[2], 'Solinst LT M10 Edge', '2006190',
+      dt.date(2013, 9, 1), pd.NaT,
+      False, False, False, False, "Achetée par l'INRS"],
+     [SONDE_MODELS_LIB.index[4], 'Solinst LT M10', '1060487',
+      dt.date(2012, 5, 5), pd.NaT,
+      False, False, False, False, None],
+     [SONDE_MODELS_LIB.index[0], 'Solinst Barologger M1.5 Gold', '1048409',
+      dt.date(2010, 2, 8), pd.NaT,
+      False, False, False, False, None],
+     ],
     columns=['sonde_model_id', 'sonde_brand_model', 'sonde_serial_no',
              'date_reception', 'date_withdrawal', 'in_repair',
              'out_of_order', 'lost', 'off_network', 'sonde_notes']
     )
 
-SONDE_INSTALLATIONS = pd.DataFrame([
-    [dt.datetime(2015, 7, 27, 23, 0), None, 1,
-     OBS_WELLS_DF.index[0], SONDES_DATA.index[0]],
-    [dt.datetime(2015, 7, 27, 23, 0), None, 9.82,
-     OBS_WELLS_DF.index[0], SONDES_DATA.index[1]],
-    [dt.datetime(2016, 3, 4, 12, 0), dt.datetime(2019, 3, 4, 12, 0), 9.82,
-     OBS_WELLS_DF.index[1], SONDES_DATA.index[2]]],
+SONDE_INSTALLATIONS = pd.DataFrame(
+    [[dt.datetime(2006, 8, 24, 18), pd.NaT, 9.02,
+      OBS_WELLS_DF.index[0], SONDES_DATA.index[0]],
+     [dt.datetime(2009, 7, 24, 19), pd.NaT, 7.19,
+      OBS_WELLS_DF.index[1], SONDES_DATA.index[1]],
+     [dt.datetime(2007, 11, 14, 19), pd.NaT, 10.1,
+      OBS_WELLS_DF.index[2], SONDES_DATA.index[2]],
+     [dt.datetime(2007, 11, 14, 19), pd.NaT, 2.0,
+      OBS_WELLS_DF.index[2], SONDES_DATA.index[3]],
+     [dt.datetime(2013, 10, 9, 1), pd.NaT, 1,
+      OBS_WELLS_DF.index[3], SONDES_DATA.index[4]],
+     [dt.datetime(2013, 10, 9, 1), dt.datetime(2014, 6, 3, 10), 8.16,
+      OBS_WELLS_DF.index[3], SONDES_DATA.index[5]],
+     [dt.datetime(2014, 6, 3, 10), pd.NaT, 8.16,
+      OBS_WELLS_DF.index[3], SONDES_DATA.index[6]],
+     [dt.datetime(2012, 5, 5, 19), pd.NaT, 9.24,
+      OBS_WELLS_DF.index[4], SONDES_DATA.index[7]],
+     [dt.datetime(2012, 5, 5, 19), pd.NaT, 1.0,
+      OBS_WELLS_DF.index[4], SONDES_DATA.index[8]]
+     ],
     columns=['start_date', 'end_date', 'install_depth',
              'sampling_feature_uuid', 'sonde_uuid']
     )
@@ -364,24 +403,32 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         observation well for the specified monitored property.
         """
         data_type = DataType(data_type)
-        try:
-            tseries_data = TSERIES[obs_well_id][DataType(data_type)]
-        except KeyError:
-            tseries_data = pd.Series([])
         data_units = {
             DataType.WaterEC: "",
             DataType.WaterLevel: "m",
             DataType.WaterTemp: "\u00B0C"}[data_type]
         tseries_group = TimeSeriesGroup(
-            data_type, data_type.title, data_units)
-        tseries_group.add_timeseries(TimeSeries(
-            tseries_data,
-            tseries_id=obs_well_id,
-            tseries_name=data_type.title,
-            tseries_units=data_units,
-            tseries_color=data_type.color,
-            sonde_id='1062392'
-            ))
+            data_type, data_type.title, data_units,
+            yaxis_inverted=(data_type == DataType.WaterLevel))
+        tseries_group.duplicated_data = []
+
+        # Add timeseries data to the group.
+        obs_ids = (OBSERVATIONS
+                   [OBSERVATIONS['obs_well_uuid'] == obs_well_id]
+                   .index)
+        for obs_id in obs_ids:
+            try:
+                tseries_data = TSERIES[obs_id][DataType(data_type)]
+            except KeyError:
+                continue
+            tseries_group.add_timeseries(TimeSeries(
+                tseries_data,
+                tseries_id=obs_id,
+                tseries_name=data_type.title,
+                tseries_units=data_units,
+                tseries_color=data_type.color,
+                sonde_id='1062392'
+                ))
         return tseries_group
 
     def save_timeseries_data_edits(self, tseries_edits):
@@ -393,6 +440,27 @@ class DatabaseAccessorDemo(DatabaseAccessor):
             value = tseries_edits.loc[(date_time, obs_id, data_type), 'value']
             TSERIES[obs_id][data_type].loc[date_time] = value
 
+    def add_timeseries_data(self, tseries_data, obs_well_uuid,
+                            sonde_installation_uuid=None):
+        """
+        Save in the database a set of timeseries data associated with the
+        given well and sonde installation id.
+        """
+        sleep(0.5)
+        new_obs_id = max(OBSERVATIONS.index) + 1
+        OBSERVATIONS.loc[new_obs_id] = [
+            min(tseries_data['datetime']),
+            max(tseries_data['datetime']),
+            obs_well_uuid,
+            sonde_installation_uuid]
+
+        TSERIES[new_obs_id] = {}
+        for data_type in DataType:
+            if data_type in tseries_data.columns:
+                TSERIES[new_obs_id][data_type] = Series(
+                    tseries_data[data_type],
+                    index=tseries_data['datetime'])
+
     def delete_timeseries_data(self, tseries_dels):
         """
         Delete data in the database for the observation IDs, datetime and
@@ -402,6 +470,14 @@ class DatabaseAccessorDemo(DatabaseAccessor):
             data = tseries_dels.iloc[i, ]
             TSERIES[data['obs_id']][data['data_type']].drop(
                 data['datetime'], inplace=True)
+        for obs_id in tseries_dels['obs_id'].unique():
+            for tseries in TSERIES[obs_id].values():
+                if len(tseries):
+                    break
+            else:
+                print("Deleting observation {} because it is now empty."
+                      .format(obs_id))
+                del TSERIES[obs_id]
 
     # ---- Manual mesurements
     def add_manual_measurements(self, measurement_id, attribute_values):

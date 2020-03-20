@@ -172,8 +172,19 @@ class DatabaseConnectionWorker(QObject):
         Save in the database a set of edits that were made to to timeseries
         data that were already saved in the database.
         """
-        print("Saving timeseries data edits...", end=' ')
+        print("Saving timeseries data edits...")
         self.db_accessor.save_timeseries_data_edits(tseries_edits)
+        print("...timeseries data edits saved sucessfully.")
+
+    def _add_timeseries_data(self, tseries_data, obs_well_uuid,
+                             sonde_installation_uuid):
+        """
+        Save in the database a set of timeseries data associated with the
+        given well and sonde installation id.
+        """
+        print("Saving timeseries data...")
+        self.db_accessor.add_timeseries_data(
+            tseries_data, obs_well_uuid, sonde_installation_uuid)
         print("...timeseries data edits saved sucessfully.")
 
     def _delete_timeseries_data(self, tseries_dels):
@@ -181,7 +192,7 @@ class DatabaseConnectionWorker(QObject):
         Delete data in the database for the observation IDs, datetime and
         data type specified in tseries_dels.
         """
-        print("Deleting timeseries data...", end=' ')
+        print("Deleting timeseries data...")
         self.db_accessor.delete_timeseries_data(tseries_dels)
         print("...timeseries data deleted sucessfully.")
 
@@ -472,6 +483,18 @@ class DatabaseConnectionManager(QObject):
         data that were already saved in the database.
         """
         self._add_task('save_timeseries_data_edits', callback, tseries_edits)
+        if not postpone_exec:
+            self.run_tasks()
+
+    def add_timeseries_data(self, tseries_data, obs_well_uuid,
+                            sonde_installation_uuid=None, callback=None,
+                            postpone_exec=False):
+        """
+        Save in the database a set of timeseries data associated with the
+        given well and sonde installation id.
+        """
+        self._add_task('add_timeseries_data', callback, tseries_data,
+                       obs_well_uuid, sonde_installation_uuid)
         if not postpone_exec:
             self.run_tasks()
 

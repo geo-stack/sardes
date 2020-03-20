@@ -60,3 +60,7 @@ class SardesPaneWidget(QMainWindow):
     def set_iconsize(self, iconsize):
         """Set the icon size of this pane toolbars."""
         pass
+
+    def register_to_plugin(self, plugin):
+        """Register the current widget to the given plugin."""
+        pass

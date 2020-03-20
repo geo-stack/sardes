@@ -16,14 +16,111 @@ from sardes.plugins.tables.tables import (
     ManualMeasurementsTableWidget, SondeInstallationsTableWidget)
 
 # ---- Third party imports
-from qtpy.QtCore import Qt, QSize
+import pandas as pd
+from qtpy.QtCore import Qt, QSize, Slot
 from qtpy.QtWidgets import QApplication, QFileDialog, QTabWidget
 
 # ---- Local imports
+from sardes.api.tablemodels import SardesTableModel
+from sardes.api.timeseries import DataType, merge_timeseries_groups
 from sardes.config.main import CONF
+from sardes.widgets.tableviews import (
+    SardesTableWidget, StringEditDelegate, BoolEditDelegate,
+    NumEditDelegate, NotEditableDelegate, TextEditDelegate)
 
 
 """Tables plugin"""
+
+
+class DataTableModel(SardesTableModel):
+    def __init__(self, obs_well_uuid):
+        super().__init__('Timeseries Data', 'tseries_data', [])
+        self._obs_well_uuid = obs_well_uuid
+
+    def create_delegate_for_column(self, view, column):
+        if column in DataType:
+            return NumEditDelegate(
+                view, decimals=6, bottom=-99999, top=99999)
+        else:
+            return NotEditableDelegate(view)
+
+    # ---- Database connection
+    def update_data(self):
+        """
+        Update this model's data and library.
+        """
+        self.sig_data_about_to_be_updated.emit()
+
+        # Get the timeseries data for that observation well.
+        self.db_connection_manager.get_timeseries_for_obs_well(
+            self._obs_well_uuid,
+            [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
+            self.set_model_tseries_groups)
+
+    def set_model_tseries_groups(self, tseries_groups):
+        """
+        Format the data contained in the list of timeseries group and
+        set the content of this table model data.
+        """
+        dataf = merge_timeseries_groups(tseries_groups)
+        dataf_columns_mapper = [('datetime', _('Datetime')),
+                                ('sonde_id', _('Sonde Serial Number'))]
+        dataf_columns_mapper.extend([(dtype, dtype.label) for dtype in
+                                     DataType if dtype in dataf.columns])
+        dataf_columns_mapper.append(('obs_id', _('Observation ID')))
+        self.set_model_data(dataf, dataf_columns_mapper)
+        self.sig_data_updated.emit()
+
+    def save_data_edits(self):
+        """
+        Save all data edits to the database.
+        """
+        self.sig_data_about_to_be_saved.emit()
+
+        tseries_edits = pd.DataFrame(
+            [], columns=['datetime', 'obs_id', 'data_type', 'value'])
+        tseries_edits.set_index(
+            'datetime', inplace=True, drop=True)
+        tseries_edits.set_index(
+            'obs_id', inplace=True, drop=True, append=True)
+        tseries_edits.set_index(
+            'data_type', inplace=True, drop=True, append=True)
+
+        tseries_dels = pd.DataFrame(
+            [], columns=['obs_id', 'datetime', 'data_type'])
+
+        for edit in self._datat.edits():
+            row_data = self._datat.get(edit.row)
+            date_time = row_data['datetime']
+            obs_id = row_data['obs_id']
+            if edit.type() == SardesTableModel.ValueChanged:
+                indexes = (date_time, obs_id, edit.column)
+                tseries_edits.loc[indexes, 'value'] = edit.edited_value
+            elif edit.type() == SardesTableModel.RowDeleted:
+                row_data = self._datat.get(edit.row)
+                data_types = [dt for dt in DataType if dt in row_data.keys()]
+                for data_type in data_types:
+                    indexes = (date_time, obs_id, data_type)
+                    if indexes in tseries_edits.index:
+                        tseries_edits.drop(indexes, inplace=True)
+                    tseries_dels = tseries_dels.append(
+                        {'obs_id': obs_id,
+                         'datetime': date_time,
+                         'data_type': data_type}, ignore_index=True)
+        self.db_connection_manager.delete_timeseries_data(
+            tseries_dels,
+            postpone_exec=True)
+        self.db_connection_manager.save_timeseries_data_edits(
+            tseries_edits,
+            callback=self._handle_data_edits_saved,
+            postpone_exec=True)
+        self.db_connection_manager.run_tasks()
+
+    def _handle_data_edits_saved(self):
+        """
+        Handle when data edits were all saved in the database.
+        """
+        self.update_data()
 
 
 class Tables(SardesPlugin):
@@ -32,7 +129,9 @@ class Tables(SardesPlugin):
 
     def __init__(self, parent):
         super().__init__(parent)
+        self._tables = {}
         self._setup_tables()
+        self._tseries_data_tables = {}
 
     # ---- Public methods implementation
     def current_table(self):
@@ -98,9 +197,62 @@ class Tables(SardesPlugin):
         self.main.db_connection_manager.sig_models_data_changed.connect(
             self._update_current_table)
 
+    def view_timeseries_data(self, obs_well_uuid):
+        """
+        Create and show a table to visualize the timeseries data contained
+        in tseries_groups.
+        """
+        if obs_well_uuid not in self._tseries_data_tables:
+            self.main.db_connection_manager.get(
+                'observation_wells_data',
+                obs_well_uuid,
+                callback=lambda obs_wells_data: self._create_timeseries_data(
+                    obs_wells_data.loc[obs_well_uuid]))
+        else:
+            data_table = self._tseries_data_tables[obs_well_uuid]
+            data_table.show()
+            data_table.raise_()
+            # If window is minimised, restore it.
+            if data_table.windowState() == Qt.WindowMinimized:
+                data_table.setWindowState(Qt.WindowNoState)
+            data_table.setFocus()
+
+    def _create_timeseries_data(self, obs_well_data):
+        """
+        Create a new timeseries data for the observation well related to the
+        given data.
+        """
+        obs_well_uuid = obs_well_data.name
+
+        # Setup a new table model and widget.
+        table_model = DataTableModel(obs_well_uuid)
+        table_model.set_database_connection_manager(
+            self.main.db_connection_manager)
+        table_widget = SardesTableWidget(
+            table_model, parent=self.main, multi_columns_sort=True,
+            sections_movable=False, sections_hidable=False,
+            disabled_actions=['new_row'])
+        table_widget.setAttribute(Qt.WA_DeleteOnClose)
+        table_widget.destroyed.connect(
+            lambda: self._handle_data_table_destroyed(obs_well_uuid))
+
+        # Set the title of the window.
+        table_widget.setWindowTitle(_("Observation well {} ({})").format(
+            obs_well_data['obs_well_id'], obs_well_data['municipality']))
+
+        # Columns width and minimum window size.
+        horizontal_header = table_widget.tableview.horizontalHeader()
+        horizontal_header.setDefaultSectionSize(100)
+        table_widget.resize(600, 600)
+
+        self._tseries_data_tables[obs_well_uuid] = table_widget
+        table_model.update_data()
+
+        # Show the new table data widget.
+        self.view_timeseries_data(obs_well_uuid)
+
     # ---- Private methods
     def _setup_tables(self):
-        self._tables = {}
         self._create_and_register_table(
             ObsWellsTableWidget,
             'observation_wells_data',
@@ -132,6 +284,7 @@ class Tables(SardesPlugin):
         table = TableClass(disabled_actions=['delete_row'])
         self.main.db_connection_manager.register_model(
             table.model(), data_name, lib_names)
+        table.register_to_plugin(self)
 
         self._tables[table.get_table_id()] = table
         self.tabwidget.addTab(
@@ -169,3 +322,10 @@ class Tables(SardesPlugin):
             self.current_table().setEnabled(
                 self.main.db_connection_manager.is_connected())
             self.current_table().update_model_data()
+
+    @Slot(object)
+    def _handle_data_table_destroyed(self, obs_well_uuid):
+        """
+        Handle when a timeseries data table is destroyed.
+        """
+        del self._tseries_data_tables[obs_well_uuid]

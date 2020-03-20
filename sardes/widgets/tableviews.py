@@ -711,7 +711,8 @@ class SardesTableView(QTableView):
                 tip=_("Put a copy of the selection on the Clipboard "
                       "so you can paste it somewhere else."),
                 triggered=self.copy_to_clipboard,
-                shortcut='Ctrl+C')
+                shortcut='Ctrl+C',
+                context=Qt.WidgetShortcut)
 
             self._actions['io'] = [copy_to_clipboard_action]
             self.addActions(self._actions['io'])
@@ -1407,7 +1408,7 @@ class SardesTableView(QTableView):
 
 
 class SardesTableWidget(SardesPaneWidget):
-    EDIT_ACTIONS = ['edit_item', 'new_row', 'delte_row', 'clear_item',
+    EDIT_ACTIONS = ['edit_item', 'new_row', 'delete_row', 'clear_item',
                     'save_edits', 'cancel_edits', 'undo_edits']
 
     def __init__(self, table_model, parent=None, multi_columns_sort=True,
@@ -1455,8 +1456,7 @@ class SardesTableWidget(SardesPaneWidget):
         self.model().sig_data_about_to_be_updated.connect(self._start_process)
         self.model().sig_data_about_to_be_saved.connect(self._start_process)
         self.model().sig_data_updated.connect(self._handle_process_ended)
-        # Note that we do not need to connect sig_data_saved signal since a
-        # data edits save is always followed by a data update.
+        self.model().sig_data_saved.connect(self._handle_process_ended)
 
         stack_widget = QWidget()
         stack_layout = QGridLayout(stack_widget)
@@ -1518,6 +1518,9 @@ class SardesTableWidget(SardesPaneWidget):
 
         sections = list(self.tableview._actions.keys())
         for section in sections:
+            actions = self.tableview._actions[section]
+            if not len(actions):
+                continue
             for action in self.tableview._actions[section]:
                 toolbar.addAction(action)
             if section != sections[-1]:
@@ -1671,11 +1674,11 @@ class SardesTableWidget(SardesPaneWidget):
         self.progressbar.show()
 
     def _handle_process_ended(self, text=''):
-        self.get_upper_toolbar().setEnabled(True)
-        self.tableview.setEnabled(True)
         self._end_process_timer.start(MSEC_MIN_PROGRESS_DISPLAY)
 
     def _end_process(self, text=''):
+        self.get_upper_toolbar().setEnabled(True)
+        self.tableview.setEnabled(True)
         self.tableview.setFocus()
         self.progressbar.hide()
 

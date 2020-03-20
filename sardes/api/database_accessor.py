@@ -590,6 +590,28 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
+    def add_timeseries_data(self, tseries_data, obs_well_uuid,
+                            sonde_installation_uuid=None):
+        """
+        Save in the database a set of timeseries data associated with the
+        given well and sonde installation id.
+
+        Parameters
+        ----------
+        tseries_data: pandas.DataFrame
+            A pandas dataframe where time is saved as datetime in a column
+            named 'datetime'. The columns in which the numerical values are
+            saved must be a member of :class:`sardes.api.timeseries.DataType`
+            enum.
+        obs_well_id: int, :class:`uuid.UUID`
+            A unique identifier that is used to reference in the database
+            the observation well in which the data were measured.
+        installation_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the sonde installation, if
+            any, corresponding to the current set of data.
+        """
+        raise NotImplementedError
+
     def delete_timeseries_data(self, tseries_dels):
         """
         Delete data in the database for the observation IDs, datetime and

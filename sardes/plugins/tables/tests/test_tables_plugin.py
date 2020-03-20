@@ -134,8 +134,8 @@ def test_edit_sonde_model(mainwindow, qtbot):
 
     # Select the first cell of the table.
     model_index = tableview.model().index(0, 0)
-    assert model_index.data() == 'Solinst Barologger M1.5 Gold'
-    assert model.get_value_at(model_index) == 0
+    assert model_index.data() == 'Solinst Barologger M1.5'
+    assert model.get_value_at(model_index) == 3
 
     qtbot.mouseClick(
         tableview.viewport(),
@@ -148,22 +148,22 @@ def test_edit_sonde_model(mainwindow, qtbot):
 
     # Assert the editor of the item delegate is showing the right data.
     editor = tableview.itemDelegate(model_index).editor
-    assert editor.currentData() == 0
-    assert editor.currentText() == 'Solinst Barologger M1.5 Gold'
+    assert editor.currentData() == 3
+    assert editor.currentText() == 'Solinst Barologger M1.5'
     assert editor.count() == len(SONDE_MODELS_LIB)
 
     # Select a new value and accept the edit.
-    editor.setCurrentIndex(editor.findData(7))
+    editor.setCurrentIndex(editor.findData(8))
     qtbot.keyPress(editor, Qt.Key_Enter)
     assert tableview.state() != tableview.EditingState
     assert model_index.data() == 'Telog 2 Druck'
-    assert model.get_value_at(model_index) == 7
+    assert model.get_value_at(model_index) == 8
     assert tabwidget.tabText(1) == tablewidget.get_table_title() + '*'
 
     # Undo the last edit.
     tableview._undo_last_data_edit()
-    assert model_index.data() == 'Solinst Barologger M1.5 Gold'
-    assert model.get_value_at(model_index) == 0
+    assert model_index.data() == 'Solinst Barologger M1.5'
+    assert model.get_value_at(model_index) == 3
     assert tabwidget.tabText(1) == tablewidget.get_table_title()
 
 
@@ -179,17 +179,17 @@ def test_save_data_edits(mainwindow, qtbot):
     mainwindow.plugin.tabwidget.setCurrentWidget(table_man_meas)
     qtbot.wait(1000)
     model_index = table_man_meas.tableview.model().index(0, 0)
-    assert model_index.data() == '0343128'
+    assert model_index.data() == '03037041'
 
     # We now switch to table observation wells and do an edit to the table's
     # data programmatically.
     mainwindow.plugin.tabwidget.setCurrentWidget(table_obs_well)
     qtbot.wait(1000)
     model_index = table_obs_well.tableview.model().index(0, 0)
-    assert model_index.data() == '0343128'
+    assert model_index.data() == '03037041'
     table_obs_well.tableview.model().set_data_edit_at(
-        model_index, '0343128_modif')
-    assert model_index.data() == '0343128_modif'
+        model_index, '03037041_modif')
+    assert model_index.data() == '03037041_modif'
 
     # We now save the edits.
     table_obs_well.tableview.model().save_data_edits()
@@ -200,7 +200,7 @@ def test_save_data_edits(mainwindow, qtbot):
     mainwindow.plugin.tabwidget.setCurrentWidget(table_man_meas)
     qtbot.wait(1000)
     model_index = table_man_meas.tableview.model().index(0, 0)
-    assert model_index.data() == '0343128_modif'
+    assert model_index.data() == '03037041_modif'
 
 
 # =============================================================================
@@ -210,18 +210,20 @@ def test_view_timeseries_data(mainwindow, qtbot):
     """
     Assert that timeseries data tables are created and shown as expected.
     """
+    tables_plugin = mainwindow.plugin
     table_obs_well = mainwindow.plugin._tables['table_observation_wells']
-    mainwindow.plugin.tabwidget.setCurrentWidget(table_obs_well)
+    tables_plugin.tabwidget.setCurrentWidget(table_obs_well)
     qtbot.wait(1000)
     table_obs_well.tableview.model().index(0, 0)
 
     current_obs_well = table_obs_well.get_current_obs_well_data().name
     assert current_obs_well == 0
 
-    assert len(table_obs_well.data_tables) == 0
+    assert len(tables_plugin._tseries_data_tables) == 0
     qtbot.mouseClick(table_obs_well.show_data_btn, Qt.LeftButton)
-    assert len(table_obs_well.data_tables) == 1
-    assert table_obs_well.data_tables[current_obs_well].isVisible()
+    qtbot.wait(1000)
+    assert len(tables_plugin._tseries_data_tables) == 1
+    assert tables_plugin._tseries_data_tables[current_obs_well].isVisible()
 
 
 if __name__ == "__main__":
