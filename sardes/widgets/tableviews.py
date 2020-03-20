@@ -711,7 +711,8 @@ class SardesTableView(QTableView):
                 tip=_("Put a copy of the selection on the Clipboard "
                       "so you can paste it somewhere else."),
                 triggered=self.copy_to_clipboard,
-                shortcut='Ctrl+C')
+                shortcut='Ctrl+C',
+                context=Qt.WidgetShortcut)
 
             self._actions['io'] = [copy_to_clipboard_action]
             self.addActions(self._actions['io'])

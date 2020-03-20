@@ -97,6 +97,15 @@ class DataImportWizard(QDialog):
         sonde_form.addRow(_('Depth') + ' :', self.install_depth)
         sonde_form.addRow(_('Period') + ' :', self.install_period)
 
+        # Make all label selectable with the mouse cursor.
+        for layout in [file_layout, sonde_form]:
+            for index in range(layout.count()):
+                try:
+                    layout.itemAt(index).widget().setTextInteractionFlags(
+                        Qt.TextBrowserInteraction)
+                except AttributeError:
+                    pass
+
         # Setup the table widget.
         self.table_model = ImportDataTableModel(
             table_title='Logger Data',
