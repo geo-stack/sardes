@@ -1455,8 +1455,7 @@ class SardesTableWidget(SardesPaneWidget):
         self.model().sig_data_about_to_be_updated.connect(self._start_process)
         self.model().sig_data_about_to_be_saved.connect(self._start_process)
         self.model().sig_data_updated.connect(self._handle_process_ended)
-        # Note that we do not need to connect sig_data_saved signal since a
-        # data edits save is always followed by a data update.
+        self.model().sig_data_saved.connect(self._handle_process_ended)
 
         stack_widget = QWidget()
         stack_layout = QGridLayout(stack_widget)
@@ -1674,11 +1673,11 @@ class SardesTableWidget(SardesPaneWidget):
         self.progressbar.show()
 
     def _handle_process_ended(self, text=''):
-        self.get_upper_toolbar().setEnabled(True)
-        self.tableview.setEnabled(True)
         self._end_process_timer.start(MSEC_MIN_PROGRESS_DISPLAY)
 
     def _end_process(self, text=''):
+        self.get_upper_toolbar().setEnabled(True)
+        self.tableview.setEnabled(True)
         self.tableview.setFocus()
         self.progressbar.hide()
 
