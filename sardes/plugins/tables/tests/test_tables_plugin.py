@@ -210,18 +210,20 @@ def test_view_timeseries_data(mainwindow, qtbot):
     """
     Assert that timeseries data tables are created and shown as expected.
     """
+    tables_plugin = mainwindow.plugin
     table_obs_well = mainwindow.plugin._tables['table_observation_wells']
-    mainwindow.plugin.tabwidget.setCurrentWidget(table_obs_well)
+    tables_plugin.tabwidget.setCurrentWidget(table_obs_well)
     qtbot.wait(1000)
     table_obs_well.tableview.model().index(0, 0)
 
     current_obs_well = table_obs_well.get_current_obs_well_data().name
     assert current_obs_well == 0
 
-    assert len(table_obs_well.data_tables) == 0
+    assert len(tables_plugin._tseries_data_tables) == 0
     qtbot.mouseClick(table_obs_well.show_data_btn, Qt.LeftButton)
-    assert len(table_obs_well.data_tables) == 1
-    assert table_obs_well.data_tables[current_obs_well].isVisible()
+    qtbot.wait(1000)
+    assert len(tables_plugin._tseries_data_tables) == 1
+    assert tables_plugin._tseries_data_tables[current_obs_well].isVisible()
 
 
 if __name__ == "__main__":
