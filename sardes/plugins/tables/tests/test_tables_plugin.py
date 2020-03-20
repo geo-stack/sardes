@@ -179,17 +179,17 @@ def test_save_data_edits(mainwindow, qtbot):
     mainwindow.plugin.tabwidget.setCurrentWidget(table_man_meas)
     qtbot.wait(1000)
     model_index = table_man_meas.tableview.model().index(0, 0)
-    assert model_index.data() == '0343128'
+    assert model_index.data() == '03037041'
 
     # We now switch to table observation wells and do an edit to the table's
     # data programmatically.
     mainwindow.plugin.tabwidget.setCurrentWidget(table_obs_well)
     qtbot.wait(1000)
     model_index = table_obs_well.tableview.model().index(0, 0)
-    assert model_index.data() == '0343128'
+    assert model_index.data() == '03037041'
     table_obs_well.tableview.model().set_data_edit_at(
-        model_index, '0343128_modif')
-    assert model_index.data() == '0343128_modif'
+        model_index, '03037041_modif')
+    assert model_index.data() == '03037041_modif'
 
     # We now save the edits.
     table_obs_well.tableview.model().save_data_edits()
@@ -200,7 +200,7 @@ def test_save_data_edits(mainwindow, qtbot):
     mainwindow.plugin.tabwidget.setCurrentWidget(table_man_meas)
     qtbot.wait(1000)
     model_index = table_man_meas.tableview.model().index(0, 0)
-    assert model_index.data() == '0343128_modif'
+    assert model_index.data() == '03037041_modif'
 
 
 # =============================================================================
