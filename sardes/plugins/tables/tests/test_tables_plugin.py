@@ -134,8 +134,8 @@ def test_edit_sonde_model(mainwindow, qtbot):
 
     # Select the first cell of the table.
     model_index = tableview.model().index(0, 0)
-    assert model_index.data() == 'Solinst Barologger M1.5 Gold'
-    assert model.get_value_at(model_index) == 0
+    assert model_index.data() == 'Solinst Barologger M1.5'
+    assert model.get_value_at(model_index) == 3
 
     qtbot.mouseClick(
         tableview.viewport(),
@@ -148,22 +148,22 @@ def test_edit_sonde_model(mainwindow, qtbot):
 
     # Assert the editor of the item delegate is showing the right data.
     editor = tableview.itemDelegate(model_index).editor
-    assert editor.currentData() == 0
-    assert editor.currentText() == 'Solinst Barologger M1.5 Gold'
+    assert editor.currentData() == 3
+    assert editor.currentText() == 'Solinst Barologger M1.5'
     assert editor.count() == len(SONDE_MODELS_LIB)
 
     # Select a new value and accept the edit.
-    editor.setCurrentIndex(editor.findData(7))
+    editor.setCurrentIndex(editor.findData(8))
     qtbot.keyPress(editor, Qt.Key_Enter)
     assert tableview.state() != tableview.EditingState
     assert model_index.data() == 'Telog 2 Druck'
-    assert model.get_value_at(model_index) == 7
+    assert model.get_value_at(model_index) == 8
     assert tabwidget.tabText(1) == tablewidget.get_table_title() + '*'
 
     # Undo the last edit.
     tableview._undo_last_data_edit()
-    assert model_index.data() == 'Solinst Barologger M1.5 Gold'
-    assert model.get_value_at(model_index) == 0
+    assert model_index.data() == 'Solinst Barologger M1.5'
+    assert model.get_value_at(model_index) == 3
     assert tabwidget.tabText(1) == tablewidget.get_table_title()
 
 
