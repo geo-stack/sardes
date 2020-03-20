@@ -16,9 +16,8 @@ import os
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
-from flaky import flaky
 import pytest
-from qtpy.QtCore import QPoint, QSize
+from qtpy.QtCore import QPoint, QSize, Qt
 
 # ---- Local imports
 from sardes.config.gui import INIT_MAINWINDOW_SIZE
@@ -46,7 +45,6 @@ def test_mainwindow_init(mainwindow):
     assert mainwindow
 
 
-@flaky(max_runs=3)
 def test_mainwindow_settings(qtbot, mocker):
     """
     Test that the window size and position are store and restore correctly
@@ -73,38 +71,32 @@ def test_mainwindow_settings(qtbot, mocker):
     assert mainwindow1.pos() == QPoint(*expected_normal_window_pos)
     assert not mainwindow1.isMaximized()
 
+    mainwindow1_size = mainwindow1.size()
+    mainwindow1_pos = mainwindow1.pos()
+
     # Maximize the window.
     mainwindow1.showMaximized()
-    qtbot.wait(100)
     assert mainwindow1.isMaximized()
-
-    qtbot.waitUntil(
-        lambda: mainwindow1.size() != QSize(*expected_normal_window_size),
-        timeout=5000)
-    qtbot.waitUntil(
-        lambda: mainwindow1.pos() != QPoint(*expected_normal_window_pos),
-        timeout=5000)
 
     # Close the main window.
     assert CONF.get('main', 'window/geometry', None) is None
-    mainwindow1_size = mainwindow1.size()
-    mainwindow1_pos = mainwindow1.pos()
     mainwindow1.close()
     assert CONF.get('main', 'window/geometry', None) is not None
-    qtbot.wait(100)
 
     # Create a new instance of the main window and assert that the size,
     # position and maximized state were restored from the previous
     # mainwindow that was closed.
     mainwindow2 = MainWindow()
-    qtbot.addWidget(mainwindow2)
     mainwindow2.show()
     qtbot.waitForWindowShown(mainwindow2)
-    qtbot.wait(100)
+    assert mainwindow2.isMaximized()
 
+    # Show window normal size and assert it is the same size and position
+    # as that of mainwindow1 instance.
+    mainwindow2.setWindowState(Qt.WindowNoState)
+    qtbot.wait(3000)
     assert mainwindow2.size() == mainwindow1_size
     assert mainwindow2.pos() == mainwindow1_pos
-    assert mainwindow2.isMaximized()
 
 
 def test_mainwindow_lang_change(mainwindow, qtbot, mocker):
