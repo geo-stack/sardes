@@ -138,8 +138,9 @@ class SamplingFeature(Base):
     sampling_feature_uuid = Column(
         'elemcarac_uuid', UUID(as_uuid=True), primary_key=True)
     sampling_feature_id = Column('elemcarac_id', Integer)
-    # Relation with table librairies.elem_interest
-    interest_id = Column('interet_id', String)
+    interest_id = Column(
+        'interet_id', Integer,
+        ForeignKey('librairies.elem_interest.interet_id'))
     loc_id = Column(Integer, ForeignKey('rsesq.localisation.loc_id'))
 
     __mapper_args__ = {'polymorphic_on': interest_id}
@@ -176,13 +177,18 @@ class Observation(Base):
     __tablename__ = 'observation'
     __table_args__ = ({"schema": "rsesq"})
 
-    observation_uuid = Column('observation_uuid', String, primary_key=True)
+    observation_uuid = Column(
+        'observation_uuid', UUID(as_uuid=True), primary_key=True)
     observation_id = Column('observation_id', Integer)
-    sampling_feature_uuid = Column('elemcarac_uuid', String)
-    process_uuid = Column('process_uuid', String)
     obs_datetime = Column('date_relv_hg', DateTime)
-    param_id = Column(
-        'param_id', Integer, ForeignKey('librairies.lib_obs_parameter'))
+    sampling_feature_uuid = Column(
+        'elemcarac_uuid', UUID(as_uuid=True),
+        ForeignKey('rsesq.elements_caracteristique.elemcarac_uuid'))
+    process_uuid = Column(
+        'process_uuid', UUID(as_uuid=True),
+        ForeignKey('processus.processus.process_uuid'))
+    # Foreign key with 'librairies.lib_obs_parameter.param_id'
+    param_id = Column('param_id', Integer)
 
     def __repr__(self):
         return format_sqlobject_repr(self)
@@ -252,8 +258,13 @@ class ProcessesInstalls(Base):
     __table_args__ = ({"schema": "processus"})
 
     process_id = Column('process_id', Integer)
-    install_id = Column('deploiement_id', String)
-    process_uuid = Column('process_uuid', UUID(as_uuid=True), primary_key=True)
+    install_id = Column(
+        'deploiement_id', Integer,
+        ForeignKey('processus.sonde_pompe_installation.deploiement_id'))
+    process_uuid = Column(
+        'process_uuid', UUID(as_uuid=True),
+        ForeignKey('processus.processus.process_uuid'),
+        primary_key=True)
 
 
 class SondeModels(Base):
@@ -297,7 +308,9 @@ class TimeSeriesData(Base):
     datetime = Column('date_heure', DateTime, primary_key=True)
     value = Column('valeur', Float, primary_key=True)
     channel_id = Column(
-        'canal_id', Integer, ForeignKey('resultats.canal_temporel.canal_id'),
+        'canal_id', Integer,
+        ForeignKey('resultats.canal_temporel.canal_id', ondelete='CASCADE',
+                   onupdate='CASCADE'),
         primary_key=True,)
 
     @hybrid_property
@@ -1161,6 +1174,62 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             # Save the edited value.
             tseries_data.value = tseries_edits.loc[
                 (date_time, obs_id, data_type), 'value']
+        self._session.commit()
+
+    def add_timeseries_data(self, tseries_data, obs_well_id,
+                            sonde_installation_id=None):
+        """
+        Save in the database a set of timeseries data associated with the
+        given well and sonde installation id.
+        """
+        # We create a new observation.
+        sonde_installation = self._get_sonde_installation(
+            sonde_installation_id)
+        process_install = (
+            self._session.query(ProcessesInstalls)
+            .filter(ProcessesInstalls.install_id ==
+                    sonde_installation.install_id)
+            .one())
+        new_obs_id = (
+            self._session.query(
+                func.max(Observation.observation_id))
+            .one())[0] + 1
+        new_observation = Observation(
+            observation_uuid=uuid.uuid4(),
+            observation_id=new_obs_id,
+            sampling_feature_uuid=obs_well_id,
+            process_uuid=process_install.process_uuid,
+            obs_datetime=max(tseries_data['datetime']),
+            param_id=7
+            )
+        self._session.add(new_observation)
+        self._session.commit()
+
+        date_times = list(pd.to_datetime(tseries_data['datetime']))
+        for data_type in DataType:
+            if data_type not in tseries_data.columns:
+                continue
+
+            new_tseries_channel_id = (
+                self._session.query(
+                    func.max(TimeSeriesChannels.channel_id))
+                .one())[0] + 1
+            new_tseries_channel = TimeSeriesChannels(
+                channel_uuid=uuid.uuid4(),
+                channel_id=new_tseries_channel_id,
+                obs_property_id=self._get_observation_property_id(data_type),
+                observation_uuid=new_observation.observation_uuid
+                )
+            self._session.add(new_tseries_channel)
+            self._session.commit()
+
+            values = tseries_data[data_type].values
+            for date_time, value in zip(date_times, values):
+                self._session.add(TimeSeriesData(
+                    datetime=date_time,
+                    value=value,
+                    channel_id=new_tseries_channel_id))
+            self._session.commit()
         self._session.commit()
 
     def delete_timeseries_data(self, tseries_dels):
