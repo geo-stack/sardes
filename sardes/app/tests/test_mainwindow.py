@@ -75,11 +75,7 @@ def test_mainwindow_settings(qtbot, mocker):
 
     # Maximize the window.
     mainwindow1.showMaximized()
-    qtbot.wait(100)
-
     assert mainwindow1.isMaximized()
-    assert mainwindow1.size() != QSize(*expected_normal_window_size)
-    assert mainwindow1.pos() != QPoint(*expected_normal_window_pos)
 
     # Close the main window.
     assert CONF.get('main', 'window/geometry', None) is None
