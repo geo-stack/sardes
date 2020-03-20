@@ -600,11 +600,9 @@ class DatabaseAccessor(DatabaseAccessorBase):
         ----------
         tseries_data: pandas.DataFrame
             A pandas dataframe where time is saved as datetime in a column
-            named 'datetime' and the numerical values are saved in
-
-            The indexes of the dataframe correspond ot the
-            datetime (datetime) of the data and the columns must be a
-            member of :class:`sardes.api.timeseries.DataType` enum.
+            named 'datetime'. The columns in which the numerical values are
+            saved must be a member of :class:`sardes.api.timeseries.DataType`
+            enum.
         obs_well_id: int, :class:`uuid.UUID`
             A unique identifier that is used to reference in the database
             the observation well in which the data were measured.
