@@ -45,8 +45,8 @@ def test_mainwindow_init(mainwindow):
     assert mainwindow
 
 
-@pytest.mark.skipif(os.environ.get('CI', None) is not None,
-                    reason="It fails on CIs")
+@pytest.mark.skipif(
+    os.environ.get('AZURE', None) is not None, reason="It fails on Azure.")
 def test_mainwindow_settings(qtbot, mocker):
     """
     Test that the window size and position are store and restore correctly
