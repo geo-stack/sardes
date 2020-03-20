@@ -55,6 +55,10 @@ class DataImportWizard(QDialog):
         self.setModal(False)
         self.resize(650, 600)
 
+        self._data_is_loading = False
+        self._data_is_loaded = False
+        self._file_reader = None
+
         self._table_id = 'data_import_wizard'
         self._libraries = {
             'sonde_data': None,
@@ -128,12 +132,12 @@ class DataImportWizard(QDialog):
         self.load_btn.setDefault(False)
         self.load_btn.setAutoDefault(False)
 
-        button_box = QDialogButtonBox()
-        button_box.addButton(self.load_btn, button_box.ActionRole)
-        button_box.addButton(self.next_btn, button_box.ApplyRole)
-        button_box.addButton(self.close_btn, button_box.RejectRole)
-        button_box.layout().insertSpacing(1, 100)
-        button_box.clicked.connect(self._handle_button_click_event)
+        self.button_box = QDialogButtonBox()
+        self.button_box.addButton(self.load_btn, self.button_box.ActionRole)
+        self.button_box.addButton(self.next_btn, self.button_box.ApplyRole)
+        self.button_box.addButton(self.close_btn, self.button_box.RejectRole)
+        self.button_box.layout().insertSpacing(1, 100)
+        self.button_box.clicked.connect(self._handle_button_click_event)
 
         # Setup the layout.
         layout = QVBoxLayout(self)
@@ -141,7 +145,7 @@ class DataImportWizard(QDialog):
         layout.addWidget(sonde_groupbox)
         layout.addWidget(self.table_widget)
         layout.setStretch(layout.count() - 1, 1)
-        layout.addWidget(button_box)
+        layout.addWidget(self.button_box)
 
         self._working_dir = get_home_dir()
         self._queued_filenames = []
@@ -162,6 +166,14 @@ class DataImportWizard(QDialog):
         """
         if new_working_dir is not None and osp.exists(new_working_dir):
             self._working_dir = new_working_dir
+
+    @property
+    def tseries_dataf(self):
+        """
+        Return the pandas dataframe containing the timeseries data'for the
+        currently opened file in the wizard.
+        """
+        return self.table_model.dataf
 
     def show(self):
         if not len(self._queued_filenames):
@@ -200,6 +212,7 @@ class DataImportWizard(QDialog):
     # ---- Private API
     def _load_next_queued_data_file(self):
         QApplication.setOverrideCursor(Qt.WaitCursor)
+        self._data_is_loaded = False
         filename = self._queued_filenames.pop(0)
         self.working_directory = osp.dirname(filename)
         self.filename_label.setText(filename)
@@ -291,7 +304,7 @@ class DataImportWizard(QDialog):
                 self.install_depth.setText('{} m'.format(
                     str(install_data['install_depth'])))
                 self.install_period.setText('{} to {}'.format(
-                    install_data['start_date'].strftime("%m-%d-%Y %H:%M"),
+                    install_data['start_date'].strftime("%Y-%m-%d %H:%M"),
                     '...' if pd.isnull(install_data['end_date']) else
                     install_data['end_date'].strftime("%Y-%m-%d %H:%M")))
         else:
@@ -369,8 +382,10 @@ class DataImportWizard(QDialog):
 
     def _update_button_state(self):
         """Update the state of the dialog's buttons."""
+        self.button_box.setEnabled(not self._data_is_loading)
         self.next_btn.setEnabled(len(self._queued_filenames) > 0)
-        self.load_btn.setEnabled(self._obs_well_uuid is not None)
+        self.load_btn.setEnabled(self._obs_well_uuid is not None and
+                                 not self._data_is_loaded)
         self.show_data_btn.setEnabled(self._obs_well_uuid is not None)
 
     @Slot(QAbstractButton)
@@ -382,6 +397,23 @@ class DataImportWizard(QDialog):
             self.close()
         elif button == self.next_btn:
             self._load_next_queued_data_file()
+        elif button == self.load_btn:
+            self.table_model.sig_data_about_to_be_saved.emit()
+            self.db_connection_manager.save_timeseries_data(
+                self.tseries_dataf, self._obs_well_uuid, self._install_id,
+                callback=self._handle_tseries_data_saved)
+            self._data_is_loading = True
+            self._update_button_state()
+
+    @Slot()
+    def _handle_tseries_data_saved(self):
+        """
+        Handle when tseries data were saved in the database.
+        """
+        self._data_is_loaded = True
+        self._data_is_loading = False
+        self.table_model.sig_data_saved.emit()
+        self._update_button_state()
 
     def _view_timeseries_data(self):
         """
