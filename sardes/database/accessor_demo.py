@@ -440,8 +440,8 @@ class DatabaseAccessorDemo(DatabaseAccessor):
             value = tseries_edits.loc[(date_time, obs_id, data_type), 'value']
             TSERIES[obs_id][data_type].loc[date_time] = value
 
-    def save_timeseries_data(self, tseries_data, obs_well_uuid,
-                             sonde_installation_uuid=None):
+    def add_timeseries_data(self, tseries_data, obs_well_uuid,
+                            sonde_installation_uuid=None):
         """
         Save in the database a set of timeseries data associated with the
         given well and sonde installation id.

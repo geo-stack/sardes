@@ -176,14 +176,14 @@ class DatabaseConnectionWorker(QObject):
         self.db_accessor.save_timeseries_data_edits(tseries_edits)
         print("...timeseries data edits saved sucessfully.")
 
-    def _save_timeseries_data(self, tseries_data, obs_well_uuid,
-                              sonde_installation_uuid):
+    def _add_timeseries_data(self, tseries_data, obs_well_uuid,
+                             sonde_installation_uuid):
         """
         Save in the database a set of timeseries data associated with the
         given well and sonde installation id.
         """
         print("Saving timeseries data...")
-        self.db_accessor.save_timeseries_data(
+        self.db_accessor.add_timeseries_data(
             tseries_data, obs_well_uuid, sonde_installation_uuid)
         print("...timeseries data edits saved sucessfully.")
 
@@ -486,14 +486,14 @@ class DatabaseConnectionManager(QObject):
         if not postpone_exec:
             self.run_tasks()
 
-    def save_timeseries_data(self, tseries_data, obs_well_uuid,
-                             sonde_installation_uuid=None, callback=None,
-                             postpone_exec=False):
+    def add_timeseries_data(self, tseries_data, obs_well_uuid,
+                            sonde_installation_uuid=None, callback=None,
+                            postpone_exec=False):
         """
         Save in the database a set of timeseries data associated with the
         given well and sonde installation id.
         """
-        self._add_task('save_timeseries_data', callback, tseries_data,
+        self._add_task('add_timeseries_data', callback, tseries_data,
                        obs_well_uuid, sonde_installation_uuid)
         if not postpone_exec:
             self.run_tasks()

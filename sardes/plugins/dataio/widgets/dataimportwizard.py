@@ -399,7 +399,7 @@ class DataImportWizard(QDialog):
             self._load_next_queued_data_file()
         elif button == self.load_btn:
             self.table_model.sig_data_about_to_be_saved.emit()
-            self.db_connection_manager.save_timeseries_data(
+            self.db_connection_manager.add_timeseries_data(
                 self.tseries_dataf, self._obs_well_uuid, self._install_id,
                 callback=self._handle_tseries_data_saved)
             self._data_is_loading = True
