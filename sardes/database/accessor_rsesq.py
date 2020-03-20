@@ -306,7 +306,7 @@ class TimeSeriesData(Base):
     __table_args__ = ({"schema": "resultats"})
 
     datetime = Column('date_heure', DateTime, primary_key=True)
-    value = Column('valeur', Float, primary_key=True)
+    value = Column('valeur', Float)
     channel_id = Column(
         'canal_id', Integer,
         ForeignKey('resultats.canal_temporel.canal_id', ondelete='CASCADE',
@@ -1240,9 +1240,9 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         for obs_id in tseries_dels['obs_id'].unique():
             sub_data = tseries_dels[tseries_dels['obs_id'] == obs_id]
             for data_type in sub_data['data_type'].unique():
-                date_times = list(pd.to_datetime(
+                date_times = (
                     sub_data[sub_data['data_type'] == data_type]
-                    ['datetime']))
+                    ['datetime'].dt.to_pydatetime())
                 query = self._query_timeseriesdata(
                     date_times, obs_id, data_type)
                 for tseries_data in query:
