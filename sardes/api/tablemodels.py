@@ -220,6 +220,8 @@ class SardesTableData(object):
         # We apply the new value to the data.
         self.data.iloc[row, col] = edited_value
 
+        return self._data_edits_stack[-1]
+
     def get(self, row, col=None):
         """
         Return the value at the given row and column indexes or the
@@ -254,6 +256,8 @@ class SardesTableData(object):
         # We add the new row to the data.
         self.data = self.data.append(pd.DataFrame(
             values, columns=self.data.columns, index=[new_index]))
+
+        return self._data_edits_stack[-1]
 
     def delete_row(self, rows):
         """
@@ -337,7 +341,7 @@ class SardesTableModelBase(QAbstractTableModel):
     WARNING: Don't override any methods or attributes present here unless you
     know what you are doing.
     """
-    sig_data_edited = Signal(bool, bool)
+    sig_data_edited = Signal(object)
     sig_data_about_to_be_updated = Signal()
     sig_data_updated = Signal()
     sig_data_about_to_be_saved = Signal()
@@ -477,7 +481,6 @@ class SardesTableModelBase(QAbstractTableModel):
         self._datat = SardesTableData(dataf)
 
         self.endResetModel()
-        self.sig_data_edited.emit(False, False)
         self._update_visual_data()
         self.dataChanged.emit(
             self.index(0, 0),
@@ -588,6 +591,12 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         return self._datat.edits()
 
+    def last_data_edit(self):
+        """
+        Return the last data edits made to the data since last save.
+        """
+        return self._datat.edits()[-1] if self.data_edit_count() else None
+
     def data_edit_count(self):
         """
         Return the number of edits in the stack.
@@ -626,7 +635,7 @@ class SardesTableModelBase(QAbstractTableModel):
             self.index(0, 0),
             self.index(self.rowCount() - 1, self.columnCount() - 1)
             )
-        self.sig_data_edited.emit(False, False)
+        self.sig_data_edited.emit(None)
 
     def set_data_edit_at(self, model_index, edited_value):
         """
@@ -634,13 +643,13 @@ class SardesTableModelBase(QAbstractTableModel):
         A signal is also emitted to indicate that the data were edited,
         so that the GUI can be updated accordingly.
         """
-        self._datat.set(model_index.row(), model_index.column(), edited_value)
+        data_edit = self._datat.set(
+            model_index.row(), model_index.column(), edited_value)
 
         # We make the appropriate calls to update the model and GUI.
         self._update_visual_data()
         self.dataChanged.emit(model_index, model_index)
-        self.sig_data_edited.emit(
-            self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
+        self.sig_data_edited.emit(data_edit)
 
     def _create_new_row_index(self):
         """
@@ -667,38 +676,31 @@ class SardesTableModelBase(QAbstractTableModel):
 
         if new_row_index is None:
             new_row_index = self._create_new_row_index()
-        self._datat.add_row(new_row_index)
+        data_edit = self._datat.add_row(new_row_index)
         self._update_visual_data()
         self.endInsertRows()
-        new_model_index_range = (
+        self.dataChanged.emit(
             self.index(self.rowCount() - 1, 0),
-            self.index(self.rowCount() - 1, self.columnCount() - 1)
-            )
-        self.dataChanged.emit(*new_model_index_range)
+            self.index(self.rowCount() - 1, self.columnCount() - 1))
 
         # We make the appropriate calls to update the model and GUI.
-        self.sig_data_edited.emit(
-            self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
-
-        return new_model_index_range
+        self.sig_data_edited.emit(data_edit)
 
     def delete_row(self, rows):
         """
         Delete rows at the specified row logical indexes.
         """
-        self._datat.delete_row(rows)
+        data_edit = self._datat.delete_row(rows)
         self.dataChanged.emit(
             self.index(0, 0),
             self.index(self.rowCount() - 1, self.columnCount() - 1))
-        self.sig_data_edited.emit(
-            self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
+        self.sig_data_edited.emit(data_edit)
 
     def undo_last_data_edit(self):
         """
         Undo the last data edits that was added to the stack.
-        An update of the view is forced if  update_model_view is True.
         """
-        last_edit = self.data_edits()[-1]
+        last_edit = self.last_data_edit()
         if last_edit.type() == SardesTableModelBase.ValueChanged:
             self._datat.undo_edit()
             self._update_visual_data()
@@ -719,11 +721,10 @@ class SardesTableModelBase(QAbstractTableModel):
         elif last_edit.type() == SardesTableModelBase.RowDeleted:
             self._datat.undo_edit()
             self.dataChanged.emit(
-                self.index(last_edit.row, last_edit.col),
-                self.index(last_edit.row, self.columnCount() - 1)
+                self.index(0, 0),
+                self.index(self.rowCount() - 1, self.columnCount() - 1)
                 )
-        self.sig_data_edited.emit(
-            self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
+        self.sig_data_edited.emit(last_edit)
 
     # ---- Database connection
     def set_database_connection_manager(self, db_connection_manager):
@@ -1020,11 +1021,6 @@ class SardesSortFilterModel(QSortFilterProxyModel):
                         Qt.DescendingOrder)
         else:
             return self.sourceModel().headerData(section, orientation, role)
-
-    def add_new_row(self):
-        new_model_indexes = self.sourceModel().add_new_row()
-        return (self.mapFromSource(new_model_indexes[0]),
-                self.mapFromSource(new_model_indexes[1]))
 
     def delete_row(self, proxy_rows):
         return self.sourceModel().delete_row(
