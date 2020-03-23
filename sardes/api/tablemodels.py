@@ -196,13 +196,20 @@ class SardesTableData(object):
         self.data = self.data.append(pd.DataFrame(
             values, columns=self.data.columns, index=[new_index]))
 
-    def delete_row(self, row, col):
+    def delete_row(self, rows):
         """
-        Delete row from data at row.
+        Delete the rows at the given row indexes from data.
+
+        Parameters
+        ----------
+        rows: list of int
+            An list of row logical indexes that need to be deleted from
+            the data.
         """
-        self._deleted_rows.append(row)
+        self._deleted_rows.extend(rows)
+        self._deleted_rows = [*{*self._deleted_rows}]
         self._data_edits_stack.append(RowDeleted(
-            self.data.index[row], row, col))
+            self.data.index[rows], rows))
 
     # ---- Edits
     def edits(self):
@@ -289,6 +296,9 @@ class SardesTableData(object):
             raise ValueError
 
 
+# =============================================================================
+# ---- Sardes Table Models
+# =============================================================================
 class SardesTableModelBase(QAbstractTableModel):
     """
     Basic functionality for Sardes table models.
@@ -641,16 +651,14 @@ class SardesTableModelBase(QAbstractTableModel):
 
         return new_model_index_range
 
-    def delete_row(self, model_index):
+    def delete_row(self, rows):
         """
-        Delete row at model index.
+        Delete rows at the specified row logical indexes.
         """
-        self._datat.delete_row(model_index.row(), model_index.column())
-        new_model_index_range = (
-            self.index(model_index.row(), 0),
-            self.index(model_index.row(), self.columnCount() - 1)
-            )
-        self.dataChanged.emit(*new_model_index_range)
+        self._datat.delete_row(rows)
+        self.dataChanged.emit(
+            self.index(0, 0),
+            self.index(self.rowCount() - 1, self.columnCount() - 1))
         self.sig_data_edited.emit(
             self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
 
@@ -980,9 +988,9 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         return (self.mapFromSource(new_model_indexes[0]),
                 self.mapFromSource(new_model_indexes[1]))
 
-    def delete_row(self, proxy_index):
+    def delete_row(self, proxy_rows):
         return self.sourceModel().delete_row(
-            self.mapToSource(proxy_index))
+            [self._map_row_to_source[row] for row in proxy_rows])
 
     def dataf_index_at(self, proxy_index):
         return self.sourceModel().dataf_index_at(
