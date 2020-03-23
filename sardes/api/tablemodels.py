@@ -128,8 +128,8 @@ class RowDeleted(SardesDataEdit):
 
     def _undo(self):
         """Undo this row deleted edit."""
-        for row in self.row:
-            self.parent._deleted_rows.remove(self.row)
+        self.parent._deleted_rows = [
+            row for row in self.parent._deleted_rows if row not in self.row]
 
 
 class RowAdded(SardesDataEdit):
