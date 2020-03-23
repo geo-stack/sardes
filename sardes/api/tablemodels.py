@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Standard imports
+from abc import ABC, abstractmethod
 from collections import OrderedDict
 import uuid
 
@@ -23,27 +24,38 @@ from sardes.config.locale import _
 from sardes.utils.data_operations import nan_values_equal
 
 
-class NoDataEdit(object):
+# =============================================================================
+# ---- Sardes Data and Edits
+# =============================================================================
+class SardesDataEdit(ABC):
+    def __init__(self, index, column=None, parent=None):
+        self.index = index
+        self.column = column
+        self.id = uuid.uuid4()
+        self.parent = parent
+
+    def undo(self):
+        """Undo this data edit."""
+        pass
+
+
+class NoDataEdit(SardesDataEdit):
     """
     A class to indicate that no edit have been done to the data since last
     save.
     """
 
     def __init__(self, index, column):
-        super() .__init__()
-        self.index = index
-        self.column = column
+        super() .__init__(index, column)
 
 
-class ValueChanged(object):
+class ValueChanged(SardesDataEdit):
     """
     A class that represents a change of a value at a given model index.
     """
 
     def __init__(self, index, column, edited_value, previous_value, row, col):
-        super() .__init__()
-        self.index = index
-        self.column = column
+        super() .__init__(index, column)
         self.previous_value = previous_value
         self.edited_value = edited_value
         self.row = row
@@ -57,14 +69,13 @@ class ValueChanged(object):
         return SardesTableModelBase.ValueChanged
 
 
-class RowDeleted(object):
+class RowDeleted(SardesDataEdit):
     """
-    A class that represents a row being deleted from the data.
+    A class that represents on or more row(s) that were deleted from the data.
     """
 
     def __init__(self, index, row, col=0):
-        super() .__init__()
-        self.index = index
+        super() .__init__(index)
         self.row = row
         self.col = col
 
@@ -76,14 +87,13 @@ class RowDeleted(object):
         return SardesTableModelBase.RowDeleted
 
 
-class RowAdded(object):
+class RowAdded(SardesDataEdit):
     """
     A class that represents a new row added to the data.
     """
 
-    def __init__(self, index, values, row):
-        super() .__init__()
-        self.index = index
+    def __init__(self, index, values, row, parent=None):
+        super() .__init__(index, None, parent)
         self.values = values
         self.row = row
         self.col = 0
