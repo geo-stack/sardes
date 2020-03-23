@@ -653,8 +653,11 @@ class SardesTableView(QTableView):
 
         # Connect update actions state slot to signals.
         self.selectionModel().currentChanged.connect(
-            self._update_actions_state)
-        self.sig_data_edited.connect(self._update_actions_state)
+            self._on_current_index_changed)
+        self.sig_data_edited.connect(
+            self._on_model_data_edits)
+        self.selectionModel().selectionChanged.connect(
+            self._on_selection_changed)
 
         # List of QAction to toggle the visibility this table's columns.
         self._setup_column_visibility_actions()
@@ -882,26 +885,41 @@ class SardesTableView(QTableView):
                 context=Qt.WidgetShortcut
                 ))
 
-    def _update_actions_state(self, *args, **kargs):
+    def _on_current_index_changed(self, *args, **kargs):
         """
-        Update the state of this table Qt actions.
+        Handle when the current position of this table view cursor changes.
         """
         current_index = self.selectionModel().currentIndex()
         if current_index.isValid():
             is_required = self.is_data_required_at(current_index)
             is_null = self.model().is_null(current_index)
             is_editable = self.is_data_editable_at(current_index)
-            is_data_deleted = self.model().is_data_deleted_at(current_index)
+            is_selection_deletable = self.is_selection_deletable()
             if 'clear_item' not in self._disabled_actions:
                 self.clear_item_action.setEnabled(
                     not is_required and not is_null and is_editable)
             if 'edit_item' not in self._disabled_actions:
                 self.edit_item_action.setEnabled(is_editable)
             if 'delete_row' not in self._disabled_actions:
-                self.delete_row_action.setEnabled(not is_data_deleted)
+                self.delete_row_action.setEnabled(is_selection_deletable)
 
-        has_unsaved_data_edits = self.model().has_unsaved_data_edits()
-        data_edit_count = self.model().data_edit_count()
+    def _on_selection_changed(self):
+        """
+        Handle when the list of selected indexes in the table changes.
+        """
+        if 'delete_row' not in self._disabled_actions:
+            self.delete_row_action.setEnabled(self.is_selection_deletable())
+
+    def _on_model_data_edits(self, has_unsaved_data_edits, data_edit_count):
+        """
+        Handle when an edit is made to the data of the table model.
+        """
+        if data_edit_count:
+            current_index = self.selectionModel().currentIndex()
+            self._data_edit_cursor_pos[self.model().data_edits()[-1].id] = (
+                current_index.row(), current_index.column())
+        else:
+            self._data_edit_cursor_pos = {}
         if 'save_edits' not in self._disabled_actions:
             self.save_edits_action.setEnabled(has_unsaved_data_edits)
         if 'undo_edits' not in self._disabled_actions:
