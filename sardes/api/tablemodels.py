@@ -128,8 +128,7 @@ class RowDeleted(SardesDataEdit):
 
     def _undo(self):
         """Undo this row deleted edit."""
-        self.parent._deleted_rows = [
-            row for row in self.parent._deleted_rows if row not in self.row]
+        self.parent._deleted_rows = self.parent._deleted_rows.drop(self.row)
 
 
 class RowAdded(SardesDataEdit):
@@ -176,7 +175,7 @@ class SardesTableData(object):
         self._data_edits_stack = []
 
         self._new_rows = []
-        self._deleted_rows = []
+        self._deleted_rows = pd.Index([])
 
         # A pandas multiindex dataframe that contains the original data at
         # the rows and columns where the data was edited. This is tracked
@@ -269,11 +268,11 @@ class SardesTableData(object):
             An list of row logical indexes that need to be deleted from
             the data.
         """
-        unique_rows = [row for row in rows if row not in self._deleted_rows]
-        self._deleted_rows.extend(unique_rows)
+        unique_rows = pd.Index(rows)
+        unique_rows = unique_rows[~unique_rows.isin(self._deleted_rows)]
+        self._deleted_rows = self._deleted_rows.append(unique_rows)
         self._data_edits_stack.append(RowDeleted(
             self.data.index[unique_rows], unique_rows, parent=self))
-
         return self._data_edits_stack[-1]
 
     # ---- Edits
