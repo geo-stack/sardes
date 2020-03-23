@@ -892,42 +892,24 @@ class SardesTableView(QTableView):
         """
         Handle when the data of this table view was changed.
         """
-        self._on_current_index_changed()
-        self._on_selection_changed()
         self._on_model_data_edit(None)
 
     def _on_current_index_changed(self):
         """
         Handle when the current position of this table view cursor changes.
         """
-        current_index = self.selectionModel().currentIndex()
-        if current_index.isValid():
-            is_required = self.is_data_required_at(current_index)
-            is_null = self.model().is_null(current_index)
-            is_editable = self.is_data_editable_at(current_index)
-            is_selection_deletable = self.is_selection_deletable()
-            if 'clear_item' not in self._disabled_actions:
-                self.clear_item_action.setEnabled(
-                    not is_required and not is_null and is_editable)
-            if 'edit_item' not in self._disabled_actions:
-                self.edit_item_action.setEnabled(is_editable)
-            if 'delete_row' not in self._disabled_actions:
-                self.delete_row_action.setEnabled(is_selection_deletable)
+        self._update_actions_state()
 
     def _on_selection_changed(self):
         """
         Handle when the list of selected indexes in the table changes.
         """
-        if 'delete_row' not in self._disabled_actions:
-            self.delete_row_action.setEnabled(self.is_selection_deletable())
+        self._update_actions_state()
 
     def _on_model_data_edit(self, data_edit):
         """
         Handle when an edit is made to the data of the table model.
         """
-        has_unsaved_data_edits = self.model().has_unsaved_data_edits()
-        is_data_edit_count = bool(self.model().data_edit_count())
-
         if data_edit is not None:
             if data_edit.id in self._data_edit_cursor_pos:
                 # This mean that the given data edit was just undone.
@@ -945,7 +927,30 @@ class SardesTableView(QTableView):
                     current_index.row(), current_index.column())
         else:
             self._data_edit_cursor_pos = {}
+        self._update_actions_state()
 
+    def _update_actions_state(self):
+        """
+        Update the states of this tableview actions.
+        """
+        current_index = self.selectionModel().currentIndex()
+        if current_index.isValid():
+            is_required = self.is_data_required_at(current_index)
+            is_null = self.model().is_null(current_index)
+            is_editable = self.is_data_editable_at(current_index)
+            is_selection_deletable = self.is_selection_deletable()
+            if 'clear_item' not in self._disabled_actions:
+                self.clear_item_action.setEnabled(
+                    not is_required and not is_null and is_editable)
+            if 'edit_item' not in self._disabled_actions:
+                self.edit_item_action.setEnabled(is_editable)
+            if 'delete_row' not in self._disabled_actions:
+                self.delete_row_action.setEnabled(is_selection_deletable)
+        if 'delete_row' not in self._disabled_actions:
+            self.delete_row_action.setEnabled(self.is_selection_deletable())
+
+        has_unsaved_data_edits = self.model().has_unsaved_data_edits()
+        is_data_edit_count = bool(self.model().data_edit_count())
         if 'save_edits' not in self._disabled_actions:
             self.save_edits_action.setEnabled(has_unsaved_data_edits)
         if 'undo_edits' not in self._disabled_actions:
