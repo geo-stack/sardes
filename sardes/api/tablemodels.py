@@ -265,10 +265,12 @@ class SardesTableData(object):
             An list of row logical indexes that need to be deleted from
             the data.
         """
-        self._deleted_rows.extend(rows)
-        self._deleted_rows = [*{*self._deleted_rows}]
+        unique_rows = [row for row in rows if row not in self._deleted_rows]
+        self._deleted_rows.extend(unique_rows)
         self._data_edits_stack.append(RowDeleted(
-            self.data.index[rows], rows, parent=self))
+            self.data.index[unique_rows], unique_rows, parent=self))
+
+        return self._data_edits_stack[-1]
 
     # ---- Edits
     def edits(self):
