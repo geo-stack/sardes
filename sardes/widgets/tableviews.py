@@ -741,8 +741,8 @@ class SardesTableView(QTableView):
             self.delete_row_action = create_action(
                 self, _("Delete Item"),
                 icon='remove_row',
-                tip=_("Delete the current item."),
-                triggered=self._delete_current_row,
+                tip=_("Delete selected items from the table."),
+                triggered=self._delete_selected_rows,
                 shortcut='Ctrl+-',
                 context=Qt.WidgetShortcut)
             self._actions['edit'].append(self.delete_row_action)
@@ -982,14 +982,21 @@ class SardesTableView(QTableView):
         will be selected.
         """
         self.setFocus()
-        selected_indexes = self.selectionModel().selectedIndexes()
-        selected_rows = sorted(list(set(
-            [index.row() for index in selected_indexes])))
+        selected_rows = self.get_selected_rows()
         for interval in intervals_extract(selected_rows):
             self.selectionModel().select(
                 QItemSelection(self.model().index(interval[0], 0),
                                self.model().index(interval[1], 0)),
                 QItemSelectionModel.Select | QItemSelectionModel.Rows)
+
+    def get_selected_rows(self):
+        """
+        Return the list of logical indexes corresponding to the rows
+        that are currently selected in the table.
+        """
+        selected_indexes = self.selectionModel().selectedIndexes()
+        return sorted(list(set(
+            [index.row() for index in selected_indexes])))
 
     def select_column(self):
         """
@@ -1246,6 +1253,17 @@ class SardesTableView(QTableView):
         """
         return self.itemDelegate(model_index).is_required
 
+    def is_selection_deletable(self):
+        """
+        Return whether at least one row with a selection is deletable.
+        """
+        selected_rows = self.get_selected_rows()
+        for row in selected_rows:
+            if not self.model().is_data_deleted_at(self.model().index(row, 0)):
+                return True
+        else:
+            return False
+
     def contextMenuEvent(self, event):
         """
         Override Qt method to show a context menu that shows different actions
@@ -1354,13 +1372,9 @@ class SardesTableView(QTableView):
         self.setCurrentIndex(new_model_index_range[0])
         self._ensure_visible(new_model_index_range[0])
 
-    def _delete_current_row(self, model_index):
-        """
-        Delete the currently selected row.
-        """
-        current_index = self.selectionModel().currentIndex()
-        if current_index.isValid():
-            self.model().delete_row(current_index)
+    def _delete_selected_rows(self):
+        """Delete rows from the table with selected indexes"""
+        self.model().delete_row(self.get_selected_rows())
 
     def _ensure_visible(self, model_index):
         """
