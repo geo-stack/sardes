@@ -985,12 +985,19 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         if not source_index.isValid() or not len(self._proxy_dataf_index):
             return QModelIndex()
 
+        proxy_index_row = self.mapRowFromSource(source_index.row())
+        return (QModelIndex() if proxy_index_row is None else
+                self.index(proxy_index_row, source_index.column()))
+
+    def mapRowFromSource(self, source_row):
+        """
+        Return the row in the proxy model that corresponds to the
+        row from the source model.
+        """
         try:
-            proxy_index_row = self._map_row_from_source[source_index.row()]
+            return self._map_row_from_source[source_row]
         except IndexError:
-            return QModelIndex()
-        else:
-            return self.index(proxy_index_row, source_index.column())
+            return None
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """
