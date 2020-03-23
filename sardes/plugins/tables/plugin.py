@@ -90,23 +90,28 @@ class DataTableModel(SardesTableModel):
             [], columns=['obs_id', 'datetime', 'data_type'])
 
         for edit in self._datat.edits():
-            row_data = self._datat.get(edit.row)
-            date_time = row_data['datetime']
-            obs_id = row_data['obs_id']
             if edit.type() == SardesTableModel.ValueChanged:
+                row_data = self._datat.get(edit.row)
+                date_time = row_data['datetime']
+                obs_id = row_data['obs_id']
                 indexes = (date_time, obs_id, edit.column)
                 tseries_edits.loc[indexes, 'value'] = edit.edited_value
             elif edit.type() == SardesTableModel.RowDeleted:
-                row_data = self._datat.get(edit.row)
-                data_types = [dt for dt in DataType if dt in row_data.keys()]
-                for data_type in data_types:
-                    indexes = (date_time, obs_id, data_type)
-                    if indexes in tseries_edits.index:
-                        tseries_edits.drop(indexes, inplace=True)
-                    tseries_dels = tseries_dels.append(
-                        {'obs_id': obs_id,
-                         'datetime': date_time,
-                         'data_type': data_type}, ignore_index=True)
+                for row in edit.row:
+                    row_data = self._datat.get(row)
+                    date_time = row_data['datetime']
+                    obs_id = row_data['obs_id']
+                    indexes = (date_time, obs_id, edit.column)
+                    data_types = [
+                        dt for dt in DataType if dt in row_data.keys()]
+                    for data_type in data_types:
+                        indexes = (date_time, obs_id, data_type)
+                        if indexes in tseries_edits.index:
+                            tseries_edits.drop(indexes, inplace=True)
+                        tseries_dels = tseries_dels.append(
+                            {'obs_id': obs_id,
+                             'datetime': date_time,
+                             'data_type': data_type}, ignore_index=True)
         self.db_connection_manager.delete_timeseries_data(
             tseries_dels,
             postpone_exec=True)
