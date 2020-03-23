@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Standard imports
+from abc import ABC
 from collections import OrderedDict
 import uuid
 
@@ -23,27 +24,60 @@ from sardes.config.locale import _
 from sardes.utils.data_operations import nan_values_equal
 
 
-class NoDataEdit(object):
+# =============================================================================
+# ---- Sardes Data and Edits
+# =============================================================================
+class SardesDataEditBase(ABC):
+    """
+    Basic functionality Sardes data edit class.
+
+    WARNING: Don't override any methods or attributes present here unless you
+    know what you are doing.
+    """
+
+    def __init__(self, index, column=None, parent=None):
+        self.index = index
+        self.column = column
+        self.id = uuid.uuid4()
+        self.parent = parent
+
+    def undo(self):
+        """Undo this data edit."""
+        if self.parent is not None:
+            self._undo()
+
+
+class SardesDataEdit(SardesDataEditBase):
+    """
+    Sardes data edit class.
+
+    All database accessors *must* inherit this class and reimplement
+    its interface.
+    """
+
+    def _undo(self):
+        """Undo this data edit."""
+        pass
+
+
+class NoDataEdit(SardesDataEdit):
     """
     A class to indicate that no edit have been done to the data since last
     save.
     """
 
     def __init__(self, index, column):
-        super() .__init__()
-        self.index = index
-        self.column = column
+        super() .__init__(index, column)
 
 
-class ValueChanged(object):
+class ValueChanged(SardesDataEdit):
     """
     A class that represents a change of a value at a given model index.
     """
 
-    def __init__(self, index, column, edited_value, previous_value, row, col):
-        super() .__init__()
-        self.index = index
-        self.column = column
+    def __init__(self, index, column, edited_value, previous_value, row, col,
+                 parent=None):
+        super() .__init__(index, column, parent)
         self.previous_value = previous_value
         self.edited_value = edited_value
         self.row = row
@@ -56,15 +90,32 @@ class ValueChanged(object):
         """
         return SardesTableModelBase.ValueChanged
 
+    def _undo(self):
+        """Undo this value changed edit."""
+        # Update the original data.
+        if (self.row, self.col) in self.parent._original_data.index:
+            original_value = self.parent._original_data.loc[
+                (self.row, self.col), 'value']
+            self.parent._original_data.drop((self.row, self.col), inplace=True)
+        else:
+            original_value = self.parent.data.iloc[self.row, self.col]
 
-class RowDeleted(object):
+        values_equal = nan_values_equal(self.previous_value, original_value)
+        if not values_equal or self.row in self.parent._new_rows:
+            self.parent._original_data.loc[
+                (self.row, self.col), 'value'] = original_value
+
+        # We apply the previous value to the data.
+        self.parent.data.iloc[self.row, self.col] = self.previous_value
+
+
+class RowDeleted(SardesDataEdit):
     """
-    A class that represents a row being deleted from the data.
+    A class that represents on or more row(s) that were deleted from the data.
     """
 
-    def __init__(self, index, row, col=0):
-        super() .__init__()
-        self.index = index
+    def __init__(self, index, row, col=0, parent=None):
+        super() .__init__(index, None, parent)
         self.row = row
         self.col = col
 
@@ -75,15 +126,18 @@ class RowDeleted(object):
         """
         return SardesTableModelBase.RowDeleted
 
+    def _undo(self):
+        """Undo this row deleted edit."""
+        self.parent._deleted_rows = self.parent._deleted_rows.drop(self.row)
 
-class RowAdded(object):
+
+class RowAdded(SardesDataEdit):
     """
     A class that represents a new row added to the data.
     """
 
-    def __init__(self, index, values, row):
-        super() .__init__()
-        self.index = index
+    def __init__(self, index, values, row, parent=None):
+        super() .__init__(index, None, parent)
         self.values = values
         self.row = row
         self.col = 0
@@ -94,6 +148,18 @@ class RowAdded(object):
         edit correspond to, as defined in :class:`SardesTableModelBase`.
         """
         return SardesTableModelBase.RowAdded
+
+    def _undo(self):
+        """Undo this row added edit."""
+        if self.parent is None:
+            return
+
+        # Update the original data.
+        for col in range(len(self.parent.data.columns)):
+            self.parent._original_data.drop((self.row, col), inplace=True)
+
+        # We remove the row from the data.
+        self.parent.data.drop(self.index, inplace=True)
 
 
 class SardesTableData(object):
@@ -109,7 +175,7 @@ class SardesTableData(object):
         self._data_edits_stack = []
 
         self._new_rows = []
-        self._deleted_rows = []
+        self._deleted_rows = pd.Index([])
 
         # A pandas multiindex dataframe that contains the original data at
         # the rows and columns where the data was edited. This is tracked
@@ -135,7 +201,8 @@ class SardesTableData(object):
         self._data_edits_stack.append(ValueChanged(
             self.data.index[row], self.data.columns[col],
             edited_value, previous_value,
-            row, col
+            row, col,
+            parent=self
             ))
 
         # We update the list of original data. We store this in an independent
@@ -151,6 +218,8 @@ class SardesTableData(object):
 
         # We apply the new value to the data.
         self.data.iloc[row, col] = edited_value
+
+        return self._data_edits_stack[-1]
 
     def get(self, row, col=None):
         """
@@ -174,7 +243,8 @@ class SardesTableData(object):
         """
         row = len(self.data)
         self._new_rows.append(row)
-        self._data_edits_stack.append(RowAdded(new_index, values, row))
+        self._data_edits_stack.append(
+            RowAdded(new_index, values, row, parent=self))
 
         # We need to add each column of the new row to the orginal data so
         # that they are highlighted correctly in the table.
@@ -186,13 +256,24 @@ class SardesTableData(object):
         self.data = self.data.append(pd.DataFrame(
             values, columns=self.data.columns, index=[new_index]))
 
-    def delete_row(self, row, col):
+        return self._data_edits_stack[-1]
+
+    def delete_row(self, rows):
         """
-        Delete row from data at row.
+        Delete the rows at the given row indexes from data.
+
+        Parameters
+        ----------
+        rows: list of int
+            An list of row logical indexes that need to be deleted from
+            the data.
         """
-        self._deleted_rows.append(row)
+        unique_rows = pd.Index(rows)
+        unique_rows = unique_rows[~unique_rows.isin(self._deleted_rows)]
+        self._deleted_rows = self._deleted_rows.append(unique_rows)
         self._data_edits_stack.append(RowDeleted(
-            self.data.index[row], row, col))
+            self.data.index[unique_rows], unique_rows, parent=self))
+        return self._data_edits_stack[-1]
 
     # ---- Edits
     def edits(self):
@@ -244,41 +325,14 @@ class SardesTableData(object):
         """
         Undo the last data edit that was added to the stack.
         """
-        if len(self._data_edits_stack) == 0:
-            return
-
-        last_edit = self._data_edits_stack.pop(-1)
-        if last_edit.type() == SardesTableModelBase.ValueChanged:
-            # Update the original data.
-            row = last_edit.row
-            col = last_edit.col
-            if (row, col) in self._original_data.index:
-                original_value = self._original_data.loc[(row, col), 'value']
-                self._original_data.drop((row, col), inplace=True)
-            else:
-                original_value = self.data.iloc[row, col]
-
-            values_equal = nan_values_equal(
-                last_edit.previous_value, original_value)
-            if not values_equal or row in self._new_rows:
-                self._original_data.loc[(row, col), 'value'] = original_value
-
-            # We apply the previous value to the data.
-            self.data.iloc[row, col] = last_edit.previous_value
-        elif last_edit.type() == SardesTableModelBase.RowAdded:
-            # Update the original data.
-            row = last_edit.row
-            for col in range(len(self.data.columns)):
-                self._original_data.drop((row, col), inplace=True)
-
-            # We remove the row from the data.
-            self.data.drop(last_edit.index, inplace=True)
-        elif last_edit.type() == SardesTableModelBase.RowDeleted:
-            self._deleted_rows.remove(last_edit.row)
-        else:
-            raise ValueError
+        if len(self._data_edits_stack):
+            last_edit = self._data_edits_stack.pop(-1)
+            last_edit.undo()
 
 
+# =============================================================================
+# ---- Sardes Table Models
+# =============================================================================
 class SardesTableModelBase(QAbstractTableModel):
     """
     Basic functionality for Sardes table models.
@@ -286,7 +340,7 @@ class SardesTableModelBase(QAbstractTableModel):
     WARNING: Don't override any methods or attributes present here unless you
     know what you are doing.
     """
-    sig_data_edited = Signal(bool, bool)
+    sig_data_edited = Signal(object)
     sig_data_about_to_be_updated = Signal()
     sig_data_updated = Signal()
     sig_data_about_to_be_saved = Signal()
@@ -426,7 +480,6 @@ class SardesTableModelBase(QAbstractTableModel):
         self._datat = SardesTableData(dataf)
 
         self.endResetModel()
-        self.sig_data_edited.emit(False, False)
         self._update_visual_data()
         self.dataChanged.emit(
             self.index(0, 0),
@@ -537,6 +590,12 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         return self._datat.edits()
 
+    def last_data_edit(self):
+        """
+        Return the last data edits made to the data since last save.
+        """
+        return self._datat.edits()[-1] if self.data_edit_count() else None
+
     def data_edit_count(self):
         """
         Return the number of edits in the stack.
@@ -575,7 +634,7 @@ class SardesTableModelBase(QAbstractTableModel):
             self.index(0, 0),
             self.index(self.rowCount() - 1, self.columnCount() - 1)
             )
-        self.sig_data_edited.emit(False, False)
+        self.sig_data_edited.emit(None)
 
     def set_data_edit_at(self, model_index, edited_value):
         """
@@ -583,13 +642,13 @@ class SardesTableModelBase(QAbstractTableModel):
         A signal is also emitted to indicate that the data were edited,
         so that the GUI can be updated accordingly.
         """
-        self._datat.set(model_index.row(), model_index.column(), edited_value)
+        data_edit = self._datat.set(
+            model_index.row(), model_index.column(), edited_value)
 
         # We make the appropriate calls to update the model and GUI.
         self._update_visual_data()
         self.dataChanged.emit(model_index, model_index)
-        self.sig_data_edited.emit(
-            self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
+        self.sig_data_edited.emit(data_edit)
 
     def _create_new_row_index(self):
         """
@@ -616,40 +675,31 @@ class SardesTableModelBase(QAbstractTableModel):
 
         if new_row_index is None:
             new_row_index = self._create_new_row_index()
-        self._datat.add_row(new_row_index)
+        data_edit = self._datat.add_row(new_row_index)
         self._update_visual_data()
         self.endInsertRows()
-        new_model_index_range = (
+        self.dataChanged.emit(
             self.index(self.rowCount() - 1, 0),
-            self.index(self.rowCount() - 1, self.columnCount() - 1)
-            )
-        self.dataChanged.emit(*new_model_index_range)
+            self.index(self.rowCount() - 1, self.columnCount() - 1))
 
         # We make the appropriate calls to update the model and GUI.
-        self.sig_data_edited.emit(
-            self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
+        self.sig_data_edited.emit(data_edit)
 
-        return new_model_index_range
-
-    def delete_row(self, model_index):
+    def delete_row(self, rows):
         """
-        Delete row at model index.
+        Delete rows at the specified row logical indexes.
         """
-        self._datat.delete_row(model_index.row(), model_index.column())
-        new_model_index_range = (
-            self.index(model_index.row(), 0),
-            self.index(model_index.row(), self.columnCount() - 1)
-            )
-        self.dataChanged.emit(*new_model_index_range)
-        self.sig_data_edited.emit(
-            self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
+        data_edit = self._datat.delete_row(rows)
+        self.dataChanged.emit(
+            self.index(0, 0),
+            self.index(self.rowCount() - 1, self.columnCount() - 1))
+        self.sig_data_edited.emit(data_edit)
 
     def undo_last_data_edit(self):
         """
         Undo the last data edits that was added to the stack.
-        An update of the view is forced if  update_model_view is True.
         """
-        last_edit = self.data_edits()[-1]
+        last_edit = self.last_data_edit()
         if last_edit.type() == SardesTableModelBase.ValueChanged:
             self._datat.undo_edit()
             self._update_visual_data()
@@ -670,11 +720,10 @@ class SardesTableModelBase(QAbstractTableModel):
         elif last_edit.type() == SardesTableModelBase.RowDeleted:
             self._datat.undo_edit()
             self.dataChanged.emit(
-                self.index(last_edit.row, last_edit.col),
-                self.index(last_edit.row, self.columnCount() - 1)
+                self.index(0, 0),
+                self.index(self.rowCount() - 1, self.columnCount() - 1)
                 )
-        self.sig_data_edited.emit(
-            self._datat.has_unsaved_edits(), bool(self._datat.edit_count()))
+        self.sig_data_edited.emit(last_edit)
 
     # ---- Database connection
     def set_database_connection_manager(self, db_connection_manager):
@@ -938,12 +987,19 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         if not source_index.isValid() or not len(self._proxy_dataf_index):
             return QModelIndex()
 
+        proxy_index_row = self.mapRowFromSource(source_index.row())
+        return (QModelIndex() if proxy_index_row is None else
+                self.index(proxy_index_row, source_index.column()))
+
+    def mapRowFromSource(self, source_row):
+        """
+        Return the row in the proxy model that corresponds to the
+        row from the source model.
+        """
         try:
-            proxy_index_row = self._map_row_from_source[source_index.row()]
+            return self._map_row_from_source[source_row]
         except IndexError:
-            return QModelIndex()
-        else:
-            return self.index(proxy_index_row, source_index.column())
+            return None
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """
@@ -965,14 +1021,9 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         else:
             return self.sourceModel().headerData(section, orientation, role)
 
-    def add_new_row(self):
-        new_model_indexes = self.sourceModel().add_new_row()
-        return (self.mapFromSource(new_model_indexes[0]),
-                self.mapFromSource(new_model_indexes[1]))
-
-    def delete_row(self, proxy_index):
+    def delete_row(self, proxy_rows):
         return self.sourceModel().delete_row(
-            self.mapToSource(proxy_index))
+            [self._map_row_to_source[row] for row in proxy_rows])
 
     def dataf_index_at(self, proxy_index):
         return self.sourceModel().dataf_index_at(

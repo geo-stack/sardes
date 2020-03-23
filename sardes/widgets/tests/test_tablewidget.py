@@ -742,21 +742,20 @@ def test_select_row(tablewidget, qtbot):
     selection_model = tablewidget.tableview.selectionModel()
 
     # Set a current index of the model selection.
-    expected_index = model.index(1, 1)
-    selection_model.setCurrentIndex(expected_index, selection_model.Current)
-    assert selection_model.currentIndex() == expected_index
-    assert len(selection_model.selectedIndexes()) == 0
+    expected_current_index = model.index(0, 1)
+    selection_model.setCurrentIndex(
+        expected_current_index, selection_model.SelectCurrent)
+    assert selection_model.currentIndex() == expected_current_index
+    assert len(selection_model.selectedIndexes()) == 1
 
-    # Select some cells in the table, one in the first row and another one
-    # in the third row.
-    selection_model.select(model.index(0, 1), selection_model.Select)
+    # Select another cell in the table on the third row row.
     selection_model.select(model.index(2, 0), selection_model.Select)
-    assert selection_model.currentIndex() == expected_index
+    assert selection_model.currentIndex() == expected_current_index
     assert len(selection_model.selectedIndexes()) == 2
 
     # Select rows with keyboard shortcut Shift+Space.
     qtbot.keyPress(tablewidget, Qt.Key_Space, modifier=Qt.ShiftModifier)
-    assert selection_model.currentIndex() == expected_index
+    assert selection_model.currentIndex() == expected_current_index
     assert len(selection_model.selectedIndexes()) == NCOL * 2
     assert [index.row() for index in selection_model.selectedRows()] == [0, 2]
 

@@ -604,7 +604,7 @@ class SardesTableView(QTableView):
     Sardes table view class to display and edit the data that are
     saved in the database.
     """
-    sig_data_edited = Signal(bool, bool)
+    sig_data_edited = Signal(object)
     sig_show_event = Signal()
 
     def __init__(self, table_model, parent=None, multi_columns_sort=True,
@@ -640,6 +640,7 @@ class SardesTableView(QTableView):
         self._sections_movable = sections_movable
         self._sections_hidable = sections_hidable
         self._disabled_actions = disabled_actions or []
+        self._data_edit_cursor_pos = {}
 
         # Setup horizontal header.
         self.setHorizontalHeader(SardesHeaderView(
@@ -653,8 +654,11 @@ class SardesTableView(QTableView):
 
         # Connect update actions state slot to signals.
         self.selectionModel().currentChanged.connect(
-            self._update_actions_state)
-        self.sig_data_edited.connect(self._update_actions_state)
+            self._on_current_index_changed)
+        self.sig_data_edited.connect(
+            self._on_model_data_edit)
+        self.selectionModel().selectionChanged.connect(
+            self._on_selection_changed)
 
         # List of QAction to toggle the visibility this table's columns.
         self._setup_column_visibility_actions()
@@ -671,6 +675,8 @@ class SardesTableView(QTableView):
         self.source_model.sig_data_edited.connect(self.sig_data_edited.emit)
         self.source_model.sig_columns_mapper_changed.connect(
             self._setup_item_delegates)
+        self.source_model.sig_data_updated.connect(self._on_data_updated)
+
         self.proxy_model = SardesSortFilterModel(
             self.source_model, multi_columns_sort)
         self.setModel(self.proxy_model)
@@ -741,8 +747,8 @@ class SardesTableView(QTableView):
             self.delete_row_action = create_action(
                 self, _("Delete Item"),
                 icon='remove_row',
-                tip=_("Delete the current item."),
-                triggered=self._delete_current_row,
+                tip=_("Delete selected items from the table."),
+                triggered=self._delete_selected_rows,
                 shortcut='Ctrl+-',
                 context=Qt.WidgetShortcut)
             self._actions['edit'].append(self.delete_row_action)
@@ -882,32 +888,77 @@ class SardesTableView(QTableView):
                 context=Qt.WidgetShortcut
                 ))
 
-    def _update_actions_state(self, *args, **kargs):
+    def _on_data_updated(self):
         """
-        Update the state of this table Qt actions.
+        Handle when the data of this table view was changed.
+        """
+        self._on_model_data_edit(None)
+
+    def _on_current_index_changed(self):
+        """
+        Handle when the current position of this table view cursor changes.
+        """
+        self._update_actions_state()
+
+    def _on_selection_changed(self):
+        """
+        Handle when the list of selected indexes in the table changes.
+        """
+        self._update_actions_state()
+
+    def _on_model_data_edit(self, data_edit):
+        """
+        Handle when an edit is made to the data of the table model.
+        """
+        if data_edit is not None:
+            if data_edit.id in self._data_edit_cursor_pos:
+                # This mean that the given data edit was just undone.
+                del self._data_edit_cursor_pos[data_edit.id]
+            else:
+                if data_edit.type() == SardesTableModelBase.RowAdded:
+                    model_index = self.model().index(
+                        self.model().rowCount() - 1, 0)
+                    self.setCurrentIndex(model_index)
+                    self._ensure_visible(model_index)
+
+                # Save the cursor position for that edit.
+                current_index = self.selectionModel().currentIndex()
+                self._data_edit_cursor_pos[data_edit.id] = (
+                    current_index.row(), current_index.column())
+        else:
+            self._data_edit_cursor_pos = {}
+        self._update_actions_state()
+
+    def _update_actions_state(self):
+        """
+        Update the states of this tableview actions.
         """
         current_index = self.selectionModel().currentIndex()
         if current_index.isValid():
             is_required = self.is_data_required_at(current_index)
             is_null = self.model().is_null(current_index)
             is_editable = self.is_data_editable_at(current_index)
-            is_data_deleted = self.model().is_data_deleted_at(current_index)
+            is_selection_deletable = self.is_selection_deletable()
             if 'clear_item' not in self._disabled_actions:
                 self.clear_item_action.setEnabled(
                     not is_required and not is_null and is_editable)
             if 'edit_item' not in self._disabled_actions:
                 self.edit_item_action.setEnabled(is_editable)
             if 'delete_row' not in self._disabled_actions:
-                self.delete_row_action.setEnabled(not is_data_deleted)
+                self.delete_row_action.setEnabled(is_selection_deletable)
+        if 'delete_row' not in self._disabled_actions:
+            self.delete_row_action.setEnabled(self.is_selection_deletable())
 
         has_unsaved_data_edits = self.model().has_unsaved_data_edits()
-        data_edit_count = self.model().data_edit_count()
+        is_data_edit_count = bool(self.model().data_edit_count())
         if 'save_edits' not in self._disabled_actions:
             self.save_edits_action.setEnabled(has_unsaved_data_edits)
         if 'undo_edits' not in self._disabled_actions:
-            self.undo_edits_action.setEnabled(bool(data_edit_count))
+            self.undo_edits_action.setEnabled(is_data_edit_count)
         if 'cancel_edits' not in self._disabled_actions:
             self.cancel_edits_action.setEnabled(has_unsaved_data_edits)
+        if 'delete_row' not in self._disabled_actions:
+            self.delete_row_action.setEnabled(self.is_selection_deletable())
 
     # ---- Options
     @property
@@ -982,14 +1033,22 @@ class SardesTableView(QTableView):
         will be selected.
         """
         self.setFocus()
-        selected_indexes = self.selectionModel().selectedIndexes()
-        selected_rows = sorted(list(set(
-            [index.row() for index in selected_indexes])))
+        selected_rows = self.get_selected_rows()
         for interval in intervals_extract(selected_rows):
             self.selectionModel().select(
                 QItemSelection(self.model().index(interval[0], 0),
                                self.model().index(interval[1], 0)),
                 QItemSelectionModel.Select | QItemSelectionModel.Rows)
+
+    def get_selected_rows(self):
+        """
+        Return the list of logical indexes corresponding to the rows
+        that are currently selected in the table.
+        """
+        selected_indexes = (self.selectionModel().selectedIndexes() +
+                            [self.selectionModel().currentIndex()])
+        return sorted(list(set(
+            [index.row() for index in selected_indexes if index.isValid()])))
 
     def select_column(self):
         """
@@ -1246,6 +1305,17 @@ class SardesTableView(QTableView):
         """
         return self.itemDelegate(model_index).is_required
 
+    def is_selection_deletable(self):
+        """
+        Return whether at least one row with a selection is deletable.
+        """
+        selected_rows = self.get_selected_rows()
+        for row in selected_rows:
+            if not self.model().is_data_deleted_at(self.model().index(row, 0)):
+                return True
+        else:
+            return False
+
     def contextMenuEvent(self, event):
         """
         Override Qt method to show a context menu that shows different actions
@@ -1296,9 +1366,11 @@ class SardesTableView(QTableView):
         Undo the last data edits that was added to the table.
         """
         last_edit = self.model().data_edits()[-1]
+        last_edit_cursor_pos = self._data_edit_cursor_pos[last_edit.id]
         if last_edit.type() == SardesTableModelBase.RowAdded:
+            row, col = self._data_edit_cursor_pos[last_edit.id]
             added_row = self.model().mapFromSource(
-                self.model().sourceModel().index(last_edit.row, last_edit.col)
+                self.model().sourceModel().index(*last_edit_cursor_pos)
                 ).row()
             self.model().undo_last_data_edit()
 
@@ -1309,7 +1381,7 @@ class SardesTableView(QTableView):
         else:
             self.model().undo_last_data_edit()
             model_index = self.model().mapFromSource(
-                self.model().sourceModel().index(last_edit.row, last_edit.col))
+                self.model().sourceModel().index(*last_edit_cursor_pos))
 
         self.selectionModel().clearSelection()
         self._ensure_visible(model_index)
@@ -1350,17 +1422,11 @@ class SardesTableView(QTableView):
         """
         Add a new empty row at the end of this table.
         """
-        new_model_index_range = self.model().add_new_row()
-        self.setCurrentIndex(new_model_index_range[0])
-        self._ensure_visible(new_model_index_range[0])
+        self.model().add_new_row()
 
-    def _delete_current_row(self, model_index):
-        """
-        Delete the currently selected row.
-        """
-        current_index = self.selectionModel().currentIndex()
-        if current_index.isValid():
-            self.model().delete_row(current_index)
+    def _delete_selected_rows(self):
+        """Delete rows from the table with selected indexes"""
+        self.model().delete_row(self.get_selected_rows())
 
     def _ensure_visible(self, model_index):
         """
