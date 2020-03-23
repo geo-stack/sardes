@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Standard imports
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections import OrderedDict
 import uuid
 
@@ -27,7 +27,14 @@ from sardes.utils.data_operations import nan_values_equal
 # =============================================================================
 # ---- Sardes Data and Edits
 # =============================================================================
-class SardesDataEdit(ABC):
+class SardesDataEditBase(ABC):
+    """
+    Basic functionality Sardes data edit class.
+
+    WARNING: Don't override any methods or attributes present here unless you
+    know what you are doing.
+    """
+
     def __init__(self, index, column=None, parent=None):
         self.index = index
         self.column = column
@@ -35,6 +42,20 @@ class SardesDataEdit(ABC):
         self.parent = parent
 
     def undo(self):
+        """Undo this data edit."""
+        if self.parent is not None:
+            self._undo()
+
+
+class SardesDataEdit(SardesDataEditBase):
+    """
+    Sardes data edit class.
+
+    All database accessors *must* inherit this class and reimplement
+    its interface.
+    """
+
+    def _undo(self):
         """Undo this data edit."""
         pass
 
@@ -54,8 +75,9 @@ class ValueChanged(SardesDataEdit):
     A class that represents a change of a value at a given model index.
     """
 
-    def __init__(self, index, column, edited_value, previous_value, row, col):
-        super() .__init__(index, column)
+    def __init__(self, index, column, edited_value, previous_value, row, col,
+                 parent=None):
+        super() .__init__(index, column, parent)
         self.previous_value = previous_value
         self.edited_value = edited_value
         self.row = row
@@ -68,14 +90,32 @@ class ValueChanged(SardesDataEdit):
         """
         return SardesTableModelBase.ValueChanged
 
+    def _undo(self):
+        """Undo this value changed edit."""
+        # Update the original data.
+        if (self.row, self.col) in self.parent._original_data.index:
+            original_value = self.parent._original_data.loc[
+                (self.row, self.col), 'value']
+            self.parent._original_data.drop((self.row, self.col), inplace=True)
+        else:
+            original_value = self.parent.data.iloc[self.row, self.col]
+
+        values_equal = nan_values_equal(self.previous_value, original_value)
+        if not values_equal or self.row in self.parent._new_rows:
+            self.parent._original_data.loc[
+                (self.row, self.col), 'value'] = original_value
+
+        # We apply the previous value to the data.
+        self.parent.data.iloc[self.row, self.col] = self.previous_value
+
 
 class RowDeleted(SardesDataEdit):
     """
     A class that represents on or more row(s) that were deleted from the data.
     """
 
-    def __init__(self, index, row, col=0):
-        super() .__init__(index)
+    def __init__(self, index, row, col=0, parent=None):
+        super() .__init__(index, None, parent)
         self.row = row
         self.col = col
 
@@ -85,6 +125,11 @@ class RowDeleted(SardesDataEdit):
         edit correspond to, as defined in :class:`SardesTableModelBase`.
         """
         return SardesTableModelBase.RowDeleted
+
+    def _undo(self):
+        """Undo this row deleted edit."""
+        for row in self.row:
+            self.parent._deleted_rows.remove(self.row)
 
 
 class RowAdded(SardesDataEdit):
@@ -104,6 +149,18 @@ class RowAdded(SardesDataEdit):
         edit correspond to, as defined in :class:`SardesTableModelBase`.
         """
         return SardesTableModelBase.RowAdded
+
+    def _undo(self):
+        """Undo this row added edit."""
+        if self.parent is None:
+            return
+
+        # Update the original data.
+        for col in range(len(self.parent.data.columns)):
+            self.parent._original_data.drop((self.row, col), inplace=True)
+
+        # We remove the row from the data.
+        self.parent.data.drop(self.index, inplace=True)
 
 
 class SardesTableData(object):
@@ -145,7 +202,8 @@ class SardesTableData(object):
         self._data_edits_stack.append(ValueChanged(
             self.data.index[row], self.data.columns[col],
             edited_value, previous_value,
-            row, col
+            row, col,
+            parent=self
             ))
 
         # We update the list of original data. We store this in an independent
@@ -184,7 +242,8 @@ class SardesTableData(object):
         """
         row = len(self.data)
         self._new_rows.append(row)
-        self._data_edits_stack.append(RowAdded(new_index, values, row))
+        self._data_edits_stack.append(
+            RowAdded(new_index, values, row, parent=self))
 
         # We need to add each column of the new row to the orginal data so
         # that they are highlighted correctly in the table.
@@ -209,7 +268,7 @@ class SardesTableData(object):
         self._deleted_rows.extend(rows)
         self._deleted_rows = [*{*self._deleted_rows}]
         self._data_edits_stack.append(RowDeleted(
-            self.data.index[rows], rows))
+            self.data.index[rows], rows, parent=self))
 
     # ---- Edits
     def edits(self):
@@ -261,39 +320,9 @@ class SardesTableData(object):
         """
         Undo the last data edit that was added to the stack.
         """
-        if len(self._data_edits_stack) == 0:
-            return
-
-        last_edit = self._data_edits_stack.pop(-1)
-        if last_edit.type() == SardesTableModelBase.ValueChanged:
-            # Update the original data.
-            row = last_edit.row
-            col = last_edit.col
-            if (row, col) in self._original_data.index:
-                original_value = self._original_data.loc[(row, col), 'value']
-                self._original_data.drop((row, col), inplace=True)
-            else:
-                original_value = self.data.iloc[row, col]
-
-            values_equal = nan_values_equal(
-                last_edit.previous_value, original_value)
-            if not values_equal or row in self._new_rows:
-                self._original_data.loc[(row, col), 'value'] = original_value
-
-            # We apply the previous value to the data.
-            self.data.iloc[row, col] = last_edit.previous_value
-        elif last_edit.type() == SardesTableModelBase.RowAdded:
-            # Update the original data.
-            row = last_edit.row
-            for col in range(len(self.data.columns)):
-                self._original_data.drop((row, col), inplace=True)
-
-            # We remove the row from the data.
-            self.data.drop(last_edit.index, inplace=True)
-        elif last_edit.type() == SardesTableModelBase.RowDeleted:
-            self._deleted_rows.remove(last_edit.row)
-        else:
-            raise ValueError
+        if len(self._data_edits_stack):
+            last_edit = self._data_edits_stack.pop(-1)
+            last_edit.undo()
 
 
 # =============================================================================
