@@ -952,6 +952,8 @@ class SardesTableView(QTableView):
             self.undo_edits_action.setEnabled(is_data_edit_count)
         if 'cancel_edits' not in self._disabled_actions:
             self.cancel_edits_action.setEnabled(has_unsaved_data_edits)
+        if 'delete_row' not in self._disabled_actions:
+            self.delete_row_action.setEnabled(self.is_selection_deletable())
 
     # ---- Options
     @property
@@ -1039,8 +1041,10 @@ class SardesTableView(QTableView):
         that are currently selected in the table.
         """
         selected_indexes = self.selectionModel().selectedIndexes()
+        current_index = [self.selectionModel().currentIndex()]
         return sorted(list(set(
-            [index.row() for index in selected_indexes])))
+            [index.row() for index in selected_indexes + current_index if
+             index.isValid()])))
 
     def select_column(self):
         """
