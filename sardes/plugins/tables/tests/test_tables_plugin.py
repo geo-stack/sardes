@@ -275,21 +275,19 @@ def test_delete_timeseries_data(mainwindow, qtbot, mocker):
     assert table.tableview.get_selected_rows() == [1, 3, 4, 5]
     assert table.tableview.delete_row_action.isEnabled()
 
-#     # Delete the selected rows.
-#     tableview.delete_row_action.trigger()
-#     assert not tableview.delete_row_action.isEnabled()
-#     assert model.data_edit_count() == 2
-#     assert model.has_unsaved_data_edits() is True
+    # Delete the selected rows.
+    table.tableview.delete_row_action.trigger()
+    assert not table.tableview.delete_row_action.isEnabled()
+    assert model.data_edit_count() == 2
+    assert model.has_unsaved_data_edits() is True
 
-#     # Commit the row deletions to the database.
-#     mocker.patch.object(QMessageBox, 'exec_', return_value=QMessageBox.Save)
-#     with qtbot.waitSignal(model.sig_data_updated, timeout=3000):
-#         tableview.save_edits_action.trigger()
-#     assert model.data_edit_count() == 0
-#     assert model.has_unsaved_data_edits() is False
-#     assert tableview.row_count() == 1826 - 4
-
-#     assert False
+    # Commit the row deletions to the database.
+    mocker.patch.object(QMessageBox, 'exec_', return_value=QMessageBox.Save)
+    with qtbot.waitSignal(model.sig_data_updated, timeout=3000):
+        table.tableview.save_edits_action.trigger()
+    assert model.data_edit_count() == 0
+    assert model.has_unsaved_data_edits() is False
+    assert table.tableview.row_count() == 1826 - 4
 
     # Close the timeseries table.
     table.close()
