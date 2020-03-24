@@ -256,24 +256,24 @@ def test_delete_timeseries_data(mainwindow, qtbot, mocker):
     model = table.model()
     assert table.tableview.row_count() == 1826
 
-    # # Select one row in the table.
-    # selection_model.setCurrentIndex(
-    #     model.index(3, 0), selection_model.SelectCurrent)
-    # assert table.tableview.get_selected_rows() == [3]
-    # assert table.tableview.delete_row_action.isEnabled()
+    # Select one row in the table.
+    selection_model.setCurrentIndex(
+        model.index(3, 0), selection_model.SelectCurrent)
+    assert table.tableview.get_selected_rows() == [3]
+    assert table.tableview.delete_row_action.isEnabled()
 
-    # # Delete the selected row.
-    # table.tableview.delete_row_action.trigger()
-    # assert not table.tableview.delete_row_action.isEnabled()
-    # assert table.tableview.model().data_edit_count() == 1
-    # assert model.has_unsaved_data_edits() is True
+    # Delete the selected row.
+    table.tableview.delete_row_action.trigger()
+    assert not table.tableview.delete_row_action.isEnabled()
+    assert table.tableview.model().data_edit_count() == 1
+    assert model.has_unsaved_data_edits() is True
 
-#     # Select more rows in the table.
-#     selection_model.select(model.index(1, 1), selection_model.Select)
-#     selection_model.select(model.index(4, 1), selection_model.Select)
-#     selection_model.select(model.index(5, 1), selection_model.Select)
-#     assert tableview.get_selected_rows() == [1, 3, 4, 5]
-#     assert tableview.delete_row_action.isEnabled()
+    # Select more rows in the table.
+    selection_model.select(model.index(1, 1), selection_model.Select)
+    selection_model.select(model.index(4, 1), selection_model.Select)
+    selection_model.select(model.index(5, 1), selection_model.Select)
+    assert table.tableview.get_selected_rows() == [1, 3, 4, 5]
+    assert table.tableview.delete_row_action.isEnabled()
 
 #     # Delete the selected rows.
 #     tableview.delete_row_action.trigger()
