@@ -233,7 +233,8 @@ class Tables(SardesPlugin):
             disabled_actions=['new_row'])
         table_widget.setAttribute(Qt.WA_DeleteOnClose)
         table_widget.destroyed.connect(
-            lambda: self._handle_data_table_destroyed(obs_well_uuid))
+            lambda _, obs_well_uuid=obs_well_uuid:
+                self._handle_data_table_destroyed(obs_well_uuid))
 
         # Set the title of the window.
         table_widget.setWindowTitle(_("Observation well {} ({})").format(
