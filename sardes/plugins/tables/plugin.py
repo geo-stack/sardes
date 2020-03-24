@@ -101,7 +101,8 @@ class DataTableModel(SardesTableModel):
                 data_types = [dtype for dtype in DataType if
                               dtype in delrows_data.keys()]
                 for data_type in data_types:
-                    delrows_data_type = delrows_data[['obs_id', 'datetime']]
+                    delrows_data_type = (
+                        delrows_data.copy()[['obs_id', 'datetime']])
                     delrows_data_type['data_type'] = data_type
                     tseries_dels = tseries_dels.append(
                         delrows_data_type, ignore_index=True)
