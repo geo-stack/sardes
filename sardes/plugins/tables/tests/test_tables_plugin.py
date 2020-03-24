@@ -287,6 +287,7 @@ def test_delete_timeseries_data(mainwindow, qtbot, mocker):
     # Close the timeseries table.
     tables_plugin._tseries_data_tables[0].close()
     qtbot.waitUntil(lambda: len(tables_plugin._tseries_data_tables) == 0)
+    qtbot.wait(300)
 
 
 if __name__ == "__main__":
