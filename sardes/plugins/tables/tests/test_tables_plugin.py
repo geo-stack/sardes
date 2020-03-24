@@ -295,5 +295,4 @@ def test_delete_timeseries_data(mainwindow, qtbot, mocker):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw',
-                 '-k', 'test_delete_timeseries_data'])
+    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
