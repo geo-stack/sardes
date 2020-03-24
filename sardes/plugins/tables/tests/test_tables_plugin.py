@@ -232,41 +232,41 @@ def test_view_timeseries_data(mainwindow, qtbot):
     qtbot.waitUntil(lambda: len(tables_plugin._tseries_data_tables) == 0)
 
 
-# def test_delete_timeseries_data(mainwindow, qtbot, mocker):
-#     """
-#     Test that deleting data in a timeseries data table is working as
-#     expected.
+def test_delete_timeseries_data(mainwindow, qtbot, mocker):
+    """
+    Test that deleting data in a timeseries data table is working as
+    expected.
 
-#     Regression test for cgq-qgc/sardes#210
-#     """
-#     tables_plugin = mainwindow.plugin
-#     table_obs_well = mainwindow.plugin._tables['table_observation_wells']
-#     tables_plugin.tabwidget.setCurrentWidget(table_obs_well)
-#     qtbot.waitUntil(lambda: table_obs_well.tableview.row_count() > 0)
+    Regression test for cgq-qgc/sardes#210
+    """
+    tables_plugin = mainwindow.plugin
+    table_obs_well = mainwindow.plugin._tables['table_observation_wells']
+    tables_plugin.tabwidget.setCurrentWidget(table_obs_well)
+    qtbot.waitUntil(lambda: table_obs_well.tableview.row_count() > 0)
 
-#     # View data table for the firs observation well.
-#     qtbot.mouseClick(table_obs_well.show_data_btn, Qt.LeftButton)
-#     qtbot.waitUntil(lambda: len(tables_plugin._tseries_data_tables) == 1)
-#     qtbot.waitForWindowShown(tables_plugin._tseries_data_tables[0])
+    current_obs_well = table_obs_well.get_current_obs_well_data().name
+    assert current_obs_well == 0
 
-#     tableview = tables_plugin._tseries_data_tables[0].tableview
-#     selection_model = tableview.selectionModel()
-#     model = tableview.model()
-#     assert tableview.row_count() == 1826
-    
-#     return
+    # View data table for the firs observation well.
+    qtbot.mouseClick(table_obs_well.show_data_btn, Qt.LeftButton)
+    qtbot.wait(1000)
 
-#     # Select one row in the table.
-#     selection_model.setCurrentIndex(
-#         model.index(3, 0), selection_model.SelectCurrent)
-#     assert tableview.get_selected_rows() == [3]
-#     assert tableview.delete_row_action.isEnabled()
+    table = tables_plugin._tseries_data_tables[current_obs_well]
+    selection_model = table.tableview.selectionModel()
+    model = table.model()
+    assert table.tableview.row_count() == 1826
 
-#     # Delete the selected row.
-#     tableview.delete_row_action.trigger()
-#     assert not tableview.delete_row_action.isEnabled()
-#     assert tableview.model().data_edit_count() == 1
-#     assert model.has_unsaved_data_edits() is True
+    # # Select one row in the table.
+    # selection_model.setCurrentIndex(
+    #     model.index(3, 0), selection_model.SelectCurrent)
+    # assert table.tableview.get_selected_rows() == [3]
+    # assert table.tableview.delete_row_action.isEnabled()
+
+    # # Delete the selected row.
+    # table.tableview.delete_row_action.trigger()
+    # assert not table.tableview.delete_row_action.isEnabled()
+    # assert table.tableview.model().data_edit_count() == 1
+    # assert model.has_unsaved_data_edits() is True
 
 #     # Select more rows in the table.
 #     selection_model.select(model.index(1, 1), selection_model.Select)
@@ -291,11 +291,9 @@ def test_view_timeseries_data(mainwindow, qtbot):
 
 #     assert False
 
-#     # Close the timeseries table.
-#     with qtbot.waitSignal(tables_plugin._tseries_data_tables[0].destroyed):
-#         tables_plugin._tseries_data_tables[0].close()
-#     qtbot.waitUntil(lambda: len(tables_plugin._tseries_data_tables) == 0)
-#     qtbot.wait(300)
+    # Close the timeseries table.
+    table.close()
+    qtbot.waitUntil(lambda: len(tables_plugin._tseries_data_tables) == 0)
 
 
 if __name__ == "__main__":
