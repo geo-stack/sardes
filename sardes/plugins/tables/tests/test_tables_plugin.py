@@ -284,6 +284,10 @@ def test_delete_timeseries_data(mainwindow, qtbot, mocker):
     assert model.has_unsaved_data_edits() is False
     assert tableview.row_count() == 1826 - 4
 
+    # Close the timeseries table.
+    tables_plugin._tseries_data_tables[0].close()
+    qtbot.waitUntil(lambda: len(tables_plugin._tseries_data_tables) == 0)
+
 
 if __name__ == "__main__":
     pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
