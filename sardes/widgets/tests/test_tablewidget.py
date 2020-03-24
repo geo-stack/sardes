@@ -502,17 +502,17 @@ def test_delete_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     Test that deleting a row in the table is working as expected.
     """
     tableview = tablewidget.tableview
+    selection_model = tablewidget.tableview.selectionModel()
+    model = tableview.model()
     assert len(TABLE_DATAF) == 3
     assert tableview.row_count() == 3
 
-    # Select a table cell whose content is not editable and try to edit it.
-    model_index = tableview.model().index(1, 2)
-    qtbot.mouseClick(
-        tableview.viewport(),
-        Qt.LeftButton,
-        pos=tableview.visualRect(model_index).center())
+    # Delete the selected rows.
+    selection_model.setCurrentIndex(
+        model.index(0, 0), selection_model.SelectCurrent)
+    selection_model.select(model.index(2, 1), selection_model.Select)
+    assert tableview.get_selected_rows() == [0, 2]
 
-    # Delete the row where the table cursor is.
     qtbot.keyPress(tableview, Qt.Key_Minus, modifier=Qt.ControlModifier)
     assert len(TABLE_DATAF) == 3
     assert tableview.row_count() == 3
@@ -527,6 +527,11 @@ def test_delete_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     assert tableview.model().has_unsaved_data_edits() is False
 
     # Delete back the row where the table cursor is.
+    selection_model.setCurrentIndex(
+        model.index(0, 0), selection_model.SelectCurrent)
+    selection_model.select(model.index(2, 1), selection_model.Select)
+    assert tableview.get_selected_rows() == [0, 2]
+
     qtbot.keyPress(tableview, Qt.Key_Minus, modifier=Qt.ControlModifier)
     assert len(TABLE_DATAF) == 3
     assert tableview.row_count() == 3
@@ -537,8 +542,8 @@ def test_delete_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     mocker.patch.object(QMessageBox, 'exec_', return_value=QMessageBox.Save)
     qtbot.keyPress(tablewidget, Qt.Key_Enter, modifier=Qt.ControlModifier)
     qtbot.wait(100)
-    assert len(TABLE_DATAF) == 2
-    assert tableview.row_count() == 2
+    assert len(TABLE_DATAF) == 1
+    assert tableview.row_count() == 1
 
 
 def test_cancel_edits(tablewidget, qtbot):
@@ -1136,4 +1141,5 @@ def test_copy_to_clipboard(tablewidget, qtbot, mocker):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
+    pytest.main(['-x', osp.basename(__file__), '-v', '-rw',
+                 '-k', 'test_delete_row'])

@@ -90,23 +90,23 @@ class DataTableModel(SardesTableModel):
             [], columns=['obs_id', 'datetime', 'data_type'])
 
         for edit in self._datat.edits():
-            row_data = self._datat.get(edit.row)
-            date_time = row_data['datetime']
-            obs_id = row_data['obs_id']
             if edit.type() == SardesTableModel.ValueChanged:
+                row_data = self._datat.get(edit.row)
+                date_time = row_data['datetime']
+                obs_id = row_data['obs_id']
                 indexes = (date_time, obs_id, edit.column)
                 tseries_edits.loc[indexes, 'value'] = edit.edited_value
             elif edit.type() == SardesTableModel.RowDeleted:
-                row_data = self._datat.get(edit.row)
-                data_types = [dt for dt in DataType if dt in row_data.keys()]
+                delrows_data = self._datat.get(edit.row)
+                data_types = [dtype for dtype in DataType if
+                              dtype in delrows_data.keys()]
                 for data_type in data_types:
-                    indexes = (date_time, obs_id, data_type)
-                    if indexes in tseries_edits.index:
-                        tseries_edits.drop(indexes, inplace=True)
+                    delrows_data_type = (
+                        delrows_data.copy()[['obs_id', 'datetime']])
+                    delrows_data_type['data_type'] = data_type
                     tseries_dels = tseries_dels.append(
-                        {'obs_id': obs_id,
-                         'datetime': date_time,
-                         'data_type': data_type}, ignore_index=True)
+                        delrows_data_type, ignore_index=True)
+        tseries_dels.drop_duplicates()
         self.db_connection_manager.delete_timeseries_data(
             tseries_dels,
             postpone_exec=True)
@@ -234,7 +234,8 @@ class Tables(SardesPlugin):
             disabled_actions=['new_row'])
         table_widget.setAttribute(Qt.WA_DeleteOnClose)
         table_widget.destroyed.connect(
-            lambda: self._handle_data_table_destroyed(obs_well_uuid))
+            lambda _, obs_well_uuid=obs_well_uuid:
+                self._handle_data_table_destroyed(obs_well_uuid))
 
         # Set the title of the window.
         table_widget.setWindowTitle(_("Observation well {} ({})").format(
