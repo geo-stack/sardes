@@ -922,9 +922,10 @@ class SardesTableView(QTableView):
                     self._ensure_visible(model_index)
 
                 # Save the cursor position for that edit.
-                current_index = self.selectionModel().currentIndex()
+                current_source_index = self.model().mapToSource(
+                    self.selectionModel().currentIndex())
                 self._data_edit_cursor_pos[data_edit.id] = (
-                    current_index.row(), current_index.column())
+                    current_source_index.row(), current_source_index.column())
         else:
             self._data_edit_cursor_pos = {}
         self._update_actions_state()

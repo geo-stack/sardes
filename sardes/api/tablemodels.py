@@ -1001,6 +1001,16 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         except IndexError:
             return None
 
+    def mapRowToSource(self, proxy_row):
+        """
+        Return the row in the source model that corresponds to the
+        row from the proxy model.
+        """
+        try:
+            return self._map_row_to_source[proxy_row]
+        except IndexError:
+            return None
+
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """
         Override Qt method so that the labels of the vertical header always
