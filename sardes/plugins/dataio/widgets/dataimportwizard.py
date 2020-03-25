@@ -20,7 +20,7 @@ from qtpy.QtCore import Qt, Slot, Signal
 from qtpy.QtWidgets import (QApplication, QFileDialog,
                             QDialog, QLabel, QPushButton,
                             QDialogButtonBox, QVBoxLayout, QAbstractButton,
-                            QFormLayout, QGroupBox)
+                            QFormLayout, QGroupBox, QMessageBox)
 
 # ---- Local imports
 from sardes.config.gui import get_iconsize
@@ -29,6 +29,7 @@ from sardes.api.tablemodels import SardesTableModel
 from sardes.api.timeseries import DataType
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import NotEditableDelegate, SardesTableWidget
+from sardes.widgets.buttons import PathBoxWidget
 
 
 NOT_FOUND_MSG = _('Not found in database')
@@ -79,7 +80,7 @@ class DataImportWizard(QDialog):
 
         file_groupbox = QGroupBox(_('File Info'))
         file_layout = QFormLayout(file_groupbox)
-        file_layout.addRow(_('File') + ' :', self.filename_label)
+        file_layout.addRow(_('Input File') + ' :', self.filename_label)
         file_layout.addRow(_('Project ID') + ' :', self.projectid_label)
         file_layout.addRow(_('Location') + ' :', self.site_name_label)
         file_layout.addRow(_('Serial Number') + ' :', self.serial_number_label)
@@ -148,12 +149,18 @@ class DataImportWizard(QDialog):
         self.button_box.layout().insertSpacing(1, 100)
         self.button_box.clicked.connect(self._handle_button_click_event)
 
+        self.pathbox_widget = PathBoxWidget(
+            label=_('Move the input file to this location after loading data'))
+
         # Setup the layout.
         layout = QVBoxLayout(self)
         layout.addWidget(file_groupbox)
         layout.addWidget(sonde_groupbox)
         layout.addWidget(self.table_widget)
         layout.setStretch(layout.count() - 1, 1)
+        layout.addSpacing(15)
+        layout.addWidget(self.pathbox_widget)
+        layout.addSpacing(5)
         layout.addWidget(self.button_box)
 
         self._working_dir = get_home_dir()
@@ -407,6 +414,18 @@ class DataImportWizard(QDialog):
         elif button == self.next_btn:
             self._load_next_queued_data_file()
         elif button == self.load_btn:
+            if (self.pathbox_widget.is_enabled() and
+                    not self.pathbox_widget.is_valid()):
+                QMessageBox.warning(
+                    self,
+                    _("Invalid Directory"),
+                    _("The directory specified for the option "
+                      "<i>{}</i> is invalid.<br><br>"
+                      "Please select a valid directory or uncheck "
+                      "that option.").format(self.pathbox_widget.label)
+                    )
+                return
+
             self.table_model.sig_data_about_to_be_saved.emit()
             self.db_connection_manager.add_timeseries_data(
                 self.tseries_dataf, self._obs_well_uuid, self._install_id,
