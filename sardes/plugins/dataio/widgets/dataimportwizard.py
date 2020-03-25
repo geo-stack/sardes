@@ -14,6 +14,7 @@ import os.path as osp
 
 # ---- Third party imports
 from appconfigs.base import get_home_dir
+from atomicwrites import replace_atomic
 import hydsensread as hsr
 import pandas as pd
 from qtpy.QtCore import Qt, Slot, Signal
@@ -425,7 +426,6 @@ class DataImportWizard(QDialog):
                       "that option.").format(self.pathbox_widget.label)
                     )
                 return
-
             self.table_model.sig_data_about_to_be_saved.emit()
             self.db_connection_manager.add_timeseries_data(
                 self.tseries_dataf, self._obs_well_uuid, self._install_id,
@@ -440,8 +440,67 @@ class DataImportWizard(QDialog):
         """
         self._data_is_loaded = True
         self._data_is_loading = False
+
+        # Move input file if option is enabled and directory is valid.
+        self._move_input_data_file()
+
         self.table_model.sig_data_saved.emit()
         self._update_button_state()
+
+    def _move_input_data_file(self):
+        """"
+        Move input data file to the destination specified for the move input
+        data file after loading option.
+        """
+        if (not self.pathbox_widget.is_enabled() or
+                not self.pathbox_widget.is_valid()):
+            return
+
+        source_fpath = self._file_reader._file
+        destination_fpath = osp.join(
+            self.pathbox_widget.path(), osp.basename(source_fpath))
+        if osp.samefile(osp.dirname(source_fpath),
+                        osp.dirname(destination_fpath)):
+            return
+
+        # Ask user what to do if destination filepath aslready exist.
+        if osp.exists(destination_fpath):
+            msg_box = QMessageBox(
+                QMessageBox.Question,
+                _("Replace or Skip Moving Input File"),
+                _("There is already a file named "
+                  "<i>{}</i> in <i>{}</i>.<br><br>"
+                  "Would you like to replace the file in "
+                  "the destination or skip moving this input file?"
+                  .format(osp.basename(destination_fpath),
+                          osp.dirname(destination_fpath))
+                  ),
+                parent=self,
+                buttons=QMessageBox.Yes | QMessageBox.No
+                )
+            msg_box.button(QMessageBox.Yes).setText('Replace')
+            msg_box.button(QMessageBox.No).setText('Skip')
+            answer = msg_box.exec_()
+            if answer == QMessageBox.No:
+                return
+
+        # Move input file to destionation.
+        try:
+            replace_atomic(source_fpath, destination_fpath)
+        except OSError:
+            answer = QMessageBox.critical(
+                self,
+                _("Moving Input File Error"),
+                _("Error moving <i>{}</i> to <i>{}</i>.<br><br>"
+                  "Would you like to choose another location?")
+                .format(osp.basename(self._file_reader._file),
+                        self.pathbox_widget.path()),
+                QMessageBox.Yes,
+                QMessageBox.Cancel
+                )
+            if answer == QMessageBox.Yes:
+                self.pathbox_widget.browse_path()
+                self._move_input_data_file()
 
     def _view_timeseries_data(self):
         """
