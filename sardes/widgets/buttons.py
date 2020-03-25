@@ -62,11 +62,6 @@ class PathBoxWidget(QFrame):
         layout.addWidget(self.path_lineedit, 1, 1)
         layout.addWidget(self.browse_btn, 1, 2)
 
-    @property
-    def path(self):
-        """Return whether this pathbox widget is enabled or not."""
-        return self.path_lineedit.text()
-
     def is_enabled(self):
         """Return whether this pathbox widget is enabled or not."""
         return self.checkbox.isChecked()
@@ -77,25 +72,31 @@ class PathBoxWidget(QFrame):
 
     def is_valid(self):
         """Return whether path is valid."""
-        return osp.exists(self.path)
+        return osp.exists(self.path())
+
+    def path(self):
+        """Return the path of this pathbox widget."""
+        return self.path_lineedit.text()
+
+    def set_path(self, path):
+        """Set the path to the specified value."""
+        return self.path_lineedit.setText(path)
 
     def browse_path(self):
         """Open a dialog to select a new directory."""
         dirname = QFileDialog.getExistingDirectory(
-            self, _('Modify Location'), self.workdir,
+            self, _('Modify Location'), self.workdir(),
             options=QFileDialog.ShowDirsOnly)
         if dirname:
-            self.workdir = dirname
+            self.set_workdir(osp.dirname(dirname))
             self.path_lineedit.setText(dirname)
             self.path_lineedit.setToolTip(dirname)
 
-    @property
     def workdir(self):
         """Return the directory that is used by the QFileDialog."""
         return self._workdir if osp.exists(self._workdir) else get_home_dir()
 
-    @workdir.setter
-    def workdir(self, new_workdir):
+    def set_workdir(self, new_workdir):
         """Set the default directory that will be used by the QFileDialog."""
         if new_workdir is not None and osp.exists(new_workdir):
             self._workdir = new_workdir
