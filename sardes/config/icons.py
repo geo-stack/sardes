@@ -33,15 +33,15 @@ FA_ICONS = {
     'bug': [
         ('mdi.bug',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
-    'checklist': [
-        ('mdi.format-list-checkbox',),
-        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'cancel_changes': [
         ('mdi.close-circle-outline',),
         {'color': RED, 'scale_factor': 1.2}],
     'cancel_selection_changes': [
         ('mdi.close-box-outline',),
         {'color': RED, 'scale_factor': 1.2}],
+    'checklist': [
+        ('mdi.format-list-checkbox',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'clear_selected_data': [
         ('mdi.close-box-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
@@ -62,48 +62,57 @@ FA_ICONS = {
     'copy_clipboard': [
         ('mdi.content-copy',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
-    'erase_data': [
-        ('mdi.eraser',),
-        {'color': ICON_COLOR, 'scale_factor': 1.1}],
-    'eye_on': [
-        ('mdi.eye',),
-        {'color': ICON_COLOR, 'scale_factor': 1.1}],
-    'eye_off': [
-        ('mdi.eye-off',),
-        {'color': ICON_COLOR, 'scale_factor': 1.1}],
-    'delete_data': [
-        ('mdi.delete-forever',),
-        {'color': ICON_COLOR, 'scale_factor': 1.4}],
     'database_connect': [
         ('mdi.power-plug',),
         {'color': GREEN, 'scale_factor': 1.3}],
     'database_disconnect': [
         ('mdi.power-plug-off',),
         {'color': RED, 'scale_factor': 1.3}],
+    'delete_data': [
+        ('mdi.delete-forever',),
+        {'color': ICON_COLOR, 'scale_factor': 1.4}],
+    'drag_select': [
+        ('mdi.shape-square-plus',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'edit_database_item': [
         ('mdi.square-edit-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'erase_data': [
+        ('mdi.eraser',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
+    'exit': [
+        ('fa.power-off',),
+        {'color': ICON_COLOR}],
+    'eye_off': [
+        ('mdi.eye-off',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
+    'eye_on': [
+        ('mdi.eye',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'failed': [
         ('mdi.alert-circle-outline',),
         {'color': RED, 'scale_factor': 1.3}],
-    'file_image': [
-        ('mdi.file-image',),
-        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'file_download': [
         ('mdi.file-download',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'file_export': [
+        ('mdi.file-export',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
+    'file_image': [
+        ('mdi.file-image',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'file_import': [
         ('mdi.file-import',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
-    'file_export': [
-        ('mdi.file-export',),
-        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'home': [
         ('mdi.home',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
-    'exit': [
-        ('fa.power-off',),
-        {'color': ICON_COLOR}],
+    'hspan_select': [
+        ('mdi.arrow-expand-horizontal',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'information': [
+        ('mdi.information-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'languages': [
         ('mdi.web',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
@@ -126,9 +135,6 @@ FA_ICONS = {
     'menu_down': [
         ('mdi.menu-down',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
-    'information': [
-        ('mdi.information-outline',),
-        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'pan': [
         ('mdi.pan',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
@@ -141,16 +147,6 @@ FA_ICONS = {
     'remove_row': [
         ('mdi.table-row-remove',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
-    'drag_select': [
-        ('mdi.shape-square-plus',),
-        {'color': ICON_COLOR, 'scale_factor': 1.2}],
-    'hspan_select': [
-        ('mdi.arrow-expand-horizontal',),
-        {'color': ICON_COLOR, 'scale_factor': 1.2}],
-    'vspan_select': [
-        ('mdi.arrow-expand-vertical',),
-        {'color': ICON_COLOR, 'scale_factor': 1.1,
-         'hflip': True}],
     'save': [
         ('fa.save',),
         {'color': ICON_COLOR}],
@@ -166,18 +162,15 @@ FA_ICONS = {
     'select_column': [
         ('mdi.arrow-expand-vertical',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
-    'table_columns': [
-        ('fa.columns',),
-        {'color': ICON_COLOR, 'scale_factor': 0.9, 'offset': (0, -0.1)}],
-    'show_plot': [
-        ('mdi.chart-line',),
-        {'color': ICON_COLOR, 'scale_factor': 1.2}],
-    'show_data_table': [
-        ('mdi.table',),
-        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'show_barplot': [
         ('mdi.chart-bar-stacked',),
         {'color': ICON_COLOR}],
+    'show_data_table': [
+        ('mdi.table',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'show_plot': [
+        ('mdi.chart-line',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'sort_ascending': [
         ('mdi.sort-ascending',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
@@ -190,15 +183,22 @@ FA_ICONS = {
     'table': [
         ('mdi.table',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
-    'tooloptions': [
-        ('fa.bars',),
-        {'color': ICON_COLOR}],
+    'table_columns': [
+        ('fa.columns',),
+        {'color': ICON_COLOR, 'scale_factor': 0.9, 'offset': (0, -0.1)}],
     'toolbars': [
         ('mdi.wrench',),
+        {'color': ICON_COLOR}],
+    'tooloptions': [
+        ('fa.bars',),
         {'color': ICON_COLOR}],
     'undo': [
         ('mdi.undo-variant',),
         {'color': ICON_COLOR}],
+    'vspan_select': [
+        ('mdi.arrow-expand-vertical',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1,
+         'hflip': True}],
     'warning': [
         ('mdi.alert-circle-outline',),
         {'color': RED, 'scale_factor': 1.3}],
