@@ -30,6 +30,9 @@ FA_ICONS = {
     'add_row': [
         ('mdi.table-row-plus-after',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
+    'browse_directory': [
+        ('mdi.folder-open',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'bug': [
         ('mdi.bug',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
