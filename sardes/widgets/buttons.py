@@ -9,18 +9,96 @@
 
 # ---- Standard library imports
 import sys
+import os.path as osp
 
 # ---- Third party imports
+from appconfigs.base import get_home_dir
 from qtpy.QtCore import Qt, QEvent, QObject, QSize, Signal, Slot
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QAbstractButton, QAction, QActionGroup, QApplication, QMenu, QSizePolicy,
-    QStyle, QStyleOptionToolButton, QStylePainter, QToolBar, QToolButton)
+    QStyle, QStyleOptionToolButton, QStylePainter, QToolBar, QToolButton,
+    QCheckBox, QFrame, QLineEdit, QLabel, QFileDialog, QPushButton,
+    QGridLayout)
 
 # ---- Local imports
 from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
+from sardes.config.locale import _
 from sardes.utils.qthelpers import create_action
+
+
+class PathBoxWidget(QFrame):
+    """A widget to display and select a directory or file location."""
+
+    def __init__(self, parent=None, label='', path='',
+                 is_enabled=True, workdir=''):
+        super().__init__(parent)
+        self._workdir = workdir
+        self.label = label
+
+        self.browse_btn = QPushButton(_("Browse..."))
+        self.browse_btn.setDefault(False)
+        self.browse_btn.setAutoDefault(False)
+        self.browse_btn.clicked.connect(self.browse_path)
+
+        self.path_lineedit = QLineEdit()
+        self.path_lineedit.setText(path)
+        self.path_lineedit.setToolTip(path)
+        self.path_lineedit.setFixedHeight(
+            self.browse_btn.sizeHint().height() - 2)
+
+        self.checkbox = QCheckBox()
+        self.checkbox.stateChanged.connect(
+            lambda _: self.browse_btn.setEnabled(self.is_enabled()))
+        self.checkbox.stateChanged.connect(
+            lambda _: self.path_lineedit.setEnabled(self.is_enabled()))
+        self.checkbox.setChecked(is_enabled)
+
+        layout = QGridLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.checkbox, 0, 0)
+        layout.addWidget(QLabel(label + ' :' if label else label), 0, 1, 1, 2)
+        layout.addWidget(self.path_lineedit, 1, 1)
+        layout.addWidget(self.browse_btn, 1, 2)
+
+    @property
+    def path(self):
+        """Return whether this pathbox widget is enabled or not."""
+        return self.path_lineedit.text()
+
+    def is_enabled(self):
+        """Return whether this pathbox widget is enabled or not."""
+        return self.checkbox.isChecked()
+
+    def is_empty(self):
+        """Return whether the path is empty."""
+        return self.path_lineedit.text() == ''
+
+    def is_valid(self):
+        """Return whether path is valid."""
+        return osp.exists(self.path)
+
+    def browse_path(self):
+        """Open a dialog to select a new directory."""
+        dirname = QFileDialog.getExistingDirectory(
+            self, _('Modify Location'), self.workdir,
+            options=QFileDialog.ShowDirsOnly)
+        if dirname:
+            self.workdir = dirname
+            self.path_lineedit.setText(dirname)
+            self.path_lineedit.setToolTip(dirname)
+
+    @property
+    def workdir(self):
+        """Return the directory that is used by the QFileDialog."""
+        return self._workdir if osp.exists(self._workdir) else get_home_dir()
+
+    @workdir.setter
+    def workdir(self, new_workdir):
+        """Set the default directory that will be used by the QFileDialog."""
+        if new_workdir is not None and osp.exists(new_workdir):
+            self._workdir = new_workdir
 
 
 class DropdownToolButton(QToolButton):
