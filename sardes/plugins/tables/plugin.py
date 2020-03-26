@@ -38,7 +38,7 @@ class DataTableModel(SardesTableModel):
         self._obs_well_uuid = obs_well_uuid
 
     def create_delegate_for_column(self, view, column):
-        if column in DataType:
+        if isinstance(column, DataType):
             return NumEditDelegate(
                 view, decimals=6, bottom=-99999, top=99999)
         else:
