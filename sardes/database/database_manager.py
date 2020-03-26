@@ -143,29 +143,30 @@ class DatabaseConnectionWorker(QObject):
         self.db_accessor.set(name, *args, **kargs)
 
     # ---- Timeseries
-    def _get_timeseries_for_obs_well(self, obs_well_id, monitored_properties):
+    def _get_timeseries_for_obs_well(self, obs_well_id, data_types):
         """
         Get the time data acquired in the observation well for each
-        monitored property listed in monitored_properties.
+        given data type.
         """
-        prop_names = [prop.name for prop in monitored_properties]
+        # Print some info message in the console.
+        prop_names = [prop.name for prop in data_types]
         prop_enum = (' and '.join(prop_names) if
-                     len(prop_names) == 2 else
-                     ', '.join(prop_names))
+                     len(prop_names) == 2 else ', '.join(prop_names))
         print("Fetching {} data for observation well {}.".format(
             prop_enum, obs_well_id))
 
-        mprop_list = []
+        # Fetch the data.
+        tseries_groups = []
         try:
-            for monitored_property in monitored_properties:
-                mprop_list.append(
+            for data_type in data_types:
+                tseries_groups.append(
                     self.db_accessor.get_timeseries_for_obs_well(
-                        obs_well_id, monitored_property)
+                        obs_well_id, data_type)
                     )
         except AttributeError as error:
             print(type(error).__name__, end=': ')
             print(error)
-        return mprop_list,
+        return tseries_groups,
 
     def _save_timeseries_data_edits(self, tseries_edits):
         """
@@ -464,17 +465,26 @@ class DatabaseConnectionManager(QObject):
         self._db_connection_worker._disconnect_from_db()
 
     # ---- Timeseries
-    def get_timeseries_for_obs_well(self, obs_well_id, monitored_properties,
-                                    callback):
+    def get_timeseries_for_obs_well(
+            self, obs_well_id, data_types, callback=None, postpone_exec=False,
+            main_thread=False):
         """
         Get the time data acquired in the observation well for each
-        monitored property in the list.
+        given data type.
         """
-        if isinstance(monitored_properties, str):
-            monitored_properties = [monitored_properties, ]
-        self._add_task('get_timeseries_for_obs_well', callback,
-                       obs_well_id, monitored_properties)
-        self.run_tasks()
+        if main_thread is False:
+            self._add_task('get_timeseries_for_obs_well', callback,
+                           obs_well_id, data_types)
+            if not postpone_exec:
+                self.run_tasks()
+        else:
+            tseries_groups = (
+                self._db_connection_worker._get_timeseries_for_obs_well(
+                    obs_well_id, data_types)
+                )[0]
+            if callback is not None:
+                callback(tseries_groups)
+            return tseries_groups
 
     def save_timeseries_data_edits(self, tseries_edits, callback=None,
                                    postpone_exec=False):

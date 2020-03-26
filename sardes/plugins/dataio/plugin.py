@@ -62,6 +62,15 @@ class DataIO(SardesPlugin):
         self.set_option(
             'wiz_workdir', self.data_import_wizard.working_directory)
 
+        # Save the path and working directory for the wizard move input
+        # files after loading option.
+        self.set_option(
+            'move_inputfile_path',
+            self.data_import_wizard.pathbox_widget.path())
+        self.set_option(
+            'move_inputfile_workdir',
+            self.data_import_wizard.pathbox_widget.workdir())
+
     def register_plugin(self):
         """
         Extend base class method to do some connection with the database
@@ -77,6 +86,13 @@ class DataIO(SardesPlugin):
         # Set the import wizard working dir.
         self.data_import_wizard.working_directory = self.get_option(
             'wiz_workdir', None)
+
+        # Set the path and working directory for the wizard move input
+        # files after loading option.
+        self.data_import_wizard.pathbox_widget.set_path(self.get_option(
+            'move_inputfile_path', ''))
+        self.data_import_wizard.pathbox_widget.set_workdir(self.get_option(
+            'move_inputfile_workdir', ''))
 
     # ---- Private API
     def _show_data_import_wizard(self):

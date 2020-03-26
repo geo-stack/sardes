@@ -14,13 +14,14 @@ import os.path as osp
 
 # ---- Third party imports
 from appconfigs.base import get_home_dir
+from atomicwrites import replace_atomic
 import hydsensread as hsr
 import pandas as pd
 from qtpy.QtCore import Qt, Slot, Signal
 from qtpy.QtWidgets import (QApplication, QFileDialog,
                             QDialog, QLabel, QPushButton,
                             QDialogButtonBox, QVBoxLayout, QAbstractButton,
-                            QFormLayout, QGroupBox)
+                            QFormLayout, QGroupBox, QMessageBox)
 
 # ---- Local imports
 from sardes.config.gui import get_iconsize
@@ -29,6 +30,7 @@ from sardes.api.tablemodels import SardesTableModel
 from sardes.api.timeseries import DataType
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import NotEditableDelegate, SardesTableWidget
+from sardes.widgets.buttons import PathBoxWidget
 
 
 NOT_FOUND_MSG = _('Not found in database')
@@ -79,7 +81,7 @@ class DataImportWizard(QDialog):
 
         file_groupbox = QGroupBox(_('File Info'))
         file_layout = QFormLayout(file_groupbox)
-        file_layout.addRow(_('File') + ' :', self.filename_label)
+        file_layout.addRow(_('Input File') + ' :', self.filename_label)
         file_layout.addRow(_('Project ID') + ' :', self.projectid_label)
         file_layout.addRow(_('Location') + ' :', self.site_name_label)
         file_layout.addRow(_('Serial Number') + ' :', self.serial_number_label)
@@ -148,16 +150,32 @@ class DataImportWizard(QDialog):
         self.button_box.layout().insertSpacing(1, 100)
         self.button_box.clicked.connect(self._handle_button_click_event)
 
+        self.pathbox_widget = PathBoxWidget(
+            label=_('Move the input file to this location after loading data'))
+
         # Setup the layout.
         layout = QVBoxLayout(self)
         layout.addWidget(file_groupbox)
         layout.addWidget(sonde_groupbox)
         layout.addWidget(self.table_widget)
         layout.setStretch(layout.count() - 1, 1)
+        layout.addSpacing(15)
+        layout.addWidget(self.pathbox_widget)
+        layout.addSpacing(5)
         layout.addWidget(self.button_box)
 
         self._working_dir = get_home_dir()
         self._queued_filenames = []
+
+    @property
+    def filename(self):
+        """
+        Return the name of the input data file currently opened in the wizard.
+        """
+        if self.filename_label.text().strip() == '':
+            return None
+        else:
+            return osp.abspath(self.filename_label.text())
 
     @property
     def working_directory(self):
@@ -407,6 +425,17 @@ class DataImportWizard(QDialog):
         elif button == self.next_btn:
             self._load_next_queued_data_file()
         elif button == self.load_btn:
+            if (self.pathbox_widget.is_enabled() and
+                    not self.pathbox_widget.is_valid()):
+                QMessageBox.warning(
+                    self,
+                    _("Invalid Directory"),
+                    _("The directory specified for the option "
+                      "<i>{}</i> is invalid.<br><br>"
+                      "Please select a valid directory or uncheck "
+                      "that option.").format(self.pathbox_widget.label)
+                    )
+                return
             self.table_model.sig_data_about_to_be_saved.emit()
             self.db_connection_manager.add_timeseries_data(
                 self.tseries_dataf, self._obs_well_uuid, self._install_id,
@@ -421,8 +450,67 @@ class DataImportWizard(QDialog):
         """
         self._data_is_loaded = True
         self._data_is_loading = False
+
+        # Move input file if option is enabled and directory is valid.
+        self._move_input_data_file()
+
         self.table_model.sig_data_saved.emit()
         self._update_button_state()
+
+    def _move_input_data_file(self):
+        """"
+        Move input data file to the destination specified for the move input
+        data file after loading option.
+        """
+        if (not self.pathbox_widget.is_enabled() or
+                not self.pathbox_widget.is_valid()):
+            return
+
+        source_fpath = self._file_reader._file
+        destination_fpath = osp.join(
+            self.pathbox_widget.path(), osp.basename(source_fpath))
+        if osp.samefile(osp.dirname(source_fpath),
+                        osp.dirname(destination_fpath)):
+            return
+
+        # Ask user what to do if destination filepath aslready exist.
+        if osp.exists(destination_fpath):
+            msg_box = QMessageBox(
+                QMessageBox.Question,
+                _("Replace or Skip Moving Input File"),
+                _("There is already a file named "
+                  "<i>{}</i> in <i>{}</i>.<br><br>"
+                  "Would you like to replace the file in "
+                  "the destination or skip moving this input file?"
+                  .format(osp.basename(destination_fpath),
+                          osp.dirname(destination_fpath))
+                  ),
+                parent=self,
+                buttons=QMessageBox.Yes | QMessageBox.No
+                )
+            msg_box.button(QMessageBox.Yes).setText('Replace')
+            msg_box.button(QMessageBox.No).setText('Skip')
+            answer = msg_box.exec_()
+            if answer == QMessageBox.No:
+                return
+
+        # Move input file to destionation.
+        try:
+            replace_atomic(source_fpath, destination_fpath)
+        except OSError:
+            answer = QMessageBox.critical(
+                self,
+                _("Moving Input File Error"),
+                _("Error moving <i>{}</i> to <i>{}</i>.<br><br>"
+                  "Would you like to choose another location?")
+                .format(osp.basename(self._file_reader._file),
+                        self.pathbox_widget.path()),
+                QMessageBox.Yes,
+                QMessageBox.Cancel
+                )
+            if answer == QMessageBox.Yes:
+                self.pathbox_widget.browse_path()
+                self._move_input_data_file()
 
     def _view_timeseries_data(self):
         """
