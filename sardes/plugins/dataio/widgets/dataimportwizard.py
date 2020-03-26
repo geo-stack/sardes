@@ -409,6 +409,7 @@ class DataImportWizard(QDialog):
 
     def _update_button_state(self):
         """Update the state of the dialog's buttons."""
+        self.pathbox_widget.setEnabled(not self._data_is_loading)
         self.button_box.setEnabled(not self._data_is_loading)
         self.next_btn.setEnabled(len(self._queued_filenames) > 0)
         self.load_btn.setEnabled(self._obs_well_uuid is not None and
@@ -436,12 +437,18 @@ class DataImportWizard(QDialog):
                       "that option.").format(self.pathbox_widget.label)
                     )
                 return
-            self.table_model.sig_data_about_to_be_saved.emit()
-            self.db_connection_manager.add_timeseries_data(
-                self.tseries_dataf, self._obs_well_uuid, self._install_id,
-                callback=self._handle_tseries_data_saved)
-            self._data_is_loading = True
-            self._update_button_state()
+            self._save_imported_data_to_database()
+
+    def _save_imported_data_to_database(self):
+        """
+        Save the data currently imported in this wizard in the database.
+        """
+        self.table_model.sig_data_about_to_be_saved.emit()
+        self.db_connection_manager.add_timeseries_data(
+            self.tseries_dataf, self._obs_well_uuid, self._install_id,
+            callback=self._handle_tseries_data_saved)
+        self._data_is_loading = True
+        self._update_button_state()
 
     @Slot()
     def _handle_tseries_data_saved(self):

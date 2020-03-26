@@ -70,6 +70,9 @@ class DataIO(SardesPlugin):
         self.set_option(
             'move_inputfile_workdir',
             self.data_import_wizard.pathbox_widget.workdir())
+        self.set_option(
+            'move_inputfile_enabled',
+            self.data_import_wizard.pathbox_widget.is_enabled())
 
     def register_plugin(self):
         """
@@ -87,12 +90,13 @@ class DataIO(SardesPlugin):
         self.data_import_wizard.working_directory = self.get_option(
             'wiz_workdir', None)
 
-        # Set the path and working directory for the wizard move input
-        # files after loading option.
+        # Set the options for the feature to move files after loading data.
         self.data_import_wizard.pathbox_widget.set_path(self.get_option(
             'move_inputfile_path', ''))
         self.data_import_wizard.pathbox_widget.set_workdir(self.get_option(
             'move_inputfile_workdir', ''))
+        self.data_import_wizard.pathbox_widget.checkbox.setChecked(
+            self.get_option('move_inputfile_enabled', False))
 
     # ---- Private API
     def _show_data_import_wizard(self):
