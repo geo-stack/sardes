@@ -15,6 +15,7 @@ Tests for the DataImportWizard.
 import os
 import os.path as osp
 from shutil import copyfile
+import sys
 
 # ---- Third party imports
 import pytest
@@ -22,7 +23,6 @@ from qtpy.QtCore import Qt
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
-from sardes.database.accessor_demo import DatabaseAccessorDemo
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.plugins.dataio.widgets.dataimportwizard import (
     QFileDialog, DataImportWizard, NOT_FOUND_MSG_COLORED, QMessageBox,
@@ -33,10 +33,22 @@ from sardes.plugins.dataio.widgets.dataimportwizard import (
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def dbconnmanager(qtbot):
+def dbaccessor(qtbot):
+    # We need to do this to make sure the demo database is reinitialized
+    # after each test.
+    try:
+        del sys.modules['sardes.database.accessor_demo']
+    except KeyError:
+        pass
+    from sardes.database.accessor_demo import DatabaseAccessorDemo
+    return DatabaseAccessorDemo()
+
+
+@pytest.fixture
+def dbconnmanager(qtbot, dbaccessor):
     dbconnmanager = DatabaseConnectionManager()
     with qtbot.waitSignal(dbconnmanager.sig_database_connected, timeout=3000):
-        dbconnmanager.connect_to_db(DatabaseAccessorDemo())
+        dbconnmanager.connect_to_db(dbaccessor)
     assert dbconnmanager.is_connected()
     qtbot.wait(100)
     return dbconnmanager
@@ -167,6 +179,47 @@ def test_load_data(qtbot, mocker, testfiles, data_import_wizard):
     assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 100)
     assert osp.exists(filename)
     qtbot.wait(300)
+
+
+@pytest.mark.parametrize('msgbox_answer', [QMessageBox.No, QMessageBox.Yes])
+def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
+                                  msgbox_answer):
+    """
+    Test loading data when the option to move the input file to another
+    destination is checked.
+    """
+    filename = data_import_wizard.filename
+    testdir = osp.dirname(filename)
+    print(filename)
+
+    # Set a valid destination for the option to move input files after
+    # loading data.
+    loaded_dirname = osp.join(testdir, 'loaded_datafiles')
+    os.makedirs(loaded_dirname)
+    data_import_wizard.pathbox_widget.checkbox.setChecked(True)
+    data_import_wizard.pathbox_widget.set_path(loaded_dirname)
+    assert data_import_wizard.pathbox_widget.is_enabled()
+    assert data_import_wizard.pathbox_widget.is_valid()
+
+    # We create an new empty file in the destination folder with the same name
+    # as that of the input file to trigger a "Replace or Skip Moving
+    # Input File" message.
+    with open(osp.join(loaded_dirname, osp.basename(filename)), "w") as f:
+        f.write("")
+    assert osp.exists(osp.join(loaded_dirname, osp.basename(filename)))
+
+    # We load the data.
+    patcher_msgbox_exec_ = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=msgbox_answer)
+    with qtbot.waitSignal(data_import_wizard.table_model.sig_data_saved):
+        qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+
+    assert osp.exists(filename) is (msgbox_answer == QMessageBox.No)
+    assert patcher_msgbox_exec_.call_count == 1
+    assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 100)
+    assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 100)
+    qtbot.wait(300)
+
 
 if __name__ == "__main__":
     pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])

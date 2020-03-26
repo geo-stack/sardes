@@ -168,6 +168,16 @@ class DataImportWizard(QDialog):
         self._queued_filenames = []
 
     @property
+    def filename(self):
+        """
+        Return the name of the input data file currently opened in the wizard.
+        """
+        if self.filename_label.text().strip() == '':
+            return None
+        else:
+            return osp.abspath(self.filename_label.text())
+
+    @property
     def working_directory(self):
         """
         Return the directory that by the QFileDialog to get open file names.
