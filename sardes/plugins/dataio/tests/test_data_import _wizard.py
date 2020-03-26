@@ -25,8 +25,7 @@ from qtpy.QtCore import Qt
 from sardes.api.timeseries import DataType
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.plugins.dataio.widgets.dataimportwizard import (
-    QFileDialog, DataImportWizard, NOT_FOUND_MSG_COLORED, QMessageBox,
-    replace_atomic)
+    QFileDialog, DataImportWizard, NOT_FOUND_MSG_COLORED, QMessageBox)
 
 
 # =============================================================================
@@ -190,7 +189,6 @@ def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
     """
     filename = data_import_wizard.filename
     testdir = osp.dirname(filename)
-    print(filename)
 
     # Set a valid destination for the option to move input files after
     # loading data.
@@ -218,6 +216,50 @@ def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
     assert patcher_msgbox_exec_.call_count == 1
     assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 100)
     assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 100)
+    qtbot.wait(300)
+
+
+def test_move_input_file_oserror(qtbot, mocker, data_import_wizard):
+    """
+    Test loading data when the operation to move the input data file fails.
+    """
+    filename = data_import_wizard.filename
+    testdir = osp.dirname(filename)
+
+    # Set a valid destination for the option to move input files after
+    # loading data.
+    loaded_dirname = osp.join(testdir, 'loaded_datafiles')
+    os.makedirs(loaded_dirname)
+    loaded_dirname_2 = osp.join(testdir, 'loaded_datafiles_2')
+    os.makedirs(loaded_dirname_2)
+    data_import_wizard.pathbox_widget.checkbox.setChecked(True)
+    data_import_wizard.pathbox_widget.set_path(loaded_dirname)
+
+    # We open a file with the same name as that of the input file in the
+    # destination folder so that the operation to move the input file fails
+    opened_fname = open(osp.join(loaded_dirname, osp.basename(filename)), "w")
+
+    # We must patch the dialogs to simulate user inputs.
+    patcher_msgbox_exec_ = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Yes)
+    patcher_msgbox_warning = mocker.patch.object(
+        QMessageBox, 'critical', return_value=QMessageBox.Yes)
+    patcher_qfiledialog = mocker.patch.object(
+        QFileDialog, 'getExistingDirectory', return_value=(loaded_dirname_2))
+
+    # We now load the data.
+    with qtbot.waitSignal(data_import_wizard.table_model.sig_data_saved):
+        qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+
+    assert patcher_msgbox_exec_.call_count == 1
+    assert patcher_msgbox_warning.call_count == 1
+    assert patcher_qfiledialog.call_count == 1
+    assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 100)
+    assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 100)
+
+    assert data_import_wizard.pathbox_widget.path() == loaded_dirname_2
+    assert osp.exists(osp.join(loaded_dirname_2, osp.basename(filename)))
+    assert not osp.exists(filename)
     qtbot.wait(300)
 
 
