@@ -899,6 +899,7 @@ def copydata_from_rsesq_postgresql(accessor_rsesq, accessor_sardeslite):
 if __name__ == "__main__":
     from sardes.database.accessor_rsesq import DatabaseAccessorRSESQ
     import sardes.database.accessor_rsesq as acc_rsesq
+    from time import perf_counter
 
     dbconfig = {
         'database': 'rsesq',
@@ -910,18 +911,26 @@ if __name__ == "__main__":
     accessor_rsesq = DatabaseAccessorRSESQ(**dbconfig)
     accessor_rsesq.connect()
 
-    accessor_sardeslite = DatabaseAccessorSardesLite('D:/rsesq_v2.db')
+    accessor_sardeslite = DatabaseAccessorSardesLite('D:/rsesq_v3.db')
     accessor_sardeslite.connect()
 
     # init_database(accessor_sardeslite)
     # copydata_from_rsesq_postgresql(accessor_rsesq, accessor_sardeslite)
 
-    # # Test accessor public methods.
-    # obs_wells = accessor_sardeslite.get_observation_wells_data()
-    # sonde_data = accessor_sardeslite.get_sondes_data()
-    # sonde_models_lib = accessor_sardeslite.get_sonde_models_lib()
-    # sonde_installations = accessor_sardeslite.get_sonde_installations()
-    # repere_data = accessor_sardeslite.get_repere_data()
+    obs_wells = accessor_sardeslite.get_observation_wells_data()
+    sonde_data = accessor_sardeslite.get_sondes_data()
+    sonde_models_lib = accessor_sardeslite.get_sonde_models_lib()
+    sonde_installations = accessor_sardeslite.get_sonde_installations()
+    repere_data = accessor_sardeslite.get_repere_data()
+
+    t1 = perf_counter()
+    print('Fetching timeseries... ', end='')
+    sampling_feature_uuid = (
+        accessor_sardeslite._get_sampling_feature_uuid_from_name('02340006'))
+    wlevel_group = accessor_sardeslite.get_timeseries_for_obs_well(
+        sampling_feature_uuid, 0)
+    wlevel_tseries = wlevel_group.get_merged_timeseries()
+    print('done in {:0.3f} seconds'.format(perf_counter() - t1))
 
     accessor_rsesq.close_connection()
     accessor_sardeslite.close_connection()
