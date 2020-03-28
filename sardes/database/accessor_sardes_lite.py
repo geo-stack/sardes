@@ -1189,6 +1189,17 @@ def copydata_from_rsesq_postgresql(accessor_rsesq, accessor_sardeslite):
             ))
     accessor_sardeslite._session.commit()
     print('done')
+    print('Copying ObservedProperty...', end=' ')
+    for item in accessor_rsesq._session.query(acc_rsesq.ObservationProperty):
+        accessor_sardeslite._session.add(ObservedProperty(
+            obs_property_id=item.obs_property_id,
+            obs_property_name=item.obs_property_name,
+            obs_property_desc=item.obs_property_desc,
+            obs_property_units=item.obs_property_units
+            ))
+    accessor_sardeslite._session.commit()
+    print('done')
+    return
     print('Copying Observation...', end=' ')
     for item in accessor_rsesq._session.query(acc_rsesq.Observation):
         try:
@@ -1206,16 +1217,6 @@ def copydata_from_rsesq_postgresql(accessor_rsesq, accessor_sardeslite):
             sampling_feature_uuid=item.sampling_feature_uuid,
             process_id=process_id,
             obs_type_id=item.param_id
-            ))
-    accessor_sardeslite._session.commit()
-    print('done')
-    print('Copying ObservedProperty...', end=' ')
-    for item in accessor_rsesq._session.query(acc_rsesq.ObservationProperty):
-        accessor_sardeslite._session.add(ObservedProperty(
-            obs_property_id=item.obs_property_id,
-            obs_property_name=item.obs_property_name,
-            obs_property_desc=item.obs_property_desc,
-            obs_property_units=item.obs_property_units
             ))
     accessor_sardeslite._session.commit()
     print('done')
