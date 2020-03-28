@@ -209,7 +209,7 @@ class TimeSeriesData(Base):
         ForeignKey('timeseries_channel.channel_id',
                    ondelete='CASCADE', onupdate='CASCADE'),
         index=True, primary_key=True)
-    Index('idx_datetime_value', 'datetime', 'value', unique=True)
+    Index('idx_datetime_value', 'datetime', 'channel_id', unique=True)
 
 
 class GenericNumericalData(Base):
