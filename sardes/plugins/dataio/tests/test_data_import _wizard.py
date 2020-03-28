@@ -216,7 +216,7 @@ def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
     assert patcher_msgbox_exec_.call_count == 1
     assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 100)
     assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 100)
-    qtbot.wait(300)
+    qtbot.wait(1000)
 
 
 def test_move_input_file_oserror(qtbot, mocker, data_import_wizard):
