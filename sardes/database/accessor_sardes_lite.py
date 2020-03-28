@@ -187,8 +187,7 @@ class TimeSeriesChannel(Base):
     observation_id = Column(
         Integer,
         ForeignKey('observation.observation_id',
-                   ondelete='CASCADE',
-                   onupdate='CASCADE'))
+                   ondelete='CASCADE', onupdate='CASCADE'))
     obs_property_id = Column(
         Integer, ForeignKey('observed_property.obs_property_id'))
 
@@ -209,7 +208,7 @@ class TimeSeriesData(Base):
         ForeignKey('timeseries_channel.channel_id',
                    ondelete='CASCADE', onupdate='CASCADE'),
         index=True, primary_key=True)
-    Index('idx_datetime_value', 'datetime', 'channel_id', unique=True)
+    Index('idx_datetime_channel_id', 'datetime', 'channel_id', unique=True)
 
 
 class GenericNumericalData(Base):
@@ -241,7 +240,7 @@ class SondeFeature(Base):
     """
     __tablename__ = 'sonde_feature'
 
-    sonde_id = Column(UUIDType(binary=False), primary_key=True)
+    sonde_uuid = Column(UUIDType(binary=False), primary_key=True)
     sonde_serial_no = Column(String)
     date_reception = Column(DateTime)
     date_withdrawal = Column(DateTime)
@@ -324,6 +323,21 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Session = sessionmaker(bind=self._engine)
         self._session = Session()
 
+    def execute(self, sql_request, **kwargs):
+        """Execute a SQL statement construct and return a ResultProxy."""
+        try:
+            return self._connection.execute(sql_request, **kwargs)
+        except ProgrammingError as p:
+            print(p)
+            raise p
+
+    def _create_index(self, name):
+        """
+        Return a new index that can be used subsequently to add a new item
+        related to name in the database.
+        """
+        return uuid.uuid4()
+
     # ---- Database connection
     def _create_engine(self):
         """Create a SQL Alchemy engine."""
@@ -391,6 +405,37 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .one()
             .sampling_feature_uuid)
 
+    def add_observation_wells_data(self, sampling_feature_uuid,
+                                   attribute_values):
+        """
+        Add a new observation well to the database using the provided ID
+        and attribute values.
+        """
+        # We need first to create a new location in table rsesq.localisation.
+        new_loc_id = (
+            self._session.query(func.max(Location.loc_id))
+            .one())[0] + 1
+        location = Location(loc_id=new_loc_id)
+        self._session.add(location)
+
+        # We then add the new observation well.
+        new_obs_well = SamplingFeature(
+            sampling_feature_uuid=sampling_feature_uuid,
+            sampling_feature_type_id=1,
+            loc_id=new_loc_id
+            )
+        self._session.add(new_obs_well)
+
+        # We then set the attribute values provided in argument for this
+        # new observation well if any.
+        for attribute_name, attribute_value in attribute_values.items():
+            self.set_observation_wells_data(
+                sampling_feature_uuid,
+                attribute_name,
+                attribute_value,
+                auto_commit=False)
+        self._session.commit()
+
     def get_observation_wells_data(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -435,6 +480,40 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return obs_wells
 
+    def set_observation_wells_data(self, sampling_feature_uuid, attribute_name,
+                                   attribute_value, auto_commit=True):
+        """
+        Save in the database the new attribute value for the observation well
+        corresponding to the specified sampling feature UUID.
+        """
+        obs_well = self._get_sampling_feature(sampling_feature_uuid)
+        note_attrs = [
+            'common_name', 'aquifer_type', 'confinement', 'aquifer_code',
+            'in_recharge_zone', 'is_influenced', 'is_station_active',
+            'obs_well_notes']
+
+        if attribute_name in ['obs_well_id']:
+            setattr(obs_well, attribute_name, attribute_value)
+        elif attribute_name in note_attrs:
+            index = note_attrs.index(attribute_name)
+            labels = [
+                'nom_commu', 'aquifere', 'nappe', 'code_aqui', 'zone_rechar',
+                'influences', 'station_active', 'remarque'][index]
+            try:
+                notes = [
+                    n.strip() for n in obs_well.obs_well_notes.split(r'||')]
+            except AttributeError:
+                notes = [''] * len(labels)
+            notes[index] = '{}: {}'.format(labels[index], attribute_value)
+            obs_well.sampling_feature_notes = r' || '.join(notes)
+        elif attribute_name in ['latitude', 'longitude', 'municipality']:
+            location = self._get_location(obs_well.loc_id)
+            setattr(location, attribute_name, attribute_value)
+
+        # Commit changes to the BD.
+        if auto_commit:
+            self._session.commit()
+
     # ---- Repere
     def _get_repere_data(self, repere_id):
         """
@@ -445,6 +524,17 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._session.query(Repere)
             .filter(Repere.repere_uuid == repere_id)
             .one())
+
+    def add_repere_data(self, repere_uuid, attribute_values):
+        """
+        Add a new observation well repere data to the database using the
+        provided repere ID and attribute values.
+        """
+        # We create a new repere item.
+        repere = Repere(repere_uuid=repere_uuid,
+                        **attribute_values)
+        self._session.add(repere)
+        self._session.commit()
 
     def get_repere_data(self):
         """
@@ -460,14 +550,25 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return repere
 
+    def set_repere_data(self, repere_uuid, attribute_name, attribute_value,
+                        auto_commit=True):
+        """
+        Save in the database the new attribute value for the observation well
+        repere data corresponding to the specified ID.
+        """
+        repere = self._get_repere_data(repere_uuid)
+        setattr(repere, attribute_name, attribute_value)
+        if auto_commit:
+            self._session.commit()
+
     # ---- Sondes Inventory
-    def _get_sonde(self, sonde_id):
+    def _get_sonde(self, sonde_uuid):
         """
         Return the sqlalchemy Sondes object corresponding to the
         specified sonde ID.
         """
         return (self._session.query(SondeFeature)
-                .filter(SondeFeature.sonde_id == sonde_id)
+                .filter(SondeFeature.sonde_uuid == sonde_uuid)
                 .one())
 
     def get_sonde_models_lib(self):
@@ -489,6 +590,17 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return sonde_models
 
+    def add_sondes_data(self, sonde_uuid, attribute_values):
+        """
+        Add a new sonde to the database using the provided sonde UUID
+        and attribute values.
+        """
+        self._session.add(SondeFeature(
+            sonde_uuid=sonde_uuid,
+            **attribute_values
+            ))
+        self._session.commit()
+
     def get_sondes_data(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -503,11 +615,64 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         sondes['date_withdrawal'] = sondes['date_withdrawal'].dt.date
 
         # Set the index to the sonde ids.
-        sondes.set_index('sonde_id', inplace=True, drop=True)
+        sondes.set_index('sonde_uuid', inplace=True, drop=True)
 
         return sondes
 
+    def set_sondes_data(self, sonde_uuid, attribute_name, attribute_value,
+                        auto_commit=True):
+        """
+        Save in the database the new attribute value for the sonde
+        corresponding to the specified sonde UUID.
+        """
+        sonde = self._get_sonde(sonde_uuid)
+        setattr(sonde, attribute_name, attribute_value)
+        if auto_commit:
+            self._session.commit()
+
     # ---- Sonde installations
+    def _get_sonde_installation(self, install_uuid):
+        """
+        Return the sqlalchemy SondeInstallation object corresponding to the
+        specified sonde ID.
+        """
+        return (
+            self._session.query(SondePompeInstallation)
+            .filter(SondePompeInstallation.install_uuid == install_uuid)
+            .one())
+
+    def add_sonde_installations(self, new_install_uuid, attribute_values):
+        """
+        Add a new sonde installation to the database using the provided ID
+        and attribute values.
+        """
+        # We first create a new sonde installation.
+        sonde_installation = SondePompeInstallation(
+            install_uuid=new_install_uuid)
+        self._session.add(sonde_installation)
+
+        # We then set the attribute values for this new installation.
+        for name, value in attribute_values.items():
+            self.set_sonde_installations(
+                new_install_uuid, name, value, auto_commit=False)
+
+        # We then need to add a new item to tables 'process_installion'
+        # and 'process'.
+        new_process_id = (
+            self._session.query(func.max(Process.process_id))
+            )[0] + 1
+        self._session.add(Process(
+            process_id=new_process_id,
+            process_type='sonde installation'
+            ))
+        self._session.add(ProcessInstallation(
+            install_uuid=new_install_uuid,
+            process_id=new_process_id
+            ))
+
+        # Commit changes to database.
+        self._session.commit()
+
     def get_sonde_installations(self):
         """
         Return a :class:`pandas.DataFrame` containing information related to
@@ -544,6 +709,25 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return data
 
+    def set_sonde_installations(self, install_uuid, attribute_name,
+                                attribute_value, auto_commit=True):
+        """
+        Save in the database the new attribute value for the sonde
+        installation corresponding to the specified id.
+        """
+        sonde_installation = self._get_sonde_installation(install_uuid)
+
+        if attribute_name in ['sonde_uuid']:
+            attribute_name = 'sonde_serial_no'
+            if attribute_value is not None:
+                attribute_value = (
+                    self._get_sonde(attribute_value).sonde_serial_no)
+        setattr(sonde_installation, attribute_name, attribute_value)
+
+        # Commit changes to the BD.
+        if auto_commit:
+            self._session.commit()
+
     # ---- Manual mesurements
     def _get_generic_num_value(self, gen_num_value_uuid):
         """
@@ -555,6 +739,36 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .filter(GenericNumericalData.gen_num_value_uuid ==
                     gen_num_value_uuid)
             .one())
+
+    def add_manual_measurements(self, gen_num_value_uuid, attribute_values):
+        """
+        Add a new manual measurements to the database using the provided ID
+        and attribute values.
+        """
+        # We need first to create a new observation in table rsesq.observation.
+        new_observation_id = (
+            self._session.query(func.max(Observation.observation_id))
+            )[0] + 1
+        observation = Observation(
+            observation_id=new_observation_id,
+            obs_datetime=attribute_values.get('datetime', None),
+            sampling_feature_uuid=attribute_values.get(
+                'sampling_feature_uuid', None),
+            obs_type_id=4
+            )
+        self._session.add(observation)
+        self._session.commit()
+
+        # We now create a new measurement in table 'generic_numerial_data'.
+        measurement = GenericNumericalData(
+            gen_num_value_uuid=gen_num_value_uuid,
+            gen_num_value=attribute_values.get('value', None),
+            observation_id=observation.observation_id,
+            obs_property_id=2,
+            gen_num_value_notes=attribute_values.get('notes', None)
+            )
+        self._session.add(measurement)
+        self._session.commit()
 
     def get_manual_measurements(self):
         """
@@ -579,7 +793,73 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return measurements
 
+    def set_manual_measurements(self, gen_num_value_uuid, attribute_name,
+                                attribute_value):
+        """
+        Save in the database the new attribute value for the manual
+        measurement corresponding to the specified id.
+        """
+        measurement = self._get_generic_num_value(gen_num_value_uuid)
+        if attribute_name == 'sampling_feature_uuid':
+            observation = self._get_observation(measurement.observation_id)
+            observation.sampling_feature_uuid = attribute_value
+        elif attribute_name == 'datetime':
+            observation = self._get_observation(measurement.observation_uuid)
+            observation.obs_datetime = attribute_value
+        elif attribute_name == 'value':
+            measurement.gen_num_value = float(attribute_value)
+        elif attribute_name == 'notes':
+            measurement.gen_num_value_notes = attribute_value
+        self._session.commit()
+
     # ---- Timeseries
+    def _get_timeseriesdata(self, date_time, obs_id, data_type):
+        """
+        Return the sqlalchemy TimeSeriesData object corresponding to a
+        timeseries data of the database.
+        """
+        obs_property_id = self._get_observed_property_id(data_type)
+        return (
+            self._session.query(TimeSeriesData)
+            .filter(TimeSeriesChannel.obs_property_id == obs_property_id)
+            .filter(TimeSeriesChannel.observation_id == obs_id)
+            .filter(TimeSeriesData.channel_id == TimeSeriesChannel.channel_id)
+            .filter(TimeSeriesData.datetime == date_time)
+            .one()
+            )
+
+    def _query_timeseriesdata(self, date_times, obs_id, data_type):
+        """
+        Return the sqlalchemy TimeSeriesData object corresponding to a
+        timeseries data of the database.
+        """
+        obs_property_id = self._get_observed_property_id(data_type)
+        return (
+            self._session.query(TimeSeriesData)
+            .filter(TimeSeriesChannel.obs_property_id == obs_property_id)
+            .filter(TimeSeriesChannel.observation_id == obs_id)
+            .filter(TimeSeriesData.channel_id == TimeSeriesChannel.channel_id)
+            .filter(TimeSeriesData.datetime.in_(date_times))
+            )
+
+    def _clean_observation_if_null(self, obs_id):
+        """
+        Delete observation with to the given ID from the database
+        if it is empty.
+        """
+        observation = self._get_observation(obs_id)
+        if observation.obs_type_id == 7:
+            count = (self._session.query(TimeSeriesData)
+                     .filter(TimeSeriesChannel.observation_id == obs_id)
+                     .filter(TimeSeriesData.channel_id ==
+                             TimeSeriesChannel.channel_id)
+                     .count())
+            if count == 0:
+                print("Deleting observation {} because it is now empty."
+                      .format(observation.observation_id))
+                self._session.delete(observation)
+                self._session.commit()
+
     def get_timeseries_for_obs_well(self, sampling_feature_uuid, data_type):
         """
         Return a :class:`TimeSeriesGroup` object containing the
@@ -659,7 +939,101 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return tseries_group
 
+    def add_timeseries_data(self, tseries_data, sampling_feature_uuid,
+                            install_uuid=None):
+        """
+        Save in the database a set of timeseries data associated with the
+        given well and sonde installation id.
+        """
+        # We create a new observation.
+        if install_uuid is not None:
+            process_id = (
+                self._session.query(ProcessInstallation)
+                .filter(ProcessInstallation.install_uuid == install_uuid)
+                .one().process_id
+                )
+        new_observation_id = (
+            self._session.query(
+                func.max(Observation.observation_id))
+            .one())[0] + 1
+        new_observation = Observation(
+            observation_id=new_observation_id,
+            sampling_feature_uuid=sampling_feature_uuid,
+            process_id=process_id,
+            obs_datetime=min(tseries_data['datetime']),
+            obs_type_id=7
+            )
+        self._session.add(new_observation)
+        self._session.commit()
+
+        date_times = list(pd.to_datetime(tseries_data['datetime']))
+        for data_type in DataType:
+            if data_type not in tseries_data.columns:
+                continue
+            new_tseries_channel_id = (
+                self._session.query(
+                    func.max(TimeSeriesChannel.channel_id))
+                .one())[0] + 1
+            new_tseries_channel = TimeSeriesChannel(
+                channel_id=new_tseries_channel_id,
+                obs_property_id=self._get_observed_property_id(data_type),
+                observation_id=new_observation_id
+                )
+            self._session.add(new_tseries_channel)
+            self._session.commit()
+
+            values = tseries_data[data_type].values
+            for date_time, value in zip(date_times, values):
+                self._session.add(TimeSeriesData(
+                    datetime=date_time,
+                    value=value,
+                    channel_id=new_tseries_channel_id))
+            self._session.commit()
+        self._session.commit()
+
+    def save_timeseries_data_edits(self, tseries_edits):
+        """
+        Save in the database a set of edits that were made to to timeseries
+        data that were already saved in the database.
+        """
+        for (date_time, obs_id, data_type) in tseries_edits.index:
+            # Fetch the timeseries data orm object.
+            tseries_data = self._get_timeseriesdata(
+                date_time, obs_id, data_type)
+            # Save the edited value.
+            tseries_data.value = tseries_edits.loc[
+                (date_time, obs_id, data_type), 'value']
+        self._session.commit()
+
+    def delete_timeseries_data(self, tseries_dels):
+        """
+        Delete data in the database for the observation IDs, datetime and
+        data type specified in tseries_dels.
+        """
+        for obs_id in tseries_dels['obs_id'].unique():
+            sub_data = tseries_dels[tseries_dels['obs_id'] == obs_id]
+            for data_type in sub_data['data_type'].unique():
+                date_times = (
+                    sub_data[sub_data['data_type'] == data_type]
+                    ['datetime'].dt.to_pydatetime())
+                query = self._query_timeseriesdata(
+                    date_times, obs_id, data_type)
+                for tseries_data in query:
+                    self._session.delete(tseries_data)
+                self._session.commit()
+
+            # We delete the observation from database if it is empty.
+            self._clean_observation_if_null(obs_id)
+
     # ---- Observations
+    def _get_observation(self, observation_id):
+        """
+        Return the observation related to the given id.
+        """
+        return (self._session.query(Observation)
+                .filter(Observation.observation_id == observation_id)
+                .one())
+
     def _get_observed_property_id(self, data_type):
         """
         Return the observed property ID for the given data type.
@@ -743,7 +1117,7 @@ def copydata_from_rsesq_postgresql(accessor_rsesq, accessor_sardeslite):
     print('Copying SondeFeature...', end=' ')
     for item in accessor_rsesq._session.query(acc_rsesq.Sondes):
         accessor_sardeslite._session.add(SondeFeature(
-            sonde_id=item.sonde_uuid,
+            sonde_uuid=item.sonde_uuid,
             sonde_serial_no=item.sonde_serial_no,
             date_reception=item.date_reception,
             date_withdrawal=item.date_withdrawal,
