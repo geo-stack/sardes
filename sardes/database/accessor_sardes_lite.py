@@ -882,7 +882,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .filter(Observation.observation_id ==
                     TimeSeriesChannel.observation_id)
             .filter(TimeSeriesData.channel_id == TimeSeriesChannel.channel_id)
-            .order_by(TimeSeriesData.datetime, TimeSeriesData.channel_id)
             )
         data = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
