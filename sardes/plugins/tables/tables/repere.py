@@ -45,7 +45,7 @@ class RepereTableModel(SardesTableModel):
         elif column in ['is_alt_geodesic']:
             return BoolEditDelegate(view, is_required=True)
         elif column in ['repere_note']:
-            return TextEditDelegate(view, is_required=True)
+            return TextEditDelegate(view, is_required=False)
         else:
             return NotEditableDelegate(view)
 
