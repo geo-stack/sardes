@@ -12,7 +12,7 @@ Object-Relational Mapping and Accessor implementation of the Sardes database.
 """
 
 # ---- Standard imports
-import datetime
+import sqlite3
 import uuid
 
 # ---- Third party imports
@@ -33,6 +33,25 @@ from sardes.api.database_accessor import DatabaseAccessor
 from sardes.database.utils import format_sqlobject_repr
 from sardes.api.timeseries import (DataType, TimeSeriesGroup, TimeSeries,
                                    merge_timeseries_groups)
+
+
+# =============================================================================
+# ---- Register Adapters
+# =============================================================================
+# This is required to avoid a "can't adapt type 'numpy.int64' or
+# 'numpy.float64'" psycopg2.ProgrammingError.
+# See https://stackoverflow.com/questions/50626058
+
+def addapt_numpy_float64(numpy_float64):
+    return float(numpy_float64)
+
+
+def addapt_numpy_int64(numpy_int64):
+    return int(numpy_int64)
+
+
+sqlite3.register_adapter(np.int64, addapt_numpy_int64)
+sqlite3.register_adapter(np.float64, addapt_numpy_float64)
 
 
 # =============================================================================
