@@ -1274,16 +1274,6 @@ if __name__ == "__main__":
     import sardes.database.accessor_rsesq as acc_rsesq
     from time import perf_counter
 
-    dbconfig = {
-        'database': 'rsesq',
-        'username': 'rsesq',
-        'hostname': 'localhost',
-        'port': 5432,
-        'client_encoding': 'utf-8',
-        'password': '5Uje6HecGyh027x'}
-    accessor_rsesq = DatabaseAccessorRSESQ(**dbconfig)
-    accessor_rsesq.connect()
-
     accessor_sardeslite = DatabaseAccessorSardesLite('D:/rsesq_v3.db')
     accessor_sardeslite.connect()
 
@@ -1305,5 +1295,4 @@ if __name__ == "__main__":
     wlevel_tseries = wlevel_group.get_merged_timeseries()
     print('done in {:0.3f} seconds'.format(perf_counter() - t1))
 
-    accessor_rsesq.close_connection()
     accessor_sardeslite.close_connection()
