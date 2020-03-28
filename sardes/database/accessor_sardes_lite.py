@@ -201,14 +201,13 @@ class TimeSeriesData(Base):
     """
     __tablename__ = 'timeseries_data'
 
-    datetime = Column(DateTime, index=True, primary_key=True)
+    datetime = Column(DateTime, primary_key=True)
     value = Column(Float)
     channel_id = Column(
         Integer,
         ForeignKey('timeseries_channel.channel_id',
                    ondelete='CASCADE', onupdate='CASCADE'),
         index=True, primary_key=True)
-    Index('idx_datetime_channel_id', 'datetime', 'channel_id', unique=True)
 
 
 class GenericNumericalData(Base):
