@@ -1078,7 +1078,7 @@ def init_database(accessor):
     for table in tables:
         if accessor._engine.dialect.has_table(
                 accessor._connection, table.__tablename__):
-            table.__table__.drop(accessor._engine)
+            continue
         Base.metadata.create_all(accessor._engine, tables=[table.__table__])
 
 
