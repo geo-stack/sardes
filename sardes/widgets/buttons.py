@@ -29,13 +29,14 @@ from sardes.utils.qthelpers import create_action
 
 
 class PathBoxWidget(QFrame):
-    """A widget to display and select a directory or file location."""
+    """
+    A widget to display and select a directory or file location.
+    """
 
-    def __init__(self, parent=None, label='', path='',
-                 is_enabled=True, workdir=''):
+    def __init__(self, parent=None, path='', workdir='', path_type='dir'):
         super().__init__(parent)
         self._workdir = workdir
-        self.label = label
+        self._path_type = path_type
 
         self.browse_btn = QPushButton(_("Browse..."))
         self.browse_btn.setDefault(False)
@@ -48,31 +49,18 @@ class PathBoxWidget(QFrame):
         self.path_lineedit.setFixedHeight(
             self.browse_btn.sizeHint().height() - 2)
 
-        self.checkbox = QCheckBox()
-        self.checkbox.stateChanged.connect(
-            lambda _: self.browse_btn.setEnabled(self.is_enabled()))
-        self.checkbox.stateChanged.connect(
-            lambda _: self.path_lineedit.setEnabled(self.is_enabled()))
-        self.checkbox.setChecked(is_enabled)
-
         layout = QGridLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.checkbox, 0, 0)
-        layout.addWidget(QLabel(label + ' :' if label else label), 0, 1, 1, 2)
-        layout.addWidget(self.path_lineedit, 1, 1)
-        layout.addWidget(self.browse_btn, 1, 2)
-
-    def is_enabled(self):
-        """Return whether this pathbox widget is enabled or not."""
-        return self.checkbox.isChecked()
-
-    def is_empty(self):
-        """Return whether the path is empty."""
-        return self.path_lineedit.text() == ''
+        layout.addWidget(self.path_lineedit, 0, 0)
+        layout.addWidget(self.browse_btn, 0, 1)
 
     def is_valid(self):
         """Return whether path is valid."""
         return osp.exists(self.path())
+
+    def is_empty(self):
+        """Return whether the path is empty."""
+        return self.path_lineedit.text() == ''
 
     def path(self):
         """Return the path of this pathbox widget."""
@@ -84,13 +72,18 @@ class PathBoxWidget(QFrame):
 
     def browse_path(self):
         """Open a dialog to select a new directory."""
-        dirname = QFileDialog.getExistingDirectory(
-            self, _('Modify Location'), self.workdir(),
-            options=QFileDialog.ShowDirsOnly)
-        if dirname:
-            self.set_workdir(osp.dirname(dirname))
-            self.path_lineedit.setText(dirname)
-            self.path_lineedit.setToolTip(dirname)
+        dialog_title = _('Modify Location')
+        if self._path_type == 'dir':
+            path = QFileDialog.getExistingDirectory(
+                self, dialog_title, self.workdir(),
+                options=QFileDialog.ShowDirsOnly)
+        elif self._path_type == 'folder':
+            path, ext = QFileDialog.getOpenFileName(
+                self, dialog_title, self.workdir(),)
+        if path:
+            self.set_workdir(osp.dirname(path))
+            self.path_lineedit.setText(path)
+            self.path_lineedit.setToolTip(path)
 
     def workdir(self):
         """Return the directory that is used by the QFileDialog."""
@@ -100,6 +93,57 @@ class PathBoxWidget(QFrame):
         """Set the default directory that will be used by the QFileDialog."""
         if new_workdir is not None and osp.exists(new_workdir):
             self._workdir = new_workdir
+
+
+class CheckboxPathBoxWidget(QFrame):
+    """
+    A widget to display and select a directory or file location, with
+    a checkbox to enable or disable the widget and a group label.
+    """
+
+    def __init__(self, parent=None, label='', path='',
+                 is_enabled=True, workdir=''):
+        super().__init__(parent)
+        self.label = label
+
+        self.pathbox_widget = PathBoxWidget(parent=self, workdir=workdir)
+
+        self.checkbox = QCheckBox()
+        self.checkbox.stateChanged.connect(
+            lambda _: self.pathbox_widget.setEnabled(self.is_enabled()))
+        self.checkbox.setChecked(is_enabled)
+
+        layout = QGridLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.checkbox, 0, 0)
+        layout.addWidget(QLabel(label + ' :' if label else label), 0, 1)
+        layout.addWidget(self.pathbox_widget, 1, 1)
+
+    def is_enabled(self):
+        """Return whether this pathbox widget is enabled or not."""
+        return self.checkbox.isChecked()
+
+    # ---- PathBoxWidget public API
+    def is_valid(self):
+        return self.pathbox_widget.is_valid()
+
+    def is_empty(self):
+        return self.pathbox_widget.is_empty()
+
+    def path(self):
+        return self.pathbox_widget.path()
+
+    def set_path(self, path):
+        return self.pathbox_widget.set_path(path)
+
+    def browse_path(self):
+        return self.pathbox_widget.browse_path()
+
+    def workdir(self):
+        return self.pathbox_widget.workdir()
+
+    def set_workdir(self, new_workdir):
+        return self.pathbox_widget.set_workdir(new_workdir)
 
 
 class DropdownToolButton(QToolButton):
