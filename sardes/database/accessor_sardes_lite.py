@@ -870,9 +870,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         data_type = DataType(data_type)
 
         obs_property_id = self._get_observed_property_id(data_type)
-        observed_property = self._get_observed_property(obs_property_id)
-
-        # Define a query to fetch the timseries data from the database.
         query = (
             self._session.query(TimeSeriesData.value,
                                 TimeSeriesData.datetime,
@@ -891,6 +888,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # For each channel, store the data in a time series object and
         # add it to the monitored property object.
+        observed_property = self._get_observed_property(obs_property_id)
         tseries_group = TimeSeriesGroup(
             data_type,
             data_type.title,
