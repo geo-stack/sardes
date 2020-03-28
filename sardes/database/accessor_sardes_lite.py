@@ -1267,11 +1267,16 @@ def copydata_from_rsesq_postgresql(accessor_rsesq, accessor_sardeslite):
 
 
 if __name__ == "__main__":
+    from sardes.config.database import get_dbconfig
     from sardes.database.accessor_rsesq import DatabaseAccessorRSESQ
     import sardes.database.accessor_rsesq as acc_rsesq
     from time import perf_counter
 
-    accessor_sardeslite = DatabaseAccessorSardesLite('D:/rsesq_v3.db')
+    dbconfig = get_dbconfig('rsesq_postgresql')
+    accessor_rsesq = DatabaseAccessorRSESQ(**dbconfig)
+    accessor_rsesq.connect()
+
+    accessor_sardeslite = DatabaseAccessorSardesLite('D:/rsesq_v4.db')
     accessor_sardeslite.connect()
 
     # init_database(accessor_sardeslite)
