@@ -74,7 +74,7 @@ class Location(Base):
     longitude = Column(Float)
     is_station_active = Column('station_active', Boolean)
     loc_notes = Column('remarque', String)
-    loc_id = Column(String, primary_key=True)
+    loc_id = Column(Integer, primary_key=True)
     loc_geom = Column('geom', Geometry('POINT', 4326))
 
     def __repr__(self):
@@ -113,7 +113,9 @@ class GenericNumericalValue(Base):
     __tablename__ = 'generique'
     __table_args__ = ({"schema": "resultats"})
 
-    gen_num_value_id = Column('generic_res_uuid', Integer, primary_key=True)
+    gen_num_value_id = Column('generic_res_id', Integer)
+    gen_num_value_uuid = Column(
+        'generic_res_uuid', UUID(as_uuid=True), primary_key=True)
     gen_num_value = Column('valeur_num', Float)
     # Relation with table resultats.observation
     observation_uuid = Column('observation_uuid', UUID(as_uuid=True))
@@ -122,6 +124,7 @@ class GenericNumericalValue(Base):
         Integer,
         ForeignKey('librairies.xm_observed_property.obs_property_id'))
     gen_num_value_notes = Column('gen_note', String)
+    gen_init_num_value = Column('valeur_initial', String)
 
     def __repr__(self):
         return format_sqlobject_repr(self)
@@ -144,6 +147,22 @@ class SamplingFeature(Base):
     loc_id = Column(Integer, ForeignKey('rsesq.localisation.loc_id'))
 
     __mapper_args__ = {'polymorphic_on': interest_id}
+
+    def __repr__(self):
+        return format_sqlobject_repr(self)
+
+
+class SamplingFeatureTypes(Base):
+    """
+    An object used to map the 'elem_interest' library of the
+    RSESQ database.
+    """
+    __tablename__ = 'elem_interest'
+    __table_args__ = ({"schema": "librairies"})
+
+    sampling_feature_type_id = Column('interet_id', Integer, primary_key=True)
+    sampling_feature_type_desc = Column('interet_desc', String)
+    sampling_feature_type_abb = Column('interet_abb', String)
 
     def __repr__(self):
         return format_sqlobject_repr(self)
@@ -194,12 +213,21 @@ class Observation(Base):
         return format_sqlobject_repr(self)
 
 
+class ObservationType(Base):
+    __tablename__ = 'lib_obs_parameter'
+    __table_args__ = ({"schema": "librairies"})
+
+    obs_type_id = Column('param_id', Integer, primary_key=True)
+    obs_type_abb = Column('param_abb', String)
+    obs_type_desc = Column('param_descr', String)
+
+
 class ObservationProperty(Base):
     __tablename__ = 'xm_observed_property'
     __table_args__ = ({"schema": "librairies"})
 
     obs_property_id = Column('obs_property_id', Integer, primary_key=True)
-    obs_property_name = Column('observed_property', Integer, primary_key=True)
+    obs_property_name = Column('observed_property', String)
     obs_property_desc = Column('observed_property_description', String)
     obs_property_units = Column('unit', String)
 
@@ -244,6 +272,16 @@ class SondeInstallation(Base):
     operator = Column('operateur', String)
 
 
+class SondeModels(Base):
+    __tablename__ = 'lib_instrument_mddep'
+    __table_args__ = ({"schema": "librairies"})
+
+    sonde_model_id = Column('instrument_id', Integer, primary_key=True)
+    sonde_brand = Column('instrument_marque', String)
+    sonde_model = Column('instrument_model', String)
+
+
+
 class Processes(Base):
     __tablename__ = 'processus'
     __table_args__ = ({"schema": "processus"})
@@ -265,15 +303,6 @@ class ProcessesInstalls(Base):
         'process_uuid', UUID(as_uuid=True),
         ForeignKey('processus.processus.process_uuid'),
         primary_key=True)
-
-
-class SondeModels(Base):
-    __tablename__ = 'lib_instrument_mddep'
-    __table_args__ = ({"schema": "librairies"})
-
-    sonde_model_id = Column('instrument_id', Integer, primary_key=True)
-    sonde_brand = Column('instrument_marque', String)
-    sonde_model = Column('instrument_model', String)
 
 
 class TimeSeriesChannels(Base):
@@ -803,7 +832,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         sondes['date_reception'] = sondes['date_reception'].dt.date
         sondes['date_withdrawal'] = sondes['date_withdrawal'].dt.date
 
-        # Set the index to the observation well ids.
+        # Set the index to the sonde ids.
         sondes.set_index('sonde_uuid', inplace=True, drop=True)
 
         return sondes
@@ -820,16 +849,23 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             self._session.commit()
 
     # ---- Sonde installations
-    def _get_sonde_installation(self, install_uuid):
+    def _get_sonde_installation(self, install_id_or_uuid):
         """
         Return the sqlalchemy SondeInstallation object corresponding to the
         specified sonde ID.
         """
-        sonde_installation = (
-            self._session.query(SondeInstallation)
-            .filter(SondeInstallation.install_uuid == install_uuid)
-            .one()
-            )
+        if isinstance(install_id_or_uuid, int):
+            sonde_installation = (
+                self._session.query(SondeInstallation)
+                .filter(SondeInstallation.install_id == install_id_or_uuid)
+                .one()
+                )
+        else:
+            sonde_installation = (
+                self._session.query(SondeInstallation)
+                .filter(SondeInstallation.install_uuid == install_id_or_uuid)
+                .one()
+                )
         return sonde_installation
 
     def add_sonde_installations(self, new_install_uuid, attribute_values):
