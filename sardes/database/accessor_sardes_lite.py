@@ -377,8 +377,19 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._session.query(SamplingFeature)
             .filter(SamplingFeature.sampling_feature_uuid ==
                     sampling_feature_uuid)
+            .one())
+
+    def _get_sampling_feature_uuid_from_name(self, sampling_feature_name):
+        """
+        Return the sampling feature UUID corresponding to the given
+        sampling feature name.
+        """
+        return (
+            self._session.query(SamplingFeature.sampling_feature_uuid)
+            .filter(SamplingFeature.sampling_feature_name ==
+                    sampling_feature_name)
             .one()
-            )
+            .sampling_feature_uuid)
 
     def get_observation_wells_data(self):
         """
@@ -464,10 +475,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Return a :class:`pandas.DataFrame` containing the information related
         to sonde brands and models.
         """
-        query = (
-            self._session.query(SondeModel)
-            .order_by(SondeModel.sonde_brand,
-                      SondeModel.sonde_model))
+        query = self._session.query(SondeModel)
         sonde_models = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
 
@@ -570,7 +578,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         measurements.set_index('gen_num_value_uuid', inplace=True, drop=True)
 
         return measurements
-    
+
     # ---- Timeseries
     def get_timeseries_for_obs_well(self, sampling_feature_uuid, data_type):
         """
@@ -674,7 +682,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         Return the sonde ID associated with the given observation ID.
         """
-        print('observation_id', observation_id)
         return (
             self._session.query(SondePompeInstallation)
             .filter(Observation.observation_id == observation_id)
@@ -684,7 +691,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     SondePompeInstallation.install_uuid)
             .one()
             .sonde_serial_no)
-    
 
 
 # =============================================================================
