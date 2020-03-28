@@ -60,6 +60,14 @@ class Databases(SardesPlugin):
         self.db_connection_widget.add_database_dialog(database_dialog)
         self.internal_database_dialogs.append(database_dialog)
 
+        from sardes.database.dialog_sardes_lite import (
+            DatabaseConnectDialogSardesLite)
+        database_dialog = DatabaseConnectDialogSardesLite()
+        database_dialog.set_database_kargs(
+            get_dbconfig(database_dialog.dbtype_name))
+        self.db_connection_widget.add_database_dialog(database_dialog)
+        self.internal_database_dialogs.append(database_dialog)
+
         self.db_connection_widget.set_current_database_dialog(
             self.get_option('dbtype_last_selected'))
 

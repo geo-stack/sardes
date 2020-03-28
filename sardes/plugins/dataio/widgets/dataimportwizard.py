@@ -18,10 +18,10 @@ from atomicwrites import replace_atomic
 import hydsensread as hsr
 import pandas as pd
 from qtpy.QtCore import Qt, Slot, Signal
-from qtpy.QtWidgets import (QApplication, QFileDialog,
-                            QDialog, QLabel, QPushButton,
-                            QDialogButtonBox, QVBoxLayout, QAbstractButton,
-                            QFormLayout, QGroupBox, QMessageBox)
+from qtpy.QtWidgets import (
+    QApplication, QFileDialog, QDialog, QLabel, QPushButton, QDialogButtonBox,
+    QVBoxLayout, QAbstractButton, QFormLayout, QGroupBox, QMessageBox,
+    QGridLayout)
 
 # ---- Local imports
 from sardes.config.gui import get_iconsize
@@ -30,7 +30,7 @@ from sardes.api.tablemodels import SardesTableModel
 from sardes.api.timeseries import DataType
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import NotEditableDelegate, SardesTableWidget
-from sardes.widgets.buttons import PathBoxWidget
+from sardes.widgets.buttons import CheckboxPathBoxWidget
 
 
 NOT_FOUND_MSG = _('Not found in database')
@@ -150,7 +150,7 @@ class DataImportWizard(QDialog):
         self.button_box.layout().insertSpacing(1, 100)
         self.button_box.clicked.connect(self._handle_button_click_event)
 
-        self.pathbox_widget = PathBoxWidget(
+        self.pathbox_widget = CheckboxPathBoxWidget(
             label=_('Move the input file to this location after loading data'))
 
         # Setup the layout.
