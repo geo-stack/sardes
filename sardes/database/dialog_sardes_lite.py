@@ -34,7 +34,8 @@ class DatabaseConnectDialogSardesLite(DatabaseConnectDialogBase):
     def __init__(self):
         super().__init__()
 
-        self.dbname_widget = PathBoxWidget(path_type='folder')
+        self.dbname_widget = PathBoxWidget(
+            path_type='getOpenFileName', filters='*.db')
 
         self.encoding_lineedit = QLineEdit()
         encoding_layout = QHBoxLayout()
@@ -42,7 +43,7 @@ class DatabaseConnectDialogSardesLite(DatabaseConnectDialogBase):
         encoding_layout.addStretch(1)
 
         self.add_widget(QLabel(_("Database :")), 0, 0)
-        self.add_widget(self.dbname_widget, 0, 1, 1, 3)
+        self.add_widget(self.dbname_widget, 0, 1)
         self.add_stretch(1)
 
     def set_database_kargs(self, kargs):

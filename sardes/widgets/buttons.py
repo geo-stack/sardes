@@ -33,9 +33,11 @@ class PathBoxWidget(QFrame):
     A widget to display and select a directory or file location.
     """
 
-    def __init__(self, parent=None, path='', workdir='', path_type='dir'):
+    def __init__(self, parent=None, path='', workdir='',
+                 path_type='getExistingDirectory', filters=None):
         super().__init__(parent)
         self._workdir = workdir
+        self.filters = filters
         self._path_type = path_type
 
         self.browse_btn = QPushButton(_("Browse..."))
@@ -77,8 +79,11 @@ class PathBoxWidget(QFrame):
             path = QFileDialog.getExistingDirectory(
                 self, dialog_title, self.workdir(),
                 options=QFileDialog.ShowDirsOnly)
-        elif self._path_type == 'folder':
+        elif self._path_type == 'getOpenFileName':
             path, ext = QFileDialog.getOpenFileName(
+                self, dialog_title, self.workdir(), self.filters)
+        elif self._path_type == 'getSaveFileName':
+            path, ext = QFileDialog.getSaveFileName(
                 self, dialog_title, self.workdir(),)
         if path:
             self.set_workdir(osp.dirname(path))
