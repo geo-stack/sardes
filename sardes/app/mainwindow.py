@@ -16,6 +16,7 @@ print('Starting SARDES...')
 # ---- Setup the main Qt application.
 import sys
 from qtpy.QtWidgets import QApplication
+from time import sleep
 app = QApplication(sys.argv)
 
 # ---- Setup the splash screen.
@@ -353,6 +354,12 @@ class MainWindow(QMainWindow):
 
         # Close the database connection manager.
         self.db_connection_manager.close()
+        count = 0
+        while self.db_connection_manager.is_connected():
+            sleep(0.1)
+            count += 1
+            if count == 1000:
+                break
 
         event.accept()
 
