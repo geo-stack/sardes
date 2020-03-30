@@ -464,7 +464,7 @@ class DatabaseConnectionManager(QObject):
 
     def close(self):
         """Close this database connection manager."""
-        self._db_connection_worker._disconnect_from_db()
+        self.disconnect_from_db()
 
     # ---- Timeseries
     def get_timeseries_for_obs_well(
