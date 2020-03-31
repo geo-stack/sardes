@@ -12,6 +12,7 @@ Object-Relational Mapping and Accessor implementation of the Sardes database.
 """
 
 # ---- Standard imports
+import os.path as osp
 import sqlite3
 import uuid
 
@@ -325,7 +326,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
     def execute(self, sql_request, **kwargs):
         """Execute a SQL statement construct and return a ResultProxy."""
         try:
-            return self._connection.execute(sql_request, **kwargs)
+            self._engine.execute(sql_request, **kwargs)
         except ProgrammingError as p:
             print(p)
             raise p
@@ -341,26 +342,44 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
     def _create_engine(self):
         """Create a SQL Alchemy engine."""
         database_url = URL('sqlite', database=self._database)
-        return create_engine(database_url, echo=False,
-                             connect_args={'check_same_thread': False})
+        return create_engine(database_url, echo=False)
 
     def is_connected(self):
         """Return whether a connection to a database is currently active."""
-        if self._connection is None:
-            return False
-        else:
-            return not self._connection.closed
+        return self._connection is not None
 
     def _connect(self):
         """
         Create a new connection object to communicate with the database.
         """
+        if not osp.exists(self._database):
+            self._connection = None
+            self._connection_error = (
+                IOError("'{}' does not exist."
+                        .format(self._database)))
+            return
+        root, ext = osp.splitext(self._database)
+        if ext != '.db':
+            self._connection = None
+            self._connection_error = (
+                IOError("'{}' is not a valid database file."
+                        .format(self._database)))
+            return
+
+        # We only test that a connection can be made correctly with the
+        # database, but we do not keep a reference to that connection.
+        # We let sqlalchemy handle the connection to the database.
+        # It is safer to do this to avoid potential problems that could
+        # occur due to sharing a same connection across multiple thread.
+        # See https://stackoverflow.com/questions/48218065
         try:
-            self._connection = self._engine.connect()
+            conn = self._engine.connect()
         except DBAPIError as e:
             self._connection = None
             self._connection_error = e
         else:
+            conn.close()
+            self._connection = True
             self._connection_error = None
 
     def close_connection(self):
