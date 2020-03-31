@@ -100,8 +100,7 @@ class MainWindow(QMainWindow):
         # have been registered in case they are connected to the database
         # manager connection signals.
         if self.databases_plugin.get_option('auto_connect_to_database'):
-            self.db_connection_manager.connect_to_db(
-                self.databases_plugin.connect_to_database())
+            self.databases_plugin.connect_to_database()
 
     def setup_internal_plugins(self):
         """Setup Sardes internal plugins."""
