@@ -372,6 +372,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # It is safer to do this to avoid potential problems that could
         # occur due to sharing a same connection across multiple thread.
         # See https://stackoverflow.com/questions/48218065
+        # See https://docs.python.org/3/library/sqlite3.html
         try:
             conn = self._engine.connect()
         except DBAPIError as e:
