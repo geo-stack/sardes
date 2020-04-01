@@ -332,11 +332,8 @@ class ProcessInstallation(Base):
     """
     __tablename__ = 'process_installation'
 
-    install_uuid = Column(
-        UUIDType(binary=False),
-        ForeignKey('sonde_pompe_installation.install_uuid'))
-    process_id = Column(
-        Integer, ForeignKey('process.process_id'), primary_key=True)
+    install_uuid = Column(UUIDType(binary=False), primary_key=True)
+    process_id = Column(Integer, ForeignKey('process.process_id'))
 
 
 # =============================================================================
