@@ -45,6 +45,8 @@ class SondeInstallationsTableModel(SardesTableModel):
             return DateTimeDelegate(view, display_format="yyyy-MM-dd hh:mm")
         elif column in ['sonde_uuid']:
             return SondesSelectionDelegate(view)
+        elif column in ['install_note']:
+            return TextEditDelegate(view)
         else:
             return NotEditableDelegate(view)
 
@@ -95,6 +97,7 @@ class SondeInstallationsTableWidget(SardesTableWidget):
                 ('sonde_uuid', _('Brand Model Serial')),
                 ('start_date', _('Date From')),
                 ('end_date', _('Date To')),
-                ('install_depth', _('Depth (m)'))]
+                ('install_depth', _('Depth (m)')),
+                ('install_note', _('Notes'))]
             )
         super().__init__(table_model, *args, **kargs)
