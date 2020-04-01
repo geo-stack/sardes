@@ -263,23 +263,6 @@ class SondeModel(Base):
     sonde_model = Column(String)
 
 
-class SondePompeInstallation(Base):
-    """
-    An object used to map the 'sonde_pompe_installation' table.
-    """
-    __tablename__ = 'sonde_pompe_installation'
-
-    install_uuid = Column(UUIDType(binary=False), primary_key=True)
-    sonde_serial_no = Column(String)
-    start_date = Column(DateTime)
-    end_date = Column(DateTime)
-    install_depth = Column(Float)
-    sampling_feature_uuid = Column(
-        UUIDType(binary=False),
-        ForeignKey('sampling_feature.sampling_feature_uuid'))
-    operator = Column(String)
-
-
 class SondeInstallation(Base):
     """
     An object used to map the 'sonde_installation' table.
