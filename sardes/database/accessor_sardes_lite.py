@@ -1103,15 +1103,17 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 # =============================================================================
 def init_database(accessor):
     tables = [Location, SamplingFeatureType, SamplingFeature,
-              SondeFeature, SondeModel, SondePompeInstallation,
-              Process, ProcessInstallation, Repere, ObservationType,
-              Observation, ObservedProperty, GenericNumericalData,
-              TimeSeriesChannel, TimeSeriesData]
+              SondeFeature, SondeModel, SondeInstallation, Process,
+              ProcessInstallation, Repere, ObservationType, Observation,
+              ObservedProperty, GenericNumericalData, TimeSeriesChannel,
+              TimeSeriesData, PumpType, PumpInstallation]
+    conn = accessor._engine.connect()
     for table in tables:
         if accessor._engine.dialect.has_table(
-                accessor._connection, table.__tablename__):
+                conn, table.__tablename__):
             continue
         Base.metadata.create_all(accessor._engine, tables=[table.__table__])
+    conn.close()
 
 
 def copydata_from_rsesq_postgresql(accessor_rsesq, accessor_sardeslite):
