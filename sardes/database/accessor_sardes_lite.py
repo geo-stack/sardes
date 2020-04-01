@@ -701,7 +701,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # process_installation.
         try:
             new_process_id = (
-                accessor._session.query(func.max(Process.process_id))
+                self._session.query(func.max(Process.process_id))
                 .one()
                 )[0] + 1
         except TypeError:
