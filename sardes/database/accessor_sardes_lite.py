@@ -328,9 +328,9 @@ class Process(Base):
 
 class ProcessInstallation(Base):
     """
-    An object used to map the 'process_installion' table.
+    An object used to map the 'process_installation' table.
     """
-    __tablename__ = 'process_installion'
+    __tablename__ = 'process_installation'
 
     install_uuid = Column(
         UUIDType(binary=False),
