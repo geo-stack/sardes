@@ -22,7 +22,7 @@ import pandas as pd
 from sqlalchemy import create_engine, extract, func
 from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
                         UniqueConstraint, Index)
-from sqlalchemy.exc import DBAPIError, ProgrammingError
+from sqlalchemy.exc import DBAPIError, ProgrammingError, OperationalError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.types import TEXT, VARCHAR, Boolean
 from sqlalchemy.orm import sessionmaker
@@ -263,14 +263,20 @@ class SondeModel(Base):
     sonde_model = Column(String)
 
 
-class SondePompeInstallation(Base):
+class SondeInstallation(Base):
     """
-    An object used to map the 'sonde_pompe_installation' table.
+    An object used to map the 'sonde_installation' table.
     """
-    __tablename__ = 'sonde_pompe_installation'
-
-    install_uuid = Column(UUIDType(binary=False), primary_key=True)
-    sonde_serial_no = Column(String)
+    __tablename__ = 'sonde_installation'
+    install_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('process_installation.install_uuid'),
+        primary_key=True,
+        )
+    sonde_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('sonde_feature.sonde_uuid'),
+        )
     start_date = Column(DateTime)
     end_date = Column(DateTime)
     install_depth = Column(Float)
@@ -278,6 +284,42 @@ class SondePompeInstallation(Base):
         UUIDType(binary=False),
         ForeignKey('sampling_feature.sampling_feature_uuid'))
     operator = Column(String)
+    install_note = Column(String)
+
+
+# ---- Pompes
+class PumpType(Base):
+    """
+    An object used to map the 'pump_type' library.
+    """
+    __tablename__ = 'pump_type'
+    pump_type_id = Column(Integer, primary_key=True)
+    pump_type_abb = Column(String)
+    pump_type_desc = Column(String)
+
+
+class PumpInstallation(Base):
+    """
+    An object used to map the 'pump_installation' table.
+    """
+    __tablename__ = 'pump_installation'
+    install_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('process_installation.install_uuid'),
+        primary_key=True,
+        )
+    pump_type_id = Column(
+        Integer,
+        ForeignKey('pump_type.pump_type_id'),
+        )
+    start_date = Column(DateTime)
+    end_date = Column(DateTime)
+    install_depth = Column(Float)
+    sampling_feature_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('sampling_feature.sampling_feature_uuid'))
+    operator = Column(String)
+    install_note = Column(String)
 
 
 # ---- Processes
@@ -293,15 +335,12 @@ class Process(Base):
 
 class ProcessInstallation(Base):
     """
-    An object used to map the 'process_installion' table.
+    An object used to map the 'process_installation' table.
     """
-    __tablename__ = 'process_installion'
+    __tablename__ = 'process_installation'
 
-    install_uuid = Column(
-        UUIDType(binary=False),
-        ForeignKey('sonde_pompe_installation.install_uuid'))
-    process_id = Column(
-        Integer, ForeignKey('process.process_id'), primary_key=True)
+    install_uuid = Column(UUIDType(binary=False), primary_key=True)
+    process_id = Column(Integer, ForeignKey('process.process_id'))
 
 
 # =============================================================================
@@ -656,8 +695,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         specified sonde ID.
         """
         return (
-            self._session.query(SondePompeInstallation)
-            .filter(SondePompeInstallation.install_uuid == install_uuid)
+            self._session.query(SondeInstallation)
+            .filter(SondeInstallation.install_uuid == install_uuid)
             .one())
 
     def add_sonde_installations(self, new_install_uuid, attribute_values):
@@ -665,21 +704,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Add a new sonde installation to the database using the provided ID
         and attribute values.
         """
-        # We first create a new sonde installation.
-        sonde_installation = SondePompeInstallation(
-            install_uuid=new_install_uuid)
-        self._session.add(sonde_installation)
-
-        # We then set the attribute values for this new installation.
-        for name, value in attribute_values.items():
-            self.set_sonde_installations(
-                new_install_uuid, name, value, auto_commit=False)
-
-        # We then need to add a new item to tables 'process_installion'
-        # and 'process'.
-        new_process_id = (
-            self._session.query(func.max(Process.process_id))
-            )[0] + 1
+        # We first create new items in the tables process and
+        # process_installation.
+        try:
+            new_process_id = (
+                self._session.query(func.max(Process.process_id))
+                .one()
+                )[0] + 1
+        except TypeError:
+            new_process_id = 0
         self._session.add(Process(
             process_id=new_process_id,
             process_type='sonde installation'
@@ -688,6 +721,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             install_uuid=new_install_uuid,
             process_id=new_process_id
             ))
+
+        # We then create a new sonde installation.
+        sonde_installation = SondeInstallation(
+            install_uuid=new_install_uuid)
+        self._session.add(sonde_installation)
+
+        # We then set the attribute values for this new installation.
+        for name, value in attribute_values.items():
+            setattr(sonde_installation, name, value)
 
         # Commit changes to database.
         self._session.commit()
@@ -698,33 +740,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         sonde installations made in the observation wells of the monitoring
         network.
         """
-        query = (
-            self._session.query(SondePompeInstallation)
-            .filter(SondePompeInstallation.install_uuid ==
-                    ProcessInstallation.install_uuid)
-            .filter(Process.process_id == ProcessInstallation.process_id)
-            .filter(Process.process_type == 'sonde installation')
-            )
+        query = self._session.query(SondeInstallation)
         data = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
 
         # Set the index of the dataframe.
         data.set_index('install_uuid', inplace=True, drop=True)
-
-        # Replace sonde serial number with the corresponding sonde uuid.
-        sondes_data = self.get_sondes_data()
-        for index in data.index:
-            sonde_serial_no = data.loc[index]['sonde_serial_no']
-            if sonde_serial_no is None:
-                data.loc[index, 'sonde_uuid'] = None
-            else:
-                sondes_data_slice = sondes_data[
-                    sondes_data['sonde_serial_no'] == sonde_serial_no]
-                if len(sondes_data_slice) > 0:
-                    data.loc[index, 'sonde_uuid'] = sondes_data_slice.index[0]
-                else:
-                    data.drop(labels=index, axis=0, inplace=True)
-        data.drop(labels='sonde_serial_no', axis=1, inplace=True)
 
         return data
 
@@ -735,12 +756,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         installation corresponding to the specified id.
         """
         sonde_installation = self._get_sonde_installation(install_uuid)
-
-        if attribute_name in ['sonde_uuid']:
-            attribute_name = 'sonde_serial_no'
-            if attribute_value is not None:
-                attribute_value = (
-                    self._get_sonde(attribute_value).sonde_serial_no)
         setattr(sonde_installation, attribute_name, attribute_value)
 
         # Commit changes to the BD.
@@ -1073,12 +1088,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Return the sonde ID associated with the given observation ID.
         """
         return (
-            self._session.query(SondePompeInstallation)
+            self._session.query(SondeInstallation)
             .filter(Observation.observation_id == observation_id)
             .filter(Observation.process_id ==
                     ProcessInstallation.process_id)
             .filter(ProcessInstallation.install_uuid ==
-                    SondePompeInstallation.install_uuid)
+                    SondeInstallation.install_uuid)
             .one()
             .sonde_serial_no)
 
@@ -1088,15 +1103,17 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 # =============================================================================
 def init_database(accessor):
     tables = [Location, SamplingFeatureType, SamplingFeature,
-              SondeFeature, SondeModel, SondePompeInstallation,
-              Process, ProcessInstallation, Repere, ObservationType,
-              Observation, ObservedProperty, GenericNumericalData,
-              TimeSeriesChannel, TimeSeriesData]
+              SondeFeature, SondeModel, SondeInstallation, Process,
+              ProcessInstallation, Repere, ObservationType, Observation,
+              ObservedProperty, GenericNumericalData, TimeSeriesChannel,
+              TimeSeriesData, PumpType, PumpInstallation]
+    conn = accessor._engine.connect()
     for table in tables:
         if accessor._engine.dialect.has_table(
-                accessor._connection, table.__tablename__):
+                conn, table.__tablename__):
             continue
         Base.metadata.create_all(accessor._engine, tables=[table.__table__])
+    conn.close()
 
 
 def copydata_from_rsesq_postgresql(accessor_rsesq, accessor_sardeslite):
@@ -1155,19 +1172,6 @@ def copydata_from_rsesq_postgresql(accessor_rsesq, accessor_sardeslite):
             ))
     accessor_sardeslite._session.commit()
     print('done')
-    print('Copying SondePompeInstallation...', end=' ')
-    for item in accessor_rsesq._session.query(acc_rsesq.SondeInstallation):
-        accessor_sardeslite._session.add(SondePompeInstallation(
-            install_uuid=item.install_uuid,
-            sonde_serial_no=item.sonde_serial_no,
-            start_date=item.start_date,
-            end_date=item.end_date,
-            install_depth=item.install_depth,
-            sampling_feature_uuid=item.sampling_feature_uuid,
-            operator=item.operator
-            ))
-    accessor_sardeslite._session.commit()
-    print('done')
     print('Copying Process...', end=' ')
     for item in accessor_rsesq._session.query(acc_rsesq.Processes):
         accessor_sardeslite._session.add(Process(
@@ -1219,7 +1223,9 @@ def copydata_from_rsesq_postgresql(accessor_rsesq, accessor_sardeslite):
             ))
     accessor_sardeslite._session.commit()
     print('done')
+
     return
+
     print('Copying Observation...', end=' ')
     for item in accessor_rsesq._session.query(acc_rsesq.Observation):
         try:
