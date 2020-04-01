@@ -303,6 +303,18 @@ class SondeInstallation(Base):
     operator = Column(String)
     install_note = Column(String)
 
+
+# ---- Pompes
+class PumpType(Base):
+    """
+    An object used to map the 'pump_type' library.
+    """
+    __tablename__ = 'pump_type'
+    pump_type_id = Column(Integer, primary_key=True)
+    pump_type_abb = Column(String)
+    pump_type_desc = Column(String)
+
+
 # ---- Processes
 class Process(Base):
     """
