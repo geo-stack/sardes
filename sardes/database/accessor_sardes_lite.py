@@ -1172,19 +1172,6 @@ def copydata_from_rsesq_postgresql(accessor_rsesq, accessor_sardeslite):
             ))
     accessor_sardeslite._session.commit()
     print('done')
-    print('Copying SondePompeInstallation...', end=' ')
-    for item in accessor_rsesq._session.query(acc_rsesq.SondeInstallation):
-        accessor_sardeslite._session.add(SondePompeInstallation(
-            install_uuid=item.install_uuid,
-            sonde_serial_no=item.sonde_serial_no,
-            start_date=item.start_date,
-            end_date=item.end_date,
-            install_depth=item.install_depth,
-            sampling_feature_uuid=item.sampling_feature_uuid,
-            operator=item.operator
-            ))
-    accessor_sardeslite._session.commit()
-    print('done')
     print('Copying Process...', end=' ')
     for item in accessor_rsesq._session.query(acc_rsesq.Processes):
         accessor_sardeslite._session.add(Process(
@@ -1236,7 +1223,9 @@ def copydata_from_rsesq_postgresql(accessor_rsesq, accessor_sardeslite):
             ))
     accessor_sardeslite._session.commit()
     print('done')
+
     return
+
     print('Copying Observation...', end=' ')
     for item in accessor_rsesq._session.query(acc_rsesq.Observation):
         try:
