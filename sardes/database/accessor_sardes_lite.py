@@ -315,6 +315,30 @@ class PumpType(Base):
     pump_type_desc = Column(String)
 
 
+class PumpInstallation(Base):
+    """
+    An object used to map the 'pump_installation' table.
+    """
+    __tablename__ = 'pump_installation'
+    install_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('process_installation.install_uuid'),
+        primary_key=True,
+        )
+    pump_type_id = Column(
+        Integer,
+        ForeignKey('pump_type.pump_type_id'),
+        )
+    start_date = Column(DateTime)
+    end_date = Column(DateTime)
+    install_depth = Column(Float)
+    sampling_feature_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('sampling_feature.sampling_feature_uuid'))
+    operator = Column(String)
+    install_note = Column(String)
+
+
 # ---- Processes
 class Process(Base):
     """
