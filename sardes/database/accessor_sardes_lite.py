@@ -19,7 +19,7 @@ import uuid
 # ---- Third party imports
 import numpy as np
 import pandas as pd
-from sqlalchemy import create_engine, extract, func
+from sqlalchemy import create_engine, extract, func, and_
 from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
                         UniqueConstraint, Index)
 from sqlalchemy.exc import DBAPIError, ProgrammingError, OperationalError
@@ -66,8 +66,9 @@ class Location(Base):
     An object used to map the 'location' table.
     """
     __tablename__ = 'location'
+    __table_args__ = {'sqlite_autoincrement': True}
 
-    loc_id = Column(Integer, primary_key=True, nullable=False)
+    loc_id = Column(Integer, primary_key=True)
     latitude = Column(Float)
     longitude = Column(Float)
     municipality = Column(String)
@@ -91,8 +92,7 @@ class Repere(Base):
     repere_note = Column(String(250))
     sampling_feature_uuid = Column(
         UUIDType(binary=False),
-        ForeignKey('sampling_feature.sampling_feature_uuid',
-                   ondelete='CASCADE'))
+        ForeignKey('sampling_feature.sampling_feature_uuid'))
 
     def __repr__(self):
         return format_sqlobject_repr(self)
@@ -138,6 +138,7 @@ class Observation(Base):
     An object used to map the 'observation' table.
     """
     __tablename__ = 'observation'
+    __table_args__ = {'sqlite_autoincrement': True}
 
     observation_id = Column(Integer, primary_key=True)
     obs_datetime = Column(DateTime)
@@ -169,7 +170,7 @@ class ObservedProperty(Base):
     __tablename__ = 'observed_property'
 
     obs_property_id = Column(Integer, primary_key=True)
-    obs_property_name = Column('observed_property', Integer, primary_key=True)
+    obs_property_name = Column('observed_property', Integer)
     obs_property_desc = Column('observed_property_description', String)
     obs_property_units = Column('unit', String)
 
@@ -183,12 +184,11 @@ class TimeSeriesChannel(Base):
     An object used to map the 'timeseries_channel' table.
     """
     __tablename__ = 'timeseries_channel'
+    __table_args__ = {'sqlite_autoincrement': True}
 
     channel_id = Column(Integer, primary_key=True)
     observation_id = Column(
-        Integer,
-        ForeignKey('observation.observation_id',
-                   ondelete='CASCADE', onupdate='CASCADE'))
+        Integer, ForeignKey('observation.observation_id'))
     obs_property_id = Column(
         Integer, ForeignKey('observed_property.obs_property_id'))
 
@@ -205,10 +205,8 @@ class TimeSeriesData(Base):
     datetime = Column(DateTime, primary_key=True)
     value = Column(Float)
     channel_id = Column(
-        Integer,
-        ForeignKey('timeseries_channel.channel_id',
-                   ondelete='CASCADE', onupdate='CASCADE'),
-        index=True, primary_key=True)
+        Integer, ForeignKey('timeseries_channel.channel_id'),
+        primary_key=True)
 
 
 class GenericNumericalData(Base):
@@ -220,10 +218,7 @@ class GenericNumericalData(Base):
     gen_num_value_uuid = Column(UUIDType(binary=False), primary_key=True)
     gen_num_value = Column(Float)
     observation_id = Column(
-        Integer,
-        ForeignKey('observation.observation_id',
-                   ondelete='CASCADE',
-                   onupdate='CASCADE'))
+        Integer, ForeignKey('observation.observation_id'))
     obs_property_id = Column(
         Integer, ForeignKey('observed_property.obs_property_id'))
     gen_num_value_notes = Column(String)
@@ -328,6 +323,7 @@ class Process(Base):
     An object used to map the 'process' table.
     """
     __tablename__ = 'process'
+    __table_args__ = {'sqlite_autoincrement': True}
 
     process_type = Column(String)
     process_id = Column(Integer, primary_key=True)
@@ -470,22 +466,18 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         and attribute values.
         """
         # We need first to create a new location in table rsesq.localisation.
-        try:
-            new_loc_id = (
-                self._session.query(func.max(Location.loc_id))
-                .one())[0] + 1
-        except TypeError:
-            new_loc_id = 0
-        location = Location(loc_id=new_loc_id)
-        self._session.add(location)
+        new_location = Location()
+        self._session.add(new_location)
+        self._session.commit()
 
         # We then add the new observation well.
         new_obs_well = SamplingFeature(
             sampling_feature_uuid=sampling_feature_uuid,
             sampling_feature_type_id=1,
-            loc_id=new_loc_id
+            loc_id=new_location.loc_id
             )
         self._session.add(new_obs_well)
+        self._session.commit()
 
         # We then set the attribute values provided in argument for this
         # new observation well if any.
@@ -709,31 +701,21 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         # We first create new items in the tables process and
         # process_installation.
-        try:
-            new_process_id = (
-                self._session.query(func.max(Process.process_id))
-                .one())[0] + 1
-        except TypeError:
-            new_process_id = 0
-        self._session.add(Process(
-            process_id=new_process_id,
-            process_type='sonde installation'
-            ))
+        new_process = Process(process_type='sonde installation')
+        self._session.add(new_process)
+        self._session.commit()
+
         self._session.add(ProcessInstallation(
             install_uuid=new_install_uuid,
-            process_id=new_process_id
+            process_id=new_process.process_id
             ))
+        self._session.commit()
 
         # We then create a new sonde installation.
         sonde_installation = SondeInstallation(
-            install_uuid=new_install_uuid)
+            install_uuid=new_install_uuid,
+            **attribute_values)
         self._session.add(sonde_installation)
-
-        # We then set the attribute values for this new installation.
-        for name, value in attribute_values.items():
-            setattr(sonde_installation, name, value)
-
-        # Commit changes to database.
         self._session.commit()
 
     def get_sonde_installations(self):
@@ -782,27 +764,20 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         and attribute values.
         """
         # We need first to create a new observation in table observation.
-        try:
-            new_observation_id = (
-                self._session.query(func.max(Observation.observation_id))
-                .one())[0] + 1
-        except TypeError:
-            new_observation_id = 0
-        observation = Observation(
-            observation_id=new_observation_id,
+        new_observation = Observation(
             obs_datetime=attribute_values.get('datetime', None),
             sampling_feature_uuid=attribute_values.get(
                 'sampling_feature_uuid', None),
             obs_type_id=4
             )
-        self._session.add(observation)
+        self._session.add(new_observation)
         self._session.commit()
 
         # We now create a new measurement in table 'generic_numerial_data'.
         measurement = GenericNumericalData(
             gen_num_value_uuid=gen_num_value_uuid,
             gen_num_value=attribute_values.get('value', None),
-            observation_id=new_observation_id,
+            observation_id=new_observation.observation_id,
             obs_property_id=2,
             gen_num_value_notes=attribute_values.get('notes', None)
             )
@@ -964,7 +939,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # Split the data in channels.
         tseries_group.duplicated_data = []
         for observation_id in data['observation_id'].unique():
-            channel_data = data[data['observation_id'] == observation_id]
+            channel_data = data[
+                data['observation_id'] == observation_id].sort_index()
             duplicated = channel_data.index.duplicated()
             for dtime in channel_data.index[duplicated]:
                 tseries_group.duplicated_data.append(
@@ -993,14 +969,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 .filter(ProcessInstallation.install_uuid == install_uuid)
                 .one().process_id
                 )
-        try:
-            new_observation_id = (
-                self._session.query(func.max(Observation.observation_id))
-                .one())[0] + 1
-        except TypeError:
-            new_observation_id = 0
+        else:
+            process_id = None
         new_observation = Observation(
-            observation_id=new_observation_id,
             sampling_feature_uuid=sampling_feature_uuid,
             process_id=process_id,
             obs_datetime=min(tseries_data['datetime']),
@@ -1012,12 +983,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         for data_type in DataType:
             if data_type not in tseries_data.columns:
                 continue
-            try:
-                new_tseries_channel_id = (
-                    self._session.query(func.max(TimeSeriesChannel.channel_id))
-                    .one())[0] + 1
-            except TypeError:
-                new_tseries_channel_id = 0
             if dropna is True:
                 tseries_data_type = tseries_data[
                     ['datetime', data_type]].dropna(subset=[data_type])
@@ -1025,9 +990,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 continue
 
             new_tseries_channel = TimeSeriesChannel(
-                channel_id=new_tseries_channel_id,
                 obs_property_id=self._get_observed_property_id(data_type),
-                observation_id=new_observation_id
+                observation_id=new_observation.observation_id
                 )
             self._session.add(new_tseries_channel)
             self._session.commit()
@@ -1038,7 +1002,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 self._session.add(TimeSeriesData(
                     datetime=date_time,
                     value=value,
-                    channel_id=new_tseries_channel_id))
+                    channel_id=new_tseries_channel.channel_id))
             self._session.commit()
         self._session.commit()
 
