@@ -896,6 +896,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             if count == 0:
                 print("Deleting observation {} because it is now empty."
                       .format(observation.observation_id))
+                # We need to delete each related timeseries channel along
+                # with the observation.
+                query = (self._session.query(TimeSeriesChannel)
+                         .filter(TimeSeriesChannel.observation_id == obs_id))
+                for tseries_channel in query:
+                    self._session.delete(tseries_channel)
                 self._session.delete(observation)
                 self._session.commit()
 
