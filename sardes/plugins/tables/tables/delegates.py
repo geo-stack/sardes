@@ -42,6 +42,8 @@ class SondeModelEditDelegate(SardesItemDelegate):
 
         # Populate the combobox with the available brand in the library.
         sonde_models_lib = self.model().libraries['sonde_models_lib']
+        sonde_models_lib = sonde_models_lib.sort_values(
+            'sonde_brand_model', axis=0, ascending=True)
         for index in sonde_models_lib.index:
             editor.addItem(sonde_models_lib.loc[index, 'sonde_brand_model'],
                            userData=index)
