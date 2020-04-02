@@ -104,8 +104,7 @@ class SamplingFeature(Base):
     """
     __tablename__ = 'sampling_feature'
 
-    sampling_feature_uuid = Column(
-        UUIDType(binary=False), primary_key=True, nullable=False)
+    sampling_feature_uuid = Column(UUIDType(binary=False), primary_key=True)
     sampling_feature_name = Column(String)
     sampling_feature_notes = Column(String)
     loc_id = Column(Integer, ForeignKey('location.loc_id'))
@@ -123,8 +122,7 @@ class SamplingFeatureType(Base):
     """
     __tablename__ = 'sampling_feature_type'
 
-    sampling_feature_type_id = Column(
-        Integer, primary_key=True, nullable=False)
+    sampling_feature_type_id = Column(Integer, primary_key=True)
     sampling_feature_type_desc = Column(String)
     sampling_feature_type_abb = Column(String)
 
@@ -253,7 +251,7 @@ class SondeModel(Base):
     """
     __tablename__ = 'sonde_model'
 
-    sonde_model_id = Column(Integer, primary_key=True, nullable=False)
+    sonde_model_id = Column(Integer, primary_key=True)
     sonde_brand = Column(String)
     sonde_model = Column(String)
 
