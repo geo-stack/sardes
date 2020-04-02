@@ -32,6 +32,24 @@ class ObsWellIdEditDelegate(SardesItemDelegate):
         return editor
 
 
+class SondeModelEditDelegate(SardesItemDelegate):
+    """
+    A delegate to select the brand of a sonde from a predefined list.
+    """
+
+    def create_editor(self, parent):
+        editor = QComboBox(parent)
+
+        # Populate the combobox with the available brand in the library.
+        sonde_models_lib = self.model().libraries['sonde_models_lib']
+        sonde_models_lib = sonde_models_lib.sort_values(
+            'sonde_brand_model', axis=0, ascending=True)
+        for index in sonde_models_lib.index:
+            editor.addItem(sonde_models_lib.loc[index, 'sonde_brand_model'],
+                           userData=index)
+        return editor
+
+
 class SondesSelectionDelegate(SardesItemDelegate):
     """
     A delegate to select a level or baro logger from the inventory.
@@ -53,7 +71,7 @@ class SondesSelectionDelegate(SardesItemDelegate):
                 sondes_data[['sonde_brand_model', 'sonde_serial_no']]
                 .apply(lambda x: ' - '.join(x), axis=1))
             sondes_data = sondes_data.sort_values(
-                'sonde_brand_model', axis=0, ascending=True)
+                'sonde_brand_model_serial', axis=0, ascending=True)
             for index in sondes_data.index:
                 editor.addItem(
                     sondes_data.loc[index, 'sonde_brand_model_serial'],
