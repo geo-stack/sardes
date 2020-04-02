@@ -1058,16 +1058,26 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         for obs_id in tseries_dels['obs_id'].unique():
             sub_data = tseries_dels[tseries_dels['obs_id'] == obs_id]
             for data_type in sub_data['data_type'].unique():
+                obs_property_id = self._get_observed_property_id(data_type)
+                channel_id = (
+                    self._session.query(TimeSeriesChannel)
+                    .filter(TimeSeriesChannel.obs_property_id ==
+                            obs_property_id)
+                    .filter(TimeSeriesChannel.observation_id == obs_id)
+                    .one()
+                    .channel_id
+                    )
                 date_times = (
                     sub_data[sub_data['data_type'] == data_type]
                     ['datetime'].dt.to_pydatetime())
-                query = self._query_timeseriesdata(
-                    date_times, obs_id, data_type)
-                for tseries_data in query:
-                    self._session.delete(tseries_data)
+                for date_time in date_times:
+                    self._session.execute(
+                        TimeSeriesData.__table__.delete().where(and_(
+                            TimeSeriesData.datetime == date_time,
+                            TimeSeriesData.channel_id == channel_id)))
                 self._session.commit()
 
-            # We delete the observation from database if it is empty.
+            # We then delete the observation from database if it is empty.
             self._clean_observation_if_null(obs_id)
 
     # ---- Observations
