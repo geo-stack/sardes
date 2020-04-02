@@ -16,22 +16,7 @@ from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesItemDelegate, SardesTableWidget, StringEditDelegate,
     BoolEditDelegate, NotEditableDelegate, TextEditDelegate, DateEditDelegate)
-
-
-class SondeModelEditDelegate(SardesItemDelegate):
-    """
-    A delegate to select the brand of a sonde from a predefined list.
-    """
-
-    def create_editor(self, parent):
-        editor = QComboBox(parent)
-
-        # Populate the combobox with the available brand in the library.
-        sonde_models_lib = self.model().libraries['sonde_models_lib']
-        for index in sonde_models_lib.index:
-            editor.addItem(sonde_models_lib.loc[index, 'sonde_brand_model'],
-                           userData=index)
-        return editor
+from sardes.plugins.tables.tables.delegates import SondeModelEditDelegate
 
 
 class SondesInventoryTableModel(SardesTableModel):
