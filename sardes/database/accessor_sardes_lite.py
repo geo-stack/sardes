@@ -976,7 +976,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 tseries_name=data_type.title,
                 tseries_units=observed_property.obs_property_units,
                 tseries_color=data_type.color,
-                sonde_id=self._get_sonde_id_from_obs_id(observation_id)
+                sonde_id=self._get_sonde_serial_no_from_obs_id(observation_id)
                 ))
         return tseries_group
 
@@ -1097,17 +1097,19 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .filter(ObservedProperty.obs_property_id == obs_property_id)
             .one())
 
-    def _get_sonde_id_from_obs_id(self, observation_id):
+    def _get_sonde_serial_no_from_obs_id(self, observation_id):
         """
         Return the sonde ID associated with the given observation ID.
         """
         return (
-            self._session.query(SondeInstallation)
+            self._session.query(SondeFeature)
             .filter(Observation.observation_id == observation_id)
             .filter(Observation.process_id ==
                     ProcessInstallation.process_id)
             .filter(ProcessInstallation.install_uuid ==
                     SondeInstallation.install_uuid)
+            .filter(SondeInstallation.sonde_uuid ==
+                    SondeFeature.sonde_uuid)
             .one()
             .sonde_serial_no)
 
