@@ -53,7 +53,7 @@ class SondesSelectionDelegate(SardesItemDelegate):
                 sondes_data[['sonde_brand_model', 'sonde_serial_no']]
                 .apply(lambda x: ' - '.join(x), axis=1))
             sondes_data = sondes_data.sort_values(
-                'sonde_brand_model', axis=0, ascending=True)
+                'sonde_brand_model_serial', axis=0, ascending=True)
             for index in sondes_data.index:
                 editor.addItem(
                     sondes_data.loc[index, 'sonde_brand_model_serial'],
