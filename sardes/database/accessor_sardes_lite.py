@@ -377,7 +377,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
     def _create_engine(self):
         """Create a SQL Alchemy engine."""
         database_url = URL('sqlite', database=self._database)
-        return create_engine(database_url, echo=False)
+        return create_engine(database_url, echo=False,
+                             connect_args={'check_same_thread': False})
 
     def is_connected(self):
         """Return whether a connection to a database is currently active."""
