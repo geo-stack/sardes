@@ -470,9 +470,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         and attribute values.
         """
         # We need first to create a new location in table rsesq.localisation.
-        new_loc_id = (
-            self._session.query(func.max(Location.loc_id))
-            .one())[0] + 1
+        try:
+            new_loc_id = (
+                self._session.query(func.max(Location.loc_id))
+                .one())[0] + 1
+        except TypeError:
+            new_loc_id = 0
         location = Location(loc_id=new_loc_id)
         self._session.add(location)
 
@@ -709,8 +712,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         try:
             new_process_id = (
                 self._session.query(func.max(Process.process_id))
-                .one()
-                )[0] + 1
+                .one())[0] + 1
         except TypeError:
             new_process_id = 0
         self._session.add(Process(
@@ -779,10 +781,13 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Add a new manual measurements to the database using the provided ID
         and attribute values.
         """
-        # We need first to create a new observation in table rsesq.observation.
-        new_observation_id = (
-            self._session.query(func.max(Observation.observation_id))
-            )[0] + 1
+        # We need first to create a new observation in table observation.
+        try:
+            new_observation_id = (
+                self._session.query(func.max(Observation.observation_id))
+                .one())[0] + 1
+        except TypeError:
+            new_observation_id = 0
         observation = Observation(
             observation_id=new_observation_id,
             obs_datetime=attribute_values.get('datetime', None),
@@ -797,7 +802,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         measurement = GenericNumericalData(
             gen_num_value_uuid=gen_num_value_uuid,
             gen_num_value=attribute_values.get('value', None),
-            observation_id=observation.observation_id,
+            observation_id=new_observation_id,
             obs_property_id=2,
             gen_num_value_notes=attribute_values.get('notes', None)
             )
@@ -967,7 +972,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 tseries_color=data_type.color,
                 sonde_id=self._get_sonde_id_from_obs_id(observation_id)
                 ))
-
         return tseries_group
 
     def add_timeseries_data(self, tseries_data, sampling_feature_uuid,
@@ -983,10 +987,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 .filter(ProcessInstallation.install_uuid == install_uuid)
                 .one().process_id
                 )
-        new_observation_id = (
-            self._session.query(
-                func.max(Observation.observation_id))
-            .one())[0] + 1
+        try:
+            new_observation_id = (
+                self._session.query(func.max(Observation.observation_id))
+                .one())[0] + 1
+        except TypeError:
+            new_observation_id = 0
         new_observation = Observation(
             observation_id=new_observation_id,
             sampling_feature_uuid=sampling_feature_uuid,
@@ -1001,10 +1007,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         for data_type in DataType:
             if data_type not in tseries_data.columns:
                 continue
-            new_tseries_channel_id = (
-                self._session.query(
-                    func.max(TimeSeriesChannel.channel_id))
-                .one())[0] + 1
+            try:
+                new_tseries_channel_id = (
+                    self._session.query(func.max(TimeSeriesChannel.channel_id))
+                    .one())[0] + 1
+            except TypeError:
+                new_tseries_channel_id = 0
             new_tseries_channel = TimeSeriesChannel(
                 channel_id=new_tseries_channel_id,
                 obs_property_id=self._get_observed_property_id(data_type),
