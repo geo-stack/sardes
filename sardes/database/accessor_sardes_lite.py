@@ -981,7 +981,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return tseries_group
 
     def add_timeseries_data(self, tseries_data, sampling_feature_uuid,
-                            install_uuid=None):
+                            install_uuid=None, dropna=True):
         """
         Save in the database a set of timeseries data associated with the
         given well and sonde installation id.
@@ -1009,7 +1009,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.add(new_observation)
         self._session.commit()
 
-        date_times = list(pd.to_datetime(tseries_data['datetime']))
         for data_type in DataType:
             if data_type not in tseries_data.columns:
                 continue
@@ -1019,6 +1018,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     .one())[0] + 1
             except TypeError:
                 new_tseries_channel_id = 0
+            if dropna is True:
+                tseries_data_type = tseries_data[
+                    ['datetime', data_type]].dropna(subset=[data_type])
+            if not len(tseries_data_type):
+                continue
+
             new_tseries_channel = TimeSeriesChannel(
                 channel_id=new_tseries_channel_id,
                 obs_property_id=self._get_observed_property_id(data_type),
@@ -1027,7 +1032,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._session.add(new_tseries_channel)
             self._session.commit()
 
-            values = tseries_data[data_type].values
+            values = tseries_data_type[data_type].values
+            date_times = list(pd.to_datetime(tseries_data_type['datetime']))
             for date_time, value in zip(date_times, values):
                 self._session.add(TimeSeriesData(
                     datetime=date_time,
