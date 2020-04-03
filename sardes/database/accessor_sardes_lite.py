@@ -28,6 +28,7 @@ from sqlalchemy.types import TEXT, VARCHAR, Boolean
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine.url import URL
 from sqlalchemy_utils import UUIDType
+from sqlalchemy.orm.exc import NoResultFound
 
 # ---- Local imports
 from sardes.api.database_accessor import DatabaseAccessor
@@ -201,11 +202,11 @@ class TimeSeriesData(Base):
     """
     __tablename__ = 'timeseries_data'
 
-    datetime = Column(DateTime, primary_key=True)
+    datetime = Column(DateTime, primary_key=True, index=True)
     value = Column(Float)
     channel_id = Column(
         Integer, ForeignKey('timeseries_channel.channel_id'),
-        primary_key=True)
+        primary_key=True, index=True)
 
 
 class GenericNumericalData(Base):
