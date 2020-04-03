@@ -903,7 +903,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             )
         data = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
-
         data['datetime'] = pd.to_datetime(
             data['datetime'], format="%Y-%m-%d %H:%M:%S")
 
@@ -1082,17 +1081,20 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         Return the sonde ID associated with the given observation ID.
         """
-        return (
-            self._session.query(SondeFeature)
-            .filter(Observation.observation_id == observation_id)
-            .filter(Observation.process_id ==
-                    ProcessInstallation.process_id)
-            .filter(ProcessInstallation.install_uuid ==
-                    SondeInstallation.install_uuid)
-            .filter(SondeInstallation.sonde_uuid ==
-                    SondeFeature.sonde_uuid)
-            .one()
-            .sonde_serial_no)
+        try:
+            return (
+                self._session.query(SondeFeature)
+                .filter(Observation.observation_id == observation_id)
+                .filter(Observation.process_id ==
+                        ProcessInstallation.process_id)
+                .filter(ProcessInstallation.install_uuid ==
+                        SondeInstallation.install_uuid)
+                .filter(SondeInstallation.sonde_uuid ==
+                        SondeFeature.sonde_uuid)
+                .one()
+                .sonde_serial_no)
+        except NoResultFound:
+            return None
 
 
 # =============================================================================
