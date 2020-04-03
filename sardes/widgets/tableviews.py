@@ -606,6 +606,7 @@ class SardesTableView(QTableView):
     """
     sig_data_edited = Signal(object)
     sig_show_event = Signal()
+    sig_data_updated = Signal()
 
     def __init__(self, table_model, parent=None, multi_columns_sort=True,
                  sections_movable=True, sections_hidable=True,
@@ -673,6 +674,7 @@ class SardesTableView(QTableView):
         """
         self.source_model = table_model
         self.source_model.sig_data_edited.connect(self.sig_data_edited.emit)
+        self.source_model.sig_data_updated.connect(self.sig_data_updated.emit)
         self.source_model.sig_columns_mapper_changed.connect(
             self._setup_item_delegates)
         self.source_model.sig_data_updated.connect(self._on_data_updated)
