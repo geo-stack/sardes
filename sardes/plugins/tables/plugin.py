@@ -254,6 +254,7 @@ class Tables(SardesPlugin):
 
         # Connect signals.
         table.tableview.sig_data_edited.connect(self._update_tab_names)
+        table.tableview.sig_data_updated.connect(self._update_tab_names)
         table.tableview.sig_show_event.connect(self._update_current_table)
 
     def _update_tab_names(self):
