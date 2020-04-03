@@ -658,6 +658,8 @@ class SardesTableView(QTableView):
             self._on_current_index_changed)
         self.sig_data_edited.connect(
             self._on_model_data_edit)
+        self.sig_data_updated.connect(
+            self._on_data_updated)
         self.selectionModel().selectionChanged.connect(
             self._on_selection_changed)
 
@@ -677,7 +679,6 @@ class SardesTableView(QTableView):
         self.source_model.sig_data_updated.connect(self.sig_data_updated.emit)
         self.source_model.sig_columns_mapper_changed.connect(
             self._setup_item_delegates)
-        self.source_model.sig_data_updated.connect(self._on_data_updated)
 
         self.proxy_model = SardesSortFilterModel(
             self.source_model, multi_columns_sort)
