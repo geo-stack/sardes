@@ -109,8 +109,7 @@ class SamplingFeature(Base):
     sampling_feature_notes = Column(String)
     loc_id = Column(Integer, ForeignKey('location.loc_id'))
     sampling_feature_type_id = Column(
-        Integer,
-        ForeignKey('sampling_feature_type.sampling_feature_type_id'))
+        Integer, ForeignKey('sampling_feature_type.sampling_feature_type_id'))
 
     def __repr__(self):
         return format_sqlobject_repr(self)
@@ -121,6 +120,7 @@ class SamplingFeatureType(Base):
     An object used to map the 'sampling_feature_type' library.
     """
     __tablename__ = 'sampling_feature_type'
+    __table_args__ = {'sqlite_autoincrement': True}
 
     sampling_feature_type_id = Column(Integer, primary_key=True)
     sampling_feature_type_desc = Column(String)
@@ -155,6 +155,7 @@ class ObservationType(Base):
     An object used to map the 'observation_type' library.
     """
     __tablename__ = 'observation_type'
+    __table_args__ = {'sqlite_autoincrement': True}
 
     obs_type_id = Column(Integer, primary_key=True)
     obs_type_abb = Column(String)
