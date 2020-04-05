@@ -98,7 +98,7 @@ class ValueChanged(SardesDataEdit):
                 (self.row, self.col), 'value']
             self.parent._original_data.drop((self.row, self.col), inplace=True)
         else:
-            original_value = self.parent.data.iloc[self.row, self.col]
+            original_value = self.parent.data.iat[self.row, self.col]
 
         values_equal = nan_values_equal(self.previous_value, original_value)
         if not values_equal or self.row in self.parent._new_rows:
@@ -106,7 +106,7 @@ class ValueChanged(SardesDataEdit):
                 (self.row, self.col), 'value'] = original_value
 
         # We apply the previous value to the data.
-        self.parent.data.iloc[self.row, self.col] = self.previous_value
+        self.parent.data.iat[self.row, self.col] = self.previous_value
 
 
 class RowDeleted(SardesDataEdit):
@@ -197,7 +197,7 @@ class SardesTableData(object):
         Store the new value at the given index and column and add the edit
         to the stack.
         """
-        previous_value = self.data.iloc[row, col]
+        previous_value = self.data.iat[row, col]
         self._data_edits_stack.append(ValueChanged(
             self.data.index[row], self.data.columns[col],
             edited_value, previous_value,
@@ -211,13 +211,13 @@ class SardesTableData(object):
             original_value = self._original_data.loc[(row, col), 'value']
             self._original_data.drop((row, col), inplace=True)
         else:
-            original_value = self.data.iloc[row, col]
+            original_value = self.data.iat[row, col]
 
         if original_value != edited_value:
             self._original_data.loc[(row, col), 'value'] = original_value
 
         # We apply the new value to the data.
-        self.data.iloc[row, col] = edited_value
+        self.data.iat[row, col] = edited_value
 
         return self._data_edits_stack[-1]
 
@@ -227,7 +227,7 @@ class SardesTableData(object):
         pandas series at the given row if no column index is given.
         """
         if col is not None:
-            return self.data.iloc[row, col]
+            return self.data.iat[row, col]
         else:
             return self.data.iloc[row]
 
@@ -536,7 +536,7 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         Return the value to display in the table at the given model index.
         """
-        return self.visual_dataf.iloc[model_index.row(), model_index.column()]
+        return self.visual_dataf.iat[model_index.row(), model_index.column()]
 
     def get_value_at(self, model_index):
         """
