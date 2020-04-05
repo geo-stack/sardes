@@ -1462,8 +1462,6 @@ class SardesTableView(QTableView):
         Extend Qt method to ensure that the cell of this table that is
         going to be edited is visible.
         """
-        if not self.is_data_editable_at(model_index):
-            return False
         if trigger is None:
             # Scroll to item if it is not currently visible in the scrollarea.
             item_rect = self.visualRect(model_index)
