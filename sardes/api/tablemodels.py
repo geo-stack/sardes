@@ -521,7 +521,7 @@ class SardesTableModelBase(QAbstractTableModel):
         elif role == Qt.BackgroundRole:
             if self.is_data_deleted_at(index):
                 return QColor('#FF9999')
-            if self.is_data_edited_at(index):
+            elif self.is_data_edited_at(index):
                 return QColor('#CCFF99')
             else:
                 return QStyleOption().palette.base().color()
@@ -530,7 +530,10 @@ class SardesTableModelBase(QAbstractTableModel):
 
     def flags(self, model_index):
         """Qt method override."""
-        return Qt.ItemIsEnabled | Qt.ItemIsEditable | Qt.ItemIsSelectable
+        if self.is_data_deleted_at(model_index):
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        else:
+            return Qt.ItemIsEnabled | Qt.ItemIsEditable | Qt.ItemIsSelectable
 
     def get_visual_data_at(self, model_index):
         """
