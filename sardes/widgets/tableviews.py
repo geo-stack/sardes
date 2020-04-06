@@ -1297,8 +1297,7 @@ class SardesTableView(QTableView):
         Return whether the item at the specified model index is editable.
         """
         try:
-            return (self.itemDelegate(model_index).is_editable and
-                    not self.model().is_data_deleted_at(model_index))
+            return self.itemDelegate(model_index).is_editable
         except AttributeError:
             return False
 
@@ -1463,8 +1462,6 @@ class SardesTableView(QTableView):
         Extend Qt method to ensure that the cell of this table that is
         going to be edited is visible.
         """
-        if not self.is_data_editable_at(model_index):
-            return False
         if trigger is None:
             # Scroll to item if it is not currently visible in the scrollarea.
             item_rect = self.visualRect(model_index)
