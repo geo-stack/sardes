@@ -1050,10 +1050,11 @@ class SardesTableView(QTableView):
         Return the list of logical indexes corresponding to the rows
         that are currently selected in the table.
         """
-        selected_indexes = (self.selectionModel().selectedIndexes() +
-                            [self.selectionModel().currentIndex()])
-        return sorted(list(set(
-            [index.row() for index in selected_indexes if index.isValid()])))
+        rows = []
+        for index_range in self.selectionModel().selection():
+            if index_range.isValid():
+                rows.extend(range(index_range.top(), index_range.bottom() + 1))
+        return [*{*rows}]
 
     def select_column(self):
         """
