@@ -1350,8 +1350,6 @@ class SardesTableView(QTableView):
         current_index = self.selectionModel().currentIndex()
         if current_index.isValid():
             if self.state() != self.EditingState:
-                self.selectionModel().setCurrentIndex(
-                    current_index, self.selectionModel().Select)
                 self.edit(current_index)
             else:
                 self.itemDelegate(current_index).commit_data()
@@ -1461,13 +1459,20 @@ class SardesTableView(QTableView):
         Extend Qt method to ensure that the cell of this table that is
         going to be edited is visible.
         """
+        if trigger is None or trigger == self.DoubleClicked:
+            # We clear all selected items but the current index.
+            self.selectionModel().setCurrentIndex(
+                model_index, self.selectionModel().ClearAndSelect)
         if trigger is None:
+            # We clear all selected items but the current index.
+            self.selectionModel().setCurrentIndex(
+                model_index, self.selectionModel().ClearAndSelect)
+
             # Scroll to item if it is not currently visible in the scrollarea.
             item_rect = self.visualRect(model_index)
             view_rect = self.geometry()
             if not view_rect.contains(item_rect):
                 self.scrollTo(model_index, hint=self.EnsureVisible)
-
             return super().edit(model_index)
         else:
             return super().edit(model_index, trigger, event)
