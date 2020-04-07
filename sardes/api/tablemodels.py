@@ -270,10 +270,11 @@ class SardesTableData(object):
         """
         unique_rows = pd.Index(rows)
         unique_rows = unique_rows[~unique_rows.isin(self._deleted_rows)]
-        self._deleted_rows = self._deleted_rows.append(unique_rows)
-        self._data_edits_stack.append(RowDeleted(
-            self.data.index[unique_rows], unique_rows, parent=self))
-        return self._data_edits_stack[-1]
+        if not unique_rows.empty:
+            self._deleted_rows = self._deleted_rows.append(unique_rows)
+            self._data_edits_stack.append(RowDeleted(
+                self.data.index[unique_rows], unique_rows, parent=self))
+            return self._data_edits_stack[-1]
 
     # ---- Edits
     def edits(self):
@@ -693,10 +694,11 @@ class SardesTableModelBase(QAbstractTableModel):
         Delete rows at the specified row logical indexes.
         """
         data_edit = self._datat.delete_row(rows)
-        self.dataChanged.emit(
-            self.index(0, 0),
-            self.index(self.rowCount() - 1, self.columnCount() - 1))
-        self.sig_data_edited.emit(data_edit)
+        if data_edit is not None:
+            self.dataChanged.emit(
+                self.index(0, 0),
+                self.index(self.rowCount() - 1, self.columnCount() - 1))
+            self.sig_data_edited.emit(data_edit)
 
     def undo_last_data_edit(self):
         """
