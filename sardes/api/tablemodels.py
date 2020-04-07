@@ -13,6 +13,7 @@ from collections import OrderedDict
 import uuid
 
 # ---- Third party imports
+import numpy as np
 import pandas as pd
 from qtpy.QtCore import (QAbstractTableModel, QModelIndex, Qt, QVariant,
                          Signal, QSortFilterProxyModel)
@@ -837,8 +838,8 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         self._columns_sort_order = []
         self._filter_by_columns = None
         self._proxy_dataf_index = []
-        self._map_row_to_source = []
-        self._map_row_from_source = []
+        self._map_row_to_source = np.array([])
+        self._map_row_from_source = np.array([])
         self._multi_columns_sort = multi_columns_sort
 
         # Setup source model.
@@ -903,12 +904,12 @@ class SardesSortFilterModel(QSortFilterProxyModel):
                 ascending=[not bool(v) for v in self._columns_sort_order],
                 axis=0,
                 inplace=False).index
-        self._map_row_to_source = [
+        self._map_row_to_source = np.array([
             self.sourceModel().visual_dataf.index.get_loc(index) for
-            index in self._proxy_dataf_index]
-        self._map_row_from_source = [
+            index in self._proxy_dataf_index])
+        self._map_row_from_source = np.array([
             self._proxy_dataf_index.get_loc(index) for
-            index in self.sourceModel().visual_dataf.index]
+            index in self.sourceModel().visual_dataf.index])
         self.sig_data_sorted.emit()
 
     # ---- Public methods
