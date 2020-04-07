@@ -436,6 +436,7 @@ class SardesHeaderView(QHeaderView):
         self.setSortIndicatorShown(False)
         self.hover = -1
         self.pressed = -1
+        self.parent().model().sig_data_sorted.connect(self._update_sections)
 
     def mousePressEvent(self, e):
         """
@@ -598,6 +599,11 @@ class SardesHeaderView(QHeaderView):
                       int(not bool(sort_order)))
         self.sig_sort_by_column.emit(section, sort_order)
 
+    @Slot()
+    def _update_sections(self):
+        """"Update all sections of this header."""
+        for section in range(self.count()):
+            self.updateSection(section)
 
 class SardesTableView(QTableView):
     """
