@@ -264,7 +264,6 @@ def test_delete_timeseries_data(mainwindow, qtbot, mocker):
 
     # Delete the selected row.
     table.tableview.delete_row_action.trigger()
-    assert not table.tableview.delete_row_action.isEnabled()
     assert table.tableview.model().data_edit_count() == 1
     assert model.has_unsaved_data_edits() is True
 
@@ -273,11 +272,9 @@ def test_delete_timeseries_data(mainwindow, qtbot, mocker):
     selection_model.select(model.index(4, 1), selection_model.Select)
     selection_model.select(model.index(5, 1), selection_model.Select)
     assert table.tableview.get_selected_rows() == [1, 3, 4, 5]
-    assert table.tableview.delete_row_action.isEnabled()
 
     # Delete the selected rows.
     table.tableview.delete_row_action.trigger()
-    assert not table.tableview.delete_row_action.isEnabled()
     assert model.data_edit_count() == 2
     assert model.has_unsaved_data_edits() is True
 
