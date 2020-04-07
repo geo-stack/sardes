@@ -164,8 +164,8 @@ def get_values_for_column(model_index):
 
 
 def get_selected_data(tablewidget):
-    return sorted([index.data() for index in
-                   tablewidget.tableview.selectionModel().selectedIndexes()])
+    return ([index.data() for index in
+             tablewidget.tableview.selectionModel().selectedIndexes()])
 
 
 # =============================================================================
@@ -950,25 +950,35 @@ def test_column_sorting(tablewidget, qtbot):
         model.index(1, 3), selection_model.SelectCurrent)
 
     assert selection_model.currentIndex().data() == '1'
-    assert get_selected_data(tablewidget) == ['1', '2.222', '29']
+    assert get_selected_data(tablewidget) == ['2.222', '29', '1']
 
     # Sort in ASCENDING order according to the current column using the
     # keyboard shorcut Ctrl+<.
+    
+    # ['str2', False, 2.222, 1, 'not editable', None]
+    # ['str1', True, 1.111, 3, 'not editable', None]
+    # ['str3', True, 3.333, 29, 'not editable', None]
+
     qtbot.keyPress(tableview, Qt.Key_Less, modifier=Qt.ControlModifier)
     assert get_values_for_column(model.index(0, 0)) == ['str2', 'str1', 'str3']
     assert horiz_header.sort_indicator_order() == [0]
     assert horiz_header.sort_indicator_sections() == [3]
-    assert selection_model.currentIndex().data() == '1'
-    assert get_selected_data(tablewidget) == ['1', '2.222', '29']
+    assert selection_model.currentIndex().data() == '3'
+    assert get_selected_data(tablewidget) == ['1.111', '29', '3']
 
     # Sort in DESCENDING order according to the current column using the
     # keyboard shorcut Ctrl+>.
+
+    # ['str3', True, 3.333, 29, 'not editable', None]
+    # ['str1', True, 1.111, 3, 'not editable', None]
+    # ['str2', False, 2.222, 1, 'not editable', None]
+
     qtbot.keyPress(tableview, Qt.Key_Greater, modifier=Qt.ControlModifier)
     assert get_values_for_column(model.index(0, 0)) == ['str3', 'str1', 'str2']
     assert horiz_header.sort_indicator_order() == [1]
     assert horiz_header.sort_indicator_sections() == [3]
-    assert selection_model.currentIndex().data() == '1'
-    assert get_selected_data(tablewidget) == ['1', '2.222', '29']
+    assert selection_model.currentIndex().data() == '3'
+    assert get_selected_data(tablewidget) == ['1.111', '1', '3']
 
     # Clear sorting.
     qtbot.keyPress(tableview, Qt.Key_Period, modifier=Qt.ControlModifier)
@@ -977,7 +987,7 @@ def test_column_sorting(tablewidget, qtbot):
     assert horiz_header.sort_indicator_order() == []
     assert horiz_header.sort_indicator_sections() == []
     assert selection_model.currentIndex().data() == '1'
-    assert get_selected_data(tablewidget) == ['1', '2.222', '29']
+    assert get_selected_data(tablewidget) == ['2.222', '29', '1']
 
 
 def test_single_column_sorting(tablewidget, qtbot):
