@@ -132,7 +132,7 @@ def tablewidget(qtbot, tablemodel):
 
     tablewidget.show()
     qtbot.waitForWindowShown(tablewidget)
-    qtbot.addWidget(tablewidget)
+    # qtbot.addWidget(tablewidget)
 
     # Assert everything is working as expected when table is empty.
     assert tablewidget
@@ -1011,7 +1011,6 @@ def test_single_column_sorting(tablewidget, qtbot):
         model.index(0, 2), selection_model.SelectCurrent)
 
     # Sort in DESCENDING order.
-
     qtbot.keyPress(tableview, Qt.Key_Greater, modifier=Qt.ControlModifier)
     assert get_values_for_column(model.index(0, 0)) == ['str3', 'str2', 'str1']
     assert horiz_header.sort_indicator_order() == [1]
@@ -1060,7 +1059,7 @@ def test_multi_column_sorting(tablewidget, qtbot):
     assert get_values_for_column(model.index(0, 0)) == ['str3', 'str2', 'str1']
     assert horiz_header.sort_indicator_order() == [1]
     assert horiz_header.sort_indicator_sections() == [2]
-    assert selection_model.currentIndex().data() == '1.111'
+    assert selection_model.currentIndex().data() == '3.333'
 
     # ['str3', True, 3.333, 29, 'not editable', None]
     # ['str2', False, 2.222, 1, 'not editable', None]
@@ -1075,7 +1074,7 @@ def test_multi_column_sorting(tablewidget, qtbot):
     assert get_values_for_column(model.index(0, 0)) == ['str2', 'str3', 'str1']
     assert horiz_header.sort_indicator_order() == [0, 1]
     assert horiz_header.sort_indicator_sections() == [1, 2]
-    assert selection_model.currentIndex().data() == 'Yes'
+    assert selection_model.currentIndex().data() == 'No'
 
     # ['str2', False, 2.222, 1, 'not editable', None]
     # ['str3', True, 3.333, 29, 'not editable', None]
