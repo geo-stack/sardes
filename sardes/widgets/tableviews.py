@@ -152,6 +152,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
                 self.model_view.raise_edits_error(
                     self.model_index, error_message)
             self.model_view._ensure_visible(self.model_index)
+            self.model_view.setCurrentIndex(self.model_index)
 
     # ---- Public methods
     def model(self):
@@ -218,8 +219,12 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         it won't be possible to clear the data if the editor have not been
         created at least once.
         """
-        if not self.is_required:
+        if not self.is_required and model_index.isValid():
+            source_model_index = self.model().mapToSource(model_index)
             model_index.model().set_data_edit_at(model_index, None)
+            model_index = self.model().mapFromSource(source_model_index)
+            self.model_view._ensure_visible(model_index)
+            self.model_view.setCurrentIndex(model_index)
 
 
 class NotEditableDelegate(SardesItemDelegateBase):
@@ -604,6 +609,7 @@ class SardesHeaderView(QHeaderView):
         """"Update all sections of this header."""
         for section in range(self.count()):
             self.updateSection(section)
+
 
 class SardesTableView(QTableView):
     """
@@ -1341,7 +1347,6 @@ class SardesTableView(QTableView):
         current_index = self.selectionModel().currentIndex()
         if current_index.isValid():
             self.itemDelegate(current_index).clear_model_data_at(current_index)
-        self._ensure_visible(current_index)
 
     def _edit_current_item(self):
         """
