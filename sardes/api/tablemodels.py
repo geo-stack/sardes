@@ -866,26 +866,11 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         """
         Invalidate the current sorting and filtering.
         """
-        self.layoutAboutToBeChanged.emit()
-
-        self._old_persistent_indexes = self.persistentIndexList()
-        self._old_persistent_source_indexes = [
-            self.mapToSource(index) for index in self.persistentIndexList()]
-
         self._sort()
-        self._update_persistent_indexes()
-
-        self.layoutChanged.emit()
-
-    def _update_persistent_indexes(self):
-        """
-        Update the persistent indexes so that, for instance, the selections
-        are preserved correctly after a change.
-        """
-        new_persistent_indexes = [self.mapFromSource(index) for index in
-                                  self._old_persistent_source_indexes]
-        self.changePersistentIndexList(
-            self._old_persistent_indexes, new_persistent_indexes)
+        self.dataChanged.emit(
+            self.index(0, 0),
+            self.index(self.rowCount() - 1, self.columnCount() - 1)
+            )
 
     def _sort(self):
         """
