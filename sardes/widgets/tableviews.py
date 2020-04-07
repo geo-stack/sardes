@@ -1227,10 +1227,7 @@ class SardesTableView(QTableView):
         Return the number of rows of this table that have at least one
         selected items.
         """
-        return len(set(
-            [index.row() for index in
-             self.selectionModel().selectedIndexes()]
-            ))
+        return len(self.get_selected_rows())
 
     def visible_row_count(self):
         """Return this table number of visible rows."""
