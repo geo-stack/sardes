@@ -942,16 +942,11 @@ class SardesTableView(QTableView):
             is_required = self.is_data_required_at(current_index)
             is_null = self.model().is_null(current_index)
             is_editable = self.is_data_editable_at(current_index)
-            is_selection_deletable = self.is_selection_deletable()
             if 'clear_item' not in self._disabled_actions:
                 self.clear_item_action.setEnabled(
                     not is_required and not is_null and is_editable)
             if 'edit_item' not in self._disabled_actions:
                 self.edit_item_action.setEnabled(is_editable)
-            if 'delete_row' not in self._disabled_actions:
-                self.delete_row_action.setEnabled(is_selection_deletable)
-        if 'delete_row' not in self._disabled_actions:
-            self.delete_row_action.setEnabled(self.is_selection_deletable())
 
         has_unsaved_data_edits = self.model().has_unsaved_data_edits()
         is_data_edit_count = bool(self.model().data_edit_count())
@@ -961,8 +956,6 @@ class SardesTableView(QTableView):
             self.undo_edits_action.setEnabled(is_data_edit_count)
         if 'cancel_edits' not in self._disabled_actions:
             self.cancel_edits_action.setEnabled(has_unsaved_data_edits)
-        if 'delete_row' not in self._disabled_actions:
-            self.delete_row_action.setEnabled(self.is_selection_deletable())
 
     # ---- Options
     @property
