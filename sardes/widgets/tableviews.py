@@ -643,13 +643,15 @@ class SardesTableView(QTableView):
         self._disabled_actions = disabled_actions or []
         self._data_edit_cursor_pos = {}
 
+        self._setup_table_model(table_model, multi_columns_sort)
+
         # Setup horizontal header.
         self.setHorizontalHeader(SardesHeaderView(
-            parent, sections_movable))
+            self, sections_movable))
         self.horizontalHeader().sig_sort_by_column.connect(self.sort_by_column)
 
+        # Setup actions and shortcuts.
         self._actions = {}
-        self._setup_table_model(table_model, multi_columns_sort)
         self._setup_item_delegates()
         self._setup_shortcuts()
 
