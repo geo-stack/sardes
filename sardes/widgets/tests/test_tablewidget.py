@@ -954,7 +954,7 @@ def test_column_sorting(tablewidget, qtbot):
 
     # Sort in ASCENDING order according to the current column using the
     # keyboard shorcut Ctrl+<.
-    
+
     # ['str2', False, 2.222, 1, 'not editable', None]
     # ['str1', True, 1.111, 3, 'not editable', None]
     # ['str3', True, 3.333, 29, 'not editable', None]
@@ -1006,7 +1006,7 @@ def test_single_column_sorting(tablewidget, qtbot):
     # ['str1', True, 1.111, 3, 'not editable', None]
     # ['str2', False, 2.222, 1, 'not editable', None]
     # ['str3', True, 3.333, 29, 'not editable', None]
-    
+
     selection_model.setCurrentIndex(
         model.index(0, 2), selection_model.SelectCurrent)
 
@@ -1016,7 +1016,7 @@ def test_single_column_sorting(tablewidget, qtbot):
     assert horiz_header.sort_indicator_order() == [1]
     assert horiz_header.sort_indicator_sections() == [2]
     assert selection_model.currentIndex().data() == '3.333'
-    
+
     # ['str3', True, 3.333, 29, 'not editable', None]
     # ['str2', False, 2.222, 1, 'not editable', None]
     # ['str1', True, 1.111, 3, 'not editable', None]
@@ -1031,7 +1031,7 @@ def test_single_column_sorting(tablewidget, qtbot):
     assert horiz_header.sort_indicator_order() == [0]
     assert horiz_header.sort_indicator_sections() == [1]
     assert selection_model.currentIndex().data() == 'No'
-    
+
     # ['str2', False, 2.222, 1, 'not editable', None]
     # ['str1', True, 1.111, 3, 'not editable', None]
     # ['str3', True, 3.333, 29, 'not editable', None]
@@ -1107,10 +1107,13 @@ def test_auto_column_sorting(tablewidget, qtbot):
 
     # Edit the value of the selected index and assert the values were
     # automatically sorted.
-    tableview.model().set_data_edit_at(selection_model.currentIndex(), 'str4')
+    item_delegate = tableview.itemDelegate(selection_model.currentIndex())
+    qtbot.keyPress(tableview, Qt.Key_Enter)
+    qtbot.keyClicks(item_delegate.editor, 'str4')
+    qtbot.keyPress(item_delegate.editor, Qt.Key_Enter)
     assert get_values_for_column(model.index(0, 0)) == ['str2', 'str3', 'str4']
     assert selection_model.currentIndex().data() == 'str4'
-    assert get_selected_data(tablewidget) == ['2.222', '29', 'str4']
+    assert get_selected_data(tablewidget) == ['str4']
 
 
 def test_copy_to_clipboard(tablewidget, qtbot, mocker):
@@ -1152,5 +1155,4 @@ def test_copy_to_clipboard(tablewidget, qtbot, mocker):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw',
-                 '-k', 'test_delete_row'])
+    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
