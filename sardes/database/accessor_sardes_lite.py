@@ -551,25 +551,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         corresponding to the specified sampling feature UUID.
         """
         obs_well = self._get_sampling_feature(sampling_feature_uuid)
-        note_attrs = [
-            'common_name', 'aquifer_type', 'confinement', 'aquifer_code',
-            'in_recharge_zone', 'is_influenced', 'is_station_active',
-            'obs_well_notes']
-
         if attribute_name in ['obs_well_id']:
             setattr(obs_well, attribute_name, attribute_value)
-        elif attribute_name in note_attrs:
-            index = note_attrs.index(attribute_name)
-            labels = [
-                'nom_commu', 'aquifere', 'nappe', 'code_aqui', 'zone_rechar',
-                'influences', 'station_active', 'remarque'][index]
-            try:
-                notes = [
-                    n.strip() for n in obs_well.obs_well_notes.split(r'||')]
-            except AttributeError:
-                notes = [''] * len(labels)
-            notes[index] = '{}: {}'.format(labels[index], attribute_value)
-            obs_well.sampling_feature_notes = r' || '.join(notes)
+        elif attribute_name in ['obs_well_notes']:
+            setattr(obs_well, 'sampling_feature_notes', attribute_value)
+        elif attribute_name in [
+                'common_name', 'aquifer_type', 'confinement', 'aquifer_code',
+                'in_recharge_zone', 'is_influenced', 'is_station_active',
+                'obs_well_notes']:
+            setattr(obs_well._metadata, attribute_name, attribute_value)
         elif attribute_name in ['latitude', 'longitude', 'municipality']:
             location = self._get_location(obs_well.loc_id)
             setattr(location, attribute_name, attribute_value)
