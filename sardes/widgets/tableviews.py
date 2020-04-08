@@ -383,11 +383,8 @@ class NumEditDelegate(SardesItemDelegate):
         self._decimals = decimals
 
     def create_editor(self, parent):
-        if self._decimals == 0:
-            editor = QSpinBox(parent)
-        else:
-            editor = QDoubleSpinBox(parent)
-            editor.setDecimals(self._decimals)
+        editor = QDoubleSpinBox(parent)
+        editor.setDecimals(self._decimals)
         if self._bottom is not None:
             editor.setMinimum(self._bottom)
         if self._top is not None:
