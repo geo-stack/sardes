@@ -522,35 +522,22 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._session.query(SamplingFeature,
                                 Location.latitude,
                                 Location.longitude,
-                                Location.municipality)
+                                Location.municipality,
+                                SamplingFeatureMetadata)
             .filter(Location.loc_id == SamplingFeature.loc_id)
+            .filter(SamplingFeatureMetadata.sampling_feature_uuid ==
+                    SamplingFeature.sampling_feature_uuid)
             )
         obs_wells = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
 
         obs_wells.rename({'sampling_feature_name': 'obs_well_id'},
                          axis='columns', inplace=True)
-
-        # Reformat notes correctly.
-        keys_in_notes = ['common_name', 'aquifer_type', 'confinement',
-                         'aquifer_code', 'in_recharge_zone',
-                         'is_influenced', 'is_station_active',
-                         'obs_well_notes']
-        split_notes = obs_wells['sampling_feature_notes'].str.split(r'\|\|')
-        obs_wells.drop(labels='sampling_feature_notes', axis=1, inplace=True)
-        for i, key in enumerate(keys_in_notes):
-            obs_wells[key] = (
-                split_notes.str[i].str.split(':').str[1].str.strip())
-            obs_wells[key] = obs_wells[key][obs_wells[key] != 'NULL']
-
-        # Convert to bool.
-        obs_wells['is_station_active'] = (
-            obs_wells['is_station_active']
-            .map({'True': True, 'False': False}))
+        obs_wells.rename({'sampling_feature_notes': 'obs_well_notes'},
+                         axis='columns', inplace=True)
 
         # Set the index to the observation well ids.
-        obs_wells.set_index(
-            'sampling_feature_uuid', inplace=True, drop=True)
+        obs_wells.set_index('sampling_feature_uuid', inplace=True, drop=True)
 
         # Replace nan by None.
         obs_wells = obs_wells.where(obs_wells.notnull(), None)
@@ -1125,17 +1112,17 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 # =============================================================================
 def init_database(accessor):
     tables = [Location, SamplingFeatureType, SamplingFeature,
-              SondeFeature, SondeModel, SondeInstallation, Process,
-              ProcessInstallation, Repere, ObservationType, Observation,
-              ObservedProperty, GenericNumericalData, TimeSeriesChannel,
-              TimeSeriesData, PumpType, PumpInstallation]
-    conn = accessor._engine.connect()
+              SamplingFeatureMetadata, SondeFeature, SondeModel,
+              SondeInstallation, Process, ProcessInstallation, Repere,
+              ObservationType, Observation, ObservedProperty,
+              GenericNumericalData, TimeSeriesChannel, TimeSeriesData,
+              PumpType, PumpInstallation]
+    dialect = accessor._engine.dialect
     for table in tables:
-        if accessor._engine.dialect.has_table(
-                conn, table.__tablename__):
+        if dialect.has_table(accessor._session, table.__tablename__):
             continue
         Base.metadata.create_all(accessor._engine, tables=[table.__table__])
-    conn.close()
+    accessor._session.commit()
 
 
 def copydata_from_rsesq_postgresql(accessor_rsesq, accessor_sardeslite):
