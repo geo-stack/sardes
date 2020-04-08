@@ -25,7 +25,7 @@ from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
 from sqlalchemy.exc import DBAPIError, ProgrammingError, OperationalError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.types import TEXT, VARCHAR, Boolean
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import relationship, sessionmaker, deferred
 from sqlalchemy.engine.url import URL
 from sqlalchemy_utils import UUIDType
 from sqlalchemy.orm.exc import NoResultFound
@@ -112,6 +112,10 @@ class SamplingFeature(Base):
     sampling_feature_type_id = Column(
         Integer, ForeignKey('sampling_feature_type.sampling_feature_type_id'))
 
+    _metadata = relationship(
+        "SamplingFeatureMetadata", uselist=False,
+        back_populates="sampling_feature")
+
     def __repr__(self):
         return format_sqlobject_repr(self)
 
@@ -129,6 +133,25 @@ class SamplingFeatureType(Base):
 
     def __repr__(self):
         return format_sqlobject_repr(self)
+
+
+class SamplingFeatureMetadata(Base):
+    __tablename__ = 'sampling_feature_metadata'
+
+    sampling_feature_uuid = deferred(Column(
+        UUIDType(binary=False),
+        ForeignKey('sampling_feature.sampling_feature_uuid'),
+        primary_key=True))
+    in_recharge_zone = Column(String)
+    aquifer_type = Column(String)
+    confinement = Column(String)
+    common_name = Column(String)
+    aquifer_code = Column(Integer)
+    is_station_active = Column(Boolean)
+    is_influenced = Column(String)
+
+    sampling_feature = relationship(
+        "SamplingFeature", uselist=False, back_populates="_metadata")
 
 
 # ---- Observations
