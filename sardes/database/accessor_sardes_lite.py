@@ -25,7 +25,7 @@ from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
 from sqlalchemy.exc import DBAPIError, ProgrammingError, OperationalError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.types import TEXT, VARCHAR, Boolean
-from sqlalchemy.orm import relationship, sessionmaker, deferred
+from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.engine.url import URL
 from sqlalchemy_utils import UUIDType
 from sqlalchemy.orm.exc import NoResultFound
@@ -138,10 +138,10 @@ class SamplingFeatureType(Base):
 class SamplingFeatureMetadata(Base):
     __tablename__ = 'sampling_feature_metadata'
 
-    sampling_feature_uuid = deferred(Column(
+    sampling_feature_uuid = Column(
         UUIDType(binary=False),
         ForeignKey('sampling_feature.sampling_feature_uuid'),
-        primary_key=True))
+        primary_key=True)
     in_recharge_zone = Column(String)
     aquifer_type = Column(String)
     confinement = Column(String)
@@ -526,7 +526,13 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                                 Location.latitude,
                                 Location.longitude,
                                 Location.municipality,
-                                SamplingFeatureMetadata)
+                                SamplingFeatureMetadata.in_recharge_zone,
+                                SamplingFeatureMetadata.aquifer_type,
+                                SamplingFeatureMetadata.confinement,
+                                SamplingFeatureMetadata.common_name,
+                                SamplingFeatureMetadata.aquifer_code,
+                                SamplingFeatureMetadata.is_station_active,
+                                SamplingFeatureMetadata.is_influenced)
             .filter(Location.loc_id == SamplingFeature.loc_id)
             .filter(SamplingFeatureMetadata.sampling_feature_uuid ==
                     SamplingFeature.sampling_feature_uuid)
