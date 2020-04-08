@@ -13,6 +13,7 @@ from collections import OrderedDict
 import uuid
 
 # ---- Third party imports
+import numpy as np
 import pandas as pd
 from qtpy.QtCore import (QAbstractTableModel, QModelIndex, Qt, QVariant,
                          Signal, QSortFilterProxyModel)
@@ -270,10 +271,11 @@ class SardesTableData(object):
         """
         unique_rows = pd.Index(rows)
         unique_rows = unique_rows[~unique_rows.isin(self._deleted_rows)]
-        self._deleted_rows = self._deleted_rows.append(unique_rows)
-        self._data_edits_stack.append(RowDeleted(
-            self.data.index[unique_rows], unique_rows, parent=self))
-        return self._data_edits_stack[-1]
+        if not unique_rows.empty:
+            self._deleted_rows = self._deleted_rows.append(unique_rows)
+            self._data_edits_stack.append(RowDeleted(
+                self.data.index[unique_rows], unique_rows, parent=self))
+            return self._data_edits_stack[-1]
 
     # ---- Edits
     def edits(self):
@@ -693,10 +695,11 @@ class SardesTableModelBase(QAbstractTableModel):
         Delete rows at the specified row logical indexes.
         """
         data_edit = self._datat.delete_row(rows)
-        self.dataChanged.emit(
-            self.index(0, 0),
-            self.index(self.rowCount() - 1, self.columnCount() - 1))
-        self.sig_data_edited.emit(data_edit)
+        if data_edit is not None:
+            self.dataChanged.emit(
+                self.index(0, 0),
+                self.index(self.rowCount() - 1, self.columnCount() - 1))
+            self.sig_data_edited.emit(data_edit)
 
     def undo_last_data_edit(self):
         """
@@ -835,8 +838,8 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         self._columns_sort_order = []
         self._filter_by_columns = None
         self._proxy_dataf_index = []
-        self._map_row_to_source = []
-        self._map_row_from_source = []
+        self._map_row_to_source = np.array([])
+        self._map_row_from_source = np.array([])
         self._multi_columns_sort = multi_columns_sort
 
         # Setup source model.
@@ -863,26 +866,11 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         """
         Invalidate the current sorting and filtering.
         """
-        self.layoutAboutToBeChanged.emit()
-
-        self._old_persistent_indexes = self.persistentIndexList()
-        self._old_persistent_source_indexes = [
-            self.mapToSource(index) for index in self.persistentIndexList()]
-
         self._sort()
-        self._update_persistent_indexes()
-
-        self.layoutChanged.emit()
-
-    def _update_persistent_indexes(self):
-        """
-        Update the persistent indexes so that, for instance, the selections
-        are preserved correctly after a change.
-        """
-        new_persistent_indexes = [self.mapFromSource(index) for index in
-                                  self._old_persistent_source_indexes]
-        self.changePersistentIndexList(
-            self._old_persistent_indexes, new_persistent_indexes)
+        self.dataChanged.emit(
+            self.index(0, 0),
+            self.index(self.rowCount() - 1, self.columnCount() - 1)
+            )
 
     def _sort(self):
         """
@@ -901,12 +889,12 @@ class SardesSortFilterModel(QSortFilterProxyModel):
                 ascending=[not bool(v) for v in self._columns_sort_order],
                 axis=0,
                 inplace=False).index
-        self._map_row_to_source = [
+        self._map_row_to_source = np.array([
             self.sourceModel().visual_dataf.index.get_loc(index) for
-            index in self._proxy_dataf_index]
-        self._map_row_from_source = [
+            index in self._proxy_dataf_index])
+        self._map_row_from_source = np.array([
             self._proxy_dataf_index.get_loc(index) for
-            index in self.sourceModel().visual_dataf.index]
+            index in self.sourceModel().visual_dataf.index])
         self.sig_data_sorted.emit()
 
     # ---- Public methods

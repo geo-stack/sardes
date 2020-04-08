@@ -152,6 +152,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
                 self.model_view.raise_edits_error(
                     self.model_index, error_message)
             self.model_view._ensure_visible(self.model_index)
+            self.model_view.setCurrentIndex(self.model_index)
 
     # ---- Public methods
     def model(self):
@@ -218,8 +219,12 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         it won't be possible to clear the data if the editor have not been
         created at least once.
         """
-        if not self.is_required:
+        if not self.is_required and model_index.isValid():
+            source_model_index = self.model().mapToSource(model_index)
             model_index.model().set_data_edit_at(model_index, None)
+            model_index = self.model().mapFromSource(source_model_index)
+            self.model_view._ensure_visible(model_index)
+            self.model_view.setCurrentIndex(model_index)
 
 
 class NotEditableDelegate(SardesItemDelegateBase):
@@ -436,6 +441,7 @@ class SardesHeaderView(QHeaderView):
         self.setSortIndicatorShown(False)
         self.hover = -1
         self.pressed = -1
+        self.parent().model().sig_data_sorted.connect(self._update_sections)
 
     def mousePressEvent(self, e):
         """
@@ -598,6 +604,12 @@ class SardesHeaderView(QHeaderView):
                       int(not bool(sort_order)))
         self.sig_sort_by_column.emit(section, sort_order)
 
+    @Slot()
+    def _update_sections(self):
+        """"Update all sections of this header."""
+        for section in range(self.count()):
+            self.updateSection(section)
+
 
 class SardesTableView(QTableView):
     """
@@ -643,13 +655,15 @@ class SardesTableView(QTableView):
         self._disabled_actions = disabled_actions or []
         self._data_edit_cursor_pos = {}
 
+        self._setup_table_model(table_model, multi_columns_sort)
+
         # Setup horizontal header.
         self.setHorizontalHeader(SardesHeaderView(
-            parent, sections_movable))
+            self, sections_movable))
         self.horizontalHeader().sig_sort_by_column.connect(self.sort_by_column)
 
+        # Setup actions and shortcuts.
         self._actions = {}
-        self._setup_table_model(table_model, multi_columns_sort)
         self._setup_item_delegates()
         self._setup_shortcuts()
 
@@ -942,16 +956,11 @@ class SardesTableView(QTableView):
             is_required = self.is_data_required_at(current_index)
             is_null = self.model().is_null(current_index)
             is_editable = self.is_data_editable_at(current_index)
-            is_selection_deletable = self.is_selection_deletable()
             if 'clear_item' not in self._disabled_actions:
                 self.clear_item_action.setEnabled(
                     not is_required and not is_null and is_editable)
             if 'edit_item' not in self._disabled_actions:
                 self.edit_item_action.setEnabled(is_editable)
-            if 'delete_row' not in self._disabled_actions:
-                self.delete_row_action.setEnabled(is_selection_deletable)
-        if 'delete_row' not in self._disabled_actions:
-            self.delete_row_action.setEnabled(self.is_selection_deletable())
 
         has_unsaved_data_edits = self.model().has_unsaved_data_edits()
         is_data_edit_count = bool(self.model().data_edit_count())
@@ -961,8 +970,6 @@ class SardesTableView(QTableView):
             self.undo_edits_action.setEnabled(is_data_edit_count)
         if 'cancel_edits' not in self._disabled_actions:
             self.cancel_edits_action.setEnabled(has_unsaved_data_edits)
-        if 'delete_row' not in self._disabled_actions:
-            self.delete_row_action.setEnabled(self.is_selection_deletable())
 
     # ---- Options
     @property
@@ -1049,10 +1056,11 @@ class SardesTableView(QTableView):
         Return the list of logical indexes corresponding to the rows
         that are currently selected in the table.
         """
-        selected_indexes = (self.selectionModel().selectedIndexes() +
-                            [self.selectionModel().currentIndex()])
-        return sorted(list(set(
-            [index.row() for index in selected_indexes if index.isValid()])))
+        rows = []
+        for index_range in self.selectionModel().selection():
+            if index_range.isValid():
+                rows.extend(range(index_range.top(), index_range.bottom() + 1))
+        return [*{*rows}]
 
     def select_column(self):
         """
@@ -1225,10 +1233,7 @@ class SardesTableView(QTableView):
         Return the number of rows of this table that have at least one
         selected items.
         """
-        return len(set(
-            [index.row() for index in
-             self.selectionModel().selectedIndexes()]
-            ))
+        return len(self.get_selected_rows())
 
     def visible_row_count(self):
         """Return this table number of visible rows."""
@@ -1342,7 +1347,6 @@ class SardesTableView(QTableView):
         current_index = self.selectionModel().currentIndex()
         if current_index.isValid():
             self.itemDelegate(current_index).clear_model_data_at(current_index)
-        self._ensure_visible(current_index)
 
     def _edit_current_item(self):
         """
@@ -1351,8 +1355,6 @@ class SardesTableView(QTableView):
         current_index = self.selectionModel().currentIndex()
         if current_index.isValid():
             if self.state() != self.EditingState:
-                self.selectionModel().setCurrentIndex(
-                    current_index, self.selectionModel().Select)
                 self.edit(current_index)
             else:
                 self.itemDelegate(current_index).commit_data()
@@ -1462,13 +1464,20 @@ class SardesTableView(QTableView):
         Extend Qt method to ensure that the cell of this table that is
         going to be edited is visible.
         """
+        if trigger is None or trigger == self.DoubleClicked:
+            # We clear all selected items but the current index.
+            self.selectionModel().setCurrentIndex(
+                model_index, self.selectionModel().ClearAndSelect)
         if trigger is None:
+            # We clear all selected items but the current index.
+            self.selectionModel().setCurrentIndex(
+                model_index, self.selectionModel().ClearAndSelect)
+
             # Scroll to item if it is not currently visible in the scrollarea.
             item_rect = self.visualRect(model_index)
             view_rect = self.geometry()
             if not view_rect.contains(item_rect):
                 self.scrollTo(model_index, hint=self.EnsureVisible)
-
             return super().edit(model_index)
         else:
             return super().edit(model_index, trigger, event)

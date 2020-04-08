@@ -50,7 +50,7 @@ class ObsWellsTableModel(SardesTableModel):
         elif column in ['latitude', 'longitude']:
             return NumEditDelegate(view, 16, -180, 180)
         else:
-            return NotEditableDelegate(self)
+            return NotEditableDelegate(view)
 
     # ---- Visual Data
     def logical_to_visual_data(self, visual_dataf):
