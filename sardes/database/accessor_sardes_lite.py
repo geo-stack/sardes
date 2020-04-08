@@ -498,9 +498,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         new_obs_well = SamplingFeature(
             sampling_feature_uuid=sampling_feature_uuid,
             sampling_feature_type_id=1,
-            loc_id=new_location.loc_id
-            )
+            loc_id=new_location.loc_id)
         self._session.add(new_obs_well)
+        
+        # We then create a new metadata object for the new observation well.
+        obs_well._metadata = SamplingFeatureMetadata(
+            sampling_feature_uuid=sampling_feature_uuid)
         self._session.commit()
 
         # We then set the attribute values provided in argument for this
