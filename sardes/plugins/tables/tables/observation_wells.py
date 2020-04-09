@@ -40,7 +40,7 @@ class ObsWellsTableModel(SardesTableModel):
         """
         if 'aquifer_code' not in dataf.columns:
             dataf['aquifer_code'] = None
-        dataf['aquifer_code'] = dataf['aquifer_code'].astype(pd.Int8Dtype())
+        dataf['aquifer_code'] = dataf['aquifer_code'].astype(pd.Int64Dtype())
         return super().set_model_data(dataf, dataf_columns_mapper)
 
     def create_delegate_for_column(self, view, column):
