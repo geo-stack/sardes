@@ -24,7 +24,7 @@ from qtpy.QtWidgets import (
     QGridLayout)
 
 # ---- Local imports
-from sardes.config.gui import get_iconsize
+from sardes.config.gui import get_iconsize, RED
 from sardes.config.locale import _
 from sardes.api.tablemodels import SardesTableModel
 from sardes.api.timeseries import DataType
@@ -246,13 +246,15 @@ class DataImportWizard(QDialog):
         self.filename_label.setToolTip(filename)
         try:
             self._file_reader = hsr.SolinstFileReader(filename)
-        except:
+        except Exception as e:
+            _error = e
             self._file_reader = None
             self._sonde_serial_no = None
             self.serial_number_label.setText(READ_ERROR_MSG_COLORED)
             self.site_name_label.setText(READ_ERROR_MSG_COLORED)
             self.projectid_label.setText(READ_ERROR_MSG_COLORED)
         else:
+            _error = None
             sites = self._file_reader.sites
             self.serial_number_label.setText(sites.instrument_serial_number)
             self.site_name_label.setText(sites.site_name)
@@ -262,6 +264,17 @@ class DataImportWizard(QDialog):
         self._update_table_model_data()
         self._update_button_state()
         QApplication.restoreOverrideCursor()
+
+        if _error:
+            QMessageBox.critical(
+                self,
+                _(_("Read Data Error")),
+                _('An error occured while atempting to read data from<br>'
+                  '<i>{}</i><br><br><font color="{}">{}:</font> {}')
+                .format(filename, RED, type(_error).__name__, _error)
+                )
+            return
+            
 
     def _update_table_model_data(self):
         """
