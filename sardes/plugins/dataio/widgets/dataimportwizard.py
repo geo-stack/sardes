@@ -15,7 +15,7 @@ import os.path as osp
 # ---- Third party imports
 from appconfigs.base import get_home_dir
 from atomicwrites import replace_atomic
-import hydsensread as hsr
+from hydsensread import SolinstFileReader
 import pandas as pd
 from qtpy.QtCore import Qt, Slot, Signal
 from qtpy.QtWidgets import (
@@ -245,7 +245,7 @@ class DataImportWizard(QDialog):
         self.filename_label.setText(filename)
         self.filename_label.setToolTip(filename)
         try:
-            self._file_reader = hsr.SolinstFileReader(filename)
+            self._file_reader = SolinstFileReader(filename)
         except Exception as e:
             _error = e
             self._file_reader = None
