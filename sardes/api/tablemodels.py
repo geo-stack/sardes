@@ -214,7 +214,7 @@ class SardesTableData(object):
         else:
             original_value = self.data.iat[row, col]
 
-        if original_value != edited_value:
+        if not are_values_equal(original_value, edited_value):
             self._original_data.loc[(row, col), 'value'] = original_value
 
         # We apply the new value to the data.
