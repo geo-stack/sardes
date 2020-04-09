@@ -25,7 +25,7 @@ from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
 from sqlalchemy.exc import DBAPIError, ProgrammingError, OperationalError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.types import TEXT, VARCHAR, Boolean
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.engine.url import URL
 from sqlalchemy_utils import UUIDType
 from sqlalchemy.orm.exc import NoResultFound
@@ -112,6 +112,10 @@ class SamplingFeature(Base):
     sampling_feature_type_id = Column(
         Integer, ForeignKey('sampling_feature_type.sampling_feature_type_id'))
 
+    _metadata = relationship(
+        "SamplingFeatureMetadata", uselist=False,
+        back_populates="sampling_feature")
+
     def __repr__(self):
         return format_sqlobject_repr(self)
 
@@ -129,6 +133,25 @@ class SamplingFeatureType(Base):
 
     def __repr__(self):
         return format_sqlobject_repr(self)
+
+
+class SamplingFeatureMetadata(Base):
+    __tablename__ = 'sampling_feature_metadata'
+
+    sampling_feature_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('sampling_feature.sampling_feature_uuid'),
+        primary_key=True)
+    in_recharge_zone = Column(String)
+    aquifer_type = Column(String)
+    confinement = Column(String)
+    common_name = Column(String)
+    aquifer_code = Column(Integer)
+    is_station_active = Column(Boolean)
+    is_influenced = Column(String)
+
+    sampling_feature = relationship(
+        "SamplingFeature", uselist=False, back_populates="_metadata")
 
 
 # ---- Observations
@@ -475,9 +498,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         new_obs_well = SamplingFeature(
             sampling_feature_uuid=sampling_feature_uuid,
             sampling_feature_type_id=1,
-            loc_id=new_location.loc_id
-            )
+            loc_id=new_location.loc_id)
         self._session.add(new_obs_well)
+        
+        # We then create a new metadata object for the new observation well.
+        obs_well._metadata = SamplingFeatureMetadata(
+            sampling_feature_uuid=sampling_feature_uuid)
         self._session.commit()
 
         # We then set the attribute values provided in argument for this
@@ -499,35 +525,28 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._session.query(SamplingFeature,
                                 Location.latitude,
                                 Location.longitude,
-                                Location.municipality)
+                                Location.municipality,
+                                SamplingFeatureMetadata.in_recharge_zone,
+                                SamplingFeatureMetadata.aquifer_type,
+                                SamplingFeatureMetadata.confinement,
+                                SamplingFeatureMetadata.common_name,
+                                SamplingFeatureMetadata.aquifer_code,
+                                SamplingFeatureMetadata.is_station_active,
+                                SamplingFeatureMetadata.is_influenced)
             .filter(Location.loc_id == SamplingFeature.loc_id)
+            .filter(SamplingFeatureMetadata.sampling_feature_uuid ==
+                    SamplingFeature.sampling_feature_uuid)
             )
         obs_wells = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
 
         obs_wells.rename({'sampling_feature_name': 'obs_well_id'},
                          axis='columns', inplace=True)
-
-        # Reformat notes correctly.
-        keys_in_notes = ['common_name', 'aquifer_type', 'confinement',
-                         'aquifer_code', 'in_recharge_zone',
-                         'is_influenced', 'is_station_active',
-                         'obs_well_notes']
-        split_notes = obs_wells['sampling_feature_notes'].str.split(r'\|\|')
-        obs_wells.drop(labels='sampling_feature_notes', axis=1, inplace=True)
-        for i, key in enumerate(keys_in_notes):
-            obs_wells[key] = (
-                split_notes.str[i].str.split(':').str[1].str.strip())
-            obs_wells[key] = obs_wells[key][obs_wells[key] != 'NULL']
-
-        # Convert to bool.
-        obs_wells['is_station_active'] = (
-            obs_wells['is_station_active']
-            .map({'True': True, 'False': False}))
+        obs_wells.rename({'sampling_feature_notes': 'obs_well_notes'},
+                         axis='columns', inplace=True)
 
         # Set the index to the observation well ids.
-        obs_wells.set_index(
-            'sampling_feature_uuid', inplace=True, drop=True)
+        obs_wells.set_index('sampling_feature_uuid', inplace=True, drop=True)
 
         # Replace nan by None.
         obs_wells = obs_wells.where(obs_wells.notnull(), None)
@@ -541,25 +560,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         corresponding to the specified sampling feature UUID.
         """
         obs_well = self._get_sampling_feature(sampling_feature_uuid)
-        note_attrs = [
-            'common_name', 'aquifer_type', 'confinement', 'aquifer_code',
-            'in_recharge_zone', 'is_influenced', 'is_station_active',
-            'obs_well_notes']
-
         if attribute_name in ['obs_well_id']:
             setattr(obs_well, attribute_name, attribute_value)
-        elif attribute_name in note_attrs:
-            index = note_attrs.index(attribute_name)
-            labels = [
-                'nom_commu', 'aquifere', 'nappe', 'code_aqui', 'zone_rechar',
-                'influences', 'station_active', 'remarque'][index]
-            try:
-                notes = [
-                    n.strip() for n in obs_well.obs_well_notes.split(r'||')]
-            except AttributeError:
-                notes = [''] * len(labels)
-            notes[index] = '{}: {}'.format(labels[index], attribute_value)
-            obs_well.sampling_feature_notes = r' || '.join(notes)
+        elif attribute_name in ['obs_well_notes']:
+            setattr(obs_well, 'sampling_feature_notes', attribute_value)
+        elif attribute_name in [
+                'common_name', 'aquifer_type', 'confinement', 'aquifer_code',
+                'in_recharge_zone', 'is_influenced', 'is_station_active',
+                'obs_well_notes']:
+            setattr(obs_well._metadata, attribute_name, attribute_value)
         elif attribute_name in ['latitude', 'longitude', 'municipality']:
             location = self._get_location(obs_well.loc_id)
             setattr(location, attribute_name, attribute_value)
@@ -1102,17 +1111,17 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 # =============================================================================
 def init_database(accessor):
     tables = [Location, SamplingFeatureType, SamplingFeature,
-              SondeFeature, SondeModel, SondeInstallation, Process,
-              ProcessInstallation, Repere, ObservationType, Observation,
-              ObservedProperty, GenericNumericalData, TimeSeriesChannel,
-              TimeSeriesData, PumpType, PumpInstallation]
-    conn = accessor._engine.connect()
+              SamplingFeatureMetadata, SondeFeature, SondeModel,
+              SondeInstallation, Process, ProcessInstallation, Repere,
+              ObservationType, Observation, ObservedProperty,
+              GenericNumericalData, TimeSeriesChannel, TimeSeriesData,
+              PumpType, PumpInstallation]
+    dialect = accessor._engine.dialect
     for table in tables:
-        if accessor._engine.dialect.has_table(
-                conn, table.__tablename__):
+        if dialect.has_table(accessor._session, table.__tablename__):
             continue
         Base.metadata.create_all(accessor._engine, tables=[table.__table__])
-    conn.close()
+    accessor._session.commit()
 
 
 def copydata_from_rsesq_postgresql(accessor_rsesq, accessor_sardeslite):

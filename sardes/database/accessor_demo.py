@@ -294,7 +294,6 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         """
         sleep(0.3)
         df = OBS_WELLS_DF.copy()
-
         return df
 
     # ---- Repere

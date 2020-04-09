@@ -42,9 +42,10 @@ class ObsWellsTableModel(SardesTableModel):
             return StringEditDelegate(view, unique_constraint=True,
                                       is_required=True)
         elif column in ['municipality', 'is_influenced', 'common_name',
-                        'in_recharge_zone', 'confinement', 'aquifer_type',
-                        'aquifer_code']:
+                        'in_recharge_zone', 'confinement', 'aquifer_type']:
             return StringEditDelegate(view)
+        elif column in ['aquifer_code']:
+            return NumEditDelegate(view, decimals=0, bottom=0, top=999)
         elif column in ['obs_well_notes']:
             return TextEditDelegate(view)
         elif column in ['latitude', 'longitude']:

@@ -97,7 +97,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         option.state &= ~QStyle.State_MouseOver
 
         # We must set the text ouselves or else no text is painted.
-        option.text = index.data()
+        option.text = index.data() if not option.text else option.text
 
         # We must fill the background with a solid color before painting the
         # control. This is necessary, for example, to color the background of
