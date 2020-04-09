@@ -45,7 +45,6 @@ VALUES = [['str1', True, 1.111, 3, 'not editable', None],
           ['str3', True, 3.333, 29, 'not editable', None]]
 INDEXES = [uuid.uuid4() for i in range(len(VALUES))]
 
-
 @pytest.fixture
 def TABLE_DATAF():
     dataf = pd.DataFrame(
@@ -53,6 +52,7 @@ def TABLE_DATAF():
         index=INDEXES,
         columns=COLUMNS
         )
+    dataf['col3'] = dataf['col3'].astype(pd.Int64Dtype())
     return dataf
 
 
@@ -415,6 +415,51 @@ def test_edit_editable_cell(tablewidget, qtbot):
         assert (tableview.model().get_value_at(model_index) ==
                 expected_edited_value[i])
         assert tableview.model().data_edit_count() == i + 1
+
+
+def test_edit_integer(tablewidget, qtbot, mocker):
+    """
+    Test editing the content of an cell containing an integer.
+
+    Regression test for cgq-qgc/sardes#231
+    """
+    tableview = tablewidget.tableview
+    model_index = tableview.model().index(2, 3)
+
+    # Select cell at model_index.
+    qtbot.mouseClick(
+        tableview.viewport(),
+        Qt.LeftButton,
+        pos=tableview.visualRect(model_index).center())
+    assert model_index.data() == '29'
+    assert tableview.model().get_value_at(model_index) == 29
+
+    # Clear the value in the current cell.
+    qtbot.keyPress(tableview, Qt.Key_Delete)
+    assert model_index.data() == ''
+    assert pd.isnull(tableview.model().get_value_at(model_index))
+
+    # Save edits.
+    patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Cancel)
+    qtbot.keyPress(tablewidget, Qt.Key_Enter, modifier=Qt.ControlModifier)
+    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
+
+    # Select back cell at model_index.
+    qtbot.mouseClick(
+        tableview.viewport(),
+        Qt.LeftButton,
+        pos=tableview.visualRect(model_index).center())
+    assert model_index.data() == ''
+    assert pd.isnull(tableview.model().get_value_at(model_index))
+
+    # Edit the value in the current cell.
+    item_delegate = tableview.itemDelegate(model_index)
+    qtbot.keyPress(tableview, Qt.Key_Enter)
+    item_delegate.editor.setValue(24)
+    qtbot.keyPress(item_delegate.editor, Qt.Key_Enter)
+    assert model_index.data() == '24'
+    assert tableview.model().get_value_at(model_index) == 24
 
 
 def test_clearing_required_cell(tablewidget, qtbot):
