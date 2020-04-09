@@ -30,6 +30,19 @@ class ObsWellsTableModel(SardesTableModel):
     in the database.
     """
 
+    def set_model_data(self, dataf, dataf_columns_mapper=None):
+        """
+        Extend SardesTableModelBase base class method to make sure we use
+        a column dtype that is capable to handle integer nan values.
+
+        See https://pandas.pydata.org/pandas-docs/stable/user_guide/
+            gotchas.html#support-for-integer-na
+        """
+        if 'aquifer_code' not in dataf.columns:
+            dataf['aquifer_code'] = None
+        dataf['aquifer_code'] = dataf['aquifer_code'].astype(pd.Int64Dtype())
+        return super().set_model_data(dataf, dataf_columns_mapper)
+
     def create_delegate_for_column(self, view, column):
         """
         Create the item delegate that the view need to use when editing the

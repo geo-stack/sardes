@@ -22,7 +22,7 @@ from qtpy.QtWidgets import QStyleOption
 
 # ---- Local imports
 from sardes.config.locale import _
-from sardes.utils.data_operations import nan_values_equal
+from sardes.utils.data_operations import are_values_equal
 
 
 # =============================================================================
@@ -101,7 +101,7 @@ class ValueChanged(SardesDataEdit):
         else:
             original_value = self.parent.data.iat[self.row, self.col]
 
-        values_equal = nan_values_equal(self.previous_value, original_value)
+        values_equal = are_values_equal(self.previous_value, original_value)
         if not values_equal or self.row in self.parent._new_rows:
             self.parent._original_data.loc[
                 (self.row, self.col), 'value'] = original_value
@@ -214,7 +214,7 @@ class SardesTableData(object):
         else:
             original_value = self.data.iat[row, col]
 
-        if original_value != edited_value:
+        if not are_values_equal(original_value, edited_value):
             self._original_data.loc[(row, col), 'value'] = original_value
 
         # We apply the new value to the data.

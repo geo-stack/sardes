@@ -31,7 +31,7 @@ from sardes.api.panes import SardesPaneWidget
 from sardes.api.tablemodels import SardesSortFilterModel, SardesTableModelBase
 from sardes.config.locale import _
 from sardes.config.gui import get_iconsize
-from sardes.utils.data_operations import intervals_extract
+from sardes.utils.data_operations import intervals_extract, are_values_equal
 from sardes.utils.qthelpers import (
     create_action, create_toolbutton, create_toolbar_stretcher,
     qbytearray_to_hexstate, hexstate_to_qbytearray, qdatetime_from_datetime,
@@ -139,7 +139,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         self.closeEditor.emit(self.editor, self.NoHint)
         editor_value = self.get_editor_data()
         model_value = self.get_model_data()
-        if editor_value != model_value:
+        if not are_values_equal(editor_value, model_value):
             # We need to validate the edits before submitting the edits to
             # the model or else, unique check will always return an error.
             error_message = self.validate_edits()
@@ -284,31 +284,31 @@ class SardesItemDelegate(SardesItemDelegateBase):
         else:
             raise NotImplementedError
 
-    def set_editor_data(self, data):
+    def set_editor_data(self, value):
         """
-        Set the data of this item delegate's editor.
+        Set the value of this item delegate's editor.
 
         You may need to reimplement this method if the type of your
         item delegate's editor is not supported or else a NotImplementedError
         will be raised.
         """
         if isinstance(self.editor, (QTextEdit, QLineEdit)):
-            data = '' if (pd.isna(data) or data is None) else data
-            self.editor.setText(data)
+            value = '' if (pd.isna(value) or value is None) else value
+            self.editor.setText(value)
         elif isinstance(self.editor, (QSpinBox, QDoubleSpinBox)):
-            if data is not None:
-                self.editor.setValue(data)
+            if not pd.isnull(value):
+                self.editor.setValue(value)
         elif isinstance(self.editor, QComboBox):
             for i in range(self.editor.count()):
-                if self.editor.itemData(i) == data:
+                if self.editor.itemData(i) == value:
                     self.editor.setCurrentIndex(i)
                     break
             else:
                 self.editor.setCurrentIndex(0)
         elif isinstance(self.editor, (QDateEdit, QDateTimeEdit)):
-            data = (datetime.today() if (pd.isna(data) or data is None)
-                    else data)
-            self.editor.setDateTime(qdatetime_from_datetime(data))
+            value = (datetime.today() if (pd.isna(value) or value is None)
+                     else value)
+            self.editor.setDateTime(qdatetime_from_datetime(value))
         else:
             raise NotImplementedError
 
