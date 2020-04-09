@@ -68,22 +68,6 @@ class ObsWellsTableModel(SardesTableModel):
                     visual_dataf[column] = obs_wells_stats[column]
         return visual_dataf
 
-    def data(self, index, role=Qt.DisplayRole):
-        """
-        Override SardesTableModelBase base class method to display integers
-        correctly, since they must be saved in float columns for nan
-        support in pandas.
-        """
-        if (role in [Qt.DisplayRole, Qt.ToolTipRole] and
-                self.dataf_column_at(index) == 'aquifer_code'):
-            value = self.get_visual_data_at(index)
-            if pd.isnull(value):
-                return ''
-            else:
-                return '{:0.0f}'.format(value)
-        else:
-            return super().data(index, role)
-
 
 class ObsWellsTableWidget(SardesTableWidget):
     sig_view_data = Signal(object)

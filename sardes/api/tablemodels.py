@@ -471,21 +471,13 @@ class SardesTableModelBase(QAbstractTableModel):
         if dataf_columns_mapper is not None:
             self._data_columns_mapper = OrderedDict(dataf_columns_mapper)
 
-        # Add missing columns to the dataframe.
+        # Add missing columns to the dataframe and reorder columns to
+        # mirror the column logical indexes of the table model so that we
+        # can access them with pandas iloc.
         for column in self.columns:
             if column not in dataf.columns:
                 dataf[column] = None
-        # Reorder columns to mirror the column logical indexes
-        # of the table model so that we can access them with pandas iloc.
         dataf = dataf[self.columns]
-
-        # Promote integer columns to float because nan values in integer
-        # columsn are not supported in pandas.
-        # see https://pandas.pydata.org/pandas-docs/stable/user_guide/
-        #     gotchas.html#support-for-integer-na
-        for column in dataf.columns:
-            if np.issubdtype(dataf[column].dtypes, np.integer):
-                dataf[column] = dataf[column].astype(float)
 
         self._datat = SardesTableData(dataf)
         self.endResetModel()
