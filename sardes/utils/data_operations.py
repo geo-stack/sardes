@@ -14,7 +14,7 @@ import itertools
 import pandas as pd
 
 
-def nan_values_equal(x1, x2):
+def are_values_equal(x1, x2):
     """
     Return wheter two Python objects x1 and x2 are equal or not. Account for
     the fact that the equality of two numpy nan values is False.
