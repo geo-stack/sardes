@@ -18,6 +18,7 @@ from time import sleep
 # ---- Third party imports
 import pytest
 import pandas as pd
+from flaky import flaky
 
 # ---- Local imports
 from sardes.database.database_manager import DatabaseConnectionManager
@@ -91,6 +92,7 @@ def test_dbmanager_connect(dbmanager, dbaccessor, qtbot):
     qtbot.waitUntil(lambda: not dbmanager._db_connection_thread.isRunning())
 
 
+@flaky(max_runs=3)
 def test_run_tasks_if_posponed(dbmanager, dbaccessor, qtbot):
     """
     Test that the database manager is managing the queued as expected
@@ -133,6 +135,7 @@ def test_run_tasks_if_posponed(dbmanager, dbaccessor, qtbot):
     qtbot.waitUntil(lambda: not dbmanager._db_connection_thread.isRunning())
 
 
+@flaky(max_runs=3)
 def test_run_tasks_if_busy(dbmanager, dbaccessor, qtbot):
     """
     Test that the database manager is managing the queued as expected
