@@ -267,7 +267,8 @@ class DataImportWizard(QDialog):
         """
         Format and update the data shown in the timeseries table.
         """
-        if self._file_reader.records is not None:
+        if (self._file_reader is not None and
+                self._file_reader.records is not None):
             dataf = self._file_reader.records
             dataf.insert(0, 'Datetime', dataf.index)
             dataf.rename(columns={'Datetime': 'datetime'}, inplace=True)
