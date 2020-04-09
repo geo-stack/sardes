@@ -1,3 +1,4 @@
+flaky
 codecov
 pytest
 pytest-qt

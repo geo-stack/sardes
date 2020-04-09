@@ -25,7 +25,8 @@ from qtpy.QtCore import Qt
 from sardes.api.timeseries import DataType
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.plugins.dataio.widgets.dataimportwizard import (
-    QFileDialog, DataImportWizard, NOT_FOUND_MSG_COLORED, QMessageBox)
+    QFileDialog, DataImportWizard, NOT_FOUND_MSG_COLORED, QMessageBox,
+    SolinstFileReader)
 
 
 # =============================================================================
@@ -144,6 +145,22 @@ def test_data_import_wizard_init(qtbot, mocker, testfiles, data_import_wizard):
     # Assert file infos.
     assert data_import_wizard.filename_label.text() == testfiles[1]
 
+
+def test_read_data_error(qtbot, mocker, testfiles, data_import_wizard):
+    """
+    Test that the wizard is working as expected when there is an error
+    while reading data from a file.
+    """
+    mocker.patch.object(SolinstFileReader, '__new__',
+        side_effect=ValueError('Mocked error for test_read_data_error.'))
+    patcher_msgbox_warning = mocker.patch.object(
+        QMessageBox, 'critical', return_value=QMessageBox.Ok)
+    
+    # Read the next selected file.
+    qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
+    assert patcher_msgbox_warning.call_count == 1
+    assert data_import_wizard.table_widget.tableview.row_count() == 0 
+    
 
 def test_load_data(qtbot, mocker, testfiles, data_import_wizard):
     """

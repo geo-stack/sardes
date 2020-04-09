@@ -15,7 +15,7 @@ import os.path as osp
 # ---- Third party imports
 from appconfigs.base import get_home_dir
 from atomicwrites import replace_atomic
-import hydsensread as hsr
+from hydsensread import SolinstFileReader
 import pandas as pd
 from qtpy.QtCore import Qt, Slot, Signal
 from qtpy.QtWidgets import (
@@ -24,7 +24,7 @@ from qtpy.QtWidgets import (
     QGridLayout)
 
 # ---- Local imports
-from sardes.config.gui import get_iconsize
+from sardes.config.gui import get_iconsize, RED
 from sardes.config.locale import _
 from sardes.api.tablemodels import SardesTableModel
 from sardes.api.timeseries import DataType
@@ -208,8 +208,8 @@ class DataImportWizard(QDialog):
                 self.parent(), 'Select data files',
                 self.working_directory, '*.csv ; *.lev ; *.xle')
         if len(self._queued_filenames):
-            self._load_next_queued_data_file()
             super().show()
+            self._load_next_queued_data_file()
 
     # ---- Sardes Model Public API
     def set_database_connection_manager(self, db_connection_manager):
@@ -245,14 +245,16 @@ class DataImportWizard(QDialog):
         self.filename_label.setText(filename)
         self.filename_label.setToolTip(filename)
         try:
-            self._file_reader = hsr.SolinstFileReader(filename)
-        except:
+            self._file_reader = SolinstFileReader(filename)
+        except Exception as e:
+            _error = e
             self._file_reader = None
             self._sonde_serial_no = None
             self.serial_number_label.setText(READ_ERROR_MSG_COLORED)
             self.site_name_label.setText(READ_ERROR_MSG_COLORED)
             self.projectid_label.setText(READ_ERROR_MSG_COLORED)
         else:
+            _error = None
             sites = self._file_reader.sites
             self.serial_number_label.setText(sites.instrument_serial_number)
             self.site_name_label.setText(sites.site_name)
@@ -263,11 +265,23 @@ class DataImportWizard(QDialog):
         self._update_button_state()
         QApplication.restoreOverrideCursor()
 
+        if _error:
+            QMessageBox.critical(
+                self,
+                _(_("Read Data Error")),
+                _('An error occured while atempting to read data from<br>'
+                  '<i>{}</i><br><br><font color="{}">{}:</font> {}')
+                .format(filename, RED, type(_error).__name__, _error)
+                )
+            return
+            
+
     def _update_table_model_data(self):
         """
         Format and update the data shown in the timeseries table.
         """
-        if self._file_reader.records is not None:
+        if (self._file_reader is not None and
+                self._file_reader.records is not None):
             dataf = self._file_reader.records
             dataf.insert(0, 'Datetime', dataf.index)
             dataf.rename(columns={'Datetime': 'datetime'}, inplace=True)
@@ -288,6 +302,9 @@ class DataImportWizard(QDialog):
             dataf_columns_mapper.extend([(dtype, dtype.label) for dtype in
                                          DataType if dtype in dataf.columns])
             self.table_model.set_model_data(dataf, dataf_columns_mapper)
+        else:
+            self.table_model.set_model_data(
+                pd.DataFrame([]), dataf_columns_mapper=[])
 
     def _update_sonde_info(self):
         """
