@@ -208,8 +208,8 @@ class DataImportWizard(QDialog):
                 self.parent(), 'Select data files',
                 self.working_directory, '*.csv ; *.lev ; *.xle')
         if len(self._queued_filenames):
-            self._load_next_queued_data_file()
             super().show()
+            self._load_next_queued_data_file()
 
     # ---- Sardes Model Public API
     def set_database_connection_manager(self, db_connection_manager):
