@@ -11,7 +11,7 @@
 import itertools
 
 # ---- Third party imports
-import numpy as np
+import pandas as pd
 
 
 def nan_values_equal(x1, x2):
@@ -20,15 +20,15 @@ def nan_values_equal(x1, x2):
     the fact that the equality of two numpy nan values is False.
     """
     try:
-        isnan1 = np.isnan(x1)
-        isnan2 = np.isnan(x2)
+        isnull_x1 = pd.isnull(x1)
+        isnull_x2 = pd.isnull(x2)
     except TypeError:
-        isnan1 = False
-        isnan2 = False
+        isnull_x1 = False
+        isnull_x2 = False
+    if isnull_x1 or isnull_x2:
+        return isnull_x1 and isnull_x2
     else:
-        isnan1 = False if isinstance(isnan1, np.ndarray) else isnan1
-        isnan2 = False if isinstance(isnan2, np.ndarray) else isnan2
-    return x1 == x2 or (isnan1 and isnan2)
+        return x1 == x2
 
 
 def intervals_extract(iterable):
