@@ -294,7 +294,6 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         """
         sleep(0.3)
         df = OBS_WELLS_DF.copy()
-        df['aquifer_code'] = df['aquifer_code'].astype(float)
         return df
 
     # ---- Repere

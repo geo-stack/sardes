@@ -479,8 +479,15 @@ class SardesTableModelBase(QAbstractTableModel):
         # of the table model so that we can access them with pandas iloc.
         dataf = dataf[self.columns]
 
-        self._datat = SardesTableData(dataf)
+        # Promote integer columns to float because nan values in integer
+        # columsn are not supported in pandas.
+        # see https://pandas.pydata.org/pandas-docs/stable/user_guide/
+        #     gotchas.html#support-for-integer-na
+        for column in dataf.columns:
+            if np.issubdtype(dataf[column].dtypes, np.integer):
+                dataf[column] = dataf[column].astype(float)
 
+        self._datat = SardesTableData(dataf)
         self.endResetModel()
         self._update_visual_data()
         self.dataChanged.emit(

@@ -390,20 +390,6 @@ class NumEditDelegate(SardesItemDelegate):
         if self._top is not None:
             editor.setMaximum(self._top)
         return editor
-    
-    def paint(self, painter, option, index):
-        """
-        Override SardesItemDelegateBase method to make sure we are painting
-        an integer in case they are stored as floats due to the data
-        containing nan values.
-        """
-        if self._decimals == 0 and index.data():
-            try:
-                option.text = '{:0.0f}'.format(float(index.data()))
-            except:
-                pass
-        super().paint(painter, option, index)
-
 
 
 class BoolEditDelegate(SardesItemDelegate):
