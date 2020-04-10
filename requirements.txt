@@ -1,3 +1,4 @@
+atomicwrites
 appconfigs
 HydroSensorReader
 keyring == 19.2.*
