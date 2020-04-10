@@ -1365,17 +1365,6 @@ class SardesTableView(QTableView):
         """
         return self.itemDelegate(model_index).is_required
 
-    def is_selection_deletable(self):
-        """
-        Return whether at least one row with a selection is deletable.
-        """
-        selected_rows = self.get_selected_rows()
-        for row in selected_rows:
-            if not self.model().is_data_deleted_at(self.model().index(row, 0)):
-                return True
-        else:
-            return False
-
     def contextMenuEvent(self, event):
         """
         Override Qt method to show a context menu that shows different actions
