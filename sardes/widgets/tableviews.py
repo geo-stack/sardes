@@ -1050,8 +1050,8 @@ class SardesTableView(QTableView):
         will be selected.
         """
         self.setFocus()
-        selected_rows = self.get_rows_intersecting_selection()
-        for interval in intervals_extract(selected_rows):
+        rows_to_select = self.get_rows_intersecting_selection()
+        for interval in intervals_extract(rows_to_select):
             self.selectionModel().select(
                 QItemSelection(self.model().index(interval[0], 0),
                                self.model().index(interval[1], 0)),
