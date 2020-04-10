@@ -1084,8 +1084,18 @@ class SardesTableView(QTableView):
         Return the list of logical indexes corresponding to the columns
         that are currently selected in the table.
         """
-        return [index.column() for index in
-                self.selectionModel().selectedColumns()]
+        if self.row_count() == 0:
+            return []
+        else:
+            row_count = np.zeros(self.model().columnCount())
+            for index_range in self.selectionModel().selection():
+                if not index_range.isValid():
+                    continue
+                columns = [column for column in
+                           range(index_range.left(), index_range.right() + 1)]
+                row_count[columns] += len(
+                    range(index_range.top(), index_range.bottom() + 1))
+            return np.where(row_count == self.row_count())[0]
 
     def move_current_to_border(self, key):
         """
