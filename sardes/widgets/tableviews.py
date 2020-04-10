@@ -1102,6 +1102,17 @@ class SardesTableView(QTableView):
         self.selectionModel().setCurrentIndex(
             self.model().index(0, column), QItemSelectionModel.Current)
 
+    def get_columns_intersecting_selection(self):
+        """
+        Return the list of columns intersecting selection.
+        """
+        columns = []
+        for index_range in self.selectionModel().selection():
+            if index_range.isValid():
+                columns.extend(range(
+                    index_range.left(), index_range.right() + 1))
+        return [*{*columns}]
+
     def select_column(self):
         """
         Select the entire column of the current selection. If the current
