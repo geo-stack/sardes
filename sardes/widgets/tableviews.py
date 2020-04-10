@@ -1120,9 +1120,7 @@ class SardesTableView(QTableView):
         selection will be selected.
         """
         self.setFocus()
-        selected_indexes = self.selectionModel().selectedIndexes()
-        selected_columns = sorted(list(set(
-            [index.column() for index in selected_indexes])))
+        selected_columns = sorted(self.get_columns_intersecting_selection())
         for interval in intervals_extract(selected_columns):
             self.selectionModel().select(
                 QItemSelection(self.model().index(0, interval[0]),
