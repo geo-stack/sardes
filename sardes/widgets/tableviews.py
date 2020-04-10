@@ -1143,7 +1143,7 @@ class SardesTableView(QTableView):
                            range(index_range.left(), index_range.right() + 1)]
                 row_count[columns] += len(
                     range(index_range.top(), index_range.bottom() + 1))
-            return np.where(row_count == self.row_count())[0]
+            return np.where(row_count == self.row_count())[0].tolist()
 
     def move_current_to_border(self, key):
         """
