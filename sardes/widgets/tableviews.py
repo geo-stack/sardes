@@ -452,6 +452,11 @@ class SardesHeaderView(QHeaderView):
         """
         if e.button() == Qt.LeftButton:
             self.pressed = self.logicalIndexAt(e.pos())
+            self.parent().select_column_at(
+                self.pressed,
+                append=bool(e.modifiers() & Qt.ControlModifier),
+                extend=bool(e.modifiers() & Qt.ShiftModifier)
+                )
         super().mousePressEvent(e)
 
     def mouseReleaseEvent(self, e):
@@ -482,6 +487,7 @@ class SardesHeaderView(QHeaderView):
         Based on the qt source code at:
         https://code.woboq.org/qt5/qtbase/src/widgets/itemviews/qheaderview.cpp.html
         """
+        selected_columns = self.parent().get_selected_columns()
         state = QStyle.State_None
         if self.isEnabled():
             state |= QStyle.State_Enabled
@@ -497,7 +503,7 @@ class SardesHeaderView(QHeaderView):
                 sm = self.parent().selectionModel()
                 if sm.columnIntersectsSelection(logicalIndex, QModelIndex()):
                     state |= QStyle.State_On
-                if sm.isColumnSelected(logicalIndex, QModelIndex()):
+                if logicalIndex in selected_columns:
                     state |= QStyle.State_Sunken
 
         opt = QStyleOptionHeader()
@@ -537,8 +543,8 @@ class SardesHeaderView(QHeaderView):
         visual_index = self.visualIndex(logicalIndex)
         if visual_index != -1:
             first = self.logicalIndex(0) == logicalIndex
-            last = (self.logicalIndex(self.visible_section_count() - 1) ==
-                    logicalIndex)
+            last = (self.logicalIndex(
+                self.visible_section_count() - 1) == logicalIndex)
             if first and last:
                 opt.position = QStyleOptionHeader.OnlyOneSection
             elif first:
@@ -549,15 +555,13 @@ class SardesHeaderView(QHeaderView):
                 opt.position = QStyleOptionHeader.Middle
 
             # Selected position.
-            sm = self.parent().selectionModel()
-            previous_selected = sm.isColumnSelected(
-                self.logicalIndex(visual_index - 1), QModelIndex())
-            next_selected = sm.isColumnSelected(
-                self.logicalIndex(visual_index + 1), QModelIndex())
-
+            previous_selected = (
+                self.logicalIndex(visual_index - 1) in selected_columns)
+            next_selected = (
+                self.logicalIndex(visual_index + 1) in selected_columns)
             if previous_selected and next_selected:
-                opt.selectedPosition = (QStyleOptionHeader
-                                        .NextAndPreviousAreSelected)
+                opt.selectedPosition = (
+                    QStyleOptionHeader.NextAndPreviousAreSelected)
             elif previous_selected:
                 opt.selectedPosition = QStyleOptionHeader.PreviousIsSelected
             elif next_selected:
