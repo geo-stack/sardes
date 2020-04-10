@@ -259,7 +259,7 @@ def test_delete_timeseries_data(mainwindow, qtbot, mocker):
     # Select one row in the table.
     selection_model.setCurrentIndex(
         model.index(3, 0), selection_model.SelectCurrent)
-    assert table.tableview.get_selected_rows() == [3]
+    assert table.tableview.get_rows_intersecting_selection() == [3]
     assert table.tableview.delete_row_action.isEnabled()
 
     # Delete the selected row.
@@ -271,7 +271,7 @@ def test_delete_timeseries_data(mainwindow, qtbot, mocker):
     selection_model.select(model.index(1, 1), selection_model.Select)
     selection_model.select(model.index(4, 1), selection_model.Select)
     selection_model.select(model.index(5, 1), selection_model.Select)
-    assert table.tableview.get_selected_rows() == [1, 3, 4, 5]
+    assert table.tableview.get_rows_intersecting_selection() == [1, 3, 4, 5]
 
     # Delete the selected rows.
     table.tableview.delete_row_action.trigger()

@@ -15,6 +15,7 @@ import itertools
 from math import floor, ceil
 
 # ---- Third party imports
+import numpy as np
 import pandas as pd
 from qtpy.QtCore import (QEvent, Qt, Signal, Slot, QItemSelection,
                          QItemSelectionModel, QRect, QTimer, QModelIndex)
@@ -434,8 +435,9 @@ class SardesHeaderView(QHeaderView):
             Qt.Horizontal.
         """
         super().__init__(orientation, parent)
-        self.setHighlightSections(True)
-        self.setSectionsClickable(True)
+        self.setHighlightSections(False)
+        self.setSectionsClickable(False)
+        self._section_clickable = True
         self.setSectionsMovable(sections_movable)
         self.sectionDoubleClicked.connect(self._handle_section_doubleclick)
         self.setSortIndicatorShown(False)
@@ -450,6 +452,11 @@ class SardesHeaderView(QHeaderView):
         """
         if e.button() == Qt.LeftButton:
             self.pressed = self.logicalIndexAt(e.pos())
+            self.parent().select_column_at(
+                self.pressed,
+                append=bool(e.modifiers() & Qt.ControlModifier),
+                extend=bool(e.modifiers() & Qt.ShiftModifier)
+                )
         super().mousePressEvent(e)
 
     def mouseReleaseEvent(self, e):
@@ -480,12 +487,13 @@ class SardesHeaderView(QHeaderView):
         Based on the qt source code at:
         https://code.woboq.org/qt5/qtbase/src/widgets/itemviews/qheaderview.cpp.html
         """
+        selected_columns = self.parent().get_selected_columns()
         state = QStyle.State_None
         if self.isEnabled():
             state |= QStyle.State_Enabled
         if self.window().isActiveWindow():
             state |= QStyle.State_Active
-        if self.sectionsClickable():
+        if self._section_clickable:
             if logicalIndex == self.hover:
                 state |= QStyle.State_MouseOver
             if logicalIndex == self.pressed:
@@ -495,7 +503,7 @@ class SardesHeaderView(QHeaderView):
                 sm = self.parent().selectionModel()
                 if sm.columnIntersectsSelection(logicalIndex, QModelIndex()):
                     state |= QStyle.State_On
-                if sm.isColumnSelected(logicalIndex, QModelIndex()):
+                if logicalIndex in selected_columns:
                     state |= QStyle.State_Sunken
 
         opt = QStyleOptionHeader()
@@ -535,8 +543,8 @@ class SardesHeaderView(QHeaderView):
         visual_index = self.visualIndex(logicalIndex)
         if visual_index != -1:
             first = self.logicalIndex(0) == logicalIndex
-            last = (self.logicalIndex(self.visible_section_count() - 1) ==
-                    logicalIndex)
+            last = (self.logicalIndex(
+                self.visible_section_count() - 1) == logicalIndex)
             if first and last:
                 opt.position = QStyleOptionHeader.OnlyOneSection
             elif first:
@@ -547,15 +555,13 @@ class SardesHeaderView(QHeaderView):
                 opt.position = QStyleOptionHeader.Middle
 
             # Selected position.
-            sm = self.parent().selectionModel()
-            previous_selected = sm.isColumnSelected(
-                self.logicalIndex(visual_index - 1), QModelIndex())
-            next_selected = sm.isColumnSelected(
-                self.logicalIndex(visual_index + 1), QModelIndex())
-
+            previous_selected = (
+                self.logicalIndex(visual_index - 1) in selected_columns)
+            next_selected = (
+                self.logicalIndex(visual_index + 1) in selected_columns)
             if previous_selected and next_selected:
-                opt.selectedPosition = (QStyleOptionHeader
-                                        .NextAndPreviousAreSelected)
+                opt.selectedPosition = (
+                    QStyleOptionHeader.NextAndPreviousAreSelected)
             elif previous_selected:
                 opt.selectedPosition = QStyleOptionHeader.PreviousIsSelected
             elif next_selected:
@@ -1044,23 +1050,68 @@ class SardesTableView(QTableView):
         will be selected.
         """
         self.setFocus()
-        selected_rows = self.get_selected_rows()
-        for interval in intervals_extract(selected_rows):
+        rows_to_select = self.get_rows_intersecting_selection()
+        for interval in intervals_extract(rows_to_select):
             self.selectionModel().select(
                 QItemSelection(self.model().index(interval[0], 0),
                                self.model().index(interval[1], 0)),
                 QItemSelectionModel.Select | QItemSelectionModel.Rows)
 
-    def get_selected_rows(self):
+    def get_rows_intersecting_selection(self):
         """
-        Return the list of logical indexes corresponding to the rows
-        that are currently selected in the table.
+        Return the list of rows intersecting selection.
         """
         rows = []
         for index_range in self.selectionModel().selection():
             if index_range.isValid():
                 rows.extend(range(index_range.top(), index_range.bottom() + 1))
         return [*{*rows}]
+
+    def select_column_at(self, column, append=False, extend=False):
+        """
+        Select all item in the given column. If extend is True, all items
+        between the current column and given column will be selected.
+        If append is True, the current selection is cleared before
+        selecting new items.
+        """
+        current_column = self.selectionModel().currentIndex().column()
+        if append is False:
+            self.selectionModel().clear()
+        if extend:
+            current_visual_column = (
+                self.horizontalHeader().visualIndex(current_column))
+            visual_column = self.horizontalHeader().visualIndex(column)
+
+            selected_columns = sorted([
+                self.horizontalHeader().logicalIndex(column) for
+                column in range(min(current_visual_column, visual_column),
+                                max(current_visual_column, visual_column) + 1)
+                ])
+            for interval in intervals_extract(selected_columns):
+                self.selectionModel().select(
+                    QItemSelection(self.model().index(0, interval[0]),
+                                   self.model().index(0, interval[1])),
+                    QItemSelectionModel.Select | QItemSelectionModel.Columns
+                    )
+        else:
+            self.selectionModel().select(
+                QItemSelection(self.model().index(0, column),
+                               self.model().index(0, column)),
+                QItemSelectionModel.Select | QItemSelectionModel.Columns
+                )
+        self.selectionModel().setCurrentIndex(
+            self.model().index(0, column), QItemSelectionModel.Current)
+
+    def get_columns_intersecting_selection(self):
+        """
+        Return the list of columns intersecting selection.
+        """
+        columns = []
+        for index_range in self.selectionModel().selection():
+            if index_range.isValid():
+                columns.extend(range(
+                    index_range.left(), index_range.right() + 1))
+        return [*{*columns}]
 
     def select_column(self):
         """
@@ -1069,9 +1120,7 @@ class SardesTableView(QTableView):
         selection will be selected.
         """
         self.setFocus()
-        selected_indexes = self.selectionModel().selectedIndexes()
-        selected_columns = sorted(list(set(
-            [index.column() for index in selected_indexes])))
+        selected_columns = sorted(self.get_columns_intersecting_selection())
         for interval in intervals_extract(selected_columns):
             self.selectionModel().select(
                 QItemSelection(self.model().index(0, interval[0]),
@@ -1083,8 +1132,18 @@ class SardesTableView(QTableView):
         Return the list of logical indexes corresponding to the columns
         that are currently selected in the table.
         """
-        return [index.column() for index in
-                self.selectionModel().selectedColumns()]
+        if self.row_count() == 0:
+            return []
+        else:
+            row_count = np.zeros(self.model().columnCount())
+            for index_range in self.selectionModel().selection():
+                if not index_range.isValid():
+                    continue
+                columns = [column for column in
+                           range(index_range.left(), index_range.right() + 1)]
+                row_count[columns] += len(
+                    range(index_range.top(), index_range.bottom() + 1))
+            return np.where(row_count == self.row_count())[0].tolist()
 
     def move_current_to_border(self, key):
         """
@@ -1233,7 +1292,7 @@ class SardesTableView(QTableView):
         Return the number of rows of this table that have at least one
         selected items.
         """
-        return len(self.get_selected_rows())
+        return len(self.get_rows_intersecting_selection())
 
     def visible_row_count(self):
         """Return this table number of visible rows."""
@@ -1265,6 +1324,8 @@ class SardesTableView(QTableView):
         if hexstate is not None:
             self.horizontalHeader().restoreState(
                 hexstate_to_qbytearray(hexstate))
+        self.horizontalHeader().setHighlightSections(False)
+        self.horizontalHeader().setSectionsClickable(False)
         for i, action in enumerate(self.get_column_visibility_actions()):
             action.blockSignals(True)
             action.setChecked(not self.horizontalHeader().isSectionHidden(i))
@@ -1312,17 +1373,6 @@ class SardesTableView(QTableView):
         specified model index.
         """
         return self.itemDelegate(model_index).is_required
-
-    def is_selection_deletable(self):
-        """
-        Return whether at least one row with a selection is deletable.
-        """
-        selected_rows = self.get_selected_rows()
-        for row in selected_rows:
-            if not self.model().is_data_deleted_at(self.model().index(row, 0)):
-                return True
-        else:
-            return False
 
     def contextMenuEvent(self, event):
         """
@@ -1431,7 +1481,7 @@ class SardesTableView(QTableView):
 
     def _delete_selected_rows(self):
         """Delete rows from the table with selected indexes"""
-        self.model().delete_row(self.get_selected_rows())
+        self.model().delete_row(self.get_rows_intersecting_selection())
 
     def _ensure_visible(self, model_index):
         """
