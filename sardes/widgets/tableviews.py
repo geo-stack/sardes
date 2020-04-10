@@ -1481,7 +1481,7 @@ class SardesTableView(QTableView):
 
     def _delete_selected_rows(self):
         """Delete rows from the table with selected indexes"""
-        self.model().delete_row(self.get_selected_rows())
+        self.model().delete_row(self.get_rows_intersecting_selection())
 
     def _ensure_visible(self, model_index):
         """
