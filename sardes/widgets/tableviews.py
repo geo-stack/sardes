@@ -15,6 +15,7 @@ import itertools
 from math import floor, ceil
 
 # ---- Third party imports
+import numpy as np
 import pandas as pd
 from qtpy.QtCore import (QEvent, Qt, Signal, Slot, QItemSelection,
                          QItemSelectionModel, QRect, QTimer, QModelIndex)
