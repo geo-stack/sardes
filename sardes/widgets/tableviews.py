@@ -434,8 +434,9 @@ class SardesHeaderView(QHeaderView):
             Qt.Horizontal.
         """
         super().__init__(orientation, parent)
-        self.setHighlightSections(True)
-        self.setSectionsClickable(True)
+        self.setHighlightSections(False)
+        self.setSectionsClickable(False)
+        self._section_clickable = True
         self.setSectionsMovable(sections_movable)
         self.sectionDoubleClicked.connect(self._handle_section_doubleclick)
         self.setSortIndicatorShown(False)
@@ -485,7 +486,7 @@ class SardesHeaderView(QHeaderView):
             state |= QStyle.State_Enabled
         if self.window().isActiveWindow():
             state |= QStyle.State_Active
-        if self.sectionsClickable():
+        if self._section_clickable:
             if logicalIndex == self.hover:
                 state |= QStyle.State_MouseOver
             if logicalIndex == self.pressed:
@@ -1265,6 +1266,8 @@ class SardesTableView(QTableView):
         if hexstate is not None:
             self.horizontalHeader().restoreState(
                 hexstate_to_qbytearray(hexstate))
+        self.horizontalHeader().setHighlightSections(False)
+        self.horizontalHeader().setSectionsClickable(False)
         for i, action in enumerate(self.get_column_visibility_actions()):
             action.blockSignals(True)
             action.setChecked(not self.horizontalHeader().isSectionHidden(i))
