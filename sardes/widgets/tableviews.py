@@ -1063,6 +1063,41 @@ class SardesTableView(QTableView):
                 rows.extend(range(index_range.top(), index_range.bottom() + 1))
         return [*{*rows}]
 
+    def select_column_at(self, column, append=False, extend=False):
+        """
+        Select all item in the given column. If extend is True, all items
+        between the current column and given column will be selected.
+        If append is True, the current selection is cleared before
+        selecting new items.
+        """
+        current_column = self.selectionModel().currentIndex().column()
+        if append is False:
+            self.selectionModel().clear()
+        if extend:
+            current_visual_column = (
+                self.horizontalHeader().visualIndex(current_column))
+            visual_column = self.horizontalHeader().visualIndex(column)
+
+            selected_columns = sorted([
+                self.horizontalHeader().logicalIndex(column) for
+                column in range(min(current_visual_column, visual_column),
+                                max(current_visual_column, visual_column) + 1)
+                ])
+            for interval in intervals_extract(selected_columns):
+                self.selectionModel().select(
+                    QItemSelection(self.model().index(0, interval[0]),
+                                   self.model().index(0, interval[1])),
+                    QItemSelectionModel.Select | QItemSelectionModel.Columns
+                    )
+        else:
+            self.selectionModel().select(
+                QItemSelection(self.model().index(0, column),
+                               self.model().index(0, column)),
+                QItemSelectionModel.Select | QItemSelectionModel.Columns
+                )
+        self.selectionModel().setCurrentIndex(
+            self.model().index(0, column), QItemSelectionModel.Current)
+
     def select_column(self):
         """
         Select the entire column of the current selection. If the current
