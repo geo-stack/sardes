@@ -556,7 +556,7 @@ def test_delete_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     selection_model.setCurrentIndex(
         model.index(0, 0), selection_model.SelectCurrent)
     selection_model.select(model.index(2, 1), selection_model.Select)
-    assert tableview.get_selected_rows() == [0, 2]
+    assert tableview.get_rows_intersecting_selection() == [0, 2]
 
     qtbot.keyPress(tableview, Qt.Key_Minus, modifier=Qt.ControlModifier)
     assert len(TABLE_DATAF) == 3
@@ -575,7 +575,7 @@ def test_delete_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     selection_model.setCurrentIndex(
         model.index(0, 0), selection_model.SelectCurrent)
     selection_model.select(model.index(2, 1), selection_model.Select)
-    assert tableview.get_selected_rows() == [0, 2]
+    assert tableview.get_rows_intersecting_selection() == [0, 2]
 
     qtbot.keyPress(tableview, Qt.Key_Minus, modifier=Qt.ControlModifier)
     assert len(TABLE_DATAF) == 3

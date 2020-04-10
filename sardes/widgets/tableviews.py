@@ -1050,17 +1050,16 @@ class SardesTableView(QTableView):
         will be selected.
         """
         self.setFocus()
-        selected_rows = self.get_selected_rows()
+        selected_rows = self.get_rows_intersecting_selection()
         for interval in intervals_extract(selected_rows):
             self.selectionModel().select(
                 QItemSelection(self.model().index(interval[0], 0),
                                self.model().index(interval[1], 0)),
                 QItemSelectionModel.Select | QItemSelectionModel.Rows)
 
-    def get_selected_rows(self):
+    def get_rows_intersecting_selection(self):
         """
-        Return the list of logical indexes corresponding to the rows
-        that are currently selected in the table.
+        Return the list of rows intersecting selection.
         """
         rows = []
         for index_range in self.selectionModel().selection():
@@ -1284,7 +1283,7 @@ class SardesTableView(QTableView):
         Return the number of rows of this table that have at least one
         selected items.
         """
-        return len(self.get_selected_rows())
+        return len(self.get_rows_intersecting_selection())
 
     def visible_row_count(self):
         """Return this table number of visible rows."""
