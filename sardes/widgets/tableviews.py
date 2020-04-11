@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 from qtpy.QtCore import (QEvent, Qt, Signal, Slot, QItemSelection,
                          QItemSelectionModel, QRect, QTimer, QModelIndex)
-from qtpy.QtGui import QCursor, QPen
+from qtpy.QtGui import QCursor, QPen, QStatusTipEvent
 from qtpy.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDateEdit, QDateTimeEdit,
     QDoubleSpinBox, QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox,
