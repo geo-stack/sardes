@@ -183,14 +183,16 @@ def test_load_data(qtbot, mocker, testfiles, data_import_wizard):
         QMessageBox, 'warning', return_value=QMessageBox.Ok)
     qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
     assert patcher_msgbox_warning.call_count == 1
+    assert data_import_wizard._data_is_loaded is False
     assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826)
     assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826)
 
     # We now disbaled the option to move the input data file after loading and
     # try to load the data again.
     data_import_wizard.pathbox_widget.checkbox.setChecked(False)
-    with qtbot.waitSignal(data_import_wizard.table_model.sig_data_saved):
-        qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+    assert data_import_wizard._data_is_loaded is False
+    qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+    qtbot.waitUntil(lambda: data_import_wizard._data_is_loaded is True)
     assert patcher_msgbox_warning.call_count == 1
     assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 100)
     assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 100)
