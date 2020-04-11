@@ -298,6 +298,13 @@ class DataImportWizard(QDialog):
                 elif column.lower().startswith('temp'):
                     dataf.rename(columns={column: DataType.WaterTemp},
                                  inplace=True)
+
+            # We round data to avoid decimals from round-off errors.
+            for data_type in DataType:
+                if data_type in dataf.columns:
+                    dataf.loc[:, data_type] = (
+                        dataf[data_type].round(decimals=6).copy())
+
             dataf_columns_mapper = [('datetime', _('Datetime'))]
             dataf_columns_mapper.extend([(dtype, dtype.label) for dtype in
                                          DataType if dtype in dataf.columns])
