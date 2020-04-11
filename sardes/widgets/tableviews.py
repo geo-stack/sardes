@@ -1635,6 +1635,15 @@ class SardesTableWidget(SardesPaneWidget):
         return self.model().update_data()
 
     # ---- Setup
+    def eventFilter(self, widget, event):
+        """
+        An event filter to prevent status tips from buttons and menus
+        to show in the status bar of the table.
+        """
+        if event.type() == QEvent.StatusTip:
+            return True
+        return False
+
     def _setup_upper_toolbar(self):
         """
         Setup the upper toolbar of this table widget.
@@ -1667,6 +1676,7 @@ class SardesTableWidget(SardesPaneWidget):
         """
         statusbar = self.statusBar()
         statusbar.setSizeGripEnabled(False)
+        self.installEventFilter(self)
 
         # Number of row(s) selected.
         self.selected_line_count = QLabel()
