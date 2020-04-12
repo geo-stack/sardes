@@ -269,8 +269,9 @@ def test_move_input_file_oserror(qtbot, mocker, data_import_wizard):
         QFileDialog, 'getExistingDirectory', return_value=(loaded_dirname_2))
 
     # We now load the data.
-    with qtbot.waitSignal(data_import_wizard.table_model.sig_data_saved):
-        qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+    assert data_import_wizard._data_is_loaded is False
+    qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+    qtbot.waitUntil(lambda: data_import_wizard._data_is_loaded is True)
 
     assert patcher_msgbox_exec_.call_count == 1
     assert patcher_msgbox_warning.call_count == 1
