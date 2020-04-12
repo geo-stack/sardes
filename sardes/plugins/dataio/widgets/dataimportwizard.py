@@ -253,6 +253,8 @@ class DataImportWizard(QDialog):
             self.serial_number_label.setText(READ_ERROR_MSG_COLORED)
             self.site_name_label.setText(READ_ERROR_MSG_COLORED)
             self.projectid_label.setText(READ_ERROR_MSG_COLORED)
+            self.table_widget.statusBar().showMessage(
+                _('Failed to load data from the file.'))
         else:
             _error = None
             sites = self._file_reader.sites
@@ -260,6 +262,8 @@ class DataImportWizard(QDialog):
             self.site_name_label.setText(sites.site_name)
             self.projectid_label.setText(sites.project_name)
             self._sonde_serial_no = sites.instrument_serial_number or None
+            self.table_widget.statusBar().showMessage(
+                _('Data loaded sucessfully from the file.'))
         self._update_sonde_info()
         self._update_table_model_data()
         self._update_button_state()
@@ -274,7 +278,6 @@ class DataImportWizard(QDialog):
                 .format(filename, RED, type(_error).__name__, _error)
                 )
             return
-            
 
     def _update_table_model_data(self):
         """
@@ -298,6 +301,13 @@ class DataImportWizard(QDialog):
                 elif column.lower().startswith('temp'):
                     dataf.rename(columns={column: DataType.WaterTemp},
                                  inplace=True)
+
+            # We round data to avoid decimals from round-off errors.
+            for data_type in DataType:
+                if data_type in dataf.columns:
+                    dataf.loc[:, data_type] = (
+                        dataf[data_type].round(decimals=6).copy())
+
             dataf_columns_mapper = [('datetime', _('Datetime'))]
             dataf_columns_mapper.extend([(dtype, dtype.label) for dtype in
                                          DataType if dtype in dataf.columns])
@@ -460,7 +470,9 @@ class DataImportWizard(QDialog):
         """
         Save the data currently imported in this wizard in the database.
         """
-        self.table_model.sig_data_about_to_be_saved.emit()
+        self.table_widget._start_process()
+        self.table_widget.statusBar().showMessage(
+            _('Saving data in the database...'))
         self.db_connection_manager.add_timeseries_data(
             self.tseries_dataf, self._obs_well_uuid, self._install_id,
             callback=self._handle_tseries_data_saved)
@@ -478,7 +490,9 @@ class DataImportWizard(QDialog):
         # Move input file if option is enabled and directory is valid.
         self._move_input_data_file()
 
-        self.table_model.sig_data_saved.emit()
+        self.table_widget._end_process()
+        self.table_widget.statusBar().showMessage(
+            _('Data saved sucessfully in the database.'))
         self._update_button_state()
 
     def _move_input_data_file(self):

@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 from qtpy.QtCore import (QEvent, Qt, Signal, Slot, QItemSelection,
                          QItemSelectionModel, QRect, QTimer, QModelIndex)
-from qtpy.QtGui import QCursor, QPen
+from qtpy.QtGui import QCursor, QPen, QStatusTipEvent
 from qtpy.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDateEdit, QDateTimeEdit,
     QDoubleSpinBox, QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox,
@@ -1578,11 +1578,17 @@ class SardesTableWidget(SardesPaneWidget):
         self._end_process_timer = QTimer(self)
         self._end_process_timer.setSingleShot(True)
         self._end_process_timer.timeout.connect(self._end_process)
+        self._end_process_timer._status_message = None
 
-        self.model().sig_data_about_to_be_updated.connect(self._start_process)
-        self.model().sig_data_about_to_be_saved.connect(self._start_process)
-        self.model().sig_data_updated.connect(self._handle_process_ended)
-        self.model().sig_data_saved.connect(self._handle_process_ended)
+        self.model().sig_data_about_to_be_updated.connect(
+            lambda: self._start_process(None))
+        self.model().sig_data_updated.connect(
+            lambda: self._handle_process_ended(None))
+        self.model().sig_data_about_to_be_saved.connect(
+            lambda: self._start_process(_('Saving edits in the database...')))
+        self.model().sig_data_saved.connect(
+            lambda: self._handle_process_ended(
+                _('Edits saved sucessfully in the database.')))
 
         stack_widget = QWidget()
         stack_layout = QGridLayout(stack_widget)
@@ -1635,6 +1641,15 @@ class SardesTableWidget(SardesPaneWidget):
         return self.model().update_data()
 
     # ---- Setup
+    def eventFilter(self, widget, event):
+        """
+        An event filter to prevent status tips from buttons and menus
+        to show in the status bar of the table.
+        """
+        if event.type() == QEvent.StatusTip:
+            return True
+        return False
+
     def _setup_upper_toolbar(self):
         """
         Setup the upper toolbar of this table widget.
@@ -1667,6 +1682,7 @@ class SardesTableWidget(SardesPaneWidget):
         """
         statusbar = self.statusBar()
         statusbar.setSizeGripEnabled(False)
+        self.installEventFilter(self)
 
         # Number of row(s) selected.
         self.selected_line_count = QLabel()
@@ -1793,16 +1809,26 @@ class SardesTableWidget(SardesPaneWidget):
         return toolbutton
 
     # ---- Process state
-    def _start_process(self):
+    def _start_process(self, text=''):
+        if text is not None:
+            self.statusBar().showMessage(text)
         self._end_process_timer.stop()
         self.get_upper_toolbar().setEnabled(False)
         self.tableview.setEnabled(False)
         self.progressbar.show()
 
-    def _handle_process_ended(self, text=''):
+    def _handle_process_ended(self, text=None):
+        if text is not None:
+            self._end_process_timer._status_message = text
         self._end_process_timer.start(MSEC_MIN_PROGRESS_DISPLAY)
 
-    def _end_process(self, text=''):
+    def _end_process(self, text=None):
+        if text is not None:
+            self.statusBar().showMessage(text)
+        if self._end_process_timer._status_message is not None:
+            self.statusBar().showMessage(
+                self._end_process_timer._status_message)
+            self._end_process_timer._status_message = None
         self.get_upper_toolbar().setEnabled(True)
         self.tableview.setEnabled(True)
         self.tableview.setFocus()

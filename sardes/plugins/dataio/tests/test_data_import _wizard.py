@@ -151,16 +151,17 @@ def test_read_data_error(qtbot, mocker, testfiles, data_import_wizard):
     Test that the wizard is working as expected when there is an error
     while reading data from a file.
     """
-    mocker.patch.object(SolinstFileReader, '__new__',
+    mocker.patch.object(
+        SolinstFileReader, '__new__',
         side_effect=ValueError('Mocked error for test_read_data_error.'))
     patcher_msgbox_warning = mocker.patch.object(
         QMessageBox, 'critical', return_value=QMessageBox.Ok)
-    
+
     # Read the next selected file.
     qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
     assert patcher_msgbox_warning.call_count == 1
-    assert data_import_wizard.table_widget.tableview.row_count() == 0 
-    
+    assert data_import_wizard.table_widget.tableview.row_count() == 0
+
 
 def test_load_data(qtbot, mocker, testfiles, data_import_wizard):
     """
@@ -182,14 +183,16 @@ def test_load_data(qtbot, mocker, testfiles, data_import_wizard):
         QMessageBox, 'warning', return_value=QMessageBox.Ok)
     qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
     assert patcher_msgbox_warning.call_count == 1
+    assert data_import_wizard._data_is_loaded is False
     assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826)
     assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826)
 
     # We now disbaled the option to move the input data file after loading and
     # try to load the data again.
     data_import_wizard.pathbox_widget.checkbox.setChecked(False)
-    with qtbot.waitSignal(data_import_wizard.table_model.sig_data_saved):
-        qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+    assert data_import_wizard._data_is_loaded is False
+    qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+    qtbot.waitUntil(lambda: data_import_wizard._data_is_loaded is True)
     assert patcher_msgbox_warning.call_count == 1
     assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 100)
     assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 100)
@@ -226,8 +229,9 @@ def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
     # We load the data.
     patcher_msgbox_exec_ = mocker.patch.object(
         QMessageBox, 'exec_', return_value=msgbox_answer)
-    with qtbot.waitSignal(data_import_wizard.table_model.sig_data_saved):
-        qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+    assert data_import_wizard._data_is_loaded is False
+    qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+    qtbot.waitUntil(lambda: data_import_wizard._data_is_loaded is True)
 
     assert osp.exists(filename) is (msgbox_answer == QMessageBox.No)
     assert patcher_msgbox_exec_.call_count == 1
@@ -265,8 +269,9 @@ def test_move_input_file_oserror(qtbot, mocker, data_import_wizard):
         QFileDialog, 'getExistingDirectory', return_value=(loaded_dirname_2))
 
     # We now load the data.
-    with qtbot.waitSignal(data_import_wizard.table_model.sig_data_saved):
-        qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+    assert data_import_wizard._data_is_loaded is False
+    qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+    qtbot.waitUntil(lambda: data_import_wizard._data_is_loaded is True)
 
     assert patcher_msgbox_exec_.call_count == 1
     assert patcher_msgbox_warning.call_count == 1
