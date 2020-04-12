@@ -229,8 +229,9 @@ def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
     # We load the data.
     patcher_msgbox_exec_ = mocker.patch.object(
         QMessageBox, 'exec_', return_value=msgbox_answer)
-    with qtbot.waitSignal(data_import_wizard.table_model.sig_data_saved):
-        qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+    assert data_import_wizard._data_is_loaded is False
+    qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+    qtbot.waitUntil(lambda: data_import_wizard._data_is_loaded is True)
 
     assert osp.exists(filename) is (msgbox_answer == QMessageBox.No)
     assert patcher_msgbox_exec_.call_count == 1
