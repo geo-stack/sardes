@@ -132,7 +132,7 @@ def tablewidget(qtbot, tablemodel):
 
     tablewidget.show()
     qtbot.waitForWindowShown(tablewidget)
-    # qtbot.addWidget(tablewidget)
+    qtbot.addWidget(tablewidget)
 
     # Assert everything is working as expected when table is empty.
     assert tablewidget
