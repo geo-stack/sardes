@@ -332,17 +332,18 @@ class DataImportWizard(QDialog):
         stored in the database previous to the data series contained in
         the data file.
         """
-        self.previous_date_label.clear()
-        self.previous_level_label.clear()
-        self.delta_level_label.clear()
-        self.delta_date_label.clear()
-        self.previous_content_widget.show()
-        self.previous_msg_label.hide()
         if self._obs_well_uuid is not None:
             self.db_connection_manager.get_timeseries_for_obs_well(
                 self._obs_well_uuid,
                 [DataType.WaterLevel],
                 self._set_previous_data)
+        else:
+            self.previous_content_widget.show()
+            self.previous_msg_label.hide()
+            self.previous_date_label.clear()
+            self.previous_level_label.clear()
+            self.delta_level_label.clear()
+            self.delta_date_label.clear()
 
     def _set_previous_data(self, tseries_groups):
         """
@@ -379,6 +380,8 @@ class DataImportWizard(QDialog):
             self.previous_msg_label.show()
             return
 
+        self.previous_content_widget.show()
+        self.previous_msg_label.hide()
         prev_level = prev_series.iat[-1]
         delta_level = new_series.iat[0] - prev_level
         prev_datetime = prev_series.index[-1]
