@@ -281,11 +281,14 @@ class DataImportWizard(QDialog):
 
     # ---- Private API
     def _load_next_queued_data_file(self):
+        """
+        Load the data from the next file in the queue.
+        """
         QApplication.setOverrideCursor(Qt.WaitCursor)
         self._data_is_loaded = False
         filename = self._queued_filenames.pop(0)
         self.working_directory = osp.dirname(filename)
-        self.filename_label.setText(filename)
+        self.filename_label.setText(osp.basename(filename))
         self.filename_label.setToolTip(filename)
         try:
             self._file_reader = SolinstFileReader(filename)
