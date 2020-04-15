@@ -474,7 +474,7 @@ class DataImportWizard(QDialog):
                     str(install_data['install_depth'])))
                 self.install_period.setText('{} to {}'.format(
                     install_data['start_date'].strftime("%Y-%m-%d %H:%M"),
-                    '...' if pd.isnull(install_data['end_date']) else
+                    _('today') if pd.isnull(install_data['end_date']) else
                     install_data['end_date'].strftime("%Y-%m-%d %H:%M")))
         else:
             self._obs_well_uuid = None
