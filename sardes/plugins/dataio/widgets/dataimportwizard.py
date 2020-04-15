@@ -284,6 +284,7 @@ class DataImportWizard(QDialog):
         """
         Load the data from the next file in the queue.
         """
+        self.table_model.sig_data_about_to_be_updated.emit()
         QApplication.setOverrideCursor(Qt.WaitCursor)
         self._data_is_loaded = False
         filename = self._queued_filenames.pop(0)
@@ -315,6 +316,7 @@ class DataImportWizard(QDialog):
         self._fetch_previous_data()
         self._update_button_state()
         QApplication.restoreOverrideCursor()
+        self.table_model.sig_data_updated.emit()
 
         if _error:
             QMessageBox.critical(
