@@ -119,6 +119,7 @@ class DataImportWizard(QDialog):
 
         previous_layout.setRowStretch(4, 1)
         previous_layout.setColumnStretch(2, 1)
+        previous_layout.setContentsMargins(0, 0, 0, 0)
 
         self.previous_msg_label = QLabel()
         self.previous_msg_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
@@ -129,7 +130,6 @@ class DataImportWizard(QDialog):
 
         previous_groupbox = QGroupBox(_('Previous Reading'))
         previous_stack_layout = QGridLayout(previous_groupbox)
-        previous_stack_layout.setContentsMargins(0, 0, 0, 0)
         previous_stack_layout.addWidget(self.previous_content_widget, 0, 0)
         previous_stack_layout.addWidget(self.previous_msg_label)
 
