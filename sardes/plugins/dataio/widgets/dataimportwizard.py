@@ -67,6 +67,7 @@ class DataImportWizard(QDialog):
             'sonde_installations': None,
             'observation_wells_data': None}
 
+        self._filename = None
         self._sonde_serial_no = None
         self._obs_well_uuid = None
         self._sonde_depth = None
@@ -209,10 +210,7 @@ class DataImportWizard(QDialog):
         """
         Return the name of the input data file currently opened in the wizard.
         """
-        if self.filename_label.text().strip() == '':
-            return None
-        else:
-            return osp.abspath(self.filename_label.text())
+        return self._filename
 
     @property
     def working_directory(self):
@@ -286,12 +284,12 @@ class DataImportWizard(QDialog):
         """
         self.table_widget._start_process(_('Loading data...'))
         self._data_is_loaded = False
-        filename = self._queued_filenames.pop(0)
-        self.working_directory = osp.dirname(filename)
-        self.filename_label.setText(osp.basename(filename))
-        self.filename_label.setToolTip(filename)
+        self._filename = self._queued_filenames.pop(0)
+        self.working_directory = osp.dirname(self._filename)
+        self.filename_label.setText(osp.basename(self._filename))
+        self.filename_label.setToolTip(self._filename)
         try:
-            self._file_reader = SolinstFileReader(filename)
+            self._file_reader = SolinstFileReader(self._filename)
         except Exception as e:
             _error = e
             self._file_reader = None
@@ -320,7 +318,7 @@ class DataImportWizard(QDialog):
                 _(_("Read Data Error")),
                 _('An error occured while atempting to read data from<br>'
                   '<i>{}</i><br><br><font color="{}">{}:</font> {}')
-                .format(filename, RED, type(_error).__name__, _error)
+                .format(self._filename, RED, type(_error).__name__, _error)
                 )
             return
 
