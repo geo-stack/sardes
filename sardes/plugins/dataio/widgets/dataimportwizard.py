@@ -27,7 +27,7 @@ from qtpy.QtWidgets import (
 from sardes.config.gui import get_iconsize, RED
 from sardes.config.locale import _
 from sardes.api.tablemodels import SardesTableModel
-from sardes.api.timeseries import DataType
+from sardes.api.timeseries import DataType, merge_timeseries_groups
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import NotEditableDelegate, SardesTableWidget
 from sardes.widgets.buttons import CheckboxPathBoxWidget
@@ -312,6 +312,7 @@ class DataImportWizard(QDialog):
                 _('Data loaded sucessfully from the file.'))
         self._update_sonde_info()
         self._update_table_model_data()
+        self._fetch_previous_data()
         self._update_button_state()
         QApplication.restoreOverrideCursor()
 
@@ -324,6 +325,74 @@ class DataImportWizard(QDialog):
                 .format(filename, RED, type(_error).__name__, _error)
                 )
             return
+
+    def _fetch_previous_data(self):
+        """
+        Update the information regarding the water level reading that is
+        stored in the database previous to the data series contained in
+        the data file.
+        """
+        self.previous_date_label.clear()
+        self.previous_level_label.clear()
+        self.delta_level_label.clear()
+        self.delta_date_label.clear()
+        self.previous_content_widget.show()
+        self.previous_msg_label.hide()
+        if self._obs_well_uuid is not None:
+            self.db_connection_manager.get_timeseries_for_obs_well(
+                self._obs_well_uuid,
+                [DataType.WaterLevel],
+                self._set_previous_data)
+
+    def _set_previous_data(self, tseries_groups):
+        """
+        Set the information regarding the water level reading that is
+        stored in the database previous to the data series contained in
+        the data file.
+        """
+        prev_dataf = merge_timeseries_groups(tseries_groups)
+        new_dataf = self.table_model.dataf
+        if (DataType.WaterLevel not in prev_dataf.columns or
+                DataType.WaterLevel not in new_dataf.columns):
+            return
+
+        new_series = pd.Series(
+            new_dataf[DataType.WaterLevel].values,
+            index=new_dataf['datetime']).dropna()
+        if not len(new_series):
+            return
+
+        prev_series = pd.Series(
+            prev_dataf[DataType.WaterLevel].values,
+            index=prev_dataf['datetime']).dropna()
+        prev_series = prev_series[
+            prev_series.index < new_series.index[0]]
+        if not len(prev_series):
+            self.previous_msg_label.setText(
+                _('There is no water level stored in the database'
+                  'for well {} before {}.'.format(
+                      self.obs_well_label.text(),
+                      new_series.index[0].strftime("%Y-%m-%d %H:%M")
+                      )
+                  ))
+            self.previous_content_widget.hide()
+            self.previous_msg_label.show()
+            return
+
+        prev_level = prev_series.iat[-1]
+        delta_level = new_series.iat[0] - prev_level
+        prev_datetime = prev_series.index[-1]
+        delta_datetime = (new_series.index[0] - prev_datetime)
+        self.previous_level_label.setText('{:0.6f}'.format(prev_level))
+        self.delta_level_label.setText('{:0.6f}'.format(delta_level))
+        self.previous_date_label.setText(
+            prev_datetime.strftime("%Y-%m-%d %H:%M"))
+        self.delta_date_label.setText(
+            '{:0.0f} {} {:0.0f} {} {:0.0f} {}'.format(
+                delta_datetime.days, _('days'),
+                delta_datetime.seconds // 3600, _('hrs'),
+                (delta_datetime.seconds // 60) % 60, _('mins')
+                ))
 
     def _update_table_model_data(self):
         """
