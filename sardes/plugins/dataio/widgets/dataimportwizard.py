@@ -248,7 +248,7 @@ class DataImportWizard(QDialog):
             super().show()
             self._load_next_queued_data_file()
 
-    # ---- Sardes Model Public API
+    # ---- Connection with Database
     def set_database_connection_manager(self, db_connection_manager):
         """Setup the namespace for the database connection manager."""
         self.db_connection_manager = db_connection_manager
@@ -284,8 +284,7 @@ class DataImportWizard(QDialog):
         """
         Load the data from the next file in the queue.
         """
-        self.table_model.sig_data_about_to_be_updated.emit()
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        self.table_widget._start_process(_('Loading data...'))
         self._data_is_loaded = False
         filename = self._queued_filenames.pop(0)
         self.working_directory = osp.dirname(filename)
@@ -300,8 +299,7 @@ class DataImportWizard(QDialog):
             self.serial_number_label.setText(READ_ERROR_MSG_COLORED)
             self.site_name_label.setText(READ_ERROR_MSG_COLORED)
             self.projectid_label.setText(READ_ERROR_MSG_COLORED)
-            self.table_widget.statusBar().showMessage(
-                _('Failed to load data from the file.'))
+            status_msg = _('Failed to load data.')
         else:
             _error = None
             sites = self._file_reader.sites
@@ -309,14 +307,12 @@ class DataImportWizard(QDialog):
             self.site_name_label.setText(sites.site_name)
             self.projectid_label.setText(sites.project_name)
             self._sonde_serial_no = sites.instrument_serial_number or None
-            self.table_widget.statusBar().showMessage(
-                _('Data loaded sucessfully from the file.'))
+            status_msg = _('Data loaded sucessfully.')
         self._update_sonde_info()
         self._update_table_model_data()
         self._fetch_previous_data()
         self._update_button_state()
-        QApplication.restoreOverrideCursor()
-        self.table_model.sig_data_updated.emit()
+        self.table_widget._handle_process_ended(status_msg)
 
         if _error:
             QMessageBox.critical(
