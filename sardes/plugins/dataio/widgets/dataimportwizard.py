@@ -61,9 +61,8 @@ class DataImportWizard(QDialog):
         self._data_is_loaded = False
         self._file_reader = None
 
-        self._table_id = 'data_import_wizard'
         self._libraries = {
-            'sonde_data': None,
+            'sondes_data': None,
             'sonde_models_lib': None,
             'sonde_installations': None,
             'observation_wells_data': None}
@@ -254,17 +253,23 @@ class DataImportWizard(QDialog):
         """Setup the namespace for the database connection manager."""
         self.db_connection_manager = db_connection_manager
 
-    def set_model_data(self, dataf):
+    def update_libraries(self):
+        """
+        Update the libraries required to link the data contained in the
+        current file with the database.
+        """
+        for name in self._libraries.keys():
+            self.db_connection_manager.get(
+                name,
+                callback=lambda dataf, name=name:
+                    self._set_library(dataf, name),
+                postpone_exec=True)
+            self.db_connection_manager.run_tasks()
+
+    def _set_library(self, dataf, name):
         """
         Set the data needed by the wizard and update the info displayed
         in the GUI.
-        """
-        self.set_model_library(dataf, 'sonde_data')
-
-    def set_model_library(self, dataf, name):
-        """
-        Set the data for the given library name and update the info
-        displayed in the GUI.
         """
         self._libraries[name] = dataf
         self._update_sonde_info()
