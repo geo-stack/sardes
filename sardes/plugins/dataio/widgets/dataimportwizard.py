@@ -673,6 +673,12 @@ class DataImportWizard(QDialog):
         if self._obs_well_uuid is not None:
             self.sig_view_data.emit(self._obs_well_uuid)
 
+    # ---- Qt method override/extension
+    def closeEvent(self, event):
+        """Reimplement Qt closeEvent."""
+        self._queued_filenames = []
+        super().closeEvent(event)
+
 
 if __name__ == '__main__':
     from sardes.database.database_manager import DatabaseConnectionManager
