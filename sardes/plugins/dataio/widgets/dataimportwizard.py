@@ -418,7 +418,7 @@ class DataImportWizard(QDialog):
         currently opened data file.
         """
         sonde_serial_no = self._sonde_serial_no
-        sonde_data = self._libraries['sonde_data']
+        sonde_data = self._libraries['sondes_data']
         if sonde_serial_no is None or sonde_data is None:
             return None
         try:
@@ -435,7 +435,7 @@ class DataImportWizard(QDialog):
         opened data file.
         """
         sonde_serial_no = self._sonde_serial_no
-        sonde_data = self._libraries['sonde_data']
+        sonde_data = self._libraries['sondes_data']
         if sonde_serial_no is None or sonde_data is None:
             return None
         try:
