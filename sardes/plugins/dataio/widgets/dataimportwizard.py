@@ -20,8 +20,8 @@ import pandas as pd
 from qtpy.QtCore import Qt, Slot, Signal
 from qtpy.QtWidgets import (
     QApplication, QFileDialog, QDialog, QLabel, QPushButton, QDialogButtonBox,
-    QVBoxLayout, QAbstractButton, QFormLayout, QGroupBox, QMessageBox,
-    QGridLayout)
+    QAbstractButton, QFormLayout, QGroupBox, QMessageBox, QGridLayout,
+    QFrame)
 
 # ---- Local imports
 from sardes.config.gui import get_iconsize, RED
@@ -99,8 +99,43 @@ class DataImportWizard(QDialog):
         sonde_form.addRow(_('Depth') + ' :', self.install_depth)
         sonde_form.addRow(_('Period') + ' :', self.install_period)
 
+        # Setup comparison with previous data.
+        self.previous_date_label = QLabel()
+        self.previous_level_label = QLabel()
+        self.delta_level_label = QLabel()
+        self.delta_date_label = QLabel()
+
+        self.previous_content_widget = QFrame()
+        previous_layout = QGridLayout(self.previous_content_widget)
+        previous_layout.addWidget(QLabel(_('Previous Date') + ' :'), 0, 0)
+        previous_layout.addWidget(self.previous_date_label, 0, 1)
+        previous_layout.addWidget(QLabel(_('Delta Date') + ' :'), 1, 0)
+        previous_layout.addWidget(self.delta_date_label, 1, 1)
+        previous_layout.addWidget(
+            QLabel(_('Previous Water Level') + ' :'), 2, 0)
+        previous_layout.addWidget(self.previous_level_label, 2, 1)
+        previous_layout.addWidget(
+            QLabel(_('Delta Water Level') + ' :'), 3, 0)
+        previous_layout.addWidget(self.delta_level_label, 3, 1)
+
+        previous_layout.setRowStretch(4, 1)
+        previous_layout.setColumnStretch(2, 1)
+
+        self.previous_msg_label = QLabel()
+        self.previous_msg_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.previous_msg_label.setTextInteractionFlags(
+            Qt.TextBrowserInteraction)
+        self.previous_msg_label.setWordWrap(True)
+        self.previous_msg_label.hide()
+
+        previous_groupbox = QGroupBox(_('Previous Reading'))
+        previous_stack_layout = QGridLayout(previous_groupbox)
+        previous_stack_layout.setContentsMargins(0, 0, 0, 0)
+        previous_stack_layout.addWidget(self.previous_content_widget, 0, 0)
+        previous_stack_layout.addWidget(self.previous_msg_label)
+
         # Make all label selectable with the mouse cursor.
-        for layout in [file_layout, sonde_form]:
+        for layout in [file_layout, sonde_form, previous_layout]:
             for index in range(layout.count()):
                 try:
                     layout.itemAt(index).widget().setTextInteractionFlags(
@@ -154,15 +189,18 @@ class DataImportWizard(QDialog):
             label=_('Move the input file to this location after loading data'))
 
         # Setup the layout.
-        layout = QVBoxLayout(self)
-        layout.addWidget(file_groupbox)
-        layout.addWidget(sonde_groupbox)
-        layout.addWidget(self.table_widget)
-        layout.setStretch(layout.count() - 1, 1)
-        layout.addSpacing(15)
-        layout.addWidget(self.pathbox_widget)
-        layout.addSpacing(5)
-        layout.addWidget(self.button_box)
+        layout = QGridLayout(self)
+        layout.addWidget(file_groupbox, 0, 0, 1, 2)
+        layout.addWidget(sonde_groupbox, 1, 0)
+        layout.addWidget(previous_groupbox, 1, 1)
+        layout.addWidget(self.table_widget, 2, 0, 1, 2)
+        layout.setRowStretch(2, 1)
+        layout.setRowMinimumHeight(3, 25)
+        layout.addWidget(self.pathbox_widget, 4, 0, 1, 2)
+        layout.setRowMinimumHeight(5, 5)
+        layout.addWidget(self.button_box, 6, 0, 1, 2)
+        layout.setColumnStretch(0, 1)
+        layout.setColumnStretch(1, 1)
 
         self._working_dir = get_home_dir()
         self._queued_filenames = []
