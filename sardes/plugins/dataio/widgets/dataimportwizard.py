@@ -372,12 +372,10 @@ class DataImportWizard(QDialog):
             prev_series.index < new_series.index[0]]
         if not len(prev_series):
             self.previous_msg_label.setText(
-                _('There is no water level stored in the database'
-                  'for well {} before {}.'.format(
+                _('There is no water level stored in the database '
+                  'for well {} before {}.').format(
                       self.obs_well_label.text(),
-                      new_series.index[0].strftime("%Y-%m-%d %H:%M")
-                      )
-                  ))
+                      new_series.index[0].strftime("%Y-%m-%d %H:%M")))
             self.previous_content_widget.hide()
             self.previous_msg_label.show()
             return
