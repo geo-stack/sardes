@@ -255,7 +255,8 @@ class DataImportWizard(QDialog):
         """
         Handle when the connection to the database change.
         """
-        self.update_sonde_installation_info()
+        self._update_sonde_installation_info()
+        self._update_previous_data()
         self._update_button_state()
 
     # ---- Private API
@@ -316,50 +317,6 @@ class DataImportWizard(QDialog):
             self.delta_level_label.clear()
             self.delta_date_label.clear()
 
-    def _load_next_queued_data_file(self):
-        """
-        Load the data from the next file in the queue.
-        """
-        self.table_widget._start_process(_('Loading data...'))
-        self._data_is_loaded = False
-        self._filename = self._queued_filenames.pop(0)
-        self.working_directory = osp.dirname(self._filename)
-        self.filename_label.setText(osp.basename(self._filename))
-        self.filename_label.setToolTip(self._filename)
-        try:
-            self._file_reader = SolinstFileReader(self._filename)
-        except Exception as e:
-            _error = e
-            self._file_reader = None
-            self._sonde_serial_no = None
-            self.serial_number_label.setText(READ_ERROR_MSG_COLORED)
-            self.site_name_label.setText(READ_ERROR_MSG_COLORED)
-            self.projectid_label.setText(READ_ERROR_MSG_COLORED)
-            status_msg = _('Failed to load data.')
-        else:
-            _error = None
-            sites = self._file_reader.sites
-            self.serial_number_label.setText(sites.instrument_serial_number)
-            self.site_name_label.setText(sites.site_name)
-            self.projectid_label.setText(sites.project_name)
-            self._sonde_serial_no = sites.instrument_serial_number or None
-            status_msg = _('Data loaded sucessfully.')
-        self._update_sonde_installation_info()
-        self._update_table_model_data()
-        self._update_previous_data()
-        self._update_button_state()
-        self.table_widget._handle_process_ended(status_msg)
-
-        if _error:
-            QMessageBox.critical(
-                self,
-                _(_("Read Data Error")),
-                _('An error occured while atempting to read data from<br>'
-                  '<i>{}</i><br><br><font color="{}">{}:</font> {}')
-                .format(self._filename, RED, type(_error).__name__, _error)
-                )
-            return
-
     def _set_previous_data(self, tseries_groups):
         """
         Set the information regarding the water level reading that is
@@ -409,6 +366,50 @@ class DataImportWizard(QDialog):
                 delta_datetime.seconds // 3600, _('hrs'),
                 (delta_datetime.seconds // 60) % 60, _('mins')
                 ))
+
+    def _load_next_queued_data_file(self):
+        """
+        Load the data from the next file in the queue.
+        """
+        self.table_widget._start_process(_('Loading data...'))
+        self._data_is_loaded = False
+        self._filename = self._queued_filenames.pop(0)
+        self.working_directory = osp.dirname(self._filename)
+        self.filename_label.setText(osp.basename(self._filename))
+        self.filename_label.setToolTip(self._filename)
+        try:
+            self._file_reader = SolinstFileReader(self._filename)
+        except Exception as e:
+            _error = e
+            self._file_reader = None
+            self._sonde_serial_no = None
+            self.serial_number_label.setText(READ_ERROR_MSG_COLORED)
+            self.site_name_label.setText(READ_ERROR_MSG_COLORED)
+            self.projectid_label.setText(READ_ERROR_MSG_COLORED)
+            status_msg = _('Failed to load data.')
+        else:
+            _error = None
+            sites = self._file_reader.sites
+            self.serial_number_label.setText(sites.instrument_serial_number)
+            self.site_name_label.setText(sites.site_name)
+            self.projectid_label.setText(sites.project_name)
+            self._sonde_serial_no = sites.instrument_serial_number or None
+            status_msg = _('Data loaded sucessfully.')
+        self._update_sonde_installation_info()
+        self._update_table_model_data()
+        self._update_previous_data()
+        self._update_button_state()
+        self.table_widget._handle_process_ended(status_msg)
+
+        if _error:
+            QMessageBox.critical(
+                self,
+                _(_("Read Data Error")),
+                _('An error occured while atempting to read data from<br>'
+                  '<i>{}</i><br><br><font color="{}">{}:</font> {}')
+                .format(self._filename, RED, type(_error).__name__, _error)
+                )
+            return
 
     def _update_table_model_data(self):
         """
