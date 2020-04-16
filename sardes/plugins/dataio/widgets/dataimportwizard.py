@@ -21,7 +21,7 @@ from qtpy.QtCore import Qt, Slot, Signal
 from qtpy.QtWidgets import (
     QApplication, QFileDialog, QDialog, QLabel, QPushButton, QDialogButtonBox,
     QAbstractButton, QFormLayout, QGroupBox, QMessageBox, QGridLayout,
-    QFrame)
+    QFrame, QStackedWidget)
 
 # ---- Local imports
 from sardes.config.gui import get_iconsize, RED
@@ -86,18 +86,31 @@ class DataImportWizard(QDialog):
         file_layout.addRow(_('Location') + ' :', self.site_name_label)
         file_layout.addRow(_('Serial Number') + ' :', self.serial_number_label)
 
-        # Setup sonde info.
+        # Setup sonde installation info.
         self.sonde_label = QLabel()
         self.obs_well_label = QLabel()
         self.install_depth = QLabel()
         self.install_period = QLabel()
 
-        sonde_groupbox = QGroupBox(_('Sonde Installation Info'))
-        sonde_form = QFormLayout(sonde_groupbox)
+        sonde_info_widget = QFrame()
+        sonde_form = QFormLayout(sonde_info_widget)
         sonde_form.addRow(_('Sonde') + ' :', self.sonde_label)
         sonde_form.addRow(_('Well') + ' :', self.obs_well_label)
         sonde_form.addRow(_('Depth') + ' :', self.install_depth)
         sonde_form.addRow(_('Period') + ' :', self.install_period)
+
+        self.sonde_msg_label = QLabel()
+        self.sonde_msg_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.sonde_msg_label.setTextInteractionFlags(Qt.TextBrowserInteraction)
+        self.sonde_msg_label.setWordWrap(True)
+
+        self.sonde_stacked_widget = QStackedWidget()
+        self.sonde_stacked_widget.addWidget(sonde_info_widget)
+        self.sonde_stacked_widget.addWidget(self.sonde_msg_label)
+        
+        sonde_groupbox = QGroupBox(_('Sonde Installation Info'))
+        sonde_groupbox_layout = QGridLayout(sonde_groupbox)
+        sonde_groupbox_layout.addWidget(self.sonde_stacked_widget)
 
         # Setup comparison with previous data.
         self.previous_date_label = QLabel()
@@ -105,8 +118,8 @@ class DataImportWizard(QDialog):
         self.delta_level_label = QLabel()
         self.delta_date_label = QLabel()
 
-        self.previous_content_widget = QFrame()
-        previous_layout = QGridLayout(self.previous_content_widget)
+        previous_widget = QFrame()
+        previous_layout = QGridLayout(previous_widget)
         previous_layout.addWidget(QLabel(_('Previous Date') + ' :'), 0, 0)
         previous_layout.addWidget(self.previous_date_label, 0, 1)
         previous_layout.addWidget(QLabel(_('Delta Date') + ' :'), 1, 0)
@@ -129,11 +142,14 @@ class DataImportWizard(QDialog):
         self.previous_msg_label.setWordWrap(True)
         self.previous_msg_label.hide()
 
-        previous_groupbox = QGroupBox(_('Previous Reading'))
-        previous_stack_layout = QGridLayout(previous_groupbox)
-        previous_stack_layout.addWidget(self.previous_content_widget, 0, 0)
-        previous_stack_layout.addWidget(self.previous_msg_label)
+        self.previous_stacked_widget = QStackedWidget()
+        self.previous_stacked_widget.addWidget(previous_widget)
+        self.previous_stacked_widget.addWidget(self.previous_msg_label)
 
+        previous_groupbox = QGroupBox(_('Previous Reading'))
+        previous_groupbox_layout = QGridLayout(previous_groupbox)
+        previous_groupbox_layout.addWidget(self.previous_stacked_widget)
+        
         # Make all label selectable with the mouse cursor.
         for layout in [file_layout, sonde_form, previous_layout]:
             for index in range(layout.count()):
@@ -249,12 +265,11 @@ class DataImportWizard(QDialog):
         self.db_connection_manager.sig_database_connection_changed.connect(
             self._handle_database_connection_changed)
 
-    def _handle_database_connection_changed(self, state):
+    def _handle_database_connection_changed(self, connected):
         """
         Handle when the connection to the database change.
         """
         self._update_installation_info()
-        self._update_previous_data()
 
     # ---- Private API
     def _update_installation_info(self):
@@ -273,7 +288,20 @@ class DataImportWizard(QDialog):
         """
         Set sonde installation info.
         """
-        if sonde_install_data is not None:
+        self._obs_well_uuid = None
+        self._sonde_depth = None
+        self._install_id = None
+        if self._file_reader is None:
+            self.sonde_label.clear()
+            self.obs_well_label.clear()
+            self.install_depth.clear()
+            self.install_period.clear()
+            self.sonde_stacked_widget.setCurrentIndex(0)
+        elif not self.db_connection_manager.is_connected():
+            self.sonde_msg_label.setText(
+                _('Info not available because not connected to a database.'))
+            self.sonde_stacked_widget.setCurrentIndex(1)
+        elif sonde_install_data is not None:
             self._install_id = sonde_install_data.name
             self._obs_well_uuid = sonde_install_data['sampling_feature_uuid']
             self._sonde_depth = sonde_install_data['install_depth']
@@ -294,14 +322,13 @@ class DataImportWizard(QDialog):
                 _('today') if pd.isnull(sonde_install_data['end_date']) else
                 sonde_install_data['end_date'].strftime("%Y-%m-%d %H:%M")
                 ))
+            self.sonde_stacked_widget.setCurrentIndex(0)
         else:
-            self._obs_well_uuid = None
-            self._sonde_depth = None
-            self._install_id = None
             self.sonde_label.setText(NOT_FOUND_MSG_COLORED)
             self.obs_well_label.setText(NOT_FOUND_MSG_COLORED)
             self.install_depth.setText(NOT_FOUND_MSG_COLORED)
             self.install_period.setText(NOT_FOUND_MSG_COLORED)
+            self.sonde_stacked_widget.setCurrentIndex(0)
         self.sig_installation_info_uptated.emit()
 
     def _update_previous_data(self):
@@ -316,18 +343,17 @@ class DataImportWizard(QDialog):
                 self._obs_well_uuid, [DataType.WaterLevel],
                 self._set_previous_data)
         else:
-            self._clear_previous_data()
+            self._set_previous_data(None)
 
     def _clear_previous_data(self):
         """
         Clear the data shown in the previous data group box.
         """
-        self.previous_content_widget.show()
-        self.previous_msg_label.hide()
         self.previous_date_label.clear()
         self.previous_level_label.clear()
         self.delta_level_label.clear()
         self.delta_date_label.clear()
+        self.previous_stacked_widget.setCurrentIndex(0)
         self.sig_previous_data_uptated.emit()
 
     def _set_previous_data(self, tseries_groups):
@@ -336,6 +362,15 @@ class DataImportWizard(QDialog):
         stored in the database previous to the data series contained in
         the data file.
         """
+        if self._file_reader is None:
+            self._clear_previous_data()
+            return
+        if not self.db_connection_manager.is_connected():
+            self.previous_msg_label.setText(
+                _('Info not available because not connected to a database.'))
+            self.previous_stacked_widget.setCurrentIndex(1)
+            self.sig_previous_data_uptated.emit()
+            return
         if tseries_groups is None:
             self._clear_previous_data()
             return
@@ -365,13 +400,11 @@ class DataImportWizard(QDialog):
                   'for well {} before {}.').format(
                       self.obs_well_label.text(),
                       new_series.index[0].strftime("%Y-%m-%d %H:%M")))
-            self.previous_content_widget.hide()
-            self.previous_msg_label.show()
+            self.previous_stacked_widget.setCurrentIndex(1)
             self.sig_previous_data_uptated.emit()
             return
 
-        self.previous_content_widget.show()
-        self.previous_msg_label.hide()
+        self.previous_stacked_widget.setCurrentIndex(0)
         prev_level = prev_series.iat[-1]
         delta_level = new_series.iat[0] - prev_level
         prev_datetime = prev_series.index[-1]
@@ -435,7 +468,7 @@ class DataImportWizard(QDialog):
         """
         if (self._file_reader is not None and
                 self._file_reader.records is not None):
-            dataf = self._file_reader.records
+            dataf = self._file_reader.records.copy()
             dataf.insert(0, 'Datetime', dataf.index)
             dataf.rename(columns={'Datetime': 'datetime'}, inplace=True)
             for column in dataf.columns:
