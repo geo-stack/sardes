@@ -12,8 +12,10 @@
 import uuid
 from collections import OrderedDict
 from time import sleep
+import datetime
 
 # ---- Third party imports
+import pandas as pd
 from pandas import DataFrame
 from qtpy.QtCore import QObject, QThread, Signal, Slot
 
@@ -99,7 +101,7 @@ class DatabaseConnectionWorker(QObject):
         Get the data related to name from the database.
         """
         if name in self._cache:
-            print("Fetched '{}' from store.".format(name))
+            # print("Fetched '{}' from store.".format(name))
             return self._cache[name],
 
         print("Fetching '{}' from the database...".format(name), end='')
@@ -196,6 +198,59 @@ class DatabaseConnectionWorker(QObject):
         print("Deleting timeseries data...")
         self.db_accessor.delete_timeseries_data(tseries_dels)
         print("...timeseries data deleted sucessfully.")
+
+    # ---- Utilities
+    def _get_sonde_installation_info(self, sonde_serial_no, date_time):
+        """
+        Fetch and return from the database the installation infos related to
+        the given sonde serial number and datetime.
+        """
+        if not self.is_connected():
+            return None,
+
+        sonde_data = self._get('sondes_data')[0]
+        try:
+            sonde_uuid = (
+                sonde_data[sonde_data['sonde_serial_no'] == sonde_serial_no]
+                .index[0])
+        except (KeyError, IndexError):
+            return None,
+
+        sonde_installations = self._get('sonde_installations')[0]
+        try:
+            installs = (
+                sonde_installations
+                [sonde_installations['sonde_uuid'] == sonde_uuid]
+                )
+        except (KeyError, IndexError):
+            return None,
+        else:
+            for i in range(len(installs)):
+                sonde_install = installs.iloc[i].copy()
+                start_date = sonde_install['start_date']
+                end_date = (sonde_install['end_date'] if
+                            not pd.isnull(sonde_install['end_date']) else
+                            datetime.datetime.now())
+                if start_date <= date_time and end_date >= date_time:
+                    break
+            else:
+                return None,
+
+        # Add information about well name and municipality.
+        obs_wells_data = self._get('observation_wells_data')[0]
+        obs_well_uuid = sonde_install['sampling_feature_uuid']
+        sonde_install['well_name'] = obs_wells_data.at[
+            obs_well_uuid, 'obs_well_id']
+        sonde_install['well_municipality'] = obs_wells_data.at[
+            obs_well_uuid, 'municipality']
+
+        # Add sonde brand and model info.
+        sonde_model_id = sonde_data.loc[sonde_uuid]['sonde_model_id']
+        sonde_models_lib = self._get('sonde_models_lib')[0]
+        sonde_install['sonde_brand_model'] = sonde_models_lib.loc[
+            sonde_model_id, 'sonde_brand_model']
+
+        return sonde_install,
 
 
 class SardesModelsManager(QObject):
@@ -465,6 +520,17 @@ class DatabaseConnectionManager(QObject):
     def close(self):
         """Close this database connection manager."""
         self.disconnect_from_db()
+
+    # ---- Utilities
+    def get_sonde_installation_info(self, sonde_serial_no, date_time,
+                                    callback=None, postpone_exec=False):
+        """
+        Fetch and return from the database the installation infos related to
+        the given sonde serial number and datetime.
+        """
+        self._add_task('get_sonde_installation_info', callback,
+                       sonde_serial_no, date_time)
+        self.run_tasks()
 
     # ---- Timeseries
     def get_timeseries_for_obs_well(

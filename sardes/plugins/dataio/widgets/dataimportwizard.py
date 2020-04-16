@@ -20,14 +20,14 @@ import pandas as pd
 from qtpy.QtCore import Qt, Slot, Signal
 from qtpy.QtWidgets import (
     QApplication, QFileDialog, QDialog, QLabel, QPushButton, QDialogButtonBox,
-    QVBoxLayout, QAbstractButton, QFormLayout, QGroupBox, QMessageBox,
-    QGridLayout)
+    QAbstractButton, QFormLayout, QGroupBox, QMessageBox, QGridLayout,
+    QFrame)
 
 # ---- Local imports
 from sardes.config.gui import get_iconsize, RED
 from sardes.config.locale import _
 from sardes.api.tablemodels import SardesTableModel
-from sardes.api.timeseries import DataType
+from sardes.api.timeseries import DataType, merge_timeseries_groups
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import NotEditableDelegate, SardesTableWidget
 from sardes.widgets.buttons import CheckboxPathBoxWidget
@@ -45,9 +45,9 @@ class ImportDataTableModel(SardesTableModel):
 
 
 class DataImportWizard(QDialog):
-    sig_data_about_to_be_updated = Signal()
-    sig_data_updated = Signal()
     sig_view_data = Signal(object)
+    sig_installation_info_uptated = Signal()
+    sig_previous_data_uptated = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -61,13 +61,13 @@ class DataImportWizard(QDialog):
         self._data_is_loaded = False
         self._file_reader = None
 
-        self._table_id = 'data_import_wizard'
         self._libraries = {
-            'sonde_data': None,
+            'sondes_data': None,
             'sonde_models_lib': None,
             'sonde_installations': None,
             'observation_wells_data': None}
 
+        self._filename = None
         self._sonde_serial_no = None
         self._obs_well_uuid = None
         self._sonde_depth = None
@@ -99,8 +99,43 @@ class DataImportWizard(QDialog):
         sonde_form.addRow(_('Depth') + ' :', self.install_depth)
         sonde_form.addRow(_('Period') + ' :', self.install_period)
 
+        # Setup comparison with previous data.
+        self.previous_date_label = QLabel()
+        self.previous_level_label = QLabel()
+        self.delta_level_label = QLabel()
+        self.delta_date_label = QLabel()
+
+        self.previous_content_widget = QFrame()
+        previous_layout = QGridLayout(self.previous_content_widget)
+        previous_layout.addWidget(QLabel(_('Previous Date') + ' :'), 0, 0)
+        previous_layout.addWidget(self.previous_date_label, 0, 1)
+        previous_layout.addWidget(QLabel(_('Delta Date') + ' :'), 1, 0)
+        previous_layout.addWidget(self.delta_date_label, 1, 1)
+        previous_layout.addWidget(
+            QLabel(_('Previous Water Level') + ' :'), 2, 0)
+        previous_layout.addWidget(self.previous_level_label, 2, 1)
+        previous_layout.addWidget(
+            QLabel(_('Delta Water Level') + ' :'), 3, 0)
+        previous_layout.addWidget(self.delta_level_label, 3, 1)
+
+        previous_layout.setRowStretch(4, 1)
+        previous_layout.setColumnStretch(2, 1)
+        previous_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.previous_msg_label = QLabel()
+        self.previous_msg_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.previous_msg_label.setTextInteractionFlags(
+            Qt.TextBrowserInteraction)
+        self.previous_msg_label.setWordWrap(True)
+        self.previous_msg_label.hide()
+
+        previous_groupbox = QGroupBox(_('Previous Reading'))
+        previous_stack_layout = QGridLayout(previous_groupbox)
+        previous_stack_layout.addWidget(self.previous_content_widget, 0, 0)
+        previous_stack_layout.addWidget(self.previous_msg_label)
+
         # Make all label selectable with the mouse cursor.
-        for layout in [file_layout, sonde_form]:
+        for layout in [file_layout, sonde_form, previous_layout]:
             for index in range(layout.count()):
                 try:
                     layout.itemAt(index).widget().setTextInteractionFlags(
@@ -154,28 +189,31 @@ class DataImportWizard(QDialog):
             label=_('Move the input file to this location after loading data'))
 
         # Setup the layout.
-        layout = QVBoxLayout(self)
-        layout.addWidget(file_groupbox)
-        layout.addWidget(sonde_groupbox)
-        layout.addWidget(self.table_widget)
-        layout.setStretch(layout.count() - 1, 1)
-        layout.addSpacing(15)
-        layout.addWidget(self.pathbox_widget)
-        layout.addSpacing(5)
-        layout.addWidget(self.button_box)
+        layout = QGridLayout(self)
+        layout.addWidget(file_groupbox, 0, 0, 1, 2)
+        layout.addWidget(sonde_groupbox, 1, 0)
+        layout.addWidget(previous_groupbox, 1, 1)
+        layout.addWidget(self.table_widget, 2, 0, 1, 2)
+        layout.setRowStretch(2, 1)
+        layout.setRowMinimumHeight(3, 25)
+        layout.addWidget(self.pathbox_widget, 4, 0, 1, 2)
+        layout.setRowMinimumHeight(5, 5)
+        layout.addWidget(self.button_box, 6, 0, 1, 2)
+        layout.setColumnStretch(0, 1)
+        layout.setColumnStretch(1, 1)
 
         self._working_dir = get_home_dir()
         self._queued_filenames = []
+
+        self.sig_installation_info_uptated.connect(self._update_previous_data)
+        self.sig_previous_data_uptated.connect(self._update_button_state)
 
     @property
     def filename(self):
         """
         Return the name of the input data file currently opened in the wizard.
         """
-        if self.filename_label.text().strip() == '':
-            return None
-        else:
-            return osp.abspath(self.filename_label.text())
+        return self._filename
 
     @property
     def working_directory(self):
@@ -202,50 +240,164 @@ class DataImportWizard(QDialog):
         """
         return self.table_model.dataf
 
-    def show(self):
-        if not len(self._queued_filenames):
-            self._queued_filenames, _ = QFileDialog.getOpenFileNames(
-                self.parent(), 'Select data files',
-                self.working_directory, '*.csv ; *.lev ; *.xle')
-        if len(self._queued_filenames):
-            super().show()
-            self._load_next_queued_data_file()
-
-    # ---- Sardes Model Public API
+    # ---- Connection with Database
     def set_database_connection_manager(self, db_connection_manager):
         """Setup the namespace for the database connection manager."""
         self.db_connection_manager = db_connection_manager
+        self.db_connection_manager.sig_database_connection_changed.connect(
+            self._handle_database_connection_changed)
 
-    def set_model_data(self, dataf):
+    def _handle_database_connection_changed(self, state):
         """
-        Set the data needed by the wizard and update the info displayed
-        in the GUI.
+        Handle when the connection to the database change.
         """
-        self.set_model_library(dataf, 'sonde_data')
-
-    def set_model_library(self, dataf, name):
-        """
-        Set the data for the given library name and update the info
-        displayed in the GUI.
-        """
-        self._libraries[name] = dataf
-        self._update_sonde_info()
-        self._update_button_state()
-
-    def clear_data(self):
-        """Clear the data of this wizard table."""
-        self.table_model.clear_data()
+        self._update_installation_info()
+        self._update_previous_data()
 
     # ---- Private API
+    def _update_installation_info(self):
+        """
+        Update sonde installation info.
+        """
+        if self._sonde_serial_no is not None:
+            self.db_connection_manager.get_sonde_installation_info(
+                self._sonde_serial_no,
+                self._file_reader.records.index.mean(),
+                callback=self._set_installation_info)
+        else:
+            self._set_installation_info(None)
+
+    def _set_installation_info(self, sonde_install_data):
+        """
+        Set sonde installation info.
+        """
+        if sonde_install_data is not None:
+            self._install_id = sonde_install_data.name
+            self._obs_well_uuid = sonde_install_data['sampling_feature_uuid']
+            self._sonde_depth = sonde_install_data['install_depth']
+
+            self.sonde_label.setText('{} {}'.format(
+                sonde_install_data['sonde_brand_model'],
+                self._sonde_serial_no
+                ))
+            self.obs_well_label.setText('{} ({})'.format(
+                sonde_install_data['well_name'],
+                sonde_install_data['well_municipality']
+                ))
+            self.install_depth.setText('{} m'.format(
+                str(sonde_install_data['install_depth'])
+                ))
+            self.install_period.setText('{} to {}'.format(
+                sonde_install_data['start_date'].strftime("%Y-%m-%d %H:%M"),
+                _('today') if pd.isnull(sonde_install_data['end_date']) else
+                sonde_install_data['end_date'].strftime("%Y-%m-%d %H:%M")
+                ))
+        else:
+            self._obs_well_uuid = None
+            self._sonde_depth = None
+            self._install_id = None
+            self.sonde_label.setText(NOT_FOUND_MSG_COLORED)
+            self.obs_well_label.setText(NOT_FOUND_MSG_COLORED)
+            self.install_depth.setText(NOT_FOUND_MSG_COLORED)
+            self.install_period.setText(NOT_FOUND_MSG_COLORED)
+        self.sig_installation_info_uptated.emit()
+
+    def _update_previous_data(self):
+        """
+        Update the information regarding the water level reading that is
+        stored in the database previous to the data series contained in
+        the data file.
+        """
+        if (self._obs_well_uuid is not None and
+                self.db_connection_manager.is_connected()):
+            self.db_connection_manager.get_timeseries_for_obs_well(
+                self._obs_well_uuid, [DataType.WaterLevel],
+                self._set_previous_data)
+        else:
+            self._clear_previous_data()
+
+    def _clear_previous_data(self):
+        """
+        Clear the data shown in the previous data group box.
+        """
+        self.previous_content_widget.show()
+        self.previous_msg_label.hide()
+        self.previous_date_label.clear()
+        self.previous_level_label.clear()
+        self.delta_level_label.clear()
+        self.delta_date_label.clear()
+        self.sig_previous_data_uptated.emit()
+
+    def _set_previous_data(self, tseries_groups):
+        """
+        Set the information regarding the water level reading that is
+        stored in the database previous to the data series contained in
+        the data file.
+        """
+        if tseries_groups is None:
+            self._clear_previous_data()
+            return
+
+        prev_dataf = merge_timeseries_groups(tseries_groups)
+        new_dataf = self.table_model.dataf
+        if (DataType.WaterLevel not in prev_dataf.columns or
+                DataType.WaterLevel not in new_dataf.columns):
+            self._clear_previous_data()
+            return
+
+        new_series = pd.Series(
+            new_dataf[DataType.WaterLevel].values,
+            index=new_dataf['datetime']).dropna()
+        if not len(new_series):
+            self._clear_previous_data()
+            return
+
+        prev_series = pd.Series(
+            prev_dataf[DataType.WaterLevel].values,
+            index=prev_dataf['datetime']).dropna()
+        prev_series = prev_series[
+            prev_series.index < new_series.index[0]]
+        if not len(prev_series):
+            self.previous_msg_label.setText(
+                _('There is no water level stored in the database '
+                  'for well {} before {}.').format(
+                      self.obs_well_label.text(),
+                      new_series.index[0].strftime("%Y-%m-%d %H:%M")))
+            self.previous_content_widget.hide()
+            self.previous_msg_label.show()
+            self.sig_previous_data_uptated.emit()
+            return
+
+        self.previous_content_widget.show()
+        self.previous_msg_label.hide()
+        prev_level = prev_series.iat[-1]
+        delta_level = new_series.iat[0] - prev_level
+        prev_datetime = prev_series.index[-1]
+        delta_datetime = (new_series.index[0] - prev_datetime)
+        self.previous_level_label.setText('{:0.6f}'.format(prev_level))
+        self.delta_level_label.setText('{:0.6f}'.format(delta_level))
+        self.previous_date_label.setText(
+            prev_datetime.strftime("%Y-%m-%d %H:%M"))
+        self.delta_date_label.setText(
+            '{:0.0f} {} {:0.0f} {} {:0.0f} {}'.format(
+                delta_datetime.days, _('days'),
+                delta_datetime.seconds // 3600, _('hrs'),
+                (delta_datetime.seconds // 60) % 60, _('mins')
+                ))
+        self.sig_previous_data_uptated.emit()
+
     def _load_next_queued_data_file(self):
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        """
+        Load the data from the next file in the queue.
+        """
+        self.table_widget._start_process(_('Loading data...'))
         self._data_is_loaded = False
-        filename = self._queued_filenames.pop(0)
-        self.working_directory = osp.dirname(filename)
-        self.filename_label.setText(filename)
-        self.filename_label.setToolTip(filename)
+        self._filename = self._queued_filenames.pop(0)
+        self.working_directory = osp.dirname(self._filename)
+        self.filename_label.setText(osp.basename(self._filename))
+        self.filename_label.setToolTip(self._filename)
         try:
-            self._file_reader = SolinstFileReader(filename)
+            self._file_reader = SolinstFileReader(self._filename)
         except Exception as e:
             _error = e
             self._file_reader = None
@@ -253,8 +405,7 @@ class DataImportWizard(QDialog):
             self.serial_number_label.setText(READ_ERROR_MSG_COLORED)
             self.site_name_label.setText(READ_ERROR_MSG_COLORED)
             self.projectid_label.setText(READ_ERROR_MSG_COLORED)
-            self.table_widget.statusBar().showMessage(
-                _('Failed to load data from the file.'))
+            status_msg = _('Failed to load data.')
         else:
             _error = None
             sites = self._file_reader.sites
@@ -262,12 +413,10 @@ class DataImportWizard(QDialog):
             self.site_name_label.setText(sites.site_name)
             self.projectid_label.setText(sites.project_name)
             self._sonde_serial_no = sites.instrument_serial_number or None
-            self.table_widget.statusBar().showMessage(
-                _('Data loaded sucessfully from the file.'))
-        self._update_sonde_info()
+            status_msg = _('Data loaded sucessfully.')
         self._update_table_model_data()
-        self._update_button_state()
-        QApplication.restoreOverrideCursor()
+        self._update_installation_info()
+        self.table_widget._handle_process_ended(status_msg)
 
         if _error:
             QMessageBox.critical(
@@ -275,7 +424,7 @@ class DataImportWizard(QDialog):
                 _(_("Read Data Error")),
                 _('An error occured while atempting to read data from<br>'
                   '<i>{}</i><br><br><font color="{}">{}:</font> {}')
-                .format(filename, RED, type(_error).__name__, _error)
+                .format(self._filename, RED, type(_error).__name__, _error)
                 )
             return
 
@@ -316,131 +465,14 @@ class DataImportWizard(QDialog):
             self.table_model.set_model_data(
                 pd.DataFrame([]), dataf_columns_mapper=[])
 
-    def _update_sonde_info(self):
-        """
-        Update sonde information.
-        """
-        # Update sonde brand model serial info.
-        sonde_uuid = self._get_sonde_uuid()
-        sonde_model_id = self._get_sonde_model_id()
-        sonde_models_lib = self._libraries['sonde_models_lib']
-        if sonde_uuid is not None and sonde_models_lib is not None:
-            try:
-                sonde_brand_model = self._libraries['sonde_models_lib'].loc[
-                    sonde_model_id, 'sonde_brand_model']
-            except (KeyError, IndexError):
-                self.sonde_label.setText(NOT_FOUND_MSG_COLORED)
-            else:
-                self.sonde_label.setText('{} {}'.format(
-                    sonde_brand_model, self._sonde_serial_no))
-        else:
-            self.sonde_label.setText(NOT_FOUND_MSG_COLORED)
-
-        # Update well id and municipality.
-        install_data = self._get_installation_data()
-        observation_wells_data = self._libraries['observation_wells_data']
-        if install_data is not None and observation_wells_data is not None:
-            self._install_id = install_data.name
-            self._obs_well_uuid = install_data['sampling_feature_uuid']
-            self._sonde_depth = install_data['install_depth']
-            try:
-                well_name = observation_wells_data.loc[
-                    self._obs_well_uuid, 'obs_well_id']
-                municipality = observation_wells_data.loc[
-                    self._obs_well_uuid, 'municipality']
-            except (KeyError, IndexError):
-                self.obs_well_label.setText(NOT_FOUND_MSG_COLORED)
-                self.install_depth.setText(NOT_FOUND_MSG_COLORED)
-                self.install_period.setText(NOT_FOUND_MSG_COLORED)
-            else:
-                self.obs_well_label.setText('{} ({})'.format(
-                    well_name, municipality))
-                self.install_depth.setText('{} m'.format(
-                    str(install_data['install_depth'])))
-                self.install_period.setText('{} to {}'.format(
-                    install_data['start_date'].strftime("%Y-%m-%d %H:%M"),
-                    '...' if pd.isnull(install_data['end_date']) else
-                    install_data['end_date'].strftime("%Y-%m-%d %H:%M")))
-        else:
-            self._obs_well_uuid = None
-            self._sonde_depth = None
-            self._install_id = None
-            self.obs_well_label.setText(NOT_FOUND_MSG_COLORED)
-            self.install_depth.setText(NOT_FOUND_MSG_COLORED)
-            self.install_period.setText(NOT_FOUND_MSG_COLORED)
-
-    def _get_sonde_uuid(self):
-        """
-        Return the sonde uuid corresponding to sonde serial number of the
-        currently opened data file.
-        """
-        sonde_serial_no = self._sonde_serial_no
-        sonde_data = self._libraries['sonde_data']
-        if sonde_serial_no is None or sonde_data is None:
-            return None
-        try:
-            sonde_uuid = (
-                sonde_data[sonde_data['sonde_serial_no'] == sonde_serial_no]
-                .index[0])
-            return sonde_uuid
-        except (KeyError, IndexError):
-            return None
-
-    def _get_sonde_model_id(self):
-        """
-        Return the model id of the sonde associated with the currently
-        opened data file.
-        """
-        sonde_serial_no = self._sonde_serial_no
-        sonde_data = self._libraries['sonde_data']
-        if sonde_serial_no is None or sonde_data is None:
-            return None
-        try:
-            sonde_model_id = (
-                sonde_data
-                [sonde_data['sonde_serial_no'] == sonde_serial_no]
-                ['sonde_model_id']
-                .values[0])
-            return sonde_model_id
-        except (KeyError, IndexError):
-            return None
-
-    def _get_installation_data(self):
-        """
-        Return the installation data associated with the sonde uuid and date
-        range of the data.
-        """
-        sonde_uuid = self._get_sonde_uuid()
-        sonde_installations = self._libraries['sonde_installations']
-        if sonde_uuid is None or sonde_installations is None:
-            return None
-        try:
-            installs = (
-                sonde_installations
-                [sonde_installations['sonde_uuid'] == sonde_uuid]
-                )
-        except (KeyError, IndexError):
-            return None
-        else:
-            avg_datetime = self._file_reader.records.index.mean()
-            for i in range(len(installs)):
-                install = installs.iloc[i]
-                start_date = install['start_date']
-                end_date = (install['end_date'] if
-                            not pd.isnull(install['end_date']) else
-                            datetime.datetime.now())
-                if start_date <= avg_datetime and end_date >= avg_datetime:
-                    return install
-            else:
-                return None
-
     def _update_button_state(self):
         """Update the state of the dialog's buttons."""
         self.pathbox_widget.setEnabled(not self._data_is_loading)
         self.button_box.setEnabled(not self._data_is_loading)
         self.next_btn.setEnabled(len(self._queued_filenames) > 0)
         self.load_btn.setEnabled(self._obs_well_uuid is not None and
-                                 not self._data_is_loaded)
+                                 not self._data_is_loaded and
+                                 self.db_connection_manager.is_connected())
         self.show_data_btn.setEnabled(self._obs_well_uuid is not None)
 
     @Slot(QAbstractButton)
@@ -558,6 +590,22 @@ class DataImportWizard(QDialog):
         """
         if self._obs_well_uuid is not None:
             self.sig_view_data.emit(self._obs_well_uuid)
+
+    # ---- Qt method override/extension
+    def closeEvent(self, event):
+        """Reimplement Qt closeEvent."""
+        self._queued_filenames = []
+        super().closeEvent(event)
+
+    def show(self):
+        """Reimplement Qt show."""
+        if not len(self._queued_filenames):
+            self._queued_filenames, _ = QFileDialog.getOpenFileNames(
+                self.parent(), 'Select data files',
+                self.working_directory, '*.csv ; *.lev ; *.xle')
+        if len(self._queued_filenames):
+            super().show()
+            self._load_next_queued_data_file()
 
 
 if __name__ == '__main__':

@@ -66,19 +66,16 @@ def testfiles(tmp_path):
 @pytest.fixture
 def data_import_wizard(qtbot, dbconnmanager, testfiles, mocker):
     data_import_wizard = DataImportWizard()
+    data_import_wizard.set_database_connection_manager(dbconnmanager)
     qtbot.addWidget(data_import_wizard)
-
-    dbconnmanager.register_model(
-        data_import_wizard,
-        'sondes_data',
-        ['sonde_models_lib', 'sonde_installations', 'observation_wells_data'])
-    with qtbot.waitSignal(data_import_wizard.sig_data_updated, timeout=3000):
-        dbconnmanager.update_model('data_import_wizard')
 
     exts = [osp.splitext(file)[0] for file in testfiles]
     mocker.patch.object(
         QFileDialog, 'getOpenFileNames', return_value=(testfiles.copy(), exts))
-    data_import_wizard.show()
+
+    with qtbot.waitSignal(data_import_wizard.sig_previous_data_uptated,
+                          timeout=3000):
+        data_import_wizard.show()
     qtbot.waitForWindowShown(data_import_wizard)
 
     return data_import_wizard
@@ -115,7 +112,8 @@ def test_data_import_wizard_init(qtbot, mocker, testfiles, data_import_wizard):
     assert data_import_wizard.table_widget.tableview.row_count() == 100
 
     # Assert file infos.
-    assert data_import_wizard.filename_label.text() == testfiles[0]
+    assert (data_import_wizard.filename_label.text() ==
+            osp.basename(testfiles[0]))
     assert data_import_wizard.serial_number_label.text() == "1016042"
     assert data_import_wizard.projectid_label.text() == "03037041"
     assert (data_import_wizard.site_name_label.text() ==
@@ -128,7 +126,7 @@ def test_data_import_wizard_init(qtbot, mocker, testfiles, data_import_wizard):
             "03037041 (Saint-Paul-d'Abbotsford)")
     assert data_import_wizard.install_depth.text() == '9.02 m'
     assert (data_import_wizard.install_period.text() ==
-            '2006-08-24 18:00 to ...')
+            '2006-08-24 18:00 to today')
 
     # Assert internal variables values.
     data_import_wizard._sonde_serial_no = '1016042'
@@ -137,13 +135,16 @@ def test_data_import_wizard_init(qtbot, mocker, testfiles, data_import_wizard):
     data_import_wizard._install_id = 0
 
     # Read the next selected file.
-    qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
+    with qtbot.waitSignal(data_import_wizard.sig_previous_data_uptated,
+                          timeout=3000):
+        qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
     assert data_import_wizard._queued_filenames == []
     assert data_import_wizard.working_directory == osp.dirname(testfiles[-1])
     assert data_import_wizard.table_widget.tableview.row_count() == 100
 
     # Assert file infos.
-    assert data_import_wizard.filename_label.text() == testfiles[1]
+    assert (data_import_wizard.filename_label.text() ==
+            osp.basename(testfiles[1]))
 
 
 def test_read_data_error(qtbot, mocker, testfiles, data_import_wizard):
@@ -158,7 +159,9 @@ def test_read_data_error(qtbot, mocker, testfiles, data_import_wizard):
         QMessageBox, 'critical', return_value=QMessageBox.Ok)
 
     # Read the next selected file.
-    qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
+    with qtbot.waitSignal(data_import_wizard.sig_previous_data_uptated,
+                          timeout=3000):
+        qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
     assert patcher_msgbox_warning.call_count == 1
     assert data_import_wizard.table_widget.tableview.row_count() == 0
 

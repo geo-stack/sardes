@@ -36,6 +36,8 @@ class DataIO(SardesPlugin):
         self.data_import_wizard = DataImportWizard(self.main)
         self.data_import_wizard.sig_view_data.connect(
             self.main.tables_plugin.view_timeseries_data)
+        self.data_import_wizard.set_database_connection_manager(
+            self.main.db_connection_manager)
 
     def create_mainwindow_toolbars(self):
         toolbar = create_mainwindow_toolbar("Data Import Wizard toolbar")
@@ -80,11 +82,6 @@ class DataIO(SardesPlugin):
         manager to update the tables' data.
         """
         super().register_plugin()
-        self.main.db_connection_manager.register_model(
-            self.data_import_wizard,
-            'sondes_data',
-            ['sonde_models_lib', 'sonde_installations',
-             'observation_wells_data'])
 
         # Set the import wizard working dir.
         self.data_import_wizard.working_directory = self.get_option(
@@ -100,8 +97,4 @@ class DataIO(SardesPlugin):
 
     # ---- Private API
     def _show_data_import_wizard(self):
-        self._update_data_import_wizard()
         self.data_import_wizard.show()
-
-    def _update_data_import_wizard(self):
-        self.main.db_connection_manager.update_model('data_import_wizard')
