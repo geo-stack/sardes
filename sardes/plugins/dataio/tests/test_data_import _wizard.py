@@ -68,13 +68,14 @@ def data_import_wizard(qtbot, dbconnmanager, testfiles, mocker):
     data_import_wizard = DataImportWizard()
     data_import_wizard.set_database_connection_manager(dbconnmanager)
     qtbot.addWidget(data_import_wizard)
-    with qtbot.waitSignal(dbconnmanager.sig_run_tasks_finished, timeout=3000):
-        data_import_wizard.update_libraries()
 
     exts = [osp.splitext(file)[0] for file in testfiles]
     mocker.patch.object(
         QFileDialog, 'getOpenFileNames', return_value=(testfiles.copy(), exts))
-    data_import_wizard.show()
+
+    with qtbot.waitSignal(data_import_wizard.sig_previous_data_uptated,
+                          timeout=3000):
+        data_import_wizard.show()
     qtbot.waitForWindowShown(data_import_wizard)
 
     return data_import_wizard
@@ -134,7 +135,9 @@ def test_data_import_wizard_init(qtbot, mocker, testfiles, data_import_wizard):
     data_import_wizard._install_id = 0
 
     # Read the next selected file.
-    qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
+    with qtbot.waitSignal(data_import_wizard.sig_previous_data_uptated,
+                          timeout=3000):
+        qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
     assert data_import_wizard._queued_filenames == []
     assert data_import_wizard.working_directory == osp.dirname(testfiles[-1])
     assert data_import_wizard.table_widget.tableview.row_count() == 100
@@ -156,7 +159,9 @@ def test_read_data_error(qtbot, mocker, testfiles, data_import_wizard):
         QMessageBox, 'critical', return_value=QMessageBox.Ok)
 
     # Read the next selected file.
-    qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
+    with qtbot.waitSignal(data_import_wizard.sig_previous_data_uptated,
+                          timeout=3000):
+        qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
     assert patcher_msgbox_warning.call_count == 1
     assert data_import_wizard.table_widget.tableview.row_count() == 0
 

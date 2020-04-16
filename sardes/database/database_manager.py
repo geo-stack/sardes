@@ -101,6 +101,7 @@ class DatabaseConnectionWorker(QObject):
         Get the data related to name from the database.
         """
         if name in self._cache:
+            # print("Fetched '{}' from store.".format(name))
             return self._cache[name],
 
         print("Fetching '{}' from the database...".format(name), end='')
