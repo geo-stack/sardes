@@ -349,11 +349,11 @@ class DataImportWizard(QDialog):
         """
         Clear the data shown in the previous data group box.
         """
-        self.previous_stacked_widget.setCurrentIndex(0)
         self.previous_date_label.clear()
         self.previous_level_label.clear()
         self.delta_level_label.clear()
         self.delta_date_label.clear()
+        self.previous_stacked_widget.setCurrentIndex(0)
         self.sig_previous_data_uptated.emit()
 
     def _set_previous_data(self, tseries_groups):
@@ -362,13 +362,15 @@ class DataImportWizard(QDialog):
         stored in the database previous to the data series contained in
         the data file.
         """
+        if self._file_reader is None:
+            self._clear_previous_data()
+            return
         if not self.db_connection_manager.is_connected():
             self.previous_msg_label.setText(
                 _('Info not available because not connected to a database.'))
             self.previous_stacked_widget.setCurrentIndex(1)
             self.sig_previous_data_uptated.emit()
             return
-
         if tseries_groups is None:
             self._clear_previous_data()
             return
