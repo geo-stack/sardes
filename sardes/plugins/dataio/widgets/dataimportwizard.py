@@ -46,6 +46,8 @@ class ImportDataTableModel(SardesTableModel):
 
 class DataImportWizard(QDialog):
     sig_view_data = Signal(object)
+    sig_installation_info_uptated = Signal()
+    sig_previous_data_uptated = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -203,6 +205,9 @@ class DataImportWizard(QDialog):
         self._working_dir = get_home_dir()
         self._queued_filenames = []
 
+        self.sig_installation_info_uptated.connect(self._update_previous_data)
+        self.sig_previous_data_uptated.connect(self._update_button_state)
+
     @property
     def filename(self):
         """
@@ -235,15 +240,6 @@ class DataImportWizard(QDialog):
         """
         return self.table_model.dataf
 
-    def show(self):
-        if not len(self._queued_filenames):
-            self._queued_filenames, _ = QFileDialog.getOpenFileNames(
-                self.parent(), 'Select data files',
-                self.working_directory, '*.csv ; *.lev ; *.xle')
-        if len(self._queued_filenames):
-            super().show()
-            self._load_next_queued_data_file()
-
     # ---- Connection with Database
     def set_database_connection_manager(self, db_connection_manager):
         """Setup the namespace for the database connection manager."""
@@ -255,19 +251,26 @@ class DataImportWizard(QDialog):
         """
         Handle when the connection to the database change.
         """
-        self._update_sonde_installation_info()
+        self._update_installation_info()
         self._update_previous_data()
-        self._update_button_state()
 
     # ---- Private API
-    def _update_sonde_installation_info(self):
+    def _update_installation_info(self):
+        """
+        Update sonde installation info.
+        """
         if self._sonde_serial_no is not None:
             self.db_connection_manager.get_sonde_installation_info(
                 self._sonde_serial_no,
                 self._file_reader.records.index.mean(),
-                callback=self._set_sonde_installation_info)
+                callback=self._set_installation_info)
+        else:
+            self._set_installation_info(None)
 
-    def _set_sonde_installation_info(self, sonde_install_data):
+    def _set_installation_info(self, sonde_install_data):
+        """
+        Set sonde installation info.
+        """
         if sonde_install_data is not None:
             self._install_id = sonde_install_data.name
             self._obs_well_uuid = sonde_install_data['sampling_feature_uuid']
@@ -297,6 +300,7 @@ class DataImportWizard(QDialog):
             self.obs_well_label.setText(NOT_FOUND_MSG_COLORED)
             self.install_depth.setText(NOT_FOUND_MSG_COLORED)
             self.install_period.setText(NOT_FOUND_MSG_COLORED)
+        self.sig_installation_info_uptated.emit()
 
     def _update_previous_data(self):
         """
@@ -316,6 +320,7 @@ class DataImportWizard(QDialog):
             self.previous_level_label.clear()
             self.delta_level_label.clear()
             self.delta_date_label.clear()
+            self.sig_previous_data_uptated.emit()
 
     def _set_previous_data(self, tseries_groups):
         """
@@ -327,12 +332,14 @@ class DataImportWizard(QDialog):
         new_dataf = self.table_model.dataf
         if (DataType.WaterLevel not in prev_dataf.columns or
                 DataType.WaterLevel not in new_dataf.columns):
+            self.sig_previous_data_uptated.emit()
             return
 
         new_series = pd.Series(
             new_dataf[DataType.WaterLevel].values,
             index=new_dataf['datetime']).dropna()
         if not len(new_series):
+            self.sig_previous_data_uptated.emit()
             return
 
         prev_series = pd.Series(
@@ -366,6 +373,7 @@ class DataImportWizard(QDialog):
                 delta_datetime.seconds // 3600, _('hrs'),
                 (delta_datetime.seconds // 60) % 60, _('mins')
                 ))
+        self.sig_previous_data_uptated.emit()
 
     def _load_next_queued_data_file(self):
         """
@@ -395,10 +403,8 @@ class DataImportWizard(QDialog):
             self.projectid_label.setText(sites.project_name)
             self._sonde_serial_no = sites.instrument_serial_number or None
             status_msg = _('Data loaded sucessfully.')
-        self._update_sonde_installation_info()
         self._update_table_model_data()
-        self._update_previous_data()
-        self._update_button_state()
+        self._update_installation_info()
         self.table_widget._handle_process_ended(status_msg)
 
         if _error:
@@ -579,6 +585,16 @@ class DataImportWizard(QDialog):
         """Reimplement Qt closeEvent."""
         self._queued_filenames = []
         super().closeEvent(event)
+
+    def show(self):
+        """Reimplement Qt show."""
+        if not len(self._queued_filenames):
+            self._queued_filenames, _ = QFileDialog.getOpenFileNames(
+                self.parent(), 'Select data files',
+                self.working_directory, '*.csv ; *.lev ; *.xle')
+        if len(self._queued_filenames):
+            super().show()
+            self._load_next_queued_data_file()
 
 
 if __name__ == '__main__':
