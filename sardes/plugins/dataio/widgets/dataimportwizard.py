@@ -21,7 +21,7 @@ from qtpy.QtCore import Qt, Slot, Signal
 from qtpy.QtWidgets import (
     QApplication, QFileDialog, QDialog, QLabel, QPushButton, QDialogButtonBox,
     QAbstractButton, QFormLayout, QGroupBox, QMessageBox, QGridLayout,
-    QFrame)
+    QFrame, QStackedWidget)
 
 # ---- Local imports
 from sardes.config.gui import get_iconsize, RED
@@ -86,18 +86,31 @@ class DataImportWizard(QDialog):
         file_layout.addRow(_('Location') + ' :', self.site_name_label)
         file_layout.addRow(_('Serial Number') + ' :', self.serial_number_label)
 
-        # Setup sonde info.
+        # Setup sonde installation info.
         self.sonde_label = QLabel()
         self.obs_well_label = QLabel()
         self.install_depth = QLabel()
         self.install_period = QLabel()
 
-        sonde_groupbox = QGroupBox(_('Sonde Installation Info'))
-        sonde_form = QFormLayout(sonde_groupbox)
+        sonde_info_widget = QFrame()
+        sonde_form = QFormLayout(sonde_info_widget)
         sonde_form.addRow(_('Sonde') + ' :', self.sonde_label)
         sonde_form.addRow(_('Well') + ' :', self.obs_well_label)
         sonde_form.addRow(_('Depth') + ' :', self.install_depth)
         sonde_form.addRow(_('Period') + ' :', self.install_period)
+
+        self.sonde_msg_label = QLabel()
+        self.sonde_msg_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.sonde_msg_label.setTextInteractionFlags(Qt.TextBrowserInteraction)
+        self.sonde_msg_label.setWordWrap(True)
+
+        self.sonde_stacked_widget = QStackedWidget()
+        self.sonde_stacked_widget.addWidget(sonde_info_widget)
+        self.sonde_stacked_widget.addWidget(self.sonde_msg_label)
+        
+        sonde_groupbox = QGroupBox(_('Sonde Installation Info'))
+        sonde_groupbox_layout = QGridLayout(sonde_groupbox)
+        sonde_groupbox_layout.addWidget(self.sonde_stacked_widget)
 
         # Setup comparison with previous data.
         self.previous_date_label = QLabel()
@@ -272,6 +285,16 @@ class DataImportWizard(QDialog):
         """
         Set sonde installation info.
         """
+        if not self.db_connection_manager.is_connected():
+            self._obs_well_uuid = None
+            self._sonde_depth = None
+            self._install_id = None
+            self.sonde_msg_label.setText(
+                _('Info not available because not connected to a database.'))
+            self.sonde_stacked_widget.setCurrentIndex(1)
+            self.sig_installation_info_uptated.emit()
+            return
+
         if sonde_install_data is not None:
             self._install_id = sonde_install_data.name
             self._obs_well_uuid = sonde_install_data['sampling_feature_uuid']
@@ -301,6 +324,7 @@ class DataImportWizard(QDialog):
             self.obs_well_label.setText(NOT_FOUND_MSG_COLORED)
             self.install_depth.setText(NOT_FOUND_MSG_COLORED)
             self.install_period.setText(NOT_FOUND_MSG_COLORED)
+        self.sonde_stacked_widget.setCurrentIndex(0)
         self.sig_installation_info_uptated.emit()
 
     def _update_previous_data(self):
