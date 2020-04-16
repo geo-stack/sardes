@@ -249,12 +249,11 @@ class DataImportWizard(QDialog):
         self.db_connection_manager.sig_database_connection_changed.connect(
             self._handle_database_connection_changed)
 
-    def _handle_database_connection_changed(self, state):
+    def _handle_database_connection_changed(self, connected):
         """
         Handle when the connection to the database change.
         """
         self._update_installation_info()
-        self._update_previous_data()
 
     # ---- Private API
     def _update_installation_info(self):
