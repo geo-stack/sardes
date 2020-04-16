@@ -561,7 +561,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         obs_well = self._get_sampling_feature(sampling_feature_uuid)
         if attribute_name in ['obs_well_id']:
-            setattr(obs_well, attribute_name, attribute_value)
+            setattr(obs_well, 'sampling_feature_name', attribute_value)
         elif attribute_name in ['obs_well_notes']:
             setattr(obs_well, 'sampling_feature_notes', attribute_value)
         elif attribute_name in [
