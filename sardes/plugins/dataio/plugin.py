@@ -97,5 +97,4 @@ class DataIO(SardesPlugin):
 
     # ---- Private API
     def _show_data_import_wizard(self):
-        self.data_import_wizard.update_libraries()
         self.data_import_wizard.show()

@@ -45,8 +45,6 @@ class ImportDataTableModel(SardesTableModel):
 
 
 class DataImportWizard(QDialog):
-    sig_data_about_to_be_updated = Signal()
-    sig_data_updated = Signal()
     sig_view_data = Signal(object)
 
     def __init__(self, parent=None):
@@ -251,18 +249,43 @@ class DataImportWizard(QDialog):
         """Setup the namespace for the database connection manager."""
         self.db_connection_manager = db_connection_manager
 
-    def update_libraries(self):
-        """
-        Update the libraries required to link the data contained in the
-        current file with the database.
-        """
-        for name in self._libraries.keys():
-            self.db_connection_manager.get(
-                name,
-                callback=lambda dataf, name=name:
-                    self._set_library(dataf, name),
-                postpone_exec=True)
-            self.db_connection_manager.run_tasks()
+    def update_sonde_installation_info(self):
+        if self._sonde_serial_no is not None:
+            self.db_connection_manager.get_sonde_installation_info(
+                self._sonde_serial_no,
+                self._file_reader.records.index.mean(),
+                callback=self.set_sonde_installation_info)
+
+    def set_sonde_installation_info(self, sonde_install_data):
+        if sonde_install_data is not None:
+            self._install_id = sonde_install_data.name
+            self._obs_well_uuid = sonde_install_data['sampling_feature_uuid']
+            self._sonde_depth = sonde_install_data['install_depth']
+
+            self.sonde_label.setText('{} {}'.format(
+                sonde_install_data['sonde_brand_model'],
+                self._sonde_serial_no
+                ))
+            self.obs_well_label.setText('{} ({})'.format(
+                sonde_install_data['well_name'],
+                sonde_install_data['well_municipality']
+                ))
+            self.install_depth.setText('{} m'.format(
+                str(sonde_install_data['install_depth'])
+                ))
+            self.install_period.setText('{} to {}'.format(
+                sonde_install_data['start_date'].strftime("%Y-%m-%d %H:%M"),
+                _('today') if pd.isnull(sonde_install_data['end_date']) else
+                sonde_install_data['end_date'].strftime("%Y-%m-%d %H:%M")
+                ))
+        else:
+            self._obs_well_uuid = None
+            self._sonde_depth = None
+            self._install_id = None
+            self.sonde_label.setText(NOT_FOUND_MSG_COLORED)
+            self.obs_well_label.setText(NOT_FOUND_MSG_COLORED)
+            self.install_depth.setText(NOT_FOUND_MSG_COLORED)
+            self.install_period.setText(NOT_FOUND_MSG_COLORED)
 
     def _set_library(self, dataf, name):
         """
@@ -273,9 +296,6 @@ class DataImportWizard(QDialog):
         self._update_sonde_info()
         self._update_button_state()
 
-    def clear_data(self):
-        """Clear the data of this wizard table."""
-        self.table_model.clear_data()
 
     # ---- Private API
     def _load_next_queued_data_file(self):
@@ -306,7 +326,7 @@ class DataImportWizard(QDialog):
             self.projectid_label.setText(sites.project_name)
             self._sonde_serial_no = sites.instrument_serial_number or None
             status_msg = _('Data loaded sucessfully.')
-        self._update_sonde_info()
+        self.update_sonde_installation_info()
         self._update_table_model_data()
         self._fetch_previous_data()
         self._update_button_state()
@@ -427,124 +447,6 @@ class DataImportWizard(QDialog):
         else:
             self.table_model.set_model_data(
                 pd.DataFrame([]), dataf_columns_mapper=[])
-
-    def _update_sonde_info(self):
-        """
-        Update sonde information.
-        """
-        # Update sonde brand model serial info.
-        sonde_uuid = self._get_sonde_uuid()
-        sonde_model_id = self._get_sonde_model_id()
-        sonde_models_lib = self._libraries['sonde_models_lib']
-        if sonde_uuid is not None and sonde_models_lib is not None:
-            try:
-                sonde_brand_model = self._libraries['sonde_models_lib'].loc[
-                    sonde_model_id, 'sonde_brand_model']
-            except (KeyError, IndexError):
-                self.sonde_label.setText(NOT_FOUND_MSG_COLORED)
-            else:
-                self.sonde_label.setText('{} {}'.format(
-                    sonde_brand_model, self._sonde_serial_no))
-        else:
-            self.sonde_label.setText(NOT_FOUND_MSG_COLORED)
-
-        # Update well id and municipality.
-        install_data = self._get_installation_data()
-        observation_wells_data = self._libraries['observation_wells_data']
-        if install_data is not None and observation_wells_data is not None:
-            self._install_id = install_data.name
-            self._obs_well_uuid = install_data['sampling_feature_uuid']
-            self._sonde_depth = install_data['install_depth']
-            try:
-                well_name = observation_wells_data.loc[
-                    self._obs_well_uuid, 'obs_well_id']
-                municipality = observation_wells_data.loc[
-                    self._obs_well_uuid, 'municipality']
-            except (KeyError, IndexError):
-                self.obs_well_label.setText(NOT_FOUND_MSG_COLORED)
-                self.install_depth.setText(NOT_FOUND_MSG_COLORED)
-                self.install_period.setText(NOT_FOUND_MSG_COLORED)
-            else:
-                self.obs_well_label.setText('{} ({})'.format(
-                    well_name, municipality))
-                self.install_depth.setText('{} m'.format(
-                    str(install_data['install_depth'])))
-                self.install_period.setText('{} to {}'.format(
-                    install_data['start_date'].strftime("%Y-%m-%d %H:%M"),
-                    _('today') if pd.isnull(install_data['end_date']) else
-                    install_data['end_date'].strftime("%Y-%m-%d %H:%M")))
-        else:
-            self._obs_well_uuid = None
-            self._sonde_depth = None
-            self._install_id = None
-            self.obs_well_label.setText(NOT_FOUND_MSG_COLORED)
-            self.install_depth.setText(NOT_FOUND_MSG_COLORED)
-            self.install_period.setText(NOT_FOUND_MSG_COLORED)
-
-    def _get_sonde_uuid(self):
-        """
-        Return the sonde uuid corresponding to sonde serial number of the
-        currently opened data file.
-        """
-        sonde_serial_no = self._sonde_serial_no
-        sonde_data = self._libraries['sondes_data']
-        if sonde_serial_no is None or sonde_data is None:
-            return None
-        try:
-            sonde_uuid = (
-                sonde_data[sonde_data['sonde_serial_no'] == sonde_serial_no]
-                .index[0])
-            return sonde_uuid
-        except (KeyError, IndexError):
-            return None
-
-    def _get_sonde_model_id(self):
-        """
-        Return the model id of the sonde associated with the currently
-        opened data file.
-        """
-        sonde_serial_no = self._sonde_serial_no
-        sonde_data = self._libraries['sondes_data']
-        if sonde_serial_no is None or sonde_data is None:
-            return None
-        try:
-            sonde_model_id = (
-                sonde_data
-                [sonde_data['sonde_serial_no'] == sonde_serial_no]
-                ['sonde_model_id']
-                .values[0])
-            return sonde_model_id
-        except (KeyError, IndexError):
-            return None
-
-    def _get_installation_data(self):
-        """
-        Return the installation data associated with the sonde uuid and date
-        range of the data.
-        """
-        sonde_uuid = self._get_sonde_uuid()
-        sonde_installations = self._libraries['sonde_installations']
-        if sonde_uuid is None or sonde_installations is None:
-            return None
-        try:
-            installs = (
-                sonde_installations
-                [sonde_installations['sonde_uuid'] == sonde_uuid]
-                )
-        except (KeyError, IndexError):
-            return None
-        else:
-            avg_datetime = self._file_reader.records.index.mean()
-            for i in range(len(installs)):
-                install = installs.iloc[i]
-                start_date = install['start_date']
-                end_date = (install['end_date'] if
-                            not pd.isnull(install['end_date']) else
-                            datetime.datetime.now())
-                if start_date <= avg_datetime and end_date >= avg_datetime:
-                    return install
-            else:
-                return None
 
     def _update_button_state(self):
         """Update the state of the dialog's buttons."""
