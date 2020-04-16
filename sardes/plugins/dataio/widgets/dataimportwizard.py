@@ -365,6 +365,7 @@ class DataImportWizard(QDialog):
                       new_series.index[0].strftime("%Y-%m-%d %H:%M")))
             self.previous_content_widget.hide()
             self.previous_msg_label.show()
+            self.sig_previous_data_uptated.emit()
             return
 
         self.previous_content_widget.show()
