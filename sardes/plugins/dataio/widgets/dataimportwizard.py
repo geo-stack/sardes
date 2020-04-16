@@ -206,6 +206,8 @@ class DataImportWizard(QDialog):
         self._queued_filenames = []
 
         self.sig_installation_info_uptated.connect(self._update_previous_data)
+        self.sig_installation_info_uptated.connect(
+            self._update_table_model_data)
         self.sig_previous_data_uptated.connect(self._update_button_state)
 
     @property
@@ -414,7 +416,6 @@ class DataImportWizard(QDialog):
             self.projectid_label.setText(sites.project_name)
             self._sonde_serial_no = sites.instrument_serial_number or None
             status_msg = _('Data loaded sucessfully.')
-        self._update_table_model_data()
         self._update_installation_info()
         self.table_widget._handle_process_ended(status_msg)
 
