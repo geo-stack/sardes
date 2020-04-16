@@ -118,8 +118,8 @@ class DataImportWizard(QDialog):
         self.delta_level_label = QLabel()
         self.delta_date_label = QLabel()
 
-        self.previous_content_widget = QFrame()
-        previous_layout = QGridLayout(self.previous_content_widget)
+        previous_widget = QFrame()
+        previous_layout = QGridLayout(previous_widget)
         previous_layout.addWidget(QLabel(_('Previous Date') + ' :'), 0, 0)
         previous_layout.addWidget(self.previous_date_label, 0, 1)
         previous_layout.addWidget(QLabel(_('Delta Date') + ' :'), 1, 0)
@@ -142,11 +142,14 @@ class DataImportWizard(QDialog):
         self.previous_msg_label.setWordWrap(True)
         self.previous_msg_label.hide()
 
-        previous_groupbox = QGroupBox(_('Previous Reading'))
-        previous_stack_layout = QGridLayout(previous_groupbox)
-        previous_stack_layout.addWidget(self.previous_content_widget, 0, 0)
-        previous_stack_layout.addWidget(self.previous_msg_label)
+        self.previous_stacked_widget = QStackedWidget()
+        self.previous_stacked_widget.addWidget(previous_widget)
+        self.previous_stacked_widget.addWidget(self.previous_msg_label)
 
+        previous_groupbox = QGroupBox(_('Previous Reading'))
+        previous_groupbox_layout = QGridLayout(previous_groupbox)
+        previous_groupbox_layout.addWidget(self.previous_stacked_widget)
+        
         # Make all label selectable with the mouse cursor.
         for layout in [file_layout, sonde_form, previous_layout]:
             for index in range(layout.count()):
@@ -339,14 +342,13 @@ class DataImportWizard(QDialog):
                 self._obs_well_uuid, [DataType.WaterLevel],
                 self._set_previous_data)
         else:
-            self._clear_previous_data()
+            self._set_previous_data(None)
 
     def _clear_previous_data(self):
         """
         Clear the data shown in the previous data group box.
         """
-        self.previous_content_widget.show()
-        self.previous_msg_label.hide()
+        self.previous_stacked_widget.setCurrentIndex(0)
         self.previous_date_label.clear()
         self.previous_level_label.clear()
         self.delta_level_label.clear()
@@ -359,6 +361,13 @@ class DataImportWizard(QDialog):
         stored in the database previous to the data series contained in
         the data file.
         """
+        if not self.db_connection_manager.is_connected():
+            self.previous_msg_label.setText(
+                _('Info not available because not connected to a database.'))
+            self.previous_stacked_widget.setCurrentIndex(1)
+            self.sig_previous_data_uptated.emit()
+            return
+
         if tseries_groups is None:
             self._clear_previous_data()
             return
@@ -388,13 +397,11 @@ class DataImportWizard(QDialog):
                   'for well {} before {}.').format(
                       self.obs_well_label.text(),
                       new_series.index[0].strftime("%Y-%m-%d %H:%M")))
-            self.previous_content_widget.hide()
-            self.previous_msg_label.show()
+            self.previous_stacked_widget.setCurrentIndex(1)
             self.sig_previous_data_uptated.emit()
             return
 
-        self.previous_content_widget.show()
-        self.previous_msg_label.hide()
+        self.previous_stacked_widget.setCurrentIndex(0)
         prev_level = prev_series.iat[-1]
         delta_level = new_series.iat[0] - prev_level
         prev_datetime = prev_series.index[-1]
