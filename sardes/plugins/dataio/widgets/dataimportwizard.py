@@ -288,17 +288,20 @@ class DataImportWizard(QDialog):
         """
         Set sonde installation info.
         """
-        if not self.db_connection_manager.is_connected():
-            self._obs_well_uuid = None
-            self._sonde_depth = None
-            self._install_id = None
+        self._obs_well_uuid = None
+        self._sonde_depth = None
+        self._install_id = None
+        if self._file_reader is None:
+            self.sonde_label.clear()
+            self.obs_well_label.clear()
+            self.install_depth.clear()
+            self.install_period.clear()
+            self.sonde_stacked_widget.setCurrentIndex(0)
+        elif not self.db_connection_manager.is_connected():
             self.sonde_msg_label.setText(
                 _('Info not available because not connected to a database.'))
             self.sonde_stacked_widget.setCurrentIndex(1)
-            self.sig_installation_info_uptated.emit()
-            return
-
-        if sonde_install_data is not None:
+        elif sonde_install_data is not None:
             self._install_id = sonde_install_data.name
             self._obs_well_uuid = sonde_install_data['sampling_feature_uuid']
             self._sonde_depth = sonde_install_data['install_depth']
@@ -319,15 +322,13 @@ class DataImportWizard(QDialog):
                 _('today') if pd.isnull(sonde_install_data['end_date']) else
                 sonde_install_data['end_date'].strftime("%Y-%m-%d %H:%M")
                 ))
+            self.sonde_stacked_widget.setCurrentIndex(0)
         else:
-            self._obs_well_uuid = None
-            self._sonde_depth = None
-            self._install_id = None
             self.sonde_label.setText(NOT_FOUND_MSG_COLORED)
             self.obs_well_label.setText(NOT_FOUND_MSG_COLORED)
             self.install_depth.setText(NOT_FOUND_MSG_COLORED)
             self.install_period.setText(NOT_FOUND_MSG_COLORED)
-        self.sonde_stacked_widget.setCurrentIndex(0)
+            self.sonde_stacked_widget.setCurrentIndex(0)
         self.sig_installation_info_uptated.emit()
 
     def _update_previous_data(self):
