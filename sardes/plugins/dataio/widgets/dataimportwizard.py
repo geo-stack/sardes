@@ -251,14 +251,22 @@ class DataImportWizard(QDialog):
         self.db_connection_manager.sig_database_connection_changed.connect(
             self._handle_database_connection_changed)
 
-    def update_sonde_installation_info(self):
+    def _handle_database_connection_changed(self, state):
+        """
+        Handle when the connection to the database change.
+        """
+        self.update_sonde_installation_info()
+        self._update_button_state()
+
+    # ---- Private API
+    def _update_sonde_installation_info(self):
         if self._sonde_serial_no is not None:
             self.db_connection_manager.get_sonde_installation_info(
                 self._sonde_serial_no,
                 self._file_reader.records.index.mean(),
-                callback=self.set_sonde_installation_info)
+                callback=self._set_sonde_installation_info)
 
-    def set_sonde_installation_info(self, sonde_install_data):
+    def _set_sonde_installation_info(self, sonde_install_data):
         if sonde_install_data is not None:
             self._install_id = sonde_install_data.name
             self._obs_well_uuid = sonde_install_data['sampling_feature_uuid']
@@ -289,23 +297,25 @@ class DataImportWizard(QDialog):
             self.install_depth.setText(NOT_FOUND_MSG_COLORED)
             self.install_period.setText(NOT_FOUND_MSG_COLORED)
 
-    def _set_library(self, dataf, name):
+    def _update_previous_data(self):
         """
-        Set the data needed by the wizard and update the info displayed
-        in the GUI.
+        Update the information regarding the water level reading that is
+        stored in the database previous to the data series contained in
+        the data file.
         """
-        self._libraries[name] = dataf
-        self._update_sonde_info()
-        self._update_button_state()
+        if (self._obs_well_uuid is not None and
+                self.db_connection_manager.is_connected()):
+            self.db_connection_manager.get_timeseries_for_obs_well(
+                self._obs_well_uuid, [DataType.WaterLevel],
+                self._set_previous_data)
+        else:
+            self.previous_content_widget.show()
+            self.previous_msg_label.hide()
+            self.previous_date_label.clear()
+            self.previous_level_label.clear()
+            self.delta_level_label.clear()
+            self.delta_date_label.clear()
 
-    def _handle_database_connection_changed(self, state):
-        """
-        Handle when the connection to the database change.
-        """
-        self.update_sonde_installation_info()
-        self._update_button_state()
-
-    # ---- Private API
     def _load_next_queued_data_file(self):
         """
         Load the data from the next file in the queue.
@@ -334,9 +344,9 @@ class DataImportWizard(QDialog):
             self.projectid_label.setText(sites.project_name)
             self._sonde_serial_no = sites.instrument_serial_number or None
             status_msg = _('Data loaded sucessfully.')
-        self.update_sonde_installation_info()
+        self._update_sonde_installation_info()
         self._update_table_model_data()
-        self._fetch_previous_data()
+        self._update_previous_data()
         self._update_button_state()
         self.table_widget._handle_process_ended(status_msg)
 
@@ -349,25 +359,6 @@ class DataImportWizard(QDialog):
                 .format(self._filename, RED, type(_error).__name__, _error)
                 )
             return
-
-    def _fetch_previous_data(self):
-        """
-        Update the information regarding the water level reading that is
-        stored in the database previous to the data series contained in
-        the data file.
-        """
-        if self._obs_well_uuid is not None:
-            self.db_connection_manager.get_timeseries_for_obs_well(
-                self._obs_well_uuid,
-                [DataType.WaterLevel],
-                self._set_previous_data)
-        else:
-            self.previous_content_widget.show()
-            self.previous_msg_label.hide()
-            self.previous_date_label.clear()
-            self.previous_level_label.clear()
-            self.delta_level_label.clear()
-            self.delta_date_label.clear()
 
     def _set_previous_data(self, tseries_groups):
         """
