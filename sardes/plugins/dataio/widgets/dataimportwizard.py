@@ -248,6 +248,8 @@ class DataImportWizard(QDialog):
     def set_database_connection_manager(self, db_connection_manager):
         """Setup the namespace for the database connection manager."""
         self.db_connection_manager = db_connection_manager
+        self.db_connection_manager.sig_database_connection_changed.connect(
+            self._handle_database_connection_changed)
 
     def update_sonde_installation_info(self):
         if self._sonde_serial_no is not None:
@@ -296,6 +298,12 @@ class DataImportWizard(QDialog):
         self._update_sonde_info()
         self._update_button_state()
 
+    def _handle_database_connection_changed(self, state):
+        """
+        Handle when the connection to the database change.
+        """
+        self.update_sonde_installation_info()
+        self._update_button_state()
 
     # ---- Private API
     def _load_next_queued_data_file(self):
@@ -454,7 +462,8 @@ class DataImportWizard(QDialog):
         self.button_box.setEnabled(not self._data_is_loading)
         self.next_btn.setEnabled(len(self._queued_filenames) > 0)
         self.load_btn.setEnabled(self._obs_well_uuid is not None and
-                                 not self._data_is_loaded)
+                                 not self._data_is_loaded and
+                                 self.db_connection_manager.is_connected())
         self.show_data_btn.setEnabled(self._obs_well_uuid is not None)
 
     @Slot(QAbstractButton)
