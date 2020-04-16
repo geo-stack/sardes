@@ -272,10 +272,10 @@ class DatabaseAccessor(DatabaseAccessorBase):
             - aquifer_code: int
                 A code that represents the combination of aquifer type and
                 confinement for the well.
-            - in_recharge_zone: bool
+            - in_recharge_zone: str
                 Indicates whether the observation well is located in or in
                 the proximity a recharge zone.
-            - is_influenced: bool
+            - is_influenced: str
                 Indicates whether the water levels measured in that well are
                 influenced or not by anthropic phenomenon.
             - elevation: float
