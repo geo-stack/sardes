@@ -314,13 +314,19 @@ class DataImportWizard(QDialog):
                 self._obs_well_uuid, [DataType.WaterLevel],
                 self._set_previous_data)
         else:
-            self.previous_content_widget.show()
-            self.previous_msg_label.hide()
-            self.previous_date_label.clear()
-            self.previous_level_label.clear()
-            self.delta_level_label.clear()
-            self.delta_date_label.clear()
-            self.sig_previous_data_uptated.emit()
+            self._clear_previous_data()
+
+    def _clear_previous_data(self):
+        """
+        Clear the data shown in the previous data group box.
+        """
+        self.previous_content_widget.show()
+        self.previous_msg_label.hide()
+        self.previous_date_label.clear()
+        self.previous_level_label.clear()
+        self.delta_level_label.clear()
+        self.delta_date_label.clear()
+        self.sig_previous_data_uptated.emit()
 
     def _set_previous_data(self, tseries_groups):
         """
@@ -328,18 +334,22 @@ class DataImportWizard(QDialog):
         stored in the database previous to the data series contained in
         the data file.
         """
+        if tseries_groups is None:
+            self._clear_previous_data()
+            return
+
         prev_dataf = merge_timeseries_groups(tseries_groups)
         new_dataf = self.table_model.dataf
         if (DataType.WaterLevel not in prev_dataf.columns or
                 DataType.WaterLevel not in new_dataf.columns):
-            self.sig_previous_data_uptated.emit()
+            self._clear_previous_data()
             return
 
         new_series = pd.Series(
             new_dataf[DataType.WaterLevel].values,
             index=new_dataf['datetime']).dropna()
         if not len(new_series):
-            self.sig_previous_data_uptated.emit()
+            self._clear_previous_data()
             return
 
         prev_series = pd.Series(
