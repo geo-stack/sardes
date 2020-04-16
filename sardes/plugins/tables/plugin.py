@@ -119,7 +119,7 @@ class DataTableModel(SardesTableModel):
         """
         Handle when data edits were all saved in the database.
         """
-        pass
+        self.sig_data_saved.emit()
 
 
 class Tables(SardesPlugin):
