@@ -458,7 +458,7 @@ class DataImportWizard(QDialog):
         """
         if (self._file_reader is not None and
                 self._file_reader.records is not None):
-            dataf = self._file_reader.records
+            dataf = self._file_reader.records.copy()
             dataf.insert(0, 'Datetime', dataf.index)
             dataf.rename(columns={'Datetime': 'datetime'}, inplace=True)
             for column in dataf.columns:
