@@ -48,6 +48,9 @@ FA_ICONS = {
     'clear_selected_data': [
         ('mdi.close-box-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'close': [
+        ('fa.close', 'fa.close', 'fa.close'),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'close_all': [
         ('fa.close', 'fa.close', 'fa.close'),
         {'options': [{'scale_factor': 0.6,
