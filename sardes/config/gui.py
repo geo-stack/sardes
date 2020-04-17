@@ -14,6 +14,7 @@ from qtpy.QtWidgets import QApplication, QStyle
 ICON_COLOR = '#202020'
 GREEN = '#00aa00'
 RED = '#CC0000'
+YELLOW = '#ffa500'
 
 INIT_MAINWINDOW_SIZE = (900, 450)
 
