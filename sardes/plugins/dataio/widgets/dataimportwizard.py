@@ -18,13 +18,14 @@ from atomicwrites import replace_atomic
 from hydsensread import SolinstFileReader
 import pandas as pd
 from qtpy.QtCore import Qt, Slot, Signal
+from qtpy.QtGui import QColor
 from qtpy.QtWidgets import (
     QApplication, QFileDialog, QDialog, QLabel, QPushButton, QDialogButtonBox,
     QAbstractButton, QFormLayout, QGroupBox, QMessageBox, QGridLayout,
     QFrame, QStackedWidget)
 
 # ---- Local imports
-from sardes.config.gui import get_iconsize, RED
+from sardes.config.gui import get_iconsize, RED, YELLOWLIGHT
 from sardes.config.locale import _
 from sardes.api.tablemodels import SardesTableModel
 from sardes.api.timeseries import DataType, merge_timeseries_groups
@@ -40,8 +41,26 @@ READ_ERROR_MSG_COLORED = '<font color=red>%s</font>' % READ_ERROR_MSG
 
 
 class ImportDataTableModel(SardesTableModel):
+    is_duplicated = None
+    highlight_duplicates = False
+
     def create_delegate_for_column(self, view, column):
         return NotEditableDelegate(self)
+
+    def set_duplicated(self, is_duplicated):
+        self.is_duplicated = is_duplicated
+        self.dataChanged.emit(
+            self.index(0, 0),
+            self.index(self.rowCount() - 1, self.columnCount() - 1)
+            )
+
+    # ---- SardesTableModel overrides
+    def data(self, index, role=Qt.DisplayRole):
+        """Qt method override."""
+        if self.is_duplicated is not None and role == Qt.BackgroundRole:
+            if self.is_duplicated[index.row()]:
+                return QColor(YELLOWLIGHT)
+        return super().data(index, role)
 
 
 class DataImportWizard(QDialog):
