@@ -16,6 +16,7 @@ import os.path as osp
 from appconfigs.base import get_home_dir
 from atomicwrites import replace_atomic
 from hydsensread import SolinstFileReader
+import numpy as np
 import pandas as pd
 from qtpy.QtCore import Qt, Slot, Signal
 from qtpy.QtGui import QColor
@@ -65,8 +66,6 @@ class ImportDataTableModel(SardesTableModel):
 
 class DataImportWizard(QDialog):
     sig_view_data = Signal(object)
-    sig_installation_info_uptated = Signal()
-    sig_previous_data_uptated = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -82,7 +81,15 @@ class DataImportWizard(QDialog):
         # A flag to indicate if the date were loaded in the database during
         # the current sesstion.
         self._data_loaded_in_database = False
+        # A flag to indicate whether this data import wizard is being updated.
+        self._is_updating = True
+
         self._file_reader = None
+
+        # An array of boolean values that indicate, for each reading of the
+        # imported data, whether data is already saved in the database for
+        # the corresponding sonde.
+        self._is_duplicated = None
 
         self._libraries = {
             'sondes_data': None,
@@ -251,11 +258,6 @@ class DataImportWizard(QDialog):
         self._working_dir = get_home_dir()
         self._queued_filenames = []
 
-        self.sig_installation_info_uptated.connect(self._update_previous_data)
-        self.sig_installation_info_uptated.connect(
-            self._update_table_model_data)
-        self.sig_previous_data_uptated.connect(self._update_button_state)
-
     @property
     def filename(self):
         """
@@ -299,9 +301,24 @@ class DataImportWizard(QDialog):
         """
         Handle when the connection to the database change.
         """
-        self._update_installation_info()
+        self._update()
+
 
     # ---- Private API
+    def _update(self):
+        """
+        Update the content of this data import wizard.
+        """
+        self._is_updating = True
+        self._update_button_state()
+        self._update_installation_info()
+        # Calling the above method will trigger this sequence of calls in
+        # this data import data wizard :
+        # _update_installation_info -> _set_installation_info ->
+        # _update_table_model_data -> _update_previous_data ->
+        # _set_previous_data -> _update_duplicated_satus ->
+        # _update_button_state
+
     def _update_installation_info(self):
         """
         Update sonde installation info.
@@ -359,7 +376,7 @@ class DataImportWizard(QDialog):
             self.install_depth.setText(NOT_FOUND_MSG_COLORED)
             self.install_period.setText(NOT_FOUND_MSG_COLORED)
             self.sonde_stacked_widget.setCurrentIndex(0)
-        self.sig_installation_info_uptated.emit()
+        self._update_table_model_data()
 
     def _update_previous_data(self):
         """
@@ -392,6 +409,7 @@ class DataImportWizard(QDialog):
         stored in the database previous to the data series contained in
         the data file.
         """
+        self._is_duplicated = None
         if self._file_reader is None:
             self._clear_previous_data()
             return
@@ -399,7 +417,7 @@ class DataImportWizard(QDialog):
             self.previous_msg_label.setText(
                 _('Info not available because not connected to a database.'))
             self.previous_stacked_widget.setCurrentIndex(1)
-            self.sig_previous_data_uptated.emit()
+            self._update_duplicated_satus()
             return
         if tseries_groups is None:
             self._clear_previous_data()
@@ -431,7 +449,7 @@ class DataImportWizard(QDialog):
                       self.obs_well_label.text(),
                       new_series.index[0].strftime("%Y-%m-%d %H:%M")))
             self.previous_stacked_widget.setCurrentIndex(1)
-            self.sig_previous_data_uptated.emit()
+            self._update_duplicated_satus()
             return
 
         self.previous_stacked_widget.setCurrentIndex(0)
@@ -449,7 +467,6 @@ class DataImportWizard(QDialog):
                 delta_datetime.seconds // 3600, _('hrs'),
                 (delta_datetime.seconds // 60) % 60, _('mins')
                 ))
-        self.sig_previous_data_uptated.emit()
 
         # Check for duplicates.
         in_db = (prev_dataf[['datetime', 'sonde_id']]
@@ -457,6 +474,23 @@ class DataImportWizard(QDialog):
         to_add = new_dataf[['datetime']].set_index('datetime', drop=True)
         to_add['sonde_id'] = self._sonde_serial_no
         self._is_duplicated = to_add.isin(in_db).values
+
+        self._is_updating = False
+        self._update_duplicated_satus()
+
+    def _update_duplicated_satus(self):
+        self.table_model.set_duplicated(self._is_duplicated)
+        nbr_duplicated = (
+            0 if self._is_duplicated is None else np.sum(self._is_duplicated))
+        if nbr_duplicated == 0:
+            self.msgbox_widget.hide()
+        else:
+            self.msgbox_widget.set_warning(_(
+                "Data for {} of these readings was found in the database."
+                .format(nbr_duplicated)
+                ))
+            self.msgbox_widget.show()
+        self._update_button_state()
 
     def _load_next_queued_data_file(self):
         """
@@ -532,14 +566,18 @@ class DataImportWizard(QDialog):
             dataf_columns_mapper.extend([(dtype, dtype.label) for dtype in
                                          DataType if dtype in dataf.columns])
             self.table_model.set_model_data(dataf, dataf_columns_mapper)
+            self.table_widget.tableview.resizeColumnsToContents()
         else:
             self.table_model.set_model_data(
                 pd.DataFrame([]), dataf_columns_mapper=[])
+        self._update_previous_data()
 
     def _update_button_state(self):
         """Update the state of the dialog's buttons."""
-        self.pathbox_widget.setEnabled(not self._loading_data_in_database)
-        self.button_box.setEnabled(not self._loading_data_in_database)
+        self.pathbox_widget.setEnabled(not self._loading_data_in_database and
+                                       not self._is_updating)
+        self.button_box.setEnabled(not self._loading_data_in_database and
+                                   not self._is_updating)
         self.next_btn.setEnabled(len(self._queued_filenames) > 0)
         self.load_btn.setEnabled(self._obs_well_uuid is not None and
                                  not self._data_loaded_in_database and
