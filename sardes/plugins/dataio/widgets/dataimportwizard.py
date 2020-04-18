@@ -296,6 +296,10 @@ class DataImportWizard(QDialog):
         self.db_connection_manager = db_connection_manager
         self.db_connection_manager.sig_database_connection_changed.connect(
             self._handle_database_connection_changed)
+        self.db_connection_manager.sig_tseries_data_changed.connect(
+            self._handle_tseries_data_changed)
+        self.db_connection_manager.sig_database_data_changed.connect(
+            self._handle_database_data_changed)
 
     def _handle_database_connection_changed(self, connected):
         """
@@ -303,6 +307,22 @@ class DataImportWizard(QDialog):
         """
         self._update()
 
+    def _handle_tseries_data_changed(self, sampling_feature_uuids):
+        """
+        Handle when timeseries data changed in the database.
+        """
+        if self._obs_well_uuid in sampling_feature_uuids:
+            self._is_updating = True
+            self._update_button_state()
+            self._update_previous_data()
+
+    def _handle_database_data_changed(self, data_names):
+        """
+        Handle when data needed by this wizard changed in the database.
+        """
+        if data_names in ['sondes_data', 'sonde_installations',
+                          'observation_wells_data', 'sonde_models_lib']:
+            self._update()
 
     # ---- Private API
     def _update(self):
@@ -401,7 +421,7 @@ class DataImportWizard(QDialog):
         self.delta_level_label.clear()
         self.delta_date_label.clear()
         self.previous_stacked_widget.setCurrentIndex(0)
-        self.sig_previous_data_uptated.emit()
+        self._update_duplicated_satus()
 
     def _set_previous_data(self, tseries_groups):
         """
