@@ -452,7 +452,7 @@ class DataImportWizard(QDialog):
             self.site_name_label.setText(sites.site_name)
             self.projectid_label.setText(sites.project_name)
             self._sonde_serial_no = sites.instrument_serial_number or None
-            status_msg = _('Data loaded sucessfully.')
+            status_msg = _('Data imported sucessfully from the file.')
         self._update_installation_info()
         self.table_widget._handle_process_ended(status_msg)
 
