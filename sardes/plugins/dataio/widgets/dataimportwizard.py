@@ -689,16 +689,12 @@ if __name__ == '__main__':
     dbconnmanager.connect_to_db(DatabaseAccessorDemo())
 
     dataimportwizard = DataImportWizard()
-    dbconnmanager.register_model(
-        dataimportwizard,
-        'sondes_data',
-        ['sonde_models_lib', 'sonde_installations',
-         'observation_wells_data'])
+    dataimportwizard.set_database_connection_manager(dbconnmanager)
     dataimportwizard._queued_filenames = [
         'C:/Users/User/sardes/sardes/plugins/dataio/'
+        'tests/solinst_level_testfile.csv',
+        'C:/Users/User/sardes/sardes/plugins/dataio/'
         'tests/solinst_level_testfile.csv']
-    dbconnmanager.update_model('data_import_wizard')
-
     dataimportwizard.show()
 
     sys.exit(app.exec_())
