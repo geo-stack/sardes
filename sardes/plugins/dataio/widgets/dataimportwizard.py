@@ -198,15 +198,10 @@ class DataImportWizard(QDialog):
             self.table_model, multi_columns_sort=False,
             sections_movable=False, sections_hidable=False,
             disabled_actions=SardesTableWidget.EDIT_ACTIONS)
-
-        # Setup the duplicates warning box widget.
-        self.msgbox_widget = WarningBoxWidget()
-        self.table_widget.install_warning_box(self.msgbox_widget)
-        self.msgbox_widget.sig_closed.connect(
-            lambda: self.table_model.set_duplicated(None))
+        self._setup_duplicate_warning_box()
 
         horizontal_header = self.table_widget.tableview.horizontalHeader()
-        horizontal_header.setDefaultSectionSize(100)
+        horizontal_header.setDefaultSectionSize(150)
 
         # Add extra toolbar buttons.
         self.show_data_btn = create_toolbutton(
@@ -323,6 +318,36 @@ class DataImportWizard(QDialog):
         if data_names in ['sondes_data', 'sonde_installations',
                           'observation_wells_data', 'sonde_models_lib']:
             self._update()
+
+    # ---- Duplicates
+    def _setup_duplicate_warning_box(self):
+        """
+        Setup a warning box that shows when data already exists
+        in the database for the data and sonde serial number related to the
+        imported data.
+        """
+        self.msgbox_widget = WarningBoxWidget()
+        self.table_widget.install_warning_box(self.msgbox_widget)
+        self.msgbox_widget.sig_closed.connect(
+            lambda: self.table_model.set_duplicated(None))
+
+    def _update_duplicated_satus(self):
+        """
+        Update the duplicate warning text and status as well as the table
+        duplicate highlighting data.
+        """
+        self.table_model.set_duplicated(self._is_duplicated)
+        nbr_duplicated = (
+            0 if self._is_duplicated is None else np.sum(self._is_duplicated))
+        if nbr_duplicated == 0:
+            self.msgbox_widget.hide()
+        else:
+            self.msgbox_widget.set_warning(_(
+                "Data for {} of these readings was found in the database."
+                .format(nbr_duplicated)
+                ))
+            self.msgbox_widget.show()
+        self._update_button_state()
 
     # ---- Private API
     def _update(self):
@@ -497,20 +522,6 @@ class DataImportWizard(QDialog):
 
         self._is_updating = False
         self._update_duplicated_satus()
-
-    def _update_duplicated_satus(self):
-        self.table_model.set_duplicated(self._is_duplicated)
-        nbr_duplicated = (
-            0 if self._is_duplicated is None else np.sum(self._is_duplicated))
-        if nbr_duplicated == 0:
-            self.msgbox_widget.hide()
-        else:
-            self.msgbox_widget.set_warning(_(
-                "Data for {} of these readings was found in the database."
-                .format(nbr_duplicated)
-                ))
-            self.msgbox_widget.show()
-        self._update_button_state()
 
     def _load_next_queued_data_file(self):
         """
