@@ -636,9 +636,9 @@ class DataImportWizard(QDialog):
                       "that option.").format(self.pathbox_widget.label)
                     )
                 return
-            self._save_imported_data_to_database()
+            self._load_data_in_database()
 
-    def _save_imported_data_to_database(self):
+    def _load_data_in_database(self):
         """
         Save the data currently imported in this wizard in the database.
         """
@@ -647,14 +647,14 @@ class DataImportWizard(QDialog):
             _('Saving data in the database...'))
         self.db_connection_manager.add_timeseries_data(
             self.tseries_dataf, self._obs_well_uuid, self._install_id,
-            callback=self._handle_tseries_data_saved)
+            callback=self._handle_data_loaded_in_database)
         self._loading_data_in_database = True
         self._update_button_state()
 
     @Slot()
-    def _handle_tseries_data_saved(self):
+    def _handle_data_loaded_in_database(self):
         """
-        Handle when tseries data were saved in the database.
+        Handle when the imported data were loaded in the database.
         """
         self._data_loaded_in_database = True
         self._loading_data_in_database = False
