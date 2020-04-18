@@ -55,10 +55,14 @@ class DataImportWizard(QDialog):
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setModal(False)
-        self.resize(650, 600)
+        self.resize(600, 650)
 
-        self._data_is_loading = False
-        self._data_is_loaded = False
+        # A flag to indicate whether data is currently being loaded in the
+        # database.
+        self._loading_data_in_database = False
+        # A flag to indicate if the date were loaded in the database during
+        # the current sesstion.
+        self._data_loaded_in_database = False
         self._file_reader = None
 
         self._libraries = {
@@ -107,7 +111,7 @@ class DataImportWizard(QDialog):
         self.sonde_stacked_widget = QStackedWidget()
         self.sonde_stacked_widget.addWidget(sonde_info_widget)
         self.sonde_stacked_widget.addWidget(self.sonde_msg_label)
-        
+
         sonde_groupbox = QGroupBox(_('Sonde Installation Info'))
         sonde_groupbox_layout = QGridLayout(sonde_groupbox)
         sonde_groupbox_layout.addWidget(self.sonde_stacked_widget)
@@ -149,7 +153,7 @@ class DataImportWizard(QDialog):
         previous_groupbox = QGroupBox(_('Previous Reading'))
         previous_groupbox_layout = QGridLayout(previous_groupbox)
         previous_groupbox_layout.addWidget(self.previous_stacked_widget)
-        
+
         # Make all label selectable with the mouse cursor.
         for layout in [file_layout, sonde_form, previous_layout]:
             for index in range(layout.count()):
@@ -426,7 +430,7 @@ class DataImportWizard(QDialog):
         Load the data from the next file in the queue.
         """
         self.table_widget._start_process(_('Loading data...'))
-        self._data_is_loaded = False
+        self._data_loaded_in_database = False
         self._filename = self._queued_filenames.pop(0)
         self.working_directory = osp.dirname(self._filename)
         self.filename_label.setText(osp.basename(self._filename))
@@ -501,11 +505,11 @@ class DataImportWizard(QDialog):
 
     def _update_button_state(self):
         """Update the state of the dialog's buttons."""
-        self.pathbox_widget.setEnabled(not self._data_is_loading)
-        self.button_box.setEnabled(not self._data_is_loading)
+        self.pathbox_widget.setEnabled(not self._loading_data_in_database)
+        self.button_box.setEnabled(not self._loading_data_in_database)
         self.next_btn.setEnabled(len(self._queued_filenames) > 0)
         self.load_btn.setEnabled(self._obs_well_uuid is not None and
-                                 not self._data_is_loaded and
+                                 not self._data_loaded_in_database and
                                  self.db_connection_manager.is_connected())
         self.show_data_btn.setEnabled(self._obs_well_uuid is not None)
 
@@ -542,7 +546,7 @@ class DataImportWizard(QDialog):
         self.db_connection_manager.add_timeseries_data(
             self.tseries_dataf, self._obs_well_uuid, self._install_id,
             callback=self._handle_tseries_data_saved)
-        self._data_is_loading = True
+        self._loading_data_in_database = True
         self._update_button_state()
 
     @Slot()
@@ -550,8 +554,8 @@ class DataImportWizard(QDialog):
         """
         Handle when tseries data were saved in the database.
         """
-        self._data_is_loaded = True
-        self._data_is_loading = False
+        self._data_loaded_in_database = True
+        self._loading_data_in_database = False
 
         # Move input file if option is enabled and directory is valid.
         self._move_input_data_file()
