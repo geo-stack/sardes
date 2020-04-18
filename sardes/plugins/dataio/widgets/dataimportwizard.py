@@ -451,6 +451,13 @@ class DataImportWizard(QDialog):
                 ))
         self.sig_previous_data_uptated.emit()
 
+        # Check for duplicates.
+        in_db = (prev_dataf[['datetime', 'sonde_id']]
+                 .drop_duplicates().set_index('datetime', drop=True))
+        to_add = new_dataf[['datetime']].set_index('datetime', drop=True)
+        to_add['sonde_id'] = self._sonde_serial_no
+        self._is_duplicated = to_add.isin(in_db).values
+
     def _load_next_queued_data_file(self):
         """
         Load the data from the next file in the queue.
