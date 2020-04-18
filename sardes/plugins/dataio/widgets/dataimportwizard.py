@@ -32,7 +32,7 @@ from sardes.api.timeseries import DataType, merge_timeseries_groups
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import NotEditableDelegate, SardesTableWidget
 from sardes.widgets.buttons import CheckboxPathBoxWidget
-
+from sardes.widgets.statusbar import WarningBoxWidget
 
 NOT_FOUND_MSG = _('Not found in database')
 NOT_FOUND_MSG_COLORED = '<font color=red>%s</font>' % NOT_FOUND_MSG
@@ -191,6 +191,13 @@ class DataImportWizard(QDialog):
             self.table_model, multi_columns_sort=False,
             sections_movable=False, sections_hidable=False,
             disabled_actions=SardesTableWidget.EDIT_ACTIONS)
+
+        # Setup the duplicates warning box widget.
+        self.msgbox_widget = WarningBoxWidget()
+        self.table_widget.install_warning_box(self.msgbox_widget)
+        self.msgbox_widget.sig_closed.connect(
+            lambda: self.table_model.set_duplicated(None))
+
         horizontal_header = self.table_widget.tableview.horizontalHeader()
         horizontal_header.setDefaultSectionSize(100)
 
