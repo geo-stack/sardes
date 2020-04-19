@@ -184,7 +184,7 @@ def test_load_data(qtbot, mocker, testfiles, data_import_wizard):
 
     patcher_msgbox_warning = mocker.patch.object(
         QMessageBox, 'warning', return_value=QMessageBox.Ok)
-    qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+    qtbot.mouseClick(data_import_wizard.save_btn, Qt.LeftButton)
     assert patcher_msgbox_warning.call_count == 1
     assert data_import_wizard._data_is_loaded is False
     assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826)
@@ -194,7 +194,7 @@ def test_load_data(qtbot, mocker, testfiles, data_import_wizard):
     # try to load the data again.
     data_import_wizard.pathbox_widget.checkbox.setChecked(False)
     assert data_import_wizard._data_is_loaded is False
-    qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+    qtbot.mouseClick(data_import_wizard.save_btn, Qt.LeftButton)
     qtbot.waitUntil(lambda: data_import_wizard._data_is_loaded is True)
     assert patcher_msgbox_warning.call_count == 1
     assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 100)
@@ -233,7 +233,7 @@ def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
     patcher_msgbox_exec_ = mocker.patch.object(
         QMessageBox, 'exec_', return_value=msgbox_answer)
     assert data_import_wizard._data_is_loaded is False
-    qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+    qtbot.mouseClick(data_import_wizard.save_btn, Qt.LeftButton)
     qtbot.waitUntil(lambda: data_import_wizard._data_is_loaded is True)
 
     assert osp.exists(filename) is (msgbox_answer == QMessageBox.No)
@@ -273,7 +273,7 @@ def test_move_input_file_oserror(qtbot, mocker, data_import_wizard):
 
     # We now load the data.
     assert data_import_wizard._data_is_loaded is False
-    qtbot.mouseClick(data_import_wizard.load_btn, Qt.LeftButton)
+    qtbot.mouseClick(data_import_wizard.save_btn, Qt.LeftButton)
     qtbot.waitUntil(lambda: data_import_wizard._data_is_loaded is True)
 
     assert patcher_msgbox_exec_.call_count == 1

@@ -223,12 +223,12 @@ class DataImportWizard(QDialog):
         self.close_btn = QPushButton(_('Close'))
         self.close_btn.setDefault(False)
         self.close_btn.setAutoDefault(False)
-        self.load_btn = QPushButton(_('Save to Database'))
-        self.load_btn.setDefault(False)
-        self.load_btn.setAutoDefault(False)
+        self.save_btn = QPushButton(_('Save to Database'))
+        self.save_btn.setDefault(False)
+        self.save_btn.setAutoDefault(False)
 
         self.button_box = QDialogButtonBox()
-        self.button_box.addButton(self.load_btn, self.button_box.ActionRole)
+        self.button_box.addButton(self.save_btn, self.button_box.ActionRole)
         self.button_box.addButton(self.next_btn, self.button_box.ApplyRole)
         self.button_box.addButton(self.close_btn, self.button_box.RejectRole)
         self.button_box.layout().insertSpacing(1, 100)
@@ -637,7 +637,7 @@ class DataImportWizard(QDialog):
         self.button_box.setEnabled(not self._loading_data_in_database and
                                    not self._is_updating)
         self.next_btn.setEnabled(len(self._queued_filenames) > 0)
-        self.load_btn.setEnabled(self._obs_well_uuid is not None and
+        self.save_btn.setEnabled(self._obs_well_uuid is not None and
                                  self.db_connection_manager.is_connected())
         self.show_data_btn.setEnabled(self._obs_well_uuid is not None)
 
@@ -650,7 +650,7 @@ class DataImportWizard(QDialog):
             self.close()
         elif button == self.next_btn:
             self._load_next_queued_data_file()
-        elif button == self.load_btn:
+        elif button == self.save_btn:
             if (self.pathbox_widget.is_enabled() and
                     not self.pathbox_widget.is_valid()):
                 QMessageBox.warning(
@@ -662,25 +662,25 @@ class DataImportWizard(QDialog):
                       "that option.").format(self.pathbox_widget.label)
                     )
                 return
-            self._load_data_in_database()
+            self._save_data_to_database()
 
-    def _load_data_in_database(self):
+    def _save_data_to_database(self):
         """
-        Save the data currently imported in this wizard in the database.
+        Save the imported data to the database.
         """
         self.table_widget._start_process()
         self.table_widget.statusBar().showMessage(
-            _('Saving data in the database...'))
+            _('Saving data to the database...'))
         self._loading_data_in_database = True
         self.db_connection_manager.add_timeseries_data(
             self.tseries_dataf, self._obs_well_uuid, self._install_id,
-            callback=self._handle_data_loaded_in_database)
+            callback=self._handle_data_saved_in_database)
         self._update_button_state()
 
     @Slot()
-    def _handle_data_loaded_in_database(self):
+    def _handle_data_saved_in_database(self):
         """
-        Handle when the imported data were loaded in the database.
+        Handle when the imported data were saved in the database.
         """
         self._data_loaded_in_database = True
         self._loading_data_in_database = False
