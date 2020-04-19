@@ -33,7 +33,7 @@ from sardes.api.timeseries import DataType, merge_timeseries_groups
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import NotEditableDelegate, SardesTableWidget
 from sardes.widgets.buttons import CheckboxPathBoxWidget
-from sardes.widgets.statusbar import WarningBoxWidget
+from sardes.widgets.statusbar import MessageBoxWidget
 
 NOT_FOUND_MSG = _('Not found in database')
 NOT_FOUND_MSG_COLORED = '<font color=red>%s</font>' % NOT_FOUND_MSG
@@ -326,10 +326,25 @@ class DataImportWizard(QDialog):
         in the database for the data and sonde serial number related to the
         imported data.
         """
-        self.msgbox_widget = WarningBoxWidget()
-        self.table_widget.install_warning_box(self.msgbox_widget)
-        self.msgbox_widget.sig_closed.connect(
+        self.duplicates_msgbox = self.table_widget.install_message_box(
+            MessageBoxWidget(color=YELLOWLIGHT, icon='warning'))
+        self.duplicates_msgbox.add_button(_('Previous'))
+        self.duplicates_msgbox.add_button(_('Next'))
+        self.duplicates_msgbox.sig_closed.connect(
             lambda: self.table_model.set_duplicated(None))
+
+        self.dataloaded_msgbox = self.table_widget.install_message_box(
+            MessageBoxWidget(color='#E5FFCC', icon='succes'))
+        self.dataloaded_msgbox.set_message(
+            _('Data saved sucessfully in the database.'))
+        self.dataloaded_msgbox.add_button(
+            _('Ok'), self.dataloaded_msgbox.close)
+        self.dataloaded_msgbox.sig_closed.connect(
+            self._handle_dataloaded_msgbox_closed)
+
+    def _handle_dataloaded_msgbox_closed(self):
+        self._data_loaded_in_database = False
+        self._update_duplicated_satus()
 
     def _update_duplicated_satus(self):
         """
