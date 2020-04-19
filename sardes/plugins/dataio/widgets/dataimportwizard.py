@@ -223,7 +223,7 @@ class DataImportWizard(QDialog):
         self.close_btn = QPushButton(_('Close'))
         self.close_btn.setDefault(False)
         self.close_btn.setAutoDefault(False)
-        self.load_btn = QPushButton(_('Load Data'))
+        self.load_btn = QPushButton(_('Save to Database'))
         self.load_btn.setDefault(False)
         self.load_btn.setAutoDefault(False)
 
