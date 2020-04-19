@@ -308,8 +308,7 @@ class DataImportWizard(QDialog):
         Handle when timeseries data changed in the database.
         """
         if self._obs_well_uuid in sampling_feature_uuids:
-            self._is_updating = True
-            self._update_button_state()
+            self._update_button_state(is_updating=True)
             self._update_previous_data()
 
     def _handle_database_data_changed(self, data_names):
@@ -348,15 +347,14 @@ class DataImportWizard(QDialog):
                 .format(nbr_duplicated)
                 ))
             self.msgbox_widget.show()
-        self._update_button_state()
+        self._update_button_state(is_updating=False)
 
     # ---- Private API
     def _update(self):
         """
         Update the content of this data import wizard.
         """
-        self._is_updating = True
-        self._update_button_state()
+        self._update_button_state(is_updating=True)
         self._update_installation_info()
         # Calling the above method will trigger this sequence of calls in
         # this data import data wizard :
@@ -604,8 +602,18 @@ class DataImportWizard(QDialog):
                 pd.DataFrame([]), dataf_columns_mapper=[])
         self._update_previous_data()
 
-    def _update_button_state(self):
-        """Update the state of the dialog's buttons."""
+    def _update_button_state(self, is_updating=None):
+        """
+        Update the state of the dialog's buttons.
+
+        Parameters
+        ----------
+        is_updating: bool
+            Whether the data import wizard is being updated.
+        """
+        if is_updating is not None:
+            self._is_updating = is_updating
+
         self.pathbox_widget.setEnabled(not self._loading_data_in_database and
                                        not self._is_updating)
         self.button_box.setEnabled(not self._loading_data_in_database and
