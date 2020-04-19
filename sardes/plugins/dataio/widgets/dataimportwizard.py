@@ -319,7 +319,7 @@ class DataImportWizard(QDialog):
                           'observation_wells_data', 'sonde_models_lib']:
             self._update()
 
-    # ---- Duplicates
+    # ---- Message boxes
     def _setup_message_boxes(self):
         """
         Setup a warning box that shows when data already exists
@@ -337,12 +337,14 @@ class DataImportWizard(QDialog):
             MessageBoxWidget(color='#E5FFCC', icon='succes'))
         self.dataloaded_msgbox.set_message(
             _('Data saved sucessfully in the database.'))
-        self.dataloaded_msgbox.add_button(
-            _('Ok'), self.dataloaded_msgbox.close)
         self.dataloaded_msgbox.sig_closed.connect(
             self._handle_dataloaded_msgbox_closed)
 
     def _handle_dataloaded_msgbox_closed(self):
+        """
+        Handled when the message box that indicates the data were saved
+        sucessfully in the dabase is closed.
+        """
         self._data_loaded_in_database = False
         self._update_duplicated_satus()
 
