@@ -73,7 +73,7 @@ class DataImportWizard(QDialog):
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setModal(False)
-        self.resize(600, 650)
+        self.resize(575, 600)
 
         # A flag to indicate whether data is currently being loaded in the
         # database.
