@@ -124,6 +124,7 @@ class DataImportWizard(QDialog):
 
         sonde_info_widget = QFrame()
         sonde_form = QFormLayout(sonde_info_widget)
+        sonde_form.setContentsMargins(0, 0, 0, 0)
         sonde_form.addRow(_('Sonde') + ' :', self.sonde_label)
         sonde_form.addRow(_('Well') + ' :', self.obs_well_label)
         sonde_form.addRow(_('Depth') + ' :', self.install_depth)
