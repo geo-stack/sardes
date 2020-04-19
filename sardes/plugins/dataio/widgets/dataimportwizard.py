@@ -202,7 +202,7 @@ class DataImportWizard(QDialog):
         self._setup_duplicate_warning_box()
 
         horizontal_header = self.table_widget.tableview.horizontalHeader()
-        horizontal_header.setDefaultSectionSize(150)
+        horizontal_header.setDefaultSectionSize(125)
 
         # Add extra toolbar buttons.
         self.show_data_btn = create_toolbutton(
