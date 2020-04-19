@@ -596,7 +596,6 @@ class DataImportWizard(QDialog):
             dataf_columns_mapper.extend([(dtype, dtype.label) for dtype in
                                          DataType if dtype in dataf.columns])
             self.table_model.set_model_data(dataf, dataf_columns_mapper)
-            self.table_widget.tableview.resizeColumnsToContents()
         else:
             self.table_model.set_model_data(
                 pd.DataFrame([]), dataf_columns_mapper=[])
