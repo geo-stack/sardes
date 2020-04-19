@@ -244,7 +244,7 @@ class DataImportWizard(QDialog):
         layout.addWidget(previous_groupbox, 1, 1)
         layout.addWidget(self.table_widget, 2, 0, 1, 2)
         layout.setRowStretch(2, 1)
-        layout.setRowMinimumHeight(3, 25)
+        layout.setRowMinimumHeight(3, 15)
         layout.addWidget(self.pathbox_widget, 4, 0, 1, 2)
         layout.setRowMinimumHeight(5, 5)
         layout.addWidget(self.button_box, 6, 0, 1, 2)
