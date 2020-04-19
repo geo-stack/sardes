@@ -19,12 +19,12 @@ import numpy as np
 import pandas as pd
 from qtpy.QtCore import (QEvent, Qt, Signal, Slot, QItemSelection,
                          QItemSelectionModel, QRect, QTimer, QModelIndex)
-from qtpy.QtGui import QCursor, QPen, QStatusTipEvent
+from qtpy.QtGui import QCursor, QPen, QPalette
 from qtpy.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDateEdit, QDateTimeEdit,
     QDoubleSpinBox, QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox,
     QSpinBox, QStyledItemDelegate, QTableView, QTextEdit, QListView, QStyle,
-    QStyleOption, QWidget, QGridLayout, QStyleOptionHeader)
+    QStyleOption, QWidget, QGridLayout, QStyleOptionHeader, QVBoxLayout)
 
 # ---- Local imports
 from sardes import __appname__
@@ -99,6 +99,11 @@ class SardesItemDelegateBase(QStyledItemDelegate):
 
         # We must set the text ouselves or else no text is painted.
         option.text = index.data() if not option.text else option.text
+
+        # Set the color of the text from the model's data.
+        foreground_color = index.data(Qt.ForegroundRole)
+        if foreground_color:
+            option.palette.setColor(QPalette.Text, foreground_color)
 
         # We must fill the background with a solid color before painting the
         # control. This is necessary, for example, to color the background of
