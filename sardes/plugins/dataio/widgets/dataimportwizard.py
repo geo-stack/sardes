@@ -338,14 +338,14 @@ class DataImportWizard(QDialog):
         self.duplicates_msgbox.sig_closed.connect(
             lambda: self.table_model.set_duplicated(None))
 
-        self.dataloaded_msgbox = self.table_widget.install_message_box(
+        self.datasaved_msgbox = self.table_widget.install_message_box(
             MessageBoxWidget(color='#E5FFCC', icon='succes'))
-        self.dataloaded_msgbox.set_message(
+        self.datasaved_msgbox.set_message(
             _('Data saved sucessfully in the database.'))
-        self.dataloaded_msgbox.sig_closed.connect(
-            self._handle_dataloaded_msgbox_closed)
+        self.datasaved_msgbox.sig_closed.connect(
+            self._handle_datasaved_msgbox_closed)
 
-    def _handle_dataloaded_msgbox_closed(self):
+    def _handle_datasaved_msgbox_closed(self):
         """
         Handled when the message box that indicates the data were saved
         sucessfully in the dabase is closed.
@@ -739,7 +739,7 @@ class DataImportWizard(QDialog):
         self._data_saved_in_database = True
         self._loading_data_in_database = False
         self.duplicates_msgbox.close()
-        self.dataloaded_msgbox.show()
+        self.datasaved_msgbox.show()
 
         # Move input file if option is enabled and directory is valid.
         self._move_input_data_file()
