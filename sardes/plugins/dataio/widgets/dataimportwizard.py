@@ -687,6 +687,7 @@ class DataImportWizard(QDialog):
         if button == self.close_btn:
             self.close()
         elif button == self.next_btn:
+            self.datasaved_msgbox.close()
             self._load_next_queued_data_file()
         elif button == self.save_btn:
             if (self.pathbox_widget.is_enabled() and
