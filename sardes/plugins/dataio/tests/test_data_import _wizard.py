@@ -192,7 +192,8 @@ def test_load_data(qtbot, mocker, testfiles, data_import_wizard):
     data_import_wizard.pathbox_widget.checkbox.setChecked(False)
     assert data_import_wizard._data_saved_in_database is False
     qtbot.mouseClick(data_import_wizard.save_btn, Qt.LeftButton)
-    qtbot.waitUntil(lambda: data_import_wizard._data_saved_in_database is True)
+    qtbot.waitUntil(lambda: data_import_wizard._data_saved_in_database is True,
+                    timeout=3000)
     assert patcher_msgbox_warning.call_count == 1
     assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 100)
     assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 100)
@@ -231,7 +232,8 @@ def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
         QMessageBox, 'exec_', return_value=msgbox_answer)
     assert data_import_wizard._data_saved_in_database is False
     qtbot.mouseClick(data_import_wizard.save_btn, Qt.LeftButton)
-    qtbot.waitUntil(lambda: data_import_wizard._data_saved_in_database is True)
+    qtbot.waitUntil(lambda: data_import_wizard._data_saved_in_database is True,
+                    timeout=3000)
 
     assert osp.exists(filename) is (msgbox_answer == QMessageBox.No)
     assert patcher_msgbox_exec_.call_count == 1
@@ -271,7 +273,8 @@ def test_move_input_file_oserror(qtbot, mocker, data_import_wizard):
     # We now load the data.
     assert data_import_wizard._data_saved_in_database is False
     qtbot.mouseClick(data_import_wizard.save_btn, Qt.LeftButton)
-    qtbot.waitUntil(lambda: data_import_wizard._data_saved_in_database is True)
+    qtbot.waitUntil(lambda: data_import_wizard._data_saved_in_database is True,
+                    timeout=3000)
 
     assert patcher_msgbox_exec_.call_count == 1
     assert patcher_msgbox_warning.call_count == 1
