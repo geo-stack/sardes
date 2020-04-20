@@ -141,6 +141,9 @@ FA_ICONS = {
     'menu_down': [
         ('mdi.menu-down',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'menu_right': [
+        ('mdi.menu-right',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'pan': [
         ('mdi.pan',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
