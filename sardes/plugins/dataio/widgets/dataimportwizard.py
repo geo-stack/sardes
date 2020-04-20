@@ -420,6 +420,47 @@ class DataImportWizard(QDialog):
         self.table_widget.add_toolbar_widget(self.show_data_btn)
         return self.table_widget
 
+    def _update_table_model_data(self):
+        """
+        Format and update the data shown in the timeseries table.
+        """
+        horiz_header = self.table_widget.tableview.horizontalHeader()
+        if (self._file_reader is not None and
+                self._file_reader.records is not None):
+            dataf = self._file_reader.records.copy()
+            dataf.insert(0, 'Datetime', dataf.index)
+            dataf.rename(columns={'Datetime': 'datetime'}, inplace=True)
+            for column in dataf.columns:
+                if column.lower().startswith('level'):
+                    # We convert into meters.
+                    if column.lower().endswith('cm'):
+                        dataf[column] = dataf[column] / 100
+                    # We convert water height in depth below top of casing.
+                    if self._sonde_depth is not None:
+                        dataf[column] = self._sonde_depth - dataf[column]
+                    dataf.rename(columns={column: DataType.WaterLevel},
+                                 inplace=True)
+                elif column.lower().startswith('temp'):
+                    dataf.rename(columns={column: DataType.WaterTemp},
+                                 inplace=True)
+
+            horiz_header.setSectionHidden(0, False)
+            for data_type in DataType:
+                if data_type in dataf.columns:
+                    # We round data to avoid decimals from round-off errors.
+                    dataf.loc[:, data_type] = (
+                        dataf[data_type].round(decimals=6).copy())
+
+                # We hide or show the corresponding column in the table.
+                horiz_header.setSectionHidden(
+                    self.table_model.columns.index(data_type),
+                    data_type not in dataf.columns)
+
+            self.table_model.set_model_data(dataf)
+        else:
+            self.clear_table()
+        self._update_previous_data()
+
     # ---- Private API
     def _update(self):
         """
@@ -632,44 +673,6 @@ class DataImportWizard(QDialog):
                 .format(self._filename, RED, type(_error).__name__, _error)
                 )
             return
-
-    def _update_table_model_data(self):
-        """
-        Format and update the data shown in the timeseries table.
-        """
-        if (self._file_reader is not None and
-                self._file_reader.records is not None):
-            dataf = self._file_reader.records.copy()
-            dataf.insert(0, 'Datetime', dataf.index)
-            dataf.rename(columns={'Datetime': 'datetime'}, inplace=True)
-            for column in dataf.columns:
-                if column.lower().startswith('level'):
-                    # We convert into meters.
-                    if column.lower().endswith('cm'):
-                        dataf[column] = dataf[column] / 100
-                    # We convert water height in depth below top of casing.
-                    if self._sonde_depth is not None:
-                        dataf[column] = self._sonde_depth - dataf[column]
-                    dataf.rename(columns={column: DataType.WaterLevel},
-                                 inplace=True)
-                elif column.lower().startswith('temp'):
-                    dataf.rename(columns={column: DataType.WaterTemp},
-                                 inplace=True)
-
-            # We round data to avoid decimals from round-off errors.
-            for data_type in DataType:
-                if data_type in dataf.columns:
-                    dataf.loc[:, data_type] = (
-                        dataf[data_type].round(decimals=6).copy())
-
-            dataf_columns_mapper = [('datetime', _('Datetime'))]
-            dataf_columns_mapper.extend([(dtype, dtype.label) for dtype in
-                                         DataType if dtype in dataf.columns])
-            self.table_model.set_model_data(dataf, dataf_columns_mapper)
-        else:
-            self.table_model.set_model_data(
-                pd.DataFrame([]), dataf_columns_mapper=[])
-        self._update_previous_data()
 
     def _update_button_state(self, is_updating=None):
         """
