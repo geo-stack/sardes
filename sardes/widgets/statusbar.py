@@ -82,6 +82,7 @@ class MessageBoxWidget(QWidget):
         new_button = QPushButton(label)
         new_button.setAutoDefault(False)
         new_button.setDefault(False)
+        new_button.setFocusPolicy(Qt.TabFocus)
         if clicked_callback is not None:
             new_button.clicked.connect(clicked_callback)
         self.buttons.append(new_button)
