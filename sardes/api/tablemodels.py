@@ -354,7 +354,7 @@ class SardesTableModelBase(QAbstractTableModel):
     RowRemoved = 2
     RowDeleted = 3
 
-    def __init__(self, table_title='', table_id='', data_columns_mapper=[]):
+    def __init__(self, table_title='', table_id='', data_columns_mapper=None):
         """
         Parameters
         ----------
@@ -371,7 +371,7 @@ class SardesTableModelBase(QAbstractTableModel):
         super().__init__()
         self._table_title = table_title
         self._table_id = table_id
-        self._data_columns_mapper = OrderedDict(data_columns_mapper)
+        self._data_columns_mapper = OrderedDict(data_columns_mapper or [])
 
         # The sardes table data object that is used to store the table data
         # and handle edits.
