@@ -23,7 +23,7 @@ from qtpy.QtGui import QColor
 from qtpy.QtWidgets import (
     QApplication, QFileDialog, QDialog, QLabel, QPushButton, QDialogButtonBox,
     QAbstractButton, QFormLayout, QGroupBox, QMessageBox, QGridLayout,
-    QFrame, QStackedWidget)
+    QFrame, QStackedWidget, QCheckBox)
 
 # ---- Local imports
 from sardes.config.gui import get_iconsize, RED, YELLOWLIGHT
@@ -83,6 +83,9 @@ class DataImportWizard(QDialog):
         self._data_saved_in_database = False
         # A flag to indicate whether this data import wizard is being updated.
         self._is_updating = True
+        # A flag to indicate whether a confirmation message should be shown
+        # before saving potential duplicates in the database.
+        self._confirm_before_saving_duplicates = False
 
         self._file_reader = None
 
@@ -711,12 +714,18 @@ class DataImportWizard(QDialog):
                 _("Confirm Dulicates Saving"),
                 _("This operation will potentially add {} duplicate "
                   "readings to the database.<br><br>"
-                  "Are you sure you want to continue?"
+                  "Are you sure you want to continue?<br><br>"
                   .format(nbr_duplicated)
                   ),
                 parent=self,
                 buttons=QMessageBox.Yes | QMessageBox.No)
+
+            chkbox = QCheckBox(
+                _("Do not show this message again during this session."))
+            msg_box.setCheckBox(chkbox)
+
             answer = msg_box.exec_()
+            self._confirm_before_saving_duplicates = not chkbox.isChecked()
             if answer == QMessageBox.No:
                 self.table_model.set_duplicated(self._is_duplicated)
                 self.duplicates_msgbox.show()
