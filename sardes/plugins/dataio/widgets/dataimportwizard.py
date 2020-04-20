@@ -328,8 +328,13 @@ class DataImportWizard(QDialog):
         """
         self.duplicates_msgbox = self.table_widget.install_message_box(
             MessageBoxWidget(color=YELLOWLIGHT, icon='warning'))
-        self.duplicates_msgbox.add_button(_('Previous'))
-        self.duplicates_msgbox.add_button(_('Next'))
+        prev_button = self.duplicates_msgbox.add_button(_('Previous'))
+        prev_button.clicked.connect(
+            lambda _: self.goto_closest_duplicate(direction='previous'))
+        next_button = self.duplicates_msgbox.add_button(_('Next'))
+        next_button.clicked.connect(
+            lambda _: self.goto_closest_duplicate(direction='next'))
+
         self.duplicates_msgbox.sig_closed.connect(
             lambda: self.table_model.set_duplicated(None))
 
@@ -368,6 +373,36 @@ class DataImportWizard(QDialog):
                 ))
             self.duplicates_msgbox.show()
         self._update_button_state(is_updating=False)
+
+    def goto_closest_duplicate(self, direction):
+        """
+        Go to the next duplicate reding in the table when direction is 'next'
+        and go to the previous one when it is 'previous'.
+        """
+        tableview = self.table_widget.tableview
+        tableview.setFocus()
+        current_index = tableview.currentIndex()
+
+        sorted_duplicated = pd.Series(self._is_duplicated[
+            tableview.model()._map_row_from_source].flatten())
+        duplicated_rows = sorted_duplicated[sorted_duplicated.values].index
+
+        if direction == 'next':
+            try:
+                goto_row = duplicated_rows[
+                    duplicated_rows > current_index.row()][0]
+            except IndexError:
+                goto_row = duplicated_rows[0]
+        elif direction == 'previous':
+            try:
+                goto_row = duplicated_rows[
+                    duplicated_rows < current_index.row()][-1]
+            except IndexError:
+                goto_row = duplicated_rows[-1]
+
+        tableview.selectionModel().setCurrentIndex(
+            tableview.model().index(goto_row, current_index.column()),
+            tableview.selectionModel().ClearAndSelect)
 
     # ---- Private API
     def _update(self):
