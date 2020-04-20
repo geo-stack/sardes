@@ -73,10 +73,9 @@ def data_import_wizard(qtbot, dbconnmanager, testfiles, mocker):
     mocker.patch.object(
         QFileDialog, 'getOpenFileNames', return_value=(testfiles.copy(), exts))
 
-    with qtbot.waitSignal(data_import_wizard.sig_previous_data_uptated,
-                          timeout=3000):
-        data_import_wizard.show()
+    data_import_wizard.show()
     qtbot.waitForWindowShown(data_import_wizard)
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
 
     return data_import_wizard
 
@@ -135,9 +134,8 @@ def test_data_import_wizard_init(qtbot, mocker, testfiles, data_import_wizard):
     data_import_wizard._install_id = 0
 
     # Read the next selected file.
-    with qtbot.waitSignal(data_import_wizard.sig_previous_data_uptated,
-                          timeout=3000):
-        qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
+    qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
     assert data_import_wizard._queued_filenames == []
     assert data_import_wizard.working_directory == osp.dirname(testfiles[-1])
     assert data_import_wizard.table_widget.tableview.row_count() == 100
@@ -159,9 +157,8 @@ def test_read_data_error(qtbot, mocker, testfiles, data_import_wizard):
         QMessageBox, 'critical', return_value=QMessageBox.Ok)
 
     # Read the next selected file.
-    with qtbot.waitSignal(data_import_wizard.sig_previous_data_uptated,
-                          timeout=3000):
-        qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
+    qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
     assert patcher_msgbox_warning.call_count == 1
     assert data_import_wizard.table_widget.tableview.row_count() == 0
 
@@ -186,16 +183,16 @@ def test_load_data(qtbot, mocker, testfiles, data_import_wizard):
         QMessageBox, 'warning', return_value=QMessageBox.Ok)
     qtbot.mouseClick(data_import_wizard.save_btn, Qt.LeftButton)
     assert patcher_msgbox_warning.call_count == 1
-    assert data_import_wizard._data_is_loaded is False
+    assert data_import_wizard._data_saved_in_database is False
     assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826)
     assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826)
 
     # We now disbaled the option to move the input data file after loading and
     # try to load the data again.
     data_import_wizard.pathbox_widget.checkbox.setChecked(False)
-    assert data_import_wizard._data_is_loaded is False
+    assert data_import_wizard._data_saved_in_database is False
     qtbot.mouseClick(data_import_wizard.save_btn, Qt.LeftButton)
-    qtbot.waitUntil(lambda: data_import_wizard._data_is_loaded is True)
+    qtbot.waitUntil(lambda: data_import_wizard._data_saved_in_database is True)
     assert patcher_msgbox_warning.call_count == 1
     assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 100)
     assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 100)
@@ -232,9 +229,9 @@ def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
     # We load the data.
     patcher_msgbox_exec_ = mocker.patch.object(
         QMessageBox, 'exec_', return_value=msgbox_answer)
-    assert data_import_wizard._data_is_loaded is False
+    assert data_import_wizard._data_saved_in_database is False
     qtbot.mouseClick(data_import_wizard.save_btn, Qt.LeftButton)
-    qtbot.waitUntil(lambda: data_import_wizard._data_is_loaded is True)
+    qtbot.waitUntil(lambda: data_import_wizard._data_saved_in_database is True)
 
     assert osp.exists(filename) is (msgbox_answer == QMessageBox.No)
     assert patcher_msgbox_exec_.call_count == 1
@@ -272,9 +269,9 @@ def test_move_input_file_oserror(qtbot, mocker, data_import_wizard):
         QFileDialog, 'getExistingDirectory', return_value=(loaded_dirname_2))
 
     # We now load the data.
-    assert data_import_wizard._data_is_loaded is False
+    assert data_import_wizard._data_saved_in_database is False
     qtbot.mouseClick(data_import_wizard.save_btn, Qt.LeftButton)
-    qtbot.waitUntil(lambda: data_import_wizard._data_is_loaded is True)
+    qtbot.waitUntil(lambda: data_import_wizard._data_saved_in_database is True)
 
     assert patcher_msgbox_exec_.call_count == 1
     assert patcher_msgbox_warning.call_count == 1
