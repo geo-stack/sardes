@@ -45,6 +45,13 @@ class ImportDataTableModel(SardesTableModel):
     is_duplicated = None
     highlight_duplicates = False
 
+    def __init__(self):
+        super().__init__(
+            table_title='Logger Data', table_id='logger_data',
+            data_columns_mapper=([('datetime', _('Datetime'))] +
+                                 [(dtype, dtype.label) for dtype in DataType])
+            )
+
     def create_delegate_for_column(self, view, column):
         return NotEditableDelegate(self)
 
@@ -194,31 +201,7 @@ class DataImportWizard(QDialog):
                     pass
 
         # Setup the table widget.
-        self.table_model = ImportDataTableModel(
-            table_title='Logger Data',
-            table_id='logger_data',
-            data_columns_mapper=[])
-        self.table_widget = SardesTableWidget(
-            self.table_model, multi_columns_sort=False,
-            sections_movable=False, sections_hidable=False,
-            disabled_actions=SardesTableWidget.EDIT_ACTIONS)
-        self._setup_message_boxes()
-
-        horizontal_header = self.table_widget.tableview.horizontalHeader()
-        horizontal_header.setDefaultSectionSize(125)
-
-        # Add extra toolbar buttons.
-        self.show_data_btn = create_toolbutton(
-            self,
-            icon='show_data_table',
-            text=_("View data"),
-            tip=_('Show the data of the timeseries acquired in the currently '
-                  'selected observation well in a table.'),
-            triggered=lambda _: self._view_timeseries_data(),
-            iconsize=get_iconsize()
-            )
-        self.table_widget.add_toolbar_separator()
-        self.table_widget.add_toolbar_widget(self.show_data_btn)
+        table_widget = self._setup_table()
 
         # Setup the dialog button box.
         self.next_btn = QPushButton(_('Next'))
@@ -245,7 +228,7 @@ class DataImportWizard(QDialog):
         layout.addWidget(file_groupbox, 0, 0, 1, 2)
         layout.addWidget(sonde_groupbox, 1, 0)
         layout.addWidget(previous_groupbox, 1, 1)
-        layout.addWidget(self.table_widget, 2, 0, 1, 2)
+        layout.addWidget(table_widget, 2, 0, 1, 2)
         layout.setRowStretch(2, 1)
         layout.setRowMinimumHeight(3, 15)
         layout.addWidget(self.pathbox_widget, 4, 0, 1, 2)
@@ -406,6 +389,85 @@ class DataImportWizard(QDialog):
         tableview.selectionModel().setCurrentIndex(
             tableview.model().index(goto_row, current_index.column()),
             tableview.selectionModel().ClearAndSelect)
+
+    # ---- Table
+    def _setup_table(self):
+        """
+        Setup the table model and widget used to display the imported data
+        in this wizard.
+        """
+        self.table_model = ImportDataTableModel()
+        self.table_widget = SardesTableWidget(
+            self.table_model, multi_columns_sort=False,
+            sections_movable=False, sections_hidable=False,
+            disabled_actions=SardesTableWidget.EDIT_ACTIONS)
+        self._setup_message_boxes()
+
+        self.horizontal_header = self.table_widget.tableview.horizontalHeader()
+        self.clear_table()
+
+        # Add extra toolbar buttons.
+        self.show_data_btn = create_toolbutton(
+            self,
+            icon='show_data_table',
+            text=_("View data"),
+            tip=_('Show the data of the timeseries acquired in the currently '
+                  'selected observation well in a table.'),
+            triggered=lambda _: self._view_timeseries_data(),
+            iconsize=get_iconsize()
+            )
+        self.table_widget.add_toolbar_separator()
+        self.table_widget.add_toolbar_widget(self.show_data_btn)
+        return self.table_widget
+
+    def clear_table(self):
+        """
+        Clear the content of the table.
+        """
+        for section in range(self.horizontal_header.count()):
+            self.horizontal_header.setSectionHidden(section, True)
+        self.table_model.set_model_data(pd.DataFrame([]))
+
+    def _update_table_model_data(self):
+        """
+        Format and update the data shown in the timeseries table.
+        """
+        horiz_header = self.table_widget.tableview.horizontalHeader()
+        if (self._file_reader is not None and
+                self._file_reader.records is not None):
+            dataf = self._file_reader.records.copy()
+            dataf.insert(0, 'Datetime', dataf.index)
+            dataf.rename(columns={'Datetime': 'datetime'}, inplace=True)
+            for column in dataf.columns:
+                if column.lower().startswith('level'):
+                    # We convert into meters.
+                    if column.lower().endswith('cm'):
+                        dataf[column] = dataf[column] / 100
+                    # We convert water height in depth below top of casing.
+                    if self._sonde_depth is not None:
+                        dataf[column] = self._sonde_depth - dataf[column]
+                    dataf.rename(columns={column: DataType.WaterLevel},
+                                 inplace=True)
+                elif column.lower().startswith('temp'):
+                    dataf.rename(columns={column: DataType.WaterTemp},
+                                 inplace=True)
+
+            horiz_header.setSectionHidden(0, False)
+            for data_type in DataType:
+                if data_type in dataf.columns:
+                    # We round data to avoid decimals from round-off errors.
+                    dataf.loc[:, data_type] = (
+                        dataf[data_type].round(decimals=6).copy())
+
+                # We hide or show the corresponding column in the table.
+                horiz_header.setSectionHidden(
+                    self.table_model.columns.index(data_type),
+                    data_type not in dataf.columns)
+
+            self.table_model.set_model_data(dataf)
+        else:
+            self.clear_table()
+        self._update_previous_data()
 
     # ---- Private API
     def _update(self):
@@ -620,44 +682,6 @@ class DataImportWizard(QDialog):
                 )
             return
 
-    def _update_table_model_data(self):
-        """
-        Format and update the data shown in the timeseries table.
-        """
-        if (self._file_reader is not None and
-                self._file_reader.records is not None):
-            dataf = self._file_reader.records.copy()
-            dataf.insert(0, 'Datetime', dataf.index)
-            dataf.rename(columns={'Datetime': 'datetime'}, inplace=True)
-            for column in dataf.columns:
-                if column.lower().startswith('level'):
-                    # We convert into meters.
-                    if column.lower().endswith('cm'):
-                        dataf[column] = dataf[column] / 100
-                    # We convert water height in depth below top of casing.
-                    if self._sonde_depth is not None:
-                        dataf[column] = self._sonde_depth - dataf[column]
-                    dataf.rename(columns={column: DataType.WaterLevel},
-                                 inplace=True)
-                elif column.lower().startswith('temp'):
-                    dataf.rename(columns={column: DataType.WaterTemp},
-                                 inplace=True)
-
-            # We round data to avoid decimals from round-off errors.
-            for data_type in DataType:
-                if data_type in dataf.columns:
-                    dataf.loc[:, data_type] = (
-                        dataf[data_type].round(decimals=6).copy())
-
-            dataf_columns_mapper = [('datetime', _('Datetime'))]
-            dataf_columns_mapper.extend([(dtype, dtype.label) for dtype in
-                                         DataType if dtype in dataf.columns])
-            self.table_model.set_model_data(dataf, dataf_columns_mapper)
-        else:
-            self.table_model.set_model_data(
-                pd.DataFrame([]), dataf_columns_mapper=[])
-        self._update_previous_data()
-
     def _update_button_state(self, is_updating=None):
         """
         Update the state of the dialog's buttons.
@@ -854,9 +878,7 @@ if __name__ == '__main__':
     dataimportwizard.set_database_connection_manager(dbconnmanager)
     dataimportwizard._queued_filenames = [
         'C:/Users/User/sardes/sardes/plugins/dataio/'
-        'tests/solinst_level_testfile.csv',
-        'C:/Users/User/sardes/sardes/plugins/dataio/'
-        'tests/solinst_level_testfile.csv']
+        'tests/solinst_level_testfile_03040002.csv']
     dataimportwizard.show()
 
     sys.exit(app.exec_())

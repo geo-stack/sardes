@@ -76,6 +76,15 @@ class DataIO(SardesPlugin):
             'move_inputfile_enabled',
             self.data_import_wizard.pathbox_widget.is_enabled())
 
+        # Save the state of the horizontal header.
+        self.data_import_wizard.clear_table()
+        self.set_option(
+            'horiz_header/state',
+            self.data_import_wizard.table_widget.get_table_horiz_header_state()
+            )
+
+        self.data_import_wizard.close()
+
     def register_plugin(self):
         """
         Extend base class method to do some connection with the database
@@ -94,6 +103,10 @@ class DataIO(SardesPlugin):
             'move_inputfile_workdir', ''))
         self.data_import_wizard.pathbox_widget.checkbox.setChecked(
             self.get_option('move_inputfile_enabled', False))
+
+        # Restore the state of the horizontal header.
+        self.data_import_wizard.table_widget.restore_table_horiz_header_state(
+            self.get_option('horiz_header/state', None))
 
     # ---- Private API
     def _show_data_import_wizard(self):
