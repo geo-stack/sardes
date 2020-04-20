@@ -75,7 +75,8 @@ def data_import_wizard(qtbot, dbconnmanager, testfiles, mocker):
 
     data_import_wizard.show()
     qtbot.waitForWindowShown(data_import_wizard)
-    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False,
+                    timeout=3000)
 
     return data_import_wizard
 
