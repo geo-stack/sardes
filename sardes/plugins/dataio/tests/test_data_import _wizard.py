@@ -18,6 +18,7 @@ from shutil import copyfile
 import sys
 
 # ---- Third party imports
+import numpy as np
 import pytest
 from qtpy.QtCore import Qt
 
@@ -56,7 +57,7 @@ def dbconnmanager(qtbot, dbaccessor):
 
 @pytest.fixture
 def testfiles(tmp_path):
-    filenames = ["solinst_level_testfile.csv", "solinst_level_testfile.lev"]
+    filenames = ["solinst_level_testfile_03040002.csv"] * 2
     for filename in filenames:
         copyfile(osp.join(osp.dirname(__file__), filename),
                  osp.join(tmp_path, filename))
@@ -109,37 +110,37 @@ def test_data_import_wizard_init(qtbot, mocker, testfiles, data_import_wizard):
     # The first selected file is read automatically.
     assert data_import_wizard._queued_filenames == testfiles[1:]
     assert data_import_wizard.working_directory == osp.dirname(testfiles[-1])
-    assert data_import_wizard.table_widget.tableview.row_count() == 100
+    assert data_import_wizard.table_widget.tableview.row_count() == 365
 
     # Assert file infos.
     assert (data_import_wizard.filename_label.text() ==
             osp.basename(testfiles[0]))
-    assert data_import_wizard.serial_number_label.text() == "1016042"
-    assert data_import_wizard.projectid_label.text() == "03037041"
+    assert data_import_wizard.serial_number_label.text() == "1060487"
+    assert data_import_wizard.projectid_label.text() == "03040002"
     assert (data_import_wizard.site_name_label.text() ==
-            "SAINT-PAUL-D'ABBOTSFORD")
+            "Calixa-Lavallée")
 
     # Assert sonde installation infos.
     assert (data_import_wizard.sonde_label.text() ==
-            'Solinst LT M10 Gold 1016042')
+            'Solinst LT M10 1060487')
     assert (data_import_wizard.obs_well_label.text() ==
-            "03037041 (Saint-Paul-d'Abbotsford)")
-    assert data_import_wizard.install_depth.text() == '9.02 m'
+            "03040002 (Calixa-Lavallée)")
+    assert data_import_wizard.install_depth.text() == '9.24 m'
     assert (data_import_wizard.install_period.text() ==
-            '2006-08-24 18:00 to today')
+            '2012-05-05 19:00 to today')
 
     # Assert internal variables values.
-    data_import_wizard._sonde_serial_no = '1016042'
-    data_import_wizard._obs_well_uuid = 0
-    data_import_wizard._sonde_depth = 9.02
-    data_import_wizard._install_id = 0
+    data_import_wizard._sonde_serial_no = '1060487'
+    data_import_wizard._obs_well_uuid = 4
+    data_import_wizard._sonde_depth = 9.24
+    data_import_wizard._install_id = 7
 
     # Read the next selected file.
     qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
     qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
     assert data_import_wizard._queued_filenames == []
     assert data_import_wizard.working_directory == osp.dirname(testfiles[-1])
-    assert data_import_wizard.table_widget.tableview.row_count() == 100
+    assert data_import_wizard.table_widget.tableview.row_count() == 365
 
     # Assert file infos.
     assert (data_import_wizard.filename_label.text() ==
@@ -196,8 +197,8 @@ def test_load_data(qtbot, mocker, testfiles, data_import_wizard):
     qtbot.waitUntil(lambda: data_import_wizard._data_saved_in_database is True,
                     timeout=3000)
     assert patcher_msgbox_warning.call_count == 1
-    assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 100)
-    assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 100)
+    assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 365)
+    assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 365)
     assert osp.exists(filename)
     qtbot.wait(300)
 
@@ -238,8 +239,8 @@ def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
 
     assert osp.exists(filename) is (msgbox_answer == QMessageBox.No)
     assert patcher_msgbox_exec_.call_count == 1
-    assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 100)
-    assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 100)
+    assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 365)
+    assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 365)
     qtbot.wait(1000)
 
 
@@ -280,13 +281,48 @@ def test_move_input_file_oserror(qtbot, mocker, data_import_wizard):
     assert patcher_msgbox_exec_.call_count == 1
     assert patcher_msgbox_warning.call_count == 1
     assert patcher_qfiledialog.call_count == 1
-    assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 100)
-    assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 100)
+    assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 365)
+    assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 365)
 
     assert data_import_wizard.pathbox_widget.path() == loaded_dirname_2
     assert osp.exists(osp.join(loaded_dirname_2, osp.basename(filename)))
     assert not osp.exists(filename)
     qtbot.wait(300)
+
+
+def test_duplicate_readings(qtbot, mocker, data_import_wizard):
+    """
+    Test that duplicate readings are handled as expected by the wizard.
+    """
+    patcher_msgbox_exec_ = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Yes)
+    data_import_wizard.pathbox_widget.checkbox.setChecked(False)
+
+    # Save the data to the database.
+    assert np.sum(data_import_wizard._is_duplicated) == 0
+    assert not data_import_wizard.datasaved_msgbox.isVisible()
+    with qtbot.waitSignal(
+            data_import_wizard.db_connection_manager.sig_tseries_data_changed,
+            timeout=3000):
+        qtbot.mouseClick(data_import_wizard.save_btn, Qt.LeftButton)
+    assert patcher_msgbox_exec_.call_count == 0
+    assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 365)
+    assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 365)
+
+    assert data_import_wizard.datasaved_msgbox.isVisible()
+    assert data_import_wizard._data_saved_in_database is True
+
+    qtbot.wait(1000)
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
+    assert np.sum(data_import_wizard._is_duplicated) == 365
+
+    # # Close the "Data saved sucessfully" message box.
+    # assert not data_import_wizard.duplicates_msgbox.isVisible()
+    # data_import_wizard.datasaved_msgbox.close()
+    # qtbot.wait(3000)
+    # qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
+    # assert not data_import_wizard.datasaved_msgbox.isVisible()
+    # assert data_import_wizard.duplicates_msgbox.isVisible()
 
 
 if __name__ == "__main__":

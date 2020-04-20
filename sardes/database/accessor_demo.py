@@ -27,7 +27,7 @@ from sardes.api.timeseries import DataType, TimeSeriesGroup, TimeSeries
 
 
 # =============================================================================
-# Module variable definition
+# ---- Database Content
 # =============================================================================
 OBS_WELLS_DF = pd.DataFrame(
     [['03037041', "St-Paul-d'Abbotsford", "Saint-Paul-d'Abbotsford",
@@ -177,6 +177,12 @@ SONDE_INSTALLATIONS = pd.DataFrame(
     columns=['start_date', 'end_date', 'install_depth',
              'sampling_feature_uuid', 'sonde_uuid']
     )
+
+OBSERVATIONS.loc[0, 'sonde_installation_uuid'] = 0
+OBSERVATIONS.loc[1, 'sonde_installation_uuid'] = 1
+OBSERVATIONS.loc[2, 'sonde_installation_uuid'] = 2
+OBSERVATIONS.loc[3, 'sonde_installation_uuid'] = 6
+OBSERVATIONS.loc[4, 'sonde_installation_uuid'] = 7
 
 REPERE_DATA = []
 for i in range(len(OBS_WELLS_DF)):
@@ -426,7 +432,7 @@ class DatabaseAccessorDemo(DatabaseAccessor):
                 tseries_name=data_type.title,
                 tseries_units=data_units,
                 tseries_color=data_type.color,
-                sonde_id='1062392'
+                sonde_id=self._get_sonde_serial_no_from_obs_id(obs_id)
                 ))
         return tseries_group
 
@@ -508,11 +514,24 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         MANUAL_MEASUREMENTS.loc[
             measurement_id, attribute_name] = attribute_value
 
+    # ---- Observations
+    def _get_sonde_serial_no_from_obs_id(self, observation_id):
+        """
+        Return the sonde serial number associated with the given
+        observation ID.
+        """
+        sonde_installation_uuid = (
+            OBSERVATIONS.loc[observation_id]['sonde_installation_uuid'])
+        sonde_uuid = (
+            SONDE_INSTALLATIONS.loc[sonde_installation_uuid]['sonde_uuid'])
+        sonde_serial_no = (SONDES_DATA.loc[sonde_uuid]['sonde_serial_no'])
+        return sonde_serial_no
+
 
 if __name__ == '__main__':
     accessor = DatabaseAccessorDemo()
     accessor.connect()
     obs_wells = accessor.get_observation_wells_data()
-    wlevel = accessor.get_timeseries_for_obs_well('', DataType.WaterLevel)
+    wlevel = accessor.get_timeseries_for_obs_well(1, DataType.WaterLevel)
     obs_well_stats = accessor.get_observation_wells_statistics()
     print(wlevel)
