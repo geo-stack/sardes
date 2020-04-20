@@ -420,6 +420,14 @@ class DataImportWizard(QDialog):
         self.table_widget.add_toolbar_widget(self.show_data_btn)
         return self.table_widget
 
+    def clear_table(self):
+        """
+        Clear the content of the table.
+        """
+        for section in range(self.horizontal_header.count()):
+            self.horizontal_header.setSectionHidden(section, True)
+        self.table_model.set_model_data(pd.DataFrame([]))
+
     def _update_table_model_data(self):
         """
         Format and update the data shown in the timeseries table.
@@ -870,9 +878,7 @@ if __name__ == '__main__':
     dataimportwizard.set_database_connection_manager(dbconnmanager)
     dataimportwizard._queued_filenames = [
         'C:/Users/User/sardes/sardes/plugins/dataio/'
-        'tests/solinst_level_testfile.csv',
-        'C:/Users/User/sardes/sardes/plugins/dataio/'
-        'tests/solinst_level_testfile.csv']
+        'tests/solinst_level_testfile_03040002.csv']
     dataimportwizard.show()
 
     sys.exit(app.exec_())
