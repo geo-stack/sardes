@@ -85,7 +85,7 @@ class DataImportWizard(QDialog):
         self._is_updating = True
         # A flag to indicate whether a confirmation message should be shown
         # before saving potential duplicates in the database.
-        self._confirm_before_saving_duplicates = False
+        self._confirm_before_saving_duplicates = True
 
         self._file_reader = None
 
