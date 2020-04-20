@@ -305,25 +305,39 @@ def test_duplicate_readings(qtbot, mocker, data_import_wizard):
             data_import_wizard.db_connection_manager.sig_tseries_data_changed,
             timeout=3000):
         qtbot.mouseClick(data_import_wizard.save_btn, Qt.LeftButton)
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
+
     assert patcher_msgbox_exec_.call_count == 0
     assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 365)
     assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 365)
 
-    assert data_import_wizard.datasaved_msgbox.isVisible()
     assert data_import_wizard._data_saved_in_database is True
-
-    qtbot.wait(1000)
-    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
+    assert data_import_wizard.datasaved_msgbox.isVisible()
     assert np.sum(data_import_wizard._is_duplicated) == 365
 
-    # # Close the "Data saved sucessfully" message box.
-    # assert not data_import_wizard.duplicates_msgbox.isVisible()
-    # data_import_wizard.datasaved_msgbox.close()
-    # qtbot.wait(3000)
-    # qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
-    # assert not data_import_wizard.datasaved_msgbox.isVisible()
-    # assert data_import_wizard.duplicates_msgbox.isVisible()
+    # Close the "Data saved sucessfully" message box.
+    assert not data_import_wizard.duplicates_msgbox.isVisible()
+    data_import_wizard.datasaved_msgbox.close()
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
+    assert not data_import_wizard.datasaved_msgbox.isVisible()
+    assert data_import_wizard.duplicates_msgbox.isVisible()
+
+    # Save the data again to the database.
+    with qtbot.waitSignal(
+            data_import_wizard.db_connection_manager.sig_tseries_data_changed,
+            timeout=3000):
+        qtbot.mouseClick(data_import_wizard.save_btn, Qt.LeftButton)
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
+
+    assert patcher_msgbox_exec_.call_count == 1
+    assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 730)
+    assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 730)
+
+    assert data_import_wizard._data_saved_in_database is True
+    assert data_import_wizard.datasaved_msgbox.isVisible()
+    assert np.sum(data_import_wizard._is_duplicated) == 365
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
+    pytest.main(['-x', osp.basename(__file__), '-v', '-rw',
+                 '-k', 'test_duplicate_readings'])
