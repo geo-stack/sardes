@@ -668,6 +668,25 @@ class DataImportWizard(QDialog):
         """
         Save the imported data to the database.
         """
+        nbr_duplicated = (
+            0 if self._is_duplicated is None else np.sum(self._is_duplicated))
+        if nbr_duplicated > 0:
+            msg_box = QMessageBox(
+                QMessageBox.Question,
+                _("Confirm Dulicates Saving"),
+                _("This operation will potentially add {} duplicate "
+                  "readings to the database.<br><br>"
+                  "Are you sure you want to continue?"
+                  .format(nbr_duplicated)
+                  ),
+                parent=self,
+                buttons=QMessageBox.Yes | QMessageBox.No)
+            answer = msg_box.exec_()
+            if answer == QMessageBox.No:
+                self.table_model.set_duplicated(self._is_duplicated)
+                self.duplicates_msgbox.show()
+                return
+
         self.table_widget._start_process()
         self.table_widget.statusBar().showMessage(
             _('Saving data to the database...'))
