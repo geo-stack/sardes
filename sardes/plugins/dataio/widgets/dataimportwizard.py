@@ -709,7 +709,7 @@ class DataImportWizard(QDialog):
         """
         nbr_duplicated = (
             0 if self._is_duplicated is None else np.sum(self._is_duplicated))
-        if nbr_duplicated > 0:
+        if nbr_duplicated > 0 and self._confirm_before_saving_duplicates:
             msg_box = QMessageBox(
                 QMessageBox.Question,
                 _("Confirm Dulicates Saving"),
