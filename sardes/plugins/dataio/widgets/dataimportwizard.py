@@ -78,9 +78,9 @@ class DataImportWizard(QDialog):
         # A flag to indicate whether data is currently being loaded in the
         # database.
         self._loading_data_in_database = False
-        # A flag to indicate if the date were loaded in the database during
+        # A flag to indicate if the date were saved in the database during
         # the current sesstion.
-        self._data_loaded_in_database = False
+        self._data_saved_in_database = False
         # A flag to indicate whether this data import wizard is being updated.
         self._is_updating = True
 
@@ -350,7 +350,7 @@ class DataImportWizard(QDialog):
         Handled when the message box that indicates the data were saved
         sucessfully in the dabase is closed.
         """
-        self._data_loaded_in_database = False
+        self._data_saved_in_database = False
         self._update_duplicated_satus()
 
     def _update_duplicated_satus(self):
@@ -359,7 +359,7 @@ class DataImportWizard(QDialog):
         duplicate highlighting data.
         """
         is_duplicated = (
-            None if self._data_loaded_in_database else self._is_duplicated)
+            None if self._data_saved_in_database else self._is_duplicated)
         nbr_duplicated = (
             0 if is_duplicated is None else np.sum(is_duplicated))
 
@@ -581,7 +581,7 @@ class DataImportWizard(QDialog):
         Load the data from the next file in the queue.
         """
         self.table_widget._start_process(_('Loading data...'))
-        self._data_loaded_in_database = False
+        self._data_saved_in_database = False
         self._filename = self._queued_filenames.pop(0)
         self.working_directory = osp.dirname(self._filename)
         self.filename_label.setText(osp.basename(self._filename))
@@ -736,7 +736,7 @@ class DataImportWizard(QDialog):
         """
         Handle when the imported data were saved in the database.
         """
-        self._data_loaded_in_database = True
+        self._data_saved_in_database = True
         self._loading_data_in_database = False
         self.duplicates_msgbox.close()
         self.dataloaded_msgbox.show()
