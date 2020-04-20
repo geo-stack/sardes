@@ -14,7 +14,7 @@ import sys
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtWidgets import (QGridLayout, QLabel, QWidget, QPushButton,
                             QToolButton, QStyle, QFrame, QApplication,
-                            QHBoxLayout, QGraphicsOpacityEffect)
+                            QHBoxLayout)
 
 from sardes.config.icons import get_icon
 from sardes.utils.qthelpers import create_waitspinner
@@ -201,9 +201,6 @@ class ProcessStatusBar(QWidget):
 
 
 if __name__ == '__main__':
-    from sardes.database.database_manager import DatabaseConnectionManager
-    from sardes.database.accessor_demo import DatabaseAccessorDemo
-
     app = QApplication(sys.argv)
 
     msgbox = MessageBoxWidget()
