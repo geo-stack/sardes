@@ -19,12 +19,12 @@ import numpy as np
 import pandas as pd
 from qtpy.QtCore import (QEvent, Qt, Signal, Slot, QItemSelection,
                          QItemSelectionModel, QRect, QTimer, QModelIndex)
-from qtpy.QtGui import QCursor, QPen, QStatusTipEvent
+from qtpy.QtGui import QCursor, QPen, QPalette
 from qtpy.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDateEdit, QDateTimeEdit,
     QDoubleSpinBox, QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox,
     QSpinBox, QStyledItemDelegate, QTableView, QTextEdit, QListView, QStyle,
-    QStyleOption, QWidget, QGridLayout, QStyleOptionHeader)
+    QStyleOption, QWidget, QGridLayout, QStyleOptionHeader, QVBoxLayout)
 
 # ---- Local imports
 from sardes import __appname__
@@ -99,6 +99,11 @@ class SardesItemDelegateBase(QStyledItemDelegate):
 
         # We must set the text ouselves or else no text is painted.
         option.text = index.data() if not option.text else option.text
+
+        # Set the color of the text from the model's data.
+        foreground_color = index.data(Qt.ForegroundRole)
+        if foreground_color:
+            option.palette.setColor(QPalette.Text, foreground_color)
 
         # We must fill the background with a solid color before painting the
         # control. This is necessary, for example, to color the background of
@@ -1590,19 +1595,39 @@ class SardesTableWidget(SardesPaneWidget):
             lambda: self._handle_process_ended(
                 _('Edits saved sucessfully in the database.')))
 
-        stack_widget = QWidget()
-        stack_layout = QGridLayout(stack_widget)
-        stack_layout.setContentsMargins(0, 0, 0, 0)
-        stack_layout.addWidget(self.tableview, 0, 0, 3, 3)
-        stack_layout.addWidget(self.progressbar, 1, 1)
-        stack_layout.setRowStretch(0, 1)
-        stack_layout.setRowStretch(2, 1)
-        stack_layout.setColumnStretch(0, 1)
-        stack_layout.setColumnStretch(2, 1)
-        self.set_central_widget(stack_widget)
+        progressbar_layout = QGridLayout()
+        progressbar_layout.setContentsMargins(0, 0, 0, 0)
+        progressbar_layout.addWidget(self.progressbar, 1, 1)
+        progressbar_layout.setRowStretch(0, 1)
+        progressbar_layout.setRowStretch(2, 1)
+        progressbar_layout.setColumnStretch(0, 1)
+        progressbar_layout.setColumnStretch(2, 1)
+
+        self.message_layout = QVBoxLayout()
+        self.message_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.central_widget = QWidget()
+        central_widget_layout = QGridLayout(self.central_widget)
+        central_widget_layout.setContentsMargins(0, 0, 0, 0)
+        central_widget_layout.addLayout(self.message_layout, 0, 0)
+        central_widget_layout.addWidget(self.tableview, 1, 0)
+        central_widget_layout.addLayout(progressbar_layout, 1, 0)
+        central_widget_layout.setRowStretch(1, 1)
+        central_widget_layout.setColumnStretch(0, 1)
+        central_widget_layout.setSpacing(0)
+        self.set_central_widget(self.central_widget)
 
         self._setup_upper_toolbar()
         self._setup_status_bar()
+
+    # ---- Layout
+    def install_message_box(self, message_box):
+        """
+        Add the given message box to this table widget.
+        """
+        self.message_layout.addWidget(message_box)
+        message_box.hide()
+        return message_box
 
     # ---- Public methods
     def clear_model_data(self):

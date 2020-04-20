@@ -16,22 +16,24 @@ import os.path as osp
 from appconfigs.base import get_home_dir
 from atomicwrites import replace_atomic
 from hydsensread import SolinstFileReader
+import numpy as np
 import pandas as pd
 from qtpy.QtCore import Qt, Slot, Signal
+from qtpy.QtGui import QColor
 from qtpy.QtWidgets import (
     QApplication, QFileDialog, QDialog, QLabel, QPushButton, QDialogButtonBox,
     QAbstractButton, QFormLayout, QGroupBox, QMessageBox, QGridLayout,
-    QFrame, QStackedWidget)
+    QFrame, QStackedWidget, QCheckBox)
 
 # ---- Local imports
-from sardes.config.gui import get_iconsize, RED
+from sardes.config.gui import get_iconsize, RED, YELLOWLIGHT
 from sardes.config.locale import _
 from sardes.api.tablemodels import SardesTableModel
 from sardes.api.timeseries import DataType, merge_timeseries_groups
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import NotEditableDelegate, SardesTableWidget
 from sardes.widgets.buttons import CheckboxPathBoxWidget
-
+from sardes.widgets.statusbar import MessageBoxWidget
 
 NOT_FOUND_MSG = _('Not found in database')
 NOT_FOUND_MSG_COLORED = '<font color=red>%s</font>' % NOT_FOUND_MSG
@@ -40,14 +42,30 @@ READ_ERROR_MSG_COLORED = '<font color=red>%s</font>' % READ_ERROR_MSG
 
 
 class ImportDataTableModel(SardesTableModel):
+    is_duplicated = None
+    highlight_duplicates = False
+
     def create_delegate_for_column(self, view, column):
         return NotEditableDelegate(self)
+
+    def set_duplicated(self, is_duplicated):
+        self.is_duplicated = is_duplicated
+        self.dataChanged.emit(
+            self.index(0, 0),
+            self.index(self.rowCount() - 1, self.columnCount() - 1)
+            )
+
+    # ---- SardesTableModel overrides
+    def data(self, index, role=Qt.DisplayRole):
+        """Qt method override."""
+        if role == Qt.BackgroundRole and self.is_duplicated is not None:
+            if self.is_duplicated[index.row()]:
+                return QColor(YELLOWLIGHT)
+        return super().data(index, role)
 
 
 class DataImportWizard(QDialog):
     sig_view_data = Signal(object)
-    sig_installation_info_uptated = Signal()
-    sig_previous_data_uptated = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -55,11 +73,26 @@ class DataImportWizard(QDialog):
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setModal(False)
-        self.resize(650, 600)
+        self.resize(575, 600)
 
-        self._data_is_loading = False
-        self._data_is_loaded = False
+        # A flag to indicate whether data is currently being loaded in the
+        # database.
+        self._loading_data_in_database = False
+        # A flag to indicate if the date were saved in the database during
+        # the current sesstion.
+        self._data_saved_in_database = False
+        # A flag to indicate whether this data import wizard is being updated.
+        self._is_updating = True
+        # A flag to indicate whether a confirmation message should be shown
+        # before saving potential duplicates in the database.
+        self._confirm_before_saving_duplicates = True
+
         self._file_reader = None
+
+        # An array of boolean values that indicate, for each reading of the
+        # imported data, whether data is already saved in the database for
+        # the corresponding sonde.
+        self._is_duplicated = None
 
         self._libraries = {
             'sondes_data': None,
@@ -86,7 +119,7 @@ class DataImportWizard(QDialog):
         file_layout.addRow(_('Location') + ' :', self.site_name_label)
         file_layout.addRow(_('Serial Number') + ' :', self.serial_number_label)
 
-        # Setup sonde installation info.
+        # Setup sonde installation info groupbox.
         self.sonde_label = QLabel()
         self.obs_well_label = QLabel()
         self.install_depth = QLabel()
@@ -94,6 +127,7 @@ class DataImportWizard(QDialog):
 
         sonde_info_widget = QFrame()
         sonde_form = QFormLayout(sonde_info_widget)
+        sonde_form.setContentsMargins(0, 0, 0, 0)
         sonde_form.addRow(_('Sonde') + ' :', self.sonde_label)
         sonde_form.addRow(_('Well') + ' :', self.obs_well_label)
         sonde_form.addRow(_('Depth') + ' :', self.install_depth)
@@ -107,12 +141,12 @@ class DataImportWizard(QDialog):
         self.sonde_stacked_widget = QStackedWidget()
         self.sonde_stacked_widget.addWidget(sonde_info_widget)
         self.sonde_stacked_widget.addWidget(self.sonde_msg_label)
-        
+
         sonde_groupbox = QGroupBox(_('Sonde Installation Info'))
         sonde_groupbox_layout = QGridLayout(sonde_groupbox)
         sonde_groupbox_layout.addWidget(self.sonde_stacked_widget)
 
-        # Setup comparison with previous data.
+        # Setup previous data groupbox.
         self.previous_date_label = QLabel()
         self.previous_level_label = QLabel()
         self.delta_level_label = QLabel()
@@ -149,7 +183,7 @@ class DataImportWizard(QDialog):
         previous_groupbox = QGroupBox(_('Previous Reading'))
         previous_groupbox_layout = QGridLayout(previous_groupbox)
         previous_groupbox_layout.addWidget(self.previous_stacked_widget)
-        
+
         # Make all label selectable with the mouse cursor.
         for layout in [file_layout, sonde_form, previous_layout]:
             for index in range(layout.count()):
@@ -168,8 +202,10 @@ class DataImportWizard(QDialog):
             self.table_model, multi_columns_sort=False,
             sections_movable=False, sections_hidable=False,
             disabled_actions=SardesTableWidget.EDIT_ACTIONS)
+        self._setup_message_boxes()
+
         horizontal_header = self.table_widget.tableview.horizontalHeader()
-        horizontal_header.setDefaultSectionSize(100)
+        horizontal_header.setDefaultSectionSize(125)
 
         # Add extra toolbar buttons.
         self.show_data_btn = create_toolbutton(
@@ -190,12 +226,12 @@ class DataImportWizard(QDialog):
         self.close_btn = QPushButton(_('Close'))
         self.close_btn.setDefault(False)
         self.close_btn.setAutoDefault(False)
-        self.load_btn = QPushButton(_('Load Data'))
-        self.load_btn.setDefault(False)
-        self.load_btn.setAutoDefault(False)
+        self.save_btn = QPushButton(_('Save to Database'))
+        self.save_btn.setDefault(False)
+        self.save_btn.setAutoDefault(False)
 
         self.button_box = QDialogButtonBox()
-        self.button_box.addButton(self.load_btn, self.button_box.ActionRole)
+        self.button_box.addButton(self.save_btn, self.button_box.ActionRole)
         self.button_box.addButton(self.next_btn, self.button_box.ApplyRole)
         self.button_box.addButton(self.close_btn, self.button_box.RejectRole)
         self.button_box.layout().insertSpacing(1, 100)
@@ -211,7 +247,7 @@ class DataImportWizard(QDialog):
         layout.addWidget(previous_groupbox, 1, 1)
         layout.addWidget(self.table_widget, 2, 0, 1, 2)
         layout.setRowStretch(2, 1)
-        layout.setRowMinimumHeight(3, 25)
+        layout.setRowMinimumHeight(3, 15)
         layout.addWidget(self.pathbox_widget, 4, 0, 1, 2)
         layout.setRowMinimumHeight(5, 5)
         layout.addWidget(self.button_box, 6, 0, 1, 2)
@@ -220,11 +256,6 @@ class DataImportWizard(QDialog):
 
         self._working_dir = get_home_dir()
         self._queued_filenames = []
-
-        self.sig_installation_info_uptated.connect(self._update_previous_data)
-        self.sig_installation_info_uptated.connect(
-            self._update_table_model_data)
-        self.sig_previous_data_uptated.connect(self._update_button_state)
 
     @property
     def filename(self):
@@ -264,14 +295,132 @@ class DataImportWizard(QDialog):
         self.db_connection_manager = db_connection_manager
         self.db_connection_manager.sig_database_connection_changed.connect(
             self._handle_database_connection_changed)
+        self.db_connection_manager.sig_tseries_data_changed.connect(
+            self._handle_tseries_data_changed)
+        self.db_connection_manager.sig_database_data_changed.connect(
+            self._handle_database_data_changed)
 
     def _handle_database_connection_changed(self, connected):
         """
         Handle when the connection to the database change.
         """
-        self._update_installation_info()
+        self._update()
+
+    def _handle_tseries_data_changed(self, sampling_feature_uuids):
+        """
+        Handle when timeseries data changed in the database.
+        """
+        if self._obs_well_uuid in sampling_feature_uuids:
+            self._update_button_state(is_updating=True)
+            self._update_previous_data()
+
+    def _handle_database_data_changed(self, data_names):
+        """
+        Handle when data needed by this wizard changed in the database.
+        """
+        if data_names in ['sondes_data', 'sonde_installations',
+                          'observation_wells_data', 'sonde_models_lib']:
+            self._update()
+
+    # ---- Message boxes
+    def _setup_message_boxes(self):
+        """
+        Setup a warning box that shows when data already exists
+        in the database for the data and sonde serial number related to the
+        imported data.
+        """
+        self.duplicates_msgbox = self.table_widget.install_message_box(
+            MessageBoxWidget(color=YELLOWLIGHT, icon='warning'))
+        prev_button = self.duplicates_msgbox.add_button(_('Previous'))
+        prev_button.clicked.connect(
+            lambda _: self.goto_closest_duplicate(direction='previous'))
+        next_button = self.duplicates_msgbox.add_button(_('Next'))
+        next_button.clicked.connect(
+            lambda _: self.goto_closest_duplicate(direction='next'))
+
+        self.duplicates_msgbox.sig_closed.connect(
+            lambda: self.table_model.set_duplicated(None))
+
+        self.datasaved_msgbox = self.table_widget.install_message_box(
+            MessageBoxWidget(color='#E5FFCC', icon='succes'))
+        self.datasaved_msgbox.set_message(
+            _('Data saved sucessfully in the database.'))
+        self.datasaved_msgbox.sig_closed.connect(
+            self._handle_datasaved_msgbox_closed)
+
+    def _handle_datasaved_msgbox_closed(self):
+        """
+        Handled when the message box that indicates the data were saved
+        sucessfully in the dabase is closed.
+        """
+        self._data_saved_in_database = False
+        self._update_duplicated_satus()
+
+    def _update_duplicated_satus(self):
+        """
+        Update the duplicate warning text and status as well as the table
+        duplicate highlighting data.
+        """
+        is_duplicated = (
+            None if self._data_saved_in_database else self._is_duplicated)
+        nbr_duplicated = (
+            0 if is_duplicated is None else np.sum(is_duplicated))
+
+        self.table_model.set_duplicated(is_duplicated)
+        if nbr_duplicated == 0:
+            self.duplicates_msgbox.hide()
+        else:
+            self.duplicates_msgbox.set_message(_(
+                "Data for {} of these readings was found in the database."
+                .format(nbr_duplicated)
+                ))
+            self.duplicates_msgbox.show()
+        self._update_button_state(is_updating=False)
+
+    def goto_closest_duplicate(self, direction):
+        """
+        Go to the next duplicate reding in the table when direction is 'next'
+        and go to the previous one when it is 'previous'.
+        """
+        tableview = self.table_widget.tableview
+        tableview.setFocus()
+        current_index = tableview.currentIndex()
+
+        sorted_duplicated = pd.Series(self._is_duplicated[
+            tableview.model()._map_row_from_source].flatten())
+        duplicated_rows = sorted_duplicated[sorted_duplicated.values].index
+
+        if direction == 'next':
+            try:
+                goto_row = duplicated_rows[
+                    duplicated_rows > current_index.row()][0]
+            except IndexError:
+                goto_row = duplicated_rows[0]
+        elif direction == 'previous':
+            try:
+                goto_row = duplicated_rows[
+                    duplicated_rows < current_index.row()][-1]
+            except IndexError:
+                goto_row = duplicated_rows[-1]
+
+        tableview.selectionModel().setCurrentIndex(
+            tableview.model().index(goto_row, current_index.column()),
+            tableview.selectionModel().ClearAndSelect)
 
     # ---- Private API
+    def _update(self):
+        """
+        Update the content of this data import wizard.
+        """
+        self._update_button_state(is_updating=True)
+        self._update_installation_info()
+        # Calling the above method will trigger this sequence of calls in
+        # this data import data wizard :
+        # _update_installation_info -> _set_installation_info ->
+        # _update_table_model_data -> _update_previous_data ->
+        # _set_previous_data -> _update_duplicated_satus ->
+        # _update_button_state
+
     def _update_installation_info(self):
         """
         Update sonde installation info.
@@ -329,7 +478,7 @@ class DataImportWizard(QDialog):
             self.install_depth.setText(NOT_FOUND_MSG_COLORED)
             self.install_period.setText(NOT_FOUND_MSG_COLORED)
             self.sonde_stacked_widget.setCurrentIndex(0)
-        self.sig_installation_info_uptated.emit()
+        self._update_table_model_data()
 
     def _update_previous_data(self):
         """
@@ -354,7 +503,7 @@ class DataImportWizard(QDialog):
         self.delta_level_label.clear()
         self.delta_date_label.clear()
         self.previous_stacked_widget.setCurrentIndex(0)
-        self.sig_previous_data_uptated.emit()
+        self._update_duplicated_satus()
 
     def _set_previous_data(self, tseries_groups):
         """
@@ -362,6 +511,7 @@ class DataImportWizard(QDialog):
         stored in the database previous to the data series contained in
         the data file.
         """
+        self._is_duplicated = None
         if self._file_reader is None:
             self._clear_previous_data()
             return
@@ -369,14 +519,14 @@ class DataImportWizard(QDialog):
             self.previous_msg_label.setText(
                 _('Info not available because not connected to a database.'))
             self.previous_stacked_widget.setCurrentIndex(1)
-            self.sig_previous_data_uptated.emit()
+            self._update_duplicated_satus()
             return
         if tseries_groups is None:
             self._clear_previous_data()
             return
 
         prev_dataf = merge_timeseries_groups(tseries_groups)
-        new_dataf = self.table_model.dataf
+        new_dataf = self.tseries_dataf
         if (DataType.WaterLevel not in prev_dataf.columns or
                 DataType.WaterLevel not in new_dataf.columns):
             self._clear_previous_data()
@@ -401,7 +551,7 @@ class DataImportWizard(QDialog):
                       self.obs_well_label.text(),
                       new_series.index[0].strftime("%Y-%m-%d %H:%M")))
             self.previous_stacked_widget.setCurrentIndex(1)
-            self.sig_previous_data_uptated.emit()
+            self._update_duplicated_satus()
             return
 
         self.previous_stacked_widget.setCurrentIndex(0)
@@ -419,14 +569,22 @@ class DataImportWizard(QDialog):
                 delta_datetime.seconds // 3600, _('hrs'),
                 (delta_datetime.seconds // 60) % 60, _('mins')
                 ))
-        self.sig_previous_data_uptated.emit()
+
+        # Check for duplicates.
+        in_db = (prev_dataf[['datetime', 'sonde_id']]
+                 .drop_duplicates().set_index('datetime', drop=True))
+        to_add = new_dataf[['datetime']].set_index('datetime', drop=True)
+        to_add['sonde_id'] = self._sonde_serial_no
+        self._is_duplicated = to_add.isin(in_db).values
+
+        self._update_duplicated_satus()
 
     def _load_next_queued_data_file(self):
         """
         Load the data from the next file in the queue.
         """
         self.table_widget._start_process(_('Loading data...'))
-        self._data_is_loaded = False
+        self._data_saved_in_database = False
         self._filename = self._queued_filenames.pop(0)
         self.working_directory = osp.dirname(self._filename)
         self.filename_label.setText(osp.basename(self._filename))
@@ -448,7 +606,7 @@ class DataImportWizard(QDialog):
             self.site_name_label.setText(sites.site_name)
             self.projectid_label.setText(sites.project_name)
             self._sonde_serial_no = sites.instrument_serial_number or None
-            status_msg = _('Data loaded sucessfully.')
+            status_msg = _('Data imported sucessfully from the file.')
         self._update_installation_info()
         self.table_widget._handle_process_ended(status_msg)
 
@@ -498,14 +656,26 @@ class DataImportWizard(QDialog):
         else:
             self.table_model.set_model_data(
                 pd.DataFrame([]), dataf_columns_mapper=[])
+        self._update_previous_data()
 
-    def _update_button_state(self):
-        """Update the state of the dialog's buttons."""
-        self.pathbox_widget.setEnabled(not self._data_is_loading)
-        self.button_box.setEnabled(not self._data_is_loading)
+    def _update_button_state(self, is_updating=None):
+        """
+        Update the state of the dialog's buttons.
+
+        Parameters
+        ----------
+        is_updating: bool
+            Whether the data import wizard is being updated.
+        """
+        if is_updating is not None:
+            self._is_updating = is_updating
+
+        self.pathbox_widget.setEnabled(not self._loading_data_in_database and
+                                       not self._is_updating)
+        self.button_box.setEnabled(not self._loading_data_in_database and
+                                   not self._is_updating)
         self.next_btn.setEnabled(len(self._queued_filenames) > 0)
-        self.load_btn.setEnabled(self._obs_well_uuid is not None and
-                                 not self._data_is_loaded and
+        self.save_btn.setEnabled(self._obs_well_uuid is not None and
                                  self.db_connection_manager.is_connected())
         self.show_data_btn.setEnabled(self._obs_well_uuid is not None)
 
@@ -517,8 +687,9 @@ class DataImportWizard(QDialog):
         if button == self.close_btn:
             self.close()
         elif button == self.next_btn:
+            self.datasaved_msgbox.hide()
             self._load_next_queued_data_file()
-        elif button == self.load_btn:
+        elif button == self.save_btn:
             if (self.pathbox_widget.is_enabled() and
                     not self.pathbox_widget.is_valid()):
                 QMessageBox.warning(
@@ -530,28 +701,55 @@ class DataImportWizard(QDialog):
                       "that option.").format(self.pathbox_widget.label)
                     )
                 return
-            self._save_imported_data_to_database()
+            self._save_data_to_database()
 
-    def _save_imported_data_to_database(self):
+    def _save_data_to_database(self):
         """
-        Save the data currently imported in this wizard in the database.
+        Save the imported data to the database.
         """
+        nbr_duplicated = (
+            0 if self._is_duplicated is None else np.sum(self._is_duplicated))
+        if nbr_duplicated > 0 and self._confirm_before_saving_duplicates:
+            msg_box = QMessageBox(
+                QMessageBox.Question,
+                _("Confirm Dulicates Saving"),
+                _("This operation will potentially add {} duplicate "
+                  "readings to the database.<br><br>"
+                  "Are you sure you want to continue?<br><br>"
+                  .format(nbr_duplicated)
+                  ),
+                parent=self,
+                buttons=QMessageBox.Yes | QMessageBox.No)
+
+            chkbox = QCheckBox(
+                _("Do not show this message again during this session."))
+            msg_box.setCheckBox(chkbox)
+
+            answer = msg_box.exec_()
+            self._confirm_before_saving_duplicates = not chkbox.isChecked()
+            if answer == QMessageBox.No:
+                self.table_model.set_duplicated(self._is_duplicated)
+                self.duplicates_msgbox.show()
+                return
+
         self.table_widget._start_process()
         self.table_widget.statusBar().showMessage(
-            _('Saving data in the database...'))
+            _('Saving data to the database...'))
+        self._loading_data_in_database = True
         self.db_connection_manager.add_timeseries_data(
             self.tseries_dataf, self._obs_well_uuid, self._install_id,
-            callback=self._handle_tseries_data_saved)
-        self._data_is_loading = True
+            callback=self._handle_data_saved_in_database)
         self._update_button_state()
 
     @Slot()
-    def _handle_tseries_data_saved(self):
+    def _handle_data_saved_in_database(self):
         """
-        Handle when tseries data were saved in the database.
+        Handle when the imported data were saved in the database.
         """
-        self._data_is_loaded = True
-        self._data_is_loading = False
+        self._data_saved_in_database = True
+        self._loading_data_in_database = False
+        self.duplicates_msgbox.close()
+        self.datasaved_msgbox.show()
 
         # Move input file if option is enabled and directory is valid.
         self._move_input_data_file()
@@ -559,7 +757,8 @@ class DataImportWizard(QDialog):
         self.table_widget._end_process()
         self.table_widget.statusBar().showMessage(
             _('Data saved sucessfully in the database.'))
-        self._update_button_state()
+
+        self._update_button_state(is_updating=False)
 
     def _move_input_data_file(self):
         """"
@@ -652,16 +851,12 @@ if __name__ == '__main__':
     dbconnmanager.connect_to_db(DatabaseAccessorDemo())
 
     dataimportwizard = DataImportWizard()
-    dbconnmanager.register_model(
-        dataimportwizard,
-        'sondes_data',
-        ['sonde_models_lib', 'sonde_installations',
-         'observation_wells_data'])
+    dataimportwizard.set_database_connection_manager(dbconnmanager)
     dataimportwizard._queued_filenames = [
         'C:/Users/User/sardes/sardes/plugins/dataio/'
+        'tests/solinst_level_testfile.csv',
+        'C:/Users/User/sardes/sardes/plugins/dataio/'
         'tests/solinst_level_testfile.csv']
-    dbconnmanager.update_model('data_import_wizard')
-
     dataimportwizard.show()
 
     sys.exit(app.exec_())

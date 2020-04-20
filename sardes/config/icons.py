@@ -19,7 +19,7 @@ import qtawesome as qta
 
 # ---- Local imports
 from sardes import __rootdir__
-from sardes.config.gui import ICON_COLOR, GREEN, RED
+from sardes.config.gui import ICON_COLOR, GREEN, RED, YELLOW
 
 DIRNAME = os.path.join(__rootdir__, 'ressources', 'icons')
 LOCAL_ICONS = {
@@ -47,6 +47,9 @@ FA_ICONS = {
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'clear_selected_data': [
         ('mdi.close-box-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'close': [
+        ('fa.close', 'fa.close', 'fa.close'),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'close_all': [
         ('fa.close', 'fa.close', 'fa.close'),
@@ -138,6 +141,9 @@ FA_ICONS = {
     'menu_down': [
         ('mdi.menu-down',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'menu_right': [
+        ('mdi.menu-right',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'pan': [
         ('mdi.pan',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
@@ -203,8 +209,8 @@ FA_ICONS = {
         {'color': ICON_COLOR, 'scale_factor': 1.1,
          'hflip': True}],
     'warning': [
-        ('mdi.alert-circle-outline',),
-        {'color': RED, 'scale_factor': 1.3}],
+        ('mdi.alert-outline',),
+        {'color': YELLOW, 'scale_factor': 1.3}],
     'zoom_to_rect': [
         ('mdi.magnify-plus-cursor',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
