@@ -672,6 +672,7 @@ class SardesTableView(QTableView):
         self.setHorizontalHeader(SardesHeaderView(
             self, sections_movable))
         self.horizontalHeader().sig_sort_by_column.connect(self.sort_by_column)
+        self.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
 
         # Setup actions and shortcuts.
         self._actions = {}
