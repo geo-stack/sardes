@@ -412,7 +412,9 @@ class DataImportWizard(QDialog):
             disabled_actions=SardesTableWidget.EDIT_ACTIONS)
         self._setup_message_boxes()
 
-        self.horizontal_header = self.table_widget.tableview.horizontalHeader()
+        # Setup the horizontal header.
+        horizontal_header = self.table_widget.tableview.horizontalHeader()
+        horizontal_header.setDefaultSectionSize(125)
         self.clear_table()
 
         # Add extra toolbar buttons.
