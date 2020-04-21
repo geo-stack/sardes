@@ -354,6 +354,10 @@ class SardesTableModelBase(QAbstractTableModel):
     RowRemoved = 2
     RowDeleted = 3
 
+    BackgroundColorDeleted = QColor('#FF9999')
+    BackgroundColorEdited = QColor('#CCFF99')
+    BackgroundColorBase = QStyleOption().palette.base().color()
+
     def __init__(self, table_title='', table_id='', data_columns_mapper=None):
         """
         Parameters
@@ -517,15 +521,13 @@ class SardesTableModelBase(QAbstractTableModel):
             else:
                 value = str(value)
             return value
-        elif role == Qt.ForegroundRole:
-            return QVariant()
         elif role == Qt.BackgroundRole:
             if self.is_data_deleted_at(index):
-                return QColor('#FF9999')
+                return self.BackgroundColorDeleted
             elif self.is_data_edited_at(index):
-                return QColor('#CCFF99')
+                return self.BackgroundColorEdited
             else:
-                return QStyleOption().palette.base().color()
+                return self.BackgroundColorBase
         else:
             return QVariant()
 

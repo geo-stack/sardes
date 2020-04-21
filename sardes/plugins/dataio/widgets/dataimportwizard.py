@@ -391,6 +391,15 @@ class DataImportWizard(QDialog):
             tableview.selectionModel().ClearAndSelect)
 
     # ---- Table
+    def clear_table(self):
+        """
+        Clear the content of the table.
+        """
+        horizontal_header = self.table_widget.tableview.horizontalHeader()
+        for section in range(horizontal_header.count()):
+            horizontal_header.setSectionHidden(section, True)
+        self.table_model.set_model_data(pd.DataFrame([]))
+
     def _setup_table(self):
         """
         Setup the table model and widget used to display the imported data
@@ -403,7 +412,9 @@ class DataImportWizard(QDialog):
             disabled_actions=SardesTableWidget.EDIT_ACTIONS)
         self._setup_message_boxes()
 
-        self.horizontal_header = self.table_widget.tableview.horizontalHeader()
+        # Setup the horizontal header.
+        horizontal_header = self.table_widget.tableview.horizontalHeader()
+        horizontal_header.setDefaultSectionSize(125)
         self.clear_table()
 
         # Add extra toolbar buttons.
@@ -419,14 +430,6 @@ class DataImportWizard(QDialog):
         self.table_widget.add_toolbar_separator()
         self.table_widget.add_toolbar_widget(self.show_data_btn)
         return self.table_widget
-
-    def clear_table(self):
-        """
-        Clear the content of the table.
-        """
-        for section in range(self.horizontal_header.count()):
-            self.horizontal_header.setSectionHidden(section, True)
-        self.table_model.set_model_data(pd.DataFrame([]))
 
     def _update_table_model_data(self):
         """
