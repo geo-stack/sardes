@@ -348,16 +348,6 @@ class DataImportWizard(SardesPaneWidget):
             MessageBoxWidget(color='#E5FFCC', icon='succes'))
         self.datasaved_msgbox.set_message(
             _('Data saved sucessfully in the database.'))
-        self.datasaved_msgbox.sig_closed.connect(
-            self._handle_datasaved_msgbox_closed)
-
-    def _handle_datasaved_msgbox_closed(self):
-        """
-        Handled when the message box that indicates the data were saved
-        sucessfully in the dabase is closed.
-        """
-        self._data_saved_in_database = False
-        self._update_duplicated_satus()
 
     def _update_duplicated_satus(self):
         """
@@ -666,6 +656,7 @@ class DataImportWizard(SardesPaneWidget):
         """
         Load the data from the next file in the queue.
         """
+        self.datasaved_msgbox.hide()
         self.table_widget._start_process(_('Loading data...'))
         self._data_saved_in_database = False
         self._filename = self._queued_filenames.pop(0)
@@ -715,14 +706,20 @@ class DataImportWizard(SardesPaneWidget):
         if is_updating is not None:
             self._is_updating = is_updating
 
+        self.show_data_btn.setEnabled(self._obs_well_uuid is not None)
         self.pathbox_widget.setEnabled(not self._loading_data_in_database and
                                        not self._is_updating)
-        self.button_box.setEnabled(not self._loading_data_in_database and
-                                   not self._is_updating)
-        self.next_btn.setEnabled(len(self._queued_filenames) > 0)
-        self.save_btn.setEnabled(self._obs_well_uuid is not None and
-                                 self.db_connection_manager.is_connected())
-        self.show_data_btn.setEnabled(self._obs_well_uuid is not None)
+        if self._loading_data_in_database or self._is_updating:
+            self.open_files_btn.setEnabled(False)
+            self.next_btn.setEnabled(False)
+            self.save_btn.setEnabled(False)
+        else:
+            self.open_files_btn.setEnabled(True)
+            self.next_btn.setEnabled(len(self._queued_filenames) > 0)
+            self.save_btn.setEnabled(
+                self._obs_well_uuid is not None and
+                self.db_connection_manager.is_connected() and
+                not self._data_saved_in_database)
 
     def _save_data_to_database(self):
         """
