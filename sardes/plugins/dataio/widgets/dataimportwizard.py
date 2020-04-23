@@ -724,34 +724,22 @@ class DataImportWizard(SardesPaneWidget):
                                  self.db_connection_manager.is_connected())
         self.show_data_btn.setEnabled(self._obs_well_uuid is not None)
 
-    @Slot(QAbstractButton)
-    def _handle_button_click_event(self, button):
-        """
-        Handle when a button is clicked on the dialog button box.
-        """
-        if button == self.close_btn:
-            self.close()
-        elif button == self.next_btn:
-            self.datasaved_msgbox.hide()
-            self._load_next_queued_data_file()
-        elif button == self.save_btn:
-            if (self.pathbox_widget.is_enabled() and
-                    not self.pathbox_widget.is_valid()):
-                QMessageBox.warning(
-                    self,
-                    _("Invalid Directory"),
-                    _("The directory specified for the option "
-                      "<i>{}</i> is invalid.<br><br>"
-                      "Please select a valid directory or uncheck "
-                      "that option.").format(self.pathbox_widget.label)
-                    )
-                return
-            self._save_data_to_database()
-
     def _save_data_to_database(self):
         """
         Save the imported data to the database.
         """
+        if (self.pathbox_widget.is_enabled() and
+                not self.pathbox_widget.is_valid()):
+            QMessageBox.warning(
+                self,
+                _("Invalid Directory"),
+                _("The directory specified for the option "
+                  "<i>{}</i> is invalid.<br><br>"
+                  "Please select a valid directory or uncheck "
+                  "that option.").format(self.pathbox_widget.label)
+                )
+            return
+
         nbr_duplicated = (
             0 if self._is_duplicated is None else np.sum(self._is_duplicated))
         if nbr_duplicated > 0 and self._confirm_before_saving_duplicates:
