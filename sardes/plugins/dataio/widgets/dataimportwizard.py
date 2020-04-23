@@ -21,13 +21,13 @@ import pandas as pd
 from qtpy.QtCore import Qt, Slot, Signal
 from qtpy.QtGui import QColor
 from qtpy.QtWidgets import (
-    QApplication, QFileDialog, QDialog, QLabel, QPushButton, QDialogButtonBox,
-    QAbstractButton, QFormLayout, QGroupBox, QMessageBox, QGridLayout,
-    QFrame, QStackedWidget, QCheckBox)
+    QApplication, QFileDialog, QLabel, QFormLayout, QGroupBox, QMessageBox,
+    QGridLayout, QFrame, QStackedWidget, QCheckBox, QWidget)
 
 # ---- Local imports
 from sardes.config.gui import get_iconsize, RED, YELLOWLIGHT
 from sardes.config.locale import _
+from sardes.api.panes import SardesPaneWidget
 from sardes.api.tablemodels import SardesTableModel
 from sardes.api.timeseries import DataType, merge_timeseries_groups
 from sardes.utils.qthelpers import create_toolbutton
@@ -79,7 +79,6 @@ class DataImportWizard(SardesPaneWidget):
         self.setWindowTitle(_('Data Import Wizard'))
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
-        self.setModal(False)
         self.resize(575, 600)
 
         # A flag to indicate whether data is currently being loaded in the
@@ -872,21 +871,22 @@ class DataImportWizard(SardesPaneWidget):
         if self._obs_well_uuid is not None:
             self.sig_view_data.emit(self._obs_well_uuid)
 
+    def _browse_files(self):
+        """
+        Opend a Qt file dialog to select input data files.
+        """
+        filenames = QFileDialog.getOpenFileNames(
+            self.parent(), 'Select data files',
+            self.working_directory, '*.csv ; *.lev ; *.xle')[0]
+        if filenames:
+            self._queued_filenames = filenames
+            self._load_next_queued_data_file()
+
     # ---- Qt method override/extension
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
         self._queued_filenames = []
         super().closeEvent(event)
-
-    def show(self):
-        """Reimplement Qt show."""
-        if not len(self._queued_filenames):
-            self._queued_filenames, _ = QFileDialog.getOpenFileNames(
-                self.parent(), 'Select data files',
-                self.working_directory, '*.csv ; *.lev ; *.xle')
-        if len(self._queued_filenames):
-            super().show()
-            self._load_next_queued_data_file()
 
 
 if __name__ == '__main__':
