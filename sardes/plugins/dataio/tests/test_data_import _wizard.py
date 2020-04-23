@@ -70,14 +70,12 @@ def data_import_wizard(qtbot, dbconnmanager, testfiles, mocker):
     data_import_wizard.set_database_connection_manager(dbconnmanager)
     qtbot.addWidget(data_import_wizard)
 
-    exts = [osp.splitext(file)[0] for file in testfiles]
-    mocker.patch.object(
-        QFileDialog, 'getOpenFileNames', return_value=(testfiles.copy(), exts))
-
     data_import_wizard.show()
     qtbot.waitForWindowShown(data_import_wizard)
-    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False,
-                    timeout=3000)
+
+    assert len(data_import_wizard._queued_filenames) == 0
+    assert not data_import_wizard.duplicates_msgbox.isVisible()
+    assert not data_import_wizard.datasaved_msgbox.isVisible()
 
     return data_import_wizard
 
@@ -102,11 +100,19 @@ def assert_tseries_len(data_import_wizard, data_type, expected_length):
 # =============================================================================
 # ---- Tests
 # =============================================================================
-def test_data_import_wizard_init(qtbot, mocker, testfiles, data_import_wizard):
+def test_read_data(qtbot, mocker, testfiles, data_import_wizard):
     """
     Test that the data import wizard imports and displays data
     as expected.
     """
+    # Select some files from the disk.
+    exts = [osp.splitext(file)[0] for file in testfiles]
+    mocker.patch.object(
+        QFileDialog, 'getOpenFileNames', return_value=(testfiles.copy(), exts))
+    qtbot.mouseClick(data_import_wizard.open_files_btn, Qt.LeftButton)
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False,
+                    timeout=3000)
+
     # The first selected file is read automatically.
     assert data_import_wizard._queued_filenames == testfiles[1:]
     assert data_import_wizard.working_directory == osp.dirname(testfiles[-1])
@@ -339,5 +345,4 @@ def test_duplicate_readings(qtbot, mocker, data_import_wizard):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw',
-                 '-k', 'test_duplicate_readings'])
+    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
