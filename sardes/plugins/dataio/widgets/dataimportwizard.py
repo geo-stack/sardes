@@ -617,6 +617,7 @@ class DataImportWizard(SardesPaneWidget):
             self._clear_previous_data()
             return
 
+        # Update Previous Data Info.
         new_series = pd.Series(
             new_dataf[DataType.WaterLevel].values,
             index=new_dataf['datetime']).dropna()
@@ -636,24 +637,22 @@ class DataImportWizard(SardesPaneWidget):
                       self.obs_well_label.text(),
                       new_series.index[0].strftime("%Y-%m-%d %H:%M")))
             self.previous_stacked_widget.setCurrentIndex(1)
-            self._update_duplicated_satus()
-            return
-
-        self.previous_stacked_widget.setCurrentIndex(0)
-        prev_level = prev_series.iat[-1]
-        delta_level = new_series.iat[0] - prev_level
-        prev_datetime = prev_series.index[-1]
-        delta_datetime = (new_series.index[0] - prev_datetime)
-        self.previous_level_label.setText('{:0.6f}'.format(prev_level))
-        self.delta_level_label.setText('{:0.6f}'.format(delta_level))
-        self.previous_date_label.setText(
-            prev_datetime.strftime("%Y-%m-%d %H:%M"))
-        self.delta_date_label.setText(
-            '{:0.0f} {} {:0.0f} {} {:0.0f} {}'.format(
-                delta_datetime.days, _('days'),
-                delta_datetime.seconds // 3600, _('hrs'),
-                (delta_datetime.seconds // 60) % 60, _('mins')
-                ))
+        else:
+            self.previous_stacked_widget.setCurrentIndex(0)
+            prev_level = prev_series.iat[-1]
+            delta_level = new_series.iat[0] - prev_level
+            prev_datetime = prev_series.index[-1]
+            delta_datetime = (new_series.index[0] - prev_datetime)
+            self.previous_level_label.setText('{:0.6f}'.format(prev_level))
+            self.delta_level_label.setText('{:0.6f}'.format(delta_level))
+            self.previous_date_label.setText(
+                prev_datetime.strftime("%Y-%m-%d %H:%M"))
+            self.delta_date_label.setText(
+                '{:0.0f} {} {:0.0f} {} {:0.0f} {}'.format(
+                    delta_datetime.days, _('days'),
+                    delta_datetime.seconds // 3600, _('hrs'),
+                    (delta_datetime.seconds // 60) % 60, _('mins')
+                    ))
 
         # Check for duplicates.
         in_db = (prev_dataf[['datetime', 'sonde_id']]
@@ -661,7 +660,6 @@ class DataImportWizard(SardesPaneWidget):
         to_add = new_dataf[['datetime']].set_index('datetime', drop=True)
         to_add['sonde_id'] = self._sonde_serial_no
         self._is_duplicated = to_add.isin(in_db).values
-
         self._update_duplicated_satus()
 
     def _load_next_queued_data_file(self):
