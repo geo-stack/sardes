@@ -235,7 +235,7 @@ class DataImportWizard(SardesPaneWidget):
         upper_toolbar.addWidget(self.save_btn)
         self.next_btn = create_toolbutton(
             self,
-            icon='next_file',
+            icon='file_next',
             text=_("Next File"),
             tip=_("Open a menu to select the columns to "
                   "display in this table."),

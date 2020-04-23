@@ -33,6 +33,9 @@ FA_ICONS = {
     'browse_directory': [
         ('mdi.folder-open',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'browse_files': [
+        ('fa5.folder-open',),
+        {'color': ICON_COLOR, 'scale_factor': 1}],
     'bug': [
         ('mdi.bug',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
@@ -110,6 +113,9 @@ FA_ICONS = {
     'file_import': [
         ('mdi.file-import',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
+    'file_next': [
+        ('mdi.arrow-right-bold',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'home': [
         ('mdi.home',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
@@ -159,6 +165,9 @@ FA_ICONS = {
     'save': [
         ('fa.save',),
         {'color': ICON_COLOR}],
+    'save_to_db': [
+        ('mdi.upload',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'select_all': [
         ('mdi.select-all',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
