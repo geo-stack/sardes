@@ -222,6 +222,10 @@ class DataImportWizard(QDialog):
 
         self.pathbox_widget = CheckboxPathBoxWidget(
             label=_('Move the input file to this location after loading data'))
+        pathbox_groupbox = QGroupBox()
+        pathbox_layout = QGridLayout(pathbox_groupbox)
+        pathbox_layout.addWidget(self.pathbox_widget)
+
 
         # Setup the layout.
         layout = QGridLayout(self)
