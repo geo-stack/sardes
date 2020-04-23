@@ -71,7 +71,7 @@ class ImportDataTableModel(SardesTableModel):
         return super().data(index, role)
 
 
-class DataImportWizard(QDialog):
+class DataImportWizard(SardesPaneWidget):
     sig_view_data = Signal(object)
 
     def __init__(self, parent=None):
@@ -203,46 +203,63 @@ class DataImportWizard(QDialog):
         # Setup the table widget.
         table_widget = self._setup_table()
 
-        # Setup the dialog button box.
-        self.next_btn = QPushButton(_('Next'))
-        self.next_btn.setDefault(True)
-        self.close_btn = QPushButton(_('Close'))
-        self.close_btn.setDefault(False)
-        self.close_btn.setAutoDefault(False)
-        self.save_btn = QPushButton(_('Save to Database'))
-        self.save_btn.setDefault(False)
-        self.save_btn.setAutoDefault(False)
-
-        self.button_box = QDialogButtonBox()
-        self.button_box.addButton(self.save_btn, self.button_box.ActionRole)
-        self.button_box.addButton(self.next_btn, self.button_box.ApplyRole)
-        self.button_box.addButton(self.close_btn, self.button_box.RejectRole)
-        self.button_box.layout().insertSpacing(1, 100)
-        self.button_box.clicked.connect(self._handle_button_click_event)
-
         self.pathbox_widget = CheckboxPathBoxWidget(
             label=_('Move the input file to this location after loading data'))
         pathbox_groupbox = QGroupBox()
         pathbox_layout = QGridLayout(pathbox_groupbox)
         pathbox_layout.addWidget(self.pathbox_widget)
 
+        # Setup toolbar.
+        upper_toolbar = self.get_upper_toolbar()
+        self.open_files_btn = create_toolbutton(
+            self,
+            icon='browse_files',
+            text=_("Open File"),
+            tip=_("Open a menu to select the columns to "
+                  "display in this table."),
+            triggered=self._browse_files,
+            shortcut='Ctrl+O',
+            iconsize=get_iconsize()
+            )
+        upper_toolbar.addWidget(self.open_files_btn)
+        self.save_btn = create_toolbutton(
+            self,
+            icon='save_to_db',
+            text=_("Save to Database"),
+            tip=_("Open a menu to select the columns to "
+                  "display in this table."),
+            triggered=self._save_data_to_database,
+            iconsize=get_iconsize()
+            )
+        upper_toolbar.addWidget(self.save_btn)
+        self.next_btn = create_toolbutton(
+            self,
+            icon='next_file',
+            text=_("Next File"),
+            tip=_("Open a menu to select the columns to "
+                  "display in this table."),
+            triggered=self._load_next_queued_data_file,
+            iconsize=get_iconsize()
+            )
+        upper_toolbar.addWidget(self.next_btn)
 
         # Setup the layout.
-        layout = QGridLayout(self)
-        layout.addWidget(file_groupbox, 0, 0, 1, 2)
-        layout.addWidget(sonde_groupbox, 1, 0)
-        layout.addWidget(previous_groupbox, 1, 1)
-        layout.addWidget(table_widget, 2, 0, 1, 2)
-        layout.setRowStretch(2, 1)
-        layout.setRowMinimumHeight(3, 15)
-        layout.addWidget(self.pathbox_widget, 4, 0, 1, 2)
-        layout.setRowMinimumHeight(5, 5)
-        layout.addWidget(self.button_box, 6, 0, 1, 2)
+        central_widget = QWidget()
+        layout = QGridLayout(central_widget)
+        layout.setContentsMargins(0, 3, 0, 0)
+        layout.addWidget(pathbox_groupbox, 0, 0, 1, 2)
+        layout.addWidget(file_groupbox, 1, 0, 1, 2)
+        layout.addWidget(sonde_groupbox, 2, 0)
+        layout.addWidget(previous_groupbox, 2, 1)
+        layout.addWidget(table_widget, 3, 0, 1, 2)
+        layout.setRowStretch(3, 1)
+
         layout.setColumnStretch(0, 1)
         layout.setColumnStretch(1, 1)
 
         self._working_dir = get_home_dir()
         self._queued_filenames = []
+        self.set_central_widget(central_widget)
 
     @property
     def filename(self):
