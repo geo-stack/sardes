@@ -663,6 +663,7 @@ class DataImportWizard(SardesPaneWidget):
         self.working_directory = osp.dirname(self._filename)
         self.filename_label.setText(osp.basename(self._filename))
         self.filename_label.setToolTip(self._filename)
+        self._update_button_state(is_updating=True)
         try:
             self._file_reader = SolinstFileReader(self._filename)
         except Exception as e:
