@@ -21,13 +21,13 @@ import pandas as pd
 from qtpy.QtCore import Qt, Slot, Signal
 from qtpy.QtGui import QColor
 from qtpy.QtWidgets import (
-    QApplication, QFileDialog, QDialog, QLabel, QPushButton, QDialogButtonBox,
-    QAbstractButton, QFormLayout, QGroupBox, QMessageBox, QGridLayout,
-    QFrame, QStackedWidget, QCheckBox)
+    QApplication, QFileDialog, QLabel, QFormLayout, QGroupBox, QMessageBox,
+    QGridLayout, QFrame, QStackedWidget, QCheckBox, QWidget)
 
 # ---- Local imports
 from sardes.config.gui import get_iconsize, RED, YELLOWLIGHT
 from sardes.config.locale import _
+from sardes.api.panes import SardesPaneWidget
 from sardes.api.tablemodels import SardesTableModel
 from sardes.api.timeseries import DataType, merge_timeseries_groups
 from sardes.utils.qthelpers import create_toolbutton
@@ -71,7 +71,7 @@ class ImportDataTableModel(SardesTableModel):
         return super().data(index, role)
 
 
-class DataImportWizard(QDialog):
+class DataImportWizard(SardesPaneWidget):
     sig_view_data = Signal(object)
 
     def __init__(self, parent=None):
@@ -79,7 +79,6 @@ class DataImportWizard(QDialog):
         self.setWindowTitle(_('Data Import Wizard'))
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
-        self.setModal(False)
         self.resize(575, 600)
 
         # A flag to indicate whether data is currently being loaded in the
@@ -95,6 +94,8 @@ class DataImportWizard(QDialog):
         self._confirm_before_saving_duplicates = True
 
         self._file_reader = None
+        self._working_dir = get_home_dir()
+        self._queued_filenames = []
 
         # An array of boolean values that indicate, for each reading of the
         # imported data, whether data is already saved in the database for
@@ -203,42 +204,61 @@ class DataImportWizard(QDialog):
         # Setup the table widget.
         table_widget = self._setup_table()
 
-        # Setup the dialog button box.
-        self.next_btn = QPushButton(_('Next'))
-        self.next_btn.setDefault(True)
-        self.close_btn = QPushButton(_('Close'))
-        self.close_btn.setDefault(False)
-        self.close_btn.setAutoDefault(False)
-        self.save_btn = QPushButton(_('Save to Database'))
-        self.save_btn.setDefault(False)
-        self.save_btn.setAutoDefault(False)
-
-        self.button_box = QDialogButtonBox()
-        self.button_box.addButton(self.save_btn, self.button_box.ActionRole)
-        self.button_box.addButton(self.next_btn, self.button_box.ApplyRole)
-        self.button_box.addButton(self.close_btn, self.button_box.RejectRole)
-        self.button_box.layout().insertSpacing(1, 100)
-        self.button_box.clicked.connect(self._handle_button_click_event)
-
         self.pathbox_widget = CheckboxPathBoxWidget(
             label=_('Move the input file to this location after loading data'))
+        pathbox_groupbox = QGroupBox()
+        pathbox_layout = QGridLayout(pathbox_groupbox)
+        pathbox_layout.addWidget(self.pathbox_widget)
+
+        # Setup toolbar.
+        upper_toolbar = self.get_upper_toolbar()
+        self.open_files_btn = create_toolbutton(
+            self,
+            icon='browse_files',
+            text=_("Open File"),
+            tip=_("Open a menu to select the columns to "
+                  "display in this table."),
+            triggered=self._browse_files,
+            shortcut='Ctrl+O',
+            iconsize=get_iconsize()
+            )
+        upper_toolbar.addWidget(self.open_files_btn)
+        self.save_btn = create_toolbutton(
+            self,
+            icon='save_to_db',
+            text=_("Save to Database"),
+            tip=_("Open a menu to select the columns to "
+                  "display in this table."),
+            triggered=self._save_data_to_database,
+            iconsize=get_iconsize()
+            )
+        upper_toolbar.addWidget(self.save_btn)
+        self.next_btn = create_toolbutton(
+            self,
+            icon='file_next',
+            text=_("Next File"),
+            tip=_("Open a menu to select the columns to "
+                  "display in this table."),
+            triggered=self._load_next_queued_data_file,
+            iconsize=get_iconsize()
+            )
+        upper_toolbar.addWidget(self.next_btn)
 
         # Setup the layout.
-        layout = QGridLayout(self)
-        layout.addWidget(file_groupbox, 0, 0, 1, 2)
-        layout.addWidget(sonde_groupbox, 1, 0)
-        layout.addWidget(previous_groupbox, 1, 1)
-        layout.addWidget(table_widget, 2, 0, 1, 2)
-        layout.setRowStretch(2, 1)
-        layout.setRowMinimumHeight(3, 15)
-        layout.addWidget(self.pathbox_widget, 4, 0, 1, 2)
-        layout.setRowMinimumHeight(5, 5)
-        layout.addWidget(self.button_box, 6, 0, 1, 2)
+        central_widget = QWidget()
+        layout = QGridLayout(central_widget)
+        layout.setContentsMargins(0, 3, 0, 0)
+        layout.addWidget(pathbox_groupbox, 0, 0, 1, 2)
+        layout.addWidget(file_groupbox, 1, 0, 1, 2)
+        layout.addWidget(sonde_groupbox, 2, 0)
+        layout.addWidget(previous_groupbox, 2, 1)
+        layout.addWidget(table_widget, 3, 0, 1, 2)
+        layout.setRowStretch(3, 1)
+
         layout.setColumnStretch(0, 1)
         layout.setColumnStretch(1, 1)
 
-        self._working_dir = get_home_dir()
-        self._queued_filenames = []
+        self.set_central_widget(central_widget)
 
     @property
     def filename(self):
@@ -328,16 +348,6 @@ class DataImportWizard(QDialog):
             MessageBoxWidget(color='#E5FFCC', icon='succes'))
         self.datasaved_msgbox.set_message(
             _('Data saved sucessfully in the database.'))
-        self.datasaved_msgbox.sig_closed.connect(
-            self._handle_datasaved_msgbox_closed)
-
-    def _handle_datasaved_msgbox_closed(self):
-        """
-        Handled when the message box that indicates the data were saved
-        sucessfully in the dabase is closed.
-        """
-        self._data_saved_in_database = False
-        self._update_duplicated_satus()
 
     def _update_duplicated_satus(self):
         """
@@ -597,6 +607,7 @@ class DataImportWizard(QDialog):
             self._clear_previous_data()
             return
 
+        # Update Previous Data Info.
         new_series = pd.Series(
             new_dataf[DataType.WaterLevel].values,
             index=new_dataf['datetime']).dropna()
@@ -616,24 +627,22 @@ class DataImportWizard(QDialog):
                       self.obs_well_label.text(),
                       new_series.index[0].strftime("%Y-%m-%d %H:%M")))
             self.previous_stacked_widget.setCurrentIndex(1)
-            self._update_duplicated_satus()
-            return
-
-        self.previous_stacked_widget.setCurrentIndex(0)
-        prev_level = prev_series.iat[-1]
-        delta_level = new_series.iat[0] - prev_level
-        prev_datetime = prev_series.index[-1]
-        delta_datetime = (new_series.index[0] - prev_datetime)
-        self.previous_level_label.setText('{:0.6f}'.format(prev_level))
-        self.delta_level_label.setText('{:0.6f}'.format(delta_level))
-        self.previous_date_label.setText(
-            prev_datetime.strftime("%Y-%m-%d %H:%M"))
-        self.delta_date_label.setText(
-            '{:0.0f} {} {:0.0f} {} {:0.0f} {}'.format(
-                delta_datetime.days, _('days'),
-                delta_datetime.seconds // 3600, _('hrs'),
-                (delta_datetime.seconds // 60) % 60, _('mins')
-                ))
+        else:
+            self.previous_stacked_widget.setCurrentIndex(0)
+            prev_level = prev_series.iat[-1]
+            delta_level = new_series.iat[0] - prev_level
+            prev_datetime = prev_series.index[-1]
+            delta_datetime = (new_series.index[0] - prev_datetime)
+            self.previous_level_label.setText('{:0.6f}'.format(prev_level))
+            self.delta_level_label.setText('{:0.6f}'.format(delta_level))
+            self.previous_date_label.setText(
+                prev_datetime.strftime("%Y-%m-%d %H:%M"))
+            self.delta_date_label.setText(
+                '{:0.0f} {} {:0.0f} {} {:0.0f} {}'.format(
+                    delta_datetime.days, _('days'),
+                    delta_datetime.seconds // 3600, _('hrs'),
+                    (delta_datetime.seconds // 60) % 60, _('mins')
+                    ))
 
         # Check for duplicates.
         in_db = (prev_dataf[['datetime', 'sonde_id']]
@@ -641,19 +650,20 @@ class DataImportWizard(QDialog):
         to_add = new_dataf[['datetime']].set_index('datetime', drop=True)
         to_add['sonde_id'] = self._sonde_serial_no
         self._is_duplicated = to_add.isin(in_db).values
-
         self._update_duplicated_satus()
 
     def _load_next_queued_data_file(self):
         """
         Load the data from the next file in the queue.
         """
+        self.datasaved_msgbox.hide()
         self.table_widget._start_process(_('Loading data...'))
         self._data_saved_in_database = False
         self._filename = self._queued_filenames.pop(0)
         self.working_directory = osp.dirname(self._filename)
         self.filename_label.setText(osp.basename(self._filename))
         self.filename_label.setToolTip(self._filename)
+        self._update_button_state(is_updating=True)
         try:
             self._file_reader = SolinstFileReader(self._filename)
         except Exception as e:
@@ -697,43 +707,37 @@ class DataImportWizard(QDialog):
         if is_updating is not None:
             self._is_updating = is_updating
 
+        self.show_data_btn.setEnabled(self._obs_well_uuid is not None)
         self.pathbox_widget.setEnabled(not self._loading_data_in_database and
                                        not self._is_updating)
-        self.button_box.setEnabled(not self._loading_data_in_database and
-                                   not self._is_updating)
-        self.next_btn.setEnabled(len(self._queued_filenames) > 0)
-        self.save_btn.setEnabled(self._obs_well_uuid is not None and
-                                 self.db_connection_manager.is_connected())
-        self.show_data_btn.setEnabled(self._obs_well_uuid is not None)
-
-    @Slot(QAbstractButton)
-    def _handle_button_click_event(self, button):
-        """
-        Handle when a button is clicked on the dialog button box.
-        """
-        if button == self.close_btn:
-            self.close()
-        elif button == self.next_btn:
-            self.datasaved_msgbox.hide()
-            self._load_next_queued_data_file()
-        elif button == self.save_btn:
-            if (self.pathbox_widget.is_enabled() and
-                    not self.pathbox_widget.is_valid()):
-                QMessageBox.warning(
-                    self,
-                    _("Invalid Directory"),
-                    _("The directory specified for the option "
-                      "<i>{}</i> is invalid.<br><br>"
-                      "Please select a valid directory or uncheck "
-                      "that option.").format(self.pathbox_widget.label)
-                    )
-                return
-            self._save_data_to_database()
+        if self._loading_data_in_database or self._is_updating:
+            self.open_files_btn.setEnabled(False)
+            self.next_btn.setEnabled(False)
+            self.save_btn.setEnabled(False)
+        else:
+            self.open_files_btn.setEnabled(True)
+            self.next_btn.setEnabled(len(self._queued_filenames) > 0)
+            self.save_btn.setEnabled(
+                self._obs_well_uuid is not None and
+                self.db_connection_manager.is_connected() and
+                not self._data_saved_in_database)
 
     def _save_data_to_database(self):
         """
         Save the imported data to the database.
         """
+        if (self.pathbox_widget.is_enabled() and
+                not self.pathbox_widget.is_valid()):
+            QMessageBox.warning(
+                self,
+                _("Invalid Directory"),
+                _("The directory specified for the option "
+                  "<i>{}</i> is invalid.<br><br>"
+                  "Please select a valid directory or uncheck "
+                  "that option.").format(self.pathbox_widget.label)
+                )
+            return
+
         nbr_duplicated = (
             0 if self._is_duplicated is None else np.sum(self._is_duplicated))
         if nbr_duplicated > 0 and self._confirm_before_saving_duplicates:
@@ -851,21 +855,22 @@ class DataImportWizard(QDialog):
         if self._obs_well_uuid is not None:
             self.sig_view_data.emit(self._obs_well_uuid)
 
+    def _browse_files(self):
+        """
+        Opend a Qt file dialog to select input data files.
+        """
+        filenames = QFileDialog.getOpenFileNames(
+            self.parent(), 'Select data files',
+            self.working_directory, '*.csv ; *.lev ; *.xle')[0]
+        if filenames:
+            self._queued_filenames = filenames
+            self._load_next_queued_data_file()
+
     # ---- Qt method override/extension
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
         self._queued_filenames = []
         super().closeEvent(event)
-
-    def show(self):
-        """Reimplement Qt show."""
-        if not len(self._queued_filenames):
-            self._queued_filenames, _ = QFileDialog.getOpenFileNames(
-                self.parent(), 'Select data files',
-                self.working_directory, '*.csv ; *.lev ; *.xle')
-        if len(self._queued_filenames):
-            super().show()
-            self._load_next_queued_data_file()
 
 
 if __name__ == '__main__':

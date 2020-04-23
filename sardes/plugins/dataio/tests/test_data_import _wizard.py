@@ -70,14 +70,12 @@ def data_import_wizard(qtbot, dbconnmanager, testfiles, mocker):
     data_import_wizard.set_database_connection_manager(dbconnmanager)
     qtbot.addWidget(data_import_wizard)
 
-    exts = [osp.splitext(file)[0] for file in testfiles]
-    mocker.patch.object(
-        QFileDialog, 'getOpenFileNames', return_value=(testfiles.copy(), exts))
-
     data_import_wizard.show()
     qtbot.waitForWindowShown(data_import_wizard)
-    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False,
-                    timeout=3000)
+
+    assert len(data_import_wizard._queued_filenames) == 0
+    assert not data_import_wizard.duplicates_msgbox.isVisible()
+    assert not data_import_wizard.datasaved_msgbox.isVisible()
 
     return data_import_wizard
 
@@ -102,11 +100,19 @@ def assert_tseries_len(data_import_wizard, data_type, expected_length):
 # =============================================================================
 # ---- Tests
 # =============================================================================
-def test_data_import_wizard_init(qtbot, mocker, testfiles, data_import_wizard):
+def test_read_data(qtbot, mocker, testfiles, data_import_wizard):
     """
     Test that the data import wizard imports and displays data
     as expected.
     """
+    # Select some files from the disk.
+    exts = [osp.splitext(file)[0] for file in testfiles]
+    mocker.patch.object(
+        QFileDialog, 'getOpenFileNames', return_value=(testfiles.copy(), exts))
+    qtbot.mouseClick(data_import_wizard.open_files_btn, Qt.LeftButton)
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False,
+                    timeout=3000)
+
     # The first selected file is read automatically.
     assert data_import_wizard._queued_filenames == testfiles[1:]
     assert data_import_wizard.working_directory == osp.dirname(testfiles[-1])
@@ -152,25 +158,32 @@ def test_read_data_error(qtbot, mocker, testfiles, data_import_wizard):
     Test that the wizard is working as expected when there is an error
     while reading data from a file.
     """
+    # Patch SolinstFileReader to trigger an error when trying to read a file.
     mocker.patch.object(
         SolinstFileReader, '__new__',
         side_effect=ValueError('Mocked error for test_read_data_error.'))
     patcher_msgbox_warning = mocker.patch.object(
         QMessageBox, 'critical', return_value=QMessageBox.Ok)
 
-    # Read the next selected file.
-    qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
-    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
+    # Try to load data from an input data file and assert the mocked error
+    # was shown as expected in a dialog.
+    data_import_wizard._queued_filenames = testfiles
+    data_import_wizard._load_next_queued_data_file()
     assert patcher_msgbox_warning.call_count == 1
     assert data_import_wizard.table_widget.tableview.row_count() == 0
 
 
-def test_load_data(qtbot, mocker, testfiles, data_import_wizard):
+def test_save_data_to_database(qtbot, mocker, testfiles, data_import_wizard):
     """
     Test that loading new timeseries data to the database is working as
     expected.
     """
-    filename = testfiles[0]
+    # Load the data from an inut data file.
+    data_import_wizard._queued_filenames = testfiles
+    data_import_wizard._load_next_queued_data_file()
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False,
+                    timeout=3000)
+
     assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826)
     assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826)
 
@@ -199,17 +212,23 @@ def test_load_data(qtbot, mocker, testfiles, data_import_wizard):
     assert patcher_msgbox_warning.call_count == 1
     assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 365)
     assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 365)
-    assert osp.exists(filename)
+    assert osp.exists(testfiles[0])
     qtbot.wait(300)
 
 
 @pytest.mark.parametrize('msgbox_answer', [QMessageBox.No, QMessageBox.Yes])
 def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
-                                  msgbox_answer):
+                                  msgbox_answer, testfiles):
     """
     Test loading data when the option to move the input file to another
     destination is checked.
     """
+    # Load the data from an inut data file.
+    data_import_wizard._queued_filenames = testfiles
+    data_import_wizard._load_next_queued_data_file()
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False,
+                    timeout=3000)
+
     filename = data_import_wizard.filename
     testdir = osp.dirname(filename)
 
@@ -244,10 +263,16 @@ def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
     qtbot.wait(1000)
 
 
-def test_move_input_file_oserror(qtbot, mocker, data_import_wizard):
+def test_move_input_file_oserror(qtbot, mocker, data_import_wizard, testfiles):
     """
     Test loading data when the operation to move the input data file fails.
     """
+    # Load the data from an inut data file.
+    data_import_wizard._queued_filenames = testfiles
+    data_import_wizard._load_next_queued_data_file()
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False,
+                    timeout=3000)
+
     filename = data_import_wizard.filename
     testdir = osp.dirname(filename)
 
@@ -290,10 +315,16 @@ def test_move_input_file_oserror(qtbot, mocker, data_import_wizard):
     qtbot.wait(300)
 
 
-def test_duplicate_readings(qtbot, mocker, data_import_wizard):
+def test_duplicate_readings(qtbot, mocker, data_import_wizard, testfiles):
     """
     Test that duplicate readings are handled as expected by the wizard.
     """
+    # Load the data from an inut data file.
+    data_import_wizard._queued_filenames = testfiles.copy()
+    data_import_wizard._load_next_queued_data_file()
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False,
+                    timeout=3000)
+
     patcher_msgbox_exec_ = mocker.patch.object(
         QMessageBox, 'exec_', return_value=QMessageBox.Yes)
     data_import_wizard.pathbox_widget.checkbox.setChecked(False)
@@ -310,19 +341,31 @@ def test_duplicate_readings(qtbot, mocker, data_import_wizard):
     assert patcher_msgbox_exec_.call_count == 0
     assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 365)
     assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 365)
-
     assert data_import_wizard._data_saved_in_database is True
     assert data_import_wizard.datasaved_msgbox.isVisible()
     assert np.sum(data_import_wizard._is_duplicated) == 365
+    assert not data_import_wizard.duplicates_msgbox.isVisible()
+    assert not data_import_wizard.save_btn.isEnabled()
 
     # Close the "Data saved sucessfully" message box.
-    assert not data_import_wizard.duplicates_msgbox.isVisible()
     data_import_wizard.datasaved_msgbox.close()
+    assert not data_import_wizard.datasaved_msgbox.isVisible()
+    assert not data_import_wizard.duplicates_msgbox.isVisible()
+    assert not data_import_wizard.save_btn.isEnabled()
+    assert data_import_wizard._data_saved_in_database is True
+
+    # Load the data from the save file again and save the data again
+    # to the database.
+    data_import_wizard._queued_filenames = testfiles.copy()
+    data_import_wizard._load_next_queued_data_file()
     qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
+
+    assert data_import_wizard._data_saved_in_database is False
     assert not data_import_wizard.datasaved_msgbox.isVisible()
     assert data_import_wizard.duplicates_msgbox.isVisible()
+    assert data_import_wizard.save_btn.isEnabled()
+    assert np.sum(data_import_wizard._is_duplicated) == 365
 
-    # Save the data again to the database.
     with qtbot.waitSignal(
             data_import_wizard.db_connection_manager.sig_tseries_data_changed,
             timeout=3000):
@@ -335,9 +378,9 @@ def test_duplicate_readings(qtbot, mocker, data_import_wizard):
 
     assert data_import_wizard._data_saved_in_database is True
     assert data_import_wizard.datasaved_msgbox.isVisible()
-    assert np.sum(data_import_wizard._is_duplicated) == 365
+    assert not data_import_wizard.duplicates_msgbox.isVisible()
+    assert not data_import_wizard.save_btn.isEnabled()
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw',
-                 '-k', 'test_duplicate_readings'])
+    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])

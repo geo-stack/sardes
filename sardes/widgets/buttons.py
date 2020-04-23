@@ -128,6 +128,9 @@ class CheckboxPathBoxWidget(QFrame):
         """Return whether this pathbox widget is enabled or not."""
         return self.checkbox.isChecked()
 
+    def set_enabled(self, enabled):
+        self.checkbox.setChecked(enabled)
+
     # ---- PathBoxWidget public API
     def is_valid(self):
         return self.pathbox_widget.is_valid()
