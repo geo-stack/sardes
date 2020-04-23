@@ -94,6 +94,8 @@ class DataImportWizard(SardesPaneWidget):
         self._confirm_before_saving_duplicates = True
 
         self._file_reader = None
+        self._working_dir = get_home_dir()
+        self._queued_filenames = []
 
         # An array of boolean values that indicate, for each reading of the
         # imported data, whether data is already saved in the database for
@@ -256,8 +258,6 @@ class DataImportWizard(SardesPaneWidget):
         layout.setColumnStretch(0, 1)
         layout.setColumnStretch(1, 1)
 
-        self._working_dir = get_home_dir()
-        self._queued_filenames = []
         self.set_central_widget(central_widget)
 
     @property
