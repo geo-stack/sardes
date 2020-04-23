@@ -354,10 +354,6 @@ class SardesTableModelBase(QAbstractTableModel):
     RowRemoved = 2
     RowDeleted = 3
 
-    BackgroundColorDeleted = QColor('#FF9999')
-    BackgroundColorEdited = QColor('#CCFF99')
-    BackgroundColorBase = QStyleOption().palette.base().color()
-
     def __init__(self, table_title='', table_id='', data_columns_mapper=None):
         """
         Parameters
@@ -373,6 +369,10 @@ class SardesTableModelBase(QAbstractTableModel):
             The default is [].
         """
         super().__init__()
+        self.BackgroundColorBase = QStyleOption().palette.base().color()
+        self.BackgroundColorDeleted = QColor('#FF9999')
+        self.BackgroundColorEdited = QColor('#CCFF99')
+
         self._table_title = table_title
         self._table_id = table_id
         self._data_columns_mapper = OrderedDict(data_columns_mapper or [])
