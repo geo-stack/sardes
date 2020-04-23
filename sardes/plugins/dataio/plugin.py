@@ -101,7 +101,7 @@ class DataIO(SardesPlugin):
             'move_inputfile_path', ''))
         self.data_import_wizard.pathbox_widget.set_workdir(self.get_option(
             'move_inputfile_workdir', ''))
-        self.data_import_wizard.pathbox_widget.checkbox.setChecked(
+        self.data_import_wizard.pathbox_widget.set_enabled(
             self.get_option('move_inputfile_enabled', False))
 
         # Restore the state of the horizontal header.
