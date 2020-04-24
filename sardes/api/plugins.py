@@ -10,10 +10,235 @@
 # ---- Third party imports
 from appconfigs.user import NoDefault
 from qtpy.QtCore import QObject, Qt, Slot
-from qtpy.QtWidgets import QDockWidget, QGridLayout, QWidget
+from qtpy.QtGui import QPalette
+from qtpy.QtWidgets import (QDockWidget, QGridLayout, QWidget, QFrame,
+                            QToolBar, QStyle, QApplication, QStyleOption,
+                            QPushButton, QStyleOptionDockWidget,
+                            QStylePainter, QStyleOptionFrame, QLabel)
 
 # ---- Local imports
+from sardes.api.panes import SardesPaneWidget, SardesDockingButton
+from sardes.config.icons import get_icon
 from sardes.config.main import CONF
+from sardes.utils.qthelpers import (
+    create_toolbar_stretcher, create_action, qbytearray_to_hexstate,
+    hexstate_to_qbytearray, create_toolbutton)
+
+
+class SardesDockWindow(QFrame):
+    """
+    A frame that can display the content of a Sardes plugin pane either
+    encased in a dockwidget docked in the main window or as a
+    separate full fledged independent window when undocked.
+    """
+
+    def __init__(self, widget, plugin, undocked_geometry, is_docked,
+                 is_locked=True):
+        super().__init__()
+        self.plugin = plugin
+        self.widget = widget
+        self.dock_btn = None
+
+        self._undocked_geometry = undocked_geometry
+        self._is_docked = is_docked
+        self._is_locked = is_locked
+        if is_docked:
+            self.setWindowFlags(Qt.Widget)
+        else:
+            self.setWindowFlags(Qt.Window)
+            if undocked_geometry is not None:
+                self.restoreGeometry(self._undocked_geometry)
+
+        self._toggle_view_action = create_action(
+            self, text=plugin.get_plugin_title(),
+            toggled=self._handle_view_action_toggled)
+
+        self._setup_layout()
+        self._setup_dockwidget()
+        self._setup_widget()
+        self.setWindowTitle(plugin.get_plugin_title())
+        self.setWindowIcon(plugin.get_plugin_icon())
+
+    # ---- Private API
+    def _setup_layout(self):
+        """
+        Setup the layout of this dockwindow.
+        """
+        layout = QGridLayout(self)
+        layout.setContentsMargins(3, 3, 3, 3)
+
+    def _setup_dockwidget(self):
+        """
+        Setup the dockwidget used to encased this dockwindow in the
+        mainwindow.
+        """
+        class _DockWidget(QDockWidget):
+            def __init__(self, toggle_view_action, *args, **kargs):
+                super().__init__(*args, **kargs)
+                self._toggle_view_action = toggle_view_action
+
+            def showEvent(self, event):
+                """
+                Override this QT event to synchronize the toggle view
+                action of the dockwindow contained by this dockwidget
+                when shown.
+                """
+                self._toggle_view_action.blockSignals(True)
+                self._toggle_view_action.setChecked(True)
+                self._toggle_view_action.blockSignals(False)
+
+            def closeEvent(self, event):
+                """
+                Override this QT event to synchronize the toggle view
+                action of the dockwindow contained by this dockwidget
+                when closed.
+                """
+                self._toggle_view_action.blockSignals(True)
+                self._toggle_view_action.setChecked(False)
+                self._toggle_view_action.blockSignals(False)
+                super().closeEvent(event)
+
+        self.dockwidget = _DockWidget(self._toggle_view_action)
+        self.dockwidget.setAllowedAreas(Qt.AllDockWidgetAreas)
+        self.dockwidget.setObjectName(self.plugin.__class__.__name__ + "_dw")
+        if self._is_docked is True:
+            self.dockwidget.setWidget(self)
+        self.set_locked(self._is_locked)
+
+    def _setup_widget(self):
+        """
+        Setup the widget that this dockwindow is used to display.
+        """
+        self.layout().addWidget(self.widget, 0, 0)
+        if (isinstance(self.widget, SardesPaneWidget) and
+                self.widget._upper_toolbar is not None):
+            self.dock_btn = SardesDockingButton(
+                self.plugin.get_plugin_title(), self._is_docked)
+            self.dock_btn.sig_undock_pane.connect(self.undock)
+            self.dock_btn.sig_dock_pane.connect(self.dock)
+            self.widget._upper_toolbar.addWidget(create_toolbar_stretcher())
+            self.widget._upper_toolbar.addWidget(self.dock_btn)
+
+    @Slot(bool)
+    def _handle_view_action_toggled(self, checked):
+        """
+        Handle when the action to control this dockwindow's visibility
+        is toggled on or off in the menu `View > Panes`.
+
+        Parameters
+        ----------
+        checked: bool
+            Is the entry in `View > Panes` checked or not?
+        """
+        if checked and self._is_docked:
+            self.dockwidget.show()
+            self.dockwidget.raise_()
+            self.show()
+        elif checked and not self._is_docked:
+            self.show()
+            self.raise_()
+        elif not checked and self._is_docked:
+            self.dockwidget.hide()
+            self.hide()
+        elif not checked and not self._is_docked:
+            self.hide()
+
+    # ---- Public API
+    def undocked_geometry(self):
+        """
+        Return the geometry of this dockwindow when undocked.
+        """
+        if self._is_docked is False:
+            return self.saveGeometry()
+        else:
+            return self._undocked_geometry
+
+    def is_docked(self):
+        """
+        Return whether this dockwindow is docked or not.
+        """
+        return self._is_docked
+
+    def is_visible(self):
+        """
+        Return whether this dockwindow is visible or not.
+        """
+        return self.isVisible()
+
+    def undock(self):
+        """
+        Undock this dockwindow as a full fledged window.
+        """
+        self._is_docked = False
+        self.dockwidget.setVisible(False)
+        self.setParent(None)
+        self.setWindowFlags(Qt.Window)
+        if self._undocked_geometry is not None:
+            self.restoreGeometry(self._undocked_geometry)
+        self.show()
+        self.raise_()
+
+    def dock(self):
+        """
+        Encase this dockwindow in a dockwidget and dock it in the mainwindow.
+        """
+        self._undocked_geometry = self.saveGeometry()
+        self._is_docked = True
+        self.dockwidget.setWidget(self)
+        self.setWindowFlags(Qt.Widget)
+        self.dockwidget.show()
+        self.dockwidget.raise_()
+
+    def set_locked(self, locked):
+        """
+        If locked, hide the title bar and make the dockwidget if this
+        dockwindow un-movable and un-closable.
+        """
+        self._is_locked = locked
+        self.setFeatures(
+            QDockWidget.NoDockWidgetFeatures if locked else
+            QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetMovable)
+        self.dockwidget.setTitleBarWidget(QWidget() if locked else None)
+
+    # ---- Qt Overrides
+    def showEvent(self, event):
+        """
+        Override this QT event to synchronize the toggle view action related
+        to this dockwindow when shown.
+        """
+        self._toggle_view_action.blockSignals(True)
+        self._toggle_view_action.setChecked(True)
+        self._toggle_view_action.blockSignals(False)
+
+    def closeEvent(self, event):
+        """
+        Override this QT event to synchronize the toggle view action related
+        to this dockwindow when closed.
+        """
+        self._toggle_view_action.blockSignals(True)
+        self._toggle_view_action.setChecked(False)
+        self._toggle_view_action.blockSignals(False)
+        super().closeEvent(event)
+
+    # ---- QDockWidget mocked API
+    def setFeatures(self, *args, **kargs):
+        return self.dockwidget.setFeatures(*args, **kargs)
+
+    def setFloating(self, *args, **kargs):
+        return self.dockwidget.setFloating(*args, **kargs)
+
+    def setTitleBarWidget(self, *args, **kargs):
+        return self.dockwidget.setTitleBarWidget(*args, **kargs)
+
+    def isFloating(self, *args, **kargs):
+        return self.dockwidget.isFloating()
+
+    def setWindowTitle(self, title):
+        self.dockwidget.setWindowTitle(title)
+        return super().setWindowTitle(title)
+
+    def toggleViewAction(self):
+        return self._toggle_view_action
 
 
 class SardesPluginBase(QObject):
