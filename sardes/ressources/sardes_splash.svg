@@ -699,13 +699,13 @@
    inkscape:window-height="1017"
    id="namedview404"
    showgrid="false"
-   inkscape:zoom="1.5765009"
-   inkscape:cx="664.04514"
-   inkscape:cy="243.65835"
+   inkscape:zoom="1.931225"
+   inkscape:cx="863.00357"
+   inkscape:cy="330.30063"
    inkscape:window-x="-8"
    inkscape:window-y="-8"
    inkscape:window-maximized="1"
-   inkscape:current-layer="g1698-8"
+   inkscape:current-layer="Calque_1"
    showguides="true"
    inkscape:snap-global="false"
    inkscape:guide-bbox="true"
@@ -794,6 +794,7 @@
 
 
 
+
 </g><text
    id="text5236-32"
    y="267.39911"
@@ -811,6 +812,7 @@
      x="409.6062"
      sodipodi:role="line"
      id="tspan1499">de données d’eau souterraine</tspan></text>
+
 
 
 
@@ -884,7 +886,8 @@
      id="tspan5226-7-2"
      x="254.64215"
      y="558.4408"
-     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:41.33333206px;font-family:Carlito;-inkscape-font-specification:'Carlito Bold';fill:#001844;fill-opacity:1;stroke-width:1">v0.7.2</tspan></text>
+     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:41.33333206px;font-family:Carlito;-inkscape-font-specification:'Carlito Bold';fill:#001844;fill-opacity:1;stroke-width:1">v0.7.3</tspan></text>
+
 
 
 
