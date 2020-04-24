@@ -216,8 +216,8 @@ class DataImportWizard(SardesPaneWidget):
             self,
             icon='browse_files',
             text=_("Open File"),
-            tip=_("Open a menu to select the columns to "
-                  "display in this table."),
+            tip=_("Select one or more input data files from which time data "
+                  "is to be imported."),
             triggered=self._browse_files,
             shortcut='Ctrl+O',
             iconsize=get_iconsize()
@@ -227,8 +227,7 @@ class DataImportWizard(SardesPaneWidget):
             self,
             icon='save_to_db',
             text=_("Save to Database"),
-            tip=_("Open a menu to select the columns to "
-                  "display in this table."),
+            tip=_("Save the currently imported time data to the database."),
             triggered=self._save_data_to_database,
             iconsize=get_iconsize()
             )
@@ -237,8 +236,7 @@ class DataImportWizard(SardesPaneWidget):
             self,
             icon='file_next',
             text=_("Next File"),
-            tip=_("Open a menu to select the columns to "
-                  "display in this table."),
+            tip=_("Import the time data of the next selected file."),
             triggered=self._load_next_queued_data_file,
             iconsize=get_iconsize()
             )
