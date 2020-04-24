@@ -64,6 +64,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowIcon(get_icon('master'))
         self.setWindowTitle(__namever__)
+        self.setCentralWidget(None)
+        self.setDockNestingEnabled(True)
         if platform.system() == 'Windows':
             import ctypes
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
@@ -135,9 +137,9 @@ class MainWindow(QMainWindow):
         print("Loading the {} plugin...".format(plugin_title), end=' ')
         splash.showMessage(_("Loading the {} plugin...")
                            .format(SARDES_PLUGIN_CLASS.get_plugin_title()))
-        plugin = SARDES_PLUGIN_CLASS(self)
-        plugin.register_plugin()
-        self.internal_plugins.append(plugin)
+        self.data_import_plugin = SARDES_PLUGIN_CLASS(self)
+        self.data_import_plugin.register_plugin()
+        self.internal_plugins.append(self.data_import_plugin)
         print("done")
 
     def setup_thirdparty_plugins(self):
@@ -327,6 +329,13 @@ class MainWindow(QMainWindow):
         if hexstate:
             hexstate = hexstate_to_qbytearray(hexstate)
             self.restoreState(hexstate)
+        else:
+            # There is no layout configuration saved yet in the configs, we
+            # then need to setup the layout ourselves.
+            self.splitDockWidget(
+                self.tables_plugin.dockwidget(),
+                self.data_import_plugin.dockwidget(),
+                Qt.Horizontal)
         self.lock_dockwidgets_and_toolbars_action.setChecked(
             CONF.get('main', 'panes_and_toolbars_locked'))
 
@@ -341,6 +350,14 @@ class MainWindow(QMainWindow):
                  self.lock_dockwidgets_and_toolbars_action.isChecked())
 
     # ---- Qt method override/extension
+    def show(self):
+        """
+        Extend Qt method to call show_plugin on each installed plugin.
+        """
+        super().show()
+        for plugin in self.internal_plugins + self.thirdparty_plugins:
+            plugin.show_plugin()
+
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
         print('Closing SARDES...')

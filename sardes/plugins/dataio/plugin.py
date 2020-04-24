@@ -31,6 +31,9 @@ class DataIO(SardesPlugin):
         """Return widget title"""
         return _('Data Import Wizard')
 
+    def create_pane_widget(self):
+        return self.data_import_wizard
+
     def setup_plugin(self):
         """Setup this plugin."""
         self.data_import_wizard = DataImportWizard(self.main)
@@ -38,20 +41,6 @@ class DataIO(SardesPlugin):
             self.main.tables_plugin.view_timeseries_data)
         self.data_import_wizard.set_database_connection_manager(
             self.main.db_connection_manager)
-
-    def create_mainwindow_toolbars(self):
-        toolbar = create_mainwindow_toolbar("Data Import Wizard toolbar")
-
-        # Setup the database connection button.
-        data_import_button = create_toolbutton(
-            self.main, triggered=self._show_data_import_wizard,
-            text=_("Import Data..."),
-            tip=_("Open a wizard to import new monitoring data."),
-            icon='file_import'
-            )
-        toolbar.addWidget(data_import_button)
-
-        return [toolbar]
 
     def close_plugin(self):
         """
@@ -107,7 +96,3 @@ class DataIO(SardesPlugin):
         # Restore the state of the horizontal header.
         self.data_import_wizard.table_widget.restore_table_horiz_header_state(
             self.get_option('horiz_header/state', None))
-
-    # ---- Private API
-    def _show_data_import_wizard(self):
-        self.data_import_wizard.show()

@@ -154,8 +154,14 @@ FA_ICONS = {
         ('mdi.pan',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'panes': [
-        ('mdi.view-grid',),
+        ('mdi.widgets',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'pane_dock': [
+        ('mdi.open-in-app',),
+        {'color': ICON_COLOR}],
+    'pane_undock': [
+        ('mdi.window-restore',),
+        {'color': ICON_COLOR, 'scale_factor': 1}],
     'preferences': [
         ('mdi.settings',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],

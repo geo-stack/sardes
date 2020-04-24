@@ -17,7 +17,7 @@ RED = '#CC0000'
 YELLOW = '#ffa500'
 YELLOWLIGHT = '#fcf7b6'
 
-INIT_MAINWINDOW_SIZE = (900, 450)
+INIT_MAINWINDOW_SIZE = (1260, 740)
 
 
 def get_iconsize(size='normal'):
