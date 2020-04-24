@@ -278,6 +278,13 @@ class SardesPluginBase(QObject):
         return []
 
     # ---- Public methods
+    def dockwidget(self):
+        """
+        Return the dockwidget of this plugin if any.
+        """
+        return (self.dockwindow.dockwidget if self.dockwindow
+                is not None else None)
+
     def get_option(self, option, default=NoDefault):
         """
         Get an option from Sardes configuration file.
