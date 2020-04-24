@@ -64,6 +64,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowIcon(get_icon('master'))
         self.setWindowTitle(__namever__)
+        self.setCentralWidget(None)
+        self.setDockNestingEnabled(True)
         if platform.system() == 'Windows':
             import ctypes
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
