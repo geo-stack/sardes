@@ -343,6 +343,14 @@ class MainWindow(QMainWindow):
                  self.lock_dockwidgets_and_toolbars_action.isChecked())
 
     # ---- Qt method override/extension
+    def show(self):
+        """
+        Extend Qt method to call show_plugin on each installed plugin.
+        """
+        super().show()
+        for plugin in self.internal_plugins + self.thirdparty_plugins:
+            plugin.show_plugin()
+
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
         print('Closing SARDES...')
