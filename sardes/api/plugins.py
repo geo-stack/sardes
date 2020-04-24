@@ -257,14 +257,11 @@ class SardesPluginBase(QObject):
 
         # This is the dock widget for the plugin, i.e. the pane that's going
         # to be displayed in Sardes main window for this plugin.
-        self.dockwidget = None
+        self.dockwindow = None
 
         self.setup_plugin()
         self.pane_widget = self.create_pane_widget()
         self.mainwindow_toolbars = self.create_mainwindow_toolbars()
-
-        self._toggle_dockwidget_view_shortcut = None
-        self._toggle_dockwidget_view_action = None
 
     def main_option_actions(self):
         return []
@@ -304,46 +301,61 @@ class SardesPluginBase(QObject):
         """
         CONF.set(self.CONF_SECTION, option, value)
 
-    def lock_pane_and_toolbar(self, state):
+    def lock_pane_and_toolbar(self, lock):
         """
-        Lock or unlock this plugin dockwidget and mainwindow toolbars.
+        Lock or unlock this plugin dockwindow and mainwindow toolbars.
         """
-        if self.dockwidget is not None:
-            self.dockwidget.setFloating(
-                not state and self.dockwidget.isFloating())
-            self.dockwidget.setFeatures(
-                QDockWidget.NoDockWidgetFeatures |
-                QDockWidget.DockWidgetClosable if state else
-                QDockWidget.AllDockWidgetFeatures)
-            self.dockwidget.setTitleBarWidget(QWidget() if state else None)
+        if self.dockwindow is not None:
+            self.dockwindow.set_locked(lock)
         for toolbar in self.mainwindow_toolbars:
-            toolbar.setMovable(not state)
+            toolbar.setMovable(not lock)
+
+    def save_geometry_and_state(self):
+        """
+        Save the geometry and state of this plugin's dockwindow to the
+        configurations.
+        """
+        if self.dockwindow is not None:
+            undocked_geometry = self.dockwindow.undocked_geometry()
+            if undocked_geometry is not None:
+                self.set_option(
+                    'undocked/geometry',
+                    qbytearray_to_hexstate(undocked_geometry))
+            self.set_option('is_docked', self.dockwindow._is_docked)
 
     # ---- Private internal methods
-    def _setup_dockwidget(self):
+    def _setup_dockwindow(self):
+        """
+        Setup a dockwindow that is used to show the pane related to
+        this plugin, if it exists, either encased in a dockwidget docked
+        in the mainwindow or as a full fledged independent window when
+        undocked.
+        """
         if self.main is not None and self.pane_widget is not None:
-            self.dockwidget = QDockWidget()
-            self.dockwidget.setObjectName(
-                self.__class__.__name__ + "_dw")
+            hexstate = self.get_option('undocked/geometry', None)
+            undocked_geometry = (
+                hexstate_to_qbytearray(hexstate) if hexstate is not
+                None else None)
 
-            # Encapsulate the pane widget in another widget to control the
-            # size of the contents margins.
-            self._pane_margins_widget = QWidget()
-            layout = QGridLayout(self._pane_margins_widget)
-            layout.addWidget(self.pane_widget)
-            layout.setContentsMargins(0, 0, 0, 0)
-            self.dockwidget.setWidget(self._pane_margins_widget)
-
-            self.dockwidget.setWindowTitle(self.get_plugin_title())
+            self.dockwindow = SardesDockWindow(
+                widget=self.pane_widget,
+                plugin=self,
+                undocked_geometry=undocked_geometry,
+                is_docked=self.get_option('is_docked', True),
+                )
 
             # Add the dockwidget to the mainwindow.
-            self.main.addDockWidget(Qt.LeftDockWidgetArea, self.dockwidget)
+            self.main.addDockWidget(
+                Qt.LeftDockWidgetArea, self.dockwindow.dockwidget)
 
             # Add a toggle view action for this plugin's dockwidget to the
             # panes menu of the mainwindow's options menu.
-            self.main.panes_menu.addAction(self.dockwidget.toggleViewAction())
+            self.main.panes_menu.addAction(self.dockwindow.toggleViewAction())
 
     def _setup_mainwindow_toolbars(self):
+        """
+        Setup any toolbar that need to be added to the mainwindow.
+        """
         for toolbar in self.mainwindow_toolbars:
             self.main.insertToolBar(self.main.options_menu_toolbar, toolbar)
 
@@ -356,24 +368,6 @@ class SardesPluginBase(QObject):
         Setup Options menu, create toggle action and connect signals.
         """
         pass
-
-    @Slot(bool)
-    def _toggle_dockwidget_view(self, checked):
-        """
-        Toggle dockwidget's visibility when its entry is selected in
-        the menu `View > Panes`.
-
-        Parameters
-        ----------
-        checked: bool
-            Is the entry in `View > Panes` checked or not?
-        """
-        if self.dockwidget is not None:
-            if checked:
-                self.dockwidget.show()
-                self.dockwidget.raise_()
-            else:
-                self.dockwidget.hide()
 
 
 class SardesPlugin(SardesPluginBase):
@@ -404,6 +398,14 @@ class SardesPlugin(SardesPluginBase):
         """
         raise NotImplementedError
 
+    @classmethod
+    def get_plugin_icon(cls):
+        """
+        Return the icon to used for this plugin. The default value is the icon
+        used for Sardes mainwindow.
+        """
+        return get_icon('master')
+
     def setup_plugin(self):
         pass
 
@@ -418,14 +420,26 @@ class SardesPlugin(SardesPluginBase):
         Register this plugin in Sardes's mainwindow and connect it to other
         plugins.
         """
-        self._setup_dockwidget()
+        self._setup_dockwindow()
         self._setup_mainwindow_toolbars()
+        self.lock_pane_and_toolbar(False)
+
+    def show_plugin(self):
+        """
+        Show this plugin dockwindow if it exists, is visible and is not docked.
+
+        This method is called by the mainwindow after it is shown.
+        """
+        is_visible = self.get_option('is_visible', False)
+        is_docked = self.get_option('is_docked', True)
+        if is_visible and not is_docked:
+            self.dockwindow.show()
+            self.dockwindow.raise_()
 
     def close_plugin(self):
         """
-        Close this plugin panewidget and dockwidget if they exist.
+        Close this plugin dockwindow if it exists.
         """
-        if self.pane_widget:
-            self.pane_widget.close()
-        if self.dockwidget:
-            self.dockwidget.close()
+        if self.dockwindow is not None:
+            self.save_geometry_and_state()
+            self.dockwindow.close()
