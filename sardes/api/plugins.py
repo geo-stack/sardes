@@ -9,7 +9,7 @@
 
 # ---- Third party imports
 from appconfigs.user import NoDefault
-from qtpy.QtCore import QObject, Qt, Slot
+from qtpy.QtCore import QObject, Qt, Slot, QPoint
 from qtpy.QtGui import QPalette
 from qtpy.QtWidgets import (QDockWidget, QGridLayout, QWidget, QFrame,
                             QToolBar, QStyle, QApplication, QStyleOption,
@@ -175,6 +175,17 @@ class SardesDockWindow(QFrame):
         self.setWindowFlags(Qt.Window)
         if self._undocked_geometry is not None:
             self.restoreGeometry(self._undocked_geometry)
+        else:
+            # Since this is the first time this dockwindow is shown undocked,
+            # we center its'position programmatically to that
+            # of the mainwindow.
+            qr = self.frameGeometry()
+            parent = self.plugin.main
+            wp = parent.frameGeometry().width()
+            hp = parent.frameGeometry().height()
+            cp = parent.mapToGlobal(QPoint(wp/2, hp/2))
+            qr.moveCenter(cp)
+            self.move(qr.topLeft())
         self.show()
         self.raise_()
 
