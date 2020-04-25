@@ -159,9 +159,15 @@ FA_ICONS = {
     'pane_dock': [
         ('mdi.open-in-app',),
         {'color': ICON_COLOR}],
+    'pane_lock': [
+        ('mdi.lock-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'pane_undock': [
         ('mdi.window-restore',),
         {'color': ICON_COLOR, 'scale_factor': 1}],
+    'pane_unlock': [
+        ('mdi.lock-open-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'preferences': [
         ('mdi.settings',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],

@@ -76,6 +76,7 @@ class MainWindow(QMainWindow):
         self.toolbars = []
         self.thirdparty_plugins = []
         self.internal_plugins = []
+        self._is_panes_and_toolbars_locked = False
 
         # Setup the database connection manager.
         print("Setting up the database connection manager...", end=' ')
@@ -172,14 +173,20 @@ class MainWindow(QMainWindow):
 
     # ---- Toolbar setup
     @Slot(bool)
-    def toggle_lock_dockwidgets_and_toolbars(self, checked):
+    def toggle_lock_dockwidgets_and_toolbars(self, locked):
         """
         Lock or unlock this mainwindow dockwidgets and toolbars.
         """
+        self._is_panes_and_toolbars_locked = locked
+        self.lock_dockwidgets_and_toolbars_action.setIcon(
+            get_icon('pane_lock' if locked else 'pane_unlock'))
+        self.lock_dockwidgets_and_toolbars_action.setText(
+            _('Unlock panes and toolbars') if locked else
+            _('Lock panes and toolbars'))
         for plugin in self.internal_plugins + self.thirdparty_plugins:
-            plugin.lock_pane_and_toolbar(checked)
+            plugin.lock_pane_and_toolbar(locked)
         for toolbar in self.toolbars:
-            toolbar.setMovable(not checked)
+            toolbar.setMovable(not locked)
 
     # ---- Setup options button and menu
     def _setup_options_menu_toolbar(self):
@@ -250,8 +257,9 @@ class MainWindow(QMainWindow):
         self.lock_dockwidgets_and_toolbars_action = create_action(
             self, _('Lock panes and toolbars'),
             shortcut='Ctrl+Shift+F5', context=Qt.ApplicationShortcut,
-            toggled=(lambda checked:
-                     self.toggle_lock_dockwidgets_and_toolbars(checked))
+            triggered=(
+                lambda checked: self.toggle_lock_dockwidgets_and_toolbars(
+                    not self._is_panes_and_toolbars_locked))
             )
 
         # Create help related actions and menus.
@@ -336,7 +344,7 @@ class MainWindow(QMainWindow):
                 self.tables_plugin.dockwidget(),
                 self.data_import_plugin.dockwidget(),
                 Qt.Horizontal)
-        self.lock_dockwidgets_and_toolbars_action.setChecked(
+        self.toggle_lock_dockwidgets_and_toolbars(
             CONF.get('main', 'panes_and_toolbars_locked'))
 
     def _save_window_state(self):
@@ -347,7 +355,7 @@ class MainWindow(QMainWindow):
         hexstate = qbytearray_to_hexstate(self.saveState())
         CONF.set('main', 'window/state', hexstate)
         CONF.set('main', 'panes_and_toolbars_locked',
-                 self.lock_dockwidgets_and_toolbars_action.isChecked())
+                 self._is_panes_and_toolbars_locked)
 
     # ---- Qt method override/extension
     def show(self):
