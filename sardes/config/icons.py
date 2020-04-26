@@ -70,7 +70,7 @@ FA_ICONS = {
         {'color': GREEN, 'scale_factor': 1.2}],
     'copy_clipboard': [
         ('mdi.content-copy',),
-        {'color': ICON_COLOR, 'scale_factor': 1.1}],
+        {'color': ICON_COLOR, 'scale_factor': 1}],
     'database_connect': [
         ('mdi.power-plug',),
         {'color': GREEN, 'scale_factor': 1.3}],
