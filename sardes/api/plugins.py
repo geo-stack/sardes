@@ -7,22 +7,88 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+# ---- Standard imports
+import os
+
 # ---- Third party imports
 from appconfigs.user import NoDefault
 from qtpy.QtCore import QObject, Qt, Slot, QPoint
-from qtpy.QtGui import QPalette
 from qtpy.QtWidgets import (QDockWidget, QGridLayout, QWidget, QFrame,
-                            QToolBar, QStyle, QApplication, QStyleOption,
-                            QPushButton, QStyleOptionDockWidget,
-                            QStylePainter, QStyleOptionFrame, QLabel)
+                            QStyle, QApplication, QLabel)
 
 # ---- Local imports
-from sardes.api.panes import SardesPaneWidget, SardesDockingButton
 from sardes.config.icons import get_icon
 from sardes.config.main import CONF
 from sardes.utils.qthelpers import (
-    create_toolbar_stretcher, create_action, qbytearray_to_hexstate,
+    create_action, qbytearray_to_hexstate,
     hexstate_to_qbytearray, create_toolbutton)
+
+
+class DockWidgetTitleBar(QWidget):
+    """
+    A custom title bar widget for the SardesDockWindow.
+    """
+
+    def __init__(self, plugin, parent=None):
+        super().__init__(parent)
+
+        style = QApplication.instance().style()
+        title_label = QLabel(plugin.get_plugin_title())
+
+        # https://code.qt.io/cgit/qt/qtbase.git/tree/src/widgets/widgets/qdockwidget.cpp
+        # Dock Widget title buttons on Windows where historically limited
+        # to size 10 (from small icon size 16) since only a 10x10 XPM was
+        # provided. Adding larger pixmaps to the icons thus caused the icons
+        # to grow; limit this to qpiScaled(10) here.
+        if os.name == 'nt':
+            iconsize = style.pixelMetric(QStyle.PM_SmallIconSize)
+            iconsize = min(10 * self.logicalDpiX() / 96, iconsize)
+
+        self.close_btn = create_toolbutton(
+            self,
+            icon=style.standardIcon(QStyle.SP_TitleBarCloseButton),
+            iconsize=iconsize
+            )
+        self.close_btn.setFocusPolicy(Qt.NoFocus)
+
+        self.undock_btn = create_toolbutton(
+            self,
+            icon=style.standardIcon(QStyle.SP_TitleBarNormalButton),
+            iconsize=iconsize
+            )
+        self.undock_btn.setFocusPolicy(Qt.NoFocus)
+
+        # Setup title banner.
+        banner = QFrame()
+        banner.setLineWidth(1)
+        banner.setMidLineWidth(0)
+        banner.setFrameStyle(banner.Box | banner.Plain)
+
+        banner.setObjectName('titlebarbanner')
+        banner.setAutoFillBackground(True)
+        c1, c2 = 220, 190
+        banner.setStyleSheet((
+            "QFrame#titlebarbanner{"
+            "background-color: rgb(%d, %d, %d);"
+            "border: 1px solid rgb(%d, %d, %d);"
+            "}" % (c1, c1, c1, c2, c2, c2)))
+
+        height = style.pixelMetric(QStyle.PM_TitleBarHeight)
+        margin = 2 * style.pixelMetric(
+            QStyle.PM_DockWidgetTitleMargin)
+        banner.setFixedHeight(height - margin)
+
+        banner_layout = QGridLayout(banner)
+        banner_layout.setSpacing(0)
+        banner_layout.setContentsMargins(4, 1, 0, 0)
+        banner_layout.addWidget(title_label, 0, 0)
+        banner_layout.setColumnStretch(0, 1)
+        banner_layout.addWidget(self.undock_btn, 0, 1)
+        banner_layout.addWidget(self.close_btn, 0, 2)
+
+        layout = QGridLayout(self)
+        layout.setContentsMargins(0, 1, 0, 2)
+        layout.addWidget(banner)
 
 
 class SardesDockWindow(QFrame):
