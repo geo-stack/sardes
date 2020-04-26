@@ -204,11 +204,15 @@ class DataImportWizard(SardesPaneWidget):
         # Setup the table widget.
         table_widget = self._setup_table()
 
+        # Setup the pathbox widget for the 'move file' feature.
         self.pathbox_widget = CheckboxPathBoxWidget(
             label=_('Move the input file to this location after loading data'))
-        pathbox_groupbox = QGroupBox()
+        pathbox_groupbox = QFrame()
         pathbox_layout = QGridLayout(pathbox_groupbox)
+        pathbox_layout.setContentsMargins(0, 10, 0, 10)
         pathbox_layout.addWidget(self.pathbox_widget)
+        table_widget.central_widget.layout().addWidget(
+            pathbox_groupbox, 4, 0, 1, 2)
 
         # Setup toolbar.
         upper_toolbar = self.get_upper_toolbar()
@@ -245,8 +249,7 @@ class DataImportWizard(SardesPaneWidget):
         # Setup the layout.
         central_widget = QWidget()
         layout = QGridLayout(central_widget)
-        layout.setContentsMargins(0, 3, 0, 0)
-        layout.addWidget(pathbox_groupbox, 0, 0, 1, 2)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(file_groupbox, 1, 0, 1, 2)
         layout.addWidget(sonde_groupbox, 2, 0)
         layout.addWidget(previous_groupbox, 2, 1)
