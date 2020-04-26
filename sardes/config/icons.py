@@ -196,7 +196,7 @@ FA_ICONS = {
         ('mdi.chart-bar-stacked',),
         {'color': ICON_COLOR}],
     'show_data_table': [
-        ('mdi.table',),
+        ('mdi.table-search',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'show_plot': [
         ('mdi.chart-line',),
