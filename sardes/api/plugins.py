@@ -395,6 +395,7 @@ class SardesPluginBase(QObject):
                     'undocked/geometry',
                     qbytearray_to_hexstate(undocked_geometry))
             self.set_option('is_docked', self.dockwindow._is_docked)
+            self.set_option('is_visible', self.dockwindow.is_visible())
 
     # ---- Private internal methods
     def _setup_dockwindow(self):
