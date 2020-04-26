@@ -119,20 +119,15 @@ class SardesDockWindow(QFrame):
             self, text=plugin.get_plugin_title(),
             toggled=self._handle_view_action_toggled)
 
-        self._setup_layout()
+        layout = QGridLayout(self)
+        layout.setContentsMargins(3, 3, 3, 3)
+        layout.addWidget(self.widget, 0, 0)
+
         self._setup_dockwidget()
-        self._setup_widget()
         self.setWindowTitle(plugin.get_plugin_title())
         self.setWindowIcon(plugin.get_plugin_icon())
 
     # ---- Private API
-    def _setup_layout(self):
-        """
-        Setup the layout of this dockwindow.
-        """
-        layout = QGridLayout(self)
-        layout.setContentsMargins(3, 3, 3, 3)
-
     def _setup_dockwidget(self):
         """
         Setup the dockwidget used to encased this dockwindow in the
@@ -167,23 +162,16 @@ class SardesDockWindow(QFrame):
         self.dockwidget = _DockWidget(self._toggle_view_action)
         self.dockwidget.setAllowedAreas(Qt.AllDockWidgetAreas)
         self.dockwidget.setObjectName(self.plugin.__class__.__name__ + "_dw")
+
+        self.dockwidget_titlebar = DockWidgetTitleBar(
+            self.plugin, self.dockwidget)
+        self.dockwidget_titlebar.close_btn.clicked.connect(
+            self.dockwidget.close)
+        self.dockwidget_titlebar.undock_btn.clicked.connect(self.undock)
+
         if self._is_docked is True:
             self.dockwidget.setWidget(self)
         self.set_locked(self._is_locked)
-
-    def _setup_widget(self):
-        """
-        Setup the widget that this dockwindow is used to display.
-        """
-        self.layout().addWidget(self.widget, 0, 0)
-        if (isinstance(self.widget, SardesPaneWidget) and
-                self.widget._upper_toolbar is not None):
-            self.dock_btn = SardesDockingButton(
-                self.plugin.get_plugin_title(), self._is_docked)
-            self.dock_btn.sig_undock_pane.connect(self.undock)
-            self.dock_btn.sig_dock_pane.connect(self.dock)
-            self.widget._upper_toolbar.addWidget(create_toolbar_stretcher())
-            self.widget._upper_toolbar.addWidget(self.dock_btn)
 
     @Slot(bool)
     def _handle_view_action_toggled(self, checked):
@@ -274,8 +262,10 @@ class SardesDockWindow(QFrame):
         self._is_locked = locked
         self.setFeatures(
             QDockWidget.NoDockWidgetFeatures if locked else
-            QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetMovable)
-        self.dockwidget.setTitleBarWidget(QWidget() if locked else None)
+            QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetMovable
+            )
+        self.dockwidget.setTitleBarWidget(
+            QWidget() if locked else self.dockwidget_titlebar)
 
     # ---- Qt Overrides
     def showEvent(self, event):
@@ -292,10 +282,9 @@ class SardesDockWindow(QFrame):
         Override this QT event to synchronize the toggle view action related
         to this dockwindow when closed.
         """
-        self._toggle_view_action.blockSignals(True)
-        self._toggle_view_action.setChecked(False)
-        self._toggle_view_action.blockSignals(False)
-        super().closeEvent(event)
+        if not self._is_docked:
+            self.dock()
+        event.ignore()
 
     # ---- QDockWidget mocked API
     def setFeatures(self, *args, **kargs):
