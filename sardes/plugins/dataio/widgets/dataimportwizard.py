@@ -486,6 +486,9 @@ class DataImportWizard(SardesPaneWidget):
                 elif column.lower().startswith('temp'):
                     dataf.rename(columns={column: DataType.WaterTemp},
                                  inplace=True)
+                elif column.lower().startswith('conduct'):
+                    dataf.rename(columns={column: DataType.WaterEC},
+                                 inplace=True)
 
             horiz_header.setSectionHidden(0, False)
             for data_type in DataType:

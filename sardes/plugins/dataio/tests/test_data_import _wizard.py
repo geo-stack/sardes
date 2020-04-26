@@ -57,7 +57,9 @@ def dbconnmanager(qtbot, dbaccessor):
 
 @pytest.fixture
 def testfiles(tmp_path):
-    filenames = ["solinst_level_testfile_03040002.csv"] * 2
+    filenames = ["solinst_level_testfile_03040002.csv",
+                 "solinst_level_testfile_03040002.csv",
+                 "solinst_conductivity_testfile.csv"]
     for filename in filenames:
         copyfile(osp.join(osp.dirname(__file__), filename),
                  osp.join(tmp_path, filename))
@@ -105,6 +107,8 @@ def test_read_data(qtbot, mocker, testfiles, data_import_wizard):
     Test that the data import wizard imports and displays data
     as expected.
     """
+    tableview = data_import_wizard.table_widget.tableview
+
     # Select some files from the disk.
     exts = [osp.splitext(file)[0] for file in testfiles]
     mocker.patch.object(
@@ -116,7 +120,10 @@ def test_read_data(qtbot, mocker, testfiles, data_import_wizard):
     # The first selected file is read automatically.
     assert data_import_wizard._queued_filenames == testfiles[1:]
     assert data_import_wizard.working_directory == osp.dirname(testfiles[-1])
-    assert data_import_wizard.table_widget.tableview.row_count() == 365
+    assert tableview.row_count() == 365
+    assert tableview.visible_column_count() == 3
+    assert DataType.WaterLevel in tableview.model().columns
+    assert DataType.WaterTemp in tableview.model().columns
 
     # Assert file infos.
     assert (data_import_wizard.filename_label.text() ==
@@ -144,9 +151,9 @@ def test_read_data(qtbot, mocker, testfiles, data_import_wizard):
     # Read the next selected file.
     qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
     qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
-    assert data_import_wizard._queued_filenames == []
+    assert len(data_import_wizard._queued_filenames) == 1
     assert data_import_wizard.working_directory == osp.dirname(testfiles[-1])
-    assert data_import_wizard.table_widget.tableview.row_count() == 365
+    assert tableview.row_count() == 365
 
     # Assert file infos.
     assert (data_import_wizard.filename_label.text() ==
@@ -380,6 +387,21 @@ def test_duplicate_readings(qtbot, mocker, data_import_wizard, testfiles):
     assert data_import_wizard.datasaved_msgbox.isVisible()
     assert not data_import_wizard.duplicates_msgbox.isVisible()
     assert not data_import_wizard.save_btn.isEnabled()
+
+
+def test_read_conductivity_data(qtbot, mocker, data_import_wizard, testfiles):
+    """
+    Test that conductivity data are read and displayed as expected.
+    """
+    # Load the data from an inut data file.
+    data_import_wizard._queued_filenames = testfiles[2:]
+    data_import_wizard._load_next_queued_data_file()
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
+
+    tableview = data_import_wizard.table_widget.tableview
+    assert tableview.row_count() == 10
+    assert tableview.visible_column_count() == 4
+    assert DataType.WaterEC in tableview.model().columns
 
 
 if __name__ == "__main__":
