@@ -239,8 +239,8 @@ class DataImportWizard(SardesPaneWidget):
         self.next_btn = create_toolbutton(
             self,
             icon='file_next',
-            text=_("Next File"),
-            tip=_("Import the time data of the next selected file."),
+            text=_("Load Next File"),
+            tip=_("Load the time data of the next selected file."),
             triggered=self._load_next_queued_data_file,
             iconsize=get_iconsize()
             )
