@@ -96,6 +96,8 @@ class DataImportWizard(SardesPaneWidget):
         self._file_reader = None
         self._working_dir = get_home_dir()
         self._queued_filenames = []
+        self._file_count = 0
+        self._file_current_index = 0
 
         # An array of boolean values that indicate, for each reading of the
         # imported data, whether data is already saved in the database for
@@ -243,6 +245,10 @@ class DataImportWizard(SardesPaneWidget):
             self.table_widget.get_upper_toolbar().actions()[0])
 
         upper_toolbar.addSeparator()
+        self.file_count_label = QLabel(' {} of {}'.format(
+            self._file_current_index, self._file_count))
+        upper_toolbar.addWidget(self.file_count_label)
+
         self.next_btn = create_toolbutton(
             self,
             icon='file_next',
@@ -672,6 +678,9 @@ class DataImportWizard(SardesPaneWidget):
         """
         Load the data from the next file in the queue.
         """
+        self._file_current_index += 1
+        self.file_count_label.setText(' {} of {}'.format(
+            self._file_current_index, self._file_count))
         self.datasaved_msgbox.hide()
         self.table_widget._start_process(_('Loading data...'))
         self._data_saved_in_database = False
@@ -879,12 +888,16 @@ class DataImportWizard(SardesPaneWidget):
             self.parent(), 'Select data files',
             self.working_directory, '*.csv ; *.lev ; *.xle')[0]
         if filenames:
+            self._file_count = len(filenames)
+            self._file_current_index = 0
             self._queued_filenames = filenames
             self._load_next_queued_data_file()
 
     # ---- Qt method override/extension
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
+        self._file_count = 0
+        self._file_current_index = 0
         self._queued_filenames = []
         super().closeEvent(event)
 
