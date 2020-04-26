@@ -70,7 +70,7 @@ FA_ICONS = {
         {'color': GREEN, 'scale_factor': 1.2}],
     'copy_clipboard': [
         ('mdi.content-copy',),
-        {'color': ICON_COLOR, 'scale_factor': 1.1}],
+        {'color': ICON_COLOR, 'scale_factor': 1}],
     'database_connect': [
         ('mdi.power-plug',),
         {'color': GREEN, 'scale_factor': 1.3}],
@@ -178,7 +178,7 @@ FA_ICONS = {
         ('fa.save',),
         {'color': ICON_COLOR}],
     'save_to_db': [
-        ('mdi.upload',),
+        ('mdi.content-save-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'select_all': [
         ('mdi.select-all',),
@@ -196,7 +196,7 @@ FA_ICONS = {
         ('mdi.chart-bar-stacked',),
         {'color': ICON_COLOR}],
     'show_data_table': [
-        ('mdi.table',),
+        ('mdi.table-search',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'show_plot': [
         ('mdi.chart-line',),

@@ -1693,14 +1693,15 @@ class SardesTableWidget(SardesPaneWidget):
             if section != sections[-1]:
                 toolbar.addSeparator()
 
-        # We add a stretcher here so that the columns options button is
-        # aligned to the right side of the toolbar.
-        self._upper_toolbar_separator = toolbar.addWidget(
-            create_toolbar_stretcher())
+        if self.sections_hidable:
+            # We add a stretcher here so that the columns options button is
+            # aligned to the right side of the toolbar.
+            self._upper_toolbar_separator = toolbar.addWidget(
+                create_toolbar_stretcher())
 
-        columns_options_action = toolbar.addWidget(
-            self._create_columns_options_button())
-        columns_options_action.setVisible(self.sections_hidable)
+            columns_options_action = toolbar.addWidget(
+                self._create_columns_options_button())
+            columns_options_action.setVisible(self.sections_hidable)
 
     def _setup_status_bar(self):
         """

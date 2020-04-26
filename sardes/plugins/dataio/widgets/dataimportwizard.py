@@ -96,6 +96,8 @@ class DataImportWizard(SardesPaneWidget):
         self._file_reader = None
         self._working_dir = get_home_dir()
         self._queued_filenames = []
+        self._file_count = 0
+        self._file_current_index = 0
 
         # An array of boolean values that indicate, for each reading of the
         # imported data, whether data is already saved in the database for
@@ -204,11 +206,15 @@ class DataImportWizard(SardesPaneWidget):
         # Setup the table widget.
         table_widget = self._setup_table()
 
+        # Setup the pathbox widget for the 'move file' feature.
         self.pathbox_widget = CheckboxPathBoxWidget(
             label=_('Move the input file to this location after loading data'))
-        pathbox_groupbox = QGroupBox()
+        pathbox_groupbox = QFrame()
         pathbox_layout = QGridLayout(pathbox_groupbox)
+        pathbox_layout.setContentsMargins(0, 10, 0, 10)
         pathbox_layout.addWidget(self.pathbox_widget)
+        table_widget.central_widget.layout().addWidget(
+            pathbox_groupbox, 4, 0, 1, 2)
 
         # Setup toolbar.
         upper_toolbar = self.get_upper_toolbar()
@@ -223,6 +229,7 @@ class DataImportWizard(SardesPaneWidget):
             iconsize=get_iconsize()
             )
         upper_toolbar.addWidget(self.open_files_btn)
+
         self.save_btn = create_toolbutton(
             self,
             icon='save_to_db',
@@ -232,21 +239,50 @@ class DataImportWizard(SardesPaneWidget):
             iconsize=get_iconsize()
             )
         upper_toolbar.addWidget(self.save_btn)
+
+        # We add the copy action from the table widget to this wizard toolbar.
+        upper_toolbar.addAction(
+            self.table_widget.get_upper_toolbar().actions()[0])
+
+        upper_toolbar.addSeparator()
+        self.file_count_label = QLabel(' {} of {}'.format(
+            self._file_current_index, self._file_count))
+        upper_toolbar.addWidget(self.file_count_label)
+
         self.next_btn = create_toolbutton(
             self,
             icon='file_next',
-            text=_("Next File"),
-            tip=_("Import the time data of the next selected file."),
+            text=_("Load Next File"),
+            tip=_("Load the time data of the next selected file."),
             triggered=self._load_next_queued_data_file,
             iconsize=get_iconsize()
             )
         upper_toolbar.addWidget(self.next_btn)
+        upper_toolbar.addSeparator()
+
+        # We now add the remaining actions from the table widget toolbar
+        # to this wizard toolbar.
+        for action in self.table_widget.get_upper_toolbar().actions()[2:]:
+            upper_toolbar.addAction(action)
+        self.table_widget.get_upper_toolbar().clear()
+        self.table_widget.get_upper_toolbar().hide()
+        upper_toolbar.addSeparator()
+
+        self.show_data_btn = create_toolbutton(
+            self,
+            icon='show_data_table',
+            text=_("View data"),
+            tip=_('Show the data of the timeseries acquired in the currently '
+                  'selected observation well in a table.'),
+            triggered=lambda _: self._view_timeseries_data(),
+            iconsize=get_iconsize()
+            )
+        upper_toolbar.addWidget(self.show_data_btn)
 
         # Setup the layout.
         central_widget = QWidget()
         layout = QGridLayout(central_widget)
-        layout.setContentsMargins(0, 3, 0, 0)
-        layout.addWidget(pathbox_groupbox, 0, 0, 1, 2)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(file_groupbox, 1, 0, 1, 2)
         layout.addWidget(sonde_groupbox, 2, 0)
         layout.addWidget(previous_groupbox, 2, 1)
@@ -425,18 +461,6 @@ class DataImportWizard(SardesPaneWidget):
         horizontal_header.setDefaultSectionSize(125)
         self.clear_table()
 
-        # Add extra toolbar buttons.
-        self.show_data_btn = create_toolbutton(
-            self,
-            icon='show_data_table',
-            text=_("View data"),
-            tip=_('Show the data of the timeseries acquired in the currently '
-                  'selected observation well in a table.'),
-            triggered=lambda _: self._view_timeseries_data(),
-            iconsize=get_iconsize()
-            )
-        self.table_widget.add_toolbar_separator()
-        self.table_widget.add_toolbar_widget(self.show_data_btn)
         return self.table_widget
 
     def _update_table_model_data(self):
@@ -654,6 +678,9 @@ class DataImportWizard(SardesPaneWidget):
         """
         Load the data from the next file in the queue.
         """
+        self._file_current_index += 1
+        self.file_count_label.setText(' {} of {}'.format(
+            self._file_current_index, self._file_count))
         self.datasaved_msgbox.hide()
         self.table_widget._start_process(_('Loading data...'))
         self._data_saved_in_database = False
@@ -861,12 +888,16 @@ class DataImportWizard(SardesPaneWidget):
             self.parent(), 'Select data files',
             self.working_directory, '*.csv ; *.lev ; *.xle')[0]
         if filenames:
+            self._file_count = len(filenames)
+            self._file_current_index = 0
             self._queued_filenames = filenames
             self._load_next_queued_data_file()
 
     # ---- Qt method override/extension
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
+        self._file_count = 0
+        self._file_current_index = 0
         self._queued_filenames = []
         super().closeEvent(event)
 
