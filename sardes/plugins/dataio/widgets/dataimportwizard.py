@@ -227,6 +227,7 @@ class DataImportWizard(SardesPaneWidget):
             iconsize=get_iconsize()
             )
         upper_toolbar.addWidget(self.open_files_btn)
+
         self.save_btn = create_toolbutton(
             self,
             icon='save_to_db',
@@ -236,6 +237,12 @@ class DataImportWizard(SardesPaneWidget):
             iconsize=get_iconsize()
             )
         upper_toolbar.addWidget(self.save_btn)
+
+        # We add the copy action from the table widget to this wizard toolbar.
+        upper_toolbar.addAction(
+            self.table_widget.get_upper_toolbar().actions()[0])
+
+        upper_toolbar.addSeparator()
         self.next_btn = create_toolbutton(
             self,
             icon='file_next',
@@ -245,6 +252,26 @@ class DataImportWizard(SardesPaneWidget):
             iconsize=get_iconsize()
             )
         upper_toolbar.addWidget(self.next_btn)
+        upper_toolbar.addSeparator()
+
+        # We now add the remaining actions from the table widget toolbar
+        # to this wizard toolbar.
+        for action in self.table_widget.get_upper_toolbar().actions()[2:]:
+            upper_toolbar.addAction(action)
+        self.table_widget.get_upper_toolbar().clear()
+        self.table_widget.get_upper_toolbar().hide()
+        upper_toolbar.addSeparator()
+
+        self.show_data_btn = create_toolbutton(
+            self,
+            icon='show_data_table',
+            text=_("View data"),
+            tip=_('Show the data of the timeseries acquired in the currently '
+                  'selected observation well in a table.'),
+            triggered=lambda _: self._view_timeseries_data(),
+            iconsize=get_iconsize()
+            )
+        upper_toolbar.addWidget(self.show_data_btn)
 
         # Setup the layout.
         central_widget = QWidget()
@@ -428,18 +455,6 @@ class DataImportWizard(SardesPaneWidget):
         horizontal_header.setDefaultSectionSize(125)
         self.clear_table()
 
-        # Add extra toolbar buttons.
-        self.show_data_btn = create_toolbutton(
-            self,
-            icon='show_data_table',
-            text=_("View data"),
-            tip=_('Show the data of the timeseries acquired in the currently '
-                  'selected observation well in a table.'),
-            triggered=lambda _: self._view_timeseries_data(),
-            iconsize=get_iconsize()
-            )
-        self.table_widget.add_toolbar_separator()
-        self.table_widget.add_toolbar_widget(self.show_data_btn)
         return self.table_widget
 
     def _update_table_model_data(self):
