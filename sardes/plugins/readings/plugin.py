@@ -179,7 +179,7 @@ class Readings(SardesPlugin):
         """
         super().register_plugin()
         self.main.db_connection_manager.sig_tseries_data_changed.connect(
-            self.update_timeseries_data)
+            self._update_readings_tables)
         self.main.db_connection_manager.sig_database_disconnected.connect(
             self._close_all_readings_tables)
 
@@ -211,7 +211,7 @@ class Readings(SardesPlugin):
         """
         del self._tseries_data_tables[obs_well_uuid]
 
-    # ---- Timeseries data tables
+    # ---- Readings tables
     def _close_readings_table_at(self, index):
         """
         Close the readings table at the given tabwidget index.
@@ -282,10 +282,10 @@ class Readings(SardesPlugin):
         self.view_timeseries_data(obs_well_uuid)
         table_model.update_data()
 
-    def update_timeseries_data(self, obs_well_ids):
+    def _update_readings_tables(self, obs_well_ids):
         """
-        Update the timeseries data table according to the provided list
-        of well observation wells.
+        Update the readings tables according to the provided list of
+        observation well ids.
         """
         for obs_well_id in obs_well_ids:
             if obs_well_id in self._tseries_data_tables:
