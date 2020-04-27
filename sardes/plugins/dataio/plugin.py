@@ -38,7 +38,7 @@ class DataIO(SardesPlugin):
         """Setup this plugin."""
         self.data_import_wizard = DataImportWizard(self.main)
         self.data_import_wizard.sig_view_data.connect(
-            self.main.tables_plugin.view_timeseries_data)
+            self.main.view_timeseries_data)
         self.data_import_wizard.set_database_connection_manager(
             self.main.db_connection_manager)
 
