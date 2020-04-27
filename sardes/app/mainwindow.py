@@ -143,6 +143,17 @@ class MainWindow(QMainWindow):
         self.internal_plugins.append(self.data_import_plugin)
         print("done")
 
+        # Time Data plugin.
+        from sardes.plugins.readings import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        splash.showMessage(_("Loading the {} plugin...")
+                           .format(SARDES_PLUGIN_CLASS.get_plugin_title()))
+        self.readings_plugin = SARDES_PLUGIN_CLASS(self)
+        self.readings_plugin.register_plugin()
+        self.internal_plugins.append(self.readings_plugin)
+        print("done")
+
     def setup_thirdparty_plugins(self):
         """Setup Sardes third party plugins."""
         installed_thirdparty_plugins = []
@@ -307,6 +318,10 @@ class MainWindow(QMainWindow):
                 _("The language has been set to <i>{}</i>. Restart Sardes to "
                   "apply this change.").format(LANGUAGE_CODES[lang]))
 
+    # ---- Plugin interactions
+    def view_timeseries_data(self, sampling_feature_uuid):
+        self.readings_plugin.view_timeseries_data(sampling_feature_uuid)
+
     # ---- Main window settings
     def _restore_window_geometry(self):
         """
@@ -344,6 +359,8 @@ class MainWindow(QMainWindow):
                 self.tables_plugin.dockwidget(),
                 self.data_import_plugin.dockwidget(),
                 Qt.Horizontal)
+            self.tabifyDockWidget(self.tables_plugin.dockwidget(),
+                                  self.readings_plugin.dockwidget())
         self.toggle_lock_dockwidgets_and_toolbars(
             CONF.get('main', 'panes_and_toolbars_locked'))
 
