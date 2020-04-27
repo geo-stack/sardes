@@ -320,7 +320,18 @@ class MainWindow(QMainWindow):
 
     # ---- Plugin interactions
     def view_timeseries_data(self, sampling_feature_uuid):
+        """
+        Create and show a table to visualize the timeseries data related
+        to the given sampling feature uuid.
+        """
         self.readings_plugin.view_timeseries_data(sampling_feature_uuid)
+
+    def plot_timeseries_data(self, obs_well_data):
+        """
+        Create and show a graph to visualize the timeseries data related
+        to the given observation well data.
+        """
+        self.readings_plugin._request_plot_readings(obs_well_data)
 
     # ---- Main window settings
     def _restore_window_geometry(self):
