@@ -115,7 +115,7 @@ class ObsWellsTableWidget(SardesTableWidget):
     # ---- SardesPaneWidget public API
     def register_to_plugin(self, plugin):
         """Register this table with the given plugin."""
-        self.sig_view_data.connect(plugin.view_timeseries_data)
+        self.sig_view_data.connect(plugin.main.view_timeseries_data)
 
     # ---- Timeseries
     def get_current_obs_well_data(self):
