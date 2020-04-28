@@ -673,10 +673,14 @@ class DataImportWizard(SardesPaneWidget):
 
         # Check for duplicates.
         in_db = (prev_dataf[['datetime', 'sonde_id']]
-                 .drop_duplicates().set_index('datetime', drop=True))
-        to_add = new_dataf[['datetime']].set_index('datetime', drop=True)
+                 .drop_duplicates())
+        to_add = new_dataf[['datetime']].copy()
         to_add['sonde_id'] = self._sonde_serial_no
-        self._is_duplicated = to_add.isin(in_db).values
+
+        # See https://stackoverflow.com/questions/50645297
+        self._is_duplicated = to_add.stack().isin(
+            in_db.stack().values).unstack().all(axis=1).values
+
         self._update_duplicated_satus()
 
     def _load_next_queued_data_file(self):
