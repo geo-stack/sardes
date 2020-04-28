@@ -237,9 +237,9 @@ class Readings(SardesPlugin):
         if obs_well_uuid not in self._tseries_data_tables:
             self.main.db_connection_manager.get(
                 'observation_wells_data',
-                obs_well_uuid,
                 callback=lambda obs_wells_data: self._create_readings_table(
-                    obs_wells_data.loc[obs_well_uuid]))
+                    obs_wells_data.loc[obs_well_uuid])
+                )
         else:
             data_table = self._tseries_data_tables[obs_well_uuid]
             self.tabwidget.setCurrentWidget(data_table)
