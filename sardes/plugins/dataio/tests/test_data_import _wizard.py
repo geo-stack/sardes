@@ -180,6 +180,54 @@ def test_read_data_error(qtbot, mocker, testfiles, data_import_wizard):
     assert data_import_wizard.table_widget.tableview.row_count() == 0
 
 
+def test_update_when_db_changed(qtbot, mocker, testfiles, data_import_wizard):
+    """
+    Test that the wizard updating as expected when changes are made to the
+    database.
+
+    Regression test for cgq-qgc/sardes#266
+    """
+    table_model = data_import_wizard.table_model
+
+    # Load the data from an inut data file.
+    data_import_wizard._queued_filenames = testfiles
+    data_import_wizard._load_next_queued_data_file()
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False,
+                    timeout=3000)
+
+    # Assert sonde installation infos.
+    assert data_import_wizard.sonde_label.text() == 'Solinst LT M10 1060487'
+    assert (data_import_wizard.obs_well_label.text() ==
+            "03040002 (Calixa-Lavallée)")
+    assert data_import_wizard.install_depth.text() == '9.24 m'
+    assert (data_import_wizard.install_period.text() ==
+            '2012-05-05 19:00 to today')
+    assert table_model.get_value_at(table_model.index(0, 1)) == 2.062441
+
+    # Change the installation depth in the database.
+    installation_id = data_import_wizard._install_id
+    dbconnmanager = data_import_wizard.db_connection_manager
+    with qtbot.waitSignal(dbconnmanager.sig_database_data_changed):
+        dbconnmanager.set(
+            'sonde_installations', installation_id, 'install_depth', 10.24)
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
+
+    assert data_import_wizard.install_depth.text() == '10.24 m'
+    assert data_import_wizard._sonde_depth == 10.24
+    assert table_model.get_value_at(table_model.index(0, 1)) == 3.062441
+
+    # Change the name and municipality of the well.
+    obs_well_uuid = data_import_wizard._obs_well_uuid
+    with qtbot.waitSignal(dbconnmanager.sig_database_data_changed):
+        dbconnmanager.set('observation_wells_data', obs_well_uuid,
+                          'obs_well_id', '12340002', postpone_exec=True)
+        dbconnmanager.set('observation_wells_data', obs_well_uuid,
+                          'municipality', 'New Municipality Name')
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
+    assert (data_import_wizard.obs_well_label.text() ==
+            "12340002 (New Municipality Name)")
+
+
 def test_save_data_to_database(qtbot, mocker, testfiles, data_import_wizard):
     """
     Test that loading new timeseries data to the database is working as
