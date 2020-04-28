@@ -355,9 +355,11 @@ class DataImportWizard(SardesPaneWidget):
         """
         Handle when data needed by this wizard changed in the database.
         """
-        if data_names in ['sondes_data', 'sonde_installations',
-                          'observation_wells_data', 'sonde_models_lib']:
-            self._update()
+        for name in data_names:
+            if name in ['sondes_data', 'sonde_installations',
+                        'observation_wells_data', 'sonde_models_lib']:
+                self._update()
+                break
 
     # ---- Message boxes
     def _setup_message_boxes(self):
