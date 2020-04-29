@@ -155,7 +155,7 @@ def test_read_data(qtbot, mocker, testfiles, data_import_wizard):
     # Read the next selected file.
     qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
     qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
-    assert len(data_import_wizard._queued_filenames) == 1
+    assert data_import_wizard._queued_filenames == testfiles[2:]
     assert data_import_wizard.working_directory == osp.dirname(testfiles[-1])
     assert tableview.row_count() == 365
 
