@@ -359,19 +359,20 @@ class MainWindow(QMainWindow):
         Restore the state of this mainwindow’s toolbars and dockwidgets from
         the value saved in the config.
         """
+        # We setup the default layout configuration first.
+        self.splitDockWidget(
+            self.tables_plugin.dockwidget(),
+            self.data_import_plugin.dockwidget(),
+            Qt.Horizontal)
+        self.tabifyDockWidget(
+            self.tables_plugin.dockwidget(),
+            self.readings_plugin.dockwidget())
+
+        # Then we appply saved configuration if it exists.
         hexstate = CONF.get('main', 'window/state', None)
         if hexstate:
             hexstate = hexstate_to_qbytearray(hexstate)
             self.restoreState(hexstate)
-        else:
-            # There is no layout configuration saved yet in the configs, we
-            # then need to setup the layout ourselves.
-            self.splitDockWidget(
-                self.tables_plugin.dockwidget(),
-                self.data_import_plugin.dockwidget(),
-                Qt.Horizontal)
-            self.tabifyDockWidget(self.tables_plugin.dockwidget(),
-                                  self.readings_plugin.dockwidget())
         self.toggle_lock_dockwidgets_and_toolbars(
             CONF.get('main', 'panes_and_toolbars_locked'))
 
