@@ -1702,6 +1702,8 @@ class SardesTableWidget(SardesPaneWidget):
             columns_options_action = toolbar.addWidget(
                 self._create_columns_options_button())
             columns_options_action.setVisible(self.sections_hidable)
+        else:
+            self._upper_toolbar_separator = None
 
     def _setup_status_bar(self):
         """
@@ -1742,8 +1744,11 @@ class SardesTableWidget(SardesPaneWidget):
         else add it to the lowermost toolbar.
         """
         if which == 'upper':
-            self.get_upper_toolbar().insertWidget(
-                self._upper_toolbar_separator, widget)
+            if self._upper_toolbar_separator is None:
+                self.get_upper_toolbar().addWidget(widget)
+            else:
+                self.get_upper_toolbar().insertWidget(
+                    self._upper_toolbar_separator, widget)
         else:
             self.get_lower_toolbar().addWidget(widget)
 
@@ -1753,8 +1758,11 @@ class SardesTableWidget(SardesPaneWidget):
         else add it to the lowermost toolbar.
         """
         if which == 'upper':
-            self.get_upper_toolbar().insertSeparator(
-                self._upper_toolbar_separator)
+            if self._upper_toolbar_separator is None:
+                self.get_upper_toolbar().addSeparator()
+            else:
+                self.get_upper_toolbar().insertSeparator(
+                    self._upper_toolbar_separator)
         else:
             self.get_lower_toolbar().addSeparator()
 

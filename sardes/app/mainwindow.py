@@ -143,6 +143,17 @@ class MainWindow(QMainWindow):
         self.internal_plugins.append(self.data_import_plugin)
         print("done")
 
+        # Time Data plugin.
+        from sardes.plugins.readings import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        splash.showMessage(_("Loading the {} plugin...")
+                           .format(SARDES_PLUGIN_CLASS.get_plugin_title()))
+        self.readings_plugin = SARDES_PLUGIN_CLASS(self)
+        self.readings_plugin.register_plugin()
+        self.internal_plugins.append(self.readings_plugin)
+        print("done")
+
     def setup_thirdparty_plugins(self):
         """Setup Sardes third party plugins."""
         installed_thirdparty_plugins = []
@@ -307,6 +318,21 @@ class MainWindow(QMainWindow):
                 _("The language has been set to <i>{}</i>. Restart Sardes to "
                   "apply this change.").format(LANGUAGE_CODES[lang]))
 
+    # ---- Plugin interactions
+    def view_timeseries_data(self, sampling_feature_uuid):
+        """
+        Create and show a table to visualize the timeseries data related
+        to the given sampling feature uuid.
+        """
+        self.readings_plugin.view_timeseries_data(sampling_feature_uuid)
+
+    def plot_timeseries_data(self, obs_well_data):
+        """
+        Create and show a graph to visualize the timeseries data related
+        to the given observation well data.
+        """
+        self.readings_plugin._request_plot_readings(obs_well_data)
+
     # ---- Main window settings
     def _restore_window_geometry(self):
         """
@@ -333,17 +359,20 @@ class MainWindow(QMainWindow):
         Restore the state of this mainwindow’s toolbars and dockwidgets from
         the value saved in the config.
         """
+        # We setup the default layout configuration first.
+        self.splitDockWidget(
+            self.tables_plugin.dockwidget(),
+            self.data_import_plugin.dockwidget(),
+            Qt.Horizontal)
+        self.tabifyDockWidget(
+            self.tables_plugin.dockwidget(),
+            self.readings_plugin.dockwidget())
+
+        # Then we appply saved configuration if it exists.
         hexstate = CONF.get('main', 'window/state', None)
         if hexstate:
             hexstate = hexstate_to_qbytearray(hexstate)
             self.restoreState(hexstate)
-        else:
-            # There is no layout configuration saved yet in the configs, we
-            # then need to setup the layout ourselves.
-            self.splitDockWidget(
-                self.tables_plugin.dockwidget(),
-                self.data_import_plugin.dockwidget(),
-                Qt.Horizontal)
         self.toggle_lock_dockwidgets_and_toolbars(
             CONF.get('main', 'panes_and_toolbars_locked'))
 

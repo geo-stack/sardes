@@ -132,5 +132,44 @@ def test_mainwindow_lang_change(mainwindow, qtbot, mocker):
     assert checked_actions[0].text() == 'Français'
 
 
+# =============================================================================
+# ---- Tests show readings
+# =============================================================================
+def test_view_readings(mainwindow, qtbot):
+    """
+    Assert that timeseries data tables are created and shown as expected.
+    """
+    dbmanager = mainwindow.db_connection_manager
+    with qtbot.waitSignal(dbmanager.sig_database_connected, timeout=1500):
+        mainwindow.databases_plugin.connect_to_database()
+
+    # Switch focus to the table plugin.
+    tables_plugin = mainwindow.tables_plugin
+    tables_plugin.switch_to_plugin()
+    assert tables_plugin.dockwindow.isVisible()
+
+    # Wait until the first row is selected in the table.
+    table_obs_well = tables_plugin._tables['table_observation_wells']
+    tables_plugin.tabwidget.setCurrentWidget(table_obs_well)
+    qtbot.waitUntil(
+        lambda: table_obs_well.get_current_obs_well_data() is not None)
+    current_obs_well = table_obs_well.get_current_obs_well_data().name
+    assert current_obs_well == 0
+
+    # Click on the button to show the readings data for the selected well.
+    readings_plugin = mainwindow.readings_plugin
+    assert len(readings_plugin._tseries_data_tables) == 0
+    qtbot.mouseClick(table_obs_well.show_data_btn, Qt.LeftButton)
+    qtbot.waitUntil(lambda: len(readings_plugin._tseries_data_tables) == 1)
+
+    table = readings_plugin._tseries_data_tables[0]
+    qtbot.waitUntil(lambda: table.tableview.row_count() == 1826)
+    assert table.isVisible()
+
+    # Close the timeseries table.
+    readings_plugin.tabwidget.tabCloseRequested.emit(0)
+    qtbot.waitUntil(lambda: len(readings_plugin._tseries_data_tables) == 0)
+
+
 if __name__ == "__main__":
     pytest.main(['-x', os.path.basename(__file__), '-v', '-rw'])

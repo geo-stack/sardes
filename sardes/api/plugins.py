@@ -397,6 +397,18 @@ class SardesPluginBase(QObject):
             self.set_option('is_docked', self.dockwindow._is_docked)
             self.set_option('is_visible', self.dockwindow.is_visible())
 
+    def switch_to_plugin(self):
+        """"Switch to this plugin."""
+        if self.dockwindow.is_docked():
+            self.dockwindow.dockwidget.show()
+            self.dockwindow.dockwidget.raise_()
+        else:
+            # If window is minimised, restore it.
+            if self.dockwindow.windowState() == Qt.WindowMinimized:
+                self.dockwindow.setWindowState(Qt.WindowNoState)
+            self.dockwindow.show()
+            self.dockwindow.raise_()
+
     # ---- Private internal methods
     def _setup_dockwindow(self):
         """

@@ -9,13 +9,10 @@
 
 # ---- Third party imports
 import pandas as pd
-from qtpy.QtCore import Qt, Signal, Slot
-from qtpy.QtWidgets import QApplication
+from qtpy.QtCore import Signal
 
 # ---- Local imports
 from sardes.api.tablemodels import SardesTableModel
-from sardes.api.timeseries import DataType, merge_timeseries_groups
-from sardes.widgets.timeseries import TimeSeriesPlotViewer
 from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
 from sardes.utils.qthelpers import create_toolbutton
@@ -84,6 +81,7 @@ class ObsWellsTableModel(SardesTableModel):
 
 class ObsWellsTableWidget(SardesTableWidget):
     sig_view_data = Signal(object)
+    sig_plot_data = Signal(object)
 
     def __init__(self, *args, **kargs):
         table_model = ObsWellsTableModel(
@@ -115,7 +113,8 @@ class ObsWellsTableWidget(SardesTableWidget):
     # ---- SardesPaneWidget public API
     def register_to_plugin(self, plugin):
         """Register this table with the given plugin."""
-        self.sig_view_data.connect(plugin.view_timeseries_data)
+        self.sig_view_data.connect(plugin.main.view_timeseries_data)
+        self.sig_plot_data.connect(plugin.main.plot_timeseries_data)
 
     # ---- Timeseries
     def get_current_obs_well_data(self):
@@ -150,22 +149,14 @@ class ObsWellsTableWidget(SardesTableWidget):
             )
         return [self.show_plot_btn, self.show_data_btn]
 
-    @Slot()
     def _plot_current_obs_well_data(self):
         """
-        Handle when a request has been made to show the data of the currently
-        selected well in a plot.
+        Emit a signal to plot the timeseries data saved in the database for
+        the currently selected observation well in the table.
         """
-        self.tableview.setFocus()
-        current_obs_well = self.get_current_obs_well_data()
-        if current_obs_well is not None:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-
-            # Get the timeseries data for that observation well.
-            self.db_connection_manager.get_timeseries_for_obs_well(
-                current_obs_well.name,
-                [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
-                self.plot_timeseries_data)
+        current_obs_well_data = self.get_current_obs_well_data()
+        if current_obs_well_data is not None:
+            self.sig_plot_data.emit(current_obs_well_data)
 
     def _view_current_timeseries_data(self):
         """
@@ -175,27 +166,3 @@ class ObsWellsTableWidget(SardesTableWidget):
         current_obs_well_data = self.get_current_obs_well_data()
         if current_obs_well_data is not None:
             self.sig_view_data.emit(current_obs_well_data.name)
-
-    def plot_timeseries_data(self, tseries_groups):
-        """
-        Create and show a timeseries plot viewer to visualize interactively
-        the timeseries data contained in tseries_groups.
-        """
-        viewer = TimeSeriesPlotViewer(self)
-
-        # Set the title of the window.
-        current_obs_well_data = self.get_current_obs_well_data()
-        viewer.setWindowTitle(_("Observation well {} ({})").format(
-            current_obs_well_data['obs_well_id'],
-            current_obs_well_data['municipality'])
-            )
-
-        # Setup the data for the timeseries plot viewer.
-        # where = 'left'
-        for tseries_group in tseries_groups[:2]:
-            # Create a new axe to hold the timeseries for the monitored
-            # property related to this group of timeseries.
-            viewer.create_axe(tseries_group)
-
-        QApplication.restoreOverrideCursor()
-        viewer.show()

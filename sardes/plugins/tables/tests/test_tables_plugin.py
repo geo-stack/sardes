@@ -47,6 +47,9 @@ def mainwindow(qtbot, mocker, dbconnmanager):
             self.panes_menu = Mock()
             self.db_connection_manager = dbconnmanager
 
+            self.view_timeseries_data = Mock()
+            self.plot_timeseries_data = Mock()
+
             self.plugin = SARDES_PLUGIN_CLASS(self)
             self.plugin.register_plugin()
 
@@ -201,94 +204,6 @@ def test_save_data_edits(mainwindow, qtbot):
     qtbot.wait(1000)
     model_index = table_man_meas.tableview.model().index(0, 0)
     assert model_index.data() == '03037041_modif'
-
-
-# =============================================================================
-# ---- Tests Time Series Table
-# =============================================================================
-def test_view_timeseries_data(mainwindow, qtbot):
-    """
-    Assert that timeseries data tables are created and shown as expected.
-    """
-    tables_plugin = mainwindow.plugin
-    table_obs_well = mainwindow.plugin._tables['table_observation_wells']
-    tables_plugin.tabwidget.setCurrentWidget(table_obs_well)
-    qtbot.waitUntil(lambda: table_obs_well.tableview.row_count() > 0)
-
-    current_obs_well = table_obs_well.get_current_obs_well_data().name
-    assert current_obs_well == 0
-
-    assert len(tables_plugin._tseries_data_tables) == 0
-    qtbot.mouseClick(table_obs_well.show_data_btn, Qt.LeftButton)
-    qtbot.wait(1000)
-    assert len(tables_plugin._tseries_data_tables) == 1
-    assert tables_plugin._tseries_data_tables[current_obs_well].isVisible()
-
-    table = tables_plugin._tseries_data_tables[0]
-    assert table.tableview.row_count() == 1826
-
-    # Close the timeseries table.
-    table.close()
-    qtbot.waitUntil(lambda: len(tables_plugin._tseries_data_tables) == 0)
-
-
-def test_delete_timeseries_data(mainwindow, qtbot, mocker):
-    """
-    Test that deleting data in a timeseries data table is working as
-    expected.
-
-    Regression test for cgq-qgc/sardes#210
-    """
-    tables_plugin = mainwindow.plugin
-    table_obs_well = mainwindow.plugin._tables['table_observation_wells']
-    tables_plugin.tabwidget.setCurrentWidget(table_obs_well)
-    qtbot.waitUntil(lambda: table_obs_well.tableview.row_count() > 0)
-
-    current_obs_well = table_obs_well.get_current_obs_well_data().name
-    assert current_obs_well == 0
-
-    # View data table for the firs observation well.
-    qtbot.mouseClick(table_obs_well.show_data_btn, Qt.LeftButton)
-    qtbot.wait(1000)
-
-    table = tables_plugin._tseries_data_tables[current_obs_well]
-    selection_model = table.tableview.selectionModel()
-    model = table.model()
-    assert table.tableview.row_count() == 1826
-
-    # Select one row in the table.
-    selection_model.setCurrentIndex(
-        model.index(3, 0), selection_model.SelectCurrent)
-    assert table.tableview.get_rows_intersecting_selection() == [3]
-    assert table.tableview.delete_row_action.isEnabled()
-
-    # Delete the selected row.
-    table.tableview.delete_row_action.trigger()
-    assert table.tableview.model().data_edit_count() == 1
-    assert model.has_unsaved_data_edits() is True
-
-    # Select more rows in the table.
-    selection_model.select(model.index(1, 1), selection_model.Select)
-    selection_model.select(model.index(4, 1), selection_model.Select)
-    selection_model.select(model.index(5, 1), selection_model.Select)
-    assert table.tableview.get_rows_intersecting_selection() == [1, 3, 4, 5]
-
-    # Delete the selected rows.
-    table.tableview.delete_row_action.trigger()
-    assert model.data_edit_count() == 2
-    assert model.has_unsaved_data_edits() is True
-
-    # Commit the row deletions to the database.
-    mocker.patch.object(QMessageBox, 'exec_', return_value=QMessageBox.Save)
-    with qtbot.waitSignal(model.sig_data_updated, timeout=3000):
-        table.tableview.save_edits_action.trigger()
-    assert model.data_edit_count() == 0
-    assert model.has_unsaved_data_edits() is False
-    assert table.tableview.row_count() == 1826 - 4
-
-    # Close the timeseries table.
-    table.close()
-    qtbot.waitUntil(lambda: len(tables_plugin._tseries_data_tables) == 0)
 
 
 if __name__ == "__main__":
