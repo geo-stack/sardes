@@ -29,11 +29,6 @@ class SondeInstallationsTableModel(SardesTableModel):
     """
 
     def create_delegate_for_column(self, view, column):
-        """
-        Create the item delegate that the view need to use when editing the
-        data of this model for the specified column. If None is returned,
-        the items of the column will not be editable.
-        """
         if column in ['sampling_feature_uuid']:
             return ObsWellIdEditDelegate(view, is_required=True)
         elif column == 'install_depth':
