@@ -16,8 +16,10 @@ import os
 import os.path as osp
 from shutil import copyfile
 import sys
+import datetime
 
 # ---- Third party imports
+import pandas as pd
 import numpy as np
 import pytest
 from qtpy.QtCore import Qt
@@ -59,7 +61,9 @@ def dbconnmanager(qtbot, dbaccessor):
 def testfiles(tmp_path):
     filenames = ["solinst_level_testfile_03040002.csv",
                  "solinst_level_testfile_03040002.csv",
-                 "solinst_conductivity_testfile.csv"]
+                 "solinst_conductivity_testfile.csv",
+                 "solinst_duplicates_with_multiple_sondes.csv",
+                 ]
     for filename in filenames:
         copyfile(osp.join(osp.dirname(__file__), filename),
                  osp.join(tmp_path, filename))
@@ -151,7 +155,7 @@ def test_read_data(qtbot, mocker, testfiles, data_import_wizard):
     # Read the next selected file.
     qtbot.mouseClick(data_import_wizard.next_btn, Qt.LeftButton)
     qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
-    assert len(data_import_wizard._queued_filenames) == 1
+    assert data_import_wizard._queued_filenames == testfiles[2:]
     assert data_import_wizard.working_directory == osp.dirname(testfiles[-1])
     assert tableview.row_count() == 365
 
@@ -244,7 +248,7 @@ def test_save_data_to_database(qtbot, mocker, testfiles, data_import_wizard):
 
     # We first try to load the data while setting an invalid directory for the
     # option to move the input data file after loading.
-    data_import_wizard.pathbox_widget.checkbox.setChecked(True)
+    data_import_wizard.pathbox_widget.set_enabled(True)
     data_import_wizard.pathbox_widget.set_path('some_non_valid_path')
     assert data_import_wizard.pathbox_widget.is_enabled()
     assert not data_import_wizard.pathbox_widget.is_valid()
@@ -450,6 +454,65 @@ def test_read_conductivity_data(qtbot, mocker, data_import_wizard, testfiles):
     assert tableview.row_count() == 10
     assert tableview.visible_column_count() == 4
     assert DataType.WaterEC in tableview.model().columns
+
+
+def test_duplicates_with_multiple_sondes(
+        qtbot, mocker, data_import_wizard, testfiles):
+    """
+    Test that checking for duplicate values for a well equipped with more
+    than one synchroneous sondes is working as expected.
+
+    Regression test for cgq-qgc/sardes#266
+    """
+    dbmanager = data_import_wizard.db_connection_manager
+
+    # We mock the data stored in the dabase to simulate a well equiped
+    # with more than one synchroneous sondes installed at different depths.
+    merged_data = pd.DataFrame(
+        [['2018-09-27 07:00:00', None, None, None, '1073744'],
+         ['2018-09-27 08:00:00', None, None, None, '1073744'],
+         ['2018-09-27 11:00:00', None, None, None, '1073744'],
+         ['2018-09-27 07:00:00', None, None, None, '1073747'],
+         ['2018-09-27 08:00:00', None, None, None, '1073747']],
+        columns=['datetime', DataType.WaterLevel, DataType.WaterTemp,
+                 DataType.WaterEC, 'sonde_id'])
+    merged_data['datetime'] = pd.to_datetime(
+        merged_data['datetime'], format="%Y-%m-%d %H:%M:%S")
+    mocker.patch(('sardes.plugins.dataio.widgets.'
+                  'dataimportwizard.merge_timeseries_groups'),
+                 return_value=merged_data)
+
+    sonde_installation = pd.Series(
+        {'sampling_feature_uuid': 0,
+         'sonde_uuid': 9,
+         'start_date': datetime.datetime(2018, 9, 27, 7, 0),
+         'end_date': None,
+         'install_depth': 10.25,
+         'well_municipality': "Saint-Paul-d'Abbotsford",
+         'sonde_brand_model': 'Solinst LTC M100 Edge',
+         'well_name': '03037041'})
+    mocker.patch.object(dbmanager._db_connection_worker,
+                        '_get_sonde_installation_info',
+                        return_value=(sonde_installation,))
+
+    # We select the input data files from the first sonde and assert
+    # that the duplicated values are flagged as expected.
+    data_import_wizard._queued_filenames = testfiles[3:]
+    data_import_wizard._load_next_queued_data_file()
+    qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
+
+    # We assert that the information shown in the wizard were updated as
+    # expected.
+    assert data_import_wizard._sonde_serial_no == '1073744'
+    assert (data_import_wizard.sonde_label.text() ==
+            'Solinst LTC M100 Edge 1073744')
+    assert (data_import_wizard.obs_well_label.text() ==
+            "03037041 (Saint-Paul-d'Abbotsford)")
+    assert data_import_wizard.install_depth.text() == '10.25 m'
+    assert (data_import_wizard.install_period.text() ==
+            '2018-09-27 07:00 to today')
+
+    assert np.sum(data_import_wizard._is_duplicated) == 3
 
 
 if __name__ == "__main__":

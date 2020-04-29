@@ -177,6 +177,10 @@ SONDE_INSTALLATIONS = pd.DataFrame(
     columns=['start_date', 'end_date', 'install_depth',
              'sampling_feature_uuid', 'sonde_uuid']
     )
+SONDE_INSTALLATIONS['sampling_feature_uuid'] = (
+    SONDE_INSTALLATIONS['sampling_feature_uuid'].astype(pd.Int64Dtype()))
+SONDE_INSTALLATIONS['sonde_uuid'] = (
+    SONDE_INSTALLATIONS['sonde_uuid'].astype(pd.Int64Dtype()))
 
 OBSERVATIONS.loc[0, 'sonde_installation_uuid'] = 0
 OBSERVATIONS.loc[1, 'sonde_installation_uuid'] = 1
@@ -251,6 +255,8 @@ class DatabaseAccessorDemo(DatabaseAccessor):
             max_commited_id = max(SONDES_DATA.index)
         elif name == 'manual_measurements':
             max_commited_id = max(MANUAL_MEASUREMENTS.index)
+        elif name == 'sonde_installations':
+            max_commited_id = max(SONDE_INSTALLATIONS.index)
         else:
             raise NotImplementedError
         return max(self.temp_indexes(name) + [max_commited_id]) + 1
@@ -380,7 +386,7 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         and attribute values.
         """
         for column in SONDE_INSTALLATIONS.columns:
-            SONDE_INSTALLATIONS.loc[install_id, column] = (
+            SONDE_INSTALLATIONS.at[install_id, column] = (
                 attr_values.get(column, None))
 
     def set_sonde_installations(self, install_id, attr_name, attr_value,
