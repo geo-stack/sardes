@@ -17,19 +17,21 @@ from math import floor, ceil
 # ---- Third party imports
 import numpy as np
 import pandas as pd
-from qtpy.QtCore import (QEvent, Qt, Signal, Slot, QItemSelection,
+from qtpy.QtCore import (QEvent, Qt, Signal, Slot, QItemSelection, QSize,
                          QItemSelectionModel, QRect, QTimer, QModelIndex)
 from qtpy.QtGui import QCursor, QPen, QPalette
 from qtpy.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDateEdit, QDateTimeEdit,
     QDoubleSpinBox, QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox,
     QSpinBox, QStyledItemDelegate, QTableView, QTextEdit, QListView, QStyle,
-    QStyleOption, QWidget, QGridLayout, QStyleOptionHeader, QVBoxLayout)
+    QStyleOption, QWidget, QGridLayout, QStyleOptionHeader, QVBoxLayout,
+    QTabWidget)
 
 # ---- Local imports
 from sardes import __appname__
 from sardes.api.panes import SardesPaneWidget
 from sardes.api.tablemodels import SardesSortFilterModel, SardesTableModelBase
+from sardes.config.icons import get_icon
 from sardes.config.locale import _
 from sardes.config.gui import get_iconsize
 from sardes.utils.data_operations import intervals_extract, are_values_equal
@@ -1939,6 +1941,134 @@ class SardesTableWidget(SardesPaneWidget):
         self.tableview.setEnabled(True)
         self.tableview.setFocus()
         self.progressbar.hide()
+
+
+class SardesStackedTableWidget(SardesPaneWidget):
+    """
+    A SardesPaneWidget to display multiple SardesTableWidget in a tab widget.
+    """
+
+    def __init__(self, parent=None, tabs_closable=False, tabs_movable=False):
+        super().__init__(parent)
+        self._setup_status_bar()
+
+        self.tabwidget = QTabWidget(self)
+        self.tabwidget.setTabPosition(QTabWidget.North)
+        self.tabwidget.setIconSize(QSize(18, 18))
+        self.tabwidget.setTabsClosable(tabs_closable)
+        self.tabwidget.setMovable(tabs_movable)
+        self.tabwidget.currentChanged.connect(self._on_current_changed)
+        self.tabwidget.setStyleSheet("QTabWidget::pane {padding: 0px;}")
+
+        self.tabbar = self.tabwidget.tabBar()
+
+        self.tabbar.installEventFilter(self)
+        self.tabwidget.installEventFilter(self)
+        self.installEventFilter(self)
+        self.tabwidget.tabCloseRequested.connect(self.close_table_at)
+
+        self.set_central_widget(self.tabwidget)
+
+    # ---- Public interface
+    def add_table(self, table, title, switch_to_table=False):
+        """
+        Add the given table to this stacked table widget.
+        """
+        self.tabwidget.addTab(table, get_icon('table'), title)
+        self.rowcount_label.register_table(table.tableview)
+
+        toolbar = table.get_upper_toolbar()
+        table.removeToolBar(toolbar)
+        self.addToolBar(table.get_upper_toolbar())
+        self._on_current_changed(self.currentIndex())
+
+        table.tableview.sig_data_edited.connect(self._update_tab_names)
+        table.tableview.sig_data_updated.connect(self._update_tab_names)
+
+        if switch_to_table:
+            self.tabwidget.setCurrentWidget(table)
+            table.tableview.setFocus()
+
+    def close_table_at(self, index):
+        """
+        Close the table at the given tabwidget index.
+        """
+        table = self.tabwidget.widget(index)
+        self.removeToolBar(table.get_upper_toolbar())
+        table.tableview.close()
+        table.close()
+        self.tabwidget.removeTab(index)
+        self._focus_current_table()
+
+    def close_all_tables(self):
+        """Close all opened table."""
+        for index in reversed(range(self.count())):
+            self.close_table_at(index)
+
+    # ---- Private interface
+    def _focus_current_table(self):
+        """
+        Set the focus to the current table if it exists.
+        """
+        try:
+            self.tabwidget.currentWidget().tableview.setFocus()
+        except AttributeError:
+            # This means the stacked table widget is empty.
+            pass
+
+    def _setup_status_bar(self):
+        """
+        Setup the status bar of this table widget.
+        """
+        statusbar = self.statusBar()
+        statusbar.setSizeGripEnabled(False)
+
+        # Add number of row(s) selected.
+        self.rowcount_label = RowCountLabel()
+        statusbar.addPermanentWidget(self.rowcount_label)
+
+    def _update_tab_names(self):
+        """
+        Append a '*' symbol at the end of a tab name when its corresponding
+        table have unsaved edits.
+        """
+        for index in range(self.count()):
+            table = self.tabwidget.widget(index)
+            tab_text = table.get_table_title()
+            if table.tableview.model().has_unsaved_data_edits():
+                tab_text += '*'
+            self.tabwidget.setTabText(index, tab_text)
+
+    def _on_current_changed(self, current_index):
+        """
+        Handle when the current index of this stacked table widget changed.
+        """
+        for index in range(self.count()):
+            self.tabwidget.widget(index).get_upper_toolbar().setVisible(
+                index == current_index)
+        self._focus_current_table()
+
+    # ---- Qt method overrides
+    def eventFilter(self, widget, event):
+        if event.type() == QEvent.MouseButtonPress:
+            self._focus_current_table()
+        return super().eventFilter(widget, event)
+
+    # ---- QTabWidget public API
+    def count(self):
+        return self.tabwidget.count()
+
+    def currentWidget(self):
+        return self.tabwidget.currentWidget()
+
+    def currentIndex(self):
+        return self.tabwidget.currentIndex()
+
+    def setCurrentIndex(self, *args, **kargs):
+        return self.tabwidget.setCurrentIndex(*args, **kargs)
+
+    def setCurrentWidget(self, *args, **kargs):
+        return self.tabwidget.setCurrentWidget(*args, **kargs)
 
 
 if __name__ == '__main__':
