@@ -416,6 +416,70 @@ class BoolEditDelegate(SardesItemDelegate):
 # =============================================================================
 # ---- Table View
 # =============================================================================
+class RowCountLabel(QLabel):
+    """
+    A Qt label to display the number of selected rows out of the total number
+    of rows shown in a SardesTableView.
+    """
+
+    def __init__(self, *args, **kargs):
+        super().__init__(*args, **kargs)
+
+        self._registered_tables = []
+        self._last_focused_table = None
+        self.set_row_count(0, 0)
+
+    def set_row_count(self, selected_row_count, visible_row_count):
+        """
+        Set the text displayed by this rowcount label.
+        """
+        self.setText(_("{} out of {} row(s) selected" + " ")
+                     .format(selected_row_count, visible_row_count))
+
+    def register_table(self, table):
+        """
+        Register the given table to this rowcount label.
+        """
+        if table not in self._registered_tables:
+            self._registered_tables.append(table)
+            table.sig_rowcount_changed.connect(self._on_rowcount_changed)
+            table.installEventFilter(self)
+
+    def unregister_table(self, table):
+        """
+        Un-register the given table from this rowcount label.
+        """
+        if table in self._registered_tables:
+            if table == self._last_focused_table:
+                self.set_row_count(0, 0)
+            self._registered_tables.remove(table)
+            table.removeEventFilter(self)
+            table.sig_rowcount_changed.disconnect(self._on_rowcount_changed)
+
+    def _on_rowcount_changed(self, table, selected_count, visible_count):
+        """
+        Update the selected and total row count displayed by this label after
+        a change was made to a registered table if it has focus.
+        """
+        if table == self._last_focused_table:
+            self.set_row_count(selected_count, visible_count)
+
+    def eventFilter(self, table, event):
+        """
+        Handle FocusIn and Close event for the registered tables.
+        """
+        if event.type() == QEvent.FocusIn:
+            if self._last_focused_table != table:
+                self._last_focused_table = table
+                self.set_row_count(
+                    table.selected_row_count(), table.visible_row_count())
+        elif event.type() == [QEvent.Close, QEvent.Hide]:
+            if self._last_focused_table == table:
+                self._last_focused_table = None
+                self.set_row_count(0, 0)
+        return super().eventFilter(table, event)
+
+
 class SardesHeaderView(QHeaderView):
     """
     An horizontal header view that allow sorting by columns on double mouse
