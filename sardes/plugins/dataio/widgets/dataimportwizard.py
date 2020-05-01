@@ -455,7 +455,8 @@ class DataImportWizard(SardesPaneWidget):
         self.table_widget = SardesTableWidget(
             self.table_model, multi_columns_sort=False,
             sections_movable=False, sections_hidable=False,
-            disabled_actions=SardesTableWidget.EDIT_ACTIONS)
+            disabled_actions=SardesTableWidget.EDIT_ACTIONS,
+            statusbar=True)
         self._setup_message_boxes()
 
         # Setup the horizontal header.

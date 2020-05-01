@@ -12,7 +12,7 @@ import os
 
 # ---- Third party imports
 from appconfigs.user import NoDefault
-from qtpy.QtCore import QObject, Qt, Slot, QPoint
+from qtpy.QtCore import QObject, Qt, Slot, QPoint, Signal
 from qtpy.QtWidgets import (QDockWidget, QGridLayout, QWidget, QFrame,
                             QStyle, QApplication, QLabel)
 
@@ -97,6 +97,10 @@ class SardesDockWindow(QFrame):
     encased in a dockwidget docked in the main window or as a
     separate full fledged independent window when undocked.
     """
+    sig_docked_changed = Signal(bool)
+    sig_docked = Signal()
+    sig_undocked = Signal()
+    sig_visibility_changed = Signal(bool)
 
     def __init__(self, widget, plugin, undocked_geometry, is_docked,
                  is_locked=True):
@@ -105,6 +109,7 @@ class SardesDockWindow(QFrame):
         self.widget = widget
         self.dock_btn = None
 
+        self._focused_widget = None
         self._undocked_geometry = undocked_geometry
         self._is_docked = is_docked
         self._is_locked = is_locked
@@ -126,6 +131,9 @@ class SardesDockWindow(QFrame):
         self._setup_dockwidget()
         self.setWindowTitle(plugin.get_plugin_title())
         self.setWindowIcon(plugin.get_plugin_icon())
+
+        self.sig_docked.connect(lambda: self.sig_docked_changed.emit(True))
+        self.sig_undocked.connect(lambda: self.sig_docked_changed.emit(False))
 
     # ---- Private API
     def _setup_dockwidget(self):
@@ -196,6 +204,7 @@ class SardesDockWindow(QFrame):
             self.hide()
         elif not checked and not self._is_docked:
             self.hide()
+        self.sig_visibility_changed.emit(self.is_visible())
 
     # ---- Public API
     def undocked_geometry(self):
@@ -223,6 +232,7 @@ class SardesDockWindow(QFrame):
         """
         Undock this dockwindow as a full fledged window.
         """
+        self._focused_widget = self.focusWidget()
         self._is_docked = False
         self.dockwidget.setVisible(False)
         self.setParent(None)
@@ -241,18 +251,28 @@ class SardesDockWindow(QFrame):
             qr.moveCenter(cp)
             self.move(qr.topLeft())
         self.show()
+        self.activateWindow()
         self.raise_()
+        if self._focused_widget is not None:
+            self._focused_widget.setFocus()
+        self.sig_undocked.emit()
 
     def dock(self):
         """
         Encase this dockwindow in a dockwidget and dock it in the mainwindow.
         """
-        self._undocked_geometry = self.saveGeometry()
+        self._focused_widget = self.focusWidget()
         self._is_docked = True
+        if not self.is_docked() and self.is_visible():
+            self._undocked_geometry = self.saveGeometry()
         self.dockwidget.setWidget(self)
         self.setWindowFlags(Qt.Widget)
         self.dockwidget.show()
+        self.dockwidget.activateWindow()
         self.dockwidget.raise_()
+        if self._focused_widget is not None:
+            self._focused_widget.setFocus()
+        self.sig_docked.emit()
 
     def set_locked(self, locked):
         """
@@ -401,12 +421,14 @@ class SardesPluginBase(QObject):
         """"Switch to this plugin."""
         if self.dockwindow.is_docked():
             self.dockwindow.dockwidget.show()
+            self.dockwindow.dockwidget.activateWindow()
             self.dockwindow.dockwidget.raise_()
         else:
             # If window is minimised, restore it.
             if self.dockwindow.windowState() == Qt.WindowMinimized:
                 self.dockwindow.setWindowState(Qt.WindowNoState)
             self.dockwindow.show()
+            self.dockwindow.activateWindow()
             self.dockwindow.raise_()
 
     # ---- Private internal methods
@@ -429,6 +451,12 @@ class SardesPluginBase(QObject):
                 undocked_geometry=undocked_geometry,
                 is_docked=self.get_option('is_docked', True),
                 )
+            self.dockwindow.sig_docked.connect(self.on_docked)
+            self.dockwindow.sig_undocked.connect(self.on_undocked)
+            if self.dockwindow.is_docked():
+                self.on_docked()
+            else:
+                self.on_undocked()
 
             # Add the dockwidget to the mainwindow.
             self.main.addDockWidget(
@@ -529,3 +557,17 @@ class SardesPlugin(SardesPluginBase):
         if self.dockwindow is not None:
             self.save_geometry_and_state()
             self.dockwindow.close()
+
+    @Slot()
+    def on_docked(self):
+        """
+        A slot called when the dockwindow is docked in the mainwindow.
+        """
+        pass
+
+    @Slot()
+    def on_undocked(self):
+        """
+        A slot called when the dockwindow is detached in the mainwindow.
+        """
+        pass

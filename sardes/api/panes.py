@@ -7,6 +7,9 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+# ---- Standard imports
+import uuid
+
 # ---- Third party imports
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QMainWindow
@@ -27,6 +30,9 @@ class SardesPaneWidget(QMainWindow):
         super().__init__(parent)
         self._upper_toolbar = None
         self._lower_toolbar = None
+        self.setObjectName(str(uuid.uuid4()))
+        self.setStyleSheet("QMainWindow#%s {border: 0px;}" % self.objectName())
+        self.setContextMenuPolicy(Qt.NoContextMenu)
 
     # ---- Setup
     def _setup_upper_toolbar(self):

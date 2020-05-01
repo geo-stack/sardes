@@ -17,19 +17,21 @@ from math import floor, ceil
 # ---- Third party imports
 import numpy as np
 import pandas as pd
-from qtpy.QtCore import (QEvent, Qt, Signal, Slot, QItemSelection,
+from qtpy.QtCore import (QEvent, Qt, Signal, Slot, QItemSelection, QSize,
                          QItemSelectionModel, QRect, QTimer, QModelIndex)
 from qtpy.QtGui import QCursor, QPen, QPalette
 from qtpy.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDateEdit, QDateTimeEdit,
     QDoubleSpinBox, QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox,
     QSpinBox, QStyledItemDelegate, QTableView, QTextEdit, QListView, QStyle,
-    QStyleOption, QWidget, QGridLayout, QStyleOptionHeader, QVBoxLayout)
+    QStyleOption, QWidget, QGridLayout, QStyleOptionHeader, QVBoxLayout,
+    QTabWidget)
 
 # ---- Local imports
 from sardes import __appname__
 from sardes.api.panes import SardesPaneWidget
 from sardes.api.tablemodels import SardesSortFilterModel, SardesTableModelBase
+from sardes.config.icons import get_icon
 from sardes.config.locale import _
 from sardes.config.gui import get_iconsize
 from sardes.utils.data_operations import intervals_extract, are_values_equal
@@ -416,6 +418,73 @@ class BoolEditDelegate(SardesItemDelegate):
 # =============================================================================
 # ---- Table View
 # =============================================================================
+class RowCountLabel(QLabel):
+    """
+    A Qt label to display the number of selected rows out of the total number
+    of rows shown in a SardesTableView.
+    """
+
+    def __init__(self, *args, **kargs):
+        super().__init__(*args, **kargs)
+
+        self._registered_tables = []
+        self._last_focused_table = None
+        self.set_row_count(0, 0)
+
+    def set_row_count(self, selected_row_count, visible_row_count):
+        """
+        Set the text displayed by this rowcount label.
+        """
+        self.setText(_("{} out of {} row(s) selected" + " ")
+                     .format(selected_row_count, visible_row_count))
+
+    def register_table(self, table):
+        """
+        Register the given table to this rowcount label.
+        """
+        if table not in self._registered_tables:
+            self._registered_tables.append(table)
+            table.sig_rowcount_changed.connect(self._on_rowcount_changed)
+            table.installEventFilter(self)
+            if table.hasFocus():
+                self.set_row_count(
+                    table.selected_row_count(), table.visible_row_count())
+
+    def unregister_table(self, table):
+        """
+        Un-register the given table from this rowcount label.
+        """
+        if table in self._registered_tables:
+            if table == self._last_focused_table:
+                self.set_row_count(0, 0)
+            self._registered_tables.remove(table)
+            table.removeEventFilter(self)
+            table.sig_rowcount_changed.disconnect(self._on_rowcount_changed)
+
+    def _on_rowcount_changed(self, table, selected_count, visible_count):
+        """
+        Update the selected and total row count displayed by this label after
+        a change was made to a registered table if it has focus.
+        """
+        if table == self._last_focused_table:
+            self.set_row_count(selected_count, visible_count)
+
+    def eventFilter(self, table, event):
+        """
+        Handle FocusIn and Close event for the registered tables.
+        """
+        if event.type() == QEvent.FocusIn:
+            if self._last_focused_table != table:
+                self._last_focused_table = table
+                self.set_row_count(
+                    table.selected_row_count(), table.visible_row_count())
+        elif event.type() == [QEvent.Close, QEvent.Hide]:
+            if self._last_focused_table == table:
+                self._last_focused_table = None
+                self.set_row_count(0, 0)
+        return super().eventFilter(table, event)
+
+
 class SardesHeaderView(QHeaderView):
     """
     An horizontal header view that allow sorting by columns on double mouse
@@ -630,6 +699,7 @@ class SardesTableView(QTableView):
     sig_data_edited = Signal(object)
     sig_show_event = Signal()
     sig_data_updated = Signal()
+    sig_rowcount_changed = Signal(object, int, int)
 
     def __init__(self, table_model, parent=None, multi_columns_sort=True,
                  sections_movable=True, sections_hidable=True,
@@ -688,6 +758,13 @@ class SardesTableView(QTableView):
             self._on_data_updated)
         self.selectionModel().selectionChanged.connect(
             self._on_selection_changed)
+
+        # Make the connections required for _on_selected_rowcount_changed.
+        self.model().rowsRemoved.connect(self._on_selected_rowcount_changed)
+        self.model().rowsInserted.connect(self._on_selected_rowcount_changed)
+        self.model().modelReset.connect(self._on_selected_rowcount_changed)
+        self.selectionModel().selectionChanged.connect(
+            self._on_selected_rowcount_changed)
 
         # List of QAction to toggle the visibility this table's columns.
         self._setup_column_visibility_actions()
@@ -828,7 +905,7 @@ class SardesTableView(QTableView):
                 self, _("Select All"),
                 icon='select_all',
                 tip=_("Selects all items in the table."),
-                triggered=self.selectAll,
+                triggered=self.select_all,
                 shortcut='Ctrl+A',
                 context=Qt.WidgetShortcut)
 
@@ -983,6 +1060,14 @@ class SardesTableView(QTableView):
         if 'cancel_edits' not in self._disabled_actions:
             self.cancel_edits_action.setEnabled(has_unsaved_data_edits)
 
+    def _on_selected_rowcount_changed(self):
+        """
+        Handle when the number of selected rows or the number of visibles
+        rows changed.
+        """
+        self.sig_rowcount_changed.emit(
+            self, self.selected_row_count(), self.visible_row_count())
+
     # ---- Options
     @property
     def sections_hidable(self):
@@ -1048,6 +1133,13 @@ class SardesTableView(QTableView):
                 self.model().dataf_index_at(model_index)]]
         else:
             return None
+
+    def select_all(self):
+        """
+        Selects all items in this table view.
+        """
+        self.setFocus()
+        self.selectAll()
 
     def select_row(self):
         """
@@ -1545,7 +1637,7 @@ class SardesTableWidget(SardesPaneWidget):
 
     def __init__(self, table_model, parent=None, multi_columns_sort=True,
                  sections_movable=True, sections_hidable=True,
-                 disabled_actions=None):
+                 disabled_actions=None, statusbar=False):
         """
         Parameters
         ----------
@@ -1619,7 +1711,11 @@ class SardesTableWidget(SardesPaneWidget):
         self.set_central_widget(self.central_widget)
 
         self._setup_upper_toolbar()
-        self._setup_status_bar()
+
+        self.statusbar = None
+        self.rowcount_label = None
+        if statusbar is True:
+            self._setup_status_bar()
 
     # ---- Layout
     def install_message_box(self, message_box):
@@ -1709,33 +1805,14 @@ class SardesTableWidget(SardesPaneWidget):
         """
         Setup the status bar of this table widget.
         """
-        statusbar = self.statusBar()
-        statusbar.setSizeGripEnabled(False)
+        self.statusbar = self.statusBar()
+        self.statusbar.setSizeGripEnabled(False)
         self.installEventFilter(self)
 
         # Number of row(s) selected.
-        self.selected_line_count = QLabel()
-        statusbar.addPermanentWidget(self.selected_line_count)
-
-        self._update_line_count()
-        self.tableview.selectionModel().selectionChanged.connect(
-            self._update_line_count)
-        self.tableview.model().rowsRemoved.connect(
-            self._update_line_count)
-        self.tableview.model().rowsInserted.connect(
-            self._update_line_count)
-        self.tableview.model().modelReset.connect(
-            self._update_line_count)
-
-    # ---- Line count
-    def _update_line_count(self):
-        """
-        Update the text of the selected/total row count indicator.
-        """
-        text = _("{} out of {} row(s) selected").format(
-            self.tableview.selected_row_count(),
-            self.tableview.visible_row_count())
-        self.selected_line_count.setText(text + ' ')
+        self.rowcount_label = RowCountLabel()
+        self.statusbar.addPermanentWidget(self.rowcount_label)
+        self.rowcount_label.register_table(self.tableview)
 
     # ---- Toolbar
     def add_toolbar_widget(self, widget, which='upper'):
@@ -1868,6 +1945,144 @@ class SardesTableWidget(SardesPaneWidget):
         self.tableview.setEnabled(True)
         self.tableview.setFocus()
         self.progressbar.hide()
+
+
+class SardesStackedTableWidget(SardesPaneWidget):
+    """
+    A SardesPaneWidget to display multiple SardesTableWidget in a tab widget.
+    """
+
+    def __init__(self, parent=None, tabs_closable=False, tabs_movable=False):
+        super().__init__(parent)
+        self._setup_status_bar()
+
+        self.tabwidget = QTabWidget(self)
+        self.tabwidget.setTabPosition(QTabWidget.North)
+        self.tabwidget.setIconSize(QSize(18, 18))
+        self.tabwidget.setTabsClosable(tabs_closable)
+        self.tabwidget.setMovable(tabs_movable)
+        self.tabwidget.currentChanged.connect(self._on_current_changed)
+        self.tabwidget.setStyleSheet("QTabWidget::pane {padding: 0px;}")
+
+        self.tabbar = self.tabwidget.tabBar()
+
+        self.tabbar.installEventFilter(self)
+        self.tabwidget.installEventFilter(self)
+        self.installEventFilter(self)
+        self.tabwidget.tabCloseRequested.connect(self.close_table_at)
+
+        self.set_central_widget(self.tabwidget)
+
+    # ---- Public interface
+    def add_table(self, table, title, switch_to_table=False):
+        """
+        Add the given table to this stacked table widget.
+        """
+        self.tabwidget.addTab(table, get_icon('table'), title)
+        self.rowcount_label.register_table(table.tableview)
+
+        toolbar = table.get_upper_toolbar()
+        table.removeToolBar(toolbar)
+        self.addToolBar(table.get_upper_toolbar())
+        self._on_current_changed(self.currentIndex())
+
+        table.tableview.sig_data_edited.connect(self._update_tab_names)
+        table.tableview.sig_data_updated.connect(self._update_tab_names)
+
+        if switch_to_table:
+            self.tabwidget.setCurrentWidget(table)
+            table.tableview.setFocus()
+
+    def close_table_at(self, index):
+        """
+        Close the table at the given tabwidget index.
+        """
+        table = self.tabwidget.widget(index)
+        self.removeToolBar(table.get_upper_toolbar())
+        table.tableview.close()
+        table.close()
+        self.tabwidget.removeTab(index)
+        self.focus_current_table()
+
+    def close_all_tables(self):
+        """Close all opened table."""
+        for index in reversed(range(self.count())):
+            self.close_table_at(index)
+
+    def focus_current_table(self):
+        """
+        Set the focus to the current table if it exists.
+        """
+        try:
+            self.tabwidget.currentWidget().tableview.setFocus()
+        except AttributeError:
+            # This means the stacked table widget is empty.
+            pass
+
+    # ---- Private interface
+    def _setup_status_bar(self):
+        """
+        Setup the status bar of this table widget.
+        """
+        statusbar = self.statusBar()
+        statusbar.setSizeGripEnabled(False)
+
+        # Add number of row(s) selected.
+        self.rowcount_label = RowCountLabel()
+        statusbar.addPermanentWidget(self.rowcount_label)
+
+    def _update_tab_names(self):
+        """
+        Append a '*' symbol at the end of a tab name when its corresponding
+        table have unsaved edits.
+        """
+        for index in range(self.count()):
+            table = self.tabwidget.widget(index)
+            tab_text = table.get_table_title()
+            if table.tableview.model().has_unsaved_data_edits():
+                tab_text += '*'
+            self.tabwidget.setTabText(index, tab_text)
+
+    def _on_current_changed(self, current_index):
+        """
+        Handle when the current index of this stacked table widget changed.
+        """
+        for index in range(self.count()):
+            self.tabwidget.widget(index).get_upper_toolbar().setVisible(
+                index == current_index)
+        self.focus_current_table()
+
+    # ---- Qt method overrides
+    def eventFilter(self, widget, event):
+        if event.type() == QEvent.MouseButtonPress:
+            self.focus_current_table()
+        return super().eventFilter(widget, event)
+
+    # ---- QTabWidget public API
+    def count(self):
+        return self.tabwidget.count()
+
+    def currentWidget(self):
+        return self.tabwidget.currentWidget()
+
+    def currentIndex(self):
+        return self.tabwidget.currentIndex()
+
+    def setCurrentIndex(self, *args, **kargs):
+        return self.tabwidget.setCurrentIndex(*args, **kargs)
+
+    def setCurrentWidget(self, *args, **kargs):
+        return self.tabwidget.setCurrentWidget(*args, **kargs)
+
+    @property
+    def tabCloseRequested(self):
+        return self.tabwidget.tabCloseRequested
+
+    def tabText(self, *args, **kargs):
+        return self.tabwidget.tabText(*args, **kargs)
+
+    def widget(self, *args, **kargs):
+        return self.tabwidget.widget(*args, **kargs)
 
 
 if __name__ == '__main__':
