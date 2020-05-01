@@ -86,6 +86,30 @@ class Tables(SardesPlugin):
         self.main.db_connection_manager.sig_models_data_changed.connect(
             self._update_current_table)
 
+    def on_docked(self):
+        """
+        Implement SardesPlugin abstract method.
+        """
+        # Hide stacked table widget statusbar and focus current table.
+        self.tabwidget.statusBar().hide()
+        self.tabwidget.focus_current_table()
+
+        # Register each table to main.
+        for table in self._tables.values():
+            self.main.register_table(table.tableview)
+
+    def on_undocked(self):
+        """
+        Implement SardesPlugin abstract method.
+        """
+        # Show stacked table widget statusbar and focus current table.
+        self.tabwidget.statusBar().show()
+        self.tabwidget.focus_current_table()
+
+        # Un-register each table from main.
+        for table in self._tables.values():
+            self.main.unregister_table(table.tableview)
+
     # ---- Private methods
     def _setup_tables(self):
         self._create_and_register_table(

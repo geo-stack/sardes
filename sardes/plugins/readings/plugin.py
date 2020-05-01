@@ -200,7 +200,7 @@ class Readings(SardesPlugin):
         """
         Implement SardesPlugin abstract method.
         """
-        # Show stacked table widget statusbar.
+        # Show stacked table widget statusba and focus current table.
         self.tabwidget.statusBar().show()
         self.tabwidget.focus_current_table()
 
