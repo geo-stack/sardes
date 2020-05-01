@@ -416,13 +416,7 @@ class MainWindow(QMainWindow):
         the value saved in the config.
         """
         # We setup the default layout configuration first.
-        self.splitDockWidget(
-            self.tables_plugin.dockwidget(),
-            self.data_import_plugin.dockwidget(),
-            Qt.Horizontal)
-        self.tabifyDockWidget(
-            self.tables_plugin.dockwidget(),
-            self.readings_plugin.dockwidget())
+        self.setup_default_layout()
 
         # Then we appply saved configuration if it exists.
         hexstate = CONF.get('main', 'window/state', None)
