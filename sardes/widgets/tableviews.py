@@ -2001,15 +2001,14 @@ class SardesStackedTableWidget(SardesPaneWidget):
         table.tableview.close()
         table.close()
         self.tabwidget.removeTab(index)
-        self._focus_current_table()
+        self.focus_current_table()
 
     def close_all_tables(self):
         """Close all opened table."""
         for index in reversed(range(self.count())):
             self.close_table_at(index)
 
-    # ---- Private interface
-    def _focus_current_table(self):
+    def focus_current_table(self):
         """
         Set the focus to the current table if it exists.
         """
@@ -2019,6 +2018,7 @@ class SardesStackedTableWidget(SardesPaneWidget):
             # This means the stacked table widget is empty.
             pass
 
+    # ---- Private interface
     def _setup_status_bar(self):
         """
         Setup the status bar of this table widget.
@@ -2049,12 +2049,12 @@ class SardesStackedTableWidget(SardesPaneWidget):
         for index in range(self.count()):
             self.tabwidget.widget(index).get_upper_toolbar().setVisible(
                 index == current_index)
-        self._focus_current_table()
+        self.focus_current_table()
 
     # ---- Qt method overrides
     def eventFilter(self, widget, event):
         if event.type() == QEvent.MouseButtonPress:
-            self._focus_current_table()
+            self.focus_current_table()
         return super().eventFilter(widget, event)
 
     # ---- QTabWidget public API
