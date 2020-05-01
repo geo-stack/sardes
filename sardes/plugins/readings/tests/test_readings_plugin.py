@@ -49,6 +49,9 @@ def mainwindow(qtbot, mocker, dbconnmanager):
             self.view_timeseries_data = Mock()
             self.plot_timeseries_data = Mock()
 
+            self.register_table = Mock()
+            self.unregister_table = Mock()
+
             self.plugin = SARDES_PLUGIN_CLASS(self)
             self.plugin.register_plugin()
 
