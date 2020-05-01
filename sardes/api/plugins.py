@@ -439,6 +439,12 @@ class SardesPluginBase(QObject):
                 undocked_geometry=undocked_geometry,
                 is_docked=self.get_option('is_docked', True),
                 )
+            self.dockwindow.sig_docked.connect(self.on_docked)
+            self.dockwindow.sig_undocked.connect(self.on_undocked)
+            if self.dockwindow.is_docked():
+                self.on_docked()
+            else:
+                self.on_undocked()
 
             # Add the dockwidget to the mainwindow.
             self.main.addDockWidget(
@@ -539,3 +545,17 @@ class SardesPlugin(SardesPluginBase):
         if self.dockwindow is not None:
             self.save_geometry_and_state()
             self.dockwindow.close()
+
+    @Slot()
+    def on_docked(self):
+        """
+        A slot called when the dockwindow is docked in the mainwindow.
+        """
+        pass
+
+    @Slot()
+    def on_undocked(self):
+        """
+        A slot called when the dockwindow is detached in the mainwindow.
+        """
+        pass
