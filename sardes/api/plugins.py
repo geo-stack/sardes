@@ -12,7 +12,7 @@ import os
 
 # ---- Third party imports
 from appconfigs.user import NoDefault
-from qtpy.QtCore import QObject, Qt, Slot, QPoint
+from qtpy.QtCore import QObject, Qt, Slot, QPoint, Signal
 from qtpy.QtWidgets import (QDockWidget, QGridLayout, QWidget, QFrame,
                             QStyle, QApplication, QLabel)
 
@@ -97,6 +97,9 @@ class SardesDockWindow(QFrame):
     encased in a dockwidget docked in the main window or as a
     separate full fledged independent window when undocked.
     """
+    sig_docked_changed = Signal(bool)
+    sig_docked = Signal()
+    sig_undocked = Signal()
 
     def __init__(self, widget, plugin, undocked_geometry, is_docked,
                  is_locked=True):
@@ -126,6 +129,9 @@ class SardesDockWindow(QFrame):
         self._setup_dockwidget()
         self.setWindowTitle(plugin.get_plugin_title())
         self.setWindowIcon(plugin.get_plugin_icon())
+
+        self.sig_docked.connect(lambda: self.sig_docked_changed.emit(True))
+        self.sig_undocked.connect(lambda: self.sig_docked_changed.emit(False))
 
     # ---- Private API
     def _setup_dockwidget(self):
@@ -242,6 +248,7 @@ class SardesDockWindow(QFrame):
             self.move(qr.topLeft())
         self.show()
         self.raise_()
+        self.sig_undocked.emit()
 
     def dock(self):
         """
@@ -253,6 +260,7 @@ class SardesDockWindow(QFrame):
         self.setWindowFlags(Qt.Widget)
         self.dockwidget.show()
         self.dockwidget.raise_()
+        self.sig_docked.emit()
 
     def set_locked(self, locked):
         """
