@@ -446,6 +446,9 @@ class RowCountLabel(QLabel):
             self._registered_tables.append(table)
             table.sig_rowcount_changed.connect(self._on_rowcount_changed)
             table.installEventFilter(self)
+            if table.hasFocus():
+                self.set_row_count(
+                    table.selected_row_count(), table.visible_row_count())
 
     def unregister_table(self, table):
         """
