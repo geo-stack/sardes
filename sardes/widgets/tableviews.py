@@ -2077,6 +2077,12 @@ class SardesStackedTableWidget(SardesPaneWidget):
     def tabCloseRequested(self):
         return self.tabwidget.tabCloseRequested
 
+    def tabText(self, *args, **kargs):
+        return self.tabwidget.tabText(*args, **kargs)
+
+    def widget(self, *args, **kargs):
+        return self.tabwidget.widget(*args, **kargs)
+
 
 if __name__ == '__main__':
     from sardes.database.database_manager import DatabaseConnectionManager
