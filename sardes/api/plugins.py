@@ -249,6 +249,7 @@ class SardesDockWindow(QFrame):
             qr.moveCenter(cp)
             self.move(qr.topLeft())
         self.show()
+        self.activateWindow()
         self.raise_()
         self.sig_undocked.emit()
 
@@ -256,11 +257,13 @@ class SardesDockWindow(QFrame):
         """
         Encase this dockwindow in a dockwidget and dock it in the mainwindow.
         """
-        self._undocked_geometry = self.saveGeometry()
         self._is_docked = True
+        if not self.is_docked() and self.is_visible():
+            self._undocked_geometry = self.saveGeometry()
         self.dockwidget.setWidget(self)
         self.setWindowFlags(Qt.Widget)
         self.dockwidget.show()
+        self.dockwidget.activateWindow()
         self.dockwidget.raise_()
         self.sig_docked.emit()
 
@@ -411,12 +414,14 @@ class SardesPluginBase(QObject):
         """"Switch to this plugin."""
         if self.dockwindow.is_docked():
             self.dockwindow.dockwidget.show()
+            self.dockwindow.dockwidget.activateWindow()
             self.dockwindow.dockwidget.raise_()
         else:
             # If window is minimised, restore it.
             if self.dockwindow.windowState() == Qt.WindowMinimized:
                 self.dockwindow.setWindowState(Qt.WindowNoState)
             self.dockwindow.show()
+            self.dockwindow.activateWindow()
             self.dockwindow.raise_()
 
     # ---- Private internal methods
