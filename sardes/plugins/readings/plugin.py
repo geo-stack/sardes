@@ -184,6 +184,29 @@ class Readings(SardesPlugin):
         self.main.db_connection_manager.sig_database_disconnected.connect(
             self.tabwidget.close_all_tables)
 
+    def on_docked(self):
+        """
+        Implement SardesPlugin abstract method.
+        """
+        # Hide stacked table widget statusbar and focus current table.
+        self.tabwidget.statusBar().hide()
+        self.tabwidget.focus_current_table()
+
+        # Register each table to main.
+        for table in self._tseries_data_tables.values():
+            self.main.register_table(table.tableview)
+
+    def on_undocked(self):
+        """
+        Implement SardesPlugin abstract method.
+        """
+        # Show stacked table widget statusbar.
+        self.tabwidget.statusBar().show()
+        self.tabwidget.focus_current_table()
+
+        # Un-register each table from main.
+        for table in self._tseries_data_tables.values():
+            self.main.unregister_table(table.tableview)
 
     # ---- Private methods
     def _update_tab_names(self):
