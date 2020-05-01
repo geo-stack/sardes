@@ -273,6 +273,10 @@ class MainWindow(QMainWindow):
                     not self._is_panes_and_toolbars_locked))
             )
 
+        self.reset_window_layout_action = create_action(
+            self, _('Reset window layout'), icon='reset_layout',
+            triggered=self.reset_window_layout)
+
         # Create help related actions and menus.
         report_action = create_action(
             self, _('Report an issue...'), icon='bug',
@@ -292,7 +296,8 @@ class MainWindow(QMainWindow):
         options_menu_items = [
             self.lang_menu, preferences_action, None, self.panes_menu,
             self.toolbars_menu, self.lock_dockwidgets_and_toolbars_action,
-            None, report_action, about_action, exit_action
+            self.reset_window_layout_action, None, report_action, about_action,
+            exit_action
             ]
         for item in options_menu_items:
             if item is None:
