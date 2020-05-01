@@ -86,6 +86,7 @@ def test_mainwindow_settings(qtbot, mocker):
     # position and maximized state were restored from the previous
     # mainwindow that was closed.
     mainwindow2 = MainWindow()
+    qtbot.addWidget(mainwindow2)
     mainwindow2.show()
     qtbot.waitForWindowShown(mainwindow2)
     assert mainwindow2.isMaximized()
