@@ -49,6 +49,7 @@ from sardes.config.locale import (get_available_translations, get_lang_conf,
                                   LANGUAGE_CODES, set_lang_conf)
 from sardes.config.main import CONFIG_DIR
 from sardes.database.database_manager import DatabaseConnectionManager
+from sardes.widgets.tableviews import RowCountLabel
 from sardes.utils.qthelpers import (
     create_action, create_mainwindow_toolbar, create_toolbar_stretcher,
     create_toolbutton, qbytearray_to_hexstate, hexstate_to_qbytearray)
@@ -90,6 +91,7 @@ class MainWindow(QMainWindow):
     def setup(self):
         """Setup the main window"""
         self._setup_options_menu_toolbar()
+        self.setup_statusbar()
         self._restore_window_geometry()
         self.setup_internal_plugins()
         self.setup_thirdparty_plugins()
@@ -181,6 +183,31 @@ class MainWindow(QMainWindow):
             else:
                 raise Warning(
                     "{}: This module is already loaded.".format(module_name))
+
+    # ---- Tables
+    def register_table(self, table):
+        """
+        Register a SardesTableView to the mainwindow.
+        """
+        self.tables_row_count.register_table(table)
+
+    def unregister_table(self, table):
+        """
+        Un-register a SardesTableView from the mainwindow.
+        """
+        self.tables_row_count.unregister_table(table)
+
+    # ---- Statusbar
+    def setup_statusbar(self):
+        """
+        Setup the status bar of the mainwindow.
+        """
+        statusbar = self.statusBar()
+        statusbar.setSizeGripEnabled(False)
+
+        # Number of row(s) selected.
+        self.tables_row_count = RowCountLabel()
+        statusbar.addPermanentWidget(self.tables_row_count)
 
     # ---- Toolbar setup
     @Slot(bool)
