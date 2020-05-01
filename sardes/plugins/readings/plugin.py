@@ -330,8 +330,12 @@ class Readings(SardesPlugin):
         viewer = TimeSeriesPlotViewer(self.main)
 
         # Set the title of the window.
-        viewer.setWindowTitle(_("Observation well {} ({})").format(
-            obs_well_data['obs_well_id'], obs_well_data['municipality']))
+        window_title = '{}'.format(obs_well_data['obs_well_id'])
+        if obs_well_data['common_name']:
+            window_title += ' - {}'.format(obs_well_data['common_name'])
+        if obs_well_data['municipality']:
+            window_title += ' ({})'.format(obs_well_data['municipality'])
+        viewer.setWindowTitle(window_title)
 
         # Setup the data for the timeseries plot viewer.
         # where = 'left'
