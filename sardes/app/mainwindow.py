@@ -35,7 +35,7 @@ import importlib
 
 # ---- Third party imports
 splash.showMessage(_("Importing third party Python modules..."))
-from qtpy.QtCore import Qt, QUrl, Slot
+from qtpy.QtCore import Qt, QUrl, Slot, QEvent
 from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
                             QMessageBox, QToolButton)
@@ -90,6 +90,7 @@ class MainWindow(QMainWindow):
 
     def setup(self):
         """Setup the main window"""
+        self.installEventFilter(self)
         self._setup_options_menu_toolbar()
         self.setup_statusbar()
         self._restore_window_geometry()
@@ -464,6 +465,15 @@ class MainWindow(QMainWindow):
                  self._is_panes_and_toolbars_locked)
 
     # ---- Qt method override/extension
+    def eventFilter(self, widget, event):
+        """
+        An event filter to prevent status tips from buttons and menus
+        to show in the status bar.
+        """
+        if event.type() == QEvent.StatusTip:
+            return True
+        return False
+
     def show(self):
         """
         Extend Qt method to call show_plugin on each installed plugin.
