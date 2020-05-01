@@ -892,7 +892,7 @@ class SardesTableView(QTableView):
                 self, _("Select All"),
                 icon='select_all',
                 tip=_("Selects all items in the table."),
-                triggered=self.selectAll,
+                triggered=self.select_all,
                 shortcut='Ctrl+A',
                 context=Qt.WidgetShortcut)
 
@@ -1112,6 +1112,13 @@ class SardesTableView(QTableView):
                 self.model().dataf_index_at(model_index)]]
         else:
             return None
+
+    def select_all(self):
+        """
+        Selects all items in this table view.
+        """
+        self.setFocus()
+        self.selectAll()
 
     def select_row(self):
         """
