@@ -31,7 +31,8 @@ from sardes.config.main import CONF
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
 from sardes.widgets.tableviews import (
     SardesTableWidget, StringEditDelegate, BoolEditDelegate,
-    NumEditDelegate, NotEditableDelegate, TextEditDelegate)
+    NumEditDelegate, NotEditableDelegate, TextEditDelegate,
+    SardesStackedTableWidget)
 
 
 """Readings plugin"""
@@ -158,11 +159,8 @@ class Readings(SardesPlugin):
         Create and return the pane widget to use in this
         plugin's dockwidget.
         """
-        self.tabwidget = QTabWidget(self.main)
-        self.tabwidget.setTabPosition(self.tabwidget.North)
-        self.tabwidget.setIconSize(QSize(18, 18))
-        self.tabwidget.setTabsClosable(True)
-        self.tabwidget.tabCloseRequested.connect(self._close_readings_table_at)
+        self.tabwidget = SardesStackedTableWidget(
+            self.main, tabs_closable=True, tabs_movable=True)
         return self.tabwidget
 
     def close_plugin(self):
@@ -173,7 +171,7 @@ class Readings(SardesPlugin):
         super().close_plugin()
 
         # Close all opened timeseries data table.
-        self._close_all_readings_tables()
+        self.tabwidget.close_all_tables()
 
     def register_plugin(self):
         """
@@ -184,7 +182,8 @@ class Readings(SardesPlugin):
         self.main.db_connection_manager.sig_tseries_data_changed.connect(
             self._update_readings_tables)
         self.main.db_connection_manager.sig_database_disconnected.connect(
-            self._close_all_readings_tables)
+            self.tabwidget.close_all_tables)
+
 
     # ---- Private methods
     def _update_tab_names(self):
@@ -212,22 +211,11 @@ class Readings(SardesPlugin):
         """
         Handle when a timeseries data table is destroyed.
         """
+        self.main.unregister_table(
+            self._tseries_data_tables[obs_well_uuid].tableview)
         del self._tseries_data_tables[obs_well_uuid]
 
     # ---- Readings tables
-    def _close_readings_table_at(self, index):
-        """
-        Close the readings table at the given tabwidget index.
-        """
-        table_widget = self.tabwidget.widget(index)
-        self.tabwidget.removeTab(index)
-        table_widget.close()
-
-    def _close_all_readings_tables(self):
-        """Close all opened timeseries data table."""
-        for index in reversed(range(self.count())):
-            self._close_readings_table_at(index)
-
     def view_timeseries_data(self, obs_well_uuid):
         """
         Create and show a table to visualize the timeseries data contained
@@ -291,12 +279,10 @@ class Readings(SardesPlugin):
         horizontal_header.setDefaultSectionSize(125)
 
         self._tseries_data_tables[obs_well_uuid] = table_widget
-        self.tabwidget.addTab(
-            table_widget, get_icon('table'), obs_well_data['obs_well_id'])
-        table_widget.tableview.sig_data_edited.connect(self._update_tab_names)
-        table_widget.tableview.sig_data_updated.connect(self._update_tab_names)
-        self.tabwidget.setCurrentWidget(table_widget)
-        table_widget.tableview.setFocus()
+        self.tabwidget.add_table(
+            table_widget, obs_well_data['obs_well_id'], switch_to_table=True)
+        if self.dockwindow.is_docked():
+            self.main.register_table(table_widget.tableview)
 
         table_model.update_data()
 
