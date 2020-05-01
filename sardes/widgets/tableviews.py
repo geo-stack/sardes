@@ -694,6 +694,7 @@ class SardesTableView(QTableView):
     sig_data_edited = Signal(object)
     sig_show_event = Signal()
     sig_data_updated = Signal()
+    sig_rowcount_changed = Signal(object, int, int)
 
     def __init__(self, table_model, parent=None, multi_columns_sort=True,
                  sections_movable=True, sections_hidable=True,
@@ -752,6 +753,13 @@ class SardesTableView(QTableView):
             self._on_data_updated)
         self.selectionModel().selectionChanged.connect(
             self._on_selection_changed)
+
+        # Make the connections required for _on_selected_rowcount_changed.
+        self.model().rowsRemoved.connect(self._on_selected_rowcount_changed)
+        self.model().rowsInserted.connect(self._on_selected_rowcount_changed)
+        self.model().modelReset.connect(self._on_selected_rowcount_changed)
+        self.selectionModel().selectionChanged.connect(
+            self._on_selected_rowcount_changed)
 
         # List of QAction to toggle the visibility this table's columns.
         self._setup_column_visibility_actions()
@@ -1046,6 +1054,14 @@ class SardesTableView(QTableView):
             self.undo_edits_action.setEnabled(is_data_edit_count)
         if 'cancel_edits' not in self._disabled_actions:
             self.cancel_edits_action.setEnabled(has_unsaved_data_edits)
+
+    def _on_selected_rowcount_changed(self):
+        """
+        Handle when the number of selected rows or the number of visibles
+        rows changed.
+        """
+        self.sig_rowcount_changed.emit(
+            self, self.selected_row_count(), self.visible_row_count())
 
     # ---- Options
     @property
@@ -1787,16 +1803,6 @@ class SardesTableWidget(SardesPaneWidget):
         # Number of row(s) selected.
         self.selected_line_count = QLabel()
         statusbar.addPermanentWidget(self.selected_line_count)
-
-        self._update_line_count()
-        self.tableview.selectionModel().selectionChanged.connect(
-            self._update_line_count)
-        self.tableview.model().rowsRemoved.connect(
-            self._update_line_count)
-        self.tableview.model().rowsInserted.connect(
-            self._update_line_count)
-        self.tableview.model().modelReset.connect(
-            self._update_line_count)
 
     # ---- Line count
     def _update_line_count(self):
