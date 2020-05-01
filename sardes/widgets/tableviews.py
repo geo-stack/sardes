@@ -1713,6 +1713,7 @@ class SardesTableWidget(SardesPaneWidget):
         self._setup_upper_toolbar()
 
         self.statusbar = None
+        self.rowcount_label = None
         if statusbar is True:
             self._setup_status_bar()
 
@@ -1809,9 +1810,9 @@ class SardesTableWidget(SardesPaneWidget):
         self.installEventFilter(self)
 
         # Number of row(s) selected.
-        rowcount_label = RowCountLabel()
-        self.statusbar.addPermanentWidget(rowcount_label)
-        rowcount_label.register_table(self.tableview)
+        self.rowcount_label = RowCountLabel()
+        self.statusbar.addPermanentWidget(self.rowcount_label)
+        self.rowcount_label.register_table(self.tableview)
 
     # ---- Toolbar
     def add_toolbar_widget(self, widget, which='upper'):

@@ -122,7 +122,7 @@ def tablemodel(qtbot, TABLE_DATAF):
 
 @pytest.fixture
 def tablewidget(qtbot, tablemodel):
-    tablewidget = SardesTableWidget(tablemodel)
+    tablewidget = SardesTableWidget(tablemodel, statusbar=True)
 
     # Setup the width of the table so that all columns are shown.
     width = 0
@@ -180,7 +180,7 @@ def test_tablewidget_init(tablewidget, TABLE_DATAF):
     # Assert that the content of the table is as expected.
     assert_frame_equal(tableview.model().dataf, TABLE_DATAF)
     assert tableview.visible_row_count() == len(TABLE_DATAF)
-    assert (tablewidget.selected_line_count.text() ==
+    assert (tablewidget.rowcount_label.text() ==
             "{} out of {} row(s) selected ".format(0, len(TABLE_DATAF)))
 
     # Assert that all columns are visible.
