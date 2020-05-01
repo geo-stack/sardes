@@ -1801,18 +1801,9 @@ class SardesTableWidget(SardesPaneWidget):
         self.installEventFilter(self)
 
         # Number of row(s) selected.
-        self.selected_line_count = QLabel()
-        statusbar.addPermanentWidget(self.selected_line_count)
-
-    # ---- Line count
-    def _update_line_count(self):
-        """
-        Update the text of the selected/total row count indicator.
-        """
-        text = _("{} out of {} row(s) selected").format(
-            self.tableview.selected_row_count(),
-            self.tableview.visible_row_count())
-        self.selected_line_count.setText(text + ' ')
+        rowcount_label = RowCountLabel()
+        statusbar.addPermanentWidget(rowcount_label)
+        rowcount_label.register_table(self.tableview)
 
     # ---- Toolbar
     def add_toolbar_widget(self, widget, which='upper'):
