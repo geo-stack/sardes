@@ -8,19 +8,13 @@
 # -----------------------------------------------------------------------------
 
 # ---- Local imports
+from sardes.config.main import CONF
 from sardes.api.plugins import SardesPlugin
-from sardes.config.icons import get_icon
 from sardes.config.locale import _
+from sardes.widgets.tableviews import SardesStackedTableWidget
 from sardes.plugins.tables.tables import (
     ObsWellsTableWidget, RepereTableWidget, SondesInventoryTableWidget,
     ManualMeasurementsTableWidget, SondeInstallationsTableWidget)
-
-# ---- Third party imports
-from qtpy.QtCore import QSize
-from qtpy.QtWidgets import QTabWidget
-
-# ---- Local imports
-from sardes.config.main import CONF
 
 
 """Tables plugin"""
@@ -35,7 +29,7 @@ class Tables(SardesPlugin):
         self._tables = {}
         self._setup_tables()
 
-    # ---- Public methods implementation
+    # ---- SardesPlugin public API
     def current_table(self):
         """
         Return the currently visible table of this plugin.
@@ -58,9 +52,7 @@ class Tables(SardesPlugin):
         Create and return the pane widget to use in this
         plugin's dockwidget.
         """
-        self.tabwidget = QTabWidget(self.main)
-        self.tabwidget.setTabPosition(self.tabwidget.North)
-        self.tabwidget.setIconSize(QSize(18, 18))
+        self.tabwidget = SardesStackedTableWidget(self.main)
         return self.tabwidget
 
     def close_plugin(self):
@@ -125,13 +117,13 @@ class Tables(SardesPlugin):
 
     def _create_and_register_table(self, TableClass, data_name, lib_names):
         table = TableClass(disabled_actions=['delete_row'])
+
         self.main.db_connection_manager.register_model(
             table.model(), data_name, lib_names)
         table.register_to_plugin(self)
 
         self._tables[table.get_table_id()] = table
-        self.tabwidget.addTab(
-            table, get_icon('table'), table.get_table_title())
+        self.tabwidget.add_table(table, table.get_table_title())
 
         # Restore the state of the tables' horizontal header from the configs.
         table.restore_table_horiz_header_state(
@@ -144,21 +136,7 @@ class Tables(SardesPlugin):
         table.set_columns_sorting_state(sort_by_columns, columns_sort_order)
 
         # Connect signals.
-        table.tableview.sig_data_edited.connect(self._update_tab_names)
-        table.tableview.sig_data_updated.connect(self._update_tab_names)
         table.tableview.sig_show_event.connect(self._update_current_table)
-
-    def _update_tab_names(self):
-        """
-        Append a '*' symbol at the end of a tab name when its corresponding
-        table have unsaved edits.
-        """
-        for index in range(self.tabwidget.count()):
-            table = self.tabwidget.widget(index)
-            tab_text = table.get_table_title()
-            if table.tableview.model().has_unsaved_data_edits():
-                tab_text += '*'
-            self.tabwidget.setTabText(index, tab_text)
 
     def _update_current_table(self, *args, **kargs):
         """Update the current table data and state."""
