@@ -100,6 +100,7 @@ class SardesDockWindow(QFrame):
     sig_docked_changed = Signal(bool)
     sig_docked = Signal()
     sig_undocked = Signal()
+    sig_visibility_changed = Signal(bool)
 
     def __init__(self, widget, plugin, undocked_geometry, is_docked,
                  is_locked=True):
@@ -202,6 +203,7 @@ class SardesDockWindow(QFrame):
             self.hide()
         elif not checked and not self._is_docked:
             self.hide()
+        self.sig_visibility_changed.emit(self.is_visible())
 
     # ---- Public API
     def undocked_geometry(self):
