@@ -96,3 +96,22 @@ class DataIO(SardesPlugin):
         # Restore the state of the horizontal header.
         self.data_import_wizard.table_widget.restore_table_horiz_header_state(
             self.get_option('horiz_header/state', None))
+
+    def on_docked(self):
+        """
+        Implement SardesPlugin abstract method.
+        """
+        # Register data import wizard table to main and hide its statusbar.
+        self.data_import_wizard.table_widget.statusBar().hide()
+        self.main.register_table(
+            self.data_import_wizard.table_widget.tableview)
+
+    def on_undocked(self):
+        """
+        Implement SardesPlugin abstract method.
+        """
+        # Un-register data import wizard table from main and show
+        # its statusbar.
+        self.data_import_wizard.table_widget.statusBar().show()
+        self.main.unregister_table(
+            self.data_import_wizard.table_widget.tableview)

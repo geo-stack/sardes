@@ -109,6 +109,7 @@ class SardesDockWindow(QFrame):
         self.widget = widget
         self.dock_btn = None
 
+        self._focused_widget = None
         self._undocked_geometry = undocked_geometry
         self._is_docked = is_docked
         self._is_locked = is_locked
@@ -231,6 +232,7 @@ class SardesDockWindow(QFrame):
         """
         Undock this dockwindow as a full fledged window.
         """
+        self._focused_widget = self.focusWidget()
         self._is_docked = False
         self.dockwidget.setVisible(False)
         self.setParent(None)
@@ -251,12 +253,15 @@ class SardesDockWindow(QFrame):
         self.show()
         self.activateWindow()
         self.raise_()
+        if self._focused_widget is not None:
+            self._focused_widget.setFocus()
         self.sig_undocked.emit()
 
     def dock(self):
         """
         Encase this dockwindow in a dockwidget and dock it in the mainwindow.
         """
+        self._focused_widget = self.focusWidget()
         self._is_docked = True
         if not self.is_docked() and self.is_visible():
             self._undocked_geometry = self.saveGeometry()
@@ -265,6 +270,8 @@ class SardesDockWindow(QFrame):
         self.dockwidget.show()
         self.dockwidget.activateWindow()
         self.dockwidget.raise_()
+        if self._focused_widget is not None:
+            self._focused_widget.setFocus()
         self.sig_docked.emit()
 
     def set_locked(self, locked):

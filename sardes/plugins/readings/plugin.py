@@ -188,9 +188,8 @@ class Readings(SardesPlugin):
         """
         Implement SardesPlugin abstract method.
         """
-        # Hide stacked table widget statusbar and focus current table.
+        # Hide stacked table widget statusbar.
         self.tabwidget.statusBar().hide()
-        self.tabwidget.focus_current_table()
 
         # Register each table to main.
         for table in self._tseries_data_tables.values():
@@ -200,9 +199,8 @@ class Readings(SardesPlugin):
         """
         Implement SardesPlugin abstract method.
         """
-        # Show stacked table widget statusba and focus current table.
+        # Show stacked table widget statusbar.
         self.tabwidget.statusBar().show()
-        self.tabwidget.focus_current_table()
 
         # Un-register each table from main.
         for table in self._tseries_data_tables.values():
