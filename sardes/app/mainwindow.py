@@ -334,6 +334,19 @@ class MainWindow(QMainWindow):
         self.readings_plugin._request_plot_readings(obs_well_data)
 
     # ---- Main window settings
+    @Slot()
+    def reset_window_layout(self):
+        """
+        Reset window layout to default
+        """
+        answer = QMessageBox.warning(
+            self, _("Reset Window Layout"),
+            _("Window layout will be reset to default settings.<br><br>"
+              "Do you want to continue?"),
+            QMessageBox.Yes | QMessageBox.No)
+        if answer == QMessageBox.Yes:
+            self.setup_default_layout()
+
     def setup_default_layout(self):
         """
         Setup the default layout for Sardes mainwindow.
