@@ -334,6 +334,44 @@ class MainWindow(QMainWindow):
         self.readings_plugin._request_plot_readings(obs_well_data)
 
     # ---- Main window settings
+    def setup_default_layout(self):
+        """
+        Setup the default layout for Sardes mainwindow.
+        """
+        self.setUpdatesEnabled(False)
+
+        # Make sure all plugins are docked and visible.
+        self.tables_plugin.dockwindow.dock()
+        self.data_import_plugin.dockwindow.dock()
+        self.readings_plugin.dockwindow.dock()
+
+        # Split dockwidgets.
+        # Note that we use both directions to ensure proper update in case
+        # the tables plugin is already in a tabbed docked area. In that case,
+        # doing only the horizontal orientation simply adds the other plugin
+        # to the tabbed docked area instead of next to it.
+        for orientation in [Qt.Vertical, Qt.Horizontal]:
+            self.splitDockWidget(
+                self.tables_plugin.dockwidget(),
+                self.data_import_plugin.dockwidget(),
+                orientation)
+
+        # Tabify dockwidget.
+        self.tabifyDockWidget(
+            self.tables_plugin.dockwidget(),
+            self.readings_plugin.dockwidget())
+
+        # Resize dockwidgets.
+        wf2 = int(500 / self.width() * 100)
+        wf1 = 100 - wf2
+        dockwidgets = [self.tables_plugin.dockwidget(),
+                       self.data_import_plugin.dockwidget()]
+        width_fractions = [wf1, wf2]
+        self.resizeDocks(dockwidgets, width_fractions, Qt.Horizontal)
+
+        self.tables_plugin.switch_to_plugin()
+        self.setUpdatesEnabled(True)
+
     def _restore_window_geometry(self):
         """
         Restore the geometry of this mainwindow from the value saved
