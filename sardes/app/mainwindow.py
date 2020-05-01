@@ -273,6 +273,10 @@ class MainWindow(QMainWindow):
                     not self._is_panes_and_toolbars_locked))
             )
 
+        self.reset_window_layout_action = create_action(
+            self, _('Reset window layout'), icon='reset_layout',
+            triggered=self.reset_window_layout)
+
         # Create help related actions and menus.
         report_action = create_action(
             self, _('Report an issue...'), icon='bug',
@@ -292,7 +296,8 @@ class MainWindow(QMainWindow):
         options_menu_items = [
             self.lang_menu, preferences_action, None, self.panes_menu,
             self.toolbars_menu, self.lock_dockwidgets_and_toolbars_action,
-            None, report_action, about_action, exit_action
+            self.reset_window_layout_action, None, report_action, about_action,
+            exit_action
             ]
         for item in options_menu_items:
             if item is None:
@@ -334,6 +339,57 @@ class MainWindow(QMainWindow):
         self.readings_plugin._request_plot_readings(obs_well_data)
 
     # ---- Main window settings
+    @Slot()
+    def reset_window_layout(self):
+        """
+        Reset window layout to default
+        """
+        answer = QMessageBox.warning(
+            self, _("Reset Window Layout"),
+            _("Window layout will be reset to default settings.<br><br>"
+              "Do you want to continue?"),
+            QMessageBox.Yes | QMessageBox.No)
+        if answer == QMessageBox.Yes:
+            self.setup_default_layout()
+
+    def setup_default_layout(self):
+        """
+        Setup the default layout for Sardes mainwindow.
+        """
+        self.setUpdatesEnabled(False)
+
+        # Make sure all plugins are docked and visible.
+        self.tables_plugin.dockwindow.dock()
+        self.data_import_plugin.dockwindow.dock()
+        self.readings_plugin.dockwindow.dock()
+
+        # Split dockwidgets.
+        # Note that we use both directions to ensure proper update in case
+        # the tables plugin is already in a tabbed docked area. In that case,
+        # doing only the horizontal orientation simply adds the other plugin
+        # to the tabbed docked area instead of next to it.
+        for orientation in [Qt.Vertical, Qt.Horizontal]:
+            self.splitDockWidget(
+                self.tables_plugin.dockwidget(),
+                self.data_import_plugin.dockwidget(),
+                orientation)
+
+        # Tabify dockwidget.
+        self.tabifyDockWidget(
+            self.tables_plugin.dockwidget(),
+            self.readings_plugin.dockwidget())
+
+        # Resize dockwidgets.
+        wf2 = int(500 / self.width() * 100)
+        wf1 = 100 - wf2
+        dockwidgets = [self.tables_plugin.dockwidget(),
+                       self.data_import_plugin.dockwidget()]
+        width_fractions = [wf1, wf2]
+        self.resizeDocks(dockwidgets, width_fractions, Qt.Horizontal)
+
+        self.tables_plugin.switch_to_plugin()
+        self.setUpdatesEnabled(True)
+
     def _restore_window_geometry(self):
         """
         Restore the geometry of this mainwindow from the value saved
@@ -360,13 +416,7 @@ class MainWindow(QMainWindow):
         the value saved in the config.
         """
         # We setup the default layout configuration first.
-        self.splitDockWidget(
-            self.tables_plugin.dockwidget(),
-            self.data_import_plugin.dockwidget(),
-            Qt.Horizontal)
-        self.tabifyDockWidget(
-            self.tables_plugin.dockwidget(),
-            self.readings_plugin.dockwidget())
+        self.setup_default_layout()
 
         # Then we appply saved configuration if it exists.
         hexstate = CONF.get('main', 'window/state', None)

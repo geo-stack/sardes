@@ -132,6 +132,29 @@ def test_mainwindow_lang_change(mainwindow, qtbot, mocker):
     assert checked_actions[0].text() == 'Français'
 
 
+def test_reset_window_layout(mainwindow, qtbot, mocker):
+    """
+    Test that the option to reset the layout of the mainwindow is
+    working as expected.
+    """
+    mainwindow.data_import_plugin.dockwindow.undock()
+    mainwindow.readings_plugin.dockwidget().close()
+
+    assert not mainwindow.data_import_plugin.dockwindow.is_docked()
+    assert mainwindow.data_import_plugin.dockwindow.is_visible()
+    assert mainwindow.readings_plugin.dockwindow.is_docked()
+    assert not mainwindow.readings_plugin.dockwindow.is_visible()
+
+    # Reset layout to default.
+    mocker.patch.object(QMessageBox, 'warning', return_value=QMessageBox.Yes)
+    mainwindow.reset_window_layout_action.trigger()
+
+    assert mainwindow.data_import_plugin.dockwindow.is_docked()
+    assert mainwindow.data_import_plugin.dockwindow.is_visible()
+    assert mainwindow.readings_plugin.dockwindow.is_docked()
+    assert mainwindow.readings_plugin.dockwindow.is_visible()
+
+
 # =============================================================================
 # ---- Tests show readings
 # =============================================================================

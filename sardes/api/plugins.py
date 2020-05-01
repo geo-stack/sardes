@@ -160,7 +160,7 @@ class SardesDockWindow(QFrame):
                 super().closeEvent(event)
 
         self.dockwidget = _DockWidget(self._toggle_view_action)
-        self.dockwidget.setAllowedAreas(Qt.AllDockWidgetAreas)
+        self.dockwidget.setAllowedAreas(Qt.LeftDockWidgetArea)
         self.dockwidget.setObjectName(self.plugin.__class__.__name__ + "_dw")
 
         self.dockwidget_titlebar = DockWidgetTitleBar(

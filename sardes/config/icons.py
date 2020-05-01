@@ -174,6 +174,9 @@ FA_ICONS = {
     'remove_row': [
         ('mdi.table-row-remove',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
+    'reset_layout': [
+        ('fa.undo',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'save': [
         ('fa.save',),
         {'color': ICON_COLOR}],
