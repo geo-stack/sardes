@@ -1632,7 +1632,7 @@ class SardesTableWidget(SardesPaneWidget):
 
     def __init__(self, table_model, parent=None, multi_columns_sort=True,
                  sections_movable=True, sections_hidable=True,
-                 disabled_actions=None):
+                 disabled_actions=None, statusbar=False):
         """
         Parameters
         ----------
@@ -1706,7 +1706,10 @@ class SardesTableWidget(SardesPaneWidget):
         self.set_central_widget(self.central_widget)
 
         self._setup_upper_toolbar()
-        self._setup_status_bar()
+
+        self.statusbar = None
+        if statusbar is True:
+            self._setup_status_bar()
 
     # ---- Layout
     def install_message_box(self, message_box):
@@ -1796,13 +1799,13 @@ class SardesTableWidget(SardesPaneWidget):
         """
         Setup the status bar of this table widget.
         """
-        statusbar = self.statusBar()
-        statusbar.setSizeGripEnabled(False)
+        self.statusbar = self.statusBar()
+        self.statusbar.setSizeGripEnabled(False)
         self.installEventFilter(self)
 
         # Number of row(s) selected.
         rowcount_label = RowCountLabel()
-        statusbar.addPermanentWidget(rowcount_label)
+        self.statusbar.addPermanentWidget(rowcount_label)
         rowcount_label.register_table(self.tableview)
 
     # ---- Toolbar
