@@ -31,7 +31,7 @@ from sardes.widgets.tableviews import (
 """Readings plugin"""
 
 
-class DataTableModel(SardesTableModel):
+class ReadingsTableModel(SardesTableModel):
     def __init__(self, obs_well_uuid, *args, **kargs):
         super().__init__(*args, **kargs)
         self._obs_well_uuid = obs_well_uuid
@@ -264,8 +264,8 @@ class Readings(SardesPlugin):
         obs_well_id = obs_well_data['obs_well_id']
 
         # Setup a new table model and widget.
-        table_model = DataTableModel(obs_well_uuid, table_title=obs_well_id,
-                                     table_id=obs_well_uuid)
+        table_model = ReadingsTableModel(
+            obs_well_uuid, table_title=obs_well_id, table_id=obs_well_uuid)
         table_model.set_database_connection_manager(
             self.main.db_connection_manager)
 
