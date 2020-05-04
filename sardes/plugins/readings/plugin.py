@@ -120,6 +120,15 @@ class DataTableModel(SardesTableModel):
         self.sig_data_saved.emit()
 
 
+class ReadingsTableWidget(SardesTableWidget):
+
+    def __init__(self, table_model, parent):
+        super().__init__(table_model, parent, multi_columns_sort=True,
+                         sections_movable=False, sections_hidable=False,
+                         disabled_actions=['new_row'])
+        self.setAttribute(Qt.WA_DeleteOnClose)
+
+
 class Readings(SardesPlugin):
 
     CONF_SECTION = 'readings'
@@ -260,11 +269,7 @@ class Readings(SardesPlugin):
         table_model.set_database_connection_manager(
             self.main.db_connection_manager)
 
-        table_widget = SardesTableWidget(
-            table_model, parent=self.main, multi_columns_sort=True,
-            sections_movable=False, sections_hidable=False,
-            disabled_actions=['new_row'])
-        table_widget.setAttribute(Qt.WA_DeleteOnClose)
+        table_widget = ReadingsTableWidget(table_model, self.main)
         table_widget.destroyed.connect(
             lambda _, obs_well_uuid=obs_well_uuid:
                 self._handle_data_table_destroyed(obs_well_uuid))
