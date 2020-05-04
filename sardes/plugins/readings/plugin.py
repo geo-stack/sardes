@@ -9,29 +9,22 @@
 
 # ---- Local imports
 from sardes.api.plugins import SardesPlugin
-from sardes.config.icons import get_icon
 from sardes.config.locale import _
-from sardes.plugins.tables.tables import (
-    ObsWellsTableWidget, RepereTableWidget, SondesInventoryTableWidget,
-    ManualMeasurementsTableWidget, SondeInstallationsTableWidget)
 
 # ---- Third party imports
 import pandas as pd
-from qtpy.QtCore import Qt, QSize, Slot
-from qtpy.QtWidgets import (QApplication, QFileDialog, QTabWidget,
-                            QLabel, QFrame, QGridLayout, QWidget,
-                            QPushButton, QToolButton, QStyle)
+from qtpy.QtCore import Qt, Slot
+from qtpy.QtWidgets import QApplication
 
 # ---- Local imports
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.config.gui import get_iconsize
 from sardes.api.tablemodels import SardesTableModel
-from sardes.api.timeseries import DataType, merge_timeseries_groups
+from sardes.api.timeseries import DataType
 from sardes.config.main import CONF
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
 from sardes.widgets.tableviews import (
-    SardesTableWidget, StringEditDelegate, BoolEditDelegate,
-    NumEditDelegate, NotEditableDelegate, TextEditDelegate,
+    SardesTableWidget, NumEditDelegate, NotEditableDelegate,
     SardesStackedTableWidget)
 
 
