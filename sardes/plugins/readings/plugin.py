@@ -158,7 +158,10 @@ class ReadingsTableWidget(SardesTableWidget):
             #     # Create a new axe to hold the timeseries for the monitored
             #     # property related to this group of timeseries.
             #     viewer.create_axe(tseries_group)
+        if self.plot_viewer.windowState() == Qt.WindowMinimized:
+            self.plot_viewer.setWindowState(Qt.WindowNoState)
         self.plot_viewer.show()
+        self.plot_viewer.activateWindow()
         self.plot_viewer.raise_()
 
 
