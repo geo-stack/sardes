@@ -61,20 +61,19 @@ class DataTableModel(SardesTableModel):
         self.db_connection_manager.get_timeseries_for_obs_well(
             self._obs_well_uuid,
             [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
-            self.set_model_tseries_groups)
+            self.set_model_data)
 
-    def set_model_tseries_groups(self, tseries_groups):
+    def set_model_data(self, dataf):
         """
         Format the data contained in the list of timeseries group and
         set the content of this table model data.
         """
-        dataf = merge_timeseries_groups(tseries_groups)
         dataf_columns_mapper = [('datetime', _('Datetime')),
                                 ('sonde_id', _('Sonde Serial Number'))]
         dataf_columns_mapper.extend([(dtype, dtype.label) for dtype in
                                      DataType if dtype in dataf.columns])
         dataf_columns_mapper.append(('obs_id', _('Observation ID')))
-        self.set_model_data(dataf, dataf_columns_mapper)
+        super().set_model_data(dataf, dataf_columns_mapper)
         self.sig_data_updated.emit()
 
     def save_data_edits(self):
