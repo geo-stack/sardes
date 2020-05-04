@@ -19,6 +19,9 @@ import pandas as pd
 from pandas import DataFrame
 from qtpy.QtCore import QObject, QThread, Signal, Slot
 
+# ---- Local imports
+from sardes.api.timeseries import DataType
+
 
 class DatabaseConnectionWorker(QObject):
     """
