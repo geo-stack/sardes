@@ -891,10 +891,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
     def get_timeseries_for_obs_well(self, sampling_feature_uuid, data_type):
         """
-        Return a :class:`TimeSeriesGroup` object containing the
-        :class:`TimeSeries` objects holding the data acquired for the
-        specified monitored property in the observation well corresponding
-        to the specified sampling feature ID. .
+        Return a pandas dataframe containing the readings for the given
+        data type and observation well.
         """
         data_type = DataType(data_type)
         obs_property_id = self._get_observed_property_id(data_type)
