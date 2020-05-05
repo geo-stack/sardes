@@ -151,13 +151,8 @@ class ReadingsTableWidget(SardesTableWidget):
                 window_title += ' ({})'.format(obs_well_data['municipality'])
             self.plot_viewer.setWindowTitle(window_title)
 
-            # Setup the data for the timeseries plot viewer.
-            self.plot_viewer.set_model(self.model())
-            # # where = 'left'
-            # for tseries_group in tseries_groups[:2]:
-            #     # Create a new axe to hold the timeseries for the monitored
-            #     # property related to this group of timeseries.
-            #     viewer.create_axe(tseries_group)
+            self.plot_viewer.set_data(self.model().dataf)
+
         if self.plot_viewer.windowState() == Qt.WindowMinimized:
             self.plot_viewer.setWindowState(Qt.WindowNoState)
         self.plot_viewer.show()
