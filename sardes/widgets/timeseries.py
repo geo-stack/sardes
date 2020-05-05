@@ -55,8 +55,6 @@ class TimeSeriesGroup(Mapping):
     prop_name: str
         The common human readable name describing the data constituing
         the time series that are contained in this group.
-    prop_units: str
-        The units in which the data are saved.
     yaxis_inverted: bool
         A boolean to indicate whether the data should be plotted on an
         inverted y-axis (positive towards bottom).
@@ -342,6 +340,7 @@ class TimeSeriesAxes(MplAxes):
                          facecolor=None,
                          frameon=False,
                          sharex=tseries_figure.base_axes)
+
         self.figure.add_tseries_axes(self)
         # Note that this axe is created so that its xaxis is shared with
         # the base axe of the figure.
@@ -442,9 +441,8 @@ class TimeSeriesAxes(MplAxes):
         self.tseries_group = tseries_group
 
         # Setup the ylabel of the axe.
-        ylabel = tseries_group.prop_name
-        if tseries_group.prop_units:
-            ylabel += ' ({})'.format(tseries_group.prop_units)
+        ylabel = tseries_group.data_type.title
+        ylabel += ' ({})'.format(tseries_group.data_type.units)
         self.set_ylabel(ylabel, labelpad=10)
 
         # Add each timeseries of the monitored property object to this axe.
@@ -816,6 +814,29 @@ class TimeSeriesPlotViewer(QMainWindow):
         self.current_axe_button.sig_checked_action_changed.connect(
             self._handle_selected_axe_changed)
         axis_toolbar.addWidget(self.current_axe_button)
+    # ---- Public API
+    def set_data(self, dataf):
+        for data_type in DataType:
+            if data_type in dataf.columns:
+                tseries_group = TimeSeriesGroup(
+                    data_type,
+                    yaxis_inverted=(data_type == DataType.WaterLevel)
+                    )
+
+                # Split the data in channels.
+                for obs_id in dataf['obs_id'].unique():
+                    channel_data = dataf[dataf['obs_id'] == obs_id]
+                    sonde_id = channel_data['sonde_id'].unique()[0]
+                    tseries_group.add_timeseries(TimeSeries(
+                        pd.Series(channel_data[data_type].values,
+                                  index=channel_data['datetime'].values),
+                        tseries_id=obs_id,
+                        tseries_name=data_type.title,
+                        tseries_units='',
+                        tseries_color=data_type.color,
+                        sonde_id=sonde_id
+                        ))
+                self.create_axe(tseries_group)
 
     def create_axe(self, tseries_group, where=None):
         """
@@ -826,8 +847,9 @@ class TimeSeriesPlotViewer(QMainWindow):
 
         # Add axe to selection menu.
         # Note that this will make the corresponding axe to become current.
-        self.current_axe_button.create_action(tseries_group.prop_name,
-                                              data=axe)
+        self.current_axe_button.create_action(
+            tseries_group.data_type.title, data=axe)
+
         return axe
 
     @Slot(QAction)
