@@ -80,8 +80,7 @@ class ObsWellsTableModel(SardesTableModel):
 
 
 class ObsWellsTableWidget(SardesTableWidget):
-    sig_view_data = Signal(object)
-    sig_plot_data = Signal(object)
+    sig_view_data = Signal(object, bool)
 
     def __init__(self, *args, **kargs):
         table_model = ObsWellsTableModel(
@@ -114,7 +113,6 @@ class ObsWellsTableWidget(SardesTableWidget):
     def register_to_plugin(self, plugin):
         """Register this table with the given plugin."""
         self.sig_view_data.connect(plugin.main.view_timeseries_data)
-        self.sig_plot_data.connect(plugin.main.plot_timeseries_data)
 
     # ---- Timeseries
     def get_current_obs_well_data(self):
@@ -156,7 +154,7 @@ class ObsWellsTableWidget(SardesTableWidget):
         """
         current_obs_well_data = self.get_current_obs_well_data()
         if current_obs_well_data is not None:
-            self.sig_plot_data.emit(current_obs_well_data)
+            self.sig_view_data.emit(current_obs_well_data.name, True)
 
     def _view_current_timeseries_data(self):
         """
@@ -165,4 +163,4 @@ class ObsWellsTableWidget(SardesTableWidget):
         """
         current_obs_well_data = self.get_current_obs_well_data()
         if current_obs_well_data is not None:
-            self.sig_view_data.emit(current_obs_well_data.name)
+            self.sig_view_data.emit(current_obs_well_data.name, False)
