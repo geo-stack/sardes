@@ -13,9 +13,6 @@ from abc import ABC, abstractmethod
 # ---- Third party imports
 from pandas import Series, DataFrame
 
-# ---- Local imports
-from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
-
 
 class DatabaseAccessorBase(ABC):
     """
@@ -553,9 +550,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
     # ---- Timeseries
     def get_timeseries_for_obs_well(self, obs_well_id, data_type):
         """
-        Return a :class:`TimeSeriesGroup` containing the :class:`TimeSeries`
-        holding the data acquired in the observation well for the
-        specified monitored property.
+        Return a pandas dataframe containing the readings for the given
+        data type and observation well.
 
         Parameters
         ----------
@@ -567,10 +563,15 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
         Returns
         -------
-        :class:`TimeSeriesGroup`
-            A :class:`TimeSeriesGroup` containing the :class:`TimeSeries`
-            holding the data acquired in the observation well for the
-            specified monitored property.
+        tseries_dataf: pandas.DataFrame
+            A pandas dataframe containing the readings for a given data type
+            and obervation well.
+            Time must be saved as datetime in a column named 'datetime'.
+            The column in which the numerical values are stored must be a
+            member of:class:`sardes.api.timeseries.DataType`.
+            Finally, the an observation ID and a sonde serial number must be
+            provided for each value and stored in columns named, respectively,
+            'obs_id' and 'sonde_id'.
         """
         raise NotImplementedError
 
