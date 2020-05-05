@@ -29,7 +29,7 @@ from sardes.config.gui import get_iconsize, RED, YELLOWLIGHT
 from sardes.config.locale import _
 from sardes.api.panes import SardesPaneWidget
 from sardes.api.tablemodels import SardesTableModel
-from sardes.api.timeseries import DataType, merge_timeseries_groups
+from sardes.api.timeseries import DataType
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import NotEditableDelegate, SardesTableWidget
 from sardes.widgets.buttons import CheckboxPathBoxWidget
@@ -608,7 +608,7 @@ class DataImportWizard(SardesPaneWidget):
         self.previous_stacked_widget.setCurrentIndex(0)
         self._update_duplicated_satus()
 
-    def _set_previous_data(self, tseries_groups):
+    def _set_previous_data(self, prev_dataf):
         """
         Set the information regarding the water level reading that is
         stored in the database previous to the data series contained in
@@ -624,11 +624,10 @@ class DataImportWizard(SardesPaneWidget):
             self.previous_stacked_widget.setCurrentIndex(1)
             self._update_duplicated_satus()
             return
-        if tseries_groups is None:
+        if prev_dataf is None:
             self._clear_previous_data()
             return
 
-        prev_dataf = merge_timeseries_groups(tseries_groups)
         new_dataf = self.tseries_dataf
         if (DataType.WaterLevel not in prev_dataf.columns or
                 DataType.WaterLevel not in new_dataf.columns):
