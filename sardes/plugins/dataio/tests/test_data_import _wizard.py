@@ -478,9 +478,9 @@ def test_duplicates_with_multiple_sondes(
                  DataType.WaterEC, 'sonde_id'])
     merged_data['datetime'] = pd.to_datetime(
         merged_data['datetime'], format="%Y-%m-%d %H:%M:%S")
-    mocker.patch(('sardes.plugins.dataio.widgets.'
-                  'dataimportwizard.merge_timeseries_groups'),
-                 return_value=merged_data)
+    mocker.patch.object(dbmanager._db_connection_worker,
+                        '_get_timeseries_for_obs_well',
+                        return_value=(merged_data,))
 
     sonde_installation = pd.Series(
         {'sampling_feature_uuid': 0,
