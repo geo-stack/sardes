@@ -99,7 +99,7 @@ def assert_tseries_len(data_import_wizard, data_type, expected_length):
         data_import_wizard.db_connection_manager.get_timeseries_for_obs_well(
             data_import_wizard._obs_well_uuid, [data_type],
             main_thread=True)
-        )[0].get_merged_timeseries()
+        )
     assert len(tseries_data) == expected_length
 
 
@@ -234,7 +234,7 @@ def test_update_when_db_changed(qtbot, mocker, testfiles, data_import_wizard):
 
 def test_save_data_to_database(qtbot, mocker, testfiles, data_import_wizard):
     """
-    Test that loading new timeseries data to the database is working as
+    Test that saving new timeseries data to the database is working as
     expected.
     """
     # Load the data from an inut data file.
