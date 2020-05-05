@@ -13,14 +13,16 @@ Tests for the ObservationWellTableView.
 
 # ---- Standard imports
 import os.path as osp
+import sys
 
 # ---- Third party imports
 import pytest
 from qtpy.QtCore import Qt
 
 # ---- Local imports
-from sardes.database.accessor_demo import DatabaseAccessorDemo
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
+from sardes.api.timeseries import DataType
+from sardes.database.database_manager import DatabaseConnectionManager
 
 
 # =============================================================================
@@ -28,19 +30,33 @@ from sardes.widgets.timeseries import TimeSeriesPlotViewer
 # =============================================================================
 @pytest.fixture
 def dbaccessor():
-    dbaccessor = DatabaseAccessorDemo()
-    return dbaccessor
+    # We need to do this to make sure the demo database is reinitialized
+    # after each test.
+    try:
+        del sys.modules['sardes.database.accessor_demo']
+    except KeyError:
+        pass
+    from sardes.database.accessor_demo import DatabaseAccessorDemo
+    return DatabaseAccessorDemo()
 
 
 @pytest.fixture
-def tseriesviewer(qtbot, dbaccessor):
+def dbconnmanager(qtbot, dbaccessor):
+    dbconnmanager = DatabaseConnectionManager()
+    with qtbot.waitSignal(dbconnmanager.sig_database_connected, timeout=3000):
+        dbconnmanager.connect_to_db(dbaccessor)
+    assert dbconnmanager.is_connected()
+    qtbot.wait(100)
+    return dbconnmanager
+
+
+@pytest.fixture
+def tseriesviewer(qtbot, dbconnmanager):
     viewer = TimeSeriesPlotViewer()
 
-    wlevel_tseries = dbaccessor.get_timeseries_for_obs_well(1, 0)
-    viewer.create_axe(wlevel_tseries)
-
-    wtemp_tseries = dbaccessor.get_timeseries_for_obs_well(1, 1)
-    viewer.create_axe(wtemp_tseries)
+    tseries_data = dbconnmanager.get_timeseries_for_obs_well(
+        1, [DataType.WaterLevel, DataType.WaterTemp], main_thread=True)
+    viewer.set_data(tseries_data)
 
     qtbot.addWidget(viewer)
     viewer.show()

@@ -153,6 +153,7 @@ class DatabaseConnectionWorker(QObject):
         Get the time data acquired in the observation well for each
         given data type.
         """
+        data_types = [DataType(data_type) for data_type in data_types]
         obs_well_data = self._get('observation_wells_data')[0]
         obs_well_data = obs_well_data.loc[sampling_feature_uuid]
 
