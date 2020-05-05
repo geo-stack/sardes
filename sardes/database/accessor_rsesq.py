@@ -1601,11 +1601,12 @@ def update_sonde_installations(filename, accessor):
 
 if __name__ == "__main__":
     from sardes.config.database import get_dbconfig
+    from time import perf_counter
 
     dbconfig = get_dbconfig('rsesq_postgresql')
     accessor = DatabaseAccessorRSESQ(**dbconfig)
-
     accessor.connect()
+
     obs_wells = accessor.get_observation_wells_data()
     obs_wells_stats = accessor.get_observation_wells_statistics()
     sondes_data = accessor.get_sondes_data()
@@ -1614,16 +1615,12 @@ if __name__ == "__main__":
     sonde_installations = accessor.get_sonde_installations()
     repere_data = accessor.get_repere_data()
 
+    t1 = perf_counter()
+    print('Fetching timeseries... ', end='')
     sampling_feature_uuid = accessor._get_obs_well_sampling_feature_uuid(
         '02340006')
-    wlevel_group = accessor.get_timeseries_for_obs_well(
+    wlevel_data = accessor.get_timeseries_for_obs_well(
         sampling_feature_uuid, 0)
-    wlevel_tseries = wlevel_group.get_merged_timeseries()
-
-    wtemp_group = accessor.get_timeseries_for_obs_well(
-        sampling_feature_uuid, 1)
-    wtemp_tseries = wtemp_group.get_merged_timeseries()
-
-    merged_data = merge_timeseries_groups([wlevel_group, wtemp_group])
+    print('done in {:0.3f} seconds'.format(perf_counter() - t1))
 
     accessor.close_connection()
