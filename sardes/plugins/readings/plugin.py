@@ -118,20 +118,18 @@ class ReadingsTableWidget(SardesTableWidget):
         self._parent = parent
         self.plot_viewer = None
 
-    def update_model(self, auto_plot_data=False):
+    def update_model(self):
         self.model().sig_data_about_to_be_updated.emit()
 
         # Get the timeseries data for that observation well.
         self.model().db_connection_manager.get_timeseries_for_obs_well(
             self.model()._obs_well_uuid,
             [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
-            callback=lambda dataf: self.set_model_data(dataf, auto_plot_data))
+            callback=self.set_model_data)
 
-    def set_model_data(self, dataf, auto_plot_data=False):
+    def set_model_data(self, dataf):
         self.model().set_model_data(dataf)
         self.model().sig_data_updated.emit()
-        if auto_plot_data:
-            self.plot_readings()
 
     def plot_readings(self):
         """
@@ -158,6 +156,14 @@ class ReadingsTableWidget(SardesTableWidget):
         self.plot_viewer.show()
         self.plot_viewer.activateWindow()
         self.plot_viewer.raise_()
+
+    # ---- Qt overrides
+    def closeEvent(self, event):
+        """Extend Qt closeEvent."""
+        if self.plot_viewer is not None:
+            self.plot_viewer.close()
+            self.plot_viewer = None
+        super().closeEvent(event)
 
 
 class Readings(SardesPlugin):
@@ -269,7 +275,7 @@ class Readings(SardesPlugin):
         del self._tseries_data_tables[obs_well_uuid]
 
     # ---- Readings tables
-    def view_timeseries_data(self, obs_well_uuid, auto_plot_data=False):
+    def view_timeseries_data(self, obs_well_uuid):
         """
         Create and show a table to visualize the timeseries data contained
         in tseries_groups.
@@ -279,16 +285,14 @@ class Readings(SardesPlugin):
             self.main.db_connection_manager.get(
                 'observation_wells_data',
                 callback=lambda obs_wells_data: self._create_readings_table(
-                    obs_wells_data.loc[obs_well_uuid], auto_plot_data)
+                    obs_wells_data.loc[obs_well_uuid])
                 )
         else:
             data_table = self._tseries_data_tables[obs_well_uuid]
             self.tabwidget.setCurrentWidget(data_table)
             data_table.tableview.setFocus()
-            if auto_plot_data is True:
-                data_table.plot_readings()
 
-    def _create_readings_table(self, obs_well_data, auto_plot_data=False):
+    def _create_readings_table(self, obs_well_data):
         """
         Create a new timeseries data for the observation well related to the
         given data.
@@ -316,7 +320,7 @@ class Readings(SardesPlugin):
             tip=_('Show the data of the timeseries acquired in the currently '
                   'selected observation well in an interactive '
                   'plot viewer.'),
-            triggered=lambda _: self._request_plot_readings(obs_well_data),
+            triggered=table_widget.plot_readings,
             iconsize=get_iconsize()
             )
         table_widget.add_toolbar_widget(show_plot_btn)
@@ -335,7 +339,7 @@ class Readings(SardesPlugin):
         if self.dockwindow.is_docked():
             self.main.register_table(table_widget.tableview)
 
-        table_widget.update_model(auto_plot_data)
+        table_widget.update_model()
 
     def _update_readings_tables(self, obs_well_ids):
         """
@@ -352,4 +356,4 @@ class Readings(SardesPlugin):
         Handle when a request has been made to show the data of the currently
         selected well in a plot.
         """
-        self.view_timeseries_data(obs_well_data.name, auto_plot_data=True)
+        self.view_timeseries_data(obs_well_data.name)

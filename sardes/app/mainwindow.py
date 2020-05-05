@@ -352,14 +352,12 @@ class MainWindow(QMainWindow):
                   "apply this change.").format(LANGUAGE_CODES[lang]))
 
     # ---- Plugin interactions
-    def view_timeseries_data(self, sampling_feature_uuid,
-                             auto_plot_data=False):
+    def view_timeseries_data(self, sampling_feature_uuid):
         """
         Create and show a table to visualize the timeseries data related
         to the given sampling feature uuid.
         """
-        self.readings_plugin.view_timeseries_data(
-            sampling_feature_uuid, auto_plot_data)
+        self.readings_plugin.view_timeseries_data(sampling_feature_uuid)
 
     # ---- Main window settings
     @Slot()
