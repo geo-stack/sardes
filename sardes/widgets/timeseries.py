@@ -816,6 +816,7 @@ class TimeSeriesPlotViewer(QMainWindow):
         axis_toolbar.addWidget(self.current_axe_button)
     # ---- Public API
     def set_data(self, dataf):
+        """Set the data that need to be displayed in this plot viewer."""
         for data_type in DataType:
             if data_type in dataf.columns:
                 tseries_group = TimeSeriesGroup(
@@ -837,6 +838,7 @@ class TimeSeriesPlotViewer(QMainWindow):
                         sonde_id=sonde_id
                         ))
                 self.create_axe(tseries_group)
+        self.canvas.draw()
 
     def create_axe(self, tseries_group, where=None):
         """
