@@ -268,6 +268,33 @@ class SondeModel(BaseMixin, Base):
     sonde_brand = Column(String)
     sonde_model = Column(String)
 
+    @classmethod
+    def initial_attrs(cls):
+        return [
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M10 Gold'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'Barologger M1.5 Gold'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M20 Gold'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M10'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'Barologger M1.5'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M20'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC F30/M10'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC F100/M30'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC M200 Edge'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC M20 Edge'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC M30 Edge'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC M100 Edge'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC M10 Edge'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M10 Edge'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M20 Edge'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M100 Edge'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'L M5'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M5'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M100'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'L M10'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M30'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC Jr'}]
+
 
 class SondeInstallation(BaseMixin, Base):
     """
