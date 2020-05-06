@@ -198,6 +198,7 @@ class DropdownToolButton(LeftAlignedToolButton):
 
     def __init__(self, icon=None, iconsize=None, parent=None):
         super().__init__(parent)
+        self._adjust_size_to_content = True
         if icon is not None:
             self.setIcon(get_icon(icon))
         if iconsize is not None:
@@ -282,6 +283,8 @@ class DropdownToolButton(LeftAlignedToolButton):
             self.setText(self.checked_action().text() if
                          self.checked_action() else '')
             self.sig_checked_action_changed.emit(self.checked_action())
+        if self._adjust_size_to_content and self.width() > self.minimumWidth():
+            self.setMinimumWidth(self.width())
 
 
 class SemiExclusiveButtonGroup(QObject):
