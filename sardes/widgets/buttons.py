@@ -246,6 +246,18 @@ class DropdownToolButton(LeftAlignedToolButton):
         self.setEnabled(self.count() > 0)
         return action
 
+    def remove_action(self, data):
+        """
+        Remove the action corresponding to the given data.
+        """
+        for action in self.menu().actions():
+            if action.data() == data:
+                self.action_group().removeAction(action)
+                self.menu().removeAction(action)
+        if self.count() == 0:
+            self.setEnabled(False)
+            self.setText(self._placeholder_text)
+
     def action_group(self):
         """
         Return the action group of this button.
