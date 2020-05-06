@@ -221,6 +221,13 @@ class DropdownToolButton(LeftAlignedToolButton):
 
         self.setEnabled(False)
         self.setText(self._placeholder_text)
+
+    def count(self):
+        """
+        Return the number of items in this DropdownToolButton.
+        """
+        return len(self.menu().actions())
+
     def eventFilter(self, widget, event):
         """
         An event filter to make disabled menu items checkables.
