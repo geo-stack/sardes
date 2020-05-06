@@ -797,8 +797,6 @@ class TimeSeriesPlotViewer(QMainWindow):
         toolbar.addWidget(self.save_figure_button)
 
         # ---- Timeseries selection.
-        self.addToolBarBreak(Qt.TopToolBarArea)
-        self.addToolBar(axis_toolbar)
         self.axes_toolbar = create_mainwindow_toolbar("Axis toolbar")
         self.addToolBar(Qt.BottomToolBarArea, self.axes_toolbar)
         self.toolbars.append(self.axes_toolbar)
