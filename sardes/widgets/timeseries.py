@@ -695,6 +695,7 @@ class TimeSeriesPlotViewer(QMainWindow):
 
         self.figure = TimeSeriesFigure(facecolor='white')
         self.canvas = TimeSeriesCanvas(self.figure)
+        self.toolbars = []
 
         self.setCentralWidget(self.canvas)
         self._setup_toolbar()
@@ -704,6 +705,7 @@ class TimeSeriesPlotViewer(QMainWindow):
         # ---- Navigate data.
         toolbar = create_mainwindow_toolbar("TimeSeries toolbar")
         self.addToolBar(toolbar)
+        self.toolbars.append(toolbar)
 
         self._navig_and_select_buttongroup = SemiExclusiveButtonGroup()
 
@@ -795,9 +797,11 @@ class TimeSeriesPlotViewer(QMainWindow):
         toolbar.addWidget(self.save_figure_button)
 
         # ---- Timeseries selection.
-        axis_toolbar = create_mainwindow_toolbar("Axis toolbar")
         self.addToolBarBreak(Qt.TopToolBarArea)
         self.addToolBar(axis_toolbar)
+        self.axes_toolbar = create_mainwindow_toolbar("Axis toolbar")
+        self.addToolBar(Qt.BottomToolBarArea, self.axes_toolbar)
+        self.toolbars.append(self.axes_toolbar)
 
         # Axes visibility.
         self.visible_axes_button = create_toolbutton(
@@ -806,7 +810,7 @@ class TimeSeriesPlotViewer(QMainWindow):
             tip=_('Toggle current graph element visibility.'),
             toggled=self._handle_axe_visibility_changed,
             iconsize=get_iconsize())
-        axis_toolbar.addWidget(self.visible_axes_button)
+        self.axes_toolbar.addWidget(self.visible_axes_button)
 
         # Current axe selection.
         self.current_axe_button = DropdownToolButton(
@@ -820,7 +824,7 @@ class TimeSeriesPlotViewer(QMainWindow):
             _('Select a graph element so that you can format it and'
               ' zoom and pan the data.'),
             None))
-        axis_toolbar.addWidget(self.current_axe_button)
+        self.axes_toolbar.addWidget(self.current_axe_button)
     # ---- Public API
     def set_data(self, dataf):
         """Set the data that need to be displayed in this plot viewer."""
@@ -845,16 +849,14 @@ class TimeSeriesPlotViewer(QMainWindow):
                         sonde_id=sonde_id
                         ))
                 self.create_axe(tseries_group)
-        self.canvas.draw()
+        self.axes_toolbar.setEnabled(self.current_axe_button.count())
 
     def update_data(self, dataf):
         """Set the data that need to be displayed in this plot viewer."""
         for axe in reversed(self.figure.tseries_axes_list):
-            self.figure.tseries_axes_list.remove(axe)
-            self.current_axe_button.remove_action(axe)
-            axe.remove()
+            self.remove_axe(axe)
         self.set_data(dataf)
-        
+
     def create_axe(self, tseries_group, where=None):
         """
         Create and add a new axe to the figure where to plot the data
@@ -866,8 +868,19 @@ class TimeSeriesPlotViewer(QMainWindow):
         # Note that this will make the corresponding axe to become current.
         self.current_axe_button.create_action(
             tseries_group.data_type.title, data=axe)
+        self.axes_toolbar.setEnabled(self.current_axe_button.count())
 
         return axe
+
+    def remove_axe(self, axe):
+        """
+        Remove the given axe from this timeseries viewer.
+        """
+        self.figure.tseries_axes_list.remove(axe)
+        self.current_axe_button.remove_action(axe)
+        axe.remove()
+        self.canvas.draw()
+        self.axes_toolbar.setEnabled(self.current_axe_button.count())
 
     def current_axe(self):
         """Return the currently active axe."""
