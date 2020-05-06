@@ -219,6 +219,7 @@ class DropdownToolButton(LeftAlignedToolButton):
 
         self._action_group = QActionGroup(self)
 
+        self.setEnabled(False)
         self.setText(self._placeholder_text)
     def eventFilter(self, widget, event):
         """
@@ -242,6 +243,7 @@ class DropdownToolButton(LeftAlignedToolButton):
                                data=data)
         self.menu().addAction(action)
         action.setChecked(True)
+        self.setEnabled(self.count() > 0)
         return action
 
     def action_group(self):
