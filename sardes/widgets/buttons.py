@@ -196,9 +196,13 @@ class DropdownToolButton(LeftAlignedToolButton):
     """
     sig_checked_action_changed = Signal(QAction)
 
-    def __init__(self, icon=None, iconsize=None, parent=None):
+    def __init__(self, icon=None, iconsize=None, parent=None,
+                 placeholder_text=''):
         super().__init__(parent)
         self._adjust_size_to_content = True
+        self._placeholder_text = placeholder_text
+
+        self.setMinimumWidth(150)
         if icon is not None:
             self.setIcon(get_icon(icon))
         if iconsize is not None:
@@ -215,6 +219,7 @@ class DropdownToolButton(LeftAlignedToolButton):
 
         self._action_group = QActionGroup(self)
 
+        self.setText(self._placeholder_text)
     def eventFilter(self, widget, event):
         """
         An event filter to make disabled menu items checkables.
@@ -281,7 +286,7 @@ class DropdownToolButton(LeftAlignedToolButton):
         """
         if toggle:
             self.setText(self.checked_action().text() if
-                         self.checked_action() else '')
+                         self.checked_action() else self._placeholder_text)
             self.sig_checked_action_changed.emit(self.checked_action())
         if self._adjust_size_to_content and self.width() > self.minimumWidth():
             self.setMinimumWidth(self.width())
