@@ -80,8 +80,7 @@ class ObsWellsTableModel(SardesTableModel):
 
 
 class ObsWellsTableWidget(SardesTableWidget):
-    sig_view_data = Signal(object)
-    sig_plot_data = Signal(object)
+    sig_view_data = Signal(object, bool)
 
     def __init__(self, *args, **kargs):
         table_model = ObsWellsTableModel(
@@ -114,7 +113,6 @@ class ObsWellsTableWidget(SardesTableWidget):
     def register_to_plugin(self, plugin):
         """Register this table with the given plugin."""
         self.sig_view_data.connect(plugin.main.view_timeseries_data)
-        self.sig_plot_data.connect(plugin.main.plot_timeseries_data)
 
     # ---- Timeseries
     def get_current_obs_well_data(self):
@@ -128,35 +126,16 @@ class ObsWellsTableWidget(SardesTableWidget):
             return None
 
     def _create_extra_toolbuttons(self):
-        self.show_plot_btn = create_toolbutton(
-            self,
-            icon='show_plot',
-            text=_("Plot data"),
-            tip=_('Show the data of the timeseries acquired in the currently '
-                  'selected observation well in an interactive '
-                  'plot viewer.'),
-            triggered=lambda _: self._plot_current_obs_well_data(),
-            iconsize=get_iconsize()
-            )
         self.show_data_btn = create_toolbutton(
             self,
             icon='show_data_table',
             text=_("View data"),
-            tip=_('Show the data of the timeseries acquired in the currently '
-                  'selected observation well in a table.'),
-            triggered=lambda _: self._view_current_timeseries_data(),
+            tip=_('Open a table showing all readings saved in the database '
+                  'for the currently selected observation well.'),
+            triggered=self._view_current_timeseries_data,
             iconsize=get_iconsize()
             )
-        return [self.show_plot_btn, self.show_data_btn]
-
-    def _plot_current_obs_well_data(self):
-        """
-        Emit a signal to plot the timeseries data saved in the database for
-        the currently selected observation well in the table.
-        """
-        current_obs_well_data = self.get_current_obs_well_data()
-        if current_obs_well_data is not None:
-            self.sig_plot_data.emit(current_obs_well_data)
+        return [self.show_data_btn]
 
     def _view_current_timeseries_data(self):
         """
@@ -165,4 +144,4 @@ class ObsWellsTableWidget(SardesTableWidget):
         """
         current_obs_well_data = self.get_current_obs_well_data()
         if current_obs_well_data is not None:
-            self.sig_view_data.emit(current_obs_well_data.name)
+            self.sig_view_data.emit(current_obs_well_data.name, False)

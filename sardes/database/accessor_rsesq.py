@@ -34,7 +34,7 @@ from sqlalchemy.types import TEXT, VARCHAR, Boolean
 # ---- Local imports
 from sardes.api.database_accessor import DatabaseAccessor
 from sardes.database.utils import map_table_column_names, format_sqlobject_repr
-from sardes.api.timeseries import DataType, TimeSeriesGroup, TimeSeries, merge_timeseries_groups
+from sardes.api.timeseries import DataType
 
 
 # =============================================================================
@@ -279,7 +279,6 @@ class SondeModels(Base):
     sonde_model_id = Column('instrument_id', Integer, primary_key=True)
     sonde_brand = Column('instrument_marque', String)
     sonde_model = Column('instrument_model', String)
-
 
 
 class Processes(Base):
@@ -663,6 +662,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             obs_wells[key] = (
                 split_notes.str[i].str.split(':').str[1].str.strip())
             obs_wells[key] = obs_wells[key][obs_wells[key] != 'NULL']
+        obs_wells['aquifer_code'] = obs_wells['aquifer_code'].astype(float)
 
         # Convert to bool.
         obs_wells['is_station_active'] = (
@@ -1052,10 +1052,8 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
     def get_timeseries_for_obs_well(self, sampling_feature_uuid, data_type):
         """
-        Return a :class:`TimeSeriesGroup` object containing the
-        :class:`TimeSeries` objects holding the data acquired for the
-        specified monitored property in the observation well corresponding
-        to the specified sampling feature ID. .
+        Return a pandas dataframe containing the readings for the given
+        data type and observation well.
         """
         data_type = DataType(data_type)
 
@@ -1068,7 +1066,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         query = (
             self._session.query(TimeSeriesData.value,
                                 TimeSeriesData.datetime,
-                                Observation.observation_id)
+                                Observation.observation_id.label('obs_id'))
             .filter(TimeSeriesChannels.obs_property_id == obs_property_id)
             .filter(Observation.sampling_feature_uuid == sampling_feature_uuid)
             .filter(Observation.observation_uuid ==
@@ -1087,54 +1085,24 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
 
         data['datetime'] = pd.to_datetime(
             data['datetime'], format="%Y-%m-%d %H:%M:%S")
+        data.rename(columns={'value': data_type}, inplace=True)
 
-        # For each channel, store the data in a time series object and
-        # add it to the monitored property object.
-        tseries_group = TimeSeriesGroup(
-            data_type,
-            data_type.title,
-            obs_prop.obs_property_units,
-            yaxis_inverted=(data_type == DataType.WaterLevel)
-            )
-        tseries_group.sampling_feature_name = (
-            self._get_observation_well(sampling_feature_uuid).obs_well_id)
+        data['sonde_id'] = None
+        for obs_id in data['obs_id'].unique():
+            sonde_id = self._get_sonde_id_from_obs_id(obs_id)
+            data.loc[data['obs_id'] == obs_id, 'sonde_id'] = sonde_id
 
-        # Check for duplicates along the time axis and drop the duplicated
-        # entries if any.
+        # Check for duplicates along the time axis.
         duplicated = data.duplicated(subset='datetime')
-        nbr_duplicated = len(duplicated[duplicated])
+        nbr_duplicated = np.sum(duplicated)
         if nbr_duplicated:
-            observation_well = self._get_observation_well(
+            observation_well = self._get_sampling_feature(
                 sampling_feature_uuid)
             print(("Warning: {} duplicated {} entrie(s) were found while "
                    "fetching these data for well {}."
                    ).format(nbr_duplicated, data_type,
-                            observation_well.obs_well_id))
-            tseries_group.obs_well_id = observation_well.obs_well_id
-        tseries_group.nbr_duplicated = nbr_duplicated
-
-        # Set the index.
-        data.set_index(['datetime'], drop=True, inplace=True)
-
-        # Split the data in channels.
-        tseries_group.duplicated_data = []
-        for observation_id in data['observation_id'].unique():
-            channel_data = data[data['observation_id'] == observation_id]
-            duplicated = channel_data.index.duplicated()
-            for dtime in channel_data.index[duplicated]:
-                tseries_group.duplicated_data.append(
-                    [observation_well.obs_well_id, dtime])
-                print(observation_id, dtime)
-            tseries_group.add_timeseries(TimeSeries(
-                pd.Series(channel_data['value'], index=channel_data.index),
-                tseries_id=observation_id,
-                tseries_name=data_type.title,
-                tseries_units=obs_prop.obs_property_units,
-                tseries_color=data_type.color,
-                sonde_id=self._get_sonde_id_from_obs_id(observation_id)
-                ))
-
-        return tseries_group
+                            observation_well.sampling_feature_name))
+        return data
 
     def _get_timeseriesdata(self, date_time, obs_id_or_uuid, data_type):
         """
@@ -1633,11 +1601,12 @@ def update_sonde_installations(filename, accessor):
 
 if __name__ == "__main__":
     from sardes.config.database import get_dbconfig
+    from time import perf_counter
 
     dbconfig = get_dbconfig('rsesq_postgresql')
     accessor = DatabaseAccessorRSESQ(**dbconfig)
-
     accessor.connect()
+
     obs_wells = accessor.get_observation_wells_data()
     obs_wells_stats = accessor.get_observation_wells_statistics()
     sondes_data = accessor.get_sondes_data()
@@ -1646,16 +1615,12 @@ if __name__ == "__main__":
     sonde_installations = accessor.get_sonde_installations()
     repere_data = accessor.get_repere_data()
 
+    t1 = perf_counter()
+    print('Fetching timeseries... ', end='')
     sampling_feature_uuid = accessor._get_obs_well_sampling_feature_uuid(
         '02340006')
-    wlevel_group = accessor.get_timeseries_for_obs_well(
+    wlevel_data = accessor.get_timeseries_for_obs_well(
         sampling_feature_uuid, 0)
-    wlevel_tseries = wlevel_group.get_merged_timeseries()
-
-    wtemp_group = accessor.get_timeseries_for_obs_well(
-        sampling_feature_uuid, 1)
-    wtemp_tseries = wtemp_group.get_merged_timeseries()
-
-    merged_data = merge_timeseries_groups([wlevel_group, wtemp_group])
+    print('done in {:0.3f} seconds'.format(perf_counter() - t1))
 
     accessor.close_connection()

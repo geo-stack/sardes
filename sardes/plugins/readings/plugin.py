@@ -9,39 +9,33 @@
 
 # ---- Local imports
 from sardes.api.plugins import SardesPlugin
-from sardes.config.icons import get_icon
 from sardes.config.locale import _
-from sardes.plugins.tables.tables import (
-    ObsWellsTableWidget, RepereTableWidget, SondesInventoryTableWidget,
-    ManualMeasurementsTableWidget, SondeInstallationsTableWidget)
 
 # ---- Third party imports
 import pandas as pd
-from qtpy.QtCore import Qt, QSize, Slot
-from qtpy.QtWidgets import (QApplication, QFileDialog, QTabWidget,
-                            QLabel, QFrame, QGridLayout, QWidget,
-                            QPushButton, QToolButton, QStyle)
+from qtpy.QtCore import Qt, Slot
+from qtpy.QtWidgets import QApplication
 
 # ---- Local imports
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.config.gui import get_iconsize
 from sardes.api.tablemodels import SardesTableModel
-from sardes.api.timeseries import DataType, merge_timeseries_groups
+from sardes.api.timeseries import DataType
 from sardes.config.main import CONF
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
 from sardes.widgets.tableviews import (
-    SardesTableWidget, StringEditDelegate, BoolEditDelegate,
-    NumEditDelegate, NotEditableDelegate, TextEditDelegate,
+    SardesTableWidget, NumEditDelegate, NotEditableDelegate,
     SardesStackedTableWidget)
 
 
 """Readings plugin"""
 
 
-class DataTableModel(SardesTableModel):
-    def __init__(self, obs_well_uuid, *args, **kargs):
+class ReadingsTableModel(SardesTableModel):
+    def __init__(self, obs_well_data, *args, **kargs):
         super().__init__(*args, **kargs)
-        self._obs_well_uuid = obs_well_uuid
+        self._obs_well_data = obs_well_data
+        self._obs_well_uuid = obs_well_data.name
 
     def create_delegate_for_column(self, view, column):
         if isinstance(column, DataType):
@@ -51,31 +45,17 @@ class DataTableModel(SardesTableModel):
             return NotEditableDelegate(view)
 
     # ---- Database connection
-    def update_data(self):
-        """
-        Update this model's data and library.
-        """
-        self.sig_data_about_to_be_updated.emit()
-
-        # Get the timeseries data for that observation well.
-        self.db_connection_manager.get_timeseries_for_obs_well(
-            self._obs_well_uuid,
-            [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
-            self.set_model_tseries_groups)
-
-    def set_model_tseries_groups(self, tseries_groups):
+    def set_model_data(self, dataf):
         """
         Format the data contained in the list of timeseries group and
         set the content of this table model data.
         """
-        dataf = merge_timeseries_groups(tseries_groups)
         dataf_columns_mapper = [('datetime', _('Datetime')),
                                 ('sonde_id', _('Sonde Serial Number'))]
         dataf_columns_mapper.extend([(dtype, dtype.label) for dtype in
                                      DataType if dtype in dataf.columns])
         dataf_columns_mapper.append(('obs_id', _('Observation ID')))
-        self.set_model_data(dataf, dataf_columns_mapper)
-        self.sig_data_updated.emit()
+        super().set_model_data(dataf, dataf_columns_mapper)
 
     def save_data_edits(self):
         """
@@ -126,6 +106,66 @@ class DataTableModel(SardesTableModel):
         Handle when data edits were all saved in the database.
         """
         self.sig_data_saved.emit()
+
+
+class ReadingsTableWidget(SardesTableWidget):
+
+    def __init__(self, table_model, parent):
+        super().__init__(table_model, parent, multi_columns_sort=True,
+                         sections_movable=False, sections_hidable=False,
+                         disabled_actions=['new_row'])
+        self.setAttribute(Qt.WA_DeleteOnClose)
+        self._parent = parent
+        self.plot_viewer = None
+
+    def update_model(self):
+        self.model().sig_data_about_to_be_updated.emit()
+
+        # Get the timeseries data for that observation well.
+        self.model().db_connection_manager.get_timeseries_for_obs_well(
+            self.model()._obs_well_uuid,
+            [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
+            callback=self.set_model_data)
+
+    def set_model_data(self, dataf):
+        self.model().set_model_data(dataf)
+        self.model().sig_data_updated.emit()
+        if self.plot_viewer is not None:
+            self.plot_viewer.update_data(self.model().dataf)
+
+    def plot_readings(self):
+        """
+        Create and show a timeseries plot viewer to visualize interactively
+        the timeseries data contained in tseries_groups.
+        """
+        if self.plot_viewer is None:
+            obs_well_data = self.model()._obs_well_data
+
+            self.plot_viewer = TimeSeriesPlotViewer(self._parent)
+
+            # Set the title of the window.
+            window_title = '{}'.format(obs_well_data['obs_well_id'])
+            if obs_well_data['common_name']:
+                window_title += ' - {}'.format(obs_well_data['common_name'])
+            if obs_well_data['municipality']:
+                window_title += ' ({})'.format(obs_well_data['municipality'])
+            self.plot_viewer.setWindowTitle(window_title)
+
+            self.plot_viewer.set_data(self.model().dataf)
+
+        if self.plot_viewer.windowState() == Qt.WindowMinimized:
+            self.plot_viewer.setWindowState(Qt.WindowNoState)
+        self.plot_viewer.show()
+        self.plot_viewer.activateWindow()
+        self.plot_viewer.raise_()
+
+    # ---- Qt overrides
+    def closeEvent(self, event):
+        """Extend Qt closeEvent."""
+        if self.plot_viewer is not None:
+            self.plot_viewer.close()
+            self.plot_viewer = None
+        super().closeEvent(event)
 
 
 class Readings(SardesPlugin):
@@ -263,16 +303,12 @@ class Readings(SardesPlugin):
         obs_well_id = obs_well_data['obs_well_id']
 
         # Setup a new table model and widget.
-        table_model = DataTableModel(obs_well_uuid, table_title=obs_well_id,
-                                     table_id=obs_well_uuid)
+        table_model = ReadingsTableModel(
+            obs_well_data, table_title=obs_well_id, table_id=obs_well_uuid)
         table_model.set_database_connection_manager(
             self.main.db_connection_manager)
 
-        table_widget = SardesTableWidget(
-            table_model, parent=self.main, multi_columns_sort=True,
-            sections_movable=False, sections_hidable=False,
-            disabled_actions=['new_row'])
-        table_widget.setAttribute(Qt.WA_DeleteOnClose)
+        table_widget = ReadingsTableWidget(table_model, self.main)
         table_widget.destroyed.connect(
             lambda _, obs_well_uuid=obs_well_uuid:
                 self._handle_data_table_destroyed(obs_well_uuid))
@@ -286,7 +322,7 @@ class Readings(SardesPlugin):
             tip=_('Show the data of the timeseries acquired in the currently '
                   'selected observation well in an interactive '
                   'plot viewer.'),
-            triggered=lambda _: self._request_plot_readings(obs_well_data),
+            triggered=table_widget.plot_readings,
             iconsize=get_iconsize()
             )
         table_widget.add_toolbar_widget(show_plot_btn)
@@ -305,7 +341,7 @@ class Readings(SardesPlugin):
         if self.dockwindow.is_docked():
             self.main.register_table(table_widget.tableview)
 
-        table_model.update_data()
+        table_widget.update_model()
 
     def _update_readings_tables(self, obs_well_ids):
         """
@@ -314,7 +350,7 @@ class Readings(SardesPlugin):
         """
         for obs_well_id in obs_well_ids:
             if obs_well_id in self._tseries_data_tables:
-                self._tseries_data_tables[obs_well_id].model().update_data()
+                self._tseries_data_tables[obs_well_id].update_model()
 
     # ---- Plots
     def _request_plot_readings(self, obs_well_data):
@@ -322,34 +358,4 @@ class Readings(SardesPlugin):
         Handle when a request has been made to show the data of the currently
         selected well in a plot.
         """
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        self.main.db_connection_manager.get_timeseries_for_obs_well(
-            obs_well_data.name,
-            [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
-            callback=lambda tseries_groups: self.plot_readings(
-                tseries_groups, obs_well_data))
-
-    def plot_readings(self, tseries_groups, obs_well_data):
-        """
-        Create and show a timeseries plot viewer to visualize interactively
-        the timeseries data contained in tseries_groups.
-        """
-        viewer = TimeSeriesPlotViewer(self.main)
-
-        # Set the title of the window.
-        window_title = '{}'.format(obs_well_data['obs_well_id'])
-        if obs_well_data['common_name']:
-            window_title += ' - {}'.format(obs_well_data['common_name'])
-        if obs_well_data['municipality']:
-            window_title += ' ({})'.format(obs_well_data['municipality'])
-        viewer.setWindowTitle(window_title)
-
-        # Setup the data for the timeseries plot viewer.
-        # where = 'left'
-        for tseries_group in tseries_groups[:2]:
-            # Create a new axe to hold the timeseries for the monitored
-            # property related to this group of timeseries.
-            viewer.create_axe(tseries_group)
-        QApplication.restoreOverrideCursor()
-        viewer.show()
-        viewer.raise_()
+        self.view_timeseries_data(obs_well_data.name)

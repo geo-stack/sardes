@@ -23,7 +23,7 @@ from pandas import Series
 
 # ---- Local imports
 from sardes.api.database_accessor import DatabaseAccessor
-from sardes.api.timeseries import DataType, TimeSeriesGroup, TimeSeries
+from sardes.api.timeseries import DataType
 
 
 # =============================================================================
@@ -409,38 +409,34 @@ class DatabaseAccessorDemo(DatabaseAccessor):
     # ---- Monitored properties
     def get_timeseries_for_obs_well(self, obs_well_id, data_type):
         """
-        Return a :class:`MonitoredProperty` object containing the
-        :class:`TimeSeries` objects holding the data acquired in the
-        observation well for the specified monitored property.
+        Return a pandas dataframe containing the readings for the given
+        data type and observation well.
         """
         data_type = DataType(data_type)
-        data_units = {
-            DataType.WaterEC: "",
-            DataType.WaterLevel: "m",
-            DataType.WaterTemp: "\u00B0C"}[data_type]
-        tseries_group = TimeSeriesGroup(
-            data_type, data_type.title, data_units,
-            yaxis_inverted=(data_type == DataType.WaterLevel))
-        tseries_group.duplicated_data = []
 
         # Add timeseries data to the group.
         obs_ids = (OBSERVATIONS
                    [OBSERVATIONS['obs_well_uuid'] == obs_well_id]
                    .index)
+
+        merged_tseries = pd.DataFrame(
+            [], columns=['datetime', 'obs_id', 'sonde_id'])
         for obs_id in obs_ids:
             try:
                 tseries_data = TSERIES[obs_id][DataType(data_type)]
             except KeyError:
                 continue
-            tseries_group.add_timeseries(TimeSeries(
-                tseries_data,
-                tseries_id=obs_id,
-                tseries_name=data_type.title,
-                tseries_units=data_units,
-                tseries_color=data_type.color,
-                sonde_id=self._get_sonde_serial_no_from_obs_id(obs_id)
-                ))
-        return tseries_group
+            tseries_data = tseries_data.to_frame(name=data_type)
+            tseries_data['datetime'] = tseries_data.index.values
+            tseries_data.reset_index(drop=True, inplace=True)
+            tseries_data['obs_id'] = obs_id
+            tseries_data['sonde_id'] = (
+                self._get_sonde_serial_no_from_obs_id(obs_id))
+            merged_tseries = merged_tseries.append(
+                tseries_data, ignore_index=True,
+                verify_integrity=True, sort=True)
+
+        return merged_tseries
 
     def save_timeseries_data_edits(self, tseries_edits):
         """

@@ -33,8 +33,7 @@ from sqlalchemy.orm.exc import NoResultFound
 # ---- Local imports
 from sardes.api.database_accessor import DatabaseAccessor
 from sardes.database.utils import format_sqlobject_repr
-from sardes.api.timeseries import (DataType, TimeSeriesGroup, TimeSeries,
-                                   merge_timeseries_groups)
+from sardes.api.timeseries import DataType
 
 
 # =============================================================================
@@ -892,18 +891,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
     def get_timeseries_for_obs_well(self, sampling_feature_uuid, data_type):
         """
-        Return a :class:`TimeSeriesGroup` object containing the
-        :class:`TimeSeries` objects holding the data acquired for the
-        specified monitored property in the observation well corresponding
-        to the specified sampling feature ID. .
+        Return a pandas dataframe containing the readings for the given
+        data type and observation well.
         """
         data_type = DataType(data_type)
-
         obs_property_id = self._get_observed_property_id(data_type)
         query = (
             self._session.query(TimeSeriesData.value,
                                 TimeSeriesData.datetime,
-                                Observation.observation_id)
+                                Observation.observation_id.label('obs_id'))
             .filter(TimeSeriesChannel.obs_property_id == obs_property_id)
             .filter(Observation.sampling_feature_uuid == sampling_feature_uuid)
             .filter(Observation.observation_id ==
@@ -914,24 +910,16 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             query.statement, query.session.bind, coerce_float=True)
         data['datetime'] = pd.to_datetime(
             data['datetime'], format="%Y-%m-%d %H:%M:%S")
+        data.rename(columns={'value': data_type}, inplace=True)
 
-        # For each channel, store the data in a time series object and
-        # add it to the monitored property object.
-        observed_property = self._get_observed_property(obs_property_id)
-        tseries_group = TimeSeriesGroup(
-            data_type,
-            data_type.title,
-            observed_property.obs_property_units,
-            yaxis_inverted=(data_type == DataType.WaterLevel)
-            )
-        tseries_group.sampling_feature_name = (
-            self._get_sampling_feature(sampling_feature_uuid)
-            .sampling_feature_name)
+        data['sonde_id'] = None
+        for obs_id in data['obs_id'].unique():
+            sonde_id = self._get_sonde_serial_no_from_obs_id(obs_id)
+            data.loc[data['obs_id'] == obs_id, 'sonde_id'] = sonde_id
 
-        # Check for duplicates along the time axis and drop the duplicated
-        # entries if any.
+        # Check for duplicates along the time axis.
         duplicated = data.duplicated(subset='datetime')
-        nbr_duplicated = len(duplicated[duplicated])
+        nbr_duplicated = np.sum(duplicated)
         if nbr_duplicated:
             observation_well = self._get_sampling_feature(
                 sampling_feature_uuid)
@@ -939,31 +927,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                    "fetching these data for well {}."
                    ).format(nbr_duplicated, data_type,
                             observation_well.sampling_feature_name))
-            tseries_group.obs_well_id = observation_well.sampling_feature_name
-        tseries_group.nbr_duplicated = nbr_duplicated
-
-        # Set the index.
-        data.set_index(['datetime'], drop=True, inplace=True)
-
-        # Split the data in channels.
-        tseries_group.duplicated_data = []
-        for observation_id in data['observation_id'].unique():
-            channel_data = data[
-                data['observation_id'] == observation_id].sort_index()
-            duplicated = channel_data.index.duplicated()
-            for dtime in channel_data.index[duplicated]:
-                tseries_group.duplicated_data.append(
-                    [observation_well.sampling_feature_name, dtime])
-                print(observation_id, dtime)
-            tseries_group.add_timeseries(TimeSeries(
-                pd.Series(channel_data['value'], index=channel_data.index),
-                tseries_id=observation_id,
-                tseries_name=data_type.title,
-                tseries_units=observed_property.obs_property_units,
-                tseries_color=data_type.color,
-                sonde_id=self._get_sonde_serial_no_from_obs_id(observation_id)
-                ))
-        return tseries_group
+        return data
 
     def add_timeseries_data(self, tseries_data, sampling_feature_uuid,
                             install_uuid=None, dropna=True):

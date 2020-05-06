@@ -19,6 +19,9 @@ import pandas as pd
 from pandas import DataFrame
 from qtpy.QtCore import QObject, QThread, Signal, Slot
 
+# ---- Local imports
+from sardes.api.timeseries import DataType
+
 
 class DatabaseConnectionWorker(QObject):
     """
@@ -145,30 +148,61 @@ class DatabaseConnectionWorker(QObject):
         self.db_accessor.set(name, *args, **kargs)
 
     # ---- Timeseries
-    def _get_timeseries_for_obs_well(self, obs_well_id, data_types):
+    def _get_timeseries_for_obs_well(self, sampling_feature_uuid, data_types):
         """
         Get the time data acquired in the observation well for each
         given data type.
         """
+        data_types = [DataType(data_type) for data_type in data_types]
+        obs_well_data = self._get('observation_wells_data')[0]
+        obs_well_data = obs_well_data.loc[sampling_feature_uuid]
+
         # Print some info message in the console.
         prop_names = [prop.name for prop in data_types]
         prop_enum = (' and '.join(prop_names) if
                      len(prop_names) == 2 else ', '.join(prop_names))
         print("Fetching {} data for observation well {}.".format(
-            prop_enum, obs_well_id))
+            prop_enum, obs_well_data['obs_well_id']))
 
         # Fetch the data.
+        readings = None
         tseries_groups = []
+        date_types = []
         try:
             for data_type in data_types:
-                tseries_groups.append(
-                    self.db_accessor.get_timeseries_for_obs_well(
-                        obs_well_id, data_type)
-                    )
-        except AttributeError as error:
+                tseries_dataf = self.db_accessor.get_timeseries_for_obs_well(
+                    sampling_feature_uuid, data_type)
+                tseries_groups.append(tseries_dataf)
+
+                if tseries_dataf.empty:
+                    continue
+                if readings is None:
+                    readings = tseries_dataf
+                else:
+                    readings = readings.merge(
+                        tseries_dataf,
+                        left_on=['datetime', 'obs_id', 'sonde_id'],
+                        right_on=['datetime', 'obs_id', 'sonde_id'],
+                        how='outer', sort=True)
+                date_types.append(data_type)
+            if readings is None:
+                readings = DataFrame(
+                    [],
+                    columns=['datetime', 'sonde_id', DataType(0),
+                             DataType(1), DataType(2), 'obs_id'])
+
+            # Reorder the columns so that the data are displayed nicely.
+            readings = readings[
+                ['datetime', 'sonde_id'] + date_types + ['obs_id']]
+            readings = readings.sort_values('datetime', axis=0, ascending=True)
+
+            # Add metadata to the dataframe.
+            readings._metadata = ['sampling_feature_data']
+            readings.sampling_feature_data = obs_well_data
+        except Exception as error:
             print(type(error).__name__, end=': ')
             print(error)
-        return tseries_groups,
+        return readings,
 
     def _save_timeseries_data_edits(self, tseries_edits):
         """
@@ -733,3 +767,23 @@ class DatabaseConnectionManager(QObject):
         Save all data edits to the database.
         """
         self.models_manager.save_model_edits(table_id)
+
+
+if __name__ == '__main__':
+    from sardes.database.accessor_sardes_lite import (
+        DatabaseAccessorSardesLite)
+    from sardes.api.timeseries import DataType
+
+    db_accessor = DatabaseAccessorSardesLite(
+        'D:/rsesq_prod_sample_2020-03-04.db')
+    dbmanager = DatabaseConnectionManager()
+    dbmanager.connect_to_db(db_accessor)
+    sampling_feature_uuid = (
+        db_accessor._get_sampling_feature_uuid_from_name('01070001'))
+
+    readings = dbmanager.get_timeseries_for_obs_well(
+        sampling_feature_uuid,
+        [DataType.WaterLevel, DataType.WaterTemp],
+        callback=None,
+        postpone_exec=False, main_thread=True)
+    print(readings)
