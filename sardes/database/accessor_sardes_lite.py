@@ -673,6 +673,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Add a new sonde to the database using the provided sonde UUID
         and attribute values.
         """
+        # Make sure pandas NaT are replaced by None for datetime fields
+        # to avoid errors in sqlalchemy.
+        for field in ['date_reception', 'date_withdrawal']:
+            if pd.isnull(attribute_values.get(field, None)):
+                attribute_values[field] = None
+
         self._session.add(SondeFeature(
             sonde_uuid=sonde_uuid,
             **attribute_values
@@ -688,9 +694,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         sondes = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
 
-        # Strip the hour portion since it doesn't make sense here.
-        sondes['date_reception'] = sondes['date_reception'].dt.date
-        sondes['date_withdrawal'] = sondes['date_withdrawal'].dt.date
+        # Make sure date_reception and date_withdrawal are considered as
+        # datetime and strip the hour portion since it doesn't make sense here.
+        sondes['date_reception'] = pd.to_datetime(
+            sondes['date_reception']).dt.date
+        sondes['date_withdrawal'] = pd.to_datetime(
+            sondes['date_withdrawal']).dt.date
 
         # Set the index to the sonde ids.
         sondes.set_index('sonde_uuid', inplace=True, drop=True)
@@ -703,6 +712,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Save in the database the new attribute value for the sonde
         corresponding to the specified sonde UUID.
         """
+        # Make sure pandas NaT are replaced by None for datetime fields
+        # to avoid errors in sqlalchemy.
+        if attribute_name in ['date_reception', 'date_withdrawal']:
+            if pd.isnull(attribute_value):
+                attribute_value = None
+
         sonde = self._get_sonde(sonde_uuid)
         setattr(sonde, attribute_name, attribute_value)
         if auto_commit:
