@@ -739,6 +739,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Add a new sonde installation to the database using the provided ID
         and attribute values.
         """
+        # Make sure pandas NaT are replaced by None for datetime fields
+        # to avoid errors in sqlalchemy.
+        for field in ['start_date', 'end_date']:
+            if pd.isnull(attribute_values.get(field, None)):
+                attribute_values[field] = None
+
         # We first create new items in the tables process and
         # process_installation.
         new_process = Process(process_type='sonde installation')
@@ -779,6 +785,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Save in the database the new attribute value for the sonde
         installation corresponding to the specified id.
         """
+        # Make sure pandas NaT are replaced by None for datetime fields
+        # to avoid errors in sqlalchemy.
+        if attribute_name in ['start_date', 'end_date']:
+            if pd.isnull(attribute_value):
+                attribute_value = None
+
         sonde_installation = self._get_sonde_installation(install_uuid)
         setattr(sonde_installation, attribute_name, attribute_value)
 

@@ -14,7 +14,6 @@ Tests for the DatabaseAccessorSardesLite.
 # ---- Standard imports
 import datetime
 import os.path as osp
-import uuid
 
 # ---- Third party imports
 import pytest
@@ -101,7 +100,7 @@ def test_observation_wells_interface(dbaccessor):
                 attribute_value), attribute_name
 
 
-def test_sonde_data_interface(dbaccessor):
+def test_sondes_data_interface(dbaccessor):
     """
     Test that the interface for adding, editing and deleting sondes
     from the database is working as expected.
@@ -140,7 +139,7 @@ def test_sonde_data_interface(dbaccessor):
     edited_attribute_values = {
         'sonde_serial_no': '1015973',
         'sonde_model_id': sonde_models.index[1],
-        'date_reception': datetime.date(2006, 3, 30),
+        'date_reception': datetime.date(2006, 3, 15),
         'date_withdrawal': datetime.date(2010, 6, 12),
         'in_repair': True,
         'out_of_order': True,
@@ -156,6 +155,55 @@ def test_sonde_data_interface(dbaccessor):
     assert len(sonde_data) == 1
     for attribute_name, attribute_value in edited_attribute_values.items():
         assert (sonde_data.at[sonde_feature_uuid, attribute_name] ==
+                attribute_value), attribute_name
+
+
+def test_sonde_installations_interface(dbaccessor):
+    """
+    Test that the interface for adding, editing and deleting sonde installation
+    from the database is working as expected.
+    """
+    obs_wells_data = dbaccessor.get_observation_wells_data()
+    sonde_data = dbaccessor.get_sondes_data()
+
+    sonde_install = dbaccessor.get_sonde_installations()
+    assert len(sonde_install) == 0
+
+    # Add a new sonde installation to the database.
+    sonde_install_uuid = dbaccessor._create_index('sonde_installation')
+    attribute_values = {
+        'sampling_feature_uuid': obs_wells_data.index[0],
+        'sonde_uuid': sonde_data.index[0],
+        'start_date': datetime.date(2006, 4, 12),
+        'end_date': pd.NaT,
+        'install_depth': 10.25
+        }
+    dbaccessor.add_sonde_installations(sonde_install_uuid, attribute_values)
+
+    sonde_install = dbaccessor.get_sonde_installations()
+    assert len(sonde_install) == 1
+    for attribute_name, attribute_value in attribute_values.items():
+        if attribute_name == 'end_date':
+            assert pd.isnull(
+                sonde_install.at[sonde_install_uuid, attribute_name])
+        else:
+            assert (sonde_install.at[sonde_install_uuid, attribute_name] ==
+                    attribute_value), attribute_name
+
+    # Edit the data of the newly added sonde installation.
+    edited_attribute_values = {
+        'start_date': datetime.date(2006, 4, 1),
+        'end_date': datetime.date(2016, 4, 1),
+        'install_depth': 11.25
+        }
+    for attribute_name, attribute_value in edited_attribute_values.items():
+        dbaccessor.set_sonde_installations(
+            sonde_install_uuid, attribute_name, attribute_value)
+
+    sonde_install = dbaccessor.get_sonde_installations()
+    assert len(sonde_install) == 1
+    for attribute_name, attribute_value in edited_attribute_values.items():
+        assert (sonde_install.at[sonde_install_uuid, attribute_name] ==
                 attribute_value), attribute_name
 
 if __name__ == "__main__":
