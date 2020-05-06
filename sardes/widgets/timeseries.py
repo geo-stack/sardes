@@ -810,9 +810,16 @@ class TimeSeriesPlotViewer(QMainWindow):
 
         # Current axe selection.
         self.current_axe_button = DropdownToolButton(
-            'checklist', get_iconsize(), self)
+            None, get_iconsize(),
+            parent=self,
+            placeholder_text='<{}>'.format(_('Graph is empty')))
         self.current_axe_button.sig_checked_action_changed.connect(
             self._handle_selected_axe_changed)
+        self.current_axe_button.setToolTip(format_tooltip(
+            _('Graph Element'),
+            _('Select a graph element so that you can format it and'
+              ' zoom and pan the data.'),
+            None))
         axis_toolbar.addWidget(self.current_axe_button)
     # ---- Public API
     def set_data(self, dataf):
