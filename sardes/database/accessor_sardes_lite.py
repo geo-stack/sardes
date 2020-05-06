@@ -1116,6 +1116,9 @@ def init_database(accessor):
         if dialect.has_table(accessor._session, table.__tablename__):
             continue
         Base.metadata.create_all(accessor._engine, tables=[table.__table__])
+        for item_attrs in table.initial_attrs():
+            accessor._session.add(table(**item_attrs))
+        accessor._session.commit()
     accessor._session.commit()
 
 
