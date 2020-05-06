@@ -847,6 +847,14 @@ class TimeSeriesPlotViewer(QMainWindow):
                 self.create_axe(tseries_group)
         self.canvas.draw()
 
+    def update_data(self, dataf):
+        """Set the data that need to be displayed in this plot viewer."""
+        for axe in reversed(self.figure.tseries_axes_list):
+            self.figure.tseries_axes_list.remove(axe)
+            self.current_axe_button.remove_action(axe)
+            axe.remove()
+        self.set_data(dataf)
+        
     def create_axe(self, tseries_group, where=None):
         """
         Create and add a new axe to the figure where to plot the data

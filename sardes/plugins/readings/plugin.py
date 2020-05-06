@@ -130,6 +130,8 @@ class ReadingsTableWidget(SardesTableWidget):
     def set_model_data(self, dataf):
         self.model().set_model_data(dataf)
         self.model().sig_data_updated.emit()
+        if self.plot_viewer is not None:
+            self.plot_viewer.update_data(self.model().dataf)
 
     def plot_readings(self):
         """
