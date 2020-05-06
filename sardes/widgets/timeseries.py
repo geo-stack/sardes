@@ -869,6 +869,18 @@ class TimeSeriesPlotViewer(QMainWindow):
 
         return axe
 
+    def current_axe(self):
+        """Return the currently active axe."""
+        checked_action = self.current_axe_button.checked_action()
+        if checked_action is not None:
+            return checked_action.data()
+        else:
+            return None
+
+    def set_current_axe(self, index):
+        """Set the currently active axe."""
+        self.current_axe_button.setCheckedAction(index)
+
     @Slot(QAction)
     def _handle_selected_axe_changed(self, checked_action):
         """
@@ -883,10 +895,9 @@ class TimeSeriesPlotViewer(QMainWindow):
         Toggle on or off the visibility of the current matplotlib axe and
         enable or disable items in the gui accordingly.
         """
-        checked_action = self.current_axe_button.checked_action()
-        if checked_action is not None:
-            selected_axe = checked_action.data()
-            selected_axe.set_visible(not toggle)
+        current_axe = self.current_axe()
+        if current_axe is not None:
+            current_axe.set_visible(not toggle)
             self.visible_axes_button.setIcon(
                 get_icon('eye_on' if not toggle else 'eye_off'))
 
