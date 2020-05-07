@@ -618,6 +618,10 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
 
     def __init__(self, figure):
         super().__init__(figure)
+        # A pandas series containing the information related to the well
+        # in which the data plotted in this canvas were acquired.
+        self._obs_well_data = None
+
         figure.setup_base_axes()
 
         # Setup a matplotlib navigation toolbar, but hide it.
@@ -824,8 +828,9 @@ class TimeSeriesPlotViewer(QMainWindow):
             None))
         self.axes_toolbar.addWidget(self.current_axe_button)
     # ---- Public API
-    def set_data(self, dataf):
+    def set_data(self, dataf, obs_well_data=None):
         """Set the data that need to be displayed in this plot viewer."""
+        self.canvas._obs_well_data = obs_well_data
         for data_type in DataType:
             if data_type in dataf.columns:
                 tseries_group = TimeSeriesGroup(
@@ -849,11 +854,11 @@ class TimeSeriesPlotViewer(QMainWindow):
                 self.create_axe(tseries_group)
         self.axes_toolbar.setEnabled(self.current_axe_button.count())
 
-    def update_data(self, dataf):
+    def update_data(self, dataf, obs_well_data=None):
         """Set the data that need to be displayed in this plot viewer."""
         for axe in reversed(self.figure.tseries_axes_list):
             self.remove_axe(axe)
-        self.set_data(dataf)
+        self.set_data(dataf, obs_well_data)
 
     def create_axe(self, tseries_group, where=None):
         """

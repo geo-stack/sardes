@@ -122,7 +122,8 @@ class ReadingsTableWidget(SardesTableWidget):
         self.model().set_model_data(dataf)
         self.model().sig_data_updated.emit()
         if self.plot_viewer is not None:
-            self.plot_viewer.update_data(self.model().dataf)
+            self.plot_viewer.update_data(
+                self.model().dataf, self.model()._obs_well_data)
 
     def plot_readings(self):
         """
@@ -142,7 +143,7 @@ class ReadingsTableWidget(SardesTableWidget):
                 window_title += ' ({})'.format(obs_well_data['municipality'])
             self.plot_viewer.setWindowTitle(window_title)
 
-            self.plot_viewer.set_data(self.model().dataf)
+            self.plot_viewer.set_data(self.model().dataf, obs_well_data)
 
         if self.plot_viewer.windowState() == Qt.WindowMinimized:
             self.plot_viewer.setWindowState(Qt.WindowNoState)
