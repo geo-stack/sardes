@@ -147,7 +147,7 @@ def test_edit_sonde_feature(dbaccessor):
     sonde_models = dbaccessor.get_sonde_models_lib()
     sonde_feature_uuid = dbaccessor.get_sondes_data().index[0]
     edited_attribute_values = {
-        'sonde_serial_no': '1015973_edited',
+        'sonde_serial_no': '1015973b',
         'sonde_model_id': sonde_models.index[1],
         'date_reception': datetime.date(2006, 3, 15),
         'date_withdrawal': datetime.date(2010, 6, 12),
@@ -218,6 +218,45 @@ def test_edit_sonde_installations(dbaccessor):
     for attribute_name, attribute_value in edited_attribute_values.items():
         assert (sonde_install.at[sonde_install_uuid, attribute_name] ==
                 attribute_value), attribute_name
+
+
+def test_add_timeseries(dbaccessor):
+    """
+    Test that adding timeseries data to the database is working as expected.
+    """
+    obs_well_uuid = dbaccessor.get_observation_wells_data().index[0]
+    sonde_install_uuid = dbaccessor.get_sonde_installations().index[0]
+    for data_type in DataType:
+        tseries_data = dbaccessor.get_timeseries_for_obs_well(
+            obs_well_uuid, data_type)
+    assert tseries_data.empty
+
+    new_tseries_data = pd.DataFrame(
+        [['2018-09-27 07:00:00', 1.1, 3],
+         ['2018-09-27 08:00:00', 1.2, 4],
+         ['2018-09-27 09:00:00', 1.3, 5]],
+        columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
+    new_tseries_data['datetime'] = pd.to_datetime(
+        new_tseries_data['datetime'], format="%Y-%m-%d %H:%M:%S")
+    dbaccessor.add_timeseries_data(
+        new_tseries_data, obs_well_uuid, sonde_install_uuid)
+
+    wlevel_data = dbaccessor.get_timeseries_for_obs_well(
+        obs_well_uuid, DataType.WaterLevel)
+    assert len(wlevel_data) == 3
+    assert wlevel_data['obs_id'].unique() == [1]
+    assert wlevel_data['sonde_id'].unique() == ['1015973b']
+
+    wtemp_data = dbaccessor.get_timeseries_for_obs_well(
+        obs_well_uuid, DataType.WaterTemp)
+    assert len(wtemp_data) == 3
+    assert wtemp_data['obs_id'].unique() == [1]
+    assert wtemp_data['sonde_id'].unique() == ['1015973b']
+
+    wcond_data = dbaccessor.get_timeseries_for_obs_well(
+        obs_well_uuid, DataType.WaterEC)
+    assert wcond_data.empty
+
 
 if __name__ == "__main__":
     pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
