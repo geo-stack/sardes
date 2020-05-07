@@ -20,6 +20,7 @@ import pytest
 import pandas as pd
 
 # ---- Local imports
+from sardes.api.timeseries import DataType
 from sardes.database.accessor_sardes_lite import (
     DatabaseAccessorSardesLite, init_database)
 
@@ -39,10 +40,10 @@ def dbaccessor(tmp_path_factory):
 # =============================================================================
 # ---- Tests
 # =============================================================================
-def test_observation_wells_interface(dbaccessor):
+def test_add_observation_well(dbaccessor):
     """
-    Test that the interface for adding, editing and deleting observation
-    wells from the database is working as expected.
+    Test that adding an observation well to the database is working
+    as expected.
 
     Regression test for cgq-qgc/sardes#244.
     """
@@ -74,7 +75,15 @@ def test_observation_wells_interface(dbaccessor):
         assert (obs_wells.at[sampling_feature_uuid, attribute_name] ==
                 attribute_value), attribute_name
 
-    # Edit the data of the newly added observation well.
+
+def test_edit_observation_well(dbaccessor):
+    """
+    Test that editing an observation well in the database is working
+    as expected.
+
+    Regression test for cgq-qgc/sardes#244.
+    """
+    sampling_feature_uuid = dbaccessor.get_observation_wells_data().index[0]
     edited_attribute_values = {
         'obs_well_id': '123A2456_edited',
         'latitude': 42.424242,
@@ -94,24 +103,19 @@ def test_observation_wells_interface(dbaccessor):
             sampling_feature_uuid, attribute_name, attribute_value)
 
     obs_wells = dbaccessor.get_observation_wells_data()
-    assert len(obs_wells) == 1
     for attribute_name, attribute_value in edited_attribute_values.items():
         assert (obs_wells.at[sampling_feature_uuid, attribute_name] ==
                 attribute_value), attribute_name
 
 
-def test_sondes_data_interface(dbaccessor):
+def test_add_sonde_feature(dbaccessor):
     """
-    Test that the interface for adding, editing and deleting sondes
-    from the database is working as expected.
+    Test that adding a sonde to the database is working as expected.
     """
     sonde_models = dbaccessor.get_sonde_models_lib()
-    assert len(sonde_models) > 0
-
     sonde_data = dbaccessor.get_sondes_data()
     assert len(sonde_data) == 0
 
-    # Add a new sonde to the database.
     sonde_feature_uuid = dbaccessor._create_index('sondes_data')
     attribute_values = {
         'sonde_serial_no': '1015973',
@@ -135,9 +139,15 @@ def test_sondes_data_interface(dbaccessor):
             assert (sonde_data.at[sonde_feature_uuid, attribute_name] ==
                     attribute_value), attribute_name
 
-    # Edit the data of the newly added sonde.
+
+def test_edit_sonde_feature(dbaccessor):
+    """
+    Test that editing a sonde in the database is working as expected.
+    """
+    sonde_models = dbaccessor.get_sonde_models_lib()
+    sonde_feature_uuid = dbaccessor.get_sondes_data().index[0]
     edited_attribute_values = {
-        'sonde_serial_no': '1015973',
+        'sonde_serial_no': '1015973_edited',
         'sonde_model_id': sonde_models.index[1],
         'date_reception': datetime.date(2006, 3, 15),
         'date_withdrawal': datetime.date(2010, 6, 12),
@@ -152,28 +162,26 @@ def test_sondes_data_interface(dbaccessor):
             sonde_feature_uuid, attribute_name, attribute_value)
 
     sonde_data = dbaccessor.get_sondes_data()
-    assert len(sonde_data) == 1
     for attribute_name, attribute_value in edited_attribute_values.items():
         assert (sonde_data.at[sonde_feature_uuid, attribute_name] ==
                 attribute_value), attribute_name
 
 
-def test_sonde_installations_interface(dbaccessor):
+def test_add_sonde_installations(dbaccessor):
     """
-    Test that the interface for adding, editing and deleting sonde installation
-    from the database is working as expected.
+    Test that adding a sonde installation to the database is working as
+    expected.
     """
-    obs_wells_data = dbaccessor.get_observation_wells_data()
-    sonde_data = dbaccessor.get_sondes_data()
-
+    obs_wells_uuid = dbaccessor.get_observation_wells_data().index[0]
+    sonde_uuid = dbaccessor.get_sondes_data().index[0]
     sonde_install = dbaccessor.get_sonde_installations()
     assert len(sonde_install) == 0
 
     # Add a new sonde installation to the database.
     sonde_install_uuid = dbaccessor._create_index('sonde_installation')
     attribute_values = {
-        'sampling_feature_uuid': obs_wells_data.index[0],
-        'sonde_uuid': sonde_data.index[0],
+        'sampling_feature_uuid': obs_wells_uuid,
+        'sonde_uuid': sonde_uuid,
         'start_date': datetime.date(2006, 4, 12),
         'end_date': pd.NaT,
         'install_depth': 10.25
@@ -190,7 +198,13 @@ def test_sonde_installations_interface(dbaccessor):
             assert (sonde_install.at[sonde_install_uuid, attribute_name] ==
                     attribute_value), attribute_name
 
-    # Edit the data of the newly added sonde installation.
+
+def test_edit_sonde_installations(dbaccessor):
+    """
+    Test that editing a sonde installation in the database is working as
+    expected.
+    """
+    sonde_install_uuid = dbaccessor.get_sonde_installations().index[0]
     edited_attribute_values = {
         'start_date': datetime.date(2006, 4, 1),
         'end_date': datetime.date(2016, 4, 1),
@@ -201,7 +215,6 @@ def test_sonde_installations_interface(dbaccessor):
             sonde_install_uuid, attribute_name, attribute_value)
 
     sonde_install = dbaccessor.get_sonde_installations()
-    assert len(sonde_install) == 1
     for attribute_name, attribute_value in edited_attribute_values.items():
         assert (sonde_install.at[sonde_install_uuid, attribute_name] ==
                 attribute_value), attribute_name
