@@ -618,22 +618,16 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
 
     def __init__(self, figure):
         super().__init__(figure)
+        # A pandas series containing the information related to the well
+        # in which the data plotted in this canvas were acquired.
+        self._obs_well_data = None
+
         figure.setup_base_axes()
 
         # Setup a matplotlib navigation toolbar, but hide it.
         toolbar = NavigationToolbar2QT(self, self)
         toolbar.hide()
 
-    def get_default_filename(self):
-        """
-        Return a string, which includes extension, suitable for use as
-        a default filename.
-        """
-        default_basename = self.get_window_title() or 'image'
-        default_basename = default_basename.replace(' ', '_')
-        default_filetype = self.get_default_filetype()
-        default_filename = default_basename + '.' + default_filetype
-        return default_filename
 
     def create_axe(self, tseries_group, where):
         """
@@ -681,6 +675,21 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
         """Toggle data mouse drag selection over a vertical span."""
         for axe in self.figure.tseries_axes_list:
             axe.vspan_selector.set_active(toggle)
+
+    # ---- FigureCanvasQTAgg API
+    def get_default_filename(self):
+        """
+        Return a string, which includes extension, suitable for use as
+        a default filename.
+        """
+        if self._obs_well_data is None:
+            return super().get_default_filename()
+        else:
+            figname = self._obs_well_data['obs_well_id']
+            if self._obs_well_data['common_name']:
+                figname += ' - {}'.format(self._obs_well_data['common_name'])
+            figname += '.{}'.format(self.get_default_filetype())
+            return figname
 
 
 class TimeSeriesPlotViewer(QMainWindow):
@@ -824,8 +833,9 @@ class TimeSeriesPlotViewer(QMainWindow):
             None))
         self.axes_toolbar.addWidget(self.current_axe_button)
     # ---- Public API
-    def set_data(self, dataf):
+    def set_data(self, dataf, obs_well_data=None):
         """Set the data that need to be displayed in this plot viewer."""
+        self.canvas._obs_well_data = obs_well_data
         for data_type in DataType:
             if data_type in dataf.columns:
                 tseries_group = TimeSeriesGroup(
@@ -849,11 +859,11 @@ class TimeSeriesPlotViewer(QMainWindow):
                 self.create_axe(tseries_group)
         self.axes_toolbar.setEnabled(self.current_axe_button.count())
 
-    def update_data(self, dataf):
+    def update_data(self, dataf, obs_well_data=None):
         """Set the data that need to be displayed in this plot viewer."""
         for axe in reversed(self.figure.tseries_axes_list):
             self.remove_axe(axe)
-        self.set_data(dataf)
+        self.set_data(dataf, obs_well_data)
 
     def create_axe(self, tseries_group, where=None):
         """
