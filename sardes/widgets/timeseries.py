@@ -628,16 +628,6 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
         toolbar = NavigationToolbar2QT(self, self)
         toolbar.hide()
 
-    def get_default_filename(self):
-        """
-        Return a string, which includes extension, suitable for use as
-        a default filename.
-        """
-        default_basename = self.get_window_title() or 'image'
-        default_basename = default_basename.replace(' ', '_')
-        default_filetype = self.get_default_filetype()
-        default_filename = default_basename + '.' + default_filetype
-        return default_filename
 
     def create_axe(self, tseries_group, where):
         """
@@ -685,6 +675,21 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
         """Toggle data mouse drag selection over a vertical span."""
         for axe in self.figure.tseries_axes_list:
             axe.vspan_selector.set_active(toggle)
+
+    # ---- FigureCanvasQTAgg API
+    def get_default_filename(self):
+        """
+        Return a string, which includes extension, suitable for use as
+        a default filename.
+        """
+        if self._obs_well_data is None:
+            return super().get_default_filename()
+        else:
+            figname = self._obs_well_data['obs_well_id']
+            if self._obs_well_data['common_name']:
+                figname += ' - {}'.format(self._obs_well_data['common_name'])
+            figname += '.{}'.format(self.get_default_filetype())
+            return figname
 
 
 class TimeSeriesPlotViewer(QMainWindow):
