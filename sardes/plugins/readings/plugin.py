@@ -26,6 +26,7 @@ from sardes.widgets.timeseries import TimeSeriesPlotViewer
 from sardes.widgets.tableviews import (
     SardesTableWidget, NumEditDelegate, NotEditableDelegate,
     SardesStackedTableWidget)
+from sardes.api.database_accessor import init_tseries_edits
 
 
 """Readings plugin"""
@@ -63,15 +64,7 @@ class ReadingsTableModel(SardesTableModel):
         """
         self.sig_data_about_to_be_saved.emit()
 
-        tseries_edits = pd.DataFrame(
-            [], columns=['datetime', 'obs_id', 'data_type', 'value'])
-        tseries_edits.set_index(
-            'datetime', inplace=True, drop=True)
-        tseries_edits.set_index(
-            'obs_id', inplace=True, drop=True, append=True)
-        tseries_edits.set_index(
-            'data_type', inplace=True, drop=True, append=True)
-
+        tseries_edits = init_tseries_edits()
         tseries_dels = pd.DataFrame(
             [], columns=['obs_id', 'datetime', 'data_type'])
 

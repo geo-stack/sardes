@@ -11,6 +11,7 @@
 from abc import ABC, abstractmethod
 
 # ---- Third party imports
+import pandas as pd
 from pandas import Series, DataFrame
 
 
@@ -695,3 +696,21 @@ class DatabaseAccessor(DatabaseAccessorBase):
             manual measurement id.
         """
         raise NotImplementedError
+
+
+# ---- Utilities
+def init_tseries_edits():
+    """
+    Init and return an empty multiindex pandas dataframe that can be
+    used to edit timeseries data in the database with
+    :func:`DatabaseAccessor.save_timeseries_data_edits`.
+    """
+    tseries_edits = pd.DataFrame(
+        [], columns=['datetime', 'obs_id', 'data_type', 'value'])
+    tseries_edits.set_index(
+        'datetime', inplace=True, drop=True)
+    tseries_edits.set_index(
+        'obs_id', inplace=True, drop=True, append=True)
+    tseries_edits.set_index(
+        'data_type', inplace=True, drop=True, append=True)
+    return tseries_edits

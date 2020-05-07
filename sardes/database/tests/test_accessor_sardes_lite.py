@@ -21,6 +21,7 @@ import pandas as pd
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
+from sardes.api.database_accessor import init_tseries_edits
 from sardes.database.accessor_sardes_lite import (
     DatabaseAccessorSardesLite, init_database)
 
@@ -256,6 +257,29 @@ def test_add_timeseries(dbaccessor):
     wcond_data = dbaccessor.get_timeseries_for_obs_well(
         obs_well_uuid, DataType.WaterEC)
     assert wcond_data.empty
+
+
+def test_edit_timeseries(dbaccessor):
+    """
+    Test that editing timeseries data in the database is working as expected.
+    """
+    obs_well_uuid = dbaccessor.get_observation_wells_data().index[0]
+    tseries_edits = init_tseries_edits()
+    tseries_edits.loc[
+        (datetime.datetime(2018, 9, 27, 7), 1, DataType.WaterLevel), 'value'
+        ] = 3.25
+    tseries_edits.loc[
+        (datetime.datetime(2018, 9, 27, 8), 1, DataType.WaterTemp), 'value'
+        ] = None
+    dbaccessor.save_timeseries_data_edits(tseries_edits)
+
+    wlevel_data = dbaccessor.get_timeseries_for_obs_well(
+        obs_well_uuid, DataType.WaterLevel)
+    assert wlevel_data.iloc[0][DataType.WaterLevel] == 3.25
+
+    wtemp_data = dbaccessor.get_timeseries_for_obs_well(
+        obs_well_uuid, DataType.WaterTemp)
+    assert pd.isnull(wtemp_data.iloc[1][DataType.WaterTemp])
 
 
 if __name__ == "__main__":
