@@ -61,7 +61,20 @@ sqlite3.register_adapter(np.float64, addapt_numpy_float64)
 Base = declarative_base()
 
 
-class Location(Base):
+class BaseMixin(object):
+    def __repr__(self):
+        return format_sqlobject_repr(self)
+
+    @classmethod
+    def initial_attrs(cls):
+        """
+        This needs to be reimplemented for tables for which we need to add
+        default values after creation.
+        """
+        return []
+
+
+class Location(BaseMixin, Base):
     """
     An object used to map the 'location' table.
     """
@@ -73,11 +86,8 @@ class Location(Base):
     longitude = Column(Float)
     municipality = Column(String)
 
-    def __repr__(self):
-        return format_sqlobject_repr(self)
 
-
-class Repere(Base):
+class Repere(BaseMixin, Base):
     """
     An object used to map the 'repere' table.
     """
@@ -94,11 +104,8 @@ class Repere(Base):
         UUIDType(binary=False),
         ForeignKey('sampling_feature.sampling_feature_uuid'))
 
-    def __repr__(self):
-        return format_sqlobject_repr(self)
 
-
-class SamplingFeature(Base):
+class SamplingFeature(BaseMixin, Base):
     """
     An object used to map the 'sampling_feature' table.
     """
@@ -115,11 +122,8 @@ class SamplingFeature(Base):
         "SamplingFeatureMetadata", uselist=False,
         back_populates="sampling_feature")
 
-    def __repr__(self):
-        return format_sqlobject_repr(self)
 
-
-class SamplingFeatureType(Base):
+class SamplingFeatureType(BaseMixin, Base):
     """
     An object used to map the 'sampling_feature_type' library.
     """
@@ -130,11 +134,8 @@ class SamplingFeatureType(Base):
     sampling_feature_type_desc = Column(String)
     sampling_feature_type_abb = Column(String)
 
-    def __repr__(self):
-        return format_sqlobject_repr(self)
 
-
-class SamplingFeatureMetadata(Base):
+class SamplingFeatureMetadata(BaseMixin, Base):
     __tablename__ = 'sampling_feature_metadata'
 
     sampling_feature_uuid = Column(
@@ -154,7 +155,7 @@ class SamplingFeatureMetadata(Base):
 
 
 # ---- Observations
-class Observation(Base):
+class Observation(BaseMixin, Base):
     """
     An object used to map the 'observation' table.
     """
@@ -169,11 +170,8 @@ class Observation(Base):
     process_id = Column(Integer, ForeignKey('process.process_id'))
     obs_type_id = Column(Integer, ForeignKey('observation_type.obs_type_id'))
 
-    def __repr__(self):
-        return format_sqlobject_repr(self)
 
-
-class ObservationType(Base):
+class ObservationType(BaseMixin, Base):
     """
     An object used to map the 'observation_type' library.
     """
@@ -185,7 +183,7 @@ class ObservationType(Base):
     obs_type_desc = Column(String)
 
 
-class ObservedProperty(Base):
+class ObservedProperty(BaseMixin, Base):
     """
     An object used to map the 'observed_property' library.
     """
@@ -196,12 +194,9 @@ class ObservedProperty(Base):
     obs_property_desc = Column('observed_property_description', String)
     obs_property_units = Column('unit', String)
 
-    def __repr__(self):
-        return format_sqlobject_repr(self)
-
 
 # ---- Numerical Data
-class TimeSeriesChannel(Base):
+class TimeSeriesChannel(BaseMixin, Base):
     """
     An object used to map the 'timeseries_channel' table.
     """
@@ -214,11 +209,8 @@ class TimeSeriesChannel(Base):
     obs_property_id = Column(
         Integer, ForeignKey('observed_property.obs_property_id'))
 
-    def __repr__(self):
-        return format_sqlobject_repr(self)
 
-
-class TimeSeriesData(Base):
+class TimeSeriesData(BaseMixin, Base):
     """
     An object used to map the 'timeseries_data' table.
     """
@@ -231,7 +223,7 @@ class TimeSeriesData(Base):
         primary_key=True, index=True)
 
 
-class GenericNumericalData(Base):
+class GenericNumericalData(BaseMixin, Base):
     """
     An object used to map the 'generique'.
     """
@@ -246,12 +238,9 @@ class GenericNumericalData(Base):
     gen_num_value_notes = Column(String)
     gen_init_num_value = Column(String)
 
-    def __repr__(self):
-        return format_sqlobject_repr(self)
-
 
 # ---- Sondes
-class SondeFeature(Base):
+class SondeFeature(BaseMixin, Base):
     """
     An object used to map the 'sonde_feature' table.
     """
@@ -269,7 +258,7 @@ class SondeFeature(Base):
     sonde_notes = Column(String)
 
 
-class SondeModel(Base):
+class SondeModel(BaseMixin, Base):
     """
     An object used to map the 'sonde_model' library.
     """
@@ -279,8 +268,35 @@ class SondeModel(Base):
     sonde_brand = Column(String)
     sonde_model = Column(String)
 
+    @classmethod
+    def initial_attrs(cls):
+        return [
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M10 Gold'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'Barologger M1.5 Gold'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M20 Gold'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M10'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'Barologger M1.5'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M20'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC F30/M10'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC F100/M30'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC M200 Edge'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC M20 Edge'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC M30 Edge'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC M100 Edge'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC M10 Edge'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M10 Edge'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M20 Edge'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M100 Edge'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'L M5'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M5'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M100'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'L M10'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LT M30'},
+            {'sonde_brand': 'Solinst', 'sonde_model': 'LTC Jr'}]
 
-class SondeInstallation(Base):
+
+class SondeInstallation(BaseMixin, Base):
     """
     An object used to map the 'sonde_installation' table.
     """
@@ -305,7 +321,7 @@ class SondeInstallation(Base):
 
 
 # ---- Pompes
-class PumpType(Base):
+class PumpType(BaseMixin, Base):
     """
     An object used to map the 'pump_type' library.
     """
@@ -315,7 +331,7 @@ class PumpType(Base):
     pump_type_desc = Column(String)
 
 
-class PumpInstallation(Base):
+class PumpInstallation(BaseMixin, Base):
     """
     An object used to map the 'pump_installation' table.
     """
@@ -340,7 +356,7 @@ class PumpInstallation(Base):
 
 
 # ---- Processes
-class Process(Base):
+class Process(BaseMixin, Base):
     """
     An object used to map the 'process' table.
     """
@@ -351,7 +367,7 @@ class Process(Base):
     process_id = Column(Integer, primary_key=True)
 
 
-class ProcessInstallation(Base):
+class ProcessInstallation(BaseMixin, Base):
     """
     An object used to map the 'process_installation' table.
     """
@@ -369,7 +385,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
     Manage the connection and requests to a RSESQ database.
     """
 
-    def __init__(self, database):
+    def __init__(self, database, *args, **kargs):
         super().__init__()
         self._database = database
 
@@ -657,6 +673,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Add a new sonde to the database using the provided sonde UUID
         and attribute values.
         """
+        # Make sure pandas NaT are replaced by None for datetime fields
+        # to avoid errors in sqlalchemy.
+        for field in ['date_reception', 'date_withdrawal']:
+            if pd.isnull(attribute_values.get(field, None)):
+                attribute_values[field] = None
+
         self._session.add(SondeFeature(
             sonde_uuid=sonde_uuid,
             **attribute_values
@@ -672,9 +694,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         sondes = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
 
-        # Strip the hour portion since it doesn't make sense here.
-        sondes['date_reception'] = sondes['date_reception'].dt.date
-        sondes['date_withdrawal'] = sondes['date_withdrawal'].dt.date
+        # Make sure date_reception and date_withdrawal are considered as
+        # datetime and strip the hour portion since it doesn't make sense here.
+        sondes['date_reception'] = pd.to_datetime(
+            sondes['date_reception']).dt.date
+        sondes['date_withdrawal'] = pd.to_datetime(
+            sondes['date_withdrawal']).dt.date
 
         # Set the index to the sonde ids.
         sondes.set_index('sonde_uuid', inplace=True, drop=True)
@@ -687,6 +712,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Save in the database the new attribute value for the sonde
         corresponding to the specified sonde UUID.
         """
+        # Make sure pandas NaT are replaced by None for datetime fields
+        # to avoid errors in sqlalchemy.
+        if attribute_name in ['date_reception', 'date_withdrawal']:
+            if pd.isnull(attribute_value):
+                attribute_value = None
+
         sonde = self._get_sonde(sonde_uuid)
         setattr(sonde, attribute_name, attribute_value)
         if auto_commit:
@@ -708,6 +739,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Add a new sonde installation to the database using the provided ID
         and attribute values.
         """
+        # Make sure pandas NaT are replaced by None for datetime fields
+        # to avoid errors in sqlalchemy.
+        for field in ['start_date', 'end_date']:
+            if pd.isnull(attribute_values.get(field, None)):
+                attribute_values[field] = None
+
         # We first create new items in the tables process and
         # process_installation.
         new_process = Process(process_type='sonde installation')
@@ -748,6 +785,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Save in the database the new attribute value for the sonde
         installation corresponding to the specified id.
         """
+        # Make sure pandas NaT are replaced by None for datetime fields
+        # to avoid errors in sqlalchemy.
+        if attribute_name in ['start_date', 'end_date']:
+            if pd.isnull(attribute_value):
+                attribute_value = None
+
         sonde_installation = self._get_sonde_installation(install_uuid)
         setattr(sonde_installation, attribute_name, attribute_value)
 
@@ -1085,6 +1128,9 @@ def init_database(accessor):
         if dialect.has_table(accessor._session, table.__tablename__):
             continue
         Base.metadata.create_all(accessor._engine, tables=[table.__table__])
+        for item_attrs in table.initial_attrs():
+            accessor._session.add(table(**item_attrs))
+        accessor._session.commit()
     accessor._session.commit()
 
 
