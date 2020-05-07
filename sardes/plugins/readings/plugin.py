@@ -250,14 +250,6 @@ class Readings(SardesPlugin):
                 tab_text += '*'
             self.tabwidget.setTabText(index, tab_text)
 
-    def _update_current_table(self, *args, **kargs):
-        """Update the current table data and state."""
-        return
-        if self.current_table().isVisible():
-            self.current_table().setEnabled(
-                self.main.db_connection_manager.is_connected())
-            self.current_table().update_model_data()
-
     @Slot(object)
     def _handle_data_table_destroyed(self, obs_well_uuid):
         """
