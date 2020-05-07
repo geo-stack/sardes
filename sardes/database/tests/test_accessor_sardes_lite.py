@@ -21,7 +21,7 @@ import pandas as pd
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
-from sardes.api.database_accessor import init_tseries_edits
+from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
 from sardes.database.accessor_sardes_lite import (
     DatabaseAccessorSardesLite, init_database)
 
@@ -263,7 +263,6 @@ def test_edit_timeseries(dbaccessor):
     """
     Test that editing timeseries data in the database is working as expected.
     """
-    obs_well_uuid = dbaccessor.get_observation_wells_data().index[0]
     tseries_edits = init_tseries_edits()
     tseries_edits.loc[
         (datetime.datetime(2018, 9, 27, 7), 1, DataType.WaterLevel), 'value'
@@ -273,6 +272,7 @@ def test_edit_timeseries(dbaccessor):
         ] = None
     dbaccessor.save_timeseries_data_edits(tseries_edits)
 
+    obs_well_uuid = dbaccessor.get_observation_wells_data().index[0]
     wlevel_data = dbaccessor.get_timeseries_for_obs_well(
         obs_well_uuid, DataType.WaterLevel)
     assert wlevel_data.iloc[0][DataType.WaterLevel] == 3.25
@@ -282,5 +282,49 @@ def test_edit_timeseries(dbaccessor):
     assert pd.isnull(wtemp_data.iloc[1][DataType.WaterTemp])
 
 
+def test_delete_timeseries(dbaccessor):
+    """
+    Test that deleting timeseries data from the database is working
+    as expected.
+    """
+    tseries_dels = init_tseries_dels()
+
+    # Delete the second data of the timeseries data.
+    for data_type in [DataType.WaterLevel, DataType.WaterTemp]:
+        tseries_dels = tseries_dels.append(
+            {'obs_id': 1,
+             'datetime': datetime.datetime(2018, 9, 27, 8),
+             'data_type': data_type},
+            ignore_index=True)
+    dbaccessor.delete_timeseries_data(tseries_dels)
+
+    obs_well_uuid = dbaccessor.get_observation_wells_data().index[0]
+    for data_type in [DataType.WaterLevel, DataType.WaterTemp]:
+        tseries_data = dbaccessor.get_timeseries_for_obs_well(
+            obs_well_uuid, data_type)
+        assert len(tseries_data) == 2
+
+    # Delete the remaning timeseries data.
+    for data_type in [DataType.WaterLevel, DataType.WaterTemp]:
+        tseries_dels = tseries_dels.append(
+            {'obs_id': 1,
+             'datetime': datetime.datetime(2018, 9, 27, 7),
+             'data_type': data_type},
+            ignore_index=True)
+        tseries_dels = tseries_dels.append(
+            {'obs_id': 1,
+             'datetime': datetime.datetime(2018, 9, 27, 9),
+             'data_type': data_type},
+            ignore_index=True)
+    dbaccessor.delete_timeseries_data(tseries_dels)
+
+    obs_well_uuid = dbaccessor.get_observation_wells_data().index[0]
+    for data_type in [DataType.WaterLevel, DataType.WaterTemp]:
+        tseries_data = dbaccessor.get_timeseries_for_obs_well(
+            obs_well_uuid, data_type)
+        assert len(tseries_data) == 0
+
+
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
+    pytest.main(['-x', osp.basename(__file__), '-v', '-rw',
+                 '-s'])

@@ -714,3 +714,12 @@ def init_tseries_edits():
     tseries_edits.set_index(
         'data_type', inplace=True, drop=True, append=True)
     return tseries_edits
+
+
+def init_tseries_dels():
+    """
+    Init and return an empty pandas dataframe that can be
+    used to delete timeseries data from the database with
+    :func:`DatabaseAccessor.delete_timeseries_data`.
+    """
+    return pd.DataFrame([], columns=['obs_id', 'datetime', 'data_type'])
