@@ -10,6 +10,7 @@
 # ---- Standard library imports
 import sys
 from collections.abc import Mapping
+import datetime
 
 # ---- Third party imports
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
@@ -17,7 +18,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from matplotlib.figure import Figure as MplFigure
 from matplotlib.axes import Axes as MplAxes
 from matplotlib.widgets import RectangleSelector, SpanSelector
-from matplotlib.dates import num2date
+from matplotlib.dates import num2date, date2num
 import numpy as np
 from qtpy.QtCore import (Qt, Slot, QSize, QTimer, Signal, QPropertyAnimation)
 from qtpy.QtGui import QGuiApplication, QKeySequence
@@ -330,7 +331,31 @@ class TimeSeries(Mapping):
 
 
 # ---- Plotting devices
-class TimeSeriesAxes(MplAxes):
+class BaseAxes(MplAxes):
+    MINDATE = date2num(datetime.datetime(1000, 1, 1))
+    MAXDATE = date2num(datetime.datetime(3000, 1, 1))
+
+    def set_xlim(self, left=None, right=None, emit=True, auto=False,
+                 *, xmin=None, xmax=None):
+        """
+        Override _AxesBase method to limit the xaxis to a valid matplotlib
+        date range.
+        """
+        if right is None and np.iterable(left):
+            left, right = left
+        left = xmin if xmin is not None else left
+        right = xmax if xmax is not None else right
+
+        if left is not None:
+            if left <= self.MINDATE or left >= self.MAXDATE:
+                return super().set_xlim(None, None, emit, auto)
+        if right is not None:
+            if right <= self.MINDATE or right >= self.MAXDATE:
+                return super().set_xlim(None, None, emit, auto)
+        return super().set_xlim(left, right, emit, auto)
+
+
+class TimeSeriesAxes(BaseAxes):
     """
     A matplotlib Axes object where one or more timeseries of the same
     quantity can be plotted at the same time.
@@ -541,13 +566,14 @@ class TimeSeriesFigure(MplFigure):
         """
         Setup a base axes with which all other axes will share their xaxis.
         """
-        self.base_axes = self.add_subplot(1, 1, 1)
+        self.base_axes = BaseAxes(self, [0, 0, 1, 1])
         self.base_axes.set_zorder(0)
         self.base_axes.set_yticks([])
-        self.base_axes.tick_params(labelsize=self.canvas.font().pointSize(),
-                                   left=False, right=False,
-                                   labelleft=False, labelright=False)
+        self.base_axes.tick_params(
+            labelsize=self.canvas.font().pointSize(),
+            left=False, right=False, labelleft=False, labelright=False)
         self.base_axes.set_visible(False)
+        self.add_axes(self.base_axes)
         self.canvas.draw()
 
     def add_tseries_axes(self, tseries_axes):
