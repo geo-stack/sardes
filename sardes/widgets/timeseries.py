@@ -19,9 +19,11 @@ from matplotlib.axes import Axes as MplAxes
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from matplotlib.dates import num2date
 import numpy as np
-from qtpy.QtCore import Qt, Slot, QSize
+from qtpy.QtCore import (Qt, Slot, QSize, QTimer, Signal, QPropertyAnimation)
+from qtpy.QtGui import QGuiApplication, QKeySequence
 from qtpy.QtWidgets import (QAction, QApplication, QMainWindow, QLabel,
-                            QDoubleSpinBox, QWidget, QHBoxLayout)
+                            QDoubleSpinBox, QWidget, QHBoxLayout,
+                            QGridLayout, QGraphicsOpacityEffect)
 import pandas as pd
 from pandas.plotting import register_matplotlib_converters
 
@@ -37,6 +39,7 @@ from sardes.widgets.buttons import DropdownToolButton, SemiExclusiveButtonGroup
 
 
 register_matplotlib_converters()
+MSEC_MIN_OVERLAY_MSG_DISPLAY = 2000
 
 
 # ---- Data containers
@@ -747,10 +750,70 @@ class TimeSeriesPlotViewer(QMainWindow):
 
         self.figure = TimeSeriesFigure(facecolor='white')
         self.canvas = TimeSeriesCanvas(self.figure)
-        self.toolbars = []
+        self.canvas.sig_show_overlay_message.connect(
+            self._show_canvas_overlay_message)
+        self.overlay_msg_widget = self._setup_overlay_msg_widget()
 
-        self.setCentralWidget(self.canvas)
+        self.central_widget = QWidget()
+        central_widget_layout = QGridLayout(self.central_widget)
+        central_widget_layout.setContentsMargins(0, 0, 0, 0)
+        central_widget_layout.addWidget(self.canvas, 0, 0)
+        central_widget_layout.addWidget(self.overlay_msg_widget, 0, 0)
+        self.setCentralWidget(self.central_widget)
+
+        self.toolbars = []
         self._setup_toolbar()
+
+    def _setup_overlay_msg_widget(self):
+        """
+        Setup a widget that can show a message that is overlying the plot
+        area.
+        """
+        # We cannot only the Ctrl modifier becasue this results in an
+        # empty string.
+        ctrl_text = QKeySequence('Ctrl+1').toString(
+            QKeySequence.NativeText)[:-2]
+        overlay_msg = _(
+            "Use {} + scroll to zoom the graph").format(ctrl_text)
+
+        msg_background = QWidget()
+        msg_background.setObjectName('plot_viewer_msg_background')
+        msg_background.setStyleSheet(
+            "QWidget#plot_viewer_msg_background {background-color: black;}")
+        msg_background.setAutoFillBackground(True)
+
+        self.msq_label = QLabel(overlay_msg)
+        self.msq_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.msq_label.setWordWrap(True)
+        self.msq_label.setStyleSheet("color:white;")
+        font = self.msq_label.font()
+        font.setPointSize(16)
+        self.msq_label.setFont(font)
+
+        overlay_msg_widget = QWidget()
+        msg_layout = QGridLayout(overlay_msg_widget)
+        msg_layout.setContentsMargins(0, 0, 0, 0)
+        msg_layout.addWidget(msg_background, 0, 0)
+        msg_layout.addWidget(self.msq_label, 0, 0)
+        overlay_msg_widget.hide()
+
+        opacity_effect = QGraphicsOpacityEffect(msg_background)
+        msg_background.setGraphicsEffect(opacity_effect)
+
+        # Setup a gradual opacity effect on the overlay message widget when
+        # showing it.
+        # Adapted from https://stackoverflow.com/a/14444331/4481445
+        self._overlay_msg_widget_show_animation = QPropertyAnimation(
+            opacity_effect, b"opacity")
+        self._overlay_msg_widget_show_animation.setDuration(100)
+        self._overlay_msg_widget_show_animation.setStartValue(0)
+        self._overlay_msg_widget_show_animation.setEndValue(0.65)
+
+        self._hide_overlay_msg_timer = QTimer(self)
+        self._hide_overlay_msg_timer.setSingleShot(True)
+        self._hide_overlay_msg_timer.timeout.connect(overlay_msg_widget.hide)
+
+        return overlay_msg_widget
 
     def _setup_toolbar(self):
         """Setup the main toolbar of this time series viewer."""
@@ -970,6 +1033,14 @@ class TimeSeriesPlotViewer(QMainWindow):
         """Set the currently active axe."""
         self.current_axe_button.setCheckedAction(index)
 
+    # ---- Private API
+    @Slot()
+    def _show_canvas_overlay_message(self):
+        self._hide_overlay_msg_timer.stop()
+        if not self.overlay_msg_widget.isVisible():
+            self._overlay_msg_widget_show_animation.start()
+            self.overlay_msg_widget.show()
+        self._hide_overlay_msg_timer.start(MSEC_MIN_OVERLAY_MSG_DISPLAY)
     @Slot(QAction)
     def _handle_selected_axe_changed(self, checked_action):
         """
@@ -1009,6 +1080,7 @@ class TimeSeriesPlotViewer(QMainWindow):
         for index, action in enumerate(menu.actions()):
             action.setEnabled(action.data().get_visible())
 
+    # ---- Qt Override
     def show(self):
         """
         Extend Qt show method to center this mainwindow to its parent's
