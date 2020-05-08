@@ -23,6 +23,62 @@ from sardes.config.gui import get_iconsize
 from sardes.utils.qthelpers import create_action
 
 
+class ToggleVisibilityMenu(QMenu):
+    def mouseReleaseEvent(self, event):
+        """
+        Override Qt method to prevent menu from closing when an action
+        is toggled.
+        """
+        action = self.activeAction()
+        if action:
+            action.setChecked(not action.isChecked())
+        event.accept()
+
+
+class ToggleVisibilityToolButton(QToolButton):
+    sig_item_clicked = Signal(object, bool)
+
+    def __init__(self, iconsize, parent=None):
+        super().__init__(parent)
+        self.setIcon(get_icon('eye_on'))
+        self.setIconSize(QSize(iconsize, iconsize))
+
+        self.setMenu(ToggleVisibilityMenu(self))
+        self.setPopupMode(self.InstantPopup)
+        self.menu().installEventFilter(self)
+
+    def count(self):
+        """
+        Return the number of items in this ToggleVisibilityToolButton.
+        """
+        return len(self.menu().actions())
+
+    def create_action(self, name, item):
+        """
+        Create and add a new action to this button's menu.
+        """
+        action = create_action(
+            self, name,
+            toggled=lambda toggle:
+                self.sig_item_clicked.emit(item, toggle),
+            data=item)
+        self.menu().addAction(action)
+        action.setChecked(True)
+        self.setEnabled(self.count() > 0)
+        return action
+
+    def remove_action(self, item):
+        """
+        Remove the action corresponding to the given item from this
+        toolbutton menu.
+        """
+        for action in self.menu().actions():
+            if action.data() == item:
+                self.menu().removeAction(action)
+        if self.count() == 0:
+            self.setEnabled(False)
+
+
 class LeftAlignedToolButton(QToolButton):
     def paintEvent(self, event):
         """
@@ -271,16 +327,21 @@ class SemiExclusiveButtonGroup(QObject):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
+    visibility_btn = ToggleVisibilityToolButton(get_iconsize())
+    visibility_btn.create_action('Item #1', object())
+    visibility_btn.create_action('Item #2', object())
+    visibility_btn.create_action('Item #3', object())
+
     button = DropdownToolButton('checklist', get_iconsize())
     for i in range(3):
-        button.create_action('Action #{}'.format(i),
+        button.create_action('Item #{}'.format(i),
                              'Data of Action #{}'.format(i))
-
     button.sig_checked_action_changed.connect(
         lambda action: print('{} toggled'.format(action.text()))
         )
 
     toolbar = QToolBar()
+    toolbar.addWidget(visibility_btn)
     toolbar.addWidget(button)
     toolbar.show()
 
