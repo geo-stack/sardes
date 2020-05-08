@@ -10,6 +10,7 @@
 # ---- Standard library imports
 import sys
 from collections.abc import Mapping
+import datetime
 
 # ---- Third party imports
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
@@ -17,7 +18,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from matplotlib.figure import Figure as MplFigure
 from matplotlib.axes import Axes as MplAxes
 from matplotlib.widgets import RectangleSelector, SpanSelector
-from matplotlib.dates import num2date
+from matplotlib.dates import num2date, date2num
 import numpy as np
 from qtpy.QtCore import (Qt, Slot, QSize, QTimer, Signal, QPropertyAnimation)
 from qtpy.QtGui import QGuiApplication, QKeySequence
