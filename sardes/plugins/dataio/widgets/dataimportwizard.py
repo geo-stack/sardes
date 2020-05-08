@@ -32,7 +32,7 @@ from sardes.api.tablemodels import SardesTableModel
 from sardes.api.timeseries import DataType
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import NotEditableDelegate, SardesTableWidget
-from sardes.widgets.buttons import CheckboxPathBoxWidget
+from sardes.widgets.path import CheckboxPathBoxWidget
 from sardes.widgets.statusbar import MessageBoxWidget
 
 NOT_FOUND_MSG = _('Not found in database')
