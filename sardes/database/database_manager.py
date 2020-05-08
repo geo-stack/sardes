@@ -181,8 +181,10 @@ class DatabaseConnectionWorker(QObject):
                 else:
                     readings = readings.merge(
                         tseries_dataf,
-                        left_on=['datetime', 'obs_id', 'sonde_id'],
-                        right_on=['datetime', 'obs_id', 'sonde_id'],
+                        left_on=['datetime', 'obs_id', 'sonde_id',
+                                 'install_depth'],
+                        right_on=['datetime', 'obs_id', 'sonde_id',
+                                  'install_depth'],
                         how='outer', sort=True)
                 date_types.append(data_type)
             if readings is None:
@@ -193,7 +195,9 @@ class DatabaseConnectionWorker(QObject):
 
             # Reorder the columns so that the data are displayed nicely.
             readings = readings[
-                ['datetime', 'sonde_id'] + date_types + ['obs_id']]
+                ['datetime', 'sonde_id'] +
+                date_types +
+                ['install_depth', 'obs_id']]
             readings = readings.sort_values('datetime', axis=0, ascending=True)
 
             # Add metadata to the dataframe.
