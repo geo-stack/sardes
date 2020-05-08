@@ -235,6 +235,12 @@ FA_ICONS = {
     'warning': [
         ('mdi.alert-outline',),
         {'color': YELLOW, 'scale_factor': 1.3}],
+    'zoom_in': [
+        ('mdi.plus-circle-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
+    'zoom_out': [
+        ('mdi.minus-circle-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'zoom_to_rect': [
         ('mdi.magnify-plus-cursor',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
