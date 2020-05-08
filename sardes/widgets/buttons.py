@@ -202,7 +202,7 @@ class DropdownToolButton(LeftAlignedToolButton):
         self._adjust_size_to_content = True
         self._placeholder_text = placeholder_text
 
-        self.setMinimumWidth(150)
+        self.setMinimumWidth(100)
         if icon is not None:
             self.setIcon(get_icon(icon))
         if iconsize is not None:
