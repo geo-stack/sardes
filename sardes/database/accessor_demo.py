@@ -432,6 +432,8 @@ class DatabaseAccessorDemo(DatabaseAccessor):
             tseries_data['obs_id'] = obs_id
             tseries_data['sonde_id'] = (
                 self._get_sonde_serial_no_from_obs_id(obs_id))
+            tseries_data['install_depth'] = (
+                self._get_sonde_install_depth_from_obs_id(obs_id))
             merged_tseries = merged_tseries.append(
                 tseries_data, ignore_index=True,
                 verify_integrity=True, sort=True)
@@ -528,6 +530,14 @@ class DatabaseAccessorDemo(DatabaseAccessor):
             SONDE_INSTALLATIONS.loc[sonde_installation_uuid]['sonde_uuid'])
         sonde_serial_no = (SONDES_DATA.loc[sonde_uuid]['sonde_serial_no'])
         return sonde_serial_no
+
+    def _get_sonde_install_depth_from_obs_id(self, obs_id):
+        """
+        Return the installation depth of the sonde for the given
+        observation ID.
+        """
+        install_uuid = OBSERVATIONS.loc[obs_id]['sonde_installation_uuid']
+        return SONDE_INSTALLATIONS.loc[install_uuid]['install_depth']
 
 
 if __name__ == '__main__':
