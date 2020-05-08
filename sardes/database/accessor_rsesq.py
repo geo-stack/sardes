@@ -29,6 +29,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.types import TEXT, VARCHAR, Boolean
 
 # ---- Local imports
@@ -1050,6 +1051,24 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             .one()
             .sonde_serial_no)
 
+    def _get_sonde_install_depth_from_obs_id(self, obs_id):
+        """
+        Return the installation depth of the sonde for the given
+        observation ID.
+        """
+        try:
+            return (
+                self._session.query(SondeInstallation)
+                .filter(Observation.observation_id == obs_id)
+                .filter(Observation.process_uuid ==
+                        ProcessesInstalls.process_uuid)
+                .filter(ProcessesInstalls.install_id ==
+                        SondeInstallation.install_id)
+                .one()
+                .install_depth)
+        except NoResultFound:
+            return None
+
     def get_timeseries_for_obs_well(self, sampling_feature_uuid, data_type):
         """
         Return a pandas dataframe containing the readings for the given
@@ -1091,6 +1110,8 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         for obs_id in data['obs_id'].unique():
             sonde_id = self._get_sonde_id_from_obs_id(obs_id)
             data.loc[data['obs_id'] == obs_id, 'sonde_id'] = sonde_id
+            install_depth = self._get_sonde_install_depth_from_obs_id(obs_id)
+            data.loc[data['obs_id'] == obs_id, 'install_depth'] = install_depth
 
         # Check for duplicates along the time axis.
         duplicated = data.duplicated(subset='datetime')
