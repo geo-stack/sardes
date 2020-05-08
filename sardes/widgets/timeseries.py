@@ -783,7 +783,8 @@ class TimeSeriesPlotViewer(QMainWindow):
         self.zoom_to_rect_button = create_toolbutton(
             self, icon='zoom_to_rect',
             text=_("Zoom"),
-            tip=_('Zoom to rectangle'),
+            tip=_('Zoom in to rectangle with left mouse, '
+                  'zoom out with right.'),
             shortcut='Ctrl+Z',
             toggled=self.canvas.zoom_to_rect,
             iconsize=get_iconsize())
