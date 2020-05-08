@@ -618,6 +618,7 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
     """
     A matplotlib canvas where the figure is drawn.
     """
+    sig_show_overlay_message = Signal()
     BASE_ZOOM_SCALE = 1.25
 
     def __init__(self, figure):
@@ -632,6 +633,7 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
         toolbar = NavigationToolbar2QT(self, self)
         toolbar.hide()
 
+        self.mpl_connect('scroll_event', self._on_mouse_scroll)
 
     def create_axe(self, tseries_group, where):
         """
@@ -642,6 +644,23 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
         return axe
 
     # ---- Navigation and Selection tools
+    def _on_mouse_scroll(self, event):
+        """
+        Scroll the graph in or out when Ctrl is pressed and the wheel of
+        the mouse is scrolled up or down.
+
+        Adapted from https://stackoverflow.com/a/11562898/4481445
+        """
+        modifiers = QGuiApplication.keyboardModifiers()
+        if not bool(modifiers & Qt.ControlModifier):
+            self.sig_show_overlay_message.emit()
+            return
+
+        if event.button == 'up':
+            self.zoom_current_axes(event.xdata, event.ydata, -1)
+        elif event.button == 'down':
+            self.zoom_current_axes(event.xdata, event.ydata, 1)
+
     def zoom_in(self):
         """
         Zoom current axes in.
