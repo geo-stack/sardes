@@ -791,6 +791,30 @@ class TimeSeriesPlotViewer(QMainWindow):
         toolbar.addWidget(self.zoom_to_rect_button)
         self._navig_and_select_buttongroup.add_button(self.zoom_to_rect_button)
 
+        # We cannot only the Ctrl modifier becasue this results in an
+        # empty string.
+        ctrl_text = QKeySequence('Ctrl+1').toString(
+            QKeySequence.NativeText)[:-2]
+        self.zoom_out_btn = create_toolbutton(
+            self, icon='zoom_out',
+            text=_("Zoom out"),
+            tip=_('Zoom the graph out. You can also use {}+scroll down to '
+                  'zoom the graph out.').format(ctrl_text),
+            shortcut=['Ctrl+-'],
+            triggered=self.canvas.zoom_out,
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.zoom_out_btn)
+
+        self.zoom_in_btn = create_toolbutton(
+            self, icon='zoom_in',
+            text=_("Zoom in"),
+            tip=_('Zoom the graph in. You can also use {}+scroll up to '
+                  'zoom the graph in.').format(ctrl_text),
+            shortcut=['Ctrl++', 'Ctrl+='],
+            triggered=self.canvas.zoom_in,
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.zoom_in_btn)
+
         # ---- Select and transform data.
         toolbar.addSeparator()
 
