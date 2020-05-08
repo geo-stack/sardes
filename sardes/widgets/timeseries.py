@@ -765,7 +765,7 @@ class TimeSeriesPlotViewer(QMainWindow):
             self, icon='home',
             text=_("Home"),
             tip=_('Reset original view'),
-            shortcut='Ctrl+Home',
+            shortcut='Ctrl+0',
             triggered=self.canvas.home,
             iconsize=get_iconsize())
         toolbar.addWidget(self.home_button)
