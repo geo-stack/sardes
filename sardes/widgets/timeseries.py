@@ -19,9 +19,11 @@ from matplotlib.axes import Axes as MplAxes
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from matplotlib.dates import num2date
 import numpy as np
-from qtpy.QtCore import Qt, Slot, QSize
+from qtpy.QtCore import (Qt, Slot, QSize, QTimer, Signal, QPropertyAnimation)
+from qtpy.QtGui import QGuiApplication, QKeySequence
 from qtpy.QtWidgets import (QAction, QApplication, QMainWindow, QLabel,
-                            QDoubleSpinBox, QWidget, QHBoxLayout)
+                            QDoubleSpinBox, QWidget, QHBoxLayout,
+                            QGridLayout, QGraphicsOpacityEffect)
 import pandas as pd
 from pandas.plotting import register_matplotlib_converters
 
@@ -37,6 +39,7 @@ from sardes.widgets.buttons import DropdownToolButton, SemiExclusiveButtonGroup
 
 
 register_matplotlib_converters()
+MSEC_MIN_OVERLAY_MSG_DISPLAY = 2000
 
 
 # ---- Data containers
@@ -615,6 +618,8 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
     """
     A matplotlib canvas where the figure is drawn.
     """
+    sig_show_overlay_message = Signal()
+    BASE_ZOOM_SCALE = 1.25
 
     def __init__(self, figure):
         super().__init__(figure)
@@ -628,6 +633,7 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
         toolbar = NavigationToolbar2QT(self, self)
         toolbar.hide()
 
+        self.mpl_connect('scroll_event', self._on_mouse_scroll)
 
     def create_axe(self, tseries_group, where):
         """
@@ -638,6 +644,65 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
         return axe
 
     # ---- Navigation and Selection tools
+    def _on_mouse_scroll(self, event):
+        """
+        Scroll the graph in or out when Ctrl is pressed and the wheel of
+        the mouse is scrolled up or down.
+
+        Adapted from https://stackoverflow.com/a/11562898/4481445
+        """
+        modifiers = QGuiApplication.keyboardModifiers()
+        if not bool(modifiers & Qt.ControlModifier):
+            self.sig_show_overlay_message.emit()
+            return
+
+        if event.button == 'up':
+            self.zoom_current_axes(event.xdata, event.ydata, -1)
+        elif event.button == 'down':
+            self.zoom_current_axes(event.xdata, event.ydata, 1)
+
+    def zoom_in(self):
+        """
+        Zoom current axes in.
+        """
+        ax = self.figure.gca()
+        self.zoom_current_axes(
+            np.mean(ax.get_xlim()), np.mean(ax.get_ylim()), -1)
+
+    def zoom_out(self):
+        """
+        Zoom current axes out.
+        """
+        ax = self.figure.gca()
+        self.zoom_current_axes(
+            np.mean(ax.get_xlim()), np.mean(ax.get_ylim()), 1)
+
+    def zoom_current_axes(self, xdata, ydata, scale_factor):
+        """
+        Zoome the current axes by the given scale factor around the given
+        set of x and y coordinates.
+        """
+        # push the current view to define home if stack is empty
+        if self.toolbar._nav_stack() is None:
+            self.toolbar.push_current()
+
+        scale_factor = self.BASE_ZOOM_SCALE**scale_factor
+
+        ax = self.figure.gca()
+        cur_xlim = ax.get_xlim()
+        cur_ylim = ax.get_ylim()
+
+        left_xrange = xdata - cur_xlim[0]
+        right_xrange = cur_xlim[1] - xdata
+        top_yrange = cur_ylim[1] - ydata
+        bottom_yrange = ydata - cur_ylim[0]
+
+        ax.set_xlim([xdata - left_xrange * scale_factor,
+                     xdata + right_xrange * scale_factor])
+        ax.set_ylim([ydata - bottom_yrange * scale_factor,
+                     ydata + top_yrange * scale_factor])
+        self.draw()
+
     def home(self):
         """Reset the orgininal view of this canvas' figure."""
         self.toolbar.home()
@@ -704,10 +769,70 @@ class TimeSeriesPlotViewer(QMainWindow):
 
         self.figure = TimeSeriesFigure(facecolor='white')
         self.canvas = TimeSeriesCanvas(self.figure)
-        self.toolbars = []
+        self.canvas.sig_show_overlay_message.connect(
+            self._show_canvas_overlay_message)
+        self.overlay_msg_widget = self._setup_overlay_msg_widget()
 
-        self.setCentralWidget(self.canvas)
+        self.central_widget = QWidget()
+        central_widget_layout = QGridLayout(self.central_widget)
+        central_widget_layout.setContentsMargins(0, 0, 0, 0)
+        central_widget_layout.addWidget(self.canvas, 0, 0)
+        central_widget_layout.addWidget(self.overlay_msg_widget, 0, 0)
+        self.setCentralWidget(self.central_widget)
+
+        self.toolbars = []
         self._setup_toolbar()
+
+    def _setup_overlay_msg_widget(self):
+        """
+        Setup a widget that can show a message that is overlying the plot
+        area.
+        """
+        # We cannot only the Ctrl modifier becasue this results in an
+        # empty string.
+        ctrl_text = QKeySequence('Ctrl+1').toString(
+            QKeySequence.NativeText)[:-2]
+        overlay_msg = _(
+            "Use {} + scroll to zoom the graph").format(ctrl_text)
+
+        msg_background = QWidget()
+        msg_background.setObjectName('plot_viewer_msg_background')
+        msg_background.setStyleSheet(
+            "QWidget#plot_viewer_msg_background {background-color: black;}")
+        msg_background.setAutoFillBackground(True)
+
+        self.msq_label = QLabel(overlay_msg)
+        self.msq_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.msq_label.setWordWrap(True)
+        self.msq_label.setStyleSheet("color:white;")
+        font = self.msq_label.font()
+        font.setPointSize(16)
+        self.msq_label.setFont(font)
+
+        overlay_msg_widget = QWidget()
+        msg_layout = QGridLayout(overlay_msg_widget)
+        msg_layout.setContentsMargins(0, 0, 0, 0)
+        msg_layout.addWidget(msg_background, 0, 0)
+        msg_layout.addWidget(self.msq_label, 0, 0)
+        overlay_msg_widget.hide()
+
+        opacity_effect = QGraphicsOpacityEffect(msg_background)
+        msg_background.setGraphicsEffect(opacity_effect)
+
+        # Setup a gradual opacity effect on the overlay message widget when
+        # showing it.
+        # Adapted from https://stackoverflow.com/a/14444331/4481445
+        self._overlay_msg_widget_show_animation = QPropertyAnimation(
+            opacity_effect, b"opacity")
+        self._overlay_msg_widget_show_animation.setDuration(100)
+        self._overlay_msg_widget_show_animation.setStartValue(0)
+        self._overlay_msg_widget_show_animation.setEndValue(0.65)
+
+        self._hide_overlay_msg_timer = QTimer(self)
+        self._hide_overlay_msg_timer.setSingleShot(True)
+        self._hide_overlay_msg_timer.timeout.connect(overlay_msg_widget.hide)
+
+        return overlay_msg_widget
 
     def _setup_toolbar(self):
         """Setup the main toolbar of this time series viewer."""
@@ -722,7 +847,7 @@ class TimeSeriesPlotViewer(QMainWindow):
             self, icon='home',
             text=_("Home"),
             tip=_('Reset original view'),
-            shortcut='Ctrl+Home',
+            shortcut='Ctrl+0',
             triggered=self.canvas.home,
             iconsize=get_iconsize())
         toolbar.addWidget(self.home_button)
@@ -740,12 +865,37 @@ class TimeSeriesPlotViewer(QMainWindow):
         self.zoom_to_rect_button = create_toolbutton(
             self, icon='zoom_to_rect',
             text=_("Zoom"),
-            tip=_('Zoom to rectangle'),
+            tip=_('Zoom in to rectangle with left mouse, '
+                  'zoom out with right.'),
             shortcut='Ctrl+Z',
             toggled=self.canvas.zoom_to_rect,
             iconsize=get_iconsize())
         toolbar.addWidget(self.zoom_to_rect_button)
         self._navig_and_select_buttongroup.add_button(self.zoom_to_rect_button)
+
+        # We cannot only the Ctrl modifier becasue this results in an
+        # empty string.
+        ctrl_text = QKeySequence('Ctrl+1').toString(
+            QKeySequence.NativeText)[:-2]
+        self.zoom_out_btn = create_toolbutton(
+            self, icon='zoom_out',
+            text=_("Zoom out"),
+            tip=_('Zoom the graph out. You can also use {}+scroll down to '
+                  'zoom the graph out.').format(ctrl_text),
+            shortcut=['Ctrl+-'],
+            triggered=self.canvas.zoom_out,
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.zoom_out_btn)
+
+        self.zoom_in_btn = create_toolbutton(
+            self, icon='zoom_in',
+            text=_("Zoom in"),
+            tip=_('Zoom the graph in. You can also use {}+scroll up to '
+                  'zoom the graph in.').format(ctrl_text),
+            shortcut=['Ctrl++', 'Ctrl+='],
+            triggered=self.canvas.zoom_in,
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.zoom_in_btn)
 
         # ---- Select and transform data.
         toolbar.addSeparator()
@@ -902,6 +1052,14 @@ class TimeSeriesPlotViewer(QMainWindow):
         """Set the currently active axe."""
         self.current_axe_button.setCheckedAction(index)
 
+    # ---- Private API
+    @Slot()
+    def _show_canvas_overlay_message(self):
+        self._hide_overlay_msg_timer.stop()
+        if not self.overlay_msg_widget.isVisible():
+            self._overlay_msg_widget_show_animation.start()
+            self.overlay_msg_widget.show()
+        self._hide_overlay_msg_timer.start(MSEC_MIN_OVERLAY_MSG_DISPLAY)
     @Slot(QAction)
     def _handle_selected_axe_changed(self, checked_action):
         """
@@ -941,6 +1099,7 @@ class TimeSeriesPlotViewer(QMainWindow):
         for index, action in enumerate(menu.actions()):
             action.setEnabled(action.data().get_visible())
 
+    # ---- Qt Override
     def show(self):
         """
         Extend Qt show method to center this mainwindow to its parent's

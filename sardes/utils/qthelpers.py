@@ -112,7 +112,8 @@ def create_toolbutton(parent, text=None, shortcut=None, icon=None, tip=None,
         button.setCheckable(True)
     if shortcut is not None:
         if isinstance(shortcut, (list, tuple)):
-            button.setShortcuts(shortcut)
+            for sc in shortcut:
+                button.setShortcut(sc)
         else:
             button.setShortcut(shortcut)
     if iconsize is not None:
