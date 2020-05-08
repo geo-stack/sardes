@@ -615,6 +615,7 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
     """
     A matplotlib canvas where the figure is drawn.
     """
+    BASE_ZOOM_SCALE = 1.25
 
     def __init__(self, figure):
         super().__init__(figure)
@@ -638,6 +639,48 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
         return axe
 
     # ---- Navigation and Selection tools
+    def zoom_in(self):
+        """
+        Zoom current axes in.
+        """
+        ax = self.figure.gca()
+        self.zoom_current_axes(
+            np.mean(ax.get_xlim()), np.mean(ax.get_ylim()), -1)
+
+    def zoom_out(self):
+        """
+        Zoom current axes out.
+        """
+        ax = self.figure.gca()
+        self.zoom_current_axes(
+            np.mean(ax.get_xlim()), np.mean(ax.get_ylim()), 1)
+
+    def zoom_current_axes(self, xdata, ydata, scale_factor):
+        """
+        Zoome the current axes by the given scale factor around the given
+        set of x and y coordinates.
+        """
+        # push the current view to define home if stack is empty
+        if self.toolbar._nav_stack() is None:
+            self.toolbar.push_current()
+
+        scale_factor = self.BASE_ZOOM_SCALE**scale_factor
+
+        ax = self.figure.gca()
+        cur_xlim = ax.get_xlim()
+        cur_ylim = ax.get_ylim()
+
+        left_xrange = xdata - cur_xlim[0]
+        right_xrange = cur_xlim[1] - xdata
+        top_yrange = cur_ylim[1] - ydata
+        bottom_yrange = ydata - cur_ylim[0]
+
+        ax.set_xlim([xdata - left_xrange * scale_factor,
+                     xdata + right_xrange * scale_factor])
+        ax.set_ylim([ydata - bottom_yrange * scale_factor,
+                     ydata + top_yrange * scale_factor])
+        self.draw()
+
     def home(self):
         """Reset the orgininal view of this canvas' figure."""
         self.toolbar.home()
