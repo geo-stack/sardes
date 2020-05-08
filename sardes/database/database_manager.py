@@ -191,7 +191,8 @@ class DatabaseConnectionWorker(QObject):
                 readings = DataFrame(
                     [],
                     columns=['datetime', 'sonde_id', DataType(0),
-                             DataType(1), DataType(2), 'obs_id'])
+                             DataType(1), DataType(2), 'install_depth',
+                             'obs_id'])
 
             # Reorder the columns so that the data are displayed nicely.
             readings = readings[
