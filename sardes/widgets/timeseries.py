@@ -330,7 +330,31 @@ class TimeSeries(Mapping):
 
 
 # ---- Plotting devices
-class TimeSeriesAxes(MplAxes):
+class BaseAxes(MplAxes):
+    MINDATE = date2num(datetime.datetime(1000, 1, 1))
+    MAXDATE = date2num(datetime.datetime(3000, 1, 1))
+
+    def set_xlim(self, left=None, right=None, emit=True, auto=False,
+                 *, xmin=None, xmax=None):
+        """
+        Override _AxesBase method to limit the xaxis to a valid matplotlib
+        date range.
+        """
+        if right is None and np.iterable(left):
+            left, right = left
+        left = xmin if xmin is not None else left
+        right = xmax if xmax is not None else right
+
+        if left is not None:
+            if left <= self.MINDATE or left >= self.MAXDATE:
+                return super().set_xlim(None, None, emit, auto)
+        if right is not None:
+            if right <= self.MINDATE or right >= self.MAXDATE:
+                return super().set_xlim(None, None, emit, auto)
+        return super().set_xlim(left, right, emit, auto)
+
+
+class TimeSeriesAxes(BaseAxes):
     """
     A matplotlib Axes object where one or more timeseries of the same
     quantity can be plotted at the same time.
