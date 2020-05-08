@@ -55,6 +55,7 @@ class ReadingsTableModel(SardesTableModel):
                                 ('sonde_id', _('Sonde Serial Number'))]
         dataf_columns_mapper.extend([(dtype, dtype.label) for dtype in
                                      DataType if dtype in dataf.columns])
+        dataf_columns_mapper.append(('install_depth', _('Depth')))
         dataf_columns_mapper.append(('obs_id', _('Observation ID')))
         super().set_model_data(dataf, dataf_columns_mapper)
 

@@ -955,10 +955,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             data['datetime'], format="%Y-%m-%d %H:%M:%S")
         data.rename(columns={'value': data_type}, inplace=True)
 
+        # Add sonde serial number and installation depth to the dataframe.
         data['sonde_id'] = None
+        data['install_depth'] = None
         for obs_id in data['obs_id'].unique():
             sonde_id = self._get_sonde_serial_no_from_obs_id(obs_id)
             data.loc[data['obs_id'] == obs_id, 'sonde_id'] = sonde_id
+            install_depth = self._get_sonde_install_depth_from_obs_id(obs_id)
+            data.loc[data['obs_id'] == obs_id, 'install_depth'] = install_depth
 
         # Check for duplicates along the time axis.
         duplicated = data.duplicated(subset='datetime')
@@ -1109,6 +1113,24 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                         SondeFeature.sonde_uuid)
                 .one()
                 .sonde_serial_no)
+        except NoResultFound:
+            return None
+
+    def _get_sonde_install_depth_from_obs_id(self, observation_id):
+        """
+        Return the installation depth of the sonde for the given
+        observation ID.
+        """
+        try:
+            return (
+                self._session.query(SondeInstallation)
+                .filter(Observation.observation_id == observation_id)
+                .filter(Observation.process_id ==
+                        ProcessInstallation.process_id)
+                .filter(ProcessInstallation.install_uuid ==
+                        SondeInstallation.install_uuid)
+                .one()
+                .install_depth)
         except NoResultFound:
             return None
 
