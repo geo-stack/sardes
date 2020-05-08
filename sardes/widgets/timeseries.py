@@ -565,13 +565,14 @@ class TimeSeriesFigure(MplFigure):
         """
         Setup a base axes with which all other axes will share their xaxis.
         """
-        self.base_axes = self.add_subplot(1, 1, 1)
+        self.base_axes = BaseAxes(self, [0, 0, 1, 1])
         self.base_axes.set_zorder(0)
         self.base_axes.set_yticks([])
-        self.base_axes.tick_params(labelsize=self.canvas.font().pointSize(),
-                                   left=False, right=False,
-                                   labelleft=False, labelright=False)
+        self.base_axes.tick_params(
+            labelsize=self.canvas.font().pointSize(),
+            left=False, right=False, labelleft=False, labelright=False)
         self.base_axes.set_visible(False)
+        self.add_axes(self.base_axes)
         self.canvas.draw()
 
     def add_tseries_axes(self, tseries_axes):
