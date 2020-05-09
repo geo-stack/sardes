@@ -9,150 +9,74 @@
 
 # ---- Standard library imports
 import sys
-import os.path as osp
 
 # ---- Third party imports
-from appconfigs.base import get_home_dir
 from qtpy.QtCore import Qt, QEvent, QObject, QSize, Signal, Slot
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QAbstractButton, QAction, QActionGroup, QApplication, QMenu, QSizePolicy,
-    QStyle, QStyleOptionToolButton, QStylePainter, QToolBar, QToolButton,
-    QCheckBox, QFrame, QLineEdit, QLabel, QFileDialog, QPushButton,
-    QGridLayout)
+    QStyle, QStyleOptionToolButton, QStylePainter, QToolBar, QToolButton)
 
 # ---- Local imports
 from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
-from sardes.config.locale import _
 from sardes.utils.qthelpers import create_action
 
 
-class PathBoxWidget(QFrame):
-    """
-    A widget to display and select a directory or file location.
-    """
+class ToggleVisibilityMenu(QMenu):
+    def mouseReleaseEvent(self, event):
+        """
+        Override Qt method to prevent menu from closing when an action
+        is toggled.
+        """
+        action = self.activeAction()
+        if action:
+            action.setChecked(not action.isChecked())
+        event.accept()
 
-    def __init__(self, parent=None, path='', workdir='',
-                 path_type='getExistingDirectory', filters=None):
+
+class ToggleVisibilityToolButton(QToolButton):
+    sig_item_clicked = Signal(object, bool)
+
+    def __init__(self, iconsize, parent=None):
         super().__init__(parent)
-        self._workdir = workdir
-        self.filters = filters
-        self._path_type = path_type
+        self.setIcon(get_icon('eye_on'))
+        self.setIconSize(QSize(iconsize, iconsize))
 
-        self.browse_btn = QPushButton(_("Browse..."))
-        self.browse_btn.setDefault(False)
-        self.browse_btn.setAutoDefault(False)
-        self.browse_btn.clicked.connect(self.browse_path)
+        self.setMenu(ToggleVisibilityMenu(self))
+        self.setPopupMode(self.InstantPopup)
+        self.menu().installEventFilter(self)
 
-        self.path_lineedit = QLineEdit()
-        self.path_lineedit.setText(path)
-        self.path_lineedit.setToolTip(path)
-        self.path_lineedit.setFixedHeight(
-            self.browse_btn.sizeHint().height() - 2)
+    def count(self):
+        """
+        Return the number of items in this ToggleVisibilityToolButton.
+        """
+        return len(self.menu().actions())
 
-        layout = QGridLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.path_lineedit, 0, 0)
-        layout.addWidget(self.browse_btn, 0, 1)
+    def create_action(self, name, item):
+        """
+        Create and add a new action to this button's menu.
+        """
+        action = create_action(
+            self, name,
+            toggled=lambda toggle:
+                self.sig_item_clicked.emit(item, toggle),
+            data=item)
+        self.menu().addAction(action)
+        action.setChecked(True)
+        self.setEnabled(self.count() > 0)
+        return action
 
-    def is_valid(self):
-        """Return whether path is valid."""
-        return osp.exists(self.path())
-
-    def is_empty(self):
-        """Return whether the path is empty."""
-        return self.path_lineedit.text() == ''
-
-    def path(self):
-        """Return the path of this pathbox widget."""
-        return self.path_lineedit.text()
-
-    def set_path(self, path):
-        """Set the path to the specified value."""
-        return self.path_lineedit.setText(path)
-
-    def browse_path(self):
-        """Open a dialog to select a new directory."""
-        dialog_title = _('Modify Location')
-        if self._path_type == 'getExistingDirectory':
-            path = QFileDialog.getExistingDirectory(
-                self, dialog_title, self.workdir(),
-                options=QFileDialog.ShowDirsOnly)
-        elif self._path_type == 'getOpenFileName':
-            path, ext = QFileDialog.getOpenFileName(
-                self, dialog_title, self.workdir(), self.filters)
-        elif self._path_type == 'getSaveFileName':
-            path, ext = QFileDialog.getSaveFileName(
-                self, dialog_title, self.workdir())
-        if path:
-            self.set_workdir(osp.dirname(path))
-            self.path_lineedit.setText(path)
-            self.path_lineedit.setToolTip(path)
-
-    def workdir(self):
-        """Return the directory that is used by the QFileDialog."""
-        return self._workdir if osp.exists(self._workdir) else get_home_dir()
-
-    def set_workdir(self, new_workdir):
-        """Set the default directory that will be used by the QFileDialog."""
-        if new_workdir is not None and osp.exists(new_workdir):
-            self._workdir = new_workdir
-
-
-class CheckboxPathBoxWidget(QFrame):
-    """
-    A widget to display and select a directory or file location, with
-    a checkbox to enable or disable the widget and a group label.
-    """
-
-    def __init__(self, parent=None, label='', path='',
-                 is_enabled=True, workdir=''):
-        super().__init__(parent)
-        self.label = label
-
-        self.pathbox_widget = PathBoxWidget(parent=self, workdir=workdir)
-
-        self.checkbox = QCheckBox()
-        self.checkbox.stateChanged.connect(
-            lambda _: self.pathbox_widget.setEnabled(self.is_enabled()))
-        self.checkbox.setChecked(is_enabled)
-
-        layout = QGridLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.checkbox, 0, 0)
-        layout.addWidget(QLabel(label + ' :' if label else label), 0, 1)
-        layout.addWidget(self.pathbox_widget, 1, 1)
-
-    def is_enabled(self):
-        """Return whether this pathbox widget is enabled or not."""
-        return self.checkbox.isChecked()
-
-    def set_enabled(self, enabled):
-        self.checkbox.setChecked(enabled)
-
-    # ---- PathBoxWidget public API
-    def is_valid(self):
-        return self.pathbox_widget.is_valid()
-
-    def is_empty(self):
-        return self.pathbox_widget.is_empty()
-
-    def path(self):
-        return self.pathbox_widget.path()
-
-    def set_path(self, path):
-        return self.pathbox_widget.set_path(path)
-
-    def browse_path(self):
-        return self.pathbox_widget.browse_path()
-
-    def workdir(self):
-        return self.pathbox_widget.workdir()
-
-    def set_workdir(self, new_workdir):
-        return self.pathbox_widget.set_workdir(new_workdir)
-
+    def remove_action(self, item):
+        """
+        Remove the action corresponding to the given item from this
+        toolbutton menu.
+        """
+        for action in self.menu().actions():
+            if action.data() == item:
+                self.menu().removeAction(action)
+        if self.count() == 0:
+            self.setEnabled(False)
 
 
 class LeftAlignedToolButton(QToolButton):
@@ -403,16 +327,21 @@ class SemiExclusiveButtonGroup(QObject):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
+    visibility_btn = ToggleVisibilityToolButton(get_iconsize())
+    visibility_btn.create_action('Item #1', object())
+    visibility_btn.create_action('Item #2', object())
+    visibility_btn.create_action('Item #3', object())
+
     button = DropdownToolButton('checklist', get_iconsize())
     for i in range(3):
-        button.create_action('Action #{}'.format(i),
+        button.create_action('Item #{}'.format(i),
                              'Data of Action #{}'.format(i))
-
     button.sig_checked_action_changed.connect(
         lambda action: print('{} toggled'.format(action.text()))
         )
 
     toolbar = QToolBar()
+    toolbar.addWidget(visibility_btn)
     toolbar.addWidget(button)
     toolbar.show()
 

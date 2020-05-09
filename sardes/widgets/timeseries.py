@@ -36,7 +36,8 @@ from sardes.config.gui import get_iconsize
 from sardes.utils.qthelpers import (
     center_widget_to_another, create_mainwindow_toolbar, create_toolbutton,
     format_tooltip)
-from sardes.widgets.buttons import DropdownToolButton, SemiExclusiveButtonGroup
+from sardes.widgets.buttons import (
+    DropdownToolButton, SemiExclusiveButtonGroup, ToggleVisibilityToolButton)
 
 
 register_matplotlib_converters()
@@ -808,6 +809,7 @@ class TimeSeriesPlotViewer(QMainWindow):
 
         self.toolbars = []
         self._setup_toolbar()
+        self._setup_axes_toolbar()
 
     def _setup_overlay_msg_widget(self):
         """
@@ -981,19 +983,20 @@ class TimeSeriesPlotViewer(QMainWindow):
             iconsize=get_iconsize())
         toolbar.addWidget(self.save_figure_button)
 
+    def _setup_axes_toolbar(self):
+        """
+        Setup the toolbar for axes.
+        """
         # ---- Timeseries selection.
         self.axes_toolbar = create_mainwindow_toolbar("Axis toolbar")
         self.addToolBar(Qt.BottomToolBarArea, self.axes_toolbar)
         self.toolbars.append(self.axes_toolbar)
 
         # Axes visibility.
-        self.visible_axes_button = create_toolbutton(
-            self, icon='eye_on',
-            text=_("Toggle graph element visibility"),
-            tip=_('Toggle current graph element visibility.'),
-            toggled=self._handle_axe_visibility_changed,
-            iconsize=get_iconsize())
-        self.axes_toolbar.addWidget(self.visible_axes_button)
+        self.visible_axes_btn = ToggleVisibilityToolButton(get_iconsize())
+        self.visible_axes_btn.sig_item_clicked.connect(
+            self._handle_axe_visibility_changed)
+        self.axes_toolbar.addWidget(self.visible_axes_btn)
 
         # Current axe selection.
         self.current_axe_button = DropdownToolButton(
@@ -1053,6 +1056,7 @@ class TimeSeriesPlotViewer(QMainWindow):
         self.current_axe_button.create_action(
             tseries_group.data_type.title, data=axe)
         self.axes_toolbar.setEnabled(self.current_axe_button.count())
+        self.visible_axes_btn.create_action(tseries_group.data_type.title, axe)
 
         return axe
 
@@ -1062,6 +1066,7 @@ class TimeSeriesPlotViewer(QMainWindow):
         """
         self.figure.tseries_axes_list.remove(axe)
         self.current_axe_button.remove_action(axe)
+        self.visible_axes_btn.remove_action(axe)
         axe.remove()
         self.canvas.draw()
         self.axes_toolbar.setEnabled(self.current_axe_button.count())
@@ -1093,28 +1098,15 @@ class TimeSeriesPlotViewer(QMainWindow):
         """
         selected_axe = checked_action.data()
         selected_axe.set_current()
-        self.visible_axes_button.setChecked(not selected_axe.get_visible())
 
-    def _handle_axe_visibility_changed(self, toggle):
+    def _handle_axe_visibility_changed(self, axe, toggle):
         """
         Toggle on or off the visibility of the current matplotlib axe and
         enable or disable items in the gui accordingly.
         """
-        current_axe = self.current_axe()
-        if current_axe is not None:
-            current_axe.set_visible(not toggle)
-            self.visible_axes_button.setIcon(
-                get_icon('eye_on' if not toggle else 'eye_off'))
-
-            # Update the navigation and selection tools state.
-            self._navig_and_select_buttongroup.set_enabled(not toggle)
-            if toggle is True:
-                self._navig_and_select_buttongroup.toggle_off()
-            else:
-                self._navig_and_select_buttongroup.restore_last_toggled()
-            self.canvas.draw()
-            self.current_axe_button.repaint()
-            self._update_selected_axe_cbox_state()
+        axe.set_visible(toggle)
+        self.canvas.draw()
+        self._update_selected_axe_cbox_state()
 
     def _update_selected_axe_cbox_state(self):
         """

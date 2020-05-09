@@ -105,26 +105,23 @@ def test_tseriesviewer_axes_visibility(tseriesviewer, qtbot):
     Test that changing the axes visibility is working as expected.
     """
     tseries_axes_list = tseriesviewer.canvas.figure.tseries_axes_list
-    visible_axes_button = tseriesviewer.visible_axes_button
 
     # Assert that all the axes are visible.
     assert tseries_axes_list[0].get_visible()
     assert tseries_axes_list[1].get_visible()
 
     # Hide the second axes (the one currently selected).
-    qtbot.mouseClick(visible_axes_button, Qt.LeftButton)
+    tseriesviewer.visible_axes_btn.menu().actions()[1].toggle()
     assert tseries_axes_list[0].get_visible()
     assert not tseries_axes_list[1].get_visible()
 
     # Seclect the first axes and hide it.
-    tseriesviewer.current_axe_button.menu().actions()[0].toggle()
-    qtbot.mouseClick(visible_axes_button, Qt.LeftButton)
+    tseriesviewer.visible_axes_btn.menu().actions()[0].toggle()
     assert not tseries_axes_list[0].get_visible()
     assert not tseries_axes_list[1].get_visible()
 
     # Seclect the second axes and show it again.
-    tseriesviewer.current_axe_button.menu().actions()[1].toggle()
-    qtbot.mouseClick(visible_axes_button, Qt.LeftButton)
+    tseriesviewer.visible_axes_btn.menu().actions()[1].toggle()
     assert not tseries_axes_list[0].get_visible()
     assert tseries_axes_list[1].get_visible()
 
