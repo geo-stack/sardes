@@ -80,51 +80,71 @@ def test_tseriesviewer_current_axes(tseriesviewer, qtbot):
     tseries_axes_list = tseriesviewer.canvas.figure.tseries_axes_list
     current_axe_button = tseriesviewer.current_axe_button
 
-    assert current_axe_button.checked_action().data() == tseries_axes_list[1]
-    assert (tseries_axes_list[1].get_zorder() >
-            tseries_axes_list[0].get_zorder())
+    assert current_axe_button.checked_action().data() == tseries_axes_list[0]
+    assert (tseries_axes_list[0].get_zorder() >
+            tseries_axes_list[1].get_zorder())
 
-    # Select the first axes as current.
+    # Select the second axes as current.
     current_axe_menu = current_axe_button.menu()
     current_axe_menu.show()
 
-    action = current_axe_menu.actions()[0]
+    action = current_axe_menu.actions()[1]
     with qtbot.waitSignal(current_axe_button.sig_checked_action_changed):
         qtbot.mouseClick(
             current_axe_menu,
             Qt.LeftButton,
             pos=current_axe_menu.actionGeometry(action).center())
 
-    assert (current_axe_button.checked_action().data() == tseries_axes_list[0])
-    assert (tseries_axes_list[0].get_zorder() >
-            tseries_axes_list[1].get_zorder())
+    assert (current_axe_button.checked_action().data() == tseries_axes_list[1])
+    assert (tseries_axes_list[1].get_zorder() >
+            tseries_axes_list[0].get_zorder())
 
 
 def test_tseriesviewer_axes_visibility(tseriesviewer, qtbot):
     """
     Test that changing the axes visibility is working as expected.
     """
-    tseries_axes_list = tseriesviewer.canvas.figure.tseries_axes_list
+    tseries_axes_list = tseriesviewer.figure.tseries_axes_list
 
     # Assert that all the axes are visible.
     assert tseries_axes_list[0].get_visible()
     assert tseries_axes_list[1].get_visible()
 
-    # Hide the second axes (the one currently selected).
+    # Hide the second axes.
     tseriesviewer.visible_axes_btn.menu().actions()[1].toggle()
     assert tseries_axes_list[0].get_visible()
     assert not tseries_axes_list[1].get_visible()
 
-    # Seclect the first axes and hide it.
+    # Hide the first axes.
     tseriesviewer.visible_axes_btn.menu().actions()[0].toggle()
     assert not tseries_axes_list[0].get_visible()
     assert not tseries_axes_list[1].get_visible()
 
-    # Seclect the second axes and show it again.
+    # Show the second axes again.
     tseriesviewer.visible_axes_btn.menu().actions()[1].toggle()
     assert not tseries_axes_list[0].get_visible()
     assert tseries_axes_list[1].get_visible()
 
 
+def test_manual_measurements(tseriesviewer, qtbot, dbaccessor):
+    """
+    Test that setting manual measurements for a give datatype is working
+    as expected.
+    """
+    axe = tseriesviewer.figure.tseries_axes_list[0]
+    assert axe._mpl_artist_handles['manual_measurements'] is None
+
+    # Fetch the manual measurements for a given well from the database.
+    measurements = dbaccessor.get_manual_measurements()
+    measurements = measurements[measurements['sampling_feature_uuid'] == 1]
+    assert len(measurements) == 1
+
+    # Set the manual measurement in the plot viewer.
+    tseriesviewer.set_manual_measurements(
+        DataType.WaterLevel, measurements[['datetime', 'value']])
+    assert axe._mpl_artist_handles['manual_measurements'] is not None
+    assert len(axe._mpl_artist_handles['manual_measurements'].get_xdata()) == 1
+
+
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw', '-s'])
+    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
