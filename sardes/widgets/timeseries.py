@@ -469,8 +469,8 @@ class TimeSeriesAxes(BaseAxes):
         """
         if self._mpl_artist_handles['manual_measurements'] is None:
             self._mpl_artist_handles['manual_measurements'], = (
-                self.plot([], 'o', color='#00ffff', clip_on=True, ms=6,
-                          mfc='none', mec='#00ffff', mew=2))
+                self.plot([], 'o', color='magenta', clip_on=True, ms=5,
+                          mfc='none', mec='magenta', mew=1.5))
         self._mpl_artist_handles['manual_measurements'].set_data(
             measurements['datetime'].values, measurements['value'].values)
         self.figure.canvas.draw()
