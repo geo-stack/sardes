@@ -1052,6 +1052,9 @@ class TimeSeriesPlotViewer(QMainWindow):
                 self.create_axe(tseries_group)
         self.axes_toolbar.setEnabled(self.current_axe_button.count())
 
+        # We want the water level axe to be the active one by default.
+        self.set_current_axe(0)
+
     def update_data(self, dataf, obs_well_data=None):
         """Set the data that need to be displayed in this plot viewer."""
         for axe in reversed(self.figure.tseries_axes_list):
