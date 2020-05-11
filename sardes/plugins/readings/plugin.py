@@ -156,15 +156,15 @@ class ReadingsTableWidget(SardesTableWidget):
         self.plot_viewer.activateWindow()
         self.plot_viewer.raise_()
 
-    def _set_plotviewer_manual_measurements(self, mesurements):
+    def _set_plotviewer_manual_measurements(self, measurements):
         """
         Set the water level manual measurements of the plot viewer.
         """
         obs_well_uuid = self.model()._obs_well_data.name
-        mesurements = mesurements[
-            mesurements['sampling_feature_uuid'] == obs_well_uuid]
+        measurements = measurements[
+            measurements['sampling_feature_uuid'] == obs_well_uuid]
         self.plot_viewer.set_manual_measurements(
-            DataType.WaterLevel, mesurements[['datetime', 'value']])
+            DataType.WaterLevel, measurements[['datetime', 'value']])
 
     # ---- Qt overrides
     def closeEvent(self, event):
