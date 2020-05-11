@@ -1115,6 +1115,31 @@ class TimeSeriesPlotViewer(QMainWindow):
         self.current_axe_button.setCheckedAction(index)
 
     # ---- Private API
+    def _on_mouse_move(self, event):
+        """
+        Handle when the mouse cursor is moved over this viewer's figure.
+        """
+        xdata, ydata = event.xdata, event.ydata
+        if all((xdata, ydata)):
+            self._axes_coord_action.defaultWidget().setText(
+                '{:0.3f} {}\n{}'.format(
+                    ydata,
+                    self.current_axe().tseries_group.data_type.units,
+                    num2date(xdata).strftime("%Y-%m-%d %H:%M")
+                ))
+            self._axes_coord_action.setVisible(True)
+            self._axes_coord_sep.setVisible(True)
+        else:
+            self._on_axe_leave()
+
+    def _on_axe_leave(self, event=None):
+        """
+        Handle when the mouse cursor leaves the current axe of this viewer's
+        figure.
+        """
+        self._axes_coord_action.setVisible(False)
+        self._axes_coord_sep.setVisible(False)
+
     @Slot()
     def _show_canvas_overlay_message(self):
         self._hide_overlay_msg_timer.stop()
