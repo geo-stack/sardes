@@ -380,7 +380,8 @@ class TimeSeriesAxes(BaseAxes):
         self._vspan_selector = None
         self._mpl_artist_handles = {
             'data': {},
-            'selected_data': {}}
+            'selected_data': {},
+            'manual_measurements': None}
 
         # Set and plot the timeseries for this axe.
         self.set_timeseries_group(tseries_group)
@@ -460,6 +461,19 @@ class TimeSeriesAxes(BaseAxes):
                                alpha=0.2, linestyle=':')
                 )
         return self._vspan_selector
+
+    # ---- Manual Measurements
+    def set_manual_measurements(self, measurements):
+        """
+        Set and plot the manual measurements for this axe.
+        """
+        if self._mpl_artist_handles['manual_measurements'] is None:
+            self._mpl_artist_handles['manual_measurements'], = (
+                self.plot([], 'o', color='#00ffff', clip_on=True, ms=6,
+                          mfc='none', mec='#00ffff', mew=2))
+        self._mpl_artist_handles['manual_measurements'].set_data(
+            measurements['datetime'].values, measurements['value'].values)
+        self.figure.canvas.draw()
 
     # ---- Timeseries
     def set_timeseries_group(self, tseries_group):
