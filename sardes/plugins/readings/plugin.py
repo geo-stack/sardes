@@ -144,13 +144,27 @@ class ReadingsTableWidget(SardesTableWidget):
                 window_title += ' ({})'.format(obs_well_data['municipality'])
             self.plot_viewer.setWindowTitle(window_title)
 
+            # Set the data of the plot viewer.
             self.plot_viewer.set_data(self.model().dataf, obs_well_data)
+            self.model().db_connection_manager.get(
+                'manual_measurements',
+                callback=self._set_plotviewer_manual_measurements)
 
         if self.plot_viewer.windowState() == Qt.WindowMinimized:
             self.plot_viewer.setWindowState(Qt.WindowNoState)
         self.plot_viewer.show()
         self.plot_viewer.activateWindow()
         self.plot_viewer.raise_()
+
+    def _set_plotviewer_manual_measurements(self, mesurements):
+        """
+        Set the water level manual measurements of the plot viewer.
+        """
+        obs_well_uuid = self.model()._obs_well_data.name
+        mesurements = mesurements[
+            mesurements['sampling_feature_uuid'] == obs_well_uuid]
+        self.plot_viewer.set_manual_measurements(
+            DataType.WaterLevel, mesurements[['datetime', 'value']])
 
     # ---- Qt overrides
     def closeEvent(self, event):
