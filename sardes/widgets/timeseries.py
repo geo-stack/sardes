@@ -35,7 +35,7 @@ from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
 from sardes.utils.qthelpers import (
     center_widget_to_another, create_mainwindow_toolbar, create_toolbutton,
-    format_tooltip)
+    format_tooltip, create_toolbar_stretcher)
 from sardes.widgets.buttons import (
     DropdownToolButton, SemiExclusiveButtonGroup, ToggleVisibilityToolButton)
 
@@ -812,6 +812,7 @@ class TimeSeriesPlotViewer(QMainWindow):
         self.canvas = TimeSeriesCanvas(self.figure)
         self.canvas.sig_show_overlay_message.connect(
             self._show_canvas_overlay_message)
+
         self.overlay_msg_widget = self._setup_overlay_msg_widget()
 
         self.central_widget = QWidget()
@@ -824,6 +825,10 @@ class TimeSeriesPlotViewer(QMainWindow):
         self.toolbars = []
         self._setup_toolbar()
         self._setup_axes_toolbar()
+
+        self.canvas.mpl_connect('motion_notify_event', self._on_mouse_move)
+        self.canvas.mpl_connect('axes_leave_event', self._on_axe_leave)
+        self.canvas.mpl_connect('figure_leave_event', self._on_axe_leave)
 
     def _setup_overlay_msg_widget(self):
         """
