@@ -1025,6 +1025,11 @@ class TimeSeriesPlotViewer(QMainWindow):
               ' zoom and pan the data.'),
             None))
         self.axes_toolbar.addWidget(self.current_axe_button)
+        # Axe coordinates.
+        self.axes_toolbar.addWidget(create_toolbar_stretcher())
+        self._axes_coord_sep = self.axes_toolbar.addSeparator()
+        self._axes_coord_action = self.axes_toolbar.addWidget(QLabel())
+
     # ---- Public API
     def set_data(self, dataf, obs_well_data=None):
         """Set the data that need to be displayed in this plot viewer."""
