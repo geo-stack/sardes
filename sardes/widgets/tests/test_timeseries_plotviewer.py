@@ -80,24 +80,24 @@ def test_tseriesviewer_current_axes(tseriesviewer, qtbot):
     tseries_axes_list = tseriesviewer.canvas.figure.tseries_axes_list
     current_axe_button = tseriesviewer.current_axe_button
 
-    assert current_axe_button.checked_action().data() == tseries_axes_list[1]
-    assert (tseries_axes_list[1].get_zorder() >
-            tseries_axes_list[0].get_zorder())
+    assert current_axe_button.checked_action().data() == tseries_axes_list[0]
+    assert (tseries_axes_list[0].get_zorder() >
+            tseries_axes_list[1].get_zorder())
 
-    # Select the first axes as current.
+    # Select the second axes as current.
     current_axe_menu = current_axe_button.menu()
     current_axe_menu.show()
 
-    action = current_axe_menu.actions()[0]
+    action = current_axe_menu.actions()[1]
     with qtbot.waitSignal(current_axe_button.sig_checked_action_changed):
         qtbot.mouseClick(
             current_axe_menu,
             Qt.LeftButton,
             pos=current_axe_menu.actionGeometry(action).center())
 
-    assert (current_axe_button.checked_action().data() == tseries_axes_list[0])
-    assert (tseries_axes_list[0].get_zorder() >
-            tseries_axes_list[1].get_zorder())
+    assert (current_axe_button.checked_action().data() == tseries_axes_list[1])
+    assert (tseries_axes_list[1].get_zorder() >
+            tseries_axes_list[0].get_zorder())
 
 
 def test_tseriesviewer_axes_visibility(tseriesviewer, qtbot):
@@ -110,21 +110,21 @@ def test_tseriesviewer_axes_visibility(tseriesviewer, qtbot):
     assert tseries_axes_list[0].get_visible()
     assert tseries_axes_list[1].get_visible()
 
-    # Hide the second axes (the one currently selected).
+    # Hide the second axes.
     tseriesviewer.visible_axes_btn.menu().actions()[1].toggle()
     assert tseries_axes_list[0].get_visible()
     assert not tseries_axes_list[1].get_visible()
 
-    # Seclect the first axes and hide it.
+    # Hide the first axes.
     tseriesviewer.visible_axes_btn.menu().actions()[0].toggle()
     assert not tseries_axes_list[0].get_visible()
     assert not tseries_axes_list[1].get_visible()
 
-    # Seclect the second axes and show it again.
+    # Show the second axes again.
     tseriesviewer.visible_axes_btn.menu().actions()[1].toggle()
     assert not tseries_axes_list[0].get_visible()
     assert tseries_axes_list[1].get_visible()
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw', '-s'])
+    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
