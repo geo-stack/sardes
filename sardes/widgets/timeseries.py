@@ -1058,6 +1058,15 @@ class TimeSeriesPlotViewer(QMainWindow):
             self.remove_axe(axe)
         self.set_data(dataf, obs_well_data)
 
+    def set_manual_measurements(self, data_type, measurements):
+        """
+        Set the manual measurements for the axe corresponding to the given
+        data type.
+        """
+        for axe in self.figure.tseries_axes_list:
+            if axe.tseries_group.data_type == data_type:
+                axe.set_manual_measurements(measurements)
+
     def create_axe(self, tseries_group, where=None):
         """
         Create and add a new axe to the figure where to plot the data
