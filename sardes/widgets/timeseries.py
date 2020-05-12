@@ -35,7 +35,7 @@ from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
 from sardes.utils.qthelpers import (
     center_widget_to_another, create_mainwindow_toolbar, create_toolbutton,
-    format_tooltip)
+    format_tooltip, create_toolbar_stretcher)
 from sardes.widgets.buttons import (
     DropdownToolButton, SemiExclusiveButtonGroup, ToggleVisibilityToolButton)
 
@@ -812,6 +812,7 @@ class TimeSeriesPlotViewer(QMainWindow):
         self.canvas = TimeSeriesCanvas(self.figure)
         self.canvas.sig_show_overlay_message.connect(
             self._show_canvas_overlay_message)
+
         self.overlay_msg_widget = self._setup_overlay_msg_widget()
 
         self.central_widget = QWidget()
@@ -824,6 +825,10 @@ class TimeSeriesPlotViewer(QMainWindow):
         self.toolbars = []
         self._setup_toolbar()
         self._setup_axes_toolbar()
+
+        self.canvas.mpl_connect('motion_notify_event', self._on_mouse_move)
+        self.canvas.mpl_connect('axes_leave_event', self._on_axe_leave)
+        self.canvas.mpl_connect('figure_leave_event', self._on_axe_leave)
 
     def _setup_overlay_msg_widget(self):
         """
@@ -1025,6 +1030,11 @@ class TimeSeriesPlotViewer(QMainWindow):
               ' zoom and pan the data.'),
             None))
         self.axes_toolbar.addWidget(self.current_axe_button)
+        # Axe coordinates.
+        self.axes_toolbar.addWidget(create_toolbar_stretcher())
+        self._axes_coord_sep = self.axes_toolbar.addSeparator()
+        self._axes_coord_action = self.axes_toolbar.addWidget(QLabel())
+
     # ---- Public API
     def set_data(self, dataf, obs_well_data=None):
         """Set the data that need to be displayed in this plot viewer."""
@@ -1110,6 +1120,31 @@ class TimeSeriesPlotViewer(QMainWindow):
         self.current_axe_button.setCheckedAction(index)
 
     # ---- Private API
+    def _on_mouse_move(self, event):
+        """
+        Handle when the mouse cursor is moved over this viewer's figure.
+        """
+        xdata, ydata = event.xdata, event.ydata
+        if all((xdata, ydata)):
+            self._axes_coord_action.defaultWidget().setText(
+                '{:0.3f} {}\n{}'.format(
+                    ydata,
+                    self.current_axe().tseries_group.data_type.units,
+                    num2date(xdata).strftime("%Y-%m-%d %H:%M")
+                ))
+            self._axes_coord_action.setVisible(True)
+            self._axes_coord_sep.setVisible(True)
+        else:
+            self._on_axe_leave()
+
+    def _on_axe_leave(self, event=None):
+        """
+        Handle when the mouse cursor leaves the current axe of this viewer's
+        figure.
+        """
+        self._axes_coord_action.setVisible(False)
+        self._axes_coord_sep.setVisible(False)
+
     @Slot()
     def _show_canvas_overlay_message(self):
         self._hide_overlay_msg_timer.stop()
