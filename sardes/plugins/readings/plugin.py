@@ -17,11 +17,12 @@ from qtpy.QtCore import Qt, Slot
 from qtpy.QtWidgets import QApplication
 
 # ---- Local imports
-from sardes.utils.qthelpers import create_toolbutton
+from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
+from sardes.config.main import CONF
 from sardes.api.tablemodels import SardesTableModel
 from sardes.api.timeseries import DataType
-from sardes.config.main import CONF
+from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
 from sardes.widgets.tableviews import (
     SardesTableWidget, NumEditDelegate, NotEditableDelegate,
@@ -134,7 +135,8 @@ class ReadingsTableWidget(SardesTableWidget):
         if self.plot_viewer is None:
             obs_well_data = self.model()._obs_well_data
 
-            self.plot_viewer = TimeSeriesPlotViewer(self._parent)
+            self.plot_viewer = TimeSeriesPlotViewer(parent=None)
+            self.plot_viewer.setWindowIcon(get_icon('show_plot'))
 
             # Set the title of the window.
             window_title = '{}'.format(obs_well_data['obs_well_id'])
