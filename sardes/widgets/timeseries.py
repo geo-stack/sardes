@@ -598,7 +598,6 @@ class TimeSeriesFigure(MplFigure):
     def __init__(self, *args, **kargs):
         super().__init__(*args, **kargs)
         self.set_tight_layout(True)
-        self._last_fsize = (self.bbox_inches.width, self.bbox_inches.height)
         self._legend_visible = True
 
         self.base_axes = None
@@ -692,17 +691,59 @@ class TimeSeriesFigure(MplFigure):
 
         fheight = self.get_figheight()
         fwidth = self.get_figwidth()
+        renderer = self.canvas.get_renderer()
 
         left_margin = 1 / fwidth
-        right_margin = 1 / fwidth
         bottom_margin = 0.5 / fheight
         top_margin = self.top_margin_sizehint()
+
+        if len(self.tseries_axes_list):
+            ax = self.tseries_axes_list[0]
+            if ax.get_visible():
+                # First we calculate and set the position of the ylabel.
+                bbox = self.transFigure.inverted().transform(
+                    ax.get_window_extent(renderer))
+                dx = (AXIS_LABEL_FS + 10) / 72
+                ax.yaxis.set_label_coords(
+                    x=0, y=(bbox[1, 1] + bbox[0, 1]) / 2,
+                    transform=(
+                        self.transFigure +
+                        ScaledTranslation(dx, 0, self.dpi_scale_trans))
+                    )
+
+                # Then we calculate the size of the left margin.
+                ticklabel_width = ax.yaxis.get_ticklabel_extents(
+                    renderer)[0].transformed(
+                        self.dpi_scale_trans.inverted()).width * 72
+
+                left_margin = (
+                    10 + AXIS_LABEL_FS + YAXIS_LABEL_PAD + ticklabel_width +
+                    YTICKS_PAD + YTICKS_LENGTH)
+                left_margin = np.ceil(left_margin * 100) / 100 / 72 / fwidth
+            else:
+                left_margin = 0.3 / fwidth
+
+        # Then we set the position of the other axes.
+        other_axes = [
+            ax for ax in self.tseries_axes_list[1:] if ax.get_visible()]
+        right_margin = 0
+        for ax in other_axes:
+            ax.spines['right'].set_visible(right_margin > 0)
+            ax.spines['right'].set_position(('outward', right_margin))
+            ticklabel_width = ax.yaxis.get_ticklabel_extents(
+                renderer)[1].transformed(
+                    self.dpi_scale_trans.inverted()).width * 72
+            right_margin += (
+                YTICKS_LENGTH + YTICKS_PAD + ticklabel_width +
+                YAXIS_LABEL_PAD + AXIS_LABEL_FS)
+            right_margin += 10 if ax == other_axes[-1] else 20
+            right_margin = np.ceil(right_margin * 100) / 100
+        right_margin = max(0.3, right_margin / 72) / fwidth
 
         x0 = left_margin
         y0 = bottom_margin
         w = 1 - (left_margin + right_margin)
         h = 1 - (bottom_margin + top_margin)
-
         for axe in self.axes:
             axe.set_position([x0, y0, w, h])
 
