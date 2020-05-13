@@ -571,7 +571,7 @@ class TimeSeriesFigure(MplFigure):
 
     def __init__(self, *args, **kargs):
         super().__init__(*args, **kargs)
-        self.set_tight_layout(False)
+        self.set_tight_layout(True)
         self._last_fsize = (self.bbox_inches.width, self.bbox_inches.height)
 
         self.base_axes = None
