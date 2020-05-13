@@ -501,11 +501,12 @@ class TimeSeriesAxes(BaseAxes):
         label of the yaxis and plot the data.
         """
         self.tseries_group = tseries_group
+        data_type = tseries_group.data_type
 
         # Setup the ylabel of the axe.
-        ylabel = tseries_group.data_type.title
-        ylabel += ' ({})'.format(tseries_group.data_type.units)
-        self.set_ylabel(ylabel, labelpad=10)
+        self.set_ylabel(
+            '{} ({})'.format(data_type.title, data_type.units),
+            labelpad=YAXIS_LABEL_PAD, fontsize=AXIS_LABEL_FS)
 
         # Add each timeseries of the monitored property object to this axe.
         for tseries in self.tseries_group:
