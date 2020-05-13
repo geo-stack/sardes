@@ -368,6 +368,9 @@ class TimeSeriesAxes(BaseAxes):
     """
     A matplotlib Axes object where one or more timeseries of the same
     quantity can be plotted at the same time.
+
+    Note that this axe is created so that its xaxis is shared with
+    the base axe of the figure.
     """
     # https://matplotlib.org/3.1.1/api/axes_api.html
 
@@ -375,12 +378,12 @@ class TimeSeriesAxes(BaseAxes):
         super().__init__(tseries_figure,
                          tseries_figure.base_axes.get_position(),
                          facecolor=None,
-                         frameon=False,
+                         frameon=True,
                          sharex=tseries_figure.base_axes)
+        for spine in self.spines.values():
+            spine.set_visible(False)
 
         self.figure.add_tseries_axes(self)
-        # Note that this axe is created so that its xaxis is shared with
-        # the base axe of the figure.
 
         # Init class attributes.
         self._rect_selector = None
