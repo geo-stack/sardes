@@ -13,10 +13,12 @@ from collections.abc import Mapping
 import datetime
 
 # ---- Third party imports
+import matplotlib as mpl
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from matplotlib.figure import Figure as MplFigure
 from matplotlib.axes import Axes as MplAxes
+from matplotlib.transforms import ScaledTranslation
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from matplotlib.dates import num2date, date2num
 import numpy as np
@@ -42,6 +44,12 @@ from sardes.widgets.buttons import (
 
 register_matplotlib_converters()
 MSEC_MIN_OVERLAY_MSG_DISPLAY = 2000
+
+rcParams = mpl.rcParams
+YTICKS_LENGTH = rcParams["ytick.major.size"]
+YTICKS_PAD = rcParams['ytick.major.pad']
+AXIS_LABEL_FS = 12
+YAXIS_LABEL_PAD = 10
 
 
 # ---- Data containers
