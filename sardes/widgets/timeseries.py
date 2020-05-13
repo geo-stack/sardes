@@ -666,28 +666,40 @@ class TimeSeriesFigure(MplFigure):
 
     def tight_layout(self, *args, **kargs):
         """
-        Override matplotlib method to setup the margins of the axes
-        to fixes dimension in inches. This allows to increase greatly the
-        performance of the drawing.
+        Override matplotlib method to setup the margins of the axes.
         """
-        current_fsize = (self.bbox_inches.width, self.bbox_inches.height)
-        if (self._last_fsize != current_fsize or kargs.get('force', False)):
-            self._last_fsize = current_fsize
-            fheight = self.get_figheight()
-            fwidth = self.get_figwidth()
+        if self.base_axes is None:
+            return
 
-            left_margin = 1 / fwidth
-            right_margin = 1 / fwidth
-            bottom_margin = 0.5 / fheight
-            top_margin = 0.2 / fheight
+        fheight = self.get_figheight()
+        fwidth = self.get_figwidth()
 
-            x0 = left_margin
-            y0 = bottom_margin
-            w = 1 - (left_margin + right_margin)
-            h = 1 - (bottom_margin + top_margin)
+        left_margin = 1 / fwidth
+        right_margin = 1 / fwidth
+        bottom_margin = 0.5 / fheight
+        top_margin = self.top_margin_sizehint()
 
-            for axe in self.axes:
-                axe.set_position([x0, y0, w, h])
+        x0 = left_margin
+        y0 = bottom_margin
+        w = 1 - (left_margin + right_margin)
+        h = 1 - (bottom_margin + top_margin)
+
+        for axe in self.axes:
+            axe.set_position([x0, y0, w, h])
+
+    def top_margin_sizehint(self):
+        """
+        Return the recommended size for the top margin.
+        """
+        fheight = self.get_figheight()
+        legend = self.base_axes.get_legend()
+        if legend.get_visible():
+            bbox_legend = (legend.get_window_extent(self.canvas.get_renderer())
+                           .transformed(self.dpi_scale_trans.inverted()))
+            return np.ceil(
+                (bbox_legend.height + 10/72) * 100) / 100 / fheight
+        else:
+            return 0.2 / fheight
 
 
 class TimeSeriesCanvas(FigureCanvasQTAgg):
