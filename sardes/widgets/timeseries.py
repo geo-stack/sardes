@@ -477,6 +477,13 @@ class TimeSeriesAxes(BaseAxes):
         self.figure.canvas.draw()
 
     # ---- Timeseries
+    @property
+    def data_type(self):
+        """
+        Return the DataType of the data that are plotted on this axes.
+        """
+        return self.tseries_group.data_type
+
     def set_timeseries_group(self, tseries_group):
         """
         Set the namespace of the timeseries group for this axe, setup the
