@@ -473,9 +473,17 @@ class TimeSeriesAxes(BaseAxes):
                           mfc='none', mec='magenta', mew=1.5))
         self._mpl_artist_handles['manual_measurements'].set_data(
             measurements['datetime'].values, measurements['value'].values)
+        self.figure.setup_legend()
         self.figure.canvas.draw()
 
     # ---- Timeseries
+    @property
+    def data_type(self):
+        """
+        Return the DataType of the data that are plotted on this axes.
+        """
+        return self.tseries_group.data_type
+
     def set_timeseries_group(self, tseries_group):
         """
         Set the namespace of the timeseries group for this axe, setup the
@@ -496,6 +504,7 @@ class TimeSeriesAxes(BaseAxes):
         if tseries_group.yaxis_inverted:
             self.invert_yaxis()
 
+        self.figure.setup_legend()
         self.figure.canvas.draw()
 
     def _add_timeseries(self, tseries):
@@ -558,6 +567,11 @@ class TimeSeriesAxes(BaseAxes):
         self.tseries_group.select_data(yrange=(ymin, ymax))
         self._draw_selected_data()
 
+    # ---- Axes public API
+    def set_visible(self, *arg, **kargs):
+        super().set_visible(*arg, **kargs)
+        self.figure.setup_legend()
+
 
 class TimeSeriesFigure(MplFigure):
     """
@@ -571,8 +585,9 @@ class TimeSeriesFigure(MplFigure):
 
     def __init__(self, *args, **kargs):
         super().__init__(*args, **kargs)
-        self.set_tight_layout(False)
+        self.set_tight_layout(True)
         self._last_fsize = (self.bbox_inches.width, self.bbox_inches.height)
+        self._legend_visible = True
 
         self.base_axes = None
         self.tseries_axes_list = []
@@ -589,6 +604,7 @@ class TimeSeriesFigure(MplFigure):
             left=False, right=False, labelleft=False, labelright=False)
         self.base_axes.set_visible(False)
         self.add_axes(self.base_axes)
+        self.setup_legend()
         self.canvas.draw()
 
     def add_tseries_axes(self, tseries_axes):
@@ -629,30 +645,68 @@ class TimeSeriesFigure(MplFigure):
         except AttributeError:
             pass
 
+    def setup_legend(self):
+        """Setup the legend of the graph."""
+        lg_handles = []
+        lg_labels = []
+        if self._legend_visible is True:
+            for ax in self.tseries_axes_list:
+                if not ax.get_visible():
+                    continue
+                # Add an handle for the timeseries data.
+                for handle in ax._mpl_artist_handles['data'].values():
+                    lg_handles.append(handle)
+                    lg_labels.append(ax.data_type.title)
+                    break
+                # Add an handle for the manual measurements.
+                handle = ax._mpl_artist_handles['manual_measurements']
+                if handle is not None:
+                    lg_handles.append(handle)
+                    lg_labels.append('{} ({})'.format(
+                        ax.data_type.title, _('manual')))
+
+        legend = self.base_axes.legend(
+            lg_handles, lg_labels, bbox_to_anchor=[0.5, 1],
+            loc='lower center', ncol=4, handletextpad=0.5,
+            numpoints=1, fontsize=9, frameon=False)
+        legend.set_visible(len(legend.legendHandles) > 0)
+
     def tight_layout(self, *args, **kargs):
         """
-        Override matplotlib method to setup the margins of the axes
-        to fixes dimension in inches. This allows to increase greatly the
-        performance of the drawing.
+        Override matplotlib method to setup the margins of the axes.
         """
-        current_fsize = (self.bbox_inches.width, self.bbox_inches.height)
-        if (self._last_fsize != current_fsize or kargs.get('force', False)):
-            self._last_fsize = current_fsize
-            fheight = self.get_figheight()
-            fwidth = self.get_figwidth()
+        if self.base_axes is None:
+            return
 
-            left_margin = 1 / fwidth
-            right_margin = 1 / fwidth
-            bottom_margin = 0.5 / fheight
-            top_margin = 0.2 / fheight
+        fheight = self.get_figheight()
+        fwidth = self.get_figwidth()
 
-            x0 = left_margin
-            y0 = bottom_margin
-            w = 1 - (left_margin + right_margin)
-            h = 1 - (bottom_margin + top_margin)
+        left_margin = 1 / fwidth
+        right_margin = 1 / fwidth
+        bottom_margin = 0.5 / fheight
+        top_margin = self.top_margin_sizehint()
 
-            for axe in self.axes:
-                axe.set_position([x0, y0, w, h])
+        x0 = left_margin
+        y0 = bottom_margin
+        w = 1 - (left_margin + right_margin)
+        h = 1 - (bottom_margin + top_margin)
+
+        for axe in self.axes:
+            axe.set_position([x0, y0, w, h])
+
+    def top_margin_sizehint(self):
+        """
+        Return the recommended size for the top margin.
+        """
+        fheight = self.get_figheight()
+        legend = self.base_axes.get_legend()
+        if legend.get_visible():
+            bbox_legend = (legend.get_window_extent(self.canvas.get_renderer())
+                           .transformed(self.dpi_scale_trans.inverted()))
+            return np.ceil(
+                (bbox_legend.height + 10/72) * 100) / 100 / fheight
+        else:
+            return 0.2 / fheight
 
 
 class TimeSeriesCanvas(FigureCanvasQTAgg):
@@ -806,7 +860,7 @@ class TimeSeriesPlotViewer(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowFlags(Qt.Window)
-        self.setMinimumSize(350, 350)
+        self.setMinimumSize(750, 450)
 
         self.figure = TimeSeriesFigure(facecolor='white')
         self.canvas = TimeSeriesCanvas(self.figure)

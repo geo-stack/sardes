@@ -109,21 +109,29 @@ def test_tseriesviewer_axes_visibility(tseriesviewer, qtbot):
     # Assert that all the axes are visible.
     assert tseries_axes_list[0].get_visible()
     assert tseries_axes_list[1].get_visible()
+    assert len(tseriesviewer.figure.base_axes.get_legend().legendHandles) == 2
+    assert tseriesviewer.figure.base_axes.get_legend().get_visible() is True
 
     # Hide the second axes.
     tseriesviewer.visible_axes_btn.menu().actions()[1].toggle()
     assert tseries_axes_list[0].get_visible()
     assert not tseries_axes_list[1].get_visible()
+    assert len(tseriesviewer.figure.base_axes.get_legend().legendHandles) == 1
+    assert tseriesviewer.figure.base_axes.get_legend().get_visible() is True
 
     # Hide the first axes.
     tseriesviewer.visible_axes_btn.menu().actions()[0].toggle()
     assert not tseries_axes_list[0].get_visible()
     assert not tseries_axes_list[1].get_visible()
+    assert len(tseriesviewer.figure.base_axes.get_legend().legendHandles) == 0
+    assert tseriesviewer.figure.base_axes.get_legend().get_visible() is False
 
     # Show the second axes again.
     tseriesviewer.visible_axes_btn.menu().actions()[1].toggle()
     assert not tseries_axes_list[0].get_visible()
     assert tseries_axes_list[1].get_visible()
+    assert len(tseriesviewer.figure.base_axes.get_legend().legendHandles) == 1
+    assert tseriesviewer.figure.base_axes.get_legend().get_visible() is True
 
 
 def test_manual_measurements(tseriesviewer, qtbot, dbaccessor):
@@ -133,6 +141,7 @@ def test_manual_measurements(tseriesviewer, qtbot, dbaccessor):
     """
     axe = tseriesviewer.figure.tseries_axes_list[0]
     assert axe._mpl_artist_handles['manual_measurements'] is None
+    assert len(tseriesviewer.figure.base_axes.get_legend().legendHandles) == 2
 
     # Fetch the manual measurements for a given well from the database.
     measurements = dbaccessor.get_manual_measurements()
@@ -144,6 +153,9 @@ def test_manual_measurements(tseriesviewer, qtbot, dbaccessor):
         DataType.WaterLevel, measurements[['datetime', 'value']])
     assert axe._mpl_artist_handles['manual_measurements'] is not None
     assert len(axe._mpl_artist_handles['manual_measurements'].get_xdata()) == 1
+
+    # Assert that the legend was updated as expected.
+    assert len(tseriesviewer.figure.base_axes.get_legend().legendHandles) == 3
 
 
 if __name__ == "__main__":
