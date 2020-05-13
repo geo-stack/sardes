@@ -841,7 +841,7 @@ class TimeSeriesPlotViewer(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowFlags(Qt.Window)
-        self.setMinimumSize(350, 350)
+        self.setMinimumSize(750, 450)
 
         self.figure = TimeSeriesFigure(facecolor='white')
         self.canvas = TimeSeriesCanvas(self.figure)
