@@ -473,6 +473,7 @@ class TimeSeriesAxes(BaseAxes):
                           mfc='none', mec='magenta', mew=1.5))
         self._mpl_artist_handles['manual_measurements'].set_data(
             measurements['datetime'].values, measurements['value'].values)
+        self.figure.setup_legend()
         self.figure.canvas.draw()
 
     # ---- Timeseries
@@ -496,6 +497,7 @@ class TimeSeriesAxes(BaseAxes):
         if tseries_group.yaxis_inverted:
             self.invert_yaxis()
 
+        self.figure.setup_legend()
         self.figure.canvas.draw()
 
     def _add_timeseries(self, tseries):
@@ -558,6 +560,11 @@ class TimeSeriesAxes(BaseAxes):
         self.tseries_group.select_data(yrange=(ymin, ymax))
         self._draw_selected_data()
 
+    # ---- Axes public API
+    def set_visible(self, *arg, **kargs):
+        super().set_visible(*arg, **kargs)
+        self.figure.setup_legend()
+
 
 class TimeSeriesFigure(MplFigure):
     """
@@ -573,6 +580,7 @@ class TimeSeriesFigure(MplFigure):
         super().__init__(*args, **kargs)
         self.set_tight_layout(True)
         self._last_fsize = (self.bbox_inches.width, self.bbox_inches.height)
+        self._legend_visible = True
 
         self.base_axes = None
         self.tseries_axes_list = []
@@ -589,6 +597,7 @@ class TimeSeriesFigure(MplFigure):
             left=False, right=False, labelleft=False, labelright=False)
         self.base_axes.set_visible(False)
         self.add_axes(self.base_axes)
+        self.setup_legend()
         self.canvas.draw()
 
     def add_tseries_axes(self, tseries_axes):
@@ -628,6 +637,32 @@ class TimeSeriesFigure(MplFigure):
             current_axe.clear_selected_data()
         except AttributeError:
             pass
+
+    def setup_legend(self):
+        """Setup the legend of the graph."""
+        lg_handles = []
+        lg_labels = []
+        if self._legend_visible is True:
+            for ax in self.tseries_axes_list:
+                if not ax.get_visible():
+                    continue
+                # Add an handle for the timeseries data.
+                for handle in ax._mpl_artist_handles['data'].values():
+                    lg_handles.append(handle)
+                    lg_labels.append(ax.data_type.title)
+                    break
+                # Add an handle for the manual measurements.
+                handle = ax._mpl_artist_handles['manual_measurements']
+                if handle is not None:
+                    lg_handles.append(handle)
+                    lg_labels.append('{} ({})'.format(
+                        ax.data_type.title, _('manual')))
+
+        legend = self.base_axes.legend(
+            lg_handles, lg_labels, bbox_to_anchor=[0.5, 1],
+            loc='lower center', ncol=4, handletextpad=0.5,
+            numpoints=1, fontsize=9, frameon=False)
+        legend.set_visible(len(legend.legendHandles) > 0)
 
     def tight_layout(self, *args, **kargs):
         """
