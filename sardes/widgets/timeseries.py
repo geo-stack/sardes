@@ -50,6 +50,7 @@ YTICKS_LENGTH = rcParams["ytick.major.size"]
 YTICKS_PAD = rcParams['ytick.major.pad']
 AXIS_LABEL_FS = 12
 YAXIS_LABEL_PAD = 10
+FIG_PAD = 20
 
 
 # ---- Data containers
@@ -695,7 +696,15 @@ class TimeSeriesFigure(MplFigure):
 
         left_margin = 1 / fwidth
         bottom_margin = 0.5 / fheight
-        top_margin = self.top_margin_sizehint()
+
+        # We calculate the size of the top margin.
+        top_margin = FIG_PAD / 72 / fheight
+        legend = self.base_axes.get_legend()
+        if legend.get_visible():
+            bbox_legend = legend.get_window_extent(
+                renderer).transformed(self.dpi_scale_trans.inverted())
+            top_margin = np.ceil(
+                (bbox_legend.height + FIG_PAD / 72) * 100) / 100 / fheight
 
         if len(self.tseries_axes_list):
             ax = self.tseries_axes_list[0]
@@ -734,20 +743,6 @@ class TimeSeriesFigure(MplFigure):
         h = 1 - (bottom_margin + top_margin)
         for axe in self.axes:
             axe.set_position([x0, y0, w, h])
-
-    def top_margin_sizehint(self):
-        """
-        Return the recommended size for the top margin.
-        """
-        fheight = self.get_figheight()
-        legend = self.base_axes.get_legend()
-        if legend.get_visible():
-            bbox_legend = (legend.get_window_extent(self.canvas.get_renderer())
-                           .transformed(self.dpi_scale_trans.inverted()))
-            return np.ceil(
-                (bbox_legend.height + 10/72) * 100) / 100 / fheight
-        else:
-            return 0.2 / fheight
 
 
 class TimeSeriesCanvas(FigureCanvasQTAgg):
