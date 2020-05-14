@@ -706,21 +706,21 @@ class TimeSeriesFigure(MplFigure):
             top_margin = np.ceil(
                 (bbox_legend.height + FIG_PAD / 72) * 100) / 100 / fheight
 
+        # We calculate the size of the left margin.
+        left_margin = FIG_PAD / 72 / fwidth
         if len(self.tseries_axes_list):
             ax = self.tseries_axes_list[0]
             if ax.get_visible():
                 ticklabel_width = ax.yaxis.get_ticklabel_extents(
                     renderer)[0].transformed(
                         self.dpi_scale_trans.inverted()).width * 72
+                left_margin = np.ceil((
+                    FIG_PAD + AXIS_LABEL_FS + YAXIS_LABEL_PAD +
+                    ticklabel_width + YTICKS_PAD + YTICKS_LENGTH
+                    ) * 100) / 100 / 72 / fwidth
 
-                left_margin = (
-                    10 + AXIS_LABEL_FS + YAXIS_LABEL_PAD + ticklabel_width +
-                    YTICKS_PAD + YTICKS_LENGTH)
-                left_margin = np.ceil(left_margin * 100) / 100 / 72 / fwidth
-            else:
-                left_margin = 0.3 / fwidth
-
-        # Then we set the position of the other axes.
+        # We set the position of the other axes and calculate the
+        # size of the right margin.
         other_axes = [
             ax for ax in self.tseries_axes_list[1:] if ax.get_visible()]
         right_margin = 0
@@ -730,13 +730,15 @@ class TimeSeriesFigure(MplFigure):
             ticklabel_width = ax.yaxis.get_ticklabel_extents(
                 renderer)[1].transformed(
                     self.dpi_scale_trans.inverted()).width * 72
-            right_margin += (
+            right_margin += np.ceil((
                 YTICKS_LENGTH + YTICKS_PAD + ticklabel_width +
-                YAXIS_LABEL_PAD + AXIS_LABEL_FS)
-            right_margin += 10 if ax == other_axes[-1] else 20
-            right_margin = np.ceil(right_margin * 100) / 100
-        right_margin = max(0.3, right_margin / 72) / fwidth
+                YAXIS_LABEL_PAD + AXIS_LABEL_FS +
+                (FIG_PAD if ax == other_axes[-1] else 20)
+                ) * 100) / 100
+        right_margin = max(FIG_PAD, right_margin) / 72 / fwidth
 
+        # From the size of the margins we calculated above, we set the
+        # position of the axes.
         x0 = left_margin
         y0 = bottom_margin
         w = 1 - (left_margin + right_margin)
