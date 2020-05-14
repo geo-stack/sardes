@@ -18,7 +18,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from matplotlib.figure import Figure as MplFigure
 from matplotlib.axes import Axes as MplAxes
-from matplotlib.transforms import ScaledTranslation
+from matplotlib.transforms import Bbox
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from matplotlib.dates import num2date, date2num
 import numpy as np
@@ -694,17 +694,16 @@ class TimeSeriesFigure(MplFigure):
         fwidth = self.get_figwidth()
         renderer = self.canvas.get_renderer()
 
-        left_margin = 1 / fwidth
         bottom_margin = 0.5 / fheight
 
         # We calculate the size of the top margin.
         top_margin = FIG_PAD / 72 / fheight
         legend = self.base_axes.get_legend()
         if legend.get_visible():
-            bbox_legend = legend.get_window_extent(
-                renderer).transformed(self.dpi_scale_trans.inverted())
+            legend_height = legend.get_window_extent(renderer).transformed(
+                self.dpi_scale_trans.inverted()).height * 72
             top_margin = np.ceil(
-                (bbox_legend.height + FIG_PAD / 72) * 100) / 100 / fheight
+                (legend_height + FIG_PAD) * 10) / 10 / 72 / fheight
 
         # We calculate the size of the left margin.
         left_margin = FIG_PAD / 72 / fwidth
@@ -717,7 +716,7 @@ class TimeSeriesFigure(MplFigure):
                 left_margin = np.ceil((
                     FIG_PAD + AXIS_LABEL_FS + YAXIS_LABEL_PAD +
                     ticklabel_width + YTICKS_PAD + YTICKS_LENGTH
-                    ) * 100) / 100 / 72 / fwidth
+                    ) * 10) / 10 / 72 / fwidth
 
         # We set the position of the other axes and calculate the
         # size of the right margin.
@@ -734,17 +733,17 @@ class TimeSeriesFigure(MplFigure):
                 YTICKS_LENGTH + YTICKS_PAD + ticklabel_width +
                 YAXIS_LABEL_PAD + AXIS_LABEL_FS +
                 (FIG_PAD if ax == other_axes[-1] else 20)
-                ) * 100) / 100
+                ) * 10) / 10
         right_margin = max(FIG_PAD, right_margin) / 72 / fwidth
 
-        # From the size of the margins we calculated above, we set the
-        # position of the axes.
-        x0 = left_margin
-        y0 = bottom_margin
-        w = 1 - (left_margin + right_margin)
-        h = 1 - (bottom_margin + top_margin)
-        for axe in self.axes:
-            axe.set_position([x0, y0, w, h])
+        # From the size of the margins, we set the new position of the axes.
+        cur_position = self.base_axes.get_position()
+        new_position = Bbox.from_bounds(
+            left_margin, bottom_margin,
+            1 - (left_margin + right_margin), 1 - (bottom_margin + top_margin))
+        if np.any(cur_position.get_points() != new_position.get_points()):
+            for axe in self.axes:
+                axe.set_position(new_position)
 
 
 class TimeSeriesCanvas(FigureCanvasQTAgg):
