@@ -1154,7 +1154,9 @@ class TimeSeriesPlotViewer(QMainWindow):
         self.fmt_line_weight = IconSpinBox(
             'fmt_line_weight', 0.75, value_range=(0, 99), decimals=2,
             single_step=0.25, suffix=' {}'.format(_('pt')),
-            text=_('Line Width'), tip=_('Enter a value from 0 pt to 99 pt.')
+            text=_('Line Width'),
+            tip=_('Enter a value from 0 pt to 99 pt to change the line width '
+                  'of the plot of the currently selected time series.')
             )
         self.fmt_line_weight.sig_value_changed.connect(
             self._handle_linewidth_changed)
@@ -1164,7 +1166,9 @@ class TimeSeriesPlotViewer(QMainWindow):
         self.fmt_marker_size = IconSpinBox(
             'fmt_marker_size', 0, value_range=(0, 99), decimals=0,
             single_step=1, suffix=' {}'.format(_('pt')),
-            text=_('Marker Size'), tip=_('Enter a value from 0 pt to 99 pt.')
+            text=_('Marker Size'),
+            tip=_('Enter a value from 0 pt to 99 pt to change the marker size '
+                  'of the plot of the currently selected time series.')
             )
         self.fmt_marker_size.sig_value_changed.connect(
             self._handle_markersize_changed)
