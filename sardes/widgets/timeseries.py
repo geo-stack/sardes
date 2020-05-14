@@ -13,10 +13,12 @@ from collections.abc import Mapping
 import datetime
 
 # ---- Third party imports
+import matplotlib as mpl
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from matplotlib.figure import Figure as MplFigure
 from matplotlib.axes import Axes as MplAxes
+from matplotlib.transforms import Bbox
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from matplotlib.dates import num2date, date2num
 import numpy as np
@@ -42,6 +44,13 @@ from sardes.widgets.buttons import (
 
 register_matplotlib_converters()
 MSEC_MIN_OVERLAY_MSG_DISPLAY = 2000
+
+rcParams = mpl.rcParams
+YTICKS_LENGTH = rcParams["ytick.major.size"]
+YTICKS_PAD = rcParams['ytick.major.pad']
+AXIS_LABEL_FS = 12
+YAXIS_LABEL_PAD = 10
+FIG_PAD = 20
 
 
 # ---- Data containers
@@ -360,6 +369,9 @@ class TimeSeriesAxes(BaseAxes):
     """
     A matplotlib Axes object where one or more timeseries of the same
     quantity can be plotted at the same time.
+
+    Note that this axe is created so that its xaxis is shared with
+    the base axe of the figure.
     """
     # https://matplotlib.org/3.1.1/api/axes_api.html
 
@@ -367,12 +379,12 @@ class TimeSeriesAxes(BaseAxes):
         super().__init__(tseries_figure,
                          tseries_figure.base_axes.get_position(),
                          facecolor=None,
-                         frameon=False,
+                         frameon=True,
                          sharex=tseries_figure.base_axes)
+        for spine in self.spines.values():
+            spine.set_visible(False)
 
         self.figure.add_tseries_axes(self)
-        # Note that this axe is created so that its xaxis is shared with
-        # the base axe of the figure.
 
         # Init class attributes.
         self._rect_selector = None
@@ -490,11 +502,12 @@ class TimeSeriesAxes(BaseAxes):
         label of the yaxis and plot the data.
         """
         self.tseries_group = tseries_group
+        data_type = tseries_group.data_type
 
         # Setup the ylabel of the axe.
-        ylabel = tseries_group.data_type.title
-        ylabel += ' ({})'.format(tseries_group.data_type.units)
-        self.set_ylabel(ylabel, labelpad=10)
+        self.set_ylabel(
+            '{} ({})'.format(data_type.title, data_type.units),
+            labelpad=YAXIS_LABEL_PAD, fontsize=AXIS_LABEL_FS)
 
         # Add each timeseries of the monitored property object to this axe.
         for tseries in self.tseries_group:
@@ -586,7 +599,6 @@ class TimeSeriesFigure(MplFigure):
     def __init__(self, *args, **kargs):
         super().__init__(*args, **kargs)
         self.set_tight_layout(True)
-        self._last_fsize = (self.bbox_inches.width, self.bbox_inches.height)
         self._legend_visible = True
 
         self.base_axes = None
@@ -680,33 +692,58 @@ class TimeSeriesFigure(MplFigure):
 
         fheight = self.get_figheight()
         fwidth = self.get_figwidth()
+        renderer = self.canvas.get_renderer()
 
-        left_margin = 1 / fwidth
-        right_margin = 1 / fwidth
         bottom_margin = 0.5 / fheight
-        top_margin = self.top_margin_sizehint()
 
-        x0 = left_margin
-        y0 = bottom_margin
-        w = 1 - (left_margin + right_margin)
-        h = 1 - (bottom_margin + top_margin)
-
-        for axe in self.axes:
-            axe.set_position([x0, y0, w, h])
-
-    def top_margin_sizehint(self):
-        """
-        Return the recommended size for the top margin.
-        """
-        fheight = self.get_figheight()
+        # We calculate the size of the top margin.
+        top_margin = FIG_PAD / 72 / fheight
         legend = self.base_axes.get_legend()
         if legend.get_visible():
-            bbox_legend = (legend.get_window_extent(self.canvas.get_renderer())
-                           .transformed(self.dpi_scale_trans.inverted()))
-            return np.ceil(
-                (bbox_legend.height + 10/72) * 100) / 100 / fheight
-        else:
-            return 0.2 / fheight
+            legend_height = legend.get_window_extent(renderer).transformed(
+                self.dpi_scale_trans.inverted()).height * 72
+            top_margin = np.ceil(
+                (legend_height + FIG_PAD) * 10) / 10 / 72 / fheight
+
+        # We calculate the size of the left margin.
+        left_margin = FIG_PAD / 72 / fwidth
+        if len(self.tseries_axes_list):
+            ax = self.tseries_axes_list[0]
+            if ax.get_visible():
+                ticklabel_width = ax.yaxis.get_ticklabel_extents(
+                    renderer)[0].transformed(
+                        self.dpi_scale_trans.inverted()).width * 72
+                left_margin = np.ceil((
+                    FIG_PAD + AXIS_LABEL_FS + YAXIS_LABEL_PAD +
+                    ticklabel_width + YTICKS_PAD + YTICKS_LENGTH
+                    ) * 10) / 10 / 72 / fwidth
+
+        # We set the position of the other axes and calculate the
+        # size of the right margin.
+        other_axes = [
+            ax for ax in self.tseries_axes_list[1:] if ax.get_visible()]
+        right_margin = 0
+        for ax in other_axes:
+            ax.spines['right'].set_visible(right_margin > 0)
+            ax.spines['right'].set_position(('outward', right_margin))
+            ticklabel_width = ax.yaxis.get_ticklabel_extents(
+                renderer)[1].transformed(
+                    self.dpi_scale_trans.inverted()).width * 72
+            right_margin += np.ceil((
+                YTICKS_LENGTH + YTICKS_PAD + ticklabel_width +
+                YAXIS_LABEL_PAD + AXIS_LABEL_FS +
+                (FIG_PAD if ax == other_axes[-1] else 20)
+                ) * 10) / 10
+        right_margin = max(FIG_PAD, right_margin) / 72 / fwidth
+
+        # From the size of the margins, we set the new position of the axes.
+        cur_position = self.base_axes.get_position()
+        new_position = Bbox.from_bounds(
+            left_margin, bottom_margin,
+            1 - (left_margin + right_margin), 1 - (bottom_margin + top_margin))
+        if np.any(cur_position.get_points() != new_position.get_points()):
+            for axe in self.axes:
+                axe.set_position(new_position)
 
 
 class TimeSeriesCanvas(FigureCanvasQTAgg):
