@@ -158,5 +158,55 @@ def test_manual_measurements(tseriesviewer, qtbot, dbaccessor):
     assert len(tseriesviewer.figure.base_axes.get_legend().legendHandles) == 3
 
 
+def test_linewidth_markersize_option(tseriesviewer):
+    """
+    Test that the options to change the line width and marker size of the
+    plot of the currently selected timeseries is working as expected.
+    """
+    current_axe = tseriesviewer.current_axe()
+    assert tseriesviewer.fmt_line_weight.value() == 0.75
+    assert tseriesviewer.fmt_marker_size.value() == 0
+    assert current_axe._linewidth == 0.75
+    assert current_axe._markersize == 0
+    assert len(current_axe._mpl_artist_handles['data'])
+    for artist in current_axe._mpl_artist_handles['data'].values():
+        assert artist.get_linewidth() == 0.75
+        assert artist.get_markersize() == 0
+
+    # Change the line width and marker size of the current axe.
+    tseriesviewer.fmt_line_weight.setValue(1)
+    tseriesviewer.fmt_marker_size.setValue(2)
+    assert current_axe._linewidth == 1
+    assert current_axe._markersize == 2
+    assert len(current_axe._mpl_artist_handles['data'])
+    for artist in current_axe._mpl_artist_handles['data'].values():
+        assert artist.get_linewidth() == 1
+        assert artist.get_markersize() == 2
+
+    # Change the current axe to the water temperature axe.
+    tseriesviewer.set_current_axe(1)
+    current_axe = tseriesviewer.current_axe()
+    assert tseriesviewer.fmt_line_weight.value() == 0.75
+    assert tseriesviewer.fmt_marker_size.value() == 0
+    assert current_axe._linewidth == 0.75
+    assert current_axe._markersize == 0
+    assert len(current_axe._mpl_artist_handles['data'])
+    for artist in current_axe._mpl_artist_handles['data'].values():
+        assert artist.get_linewidth() == 0.75
+        assert artist.get_markersize() == 0
+
+    # Go back to the water level axe.
+    tseriesviewer.set_current_axe(0)
+    current_axe = tseriesviewer.current_axe()
+    assert tseriesviewer.fmt_line_weight.value() == 1
+    assert tseriesviewer.fmt_marker_size.value() == 2
+    assert current_axe._linewidth == 1
+    assert current_axe._markersize == 2
+    assert len(current_axe._mpl_artist_handles['data'])
+    for artist in current_axe._mpl_artist_handles['data'].values():
+        assert artist.get_linewidth() == 1
+        assert artist.get_markersize() == 2
+
+
 if __name__ == "__main__":
     pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
