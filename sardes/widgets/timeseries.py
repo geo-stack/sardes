@@ -40,6 +40,7 @@ from sardes.utils.qthelpers import (
     format_tooltip, create_toolbar_stretcher)
 from sardes.widgets.buttons import (
     DropdownToolButton, SemiExclusiveButtonGroup, ToggleVisibilityToolButton)
+from sardes.widgets.spinboxes import IconSpinBox
 
 
 register_matplotlib_converters()
@@ -375,7 +376,8 @@ class TimeSeriesAxes(BaseAxes):
     """
     # https://matplotlib.org/3.1.1/api/axes_api.html
 
-    def __init__(self, tseries_figure, tseries_group, where=None):
+    def __init__(self, tseries_figure, tseries_group, where=None, linewidth=1,
+                 markersize=0):
         super().__init__(tseries_figure,
                          tseries_figure.base_axes.get_position(),
                          facecolor=None,
@@ -385,6 +387,10 @@ class TimeSeriesAxes(BaseAxes):
             spine.set_visible(False)
 
         self.figure.add_tseries_axes(self)
+
+        # Plot format options.
+        self._linewidth = linewidth
+        self._markersize = markersize
 
         # Init class attributes.
         self._rect_selector = None
@@ -525,7 +531,8 @@ class TimeSeriesAxes(BaseAxes):
         Plot the data of the timeseries and init selected data artist.
         """
         self._mpl_artist_handles['data'][tseries.id], = (
-            self.plot(tseries.data, color=tseries.color, clip_on=True))
+            self.plot(tseries.data, '.-', color=tseries.color, clip_on=True,
+                      ms=self._markersize, lw=self._linewidth))
         self._mpl_artist_handles['selected_data'][tseries.id], = (
             self.plot(tseries.get_selected_data(), '.', color='orange',
                       clip_on=True))
@@ -538,6 +545,24 @@ class TimeSeriesAxes(BaseAxes):
         self._draw_selected_data()
 
     # ---- Drawing methods
+    def set_linewidth(self, linewidth):
+        """Set the line width for the plots of this axe."""
+        self._linewidth = linewidth
+        for tseries in self.tseries_group:
+            (self._mpl_artist_handles['data'][tseries.id]
+             .set_linewidth(linewidth))
+        self.figure.setup_legend()
+        self.figure.canvas.draw()
+
+    def set_markersize(self, markersize):
+        """Set the marker size for the plots of this axe."""
+        self._markersize = markersize
+        for tseries in self.tseries_group:
+            (self._mpl_artist_handles['data'][tseries.id]
+             .set_markersize(markersize))
+        self.figure.setup_legend()
+        self.figure.canvas.draw()
+
     def _draw_selected_data(self, draw=True):
         """
         If this axe is current, draw the selected data of the timeseries
@@ -1121,6 +1146,30 @@ class TimeSeriesPlotViewer(QMainWindow):
               ' zoom and pan the data.'),
             None))
         self.axes_toolbar.addWidget(self.current_axe_button)
+
+        # ---- Format
+        self.axes_toolbar.addSeparator()
+
+        # Line weight format.
+        self.fmt_line_weight = IconSpinBox(
+            'fmt_line_weight', 0.75, value_range=(0, 99), decimals=2,
+            single_step=0.25, suffix=' {}'.format(_('pt')),
+            text=_('Line Width'), tip=_('Enter a value from 0 pt to 99 pt.')
+            )
+        self.fmt_line_weight.sig_value_changed.connect(
+            self._handle_linewidth_changed)
+        self.axes_toolbar.addWidget(self.fmt_line_weight)
+
+        # Marker size format.
+        self.fmt_marker_size = IconSpinBox(
+            'fmt_marker_size', 0, value_range=(0, 99), decimals=0,
+            single_step=1, suffix=' {}'.format(_('pt')),
+            text=_('Marker Size'), tip=_('Enter a value from 0 pt to 99 pt.')
+            )
+        self.fmt_marker_size.sig_value_changed.connect(
+            self._handle_markersize_changed)
+        self.axes_toolbar.addWidget(self.fmt_marker_size)
+
         # Axe coordinates.
         self.axes_toolbar.addWidget(create_toolbar_stretcher())
         self._axes_coord_sep = self.axes_toolbar.addSeparator()
@@ -1244,6 +1293,17 @@ class TimeSeriesPlotViewer(QMainWindow):
             self._overlay_msg_widget_show_animation.start()
             self.overlay_msg_widget.show()
         self._hide_overlay_msg_timer.start(MSEC_MIN_OVERLAY_MSG_DISPLAY)
+
+    @Slot(float)
+    def _handle_linewidth_changed(self, value):
+        if self.current_axe() is not None:
+            self.current_axe().set_linewidth(value)
+
+    @Slot(float)
+    def _handle_markersize_changed(self, value):
+        if self.current_axe() is not None:
+            self.current_axe().set_markersize(value)
+
     @Slot(QAction)
     def _handle_selected_axe_changed(self, checked_action):
         """
@@ -1251,6 +1311,8 @@ class TimeSeriesPlotViewer(QMainWindow):
         """
         selected_axe = checked_action.data()
         selected_axe.set_current()
+        self.fmt_line_weight.setValue(selected_axe._linewidth)
+        self.fmt_marker_size.setValue(selected_axe._markersize)
 
     def _handle_axe_visibility_changed(self, axe, toggle):
         """
