@@ -58,3 +58,6 @@ class IconSpinBox(QWidget):
     # ---- QDoubleSpinBox public API
     def setValue(self, val):
         return self.spinbox.setValue(val)
+
+    def value(self):
+        return self.spinbox.value()
