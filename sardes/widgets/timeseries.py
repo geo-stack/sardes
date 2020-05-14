@@ -700,18 +700,6 @@ class TimeSeriesFigure(MplFigure):
         if len(self.tseries_axes_list):
             ax = self.tseries_axes_list[0]
             if ax.get_visible():
-                # First we calculate and set the position of the ylabel.
-                bbox = self.transFigure.inverted().transform(
-                    ax.get_window_extent(renderer))
-                dx = (AXIS_LABEL_FS + 10) / 72
-                ax.yaxis.set_label_coords(
-                    x=0, y=(bbox[1, 1] + bbox[0, 1]) / 2,
-                    transform=(
-                        self.transFigure +
-                        ScaledTranslation(dx, 0, self.dpi_scale_trans))
-                    )
-
-                # Then we calculate the size of the left margin.
                 ticklabel_width = ax.yaxis.get_ticklabel_extents(
                     renderer)[0].transformed(
                         self.dpi_scale_trans.inverted()).width * 72
