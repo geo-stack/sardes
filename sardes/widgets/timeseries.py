@@ -1217,7 +1217,7 @@ class TimeSeriesPlotViewer(QMainWindow):
         Handle when the mouse cursor is moved over this viewer's figure.
         """
         xdata, ydata = event.xdata, event.ydata
-        if all((xdata, ydata)):
+        if all((xdata, ydata)) and self.current_axe() is not None:
             self._axes_coord_action.defaultWidget().setText(
                 '{:0.3f} {}\n{}'.format(
                     ydata,
