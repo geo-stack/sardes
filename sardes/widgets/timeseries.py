@@ -376,8 +376,8 @@ class TimeSeriesAxes(BaseAxes):
     """
     # https://matplotlib.org/3.1.1/api/axes_api.html
 
-    def __init__(self, tseries_figure, tseries_group, where=None, linewidth=1,
-                 markersize=0):
+    def __init__(self, tseries_figure, tseries_group, where=None,
+                 linewidth=0.75, markersize=0):
         super().__init__(tseries_figure,
                          tseries_figure.base_axes.get_position(),
                          facecolor=None,
