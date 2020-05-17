@@ -744,7 +744,11 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         sonde installations made in the observation wells of the monitoring
         network.
         """
-        query = self._session.query(SondeInstallation)
+        query = (
+            self._session.query(SondeInstallation,
+                                Process.sampling_feature_uuid)
+            .filter(SondeInstallation.process_id == Process.process_id)
+            )
         data = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
 
@@ -766,7 +770,11 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 attribute_value = None
 
         sonde_installation = self._get_sonde_installation(install_uuid)
-        setattr(sonde_installation, attribute_name, attribute_value)
+        if attribute_name == 'sampling_feature_uuid':
+            process = self._get_process(sonde_installation.process_id)
+            setattr(process, 'sampling_feature_uuid', attribute_value)
+        else:
+            setattr(sonde_installation, attribute_name, attribute_value)
 
         # Commit changes to the BD.
         if auto_commit:
@@ -1043,6 +1051,13 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
             # We then delete the observation from database if it is empty.
             self._clean_observation_if_null(obs_id)
+
+    # ---- Process
+    def _get_process(self, process_id):
+        """Return the process related to the given process_id."""
+        return (self._session.query(Process)
+                .filter(Process.process_id == process_id)
+                .one())
 
     # ---- Observations
     def _get_observation(self, observation_id):
