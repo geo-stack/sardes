@@ -346,8 +346,11 @@ class Process(BaseMixin, Base):
     __tablename__ = 'process'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    process_type = Column(String)
     process_id = Column(Integer, primary_key=True)
+    process_type = Column(String)
+    sampling_feature_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('sampling_feature.sampling_feature_uuid'))
 
 
 class ProcessInstallation(BaseMixin, Base):
