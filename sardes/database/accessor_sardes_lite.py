@@ -301,23 +301,15 @@ class SondeInstallation(BaseMixin, Base):
     An object used to map the 'sonde_installation' table.
     """
     __tablename__ = 'sonde_installation'
-    install_uuid = Column(
-        UUIDType(binary=False),
-        ForeignKey('process_installation.install_uuid'),
-        primary_key=True,
-        )
+    install_uuid = Column(UUIDType(binary=False), primary_key=True)
     sonde_uuid = Column(
-        UUIDType(binary=False),
-        ForeignKey('sonde_feature.sonde_uuid'),
-        )
+        UUIDType(binary=False), ForeignKey('sonde_feature.sonde_uuid'))
     start_date = Column(DateTime)
     end_date = Column(DateTime)
     install_depth = Column(Float)
-    sampling_feature_uuid = Column(
-        UUIDType(binary=False),
-        ForeignKey('sampling_feature.sampling_feature_uuid'))
     operator = Column(String)
     install_note = Column(String)
+    process_id = Column(Integer, ForeignKey('process.process_id'))
 
 
 # ---- Pompes
@@ -336,23 +328,14 @@ class PumpInstallation(BaseMixin, Base):
     An object used to map the 'pump_installation' table.
     """
     __tablename__ = 'pump_installation'
-    install_uuid = Column(
-        UUIDType(binary=False),
-        ForeignKey('process_installation.install_uuid'),
-        primary_key=True,
-        )
-    pump_type_id = Column(
-        Integer,
-        ForeignKey('pump_type.pump_type_id'),
-        )
+    install_uuid = Column(UUIDType(binary=False), primary_key=True)
+    pump_type_id = Column(Integer, ForeignKey('pump_type.pump_type_id'))
     start_date = Column(DateTime)
     end_date = Column(DateTime)
     install_depth = Column(Float)
-    sampling_feature_uuid = Column(
-        UUIDType(binary=False),
-        ForeignKey('sampling_feature.sampling_feature_uuid'))
     operator = Column(String)
     install_note = Column(String)
+    process_id = Column(Integer, ForeignKey('process.process_id'))
 
 
 # ---- Processes
@@ -363,18 +346,15 @@ class Process(BaseMixin, Base):
     __tablename__ = 'process'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    process_type = Column(String)
     process_id = Column(Integer, primary_key=True)
+    process_type = Column(String)
+    sampling_feature_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('sampling_feature.sampling_feature_uuid'))
 
 
-class ProcessInstallation(BaseMixin, Base):
     """
-    An object used to map the 'process_installation' table.
     """
-    __tablename__ = 'process_installation'
-
-    install_uuid = Column(UUIDType(binary=False), primary_key=True)
-    process_id = Column(Integer, ForeignKey('process.process_id'))
 
 
 # =============================================================================
@@ -399,7 +379,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
     def execute(self, sql_request, **kwargs):
         """Execute a SQL statement construct and return a ResultProxy."""
         try:
-            self._engine.execute(sql_request, **kwargs)
+            return self._engine.execute(sql_request, **kwargs)
         except ProgrammingError as p:
             print(p)
             raise p
@@ -745,23 +725,24 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             if pd.isnull(attribute_values.get(field, None)):
                 attribute_values[field] = None
 
-        # We first create new items in the tables process and
-        # process_installation.
+        # We first create new items in the tables process.
         new_process = Process(process_type='sonde installation')
         self._session.add(new_process)
-        self._session.commit()
-
-        self._session.add(ProcessInstallation(
-            install_uuid=new_install_uuid,
-            process_id=new_process.process_id
-            ))
         self._session.commit()
 
         # We then create a new sonde installation.
         sonde_installation = SondeInstallation(
             install_uuid=new_install_uuid,
-            **attribute_values)
+            process_id=new_process.process_id
+            )
         self._session.add(sonde_installation)
+        self._session.commit()
+
+        # We then set the attribute valuesfor this new sonde installation.
+        for attribute_name, attribute_value in attribute_values.items():
+            self.set_sonde_installations(
+                new_install_uuid, attribute_name,
+                attribute_value, auto_commit=True)
         self._session.commit()
 
     def get_sonde_installations(self):
@@ -770,7 +751,11 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         sonde installations made in the observation wells of the monitoring
         network.
         """
-        query = self._session.query(SondeInstallation)
+        query = (
+            self._session.query(SondeInstallation,
+                                Process.sampling_feature_uuid)
+            .filter(SondeInstallation.process_id == Process.process_id)
+            )
         data = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
 
@@ -792,7 +777,11 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 attribute_value = None
 
         sonde_installation = self._get_sonde_installation(install_uuid)
-        setattr(sonde_installation, attribute_name, attribute_value)
+        if attribute_name == 'sampling_feature_uuid':
+            process = self._get_process(sonde_installation.process_id)
+            setattr(process, 'sampling_feature_uuid', attribute_value)
+        else:
+            setattr(sonde_installation, attribute_name, attribute_value)
 
         # Commit changes to the BD.
         if auto_commit:
@@ -985,8 +974,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # We create a new observation.
         if install_uuid is not None:
             process_id = (
-                self._session.query(ProcessInstallation)
-                .filter(ProcessInstallation.install_uuid == install_uuid)
+                self._session.query(SondeInstallation)
+                .filter(SondeInstallation.install_uuid == install_uuid)
                 .one().process_id
                 )
         else:
@@ -1070,6 +1059,13 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             # We then delete the observation from database if it is empty.
             self._clean_observation_if_null(obs_id)
 
+    # ---- Process
+    def _get_process(self, process_id):
+        """Return the process related to the given process_id."""
+        return (self._session.query(Process)
+                .filter(Process.process_id == process_id)
+                .one())
+
     # ---- Observations
     def _get_observation(self, observation_id):
         """
@@ -1105,10 +1101,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             return (
                 self._session.query(SondeFeature)
                 .filter(Observation.observation_id == observation_id)
-                .filter(Observation.process_id ==
-                        ProcessInstallation.process_id)
-                .filter(ProcessInstallation.install_uuid ==
-                        SondeInstallation.install_uuid)
+                .filter(Observation.process_id == SondeInstallation.process_id)
                 .filter(SondeInstallation.sonde_uuid ==
                         SondeFeature.sonde_uuid)
                 .one()
@@ -1125,10 +1118,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             return (
                 self._session.query(SondeInstallation)
                 .filter(Observation.observation_id == observation_id)
-                .filter(Observation.process_id ==
-                        ProcessInstallation.process_id)
-                .filter(ProcessInstallation.install_uuid ==
-                        SondeInstallation.install_uuid)
+                .filter(Observation.process_id == SondeInstallation.process_id)
                 .one()
                 .install_depth)
         except NoResultFound:
@@ -1141,10 +1131,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 def init_database(accessor):
     tables = [Location, SamplingFeatureType, SamplingFeature,
               SamplingFeatureMetadata, SondeFeature, SondeModel,
-              SondeInstallation, Process, ProcessInstallation, Repere,
-              ObservationType, Observation, ObservedProperty,
-              GenericNumericalData, TimeSeriesChannel, TimeSeriesData,
-              PumpType, PumpInstallation]
+              SondeInstallation, Process, Repere, ObservationType, Observation,
+              ObservedProperty, GenericNumericalData, TimeSeriesChannel,
+              TimeSeriesData, PumpType, PumpInstallation]
     dialect = accessor._engine.dialect
     for table in tables:
         if dialect.has_table(accessor._session, table.__tablename__):
@@ -1154,183 +1143,6 @@ def init_database(accessor):
             accessor._session.add(table(**item_attrs))
         accessor._session.commit()
     accessor._session.commit()
-
-
-def copydata_from_rsesq_postgresql(accessor_rsesq, accessor_sardeslite):
-    print('Copying Location...', end=' ')
-    for item in accessor_rsesq._session.query(acc_rsesq.Location):
-        accessor_sardeslite._session.add(Location(
-            loc_id=item.loc_id,
-            latitude=item.latitude,
-            longitude=item.longitude,
-            municipality=item.loc_notes.split(':')[1].strip()
-            ))
-    accessor_sardeslite._session.commit()
-    print('done')
-    print('Copying SamplingFeatureType...', end=' ')
-    for item in accessor_rsesq._session.query(acc_rsesq.SamplingFeatureTypes):
-        accessor_sardeslite._session.add(SamplingFeatureType(
-            sampling_feature_type_id=item.sampling_feature_type_id,
-            sampling_feature_type_desc=item.sampling_feature_type_desc,
-            sampling_feature_type_abb=item.sampling_feature_type_abb
-            ))
-    accessor_sardeslite._session.commit()
-    print('done')
-    print('Copying SamplingFeature...', end=' ')
-    for item in accessor_rsesq._session.query(acc_rsesq.ObservationWell):
-        accessor_sardeslite._session.add(SamplingFeature(
-            sampling_feature_uuid=item.sampling_feature_uuid,
-            sampling_feature_name=item.obs_well_id,
-            sampling_feature_notes=item.obs_well_notes,
-            loc_id=item.loc_id,
-            sampling_feature_type_id=1
-            ))
-    accessor_sardeslite._session.commit()
-    print('done')
-    print('Copying SondeFeature...', end=' ')
-    for item in accessor_rsesq._session.query(acc_rsesq.Sondes):
-        accessor_sardeslite._session.add(SondeFeature(
-            sonde_uuid=item.sonde_uuid,
-            sonde_serial_no=item.sonde_serial_no,
-            date_reception=item.date_reception,
-            date_withdrawal=item.date_withdrawal,
-            sonde_notes=item.sonde_notes,
-            sonde_model_id=item.sonde_model_id,
-            out_of_order=item.out_of_order,
-            off_network=item.off_network,
-            lost=item.lost,
-            in_repair=item.in_repair
-            ))
-    accessor_sardeslite._session.commit()
-    print('done')
-    print('Copying SondeModel...', end=' ')
-    for item in accessor_rsesq._session.query(acc_rsesq.SondeModels):
-        accessor_sardeslite._session.add(SondeModel(
-            sonde_model_id=item.sonde_model_id,
-            sonde_brand=item.sonde_brand,
-            sonde_model=item.sonde_model
-            ))
-    accessor_sardeslite._session.commit()
-    print('done')
-    print('Copying Process...', end=' ')
-    for item in accessor_rsesq._session.query(acc_rsesq.Processes):
-        accessor_sardeslite._session.add(Process(
-            process_type=item.process_type,
-            process_id=item.process_id
-            ))
-    accessor_sardeslite._session.commit()
-    print('done')
-    print('Copying ProcessInstallation...', end=' ')
-    for item in accessor_rsesq._session.query(acc_rsesq.ProcessesInstalls):
-        sonde_installation = accessor_rsesq._get_sonde_installation(
-            item.install_id)
-        accessor_sardeslite._session.add(ProcessInstallation(
-            install_uuid=sonde_installation.install_uuid,
-            process_id=item.process_id
-            ))
-    accessor_sardeslite._session.commit()
-    print('done')
-    print('Copying Repere...', end=' ')
-    for item in accessor_rsesq._session.query(acc_rsesq.Repere):
-        accessor_sardeslite._session.add(Repere(
-            repere_uuid=item.repere_uuid,
-            top_casing_alt=item.top_casing_alt,
-            casing_length=item.casing_length,
-            start_date=item.start_date,
-            end_date=item.end_date,
-            is_alt_geodesic=item.is_alt_geodesic,
-            repere_note=item.repere_note,
-            sampling_feature_uuid=item.sampling_feature_uuid
-            ))
-    accessor_sardeslite._session.commit()
-    print('done')
-    print('Copying ObservationType...', end=' ')
-    for item in accessor_rsesq._session.query(acc_rsesq.ObservationType):
-        accessor_sardeslite._session.add(ObservationType(
-            obs_type_id=item.obs_type_id,
-            obs_type_abb=item.obs_type_abb,
-            obs_type_desc=item.obs_type_desc
-            ))
-    accessor_sardeslite._session.commit()
-    print('done')
-    print('Copying ObservedProperty...', end=' ')
-    for item in accessor_rsesq._session.query(acc_rsesq.ObservationProperty):
-        accessor_sardeslite._session.add(ObservedProperty(
-            obs_property_id=item.obs_property_id,
-            obs_property_name=item.obs_property_name,
-            obs_property_desc=item.obs_property_desc,
-            obs_property_units=item.obs_property_units
-            ))
-    accessor_sardeslite._session.commit()
-    print('done')
-
-    return
-
-    print('Copying Observation...', end=' ')
-    for item in accessor_rsesq._session.query(acc_rsesq.Observation):
-        try:
-            process_id = (
-                accessor_rsesq._session.query(acc_rsesq.Processes)
-                .filter(acc_rsesq.Processes.process_uuid == item.process_uuid)
-                .one()
-                .process_id
-                )
-        except Exception:
-            process_id = None
-        accessor_sardeslite._session.add(Observation(
-            observation_id=item.observation_id,
-            obs_datetime=item.obs_datetime,
-            sampling_feature_uuid=item.sampling_feature_uuid,
-            process_id=process_id,
-            obs_type_id=item.param_id
-            ))
-    accessor_sardeslite._session.commit()
-    print('done')
-    print('Copying GenericNumericalData...', end=' ')
-    for item in accessor_rsesq._session.query(acc_rsesq.GenericNumericalValue):
-        item_observation_id = accessor_rsesq._get_observation(
-            item.observation_uuid).observation_id
-        accessor_sardeslite._session.add(GenericNumericalData(
-            gen_num_value_uuid=item.gen_num_value_uuid,
-            gen_num_value=item.gen_num_value,
-            observation_id=item_observation_id,
-            obs_property_id=item.obs_property_id,
-            gen_num_value_notes=item.gen_num_value_notes,
-            gen_init_num_value=item.gen_init_num_value
-            ))
-    accessor_sardeslite._session.commit()
-    print('done')
-    print('Copying TimeSeriesChannel...', end=' ')
-    for item in accessor_rsesq._session.query(acc_rsesq.TimeSeriesChannels):
-        item_observation_id = accessor_rsesq._get_observation(
-            item.observation_uuid).observation_id
-        accessor_sardeslite._session.add(TimeSeriesChannel(
-            channel_id=item.channel_id,
-            observation_id=item_observation_id,
-            obs_property_id=item.obs_property_id,
-            ))
-    accessor_sardeslite._session.commit()
-    print('done')
-    print('Copying TimeSeriesData...', end='')
-    query = accessor_rsesq._session.query(acc_rsesq.TimeSeriesData)
-    total = query.count()
-    count = 0
-    limit = 10000
-    print('\rCopying TimeSeriesData... 0% ({}/{})'.format(count, total),
-          end='')
-    for item in query.yield_per(limit).enable_eagerloads(False):
-        accessor_sardeslite._session.add(TimeSeriesData(
-            datetime=item.datetime,
-            value=item.value,
-            channel_id=item.channel_id
-            ))
-        count += 1
-        if count % limit == 0:
-            print('\rCopying TimeSeriesData... {:0.1f}% ({}/{})'
-                  .format(count/total * 100, count, total),
-                  end='')
-            accessor_sardeslite._session.commit()
-    print('\rCopying TimeSeriesData... 100% ({}/{})'.format(total, total))
 
 
 if __name__ == "__main__":
