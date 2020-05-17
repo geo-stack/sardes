@@ -725,22 +725,16 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             if pd.isnull(attribute_values.get(field, None)):
                 attribute_values[field] = None
 
-        # We first create new items in the tables process and
-        # process_installation.
+        # We first create new items in the tables process.
         new_process = Process(process_type='sonde installation')
         self._session.add(new_process)
-        self._session.commit()
-
-        self._session.add(ProcessInstallation(
-            install_uuid=new_install_uuid,
-            process_id=new_process.process_id
-            ))
         self._session.commit()
 
         # We then create a new sonde installation.
         sonde_installation = SondeInstallation(
             install_uuid=new_install_uuid,
             **attribute_values)
+        sonde_installation.process_id = new_process.process_id
         self._session.add(sonde_installation)
         self._session.commit()
 
@@ -965,8 +959,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # We create a new observation.
         if install_uuid is not None:
             process_id = (
-                self._session.query(ProcessInstallation)
-                .filter(ProcessInstallation.install_uuid == install_uuid)
+                self._session.query(SondeInstallation)
+                .filter(SondeInstallation.install_uuid == install_uuid)
                 .one().process_id
                 )
         else:
@@ -1085,10 +1079,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             return (
                 self._session.query(SondeFeature)
                 .filter(Observation.observation_id == observation_id)
-                .filter(Observation.process_id ==
-                        ProcessInstallation.process_id)
-                .filter(ProcessInstallation.install_uuid ==
-                        SondeInstallation.install_uuid)
+                .filter(Observation.process_id == SondeInstallation.process_id)
                 .filter(SondeInstallation.sonde_uuid ==
                         SondeFeature.sonde_uuid)
                 .one()
@@ -1105,10 +1096,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             return (
                 self._session.query(SondeInstallation)
                 .filter(Observation.observation_id == observation_id)
-                .filter(Observation.process_id ==
-                        ProcessInstallation.process_id)
-                .filter(ProcessInstallation.install_uuid ==
-                        SondeInstallation.install_uuid)
+                .filter(Observation.process_id == SondeInstallation.process_id)
                 .one()
                 .install_depth)
         except NoResultFound:
@@ -1121,10 +1109,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 def init_database(accessor):
     tables = [Location, SamplingFeatureType, SamplingFeature,
               SamplingFeatureMetadata, SondeFeature, SondeModel,
-              SondeInstallation, Process, ProcessInstallation, Repere,
-              ObservationType, Observation, ObservedProperty,
-              GenericNumericalData, TimeSeriesChannel, TimeSeriesData,
-              PumpType, PumpInstallation]
+              SondeInstallation, Process, Repere, ObservationType, Observation,
+              ObservedProperty, GenericNumericalData, TimeSeriesChannel,
+              TimeSeriesData, PumpType, PumpInstallation]
     dialect = accessor._engine.dialect
     for table in tables:
         if dialect.has_table(accessor._session, table.__tablename__):
