@@ -733,9 +733,16 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # We then create a new sonde installation.
         sonde_installation = SondeInstallation(
             install_uuid=new_install_uuid,
-            **attribute_values)
-        sonde_installation.process_id = new_process.process_id
+            process_id=new_process.process_id
+            )
         self._session.add(sonde_installation)
+        self._session.commit()
+
+        # We then set the attribute valuesfor this new sonde installation.
+        for attribute_name, attribute_value in attribute_values.items():
+            self.set_sonde_installations(
+                new_install_uuid, attribute_name,
+                attribute_value, auto_commit=True)
         self._session.commit()
 
     def get_sonde_installations(self):
