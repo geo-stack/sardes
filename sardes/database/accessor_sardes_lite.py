@@ -353,14 +353,8 @@ class Process(BaseMixin, Base):
         ForeignKey('sampling_feature.sampling_feature_uuid'))
 
 
-class ProcessInstallation(BaseMixin, Base):
     """
-    An object used to map the 'process_installation' table.
     """
-    __tablename__ = 'process_installation'
-
-    install_uuid = Column(UUIDType(binary=False), primary_key=True)
-    process_id = Column(Integer, ForeignKey('process.process_id'))
 
 
 # =============================================================================
