@@ -301,23 +301,15 @@ class SondeInstallation(BaseMixin, Base):
     An object used to map the 'sonde_installation' table.
     """
     __tablename__ = 'sonde_installation'
-    install_uuid = Column(
-        UUIDType(binary=False),
-        ForeignKey('process_installation.install_uuid'),
-        primary_key=True,
-        )
+    install_uuid = Column(UUIDType(binary=False), primary_key=True)
     sonde_uuid = Column(
-        UUIDType(binary=False),
-        ForeignKey('sonde_feature.sonde_uuid'),
-        )
+        UUIDType(binary=False), ForeignKey('sonde_feature.sonde_uuid'))
     start_date = Column(DateTime)
     end_date = Column(DateTime)
     install_depth = Column(Float)
-    sampling_feature_uuid = Column(
-        UUIDType(binary=False),
-        ForeignKey('sampling_feature.sampling_feature_uuid'))
     operator = Column(String)
     install_note = Column(String)
+    process_id = Column(Integer, ForeignKey('process.process_id'))
 
 
 # ---- Pompes
