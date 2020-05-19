@@ -26,6 +26,7 @@ accessor = DatabaseAccessorSardesLite(DATABASE)
 # reference the renamed table.
 # https://www.sqlite.org/lang_altertable.html
 # https://stackoverflow.com/questions/4897867
+# See cgq-qgc/sardes#310.
 
 conn = sqlite3.connect(DATABASE)
 conn.execute("PRAGMA foreign_keys=OFF;")
