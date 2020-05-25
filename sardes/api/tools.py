@@ -12,6 +12,8 @@ import os
 
 # ---- Third party imports
 from qtpy.QtCore import QObject, Qt, Slot, QPoint, Signal, QEvent
+from qtpy.QtWidgets import (QApplication, QToolButton, QLabel, QToolBar,
+                            QMainWindow)
 
 # ---- Local imports
 from sardes.config.icons import get_icon
@@ -140,3 +142,43 @@ class SardesTool(SardesToolBase):
         raise NotImplementedError
 
 
+class SardesToolTest(SardesTool):
+    """
+    Sardes tool concrete implementation example.
+    """
+
+    def toolwidget(self):
+        widget = QLabel('This is a Sardes tool example.')
+        widget.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        widget.setFixedSize(300, 150)
+        return widget
+
+    def icon(self):
+        return 'information'
+
+    def text(self):
+        return 'Sardes Tool Example'
+
+    def tip(self):
+        return ('This is an example that show an implementation of '
+                'a Sardes tool.')
+
+    def title(self):
+        return 'Sardes Tool Example'
+
+
+if __name__ == '__main__':
+    import sys
+    app = QApplication(sys.argv)
+
+    toolbar = QToolBar()
+
+    mainwindow = QMainWindow()
+    mainwindow.addToolBar(toolbar)
+
+    tool = SardesToolTest(parent=mainwindow)
+    toolbar.addWidget(tool.toolbutton())
+
+    mainwindow.show()
+
+    sys.exit(app.exec_())
