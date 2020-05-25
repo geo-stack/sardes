@@ -107,3 +107,36 @@ class SardesToolBase(QObject):
         self._toolwidget.activateWindow()
         self._toolwidget.raise_()
 
+
+class SardesTool(SardesToolBase):
+    """
+    Sardes abstract tool class.
+
+    A Sardes tool consists mainly of a toolbutton and a widget that
+    is shown when that toolbutton is clicked.
+    """
+
+    def toolwidget(self):
+        """Return the main widget of this tool."""
+        raise NotImplementedError
+
+    def icon(self):
+        """
+        Return the icon that will be used for the toolbutton and
+        toolwidget's window.
+        """
+        raise NotImplementedError
+
+    def text(self):
+        """Return the text that will be used for the toolbutton."""
+        raise NotImplementedError
+
+    def tip(self):
+        """Return the tooltip text that will be used for the toolbutton."""
+        raise NotImplementedError
+
+    def title(self):
+        """Return the title that will be used for the toolwidget's window."""
+        raise NotImplementedError
+
+
