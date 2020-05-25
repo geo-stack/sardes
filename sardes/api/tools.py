@@ -47,6 +47,12 @@ class SardesToolBase(QObject):
             self._toolbutton = self._create_toolbutton()
         return self._toolbutton
 
+    def toolwidget(self):
+        """Return the main widget of this tool."""
+        if self._toolwidget is None:
+            self._toolwidget = self._create_toolwidget()
+        return self._toolwidget
+
     def close(self):
         """Close this tool."""
         if self._toolwidget is not None:
@@ -118,8 +124,8 @@ class SardesTool(SardesToolBase):
     is shown when that toolbutton is clicked.
     """
 
-    def toolwidget(self):
-        """Return the main widget of this tool."""
+    def _create_toolwidget(self):
+        """Create and return the main widget of this tool."""
         raise NotImplementedError
 
     def icon(self):
@@ -147,7 +153,7 @@ class SardesToolTest(SardesTool):
     Sardes tool concrete implementation example.
     """
 
-    def toolwidget(self):
+    def _create_toolwidget(self):
         widget = QLabel('This is a Sardes tool example.')
         widget.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         widget.setFixedSize(300, 150)
