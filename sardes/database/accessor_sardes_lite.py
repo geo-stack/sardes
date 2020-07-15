@@ -136,6 +136,9 @@ class SamplingFeatureType(BaseMixin, Base):
 
 
 class SamplingFeatureMetadata(BaseMixin, Base):
+    """
+    An object used to map the 'sampling_feature_metadata' table.
+    """
     __tablename__ = 'sampling_feature_metadata'
 
     sampling_feature_uuid = Column(
