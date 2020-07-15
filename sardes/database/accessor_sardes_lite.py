@@ -665,6 +665,26 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
+    def get_observation_wells_data_overview(self):
+        """
+        Return a :class:`pandas.DataFrame` containing an overview of
+        the water level data that are available for each observation well
+        of the monitoring network.
+        """
+        # Fetch data from the materialized view.
+        query = self._session.query(SamplingFeatureDataOverview)
+        data = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
+        data.set_index('sampling_feature_uuid', inplace=True, drop=True)
+
+        # We drop the time from the datetime since we don't need it.
+        data['last_date'] = data['last_date'].dt.date
+        data['first_date'] = data['first_date'].dt.date
+
+        # Round mean value.
+        data['mean_water_level'] = data['mean_water_level'].round(decimals=3)
+        return data
+
     # ---- Repere
     def _get_repere_data(self, repere_id):
         """
