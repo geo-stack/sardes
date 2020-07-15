@@ -157,6 +157,27 @@ class SamplingFeatureMetadata(BaseMixin, Base):
         "SamplingFeature", uselist=False, back_populates="_metadata")
 
 
+class SamplingFeatureDataOverview(BaseMixin, Base):
+    """
+    An object used to map the 'sampling_feature_data_overview' table. This
+    table contains summary information regarding the water level data that
+    are available for each well of the monitoring network.
+
+    Since calculating the content of this table can take several seconds, we
+    are caching the results in this table and update its content only when
+    needed.
+    """
+    __tablename__ = 'sampling_feature_data_overview'
+
+    sampling_feature_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('sampling_feature.sampling_feature_uuid'),
+        primary_key=True)
+    last_date = Column(DateTime)
+    first_date = Column(DateTime)
+    mean_water_level = Column(Float)
+
+
 # ---- Observations
 class Observation(BaseMixin, Base):
     """
