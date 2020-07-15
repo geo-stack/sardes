@@ -69,7 +69,7 @@ class ObsWellsTableModel(SardesTableModel):
         Transform logical data to visual data.
         """
         try:
-            obs_wells_stats = self.libraries['observation_wells_statistics']
+            obs_wells_stats = self.libraries['observation_wells_data_overview']
         except KeyError:
             pass
         else:
