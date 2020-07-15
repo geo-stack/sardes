@@ -1243,9 +1243,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 # =============================================================================
 def init_database(accessor):
     tables = [Location, SamplingFeatureType, SamplingFeature,
-              SamplingFeatureMetadata, SondeFeature, SondeModel,
-              SondeInstallation, Process, Repere, ObservationType, Observation,
-              ObservedProperty, GenericNumericalData, TimeSeriesChannel,
+              SamplingFeatureMetadata, SamplingFeatureDataOverview,
+              SondeFeature, SondeModel, SondeInstallation, Process, Repere,
+              ObservationType, Observation, ObservedProperty,
+              GenericNumericalData, TimeSeriesChannel,
               TimeSeriesData, PumpType, PumpInstallation]
     dialect = accessor._engine.dialect
     for table in tables:
