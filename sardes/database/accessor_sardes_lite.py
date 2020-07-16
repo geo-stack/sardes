@@ -680,9 +680,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             query.statement, query.session.bind, coerce_float=True)
         data.set_index('sampling_feature_uuid', inplace=True, drop=True)
 
-        # We drop the time from the datetime since we don't need it.
-        data['last_date'] = data['last_date'].dt.date
-        data['first_date'] = data['first_date'].dt.date
+        # Make sure first_date and last_date are considered as
+        # datetime and strip the hour portion from it.
+        data['first_date'] = pd.to_datetime(data['first_date']).dt.date
+        data['last_date'] = pd.to_datetime(data['last_date']).dt.date
 
         # Round mean value.
         data['mean_water_level'] = data['mean_water_level'].round(decimals=3)
