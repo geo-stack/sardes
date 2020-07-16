@@ -1243,6 +1243,21 @@ class SardesTableView(QTableView):
                     range(index_range.top(), index_range.bottom() + 1))
             return np.where(row_count == self.row_count())[0].tolist()
 
+    def get_selected_count(self):
+        """
+        Return the number of cells that are currently selected in the table.
+
+        Note that the approach used here is a lot more fast and efficient then
+        using 'len(self.selectionModel().selectedIndexes())', which can take
+        several seconds for big tables.
+        """
+        selected_count = 0
+        for index_range in self.selectionModel().selection():
+            selected_count += (
+                (index_range.right() - index_range.left() + 1) *
+                (index_range.bottom() - index_range.top() + 1))
+        return selected_count
+
     def move_current_to_border(self, key):
         """
         Move the currently selected index to the top, bottom, far right or
