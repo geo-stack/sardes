@@ -503,6 +503,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         Refresh the content of the table where the overview of the
         sampling feature monitoring data is cached.
+
+        If a sampling_feature_uuid is provided, only the overview of that
+        sampling feature is updated, else the content of the whole table
+        is updated.
         """
         if sampling_feature_uuid is None:
             # We delete and update the content of the whole table.
