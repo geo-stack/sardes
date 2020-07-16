@@ -516,8 +516,6 @@ class SardesTableModelBase(QAbstractTableModel):
             value = self.get_visual_data_at(index)
             if pd.isnull(value) or value in ['NaT']:
                 value = ''
-            elif pd.api.types.is_bool(value):
-                value = _('Yes') if value else _('No')
             else:
                 value = str(value)
             return value

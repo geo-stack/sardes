@@ -76,6 +76,8 @@ class ObsWellsTableModel(SardesTableModel):
             for column in ['first_date', 'last_date', 'mean_water_level']:
                 if column in obs_wells_stats.columns:
                     visual_dataf[column] = obs_wells_stats[column]
+        visual_dataf['is_station_active'].replace(
+            to_replace={True: _('Yes'), False: _('No')}, inplace=True)
         return visual_dataf
 
 

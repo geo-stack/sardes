@@ -69,6 +69,8 @@ class RepereTableModel(SardesTableModel):
         visual_dataf['end_date'] = (
             pd.to_datetime(visual_dataf['end_date'], format="%Y-%m-%d %H:%M")
             .dt.strftime('%Y-%m-%d %H:%M'))
+        visual_dataf['is_alt_geodesic'].replace(
+            to_replace={True: _('Yes'), False: _('No')}, inplace=True)
         return visual_dataf
 
 
