@@ -429,8 +429,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if not osp.exists(self._database):
             self._connection = None
             self._connection_error = (
-                IOError("'{}' does not exist."
-                        .format(self._database)))
+                IOError("'{}' does not exist.".format(self._database)))
             return
         root, ext = osp.splitext(self._database)
         if ext != '.db':
