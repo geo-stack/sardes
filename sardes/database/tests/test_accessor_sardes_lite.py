@@ -9,6 +9,9 @@
 
 """
 Tests for the DatabaseAccessorSardesLite.
+
+This module depends on a database that is shared among all tests of this
+module. Therefore, the tests must be run sequentially and in the right order.
 """
 
 # ---- Standard imports
@@ -225,6 +228,9 @@ def test_add_timeseries(dbaccessor):
     """
     Test that adding timeseries data to the database is working as expected.
     """
+    # Assert that the accessor correctly return an empty dataframe when
+    # no timeseries data is saved in the database for a given sampling feature
+    # and data type.
     obs_well_uuid = dbaccessor.get_observation_wells_data().index[0]
     sonde_install_uuid = dbaccessor.get_sonde_installations().index[0]
     for data_type in DataType:
@@ -232,10 +238,13 @@ def test_add_timeseries(dbaccessor):
             obs_well_uuid, data_type)
     assert tseries_data.empty
 
+    # Add new water level and water temperature times series to the database
+    # and assert that those were saved and can be retrieved from the database
+    # as expected.
     new_tseries_data = pd.DataFrame(
         [['2018-09-27 07:00:00', 1.1, 3],
-         ['2018-09-27 08:00:00', 1.2, 4],
-         ['2018-09-27 09:00:00', 1.3, 5]],
+         ['2018-09-28 07:00:00', 1.2, 4],
+         ['2018-09-29 07:00:00', 1.3, 5]],
         columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
     new_tseries_data['datetime'] = pd.to_datetime(
         new_tseries_data['datetime'], format="%Y-%m-%d %H:%M:%S")
@@ -258,6 +267,17 @@ def test_add_timeseries(dbaccessor):
         obs_well_uuid, DataType.WaterEC)
     assert wcond_data.empty
 
+    # Assert that the sampling feature data overview was updated and
+    # cached correctly in the database.
+    data_overview = dbaccessor.get_observation_wells_data_overview()
+    assert len(data_overview) == 1
+    assert data_overview.index[0] == obs_well_uuid
+    assert (data_overview.at[obs_well_uuid, 'first_date'] ==
+            datetime.date(2018, 9, 27))
+    assert (data_overview.at[obs_well_uuid, 'last_date'] ==
+            datetime.date(2018, 9, 29))
+    assert data_overview.at[obs_well_uuid, 'mean_water_level'] == 1.2
+
 
 def test_edit_timeseries(dbaccessor):
     """
@@ -268,7 +288,7 @@ def test_edit_timeseries(dbaccessor):
         (datetime.datetime(2018, 9, 27, 7), 1, DataType.WaterLevel), 'value'
         ] = 3.25
     tseries_edits.loc[
-        (datetime.datetime(2018, 9, 27, 8), 1, DataType.WaterTemp), 'value'
+        (datetime.datetime(2018, 9, 28, 7), 1, DataType.WaterTemp), 'value'
         ] = None
     dbaccessor.save_timeseries_data_edits(tseries_edits)
 
@@ -281,6 +301,11 @@ def test_edit_timeseries(dbaccessor):
         obs_well_uuid, DataType.WaterTemp)
     assert pd.isnull(wtemp_data.iloc[1][DataType.WaterTemp])
 
+    # Assert that the sampling feature data overview was updated and
+    # cached correctly in the database.
+    data_overview = dbaccessor.get_observation_wells_data_overview()
+    assert data_overview.at[obs_well_uuid, 'mean_water_level'] == 1.917
+
 
 def test_delete_timeseries(dbaccessor):
     """
@@ -289,11 +314,11 @@ def test_delete_timeseries(dbaccessor):
     """
     tseries_dels = init_tseries_dels()
 
-    # Delete the second data of the timeseries data.
+    # Delete the third data of the timeseries data.
     for data_type in [DataType.WaterLevel, DataType.WaterTemp]:
         tseries_dels = tseries_dels.append(
             {'obs_id': 1,
-             'datetime': datetime.datetime(2018, 9, 27, 8),
+             'datetime': datetime.datetime(2018, 9, 29, 7),
              'data_type': data_type},
             ignore_index=True)
     dbaccessor.delete_timeseries_data(tseries_dels)
@@ -304,6 +329,13 @@ def test_delete_timeseries(dbaccessor):
             obs_well_uuid, data_type)
         assert len(tseries_data) == 2
 
+    # Assert that the sampling feature data overview was updated and
+    # cached correctly in the database.
+    data_overview = dbaccessor.get_observation_wells_data_overview()
+    assert data_overview.at[obs_well_uuid, 'mean_water_level'] == 2.225
+    assert (data_overview.at[obs_well_uuid, 'last_date'] ==
+            datetime.date(2018, 9, 28))
+
     # Delete the remaning timeseries data.
     for data_type in [DataType.WaterLevel, DataType.WaterTemp]:
         tseries_dels = tseries_dels.append(
@@ -313,7 +345,7 @@ def test_delete_timeseries(dbaccessor):
             ignore_index=True)
         tseries_dels = tseries_dels.append(
             {'obs_id': 1,
-             'datetime': datetime.datetime(2018, 9, 27, 9),
+             'datetime': datetime.datetime(2018, 9, 28, 7),
              'data_type': data_type},
             ignore_index=True)
     dbaccessor.delete_timeseries_data(tseries_dels)
@@ -324,7 +356,11 @@ def test_delete_timeseries(dbaccessor):
             obs_well_uuid, data_type)
         assert len(tseries_data) == 0
 
+    # Assert that the sampling feature data overview is now empty as
+    # expected.
+    data_overview = dbaccessor.get_observation_wells_data_overview()
+    assert len(data_overview) == 0
+
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw',
-                 '-s'])
+    pytest.main(['-x', osp.basename(__file__), '-v', '-rw', '-s'])

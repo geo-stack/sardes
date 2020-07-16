@@ -136,6 +136,9 @@ class SamplingFeatureType(BaseMixin, Base):
 
 
 class SamplingFeatureMetadata(BaseMixin, Base):
+    """
+    An object used to map the 'sampling_feature_metadata' table.
+    """
     __tablename__ = 'sampling_feature_metadata'
 
     sampling_feature_uuid = Column(
@@ -152,6 +155,27 @@ class SamplingFeatureMetadata(BaseMixin, Base):
 
     sampling_feature = relationship(
         "SamplingFeature", uselist=False, back_populates="_metadata")
+
+
+class SamplingFeatureDataOverview(BaseMixin, Base):
+    """
+    An object used to map the 'sampling_feature_data_overview' table. This
+    table contains summary information regarding the water level data that
+    are available for each well of the monitoring network.
+
+    Since calculating the content of this table can take several seconds, we
+    are caching the results in this table and update its content only when
+    needed.
+    """
+    __tablename__ = 'sampling_feature_data_overview'
+
+    sampling_feature_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('sampling_feature.sampling_feature_uuid'),
+        primary_key=True)
+    last_date = Column(DateTime)
+    first_date = Column(DateTime)
+    mean_water_level = Column(Float)
 
 
 # ---- Observations
@@ -353,10 +377,6 @@ class Process(BaseMixin, Base):
         ForeignKey('sampling_feature.sampling_feature_uuid'))
 
 
-    """
-    """
-
-
 # =============================================================================
 # ---- Accessor
 # =============================================================================
@@ -409,8 +429,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if not osp.exists(self._database):
             self._connection = None
             self._connection_error = (
-                IOError("'{}' does not exist."
-                        .format(self._database)))
+                IOError("'{}' does not exist.".format(self._database)))
             return
         root, ext = osp.splitext(self._database)
         if ext != '.db':
@@ -477,6 +496,83 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     sampling_feature_name)
             .one()
             .sampling_feature_uuid)
+
+    def _refresh_sampling_feature_data_overview(
+            self, sampling_feature_uuid=None, auto_commit=True):
+        """
+        Refresh the content of the table where the overview of the
+        sampling feature monitoring data is cached.
+
+        If a sampling_feature_uuid is provided, only the overview of that
+        sampling feature is updated, else the content of the whole table
+        is updated.
+        """
+        if sampling_feature_uuid is None:
+            # We delete and update the content of the whole table.
+            print("Updating sampling feature data overview...", end=' ')
+            self._session.query(SamplingFeatureDataOverview).delete()
+
+            sampling_feature_uuids = [
+                item[0] for item in
+                self._session.query(SamplingFeature.sampling_feature_uuid)]
+            for sampling_feature_uuid in sampling_feature_uuids:
+                self._refresh_sampling_feature_data_overview(
+                    sampling_feature_uuid, auto_commit=False)
+            self._session.commit()
+            print("done")
+        else:
+            # We update the data overview only for the specified
+            # sampling feature.
+            select_query = (
+                self._session.query(Observation.sampling_feature_uuid
+                                    .label('sampling_feature_uuid'),
+                                    func.max(TimeSeriesData.datetime)
+                                    .label('last_date'),
+                                    func.min(TimeSeriesData.datetime)
+                                    .label('first_date'),
+                                    func.avg(TimeSeriesData.value)
+                                    .label('mean_water_level'))
+                .filter(Observation.observation_id ==
+                        TimeSeriesChannel.observation_id)
+                .filter(TimeSeriesData.channel_id ==
+                        TimeSeriesChannel.channel_id)
+                .filter(TimeSeriesChannel.obs_property_id == 2)
+                .filter(Observation.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .one()
+                )
+
+            try:
+                data_overview = (
+                    self._session.query(SamplingFeatureDataOverview)
+                    .filter(SamplingFeatureDataOverview.sampling_feature_uuid
+                            == sampling_feature_uuid)
+                    .one())
+            except NoResultFound:
+                if select_query[0] is None:
+                    # This means either that this sampling feature doesn't
+                    # exist or that there is no monitoring data associated with
+                    # it. Therefore, there is no need to add anything to the
+                    # data overview table.
+                    return
+                else:
+                    data_overview = SamplingFeatureDataOverview(
+                        sampling_feature_uuid=sampling_feature_uuid)
+                    self._session.add(data_overview)
+
+            if select_query[0] is None:
+                # This means either that this sampling feature doesn't
+                # exist or that there is no monitoring data associated with
+                # it anymore. Therefore, we need to remove the corresponding
+                # entry from the data overview table.
+                self._session.delete(data_overview)
+            else:
+                data_overview.last_date = select_query[1]
+                data_overview.first_date = select_query[2]
+                data_overview.mean_water_level = select_query[3]
+
+            if auto_commit:
+                self._session.commit()
 
     def add_observation_wells_data(self, sampling_feature_uuid,
                                    attribute_values):
@@ -571,6 +667,27 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # Commit changes to the BD.
         if auto_commit:
             self._session.commit()
+
+    def get_observation_wells_data_overview(self):
+        """
+        Return a :class:`pandas.DataFrame` containing an overview of
+        the water level data that are available for each observation well
+        of the monitoring network.
+        """
+        # Fetch data from the materialized view.
+        query = self._session.query(SamplingFeatureDataOverview)
+        data = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
+        data.set_index('sampling_feature_uuid', inplace=True, drop=True)
+
+        # Make sure first_date and last_date are considered as
+        # datetime and strip the hour portion from it.
+        data['first_date'] = pd.to_datetime(data['first_date']).dt.date
+        data['last_date'] = pd.to_datetime(data['last_date']).dt.date
+
+        # Round mean value.
+        data['mean_water_level'] = data['mean_water_level'].round(decimals=3)
+        return data
 
     # ---- Repere
     def _get_repere_data(self, repere_id):
@@ -1013,6 +1130,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     value=value,
                     channel_id=new_tseries_channel.channel_id))
             self._session.commit()
+
+        # Update the data overview for the given sampling feature.
+        self._refresh_sampling_feature_data_overview(
+            sampling_feature_uuid, auto_commit=False)
         self._session.commit()
 
     def save_timeseries_data_edits(self, tseries_edits):
@@ -1029,12 +1150,26 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 (date_time, obs_id, data_type), 'value']
         self._session.commit()
 
+        # Update the data overview for the sampling features whose
+        # corresponding data were affected by this change.
+        sampling_feature_uuids = list(set([
+            self._get_observation(obs_id).sampling_feature_uuid for
+            obs_id in tseries_edits.index.get_level_values(1).unique()]))
+        for sampling_feature_uuid in sampling_feature_uuids:
+            self._refresh_sampling_feature_data_overview(
+                sampling_feature_uuid, auto_commit=False)
+        self._session.commit()
+
     def delete_timeseries_data(self, tseries_dels):
         """
         Delete data in the database for the observation IDs, datetime and
         data type specified in tseries_dels.
         """
+        sampling_feature_uuids = set()
         for obs_id in tseries_dels['obs_id'].unique():
+            sampling_feature_uuids.add(
+                self._get_observation(obs_id).sampling_feature_uuid)
+
             sub_data = tseries_dels[tseries_dels['obs_id'] == obs_id]
             for data_type in sub_data['data_type'].unique():
                 obs_property_id = self._get_observed_property_id(data_type)
@@ -1058,6 +1193,13 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
             # We then delete the observation from database if it is empty.
             self._clean_observation_if_null(obs_id)
+
+        # Update the data overview for the sampling features whose
+        # corresponding data were affected by this change.
+        for sampling_feature_uuid in sampling_feature_uuids:
+            self._refresh_sampling_feature_data_overview(
+                sampling_feature_uuid, auto_commit=False)
+        self._session.commit()
 
     # ---- Process
     def _get_process(self, process_id):
@@ -1130,9 +1272,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 # =============================================================================
 def init_database(accessor):
     tables = [Location, SamplingFeatureType, SamplingFeature,
-              SamplingFeatureMetadata, SondeFeature, SondeModel,
-              SondeInstallation, Process, Repere, ObservationType, Observation,
-              ObservedProperty, GenericNumericalData, TimeSeriesChannel,
+              SamplingFeatureMetadata, SamplingFeatureDataOverview,
+              SondeFeature, SondeModel, SondeInstallation, Process, Repere,
+              ObservationType, Observation, ObservedProperty,
+              GenericNumericalData, TimeSeriesChannel,
               TimeSeriesData, PumpType, PumpInstallation]
     dialect = accessor._engine.dialect
     for table in tables:
