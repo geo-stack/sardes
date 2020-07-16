@@ -1129,6 +1129,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     value=value,
                     channel_id=new_tseries_channel.channel_id))
             self._session.commit()
+
+        # Update the data overview for the given sampling feature.
+        self._refresh_sampling_feature_data_overview(
+            sampling_feature_uuid, auto_commit=False)
         self._session.commit()
 
     def save_timeseries_data_edits(self, tseries_edits):
@@ -1145,12 +1149,26 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 (date_time, obs_id, data_type), 'value']
         self._session.commit()
 
+        # Update the data overview for the sampling features whose
+        # corresponding data were affected by this change.
+        sampling_feature_uuids = list(set([
+            self._get_observation(obs_id).sampling_feature_uuid for
+            obs_id in tseries_edits.index.get_level_values(1).unique()]))
+        for sampling_feature_uuid in sampling_feature_uuids:
+            self._refresh_sampling_feature_data_overview(
+                sampling_feature_uuid, auto_commit=False)
+        self._session.commit()
+
     def delete_timeseries_data(self, tseries_dels):
         """
         Delete data in the database for the observation IDs, datetime and
         data type specified in tseries_dels.
         """
+        sampling_feature_uuids = set()
         for obs_id in tseries_dels['obs_id'].unique():
+            sampling_feature_uuids.add(
+                self._get_observation(obs_id).sampling_feature_uuid)
+
             sub_data = tseries_dels[tseries_dels['obs_id'] == obs_id]
             for data_type in sub_data['data_type'].unique():
                 obs_property_id = self._get_observed_property_id(data_type)
@@ -1174,6 +1192,13 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
             # We then delete the observation from database if it is empty.
             self._clean_observation_if_null(obs_id)
+
+        # Update the data overview for the sampling features whose
+        # corresponding data were affected by this change.
+        for sampling_feature_uuid in sampling_feature_uuids:
+            self._refresh_sampling_feature_data_overview(
+                sampling_feature_uuid, auto_commit=False)
+        self._session.commit()
 
     # ---- Process
     def _get_process(self, process_id):
