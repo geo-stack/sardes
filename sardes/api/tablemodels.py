@@ -821,7 +821,7 @@ class SardesTableModel(SardesTableModelBase):
         column of the table as 'Yes' or 'No' strings, you would need to do:
 
         visual_dataf[column].replace(
-            to_replace={True: 'Yes', False: 'No'}, inplace=False)
+            to_replace={True: 'Yes', False: 'No'}, inplace=True)
         """
         return visual_dataf
 
