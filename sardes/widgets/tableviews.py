@@ -1375,26 +1375,24 @@ class SardesTableView(QTableView):
         Also see:
         # https://docs.microsoft.com/en-us/office/troubleshoot/excel/command-cannot-be-used-on-selections
         """
-        selected_indexes = sorted(
-            self.selectionModel().selectedIndexes(), key=lambda v: v.row())
-        selected_columns = [
-            sorted([index.column() for index in group]) for key, group in
-            itertools.groupby(selected_indexes, lambda v: v.row())]
-
-        if not selected_columns[1:] == selected_columns[:-1]:
+        selected_count = self.get_selected_count()
+        selected_columns = sorted(
+            self.get_columns_intersecting_selection(),
+            key=lambda v: self.horizontalHeader().visualIndex(v))
+        selected_rows = sorted(self.get_rows_intersecting_selection())
+        if len(selected_columns) * len(selected_rows) != selected_count:
             QMessageBox.information(
                 self, __appname__,
                 _("This function cannot be used with multiple selections."),
-                buttons=QMessageBox.Ok
-                )
+                buttons=QMessageBox.Ok)
         else:
-            collapsed_selection = [
-                sorted(group, key=lambda v: v.column()) for key, group in
-                itertools.groupby(selected_indexes, lambda v: v.row())]
-            selected_text = '\n'.join(
-                '\t'.join(index.data() for index in row)
-                for row in collapsed_selection)
-            QApplication.clipboard().setText(selected_text)
+            selected_data = self.model().visual_dataf.iloc[
+                self.model().mapRowToSource(selected_rows), selected_columns]
+            selected_data.rename(
+                self.model()._data_columns_mapper,
+                axis='columns',
+                inplace=True)
+            selected_data.to_clipboard(excel=True, index=False, na_rep='')
 
     def row_count(self):
         """Return this table number of visible row."""
