@@ -545,8 +545,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             try:
                 data_overview = (
                     self._session.query(SamplingFeatureDataOverview)
-                    .filter(SamplingFeatureDataOverview.sampling_feature_uuid
-                            == sampling_feature_uuid)
+                    .filter(SamplingFeatureDataOverview
+                            .sampling_feature_uuid ==
+                            sampling_feature_uuid)
                     .one())
             except NoResultFound:
                 if select_query[0] is None:
@@ -1143,8 +1144,34 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         for (date_time, obs_id, data_type) in tseries_edits.index:
             # Fetch the timeseries data orm object.
-            tseries_data = self._get_timeseriesdata(
-                date_time, obs_id, data_type)
+            try:
+                tseries_data = self._get_timeseriesdata(
+                    date_time, obs_id, data_type)
+            except NoResultFound:
+                obs_property_id = self._get_observed_property_id(data_type)
+                try:
+                    # We first check if a timeseries channel currently exist
+                    # for the given observation and datatype.
+                    tseries_channel = (
+                        self._session.query(TimeSeriesChannel)
+                        .filter(TimeSeriesChannel.obs_property_id ==
+                                obs_property_id)
+                        .filter(TimeSeriesChannel.observation_id == obs_id)
+                        .one())
+                except NoResultFound:
+                    # This means we need to add a new timeseries channel.
+                    tseries_channel = TimeSeriesChannel(
+                        obs_property_id=obs_property_id,
+                        observation_id=obs_id)
+                    self._session.add(tseries_channel)
+                    self._session.commit()
+
+                # Then we add a new timeseries entry to the database.
+                tseries_data = TimeSeriesData(
+                    datetime=date_time,
+                    channel_id=tseries_channel.channel_id)
+                self._session.add(tseries_data)
+
             # Save the edited value.
             tseries_data.value = tseries_edits.loc[
                 (date_time, obs_id, data_type), 'value']
@@ -1173,14 +1200,19 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             sub_data = tseries_dels[tseries_dels['obs_id'] == obs_id]
             for data_type in sub_data['data_type'].unique():
                 obs_property_id = self._get_observed_property_id(data_type)
-                channel_id = (
-                    self._session.query(TimeSeriesChannel)
-                    .filter(TimeSeriesChannel.obs_property_id ==
-                            obs_property_id)
-                    .filter(TimeSeriesChannel.observation_id == obs_id)
-                    .one()
-                    .channel_id
-                    )
+                try:
+                    channel_id = (
+                        self._session.query(TimeSeriesChannel)
+                        .filter(TimeSeriesChannel.obs_property_id ==
+                                obs_property_id)
+                        .filter(TimeSeriesChannel.observation_id == obs_id)
+                        .one()
+                        .channel_id
+                        )
+                except NoResultFound:
+                    # This means there is no timeseries data saved for this
+                    # type of data for this observation.
+                    continue
                 date_times = (
                     sub_data[sub_data['data_type'] == data_type]
                     ['datetime'].dt.to_pydatetime())
@@ -1191,7 +1223,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                             TimeSeriesData.channel_id == channel_id)))
                 self._session.commit()
 
-            # We then delete the observation from database if it is empty.
+            # We delete the observation from database if it is empty.
             self._clean_observation_if_null(obs_id)
 
         # Update the data overview for the sampling features whose
