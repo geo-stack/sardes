@@ -617,6 +617,7 @@ class DatabaseConnectionManager(QObject):
             A unique identifier used to reference the observation well in
             the database for which time series data will be edited.
         """
+        self._data_changed.add('observation_wells_data_overview')
         self._tseries_data_changed.add(obs_well_id)
         self._add_task('save_timeseries_data_edits', callback, tseries_edits)
         if not postpone_exec:
@@ -640,6 +641,7 @@ class DatabaseConnectionManager(QObject):
             A unique identifier used to reference the observation well in
             the database for which time series data will be added.
         """
+        self._data_changed.add('observation_wells_data_overview')
         self._tseries_data_changed.add(obs_well_id)
         self._add_task('add_timeseries_data', callback, tseries_data,
                        obs_well_id, sonde_installation_uuid)
@@ -662,6 +664,7 @@ class DatabaseConnectionManager(QObject):
             A unique identifier used to reference the observation well in
             the database for which time series data will be deleted.
         """
+        self._data_changed.add('observation_wells_data_overview')
         self._tseries_data_changed.add(obs_well_id)
         self._add_task('delete_timeseries_data', callback, tseries_dels)
         if not postpone_exec:
