@@ -1174,22 +1174,22 @@ def test_copy_to_clipboard(tablewidget, qtbot, mocker):
     tableview = tablewidget.tableview
     selection_model = tablewidget.tableview.selectionModel()
     model = tablewidget.tableview.model()
-    mocker.patch.object(QMessageBox, 'information')
-    QApplication.clipboard().clear()
+    QApplication.clipboard().setText('test_test_test')
 
     # Try to copy something to the clipboard when nothing is selected
     # in the table.
     qtbot.keyPress(tableview, Qt.Key_C, modifier=Qt.ControlModifier)
-    assert QApplication.clipboard().text() == ''
+    assert QApplication.clipboard().text() == 'test_test_test'
 
     # Do an invalid selection in the table and copy the selection to the
-    # clipboard using the keyboard shorcut Ctrl+S.
+    # clipboard using the keyboard shorcut Ctrl+C.
+    mocker.patch.object(QMessageBox, 'information')
     coord_to_select = [(0, 0), (0, 1), (2, 0), (2, 2)]
     for coord in coord_to_select:
         selection_model.select(model.index(*coord), selection_model.Select)
     qtbot.keyPress(tableview, Qt.Key_C, modifier=Qt.ControlModifier)
 
-    assert QApplication.clipboard().text() == ''
+    assert QApplication.clipboard().text() == 'test_test_test'
 
     # Clear the selection of the table.
     qtbot.keyPress(tableview, Qt.Key_Escape)
@@ -1200,8 +1200,8 @@ def test_copy_to_clipboard(tablewidget, qtbot, mocker):
     for coord in coord_to_select:
         selection_model.select(model.index(*coord), selection_model.Select)
     qtbot.keyPress(tableview, Qt.Key_C, modifier=Qt.ControlModifier)
-
-    assert QApplication.clipboard().text() == 'str1\t1.111\nstr3\t3.333'
+    assert QApplication.clipboard().text() == (
+        'Column #0\tColumn #2\nstr1\t1.111\nstr3\t3.333\n')
 
 
 if __name__ == "__main__":
