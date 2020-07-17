@@ -1243,6 +1243,21 @@ class SardesTableView(QTableView):
                     range(index_range.top(), index_range.bottom() + 1))
             return np.where(row_count == self.row_count())[0].tolist()
 
+    def get_selected_count(self):
+        """
+        Return the number of cells that are currently selected in the table.
+
+        Note that the approach used here is a lot more fast and efficient then
+        using 'len(self.selectionModel().selectedIndexes())', which can take
+        several seconds for big tables.
+        """
+        selected_count = 0
+        for index_range in self.selectionModel().selection():
+            selected_count += (
+                (index_range.right() - index_range.left() + 1) *
+                (index_range.bottom() - index_range.top() + 1))
+        return selected_count
+
     def move_current_to_border(self, key):
         """
         Move the currently selected index to the top, bottom, far right or
@@ -1360,26 +1375,27 @@ class SardesTableView(QTableView):
         Also see:
         # https://docs.microsoft.com/en-us/office/troubleshoot/excel/command-cannot-be-used-on-selections
         """
-        selected_indexes = sorted(
-            self.selectionModel().selectedIndexes(), key=lambda v: v.row())
-        selected_columns = [
-            sorted([index.column() for index in group]) for key, group in
-            itertools.groupby(selected_indexes, lambda v: v.row())]
+        selected_count = self.get_selected_count()
+        if selected_count == 0:
+            return
 
-        if not selected_columns[1:] == selected_columns[:-1]:
+        selected_columns = sorted(
+            self.get_columns_intersecting_selection(),
+            key=lambda v: self.horizontalHeader().visualIndex(v))
+        selected_rows = sorted(self.get_rows_intersecting_selection())
+        if len(selected_columns) * len(selected_rows) != selected_count:
             QMessageBox.information(
                 self, __appname__,
                 _("This function cannot be used with multiple selections."),
-                buttons=QMessageBox.Ok
-                )
+                buttons=QMessageBox.Ok)
         else:
-            collapsed_selection = [
-                sorted(group, key=lambda v: v.column()) for key, group in
-                itertools.groupby(selected_indexes, lambda v: v.row())]
-            selected_text = '\n'.join(
-                '\t'.join(index.data() for index in row)
-                for row in collapsed_selection)
-            QApplication.clipboard().setText(selected_text)
+            selected_data = self.model().visual_dataf.iloc[
+                self.model().mapRowToSource(selected_rows), selected_columns]
+            selected_data.rename(
+                self.model()._data_columns_mapper,
+                axis='columns',
+                inplace=True)
+            selected_data.to_clipboard(excel=True, index=False, na_rep='')
 
     def row_count(self):
         """Return this table number of visible row."""

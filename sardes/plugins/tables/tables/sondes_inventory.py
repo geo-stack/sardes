@@ -31,8 +31,7 @@ class SondesInventoryTableModel(SardesTableModel):
         data of this model for the specified column. If None is returned,
         the items of the column will not be editable.
         """
-        if column in ['en_reparation', 'out_of_order', 'in_repair',
-                      'lost', 'off_network']:
+        if column in ['out_of_order', 'in_repair', 'lost', 'off_network']:
             return BoolEditDelegate(view, is_required=True)
         elif column in ['date_reception', 'date_withdrawal']:
             return DateEditDelegate(view)
@@ -58,6 +57,10 @@ class SondesInventoryTableModel(SardesTableModel):
                 )
         except KeyError:
             pass
+
+        for column in ['out_of_order', 'in_repair', 'lost', 'off_network']:
+            visual_dataf[column].replace(
+                to_replace={True: _('Yes'), False: _('No')}, inplace=True)
 
         return visual_dataf
 

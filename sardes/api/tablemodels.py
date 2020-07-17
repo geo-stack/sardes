@@ -516,8 +516,6 @@ class SardesTableModelBase(QAbstractTableModel):
             value = self.get_visual_data_at(index)
             if pd.isnull(value) or value in ['NaT']:
                 value = ''
-            elif pd.api.types.is_bool(value):
-                value = _('Yes') if value else _('No')
             else:
                 value = str(value)
             return value
@@ -821,7 +819,7 @@ class SardesTableModel(SardesTableModelBase):
         column of the table as 'Yes' or 'No' strings, you would need to do:
 
         visual_dataf[column].replace(
-            to_replace={True: 'Yes', False: 'No'}, inplace=False)
+            to_replace={True: 'Yes', False: 'No'}, inplace=True)
         """
         return visual_dataf
 
