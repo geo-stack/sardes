@@ -1031,6 +1031,15 @@ class TimeSeriesPlotViewer(QMainWindow):
             iconsize=get_iconsize())
         toolbar.addWidget(self.save_figure_button)
 
+        self.copy_to_clipboard_btn = create_toolbutton(
+            self, icon='copy_clipboard',
+            text=_("Copy"),
+            tip=_("Put a copy of the figure on the Clipboard."),
+            triggered=self.canvas.copy_to_clipboard,
+            shortcut='Ctrl+C',
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.copy_to_clipboard_btn)
+
         toolbar.addSeparator()
 
         # ---- Navigate data.
