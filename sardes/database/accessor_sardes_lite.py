@@ -545,8 +545,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             try:
                 data_overview = (
                     self._session.query(SamplingFeatureDataOverview)
-                    .filter(SamplingFeatureDataOverview.sampling_feature_uuid
-                            == sampling_feature_uuid)
+                    .filter(SamplingFeatureDataOverview
+                            .sampling_feature_uuid ==
+                            sampling_feature_uuid)
                     .one())
             except NoResultFound:
                 if select_query[0] is None:
