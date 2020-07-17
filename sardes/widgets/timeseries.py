@@ -714,11 +714,17 @@ class TimeSeriesFigure(MplFigure):
         """
         if self.base_axes is None:
             return
+        try:
+            # This is required when saving the figure in some format like
+            # pdf and svg.
+            # See cgq-qgc/sardes#313.
+            renderer = self.canvas.get_renderer()
+        except AttributeError:
+            self.canvas.draw()
+            return
 
         fheight = self.get_figheight()
         fwidth = self.get_figwidth()
-        renderer = self.canvas.get_renderer()
-
         bottom_margin = 0.5 / fheight
 
         # We calculate the size of the top margin.
