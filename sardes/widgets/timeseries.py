@@ -11,6 +11,7 @@
 import sys
 from collections.abc import Mapping
 import datetime
+import io
 
 # ---- Third party imports
 import matplotlib as mpl
@@ -23,7 +24,7 @@ from matplotlib.widgets import RectangleSelector, SpanSelector
 from matplotlib.dates import num2date, date2num
 import numpy as np
 from qtpy.QtCore import (Qt, Slot, QSize, QTimer, Signal, QPropertyAnimation)
-from qtpy.QtGui import QGuiApplication, QKeySequence
+from qtpy.QtGui import QGuiApplication, QKeySequence, QImage
 from qtpy.QtWidgets import (QAction, QApplication, QMainWindow, QLabel,
                             QDoubleSpinBox, QWidget, QHBoxLayout,
                             QGridLayout, QGraphicsOpacityEffect)
@@ -805,6 +806,15 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
         """
         axe = TimeSeriesAxes(self.figure, tseries_group, where)
         return axe
+
+    def copy_to_clipboard(self):
+        """
+        Copy this figure's canvas to the clipboard.
+        """
+        buf = io.BytesIO()
+        self.figure.savefig(buf)
+        QApplication.clipboard().setImage(QImage.fromData(buf.getvalue()))
+        buf.close()
 
     # ---- Navigation and Selection tools
     def _on_mouse_scroll(self, event):
