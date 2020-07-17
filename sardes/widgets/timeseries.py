@@ -11,6 +11,7 @@
 import sys
 from collections.abc import Mapping
 import datetime
+import io
 
 # ---- Third party imports
 import matplotlib as mpl
@@ -23,7 +24,7 @@ from matplotlib.widgets import RectangleSelector, SpanSelector
 from matplotlib.dates import num2date, date2num
 import numpy as np
 from qtpy.QtCore import (Qt, Slot, QSize, QTimer, Signal, QPropertyAnimation)
-from qtpy.QtGui import QGuiApplication, QKeySequence
+from qtpy.QtGui import QGuiApplication, QKeySequence, QImage
 from qtpy.QtWidgets import (QAction, QApplication, QMainWindow, QLabel,
                             QDoubleSpinBox, QWidget, QHBoxLayout,
                             QGridLayout, QGraphicsOpacityEffect)
@@ -806,6 +807,15 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
         axe = TimeSeriesAxes(self.figure, tseries_group, where)
         return axe
 
+    def copy_to_clipboard(self):
+        """
+        Copy this figure's canvas to the clipboard.
+        """
+        buf = io.BytesIO()
+        self.figure.savefig(buf)
+        QApplication.clipboard().setImage(QImage.fromData(buf.getvalue()))
+        buf.close()
+
     # ---- Navigation and Selection tools
     def _on_mouse_scroll(self, event):
         """
@@ -1005,13 +1015,34 @@ class TimeSeriesPlotViewer(QMainWindow):
 
     def _setup_toolbar(self):
         """Setup the main toolbar of this time series viewer."""
-        # ---- Navigate data.
         toolbar = create_mainwindow_toolbar("TimeSeries toolbar")
         self.addToolBar(toolbar)
         self.toolbars.append(toolbar)
 
         self._navig_and_select_buttongroup = SemiExclusiveButtonGroup()
 
+        # ---- Save figure and data.
+        self.save_figure_button = create_toolbutton(
+            self, icon='save',
+            text=_("Save"),
+            tip=_('Save the figure to a file'),
+            shortcut='Ctrl+S',
+            triggered=self.canvas.toolbar.save_figure,
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.save_figure_button)
+
+        self.copy_to_clipboard_btn = create_toolbutton(
+            self, icon='copy_clipboard',
+            text=_("Copy"),
+            tip=_("Put a copy of the figure on the Clipboard."),
+            triggered=self.canvas.copy_to_clipboard,
+            shortcut='Ctrl+C',
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.copy_to_clipboard_btn)
+
+        toolbar.addSeparator()
+
+        # ---- Navigate data.
         self.home_button = create_toolbutton(
             self, icon='home',
             text=_("Home"),
@@ -1111,18 +1142,6 @@ class TimeSeriesPlotViewer(QMainWindow):
             triggered=self.canvas.figure.clear_selected_data,
             iconsize=get_iconsize())
         toolbar.addWidget(self.clear_selected_data_button)
-
-        # ---- Save figure and data.
-        toolbar.addSeparator()
-
-        self.save_figure_button = create_toolbutton(
-            self, icon='save',
-            text=_("Save"),
-            tip=_('Save the figure to a file'),
-            shortcut='Ctrl+S',
-            triggered=self.canvas.toolbar.save_figure,
-            iconsize=get_iconsize())
-        toolbar.addWidget(self.save_figure_button)
 
     def _setup_axes_toolbar(self):
         """

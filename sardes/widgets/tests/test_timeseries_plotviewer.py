@@ -16,9 +16,10 @@ import os.path as osp
 import sys
 
 # ---- Third party imports
+from matplotlib.backends.backend_qt5 import QtWidgets
 import pytest
 from qtpy.QtCore import Qt
-from matplotlib.backends.backend_qt5 import QtWidgets
+from qtpy.QtWidgets import QApplication
 
 # ---- Local imports
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
@@ -223,6 +224,18 @@ def test_save_tseries_plot(tseriesviewer, mocker, tmp_path, qtbot):
                      return_value=(fpath, fext))
         qtbot.mouseClick(tseriesviewer.save_figure_button, Qt.LeftButton)
     assert osp.exists(fpath)
+
+
+def test_copy_tseries_plot_to_clipboard(tseriesviewer, mocker, qtbot):
+    """
+    Test that copying the timeseries plot to the clipboard is working as
+    expected.
+    """
+    QApplication.clipboard().clear()
+    assert QApplication.clipboard().image().isNull()
+
+    qtbot.mouseClick(tseriesviewer.copy_to_clipboard_btn, Qt.LeftButton)
+    assert not QApplication.clipboard().image().isNull()
 
 
 if __name__ == "__main__":
