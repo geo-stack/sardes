@@ -215,6 +215,8 @@ class DatabaseConnectionWorker(QObject):
         data that were already saved in the database.
         """
         print("Saving timeseries data edits...")
+        if 'observation_wells_data_overview' in self._cache:
+            del self._cache['observation_wells_data_overview']
         self.db_accessor.save_timeseries_data_edits(tseries_edits)
         print("...timeseries data edits saved sucessfully.")
 
@@ -225,6 +227,8 @@ class DatabaseConnectionWorker(QObject):
         given well and sonde installation id.
         """
         print("Saving timeseries data...")
+        if 'observation_wells_data_overview' in self._cache:
+            del self._cache['observation_wells_data_overview']
         self.db_accessor.add_timeseries_data(
             tseries_data, obs_well_uuid, sonde_installation_uuid)
         print("...timeseries data edits saved sucessfully.")
@@ -235,6 +239,8 @@ class DatabaseConnectionWorker(QObject):
         data type specified in tseries_dels.
         """
         print("Deleting timeseries data...")
+        if 'observation_wells_data_overview' in self._cache:
+            del self._cache['observation_wells_data_overview']
         self.db_accessor.delete_timeseries_data(tseries_dels)
         print("...timeseries data deleted sucessfully.")
 
