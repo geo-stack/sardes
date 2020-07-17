@@ -1376,6 +1376,9 @@ class SardesTableView(QTableView):
         # https://docs.microsoft.com/en-us/office/troubleshoot/excel/command-cannot-be-used-on-selections
         """
         selected_count = self.get_selected_count()
+        if selected_count == 0:
+            return
+
         selected_columns = sorted(
             self.get_columns_intersecting_selection(),
             key=lambda v: self.horizontalHeader().visualIndex(v))
