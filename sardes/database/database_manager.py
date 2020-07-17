@@ -723,7 +723,7 @@ class DatabaseConnectionManager(QObject):
         self._pending_tasks.extend(self._queued_tasks)
         self._queued_tasks = []
         if len(self._running_tasks) == 0:
-            # Even though the worker has done executing all its tasks,
+            # Even though the worker has executed all its tasks,
             # we may still need to wait a little for it to stop properly.
             while self._db_connection_thread.isRunning():
                 sleep(0.1)
