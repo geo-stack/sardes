@@ -18,6 +18,7 @@ import sys
 # ---- Third party imports
 import pytest
 from qtpy.QtCore import Qt
+from matplotlib.backends.backend_qt5 import QtWidgets
 
 # ---- Local imports
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
@@ -206,6 +207,22 @@ def test_linewidth_markersize_option(tseriesviewer):
     for artist in current_axe._mpl_artist_handles['data'].values():
         assert artist.get_linewidth() == 1
         assert artist.get_markersize() == 2
+
+
+def test_save_tseries_plot(tseriesviewer, mocker, tmp_path, qtbot):
+    """
+    Test that saving plots to different file formats is working as
+    expected.
+    """
+    mocker.patch.object(QtWidgets.QMessageBox, 'critical',
+                        return_value=QtWidgets.QMessageBox.Ok)
+
+    for fext in ['.png', '.jpg', '.png', '.png', '.ps', '.eps']:
+        fpath = osp.join(tmp_path, 'test_figure' + fext)
+        mocker.patch('matplotlib.backends.backend_qt5._getSaveFileName',
+                     return_value=(fpath, fext))
+        qtbot.mouseClick(tseriesviewer.save_figure_button, Qt.LeftButton)
+    assert osp.exists(fpath)
 
 
 if __name__ == "__main__":
