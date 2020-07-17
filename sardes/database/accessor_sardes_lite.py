@@ -1144,8 +1144,34 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         for (date_time, obs_id, data_type) in tseries_edits.index:
             # Fetch the timeseries data orm object.
-            tseries_data = self._get_timeseriesdata(
-                date_time, obs_id, data_type)
+            try:
+                tseries_data = self._get_timeseriesdata(
+                    date_time, obs_id, data_type)
+            except NoResultFound:
+                obs_property_id = self._get_observed_property_id(data_type)
+                try:
+                    # We first check if a timeseries channel currently exist
+                    # for the given observation and datatype.
+                    tseries_channel = (
+                        self._session.query(TimeSeriesChannel)
+                        .filter(TimeSeriesChannel.obs_property_id ==
+                                obs_property_id)
+                        .filter(TimeSeriesChannel.observation_id == obs_id)
+                        .one())
+                except NoResultFound:
+                    # This means we need to add a new timeseries channel.
+                    tseries_channel = TimeSeriesChannel(
+                        obs_property_id=obs_property_id,
+                        observation_id=obs_id)
+                    self._session.add(tseries_channel)
+                    self._session.commit()
+
+                # Then we add a new timeseries entry to the database.
+                tseries_data = TimeSeriesData(
+                    datetime=date_time,
+                    channel_id=tseries_channel.channel_id)
+                self._session.add(tseries_data)
+
             # Save the edited value.
             tseries_data.value = tseries_edits.loc[
                 (date_time, obs_id, data_type), 'value']
