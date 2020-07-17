@@ -215,6 +215,8 @@ class DatabaseConnectionWorker(QObject):
         data that were already saved in the database.
         """
         print("Saving timeseries data edits...")
+        if 'observation_wells_data_overview' in self._cache:
+            del self._cache['observation_wells_data_overview']
         self.db_accessor.save_timeseries_data_edits(tseries_edits)
         print("...timeseries data edits saved sucessfully.")
 
@@ -225,6 +227,8 @@ class DatabaseConnectionWorker(QObject):
         given well and sonde installation id.
         """
         print("Saving timeseries data...")
+        if 'observation_wells_data_overview' in self._cache:
+            del self._cache['observation_wells_data_overview']
         self.db_accessor.add_timeseries_data(
             tseries_data, obs_well_uuid, sonde_installation_uuid)
         print("...timeseries data edits saved sucessfully.")
@@ -235,6 +239,8 @@ class DatabaseConnectionWorker(QObject):
         data type specified in tseries_dels.
         """
         print("Deleting timeseries data...")
+        if 'observation_wells_data_overview' in self._cache:
+            del self._cache['observation_wells_data_overview']
         self.db_accessor.delete_timeseries_data(tseries_dels)
         print("...timeseries data deleted sucessfully.")
 
@@ -611,6 +617,7 @@ class DatabaseConnectionManager(QObject):
             A unique identifier used to reference the observation well in
             the database for which time series data will be edited.
         """
+        self._data_changed.add('observation_wells_data_overview')
         self._tseries_data_changed.add(obs_well_id)
         self._add_task('save_timeseries_data_edits', callback, tseries_edits)
         if not postpone_exec:
@@ -634,6 +641,7 @@ class DatabaseConnectionManager(QObject):
             A unique identifier used to reference the observation well in
             the database for which time series data will be added.
         """
+        self._data_changed.add('observation_wells_data_overview')
         self._tseries_data_changed.add(obs_well_id)
         self._add_task('add_timeseries_data', callback, tseries_data,
                        obs_well_id, sonde_installation_uuid)
@@ -656,6 +664,7 @@ class DatabaseConnectionManager(QObject):
             A unique identifier used to reference the observation well in
             the database for which time series data will be deleted.
         """
+        self._data_changed.add('observation_wells_data_overview')
         self._tseries_data_changed.add(obs_well_id)
         self._add_task('delete_timeseries_data', callback, tseries_dels)
         if not postpone_exec:
@@ -714,7 +723,7 @@ class DatabaseConnectionManager(QObject):
         self._pending_tasks.extend(self._queued_tasks)
         self._queued_tasks = []
         if len(self._running_tasks) == 0:
-            # Even though the worker has done executing all its tasks,
+            # Even though the worker has executed all its tasks,
             # we may still need to wait a little for it to stop properly.
             while self._db_connection_thread.isRunning():
                 sleep(0.1)
