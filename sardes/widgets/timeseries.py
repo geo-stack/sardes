@@ -1015,13 +1015,25 @@ class TimeSeriesPlotViewer(QMainWindow):
 
     def _setup_toolbar(self):
         """Setup the main toolbar of this time series viewer."""
-        # ---- Navigate data.
         toolbar = create_mainwindow_toolbar("TimeSeries toolbar")
         self.addToolBar(toolbar)
         self.toolbars.append(toolbar)
 
         self._navig_and_select_buttongroup = SemiExclusiveButtonGroup()
 
+        # ---- Save figure and data.
+        self.save_figure_button = create_toolbutton(
+            self, icon='save',
+            text=_("Save"),
+            tip=_('Save the figure to a file'),
+            shortcut='Ctrl+S',
+            triggered=self.canvas.toolbar.save_figure,
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.save_figure_button)
+
+        toolbar.addSeparator()
+
+        # ---- Navigate data.
         self.home_button = create_toolbutton(
             self, icon='home',
             text=_("Home"),
@@ -1121,18 +1133,6 @@ class TimeSeriesPlotViewer(QMainWindow):
             triggered=self.canvas.figure.clear_selected_data,
             iconsize=get_iconsize())
         toolbar.addWidget(self.clear_selected_data_button)
-
-        # ---- Save figure and data.
-        toolbar.addSeparator()
-
-        self.save_figure_button = create_toolbutton(
-            self, icon='save',
-            text=_("Save"),
-            tip=_('Save the figure to a file'),
-            shortcut='Ctrl+S',
-            triggered=self.canvas.toolbar.save_figure,
-            iconsize=get_iconsize())
-        toolbar.addWidget(self.save_figure_button)
 
     def _setup_axes_toolbar(self):
         """
