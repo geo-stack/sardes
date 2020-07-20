@@ -436,15 +436,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         if not osp.exists(self._database):
             self._connection = None
-            self._connection_error = (
-                IOError("'{}' does not exist.".format(self._database)))
+            self._connection_error = IOError(_(
+                "'{}' does not exist.").format(self._database))
             return
         root, ext = osp.splitext(self._database)
         if ext != '.db':
             self._connection = None
-            self._connection_error = (
-                IOError("'{}' is not a valid database file."
-                        .format(self._database)))
+            self._connection_error = IOError(_(
+                "'{}' is not a valid database file.").format(self._database))
             return
 
         # We only test that a connection can be made correctly with the
