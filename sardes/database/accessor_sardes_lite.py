@@ -1351,6 +1351,9 @@ def init_database(accessor):
         accessor._session.commit()
     accessor._session.commit()
 
+    accessor.execute("PRAGMA application_id = {}".format(APPLICATION_ID))
+    accessor.execute("PRAGMA user_version = {}".format(CURRENT_SCHEMA_VERSION))
+
 
 if __name__ == "__main__":
     from sardes.config.database import get_dbconfig
