@@ -18,7 +18,7 @@ pool:
 strategy:
   matrix:
     Python37:
-      python.version: '3.7'
+      python.version: '3.7.7'
 
 steps:
 - task: UsePythonVersion@0
@@ -28,7 +28,7 @@ steps:
 
 - script: |
     python -m pip install --upgrade pip
-    python -m pip install --upgrade setuptools
+    pip install --upgrade setuptools<45.0.0
     pip install -r requirements.txt
     pip install -r requirements-dev.txt
     pip install pytest-azurepipelines
