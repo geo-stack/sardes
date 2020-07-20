@@ -101,13 +101,6 @@ class MainWindow(QMainWindow):
         # plugins and toolbars.
         self._restore_window_state()
 
-        # Connect to database if options is True.
-        # NOTE: This must be done after all internal and thirdparty plugins
-        # have been registered in case they are connected to the database
-        # manager connection signals.
-        if self.databases_plugin.get_option('auto_connect_to_database'):
-            self.databases_plugin.connect_to_database()
-
     def setup_internal_plugins(self):
         """Setup Sardes internal plugins."""
         # NOTE: We must import each internal plugin explicitely here or else
@@ -474,6 +467,13 @@ class MainWindow(QMainWindow):
         super().show()
         for plugin in self.internal_plugins + self.thirdparty_plugins:
             plugin.show_plugin()
+
+        # Connect to database if options is True.
+        # NOTE: This must be done after all internal and thirdparty plugins
+        # have been registered in case they are connected to the database
+        # manager connection signals.
+        if self.databases_plugin.get_option('auto_connect_to_database'):
+            self.databases_plugin.connect_to_database()
 
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
