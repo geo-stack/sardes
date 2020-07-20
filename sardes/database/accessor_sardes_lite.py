@@ -31,9 +31,17 @@ from sqlalchemy_utils import UUIDType
 from sqlalchemy.orm.exc import NoResultFound
 
 # ---- Local imports
+from sardes.config.locale import _
 from sardes.api.database_accessor import DatabaseAccessor
 from sardes.database.utils import format_sqlobject_repr
 from sardes.api.timeseries import DataType
+
+# An application ID to help recognize that database files are
+# specific to the current accessor.
+APPLICATION_ID = 1013042054
+
+# The latest version of the database schema.
+CURRENT_SCHEMA_VERSION = 1
 
 
 # =============================================================================
@@ -428,15 +436,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         if not osp.exists(self._database):
             self._connection = None
-            self._connection_error = (
-                IOError("'{}' does not exist.".format(self._database)))
+            self._connection_error = IOError(_(
+                "'{}' does not exist.").format(self._database))
             return
         root, ext = osp.splitext(self._database)
         if ext != '.db':
             self._connection = None
-            self._connection_error = (
-                IOError("'{}' is not a valid database file."
-                        .format(self._database)))
+            self._connection_error = IOError(_(
+                "'{}' is not a valid database file.").format(self._database))
             return
 
         # We only test that a connection can be made correctly with the
@@ -452,9 +459,34 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._connection = None
             self._connection_error = e
         else:
+            app_id = conn.execute("PRAGMA application_id").first()[0]
+            version = conn.execute("PRAGMA user_version").first()[0]
+            if app_id != APPLICATION_ID:
+                self._connection = None
+                self._connection_error = sqlite3.DatabaseError(_(
+                    "'{}' does not appear to be a Sardes SQLite database. "
+                    "The application id set in the database is {}, "
+                    "but should be {}.").format(
+                        self._database, app_id, APPLICATION_ID))
+                sqlite3.DatabaseError()
+            elif version < CURRENT_SCHEMA_VERSION:
+                self._connection = None
+                self._connection_error = sqlite3.DatabaseError(_(
+                    "The version of this database is {} and is outdated. "
+                    "Please update your database to version {} and try again."
+                    ).format(version, CURRENT_SCHEMA_VERSION))
+            elif version > CURRENT_SCHEMA_VERSION:
+                self._connection = None
+                self._connection_error = sqlite3.DatabaseError(_(
+                    "Your Sardes application is outdated and does not support "
+                    "databases whose version is higher than {}. Please "
+                    "update Sardes and try again."
+                    ).format(CURRENT_SCHEMA_VERSION))
+            else:
+                self._connection = True
+                self._connection_error = None
+
             conn.close()
-            self._connection = True
-            self._connection_error = None
 
     def close_connection(self):
         """
@@ -1318,6 +1350,9 @@ def init_database(accessor):
             accessor._session.add(table(**item_attrs))
         accessor._session.commit()
     accessor._session.commit()
+
+    accessor.execute("PRAGMA application_id = {}".format(APPLICATION_ID))
+    accessor.execute("PRAGMA user_version = {}".format(CURRENT_SCHEMA_VERSION))
 
 
 if __name__ == "__main__":
