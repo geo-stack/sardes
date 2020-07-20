@@ -17,6 +17,7 @@ module. Therefore, the tests must be run sequentially and in the right order.
 # ---- Standard imports
 import datetime
 import os.path as osp
+import sqlite3
 
 # ---- Third party imports
 import pytest
@@ -26,7 +27,7 @@ import pandas as pd
 from sardes.api.timeseries import DataType
 from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
 from sardes.database.accessor_sardes_lite import (
-    DatabaseAccessorSardesLite, init_database)
+    DatabaseAccessorSardesLite, init_database, CURRENT_SCHEMA_VERSION)
 
 
 # =============================================================================
@@ -44,6 +45,58 @@ def dbaccessor(tmp_path_factory):
 # =============================================================================
 # ---- Tests
 # =============================================================================
+def test_connection(dbaccessor):
+    """
+    Test that connecting to the BD fails and succeed as expected.
+    """
+    dbaccessor.connect()
+    assert dbaccessor.is_connected()
+    dbaccessor.close_connection()
+
+    # Assert that the connection fails if the version of the BD is outdated.
+    dbaccessor.execute("PRAGMA user_version = 0")
+    dbaccessor.connect()
+    assert not dbaccessor.is_connected()
+    assert ("The version of this database is 0 and is outdated." in
+            str(dbaccessor._connection_error))
+    dbaccessor.close_connection()
+
+    # Assert that the connection fails if the version of Sardes is outdated
+    # compared to that of the BD.
+    dbaccessor.execute(
+        "PRAGMA user_version = {}".format(CURRENT_SCHEMA_VERSION + 1))
+    dbaccessor.connect()
+    assert not dbaccessor.is_connected()
+    assert ("Your Sardes application is outdated" in
+            str(dbaccessor._connection_error))
+    dbaccessor.close_connection()
+
+    # Assert that the connection fails if the application ID of the BD does not
+    # match the application ID used for the Sardes SQLite accessor.
+    dbaccessor.execute("PRAGMA application_id = 0")
+    dbaccessor.connect()
+    assert not dbaccessor.is_connected()
+    assert ("does not appear to be a Sardes SQLite database" in
+            str(dbaccessor._connection_error))
+    dbaccessor.close_connection()
+
+    # Assert that the connection fails if the file doesn't exist.
+    dbaccessor._database = dbaccessor._database + ".txt"
+    dbaccessor.connect()
+    assert not dbaccessor.is_connected()
+    assert ("does not exist" in str(dbaccessor._connection_error))
+    dbaccessor.close_connection()
+
+    # Assert that the connection fails if the file has the wrong extension.
+    with open(dbaccessor._database, 'w'):
+        pass
+    dbaccessor.connect()
+    assert not dbaccessor.is_connected()
+    assert ("is not a valid database file" in
+            str(dbaccessor._connection_error))
+    dbaccessor.close_connection()
+
+
 def test_add_observation_well(dbaccessor):
     """
     Test that adding an observation well to the database is working
