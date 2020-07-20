@@ -187,6 +187,9 @@ class DatabaseConnectionWidget(QDialog):
             else:
                 message = _("The connection to the database failed.")
             self.status_bar.show_fail_icon(message)
+            self.show()
+            self.activateWindow()
+            self.raise_()
         else:
             message = _("Connected to the database.")
             self.status_bar.show_sucess_icon(message)
