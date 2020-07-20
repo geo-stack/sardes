@@ -20,7 +20,7 @@ a = Analysis(['../sardes/app/mainwindow.py'],
                  'win32timezone', 'sqlalchemy.ext.baked', 'PIL.BmpImagePlugin',
                  'PIL.Jpeg2KImagePlugin', 'PIL.JpegImagePlugin',
                  'PIL.PngImagePlugin', 'PIL.TiffImagePlugin',
-                 'PIL.WmfImagePlugin'
+                 'PIL.WmfImagePlugin', 'pkg_resources.py2_warn'
                  ],
              hookspath=[],
              runtime_hooks=[],
