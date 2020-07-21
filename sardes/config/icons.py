@@ -203,7 +203,7 @@ FA_ICONS = {
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'show_barplot': [
         ('mdi.chart-bar-stacked',),
-        {'color': ICON_COLOR}],
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'show_data_table': [
         ('mdi.table-search',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
