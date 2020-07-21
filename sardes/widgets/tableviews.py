@@ -1679,6 +1679,7 @@ class SardesTableWidget(SardesPaneWidget):
         """
         super().__init__(parent)
         self.setAutoFillBackground(True)
+        self.tools = []
 
         self.tableview = SardesTableView(
             table_model, self, multi_columns_sort, sections_movable,
@@ -1858,6 +1859,14 @@ class SardesTableWidget(SardesPaneWidget):
                     self._upper_toolbar_separator)
         else:
             self.get_lower_toolbar().addSeparator()
+
+    # ---- Tools
+    def install_tool(self, tool):
+        """
+        Install the provided tool in this table widget.
+        """
+        self.tools.append(tool)
+        self.add_toolbar_widget(tool.toolbutton())
 
     # ---- Table view header state
     def get_table_horiz_header_state(self):
