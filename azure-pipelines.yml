@@ -13,7 +13,7 @@ variables:
   SARDES_OUTPUT_DIRNAME: 'sardes_0.9.0_win_amd64'
 
 pool:
-  vmImage: 'vs2017-win2016'
+  vmImage: 'windows-2019'
 
 strategy:
   matrix:
