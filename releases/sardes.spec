@@ -14,7 +14,7 @@ added_files = [('../sardes/ressources/icons/*.png', 'ressources/icons'),
                ('../sardes/locale/fr/LC_MESSAGES/*.mo', 'locale/fr/LC_MESSAGES')]
 a = Analysis(['../sardes/app/mainwindow.py'],
              pathex=['C:\\Program Files (x86)\\Windows Kits\\10\\Redist\\ucrt\\DLLs\\x64'],
-             binaries=[],
+             binaries=[('C:\\Windows\\System32\\vcruntime140_1.dll', '.')],
              datas=added_files ,
              hiddenimports=[
                  'win32timezone', 'sqlalchemy.ext.baked', 'PIL.BmpImagePlugin',
