@@ -28,6 +28,7 @@ from sardes.widgets.tableviews import (
     SardesTableWidget, NumEditDelegate, NotEditableDelegate,
     SardesStackedTableWidget)
 from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
+from .tools.hydrostats import SatisticalHydrographTool
 
 
 """Readings plugin"""
@@ -327,6 +328,9 @@ class Readings(SardesPlugin):
             iconsize=get_iconsize()
             )
         table_widget.add_toolbar_widget(show_plot_btn)
+
+        # Add statistical hydrographs.
+        table_widget.install_tool(SatisticalHydrographTool(table_widget))
 
         # Set the title of the window.
         table_widget.setWindowTitle(_("Observation well {} ({})").format(
