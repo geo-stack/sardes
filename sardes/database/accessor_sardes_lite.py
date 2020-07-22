@@ -417,7 +417,16 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Return a new index that can be used subsequently to add a new item
         related to name in the database.
         """
-        return uuid.uuid4()
+        if name == 'sonde_models_lib':
+            try:
+                max_commited_id = (
+                    self._session.query(func.max(SondeModel.sonde_model_id))
+                    .one())[0]
+            except TypeError:
+                max_commited_id = 0
+            return max(self.temp_indexes(name) + [max_commited_id]) + 1
+        else:
+            return uuid.uuid4()
 
     # ---- Database connection
     def _create_engine(self):
@@ -769,16 +778,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
-    # ---- Sondes Inventory
-    def _get_sonde(self, sonde_uuid):
-        """
-        Return the sqlalchemy Sondes object corresponding to the
-        specified sonde ID.
-        """
-        return (self._session.query(SondeFeature)
-                .filter(SondeFeature.sonde_uuid == sonde_uuid)
-                .one())
-
+    # ---- Sondes Models
     def get_sonde_models_lib(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -797,6 +797,40 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         sonde_models.set_index('sonde_model_id', inplace=True, drop=True)
 
         return sonde_models
+
+    def set_sonde_models_lib(self, sonde_model_id, attribute_name,
+                             attribute_value, auto_commit=True):
+        """
+        Save in the database the new attribute value for the sonde model
+        corresponding to the specified id.
+        """
+        sonde = (self._session.query(SondeModel)
+                 .filter(SondeModel.sonde_model_id == sonde_model_id)
+                 .one())
+        setattr(sonde, attribute_name, attribute_value)
+        if auto_commit:
+            self._session.commit()
+
+    def add_sonde_models_lib(self, sonde_model_id, attribute_values):
+        """
+        Add a new sonde model to the database using the provided id
+        and attribute values.
+        """
+        self._session.add(SondeModel(
+            sonde_model_id=sonde_model_id,
+            **attribute_values
+            ))
+        self._session.commit()
+
+    # ---- Sondes Inventory
+    def _get_sonde(self, sonde_uuid):
+        """
+        Return the sqlalchemy Sondes object corresponding to the
+        specified sonde ID.
+        """
+        return (self._session.query(SondeFeature)
+                .filter(SondeFeature.sonde_uuid == sonde_uuid)
+                .one())
 
     def add_sondes_data(self, sonde_uuid, attribute_values):
         """
