@@ -791,7 +791,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # Combine the brand and model into a same field.
         sonde_models['sonde_brand_model'] = (
             sonde_models[['sonde_brand', 'sonde_model']]
-            .apply(lambda x: ' '.join(x), axis=1))
+            .apply(lambda values: ' '.join([x or '' for x in values]), axis=1)
+            )
 
         # Set the index to the observation well ids.
         sonde_models.set_index('sonde_model_id', inplace=True, drop=True)
