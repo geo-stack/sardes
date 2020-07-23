@@ -314,6 +314,27 @@ def test_add_sonde_models(dbaccessor):
     assert (sonde_models_lib.at[sonde_model_id, 'sonde_brand_model'] ==
             'some_brand_2')
 
+
+def edit_sonde_models(dbaccessor):
+    """
+    Test that editing an existing sonde model in the database is working
+    as expected.
+    """
+    # Edit the sonde model of the last item that was added to the sonde
+    # models librairie in the previous test.
+    sonde_models = dbaccessor.get_sonde_models_lib()
+    sonde_model_id = len(sonde_models)
+    dbaccessor.set_sonde_models_lib(
+        sonde_model_id, {'sonde_model': 'some_model_2'})
+
+    # Assert that the attribute of the given sonde model was edited as
+    # expected.
+    sonde_models = dbaccessor.get_sonde_models_lib()
+    assert sonde_models.at[sonde_model_id, 'sonde_model'] == 'some_model_2'
+    assert (sonde_models.at[sonde_model_id, 'sonde_brand_model'] ==
+            'some_brand_2 some_model_2')
+
+
 def test_add_timeseries(dbaccessor):
     """
     Test that adding timeseries data to the database is working as expected.
