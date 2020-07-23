@@ -351,10 +351,8 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         df = SONDE_MODELS_LIB.copy()
 
         # Combine the brand and model into a same field.
-        df['sonde_brand_model'] = (
-            df[['sonde_brand', 'sonde_model']]
-            .apply(lambda values: ' '.join([x or '' for x in values]), axis=1)
-            )
+        df['sonde_brand_model'] = df[['sonde_brand', 'sonde_model']].apply(
+            lambda values: ' '.join([x or '' for x in values]).strip(), axis=1)
         df = df.sort_values('sonde_brand_model')
 
         return df
