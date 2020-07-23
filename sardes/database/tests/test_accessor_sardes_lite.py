@@ -277,6 +277,43 @@ def test_edit_sonde_installations(dbaccessor):
                 attribute_value), attribute_name
 
 
+def test_add_sonde_models(dbaccessor):
+    """
+    Test that adding a new sonde model to the database is working as expected.
+    """
+    len_sonde_models = len(dbaccessor.get_sonde_models_lib())
+    assert len_sonde_models > 0
+
+    # Create a new sonde model id and add a new sonde model to the database.
+    sonde_model_id = dbaccessor.create_index('sonde_models_lib')
+    dbaccessor.add_sonde_models_lib(
+        sonde_model_id,
+        {'sonde_brand': 'some_brand', 'sonde_model': 'some_model'})
+
+    # Assert that the sonde model was added as expected to the database.
+    sonde_models_lib = dbaccessor.get_sonde_models_lib()
+    assert sonde_model_id == len_sonde_models + 1
+    assert len(sonde_models_lib) == len_sonde_models + 1
+    assert sonde_models_lib.at[sonde_model_id, 'sonde_brand'] == 'some_brand'
+    assert sonde_models_lib.at[sonde_model_id, 'sonde_model'] == 'some_model'
+    assert (sonde_models_lib.at[sonde_model_id, 'sonde_brand_model'] ==
+            'some_brand some_model')
+
+    # Create a new sonde model id and add a new sonde model to the database,
+    # but without an empty model.
+    sonde_model_id = dbaccessor.create_index('sonde_models_lib')
+    dbaccessor.add_sonde_models_lib(
+        sonde_model_id, {'sonde_brand': 'some_brand_2'})
+
+    # Assert that the sonde model was added as expected to the database.
+    sonde_models_lib = dbaccessor.get_sonde_models_lib()
+    assert sonde_model_id == len_sonde_models + 2
+    assert len(sonde_models_lib) == len_sonde_models + 2
+    assert sonde_models_lib.at[sonde_model_id, 'sonde_brand'] == 'some_brand_2'
+    assert sonde_models_lib.at[sonde_model_id, 'sonde_model'] is None
+    assert (sonde_models_lib.at[sonde_model_id, 'sonde_brand_model'] ==
+            'some_brand_2')
+
 def test_add_timeseries(dbaccessor):
     """
     Test that adding timeseries data to the database is working as expected.
