@@ -1938,7 +1938,7 @@ class SardesTableWidget(SardesPaneWidget):
 
     # ---- Process state
     def _start_process(self, text=''):
-        if text is not None:
+        if text is not None and self.statusbar is not None:
             self.statusBar().showMessage(text)
         self._end_process_timer.stop()
         self.get_upper_toolbar().setEnabled(False)
@@ -1951,11 +1951,12 @@ class SardesTableWidget(SardesPaneWidget):
         self._end_process_timer.start(MSEC_MIN_PROGRESS_DISPLAY)
 
     def _end_process(self, text=None):
-        if text is not None:
+        if text is not None and self.statusbar is not None:
             self.statusBar().showMessage(text)
         if self._end_process_timer._status_message is not None:
-            self.statusBar().showMessage(
-                self._end_process_timer._status_message)
+            if self.statusbar is not None:
+                self.statusBar().showMessage(
+                    self._end_process_timer._status_message)
             self._end_process_timer._status_message = None
         self.get_upper_toolbar().setEnabled(True)
         self.tableview.setEnabled(True)
@@ -2072,6 +2073,10 @@ class SardesStackedTableWidget(SardesPaneWidget):
     def eventFilter(self, widget, event):
         if event.type() == QEvent.MouseButtonPress:
             self.focus_current_table()
+        elif event.type() == QEvent.StatusTip:
+            # Prevent status tips from buttons and menus to show in the
+            # status bar of this stacked table widget.
+            return True
         return super().eventFilter(widget, event)
 
     # ---- QTabWidget public API
