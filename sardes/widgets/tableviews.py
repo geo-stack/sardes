@@ -2073,6 +2073,10 @@ class SardesStackedTableWidget(SardesPaneWidget):
     def eventFilter(self, widget, event):
         if event.type() == QEvent.MouseButtonPress:
             self.focus_current_table()
+        elif event.type() == QEvent.StatusTip:
+            # Prevent status tips from buttons and menus to show in the
+            # status bar of this stacked table widget.
+            return True
         return super().eventFilter(widget, event)
 
     # ---- QTabWidget public API
