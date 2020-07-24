@@ -156,7 +156,6 @@ class RowAdded(SardesDataEdit):
         super() .__init__(index, None, parent)
         self.values = values
         self.row = row
-        self.col = 0
 
         # We need to add each column of the new row to the original data so
         # that they are highlighted correctly in the table.
