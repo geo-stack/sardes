@@ -124,7 +124,7 @@ class RowDeleted(SardesDataEdit):
         ----------
         index : Index
             A pandas Index array that contains the list of values
-            corresponding to the datframe indexes of the rows that were
+            corresponding to the dataframe indexes of the rows that were
             deleted from the parent SardesTableData.
         row : TYPE
             A pandas Index array that contains the list of integers
