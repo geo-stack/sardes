@@ -134,6 +134,7 @@ class RowDeleted(SardesDataEdit):
         super() .__init__(index, None, parent)
         self.row = row
         self.col = 0
+        self.parent._deleted_rows = self.parent._deleted_rows.append(self.row)
 
     def type(self):
         """
@@ -287,7 +288,6 @@ class SardesTableData(object):
         unique_rows = pd.Index(rows)
         unique_rows = unique_rows[~unique_rows.isin(self._deleted_rows)]
         if not unique_rows.empty:
-            self._deleted_rows = self._deleted_rows.append(unique_rows)
             self._data_edits_stack.append(RowDeleted(
                 self.data.index[unique_rows], unique_rows, parent=self))
             return self._data_edits_stack[-1]
