@@ -133,7 +133,6 @@ class RowDeleted(SardesDataEdit):
         """
         super() .__init__(index, None, parent)
         self.row = row
-        self.col = 0
         self.parent._deleted_rows = self.parent._deleted_rows.append(self.row)
 
     def type(self):
