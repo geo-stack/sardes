@@ -152,10 +152,25 @@ class RowDeleted(SardesDataEdit):
 
 class RowAdded(SardesDataEdit):
     """
-    A class that represents a new row added to the data.
+    A SardesDataEdit class to add one or more new rows to a SardesTableData.
+
+    Note that new rows are always added at the end of the dataframe.
     """
 
     def __init__(self, index, values, parent):
+        """
+        Parameters
+        ----------
+        index : Index
+            A pandas Index array that contains the indexes of the rows that
+            needs to be added to the parent SardesTableData.
+        values: list of dict
+            A list of dict containing the values of the rows that needs to be
+            added to the parent SardesTableData. The keys of the dict must
+            match the parent SardesTableData columns.
+        parent : SardesTableData
+            A SardesTableData object where rows need to be added.
+        """
         super() .__init__(index, None, parent)
         self.values = values
         self.row = pd.Index(
