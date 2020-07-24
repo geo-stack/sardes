@@ -153,7 +153,7 @@ class RowAdded(SardesDataEdit):
     A class that represents a new row added to the data.
     """
 
-    def __init__(self, index, values, row, parent=None):
+    def __init__(self, index, values, row, parent):
         super() .__init__(index, None, parent)
         self.values = values
         self.row = row
