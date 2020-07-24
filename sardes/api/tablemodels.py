@@ -113,6 +113,9 @@ class ValueChanged(SardesDataEdit):
 class RowDeleted(SardesDataEdit):
     """
     A class that represents one or more row(s) that were deleted from the data.
+
+    Note that the rows are not actually deleted from the data. They are
+    simply highlighted in red in the table until the edits are commited.
     """
 
     def __init__(self, index, row, parent):
