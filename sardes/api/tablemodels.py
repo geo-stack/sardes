@@ -115,7 +115,7 @@ class RowDeleted(SardesDataEdit):
     A class that represents one or more row(s) that were deleted from the data.
     """
 
-    def __init__(self, index, row, col=0, parent=None):
+    def __init__(self, index, row, parent):
         """
         Parameters
         ----------
@@ -133,7 +133,7 @@ class RowDeleted(SardesDataEdit):
         """
         super() .__init__(index, None, parent)
         self.row = row
-        self.col = col
+        self.col = 0
 
     def type(self):
         """
