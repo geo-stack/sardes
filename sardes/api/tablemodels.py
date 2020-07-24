@@ -155,15 +155,16 @@ class RowAdded(SardesDataEdit):
     A class that represents a new row added to the data.
     """
 
-    def __init__(self, index, values, row, parent):
+    def __init__(self, index, values, parent):
         super() .__init__(index, None, parent)
         self.values = values
-        self.row = row
-        self.parent._new_rows.append(row)
+        self.row = pd.Index(
+            [i + len(self.parent.data) for i in range(len(index))])
+        self.parent._new_rows = self.parent._new_rows.append(self.row)
 
         # We then add the new row to the data.
         self.parent.data = self.parent.data.append(pd.DataFrame(
-            values, columns=self.parent.data.columns, index=[index]
+            values, columns=self.parent.data.columns, index=index
             ))
 
     def type(self):
@@ -175,7 +176,7 @@ class RowAdded(SardesDataEdit):
 
     def _undo(self):
         """Undo this row added edit."""
-        self.parent._new_rows.remove(self.row)
+        self.parent._new_rows = self.parent._new_rows.drop(self.row)
 
         # We remove the new row to the data.
         self.parent.data.drop(self.index, inplace=True)
@@ -193,7 +194,7 @@ class SardesTableData(object):
         # in chronological order.
         self._data_edits_stack = []
 
-        self._new_rows = []
+        self._new_rows = pd.Index([])
         self._deleted_rows = pd.Index([])
 
         # A pandas multiindex dataframe that contains the original data at
@@ -256,12 +257,12 @@ class SardesTableData(object):
         """
         return self.data.copy()
 
-    def add_row(self, new_index, values={}):
+    def add_row(self, new_index, values=None):
         """
         Add a new row with the provided values at the end of the data.
         """
-        row = len(self.data)
-        self._data_edits_stack.append(RowAdded(new_index, values, row, self))
+        self._data_edits_stack.append(RowAdded(
+            pd.Index([new_index]), [values or {}], self))
         return self._data_edits_stack[-1]
 
     def delete_row(self, rows):
@@ -720,13 +721,13 @@ class SardesTableModelBase(QAbstractTableModel):
                 )
         elif last_edit.type() == SardesTableModelBase.RowAdded:
             self.beginRemoveRows(
-                QModelIndex(), last_edit.row, last_edit.row)
+                QModelIndex(), min(last_edit.row), max(last_edit.row))
             self._datat.undo_edit()
             self._update_visual_data()
             self.endRemoveRows()
             self.dataChanged.emit(
-                self.index(last_edit.row, 0),
-                self.index(last_edit.row, self.columnCount() - 1),
+                self.index(min(last_edit.row), 0),
+                self.index(max(last_edit.row), self.columnCount() - 1),
                 )
         elif last_edit.type() == SardesTableModelBase.RowDeleted:
             self._datat.undo_edit()
