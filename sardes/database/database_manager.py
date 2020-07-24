@@ -375,11 +375,12 @@ class SardesModelsManager(QObject):
                     callback=callback,
                     postpone_exec=True)
             elif edit.type() == table_model.RowAdded:
-                self.db_manager.add(
-                    table_model_data_name,
-                    edit.index, edit.values,
-                    callback=callback,
-                    postpone_exec=True)
+                for index, values in zip(edit.index, edit.values):
+                    self.db_manager.add(
+                        table_model_data_name,
+                        index, values,
+                        callback=callback,
+                        postpone_exec=True)
             elif edit.type() == table_model.RowDeleted:
                 self.db_manager.delete(
                     table_model_data_name,

@@ -825,7 +825,6 @@ class SardesTableView(QTableView):
                 triggered=self.copy_to_clipboard,
                 shortcut='Ctrl+C',
                 context=Qt.WidgetShortcut)
-
             self._actions['io'] = [copy_to_clipboard_action]
             self.addActions(self._actions['io'])
 

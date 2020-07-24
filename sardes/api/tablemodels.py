@@ -102,7 +102,7 @@ class ValueChanged(SardesDataEdit):
             original_value = self.parent.data.iat[self.row, self.col]
 
         values_equal = are_values_equal(self.previous_value, original_value)
-        if not values_equal or self.row in self.parent._new_rows:
+        if not values_equal:
             self.parent._original_data.loc[
                 (self.row, self.col), 'value'] = original_value
 
@@ -112,13 +112,31 @@ class ValueChanged(SardesDataEdit):
 
 class RowDeleted(SardesDataEdit):
     """
-    A class that represents on or more row(s) that were deleted from the data.
+    A SardesDataEdit class used to delete one or more rows from a
+    SardesTableData.
+
+    Note that the rows are not actually deleted from the data. They are
+    simply highlighted in red in the table until the edits are commited.
     """
 
-    def __init__(self, index, row, col=0, parent=None):
+    def __init__(self, index, row, parent):
+        """
+        Parameters
+        ----------
+        index : Index
+            A pandas Index array that contains the list of values corresponding
+            to the dataframe indexes of the rows that needs to be deleted
+            from the parent SardesTableData.
+        row : Index
+            A pandas Index array that contains the list of integers
+            corresponding to the logical indexes of the rows that needs to be
+            deleted from the parent SardesTableData.
+        parent : SardesTableData, optional
+            A SardesTableData object where rows need to be deleted.
+        """
         super() .__init__(index, None, parent)
         self.row = row
-        self.col = col
+        self.parent._deleted_rows = self.parent._deleted_rows.append(self.row)
 
     def type(self):
         """
@@ -134,14 +152,35 @@ class RowDeleted(SardesDataEdit):
 
 class RowAdded(SardesDataEdit):
     """
-    A class that represents a new row added to the data.
+    A SardesDataEdit class to add one or more new rows to a SardesTableData.
+
+    Note that new rows are always added at the end of the dataframe.
     """
 
-    def __init__(self, index, values, row, parent=None):
+    def __init__(self, index, values, parent):
+        """
+        Parameters
+        ----------
+        index : Index
+            A pandas Index array that contains the indexes of the rows that
+            needs to be added to the parent SardesTableData.
+        values: list of dict
+            A list of dict containing the values of the rows that needs to be
+            added to the parent SardesTableData. The keys of the dict must
+            match the parent SardesTableData columns.
+        parent : SardesTableData
+            A SardesTableData object where rows need to be added.
+        """
         super() .__init__(index, None, parent)
         self.values = values
-        self.row = row
-        self.col = 0
+        self.row = pd.Index(
+            [i + len(self.parent.data) for i in range(len(index))])
+        self.parent._new_rows = self.parent._new_rows.append(self.row)
+
+        # We then add the new row to the data.
+        self.parent.data = self.parent.data.append(pd.DataFrame(
+            values, columns=self.parent.data.columns, index=index
+            ))
 
     def type(self):
         """
@@ -152,14 +191,9 @@ class RowAdded(SardesDataEdit):
 
     def _undo(self):
         """Undo this row added edit."""
-        if self.parent is None:
-            return
+        self.parent._new_rows = self.parent._new_rows.drop(self.row)
 
-        # Update the original data.
-        for col in range(len(self.parent.data.columns)):
-            self.parent._original_data.drop((self.row, col), inplace=True)
-
-        # We remove the row from the data.
+        # We remove the new row to the data.
         self.parent.data.drop(self.index, inplace=True)
 
 
@@ -175,7 +209,7 @@ class SardesTableData(object):
         # in chronological order.
         self._data_edits_stack = []
 
-        self._new_rows = []
+        self._new_rows = pd.Index([])
         self._deleted_rows = pd.Index([])
 
         # A pandas multiindex dataframe that contains the original data at
@@ -238,30 +272,17 @@ class SardesTableData(object):
         """
         return self.data.copy()
 
-    def add_row(self, new_index, values={}):
+    def add_row(self, new_index, values=None):
         """
         Add a new row with the provided values at the end of the data.
         """
-        row = len(self.data)
-        self._new_rows.append(row)
-        self._data_edits_stack.append(
-            RowAdded(new_index, values, row, parent=self))
-
-        # We need to add each column of the new row to the orginal data so
-        # that they are highlighted correctly in the table.
-        for col in range(len(self.data.columns)):
-            self._original_data.loc[(row, col), 'value'] = values.get(
-                self.data.columns[col], None)
-
-        # We add the new row to the data.
-        self.data = self.data.append(pd.DataFrame(
-            values, columns=self.data.columns, index=[new_index]))
-
+        self._data_edits_stack.append(RowAdded(
+            pd.Index([new_index]), [values or {}], self))
         return self._data_edits_stack[-1]
 
     def delete_row(self, rows):
         """
-        Delete the rows at the given row indexes from data.
+        Delete the rows at the given row logical indexes from data.
 
         Parameters
         ----------
@@ -272,7 +293,6 @@ class SardesTableData(object):
         unique_rows = pd.Index(rows)
         unique_rows = unique_rows[~unique_rows.isin(self._deleted_rows)]
         if not unique_rows.empty:
-            self._deleted_rows = self._deleted_rows.append(unique_rows)
             self._data_edits_stack.append(RowDeleted(
                 self.data.index[unique_rows], unique_rows, parent=self))
             return self._data_edits_stack[-1]
@@ -294,7 +314,9 @@ class SardesTableData(object):
         """
         Return whether any edits were made to the table's data since last save.
         """
-        return bool(len(self._original_data) + len(self._deleted_rows))
+        return bool(len(self._original_data) +
+                    len(self._deleted_rows) +
+                    len(self._new_rows))
 
     def is_value_in_column(self, col, value):
         """
@@ -314,7 +336,7 @@ class SardesTableData(object):
         Return whether edits were made at the specified model index
         since last save.
         """
-        return (row, col) in self._original_data.index
+        return row in self._new_rows or (row, col) in self._original_data.index
 
     def cancel_edits(self):
         """
@@ -714,13 +736,13 @@ class SardesTableModelBase(QAbstractTableModel):
                 )
         elif last_edit.type() == SardesTableModelBase.RowAdded:
             self.beginRemoveRows(
-                QModelIndex(), last_edit.row, last_edit.row)
+                QModelIndex(), min(last_edit.row), max(last_edit.row))
             self._datat.undo_edit()
             self._update_visual_data()
             self.endRemoveRows()
             self.dataChanged.emit(
-                self.index(last_edit.row, 0),
-                self.index(last_edit.row, self.columnCount() - 1),
+                self.index(min(last_edit.row), 0),
+                self.index(max(last_edit.row), self.columnCount() - 1),
                 )
         elif last_edit.type() == SardesTableModelBase.RowDeleted:
             self._datat.undo_edit()
