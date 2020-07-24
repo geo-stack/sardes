@@ -112,7 +112,8 @@ class ValueChanged(SardesDataEdit):
 
 class RowDeleted(SardesDataEdit):
     """
-    A class that represents one or more row(s) that were deleted from the data.
+    A SardesDataEdit class used to delete one or more rows from a
+    SardesTableData.
 
     Note that the rows are not actually deleted from the data. They are
     simply highlighted in red in the table until the edits are commited.
@@ -123,16 +124,15 @@ class RowDeleted(SardesDataEdit):
         Parameters
         ----------
         index : Index
-            A pandas Index array that contains the list of values
-            corresponding to the dataframe indexes of the rows that were
-            deleted from the parent SardesTableData.
-        row : TYPE
+            A pandas Index array that contains the list of values corresponding
+            to the dataframe indexes of the rows that needs to be deleted
+            from the parent SardesTableData.
+        row : Index
             A pandas Index array that contains the list of integers
-            corresponding to the logical indexes of the rows that were
+            corresponding to the logical indexes of the rows that needs to be
             deleted from the parent SardesTableData.
         parent : SardesTableData, optional
-            A SardesTableData object for which rows were deleted from its
-            dataframe. The default is None.
+            A SardesTableData object where rows need to be deleted.
         """
         super() .__init__(index, None, parent)
         self.row = row
