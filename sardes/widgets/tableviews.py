@@ -825,8 +825,16 @@ class SardesTableView(QTableView):
                 triggered=self.copy_to_clipboard,
                 shortcut='Ctrl+C',
                 context=Qt.WidgetShortcut)
-
-            self._actions['io'] = [copy_to_clipboard_action]
+            paste_from_clipboard_action = create_action(
+                self, _("Paste"),
+                icon='copy_clipboard',
+                tip=_("Put a copy of the selection on the Clipboard "
+                      "so you can paste it somewhere else."),
+                triggered=self.paste_from_clipboard,
+                shortcut='Ctrl+V',
+                context=Qt.WidgetShortcut)
+            self._actions['io'] = [
+                copy_to_clipboard_action, paste_from_clipboard_action]
             self.addActions(self._actions['io'])
 
         # ---- Setup edit actions.
@@ -1396,6 +1404,22 @@ class SardesTableView(QTableView):
                 axis='columns',
                 inplace=True)
             selected_data.to_clipboard(excel=True, index=False, na_rep='')
+
+    def paste_from_clipboard(self):
+        new_data = pd.read_clipboard(dtype='str', header=None)
+
+        # first_row = new_data.iloc[0, :]
+        for column in new_data.columns:
+            print(column)
+        
+        # if self.visible_column_count() != len(new_data.columns):
+        #     QMessageBox.information(
+        #         self, __appname__,
+        #         _("The copied data  function cannot be used with multiple selections."),
+        #         buttons=QMessageBox.Ok)
+        #     print('test')
+            
+        print(new_data)
 
     def row_count(self):
         """Return this table number of visible row."""
