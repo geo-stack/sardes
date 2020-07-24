@@ -277,7 +277,7 @@ class SardesTableData(object):
 
     def delete_row(self, rows):
         """
-        Delete the rows at the given row indexes from data.
+        Delete the rows at the given row logical indexes from data.
 
         Parameters
         ----------
