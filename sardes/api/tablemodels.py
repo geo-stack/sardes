@@ -116,6 +116,21 @@ class RowDeleted(SardesDataEdit):
     """
 
     def __init__(self, index, row, col=0, parent=None):
+        """
+        Parameters
+        ----------
+        index : Index
+            A pandas Index array that contains the list of values
+            corresponding to the datframe indexes of the rows that were
+            deleted from the parent SardesTableData.
+        row : TYPE
+            A pandas Index array that contains the list of integers
+            corresponding to the logical indexes of the rows that were
+            deleted from the parent SardesTableData.
+        parent : SardesTableData, optional
+            A SardesTableData object for which rows were deleted from its
+            dataframe. The default is None.
+        """
         super() .__init__(index, None, parent)
         self.row = row
         self.col = col
