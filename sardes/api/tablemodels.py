@@ -102,7 +102,7 @@ class ValueChanged(SardesDataEdit):
             original_value = self.parent.data.iat[self.row, self.col]
 
         values_equal = are_values_equal(self.previous_value, original_value)
-        if not values_equal or self.row in self.parent._new_rows:
+        if not values_equal:
             self.parent._original_data.loc[
                 (self.row, self.col), 'value'] = original_value
 
@@ -156,16 +156,12 @@ class RowAdded(SardesDataEdit):
         super() .__init__(index, None, parent)
         self.values = values
         self.row = row
+        self.parent._new_rows.append(row)
 
-        # We need to add each column of the new row to the original data so
-        # that they are highlighted correctly in the table.
-        for col in range(len(self.parent.data.columns)):
-            self.parent._original_data.loc[(row, col), 'value'] = values.get(
-                self.parent.data.columns[col], None)
-
-        # We add the new row to the data.
+        # We then add the new row to the data.
         self.parent.data = self.parent.data.append(pd.DataFrame(
-            values, columns=self.parent.data.columns, index=[index]))
+            values, columns=self.parent.data.columns, index=[index]
+            ))
 
     def type(self):
         """
@@ -176,15 +172,9 @@ class RowAdded(SardesDataEdit):
 
     def _undo(self):
         """Undo this row added edit."""
-        if self.parent is None:
-            return
+        self.parent._new_rows.remove(self.row)
 
-        # Update the original data.
-        self.parent._original_data.drop(
-            [(self.row, col) for col in range(len(self.parent.data.columns))],
-            inplace=True)
-
-        # We remove the row from the data.
+        # We remove the new row to the data.
         self.parent.data.drop(self.index, inplace=True)
 
 
@@ -268,7 +258,6 @@ class SardesTableData(object):
         Add a new row with the provided values at the end of the data.
         """
         row = len(self.data)
-        self._new_rows.append(row)
         self._data_edits_stack.append(RowAdded(new_index, values, row, self))
         return self._data_edits_stack[-1]
 
@@ -306,7 +295,9 @@ class SardesTableData(object):
         """
         Return whether any edits were made to the table's data since last save.
         """
-        return bool(len(self._original_data) + len(self._deleted_rows))
+        return bool(len(self._original_data) +
+                    len(self._deleted_rows) +
+                    len(self._new_rows))
 
     def is_value_in_column(self, col, value):
         """
@@ -326,7 +317,7 @@ class SardesTableData(object):
         Return whether edits were made at the specified model index
         since last save.
         """
-        return (row, col) in self._original_data.index
+        return row in self._new_rows or (row, col) in self._original_data.index
 
     def cancel_edits(self):
         """
