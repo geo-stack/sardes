@@ -159,6 +159,16 @@ class RowAdded(SardesDataEdit):
         self.row = row
         self.col = 0
 
+        # We need to add each column of the new row to the original data so
+        # that they are highlighted correctly in the table.
+        for col in range(len(self.parent.data.columns)):
+            self.parent._original_data.loc[(row, col), 'value'] = values.get(
+                self.parent.data.columns[col], None)
+
+        # We add the new row to the data.
+        self.parent.data = self.parent.data.append(pd.DataFrame(
+            values, columns=self.parent.data.columns, index=[index]))
+
     def type(self):
         """
         Return an integer that indicates the type of data edit this
@@ -260,19 +270,7 @@ class SardesTableData(object):
         """
         row = len(self.data)
         self._new_rows.append(row)
-        self._data_edits_stack.append(
-            RowAdded(new_index, values, row, parent=self))
-
-        # We need to add each column of the new row to the orginal data so
-        # that they are highlighted correctly in the table.
-        for col in range(len(self.data.columns)):
-            self._original_data.loc[(row, col), 'value'] = values.get(
-                self.data.columns[col], None)
-
-        # We add the new row to the data.
-        self.data = self.data.append(pd.DataFrame(
-            values, columns=self.data.columns, index=[new_index]))
-
+        self._data_edits_stack.append(RowAdded(new_index, values, row, self))
         return self._data_edits_stack[-1]
 
     def delete_row(self, rows):
