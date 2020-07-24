@@ -182,8 +182,9 @@ class RowAdded(SardesDataEdit):
             return
 
         # Update the original data.
-        for col in range(len(self.parent.data.columns)):
-            self.parent._original_data.drop((self.row, col), inplace=True)
+        self.parent._original_data.drop(
+            [(self.row, col) for col in range(len(self.parent.data.columns))],
+            inplace=True)
 
         # We remove the row from the data.
         self.parent.data.drop(self.index, inplace=True)
