@@ -132,7 +132,7 @@ def test_delete_timeseries_data(mainwindow, qtbot, mocker):
         table.tableview.save_edits_action.trigger()
     assert model.data_edit_count() == 0
     assert model.has_unsaved_data_edits() is False
-    # assert table.tableview.row_count() == 1826 - 4
+    assert table.tableview.row_count() == 1826 - 4
 
     # Close the timeseries table.
     mainwindow.plugin.tabwidget.tabCloseRequested.emit(0)
