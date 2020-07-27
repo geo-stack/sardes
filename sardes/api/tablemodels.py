@@ -287,8 +287,8 @@ class SardesTableData(object):
         Parameters
         ----------
         rows: list of int
-            An list of row logical indexes that need to be deleted from
-            the data.
+            A list of integers corresponding to the logical indexes of the
+            rows that need to be deleted from the data.
         """
         unique_rows = pd.Index(rows)
         unique_rows = unique_rows[~unique_rows.isin(self._deleted_rows)]
@@ -714,6 +714,12 @@ class SardesTableModelBase(QAbstractTableModel):
     def delete_row(self, rows):
         """
         Delete rows at the specified row logical indexes.
+
+        Parameters
+        ----------
+        rows: list of int
+            A list of integers corresponding to the logical indexes of the
+            rows that need to be deleted from the data.
         """
         data_edit = self._datat.delete_row(rows)
         if data_edit is not None:
