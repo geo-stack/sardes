@@ -677,14 +677,28 @@ def test_undo_edits(tablewidget, qtbot):
     Test undo edit action in table view.
     """
     tableview = tablewidget.tableview
+    selection_model = tableview.selectionModel()
+
+    # Sort the data to cover the bug described in cgq-qgc/sardes#341.
+    tableview.sort_by_column(3, 1)
 
     # Do some edits to the table's data programmatically in the first row
     # of the table.
-    expected_data = ['new_str1', 'No', '1.234', '7']
-    expected_value = ['new_str1', False, 1.234, 7]
+    expected_data = ['new_str1', 'No', '1.234', '0']
+    expected_value = ['new_str1', False, 1.234, 0]
+    source_model_indexes = []
     for i in range(4):
-        model_index = tableview.model().index(0, i)
+        model_index = tableview.model().index(1, i)
+        source_model_indexes.append(tableview.model().mapToSource(model_index))
+
+        # Select and edit the content of the cell at the specified model
+        # index. Note that the data of the table are going to be sorted
+        # automatically when we edit the value in the fourth column.
+        selection_model.setCurrentIndex(model_index, selection_model.Current)
         tableview.model().set_data_edit_at(model_index, expected_value[i])
+
+        # Assert that the edit was applied as expected.
+        model_index = tableview.model().mapFromSource(source_model_indexes[-1])
         assert model_index.data() == expected_data[i]
         assert tableview.model().get_value_at(model_index) == expected_value[i]
         assert tableview.model().data_edit_count()
@@ -694,7 +708,12 @@ def test_undo_edits(tablewidget, qtbot):
     original_value = ['str1', True, 1.111, 3, 'not editable']
     for i in reversed(range(4)):
         qtbot.keyPress(tablewidget, Qt.Key_Z, modifier=Qt.ControlModifier)
-        model_index = tableview.model().index(0, i)
+        model_index = tableview.model().mapFromSource(source_model_indexes[i])
+
+        # Assert that the cell where the edit was undone is selected
+        # correctly as expected.
+        assert selection_model.currentIndex() == model_index, i
+
         assert model_index.data() == original_data[i]
         assert tableview.model().get_value_at(model_index) == original_value[i]
 
