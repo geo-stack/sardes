@@ -159,8 +159,6 @@ class SardesItemDelegateBase(QStyledItemDelegate):
             if error_message is not None:
                 self.model_view.raise_edits_error(
                     self.model_index, error_message)
-            self.model_view._ensure_visible(self.model_index)
-            self.model_view.setCurrentIndex(self.model_index)
 
     # ---- Public methods
     def model(self):
@@ -231,8 +229,6 @@ class SardesItemDelegateBase(QStyledItemDelegate):
             source_model_index = self.model().mapToSource(model_index)
             model_index.model().set_data_edit_at(model_index, None)
             model_index = self.model().mapFromSource(source_model_index)
-            self.model_view._ensure_visible(model_index)
-            self.model_view.setCurrentIndex(model_index)
 
 
 class NotEditableDelegate(SardesItemDelegateBase):
@@ -1023,8 +1019,13 @@ class SardesTableView(QTableView):
                 if data_edit.type() == SardesTableModelBase.RowAdded:
                     model_index = self.model().index(
                         self.model().rowCount() - 1, 0)
-                    self.setCurrentIndex(model_index)
                     self._ensure_visible(model_index)
+                    self.setCurrentIndex(model_index)
+                elif data_edit.type() == SardesTableModelBase.ValueChanged:
+                    model_index = self.model().mapFromSource(
+                        self.source_model.index(data_edit.row, data_edit.col))
+                    self._ensure_visible(model_index)
+                    self.setCurrentIndex(model_index)
 
                 # Save the cursor position for that edit.
                 current_source_index = self.model().mapToSource(
