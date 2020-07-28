@@ -50,14 +50,16 @@ class SondesInventoryTableModel(SardesTableModel):
             sonde_models_lib = self.libraries['sonde_models_lib']
             visual_dataf['sonde_model_id'] = (
                 visual_dataf['sonde_model_id']
-                .replace(sonde_models_lib['sonde_brand_model'].to_dict())
+                .map(sonde_models_lib['sonde_brand_model'].to_dict().get)
                 )
         except KeyError:
             pass
 
         for column in ['out_of_order', 'in_repair', 'lost', 'off_network']:
-            visual_dataf[column].replace(
-                to_replace={True: _('Yes'), False: _('No')}, inplace=True)
+            visual_dataf[column] = (
+                visual_dataf[column]
+                .map({True: _('Yes'), False: _('No')}.get)
+                )
 
         return visual_dataf
 
