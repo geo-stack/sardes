@@ -58,7 +58,7 @@ class RepereTableModel(SardesTableModel):
             obs_wells_data = self.libraries['observation_wells_data']
             visual_dataf['sampling_feature_uuid'] = (
                 visual_dataf['sampling_feature_uuid']
-                .replace(obs_wells_data['obs_well_id'].to_dict())
+                .map(obs_wells_data['obs_well_id'].to_dict().get)
                 )
         except KeyError:
             pass
@@ -69,8 +69,10 @@ class RepereTableModel(SardesTableModel):
         visual_dataf['end_date'] = (
             pd.to_datetime(visual_dataf['end_date'], format="%Y-%m-%d %H:%M")
             .dt.strftime('%Y-%m-%d %H:%M'))
-        visual_dataf['is_alt_geodesic'].replace(
-            to_replace={True: _('Yes'), False: _('No')}, inplace=True)
+        visual_dataf['is_alt_geodesic'] = (
+            visual_dataf['is_alt_geodesic']
+            .map({True: _('Yes'), False: _('No')}.get)
+            )
         return visual_dataf
 
 
