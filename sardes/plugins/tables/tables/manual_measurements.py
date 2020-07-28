@@ -49,7 +49,7 @@ class ManualMeasurementsTableModel(SardesTableModel):
             obs_wells_data = self.libraries['observation_wells_data']
             visual_dataf['sampling_feature_uuid'] = (
                 visual_dataf['sampling_feature_uuid']
-                .replace(obs_wells_data['obs_well_id'].to_dict())
+                .map(obs_wells_data['obs_well_id'].to_dict().get)
                 )
         except KeyError:
             pass
