@@ -333,6 +333,15 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         return REPERE.copy()
 
     # ---- Sonde Brands and Models Library
+    def add_sonde_models_lib(self, sonde_model_id, attribute_values):
+        """
+        Add a new sonde model to the database using the provided id
+        and attribute values.
+        """
+        for column in SONDE_MODELS_LIB.columns:
+            SONDE_MODELS_LIB.at[sonde_model_id, column] = (
+                attribute_values.get(column, None))
+
     def get_sonde_models_lib(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -342,12 +351,19 @@ class DatabaseAccessorDemo(DatabaseAccessor):
         df = SONDE_MODELS_LIB.copy()
 
         # Combine the brand and model into a same field.
-        df['sonde_brand_model'] = (
-            df[['sonde_brand', 'sonde_model']]
-            .apply(lambda x: ' '.join(x), axis=1))
+        df['sonde_brand_model'] = df[['sonde_brand', 'sonde_model']].apply(
+            lambda values: ' '.join([x or '' for x in values]).strip(), axis=1)
         df = df.sort_values('sonde_brand_model')
 
         return df
+
+    def set_sonde_models_lib(self, sonde_model_id, attribute_name,
+                             attribute_value):
+        """
+        Save in the database the new attribute value for the sonde model
+        corresponding to the specified id.
+        """
+        SONDE_MODELS_LIB.loc[sonde_model_id, attribute_name] = attribute_value
 
     # ---- Sondes Inventory
     def add_sondes_data(self, sonde_id, attribute_values):

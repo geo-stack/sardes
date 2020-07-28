@@ -71,6 +71,8 @@ class ReadingsTableModel(SardesTableModel):
         tseries_dels = init_tseries_dels()
         for edit in self._datat.edits():
             if edit.type() == SardesTableModel.ValueChanged:
+                if self._datat.is_data_deleted_at(edit.row):
+                    continue
                 row_data = self._datat.get(edit.row)
                 date_time = row_data['datetime']
                 obs_id = row_data['obs_id']

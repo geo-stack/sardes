@@ -14,6 +14,7 @@ Tests for the DatabaseConnectionWidget.
 # ---- Standard imports
 import os
 import os.path as osp
+import sys
 from unittest.mock import Mock
 os.environ['SARDES_PYTEST'] = 'True'
 
@@ -24,7 +25,6 @@ from qtpy.QtWidgets import QMainWindow
 
 # ---- Local imports
 from sardes.database.database_manager import DatabaseConnectionManager
-from sardes.database.accessor_demo import DatabaseAccessorDemo
 from sardes.plugins.readings import SARDES_PLUGIN_CLASS
 from sardes.widgets.tableviews import (MSEC_MIN_PROGRESS_DISPLAY, QMessageBox)
 
@@ -33,13 +33,25 @@ from sardes.widgets.tableviews import (MSEC_MIN_PROGRESS_DISPLAY, QMessageBox)
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
+def dbaccessor(qtbot):
+    # We need to do this to make sure the demo database is reinitialized
+    # after each test.
+    try:
+        del sys.modules['sardes.database.accessor_demo']
+    except KeyError:
+        pass
+    from sardes.database.accessor_demo import DatabaseAccessorDemo
+    return DatabaseAccessorDemo()
+
+
+@pytest.fixture
 def dbconnmanager(qtbot):
     dbconnmanager = DatabaseConnectionManager()
     return dbconnmanager
 
 
 @pytest.fixture
-def mainwindow(qtbot, mocker, dbconnmanager):
+def mainwindow(qtbot, mocker, dbconnmanager, dbaccessor):
     class MainWindowMock(QMainWindow):
         def __init__(self):
             super().__init__()
@@ -62,9 +74,18 @@ def mainwindow(qtbot, mocker, dbconnmanager):
     qtbot.addWidget(mainwindow)
 
     with qtbot.waitSignal(dbconnmanager.sig_database_connected, timeout=3000):
-        dbconnmanager.connect_to_db(DatabaseAccessorDemo())
+        dbconnmanager.connect_to_db(dbaccessor)
     assert dbconnmanager.is_connected()
     qtbot.wait(1000)
+
+    # Show data for observation well #1.
+    mainwindow.plugin.view_timeseries_data(0)
+    qtbot.waitUntil(lambda: len(mainwindow.plugin._tseries_data_tables) == 1)
+
+    # Wait until the data are loaded in the table.
+    table = mainwindow.plugin._tseries_data_tables[0]
+    qtbot.waitUntil(lambda: table.tableview.row_count() == 1826)
+    assert table.isVisible()
 
     return mainwindow
 
@@ -79,13 +100,7 @@ def test_delete_timeseries_data(mainwindow, qtbot, mocker):
 
     Regression test for cgq-qgc/sardes#210
     """
-    plugin = mainwindow.plugin
-    plugin.view_timeseries_data(0)
-    qtbot.waitUntil(lambda: len(plugin._tseries_data_tables) == 1)
-
-    table = plugin._tseries_data_tables[0]
-    qtbot.waitUntil(lambda: table.tableview.row_count() == 1826)
-    assert table.isVisible()
+    table = mainwindow.plugin._tseries_data_tables[0]
 
     # Select one row in the table.
     model = table.model()
@@ -120,8 +135,40 @@ def test_delete_timeseries_data(mainwindow, qtbot, mocker):
     assert table.tableview.row_count() == 1826 - 4
 
     # Close the timeseries table.
-    plugin.tabwidget.tabCloseRequested.emit(0)
-    qtbot.waitUntil(lambda: len(plugin._tseries_data_tables) == 0)
+    mainwindow.plugin.tabwidget.tabCloseRequested.emit(0)
+    qtbot.waitUntil(lambda: len(mainwindow.plugin._tseries_data_tables) == 0)
+
+
+def test_edit_then_delete_row(mainwindow, qtbot, mocker):
+    """
+    Test that editing and then deleting data on a same row is working as
+    expected.
+
+    Regression test for cgq-qgc/sardes#337
+    """
+    table = mainwindow.plugin._tseries_data_tables[0]
+
+    # Edit a cell on the second row of the table.
+    model_index = table.model().index(2, 2)
+    assert table.model().get_value_at(model_index) == 3.210969794207334
+    edited_value = 999.99
+    table.model().set_data_edit_at(model_index, edited_value)
+    assert table.model().get_value_at(model_index) == 999.99
+    assert table.model().data_edit_count() == 1
+
+    # Delete the secon row of the table.
+    table.model().delete_row([2])
+    assert table.model().data_edit_count() == 2
+
+    # Commit the edits to the database.
+    mocker.patch.object(QMessageBox, 'exec_', return_value=QMessageBox.Save)
+    with qtbot.waitSignal(table.model().sig_data_updated, timeout=3000):
+        table.tableview.save_edits_action.trigger()
+
+    model_index = table.model().index(2, 2)
+    assert table.model().get_value_at(model_index) == 3.2786624267542765
+
+    assert table.tableview.row_count() == 1826 - 1
 
 
 if __name__ == "__main__":

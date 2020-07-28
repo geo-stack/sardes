@@ -7,15 +7,12 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
-# ---- Third party imports
-from qtpy.QtWidgets import QComboBox
-
 # ---- Local imports
 from sardes.api.tablemodels import SardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
-    SardesItemDelegate, SardesTableWidget, StringEditDelegate,
-    BoolEditDelegate, NotEditableDelegate, TextEditDelegate, DateEditDelegate)
+    SardesTableWidget, StringEditDelegate, BoolEditDelegate,
+    NotEditableDelegate, TextEditDelegate, DateEditDelegate)
 from sardes.plugins.tables.tables.delegates import SondeModelEditDelegate
 
 

@@ -104,7 +104,7 @@ class DatabaseConnectionWorker(QObject):
         Get the data related to name from the database.
         """
         if name in self._cache:
-            # print("Fetched '{}' from store.".format(name))
+            print("Fetched '{}' from store.".format(name))
             return self._cache[name],
 
         print("Fetching '{}' from the database...".format(name), end='')
@@ -375,11 +375,12 @@ class SardesModelsManager(QObject):
                     callback=callback,
                     postpone_exec=True)
             elif edit.type() == table_model.RowAdded:
-                self.db_manager.add(
-                    table_model_data_name,
-                    edit.index, edit.values,
-                    callback=callback,
-                    postpone_exec=True)
+                for index, values in zip(edit.index, edit.values):
+                    self.db_manager.add(
+                        table_model_data_name,
+                        index, values,
+                        callback=callback,
+                        postpone_exec=True)
             elif edit.type() == table_model.RowDeleted:
                 self.db_manager.delete(
                     table_model_data_name,

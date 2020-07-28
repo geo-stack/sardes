@@ -159,8 +159,6 @@ class SardesItemDelegateBase(QStyledItemDelegate):
             if error_message is not None:
                 self.model_view.raise_edits_error(
                     self.model_index, error_message)
-            self.model_view._ensure_visible(self.model_index)
-            self.model_view.setCurrentIndex(self.model_index)
 
     # ---- Public methods
     def model(self):
@@ -231,8 +229,6 @@ class SardesItemDelegateBase(QStyledItemDelegate):
             source_model_index = self.model().mapToSource(model_index)
             model_index.model().set_data_edit_at(model_index, None)
             model_index = self.model().mapFromSource(source_model_index)
-            self.model_view._ensure_visible(model_index)
-            self.model_view.setCurrentIndex(model_index)
 
 
 class NotEditableDelegate(SardesItemDelegateBase):
@@ -825,7 +821,6 @@ class SardesTableView(QTableView):
                 triggered=self.copy_to_clipboard,
                 shortcut='Ctrl+C',
                 context=Qt.WidgetShortcut)
-
             self._actions['io'] = [copy_to_clipboard_action]
             self.addActions(self._actions['io'])
 
@@ -1024,8 +1019,13 @@ class SardesTableView(QTableView):
                 if data_edit.type() == SardesTableModelBase.RowAdded:
                     model_index = self.model().index(
                         self.model().rowCount() - 1, 0)
-                    self.setCurrentIndex(model_index)
                     self._ensure_visible(model_index)
+                    self.setCurrentIndex(model_index)
+                elif data_edit.type() == SardesTableModelBase.ValueChanged:
+                    model_index = self.model().mapFromSource(
+                        self.source_model.index(data_edit.row, data_edit.col))
+                    self._ensure_visible(model_index)
+                    self.setCurrentIndex(model_index)
 
                 # Save the cursor position for that edit.
                 current_source_index = self.model().mapToSource(
@@ -1110,6 +1110,16 @@ class SardesTableView(QTableView):
         """
         Sort the rows of this table by ordering the data of the specified
         column in the specified sorting order.
+
+        Parameters
+        ----------
+        column_logical_index : int
+            The logical index of the column by which to sort the data of the
+            whole table.
+        sorting_order : int
+            An integer to indicate how the data in the table needs to be
+            sorted according to the specified column. 0 is used for ascending
+            sorting, 1 for descending sorting, and -1 for no sorting.
         """
         self.model().sort(column_logical_index, sorting_order)
 
@@ -1117,6 +1127,13 @@ class SardesTableView(QTableView):
         """
         Sort the rows of this table by ordering the data of the currently
         selected column, if any, in the specified sorting order.
+
+        Parameters
+        ----------
+        sorting_order : int
+            An integer to indicate how the data in the table needs to be
+            sorted according to the current column if any. 0 is used for
+            ascending sorting, 1 for descending sorting, and -1 for no sorting.
         """
         self.sort_by_column(
             self.selectionModel().currentIndex().column(), sorting_order)
@@ -1947,7 +1964,7 @@ class SardesTableWidget(SardesPaneWidget):
 
     # ---- Process state
     def _start_process(self, text=''):
-        if text is not None:
+        if text is not None and self.statusbar is not None:
             self.statusBar().showMessage(text)
         self._end_process_timer.stop()
         self.get_upper_toolbar().setEnabled(False)
@@ -1960,11 +1977,12 @@ class SardesTableWidget(SardesPaneWidget):
         self._end_process_timer.start(MSEC_MIN_PROGRESS_DISPLAY)
 
     def _end_process(self, text=None):
-        if text is not None:
+        if text is not None and self.statusbar is not None:
             self.statusBar().showMessage(text)
         if self._end_process_timer._status_message is not None:
-            self.statusBar().showMessage(
-                self._end_process_timer._status_message)
+            if self.statusbar is not None:
+                self.statusBar().showMessage(
+                    self._end_process_timer._status_message)
             self._end_process_timer._status_message = None
         self.get_upper_toolbar().setEnabled(True)
         self.tableview.setEnabled(True)
@@ -2081,6 +2099,10 @@ class SardesStackedTableWidget(SardesPaneWidget):
     def eventFilter(self, widget, event):
         if event.type() == QEvent.MouseButtonPress:
             self.focus_current_table()
+        elif event.type() == QEvent.StatusTip:
+            # Prevent status tips from buttons and menus to show in the
+            # status bar of this stacked table widget.
+            return True
         return super().eventFilter(widget, event)
 
     # ---- QTabWidget public API
