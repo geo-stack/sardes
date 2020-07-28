@@ -187,7 +187,7 @@ FA_ICONS = {
         ('fa.save',),
         {'color': ICON_COLOR}],
     'save_to_db': [
-        ('mdi.content-save-outline',),
+        ('mdi.database-import',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'select_all': [
         ('mdi.select-all',),
