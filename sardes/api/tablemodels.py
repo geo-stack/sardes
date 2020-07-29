@@ -272,12 +272,11 @@ class SardesTableData(object):
         """
         return self.data.copy()
 
-    def add_row(self, new_index, values=None):
+    def add_row(self, index, values=None):
         """
         Add a new row with the provided values at the end of the data.
         """
-        self._data_edits_stack.append(RowAdded(
-            pd.Index([new_index]), [values or {}], self))
+        self._data_edits_stack.append(RowAdded(index, values or [{}], self))
         return self._data_edits_stack[-1]
 
     def delete_row(self, rows):
