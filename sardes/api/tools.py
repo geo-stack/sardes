@@ -11,17 +11,17 @@
 import os
 
 # ---- Third party imports
-from qtpy.QtCore import QObject, Qt, Slot, QPoint, Signal, QEvent
+from qtpy.QtCore import QObject, Qt, Slot, QPoint, Signal, QEvent, QSize
 from qtpy.QtWidgets import (QApplication, QToolButton, QLabel, QToolBar,
-                            QMainWindow)
+                            QMainWindow, QAction)
 
 # ---- Local imports
 from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
-from sardes.utils.qthelpers import create_toolbutton
+from sardes.utils.qthelpers import create_toolbutton, format_tooltip
 
 
-class SardesToolBase(QObject):
+class SardesToolBase(QAction):
     """
     Basic functionality for Sardes tools.
 
@@ -29,30 +29,69 @@ class SardesToolBase(QObject):
     know what you are doing.
     """
 
-    def __init__(self, parent, name):
-        super().__init__()
-        self.setObjectName(name)
+    def __init__(self, parent, name, text, icon, tip=None, iconsize=None,
+                 shortcut=None, context=Qt.WindowShortcut):
+        """
+        Parameters
+        ----------
+        parent : object
+            The parent object where this tool is installed.
+        name : str
+            The name that will be used to reference this tool in the code.
+        text: str
+            The str that will be used for the tooltip title and
+            toolwidget window title.
+        tip: str
+            The str that will be used for the tooltip description.
+        icon: str or QIcon
+            A QIcon object or a string to fetch from the configs the icon that
+            will be used for the toolbutton and the toolwidget's window.
+        shortcut: str
+            A string corresponding to the keyboard shortcut to use for
+            triggering this tool.
+        """
+        super().__init__(text, parent)
         self.parent = parent
-        self._toolwidget = None
+        self.triggered.connect(self.__triggered__)
+        self.setObjectName(name)
+        self._text = text
+        self.setIcon(get_icon(icon) if isinstance(icon, str) else icon)
+        iconsize = iconsize or get_iconsize()
+        self.setToolTip(format_tooltip(text, tip, shortcut))
+
+        if shortcut is not None:
+            if isinstance(shortcut, (list, tuple)):
+                self.setShortcuts(shortcut)
+            else:
+                self.setShortcut(shortcut)
+            self.setShortcutContext(context)
+
         self._toolbutton = None
+        self._toolwidget = None
         self._hidden_with_parent = False
         parent.installEventFilter(self)
 
     # ---- Public API
-    def toolbutton(self):
-        """
-        Return the toolbutton that is used to show this tools' widget
-        when clicked on.
-        """
-        if self._toolbutton is None:
-            self._toolbutton = self._create_toolbutton()
-        return self._toolbutton
-
     def toolwidget(self):
         """Return the main widget of this tool."""
         if self._toolwidget is None:
-            self._toolwidget = self._create_toolwidget()
+            try:
+                self._toolwidget = self.__init_toolwidget__()
+            except NotImplementedError:
+                self._toolwidget = None
+            else:
+                if self._toolwidget is not None:
+                    self._setup_toolwidget()
         return self._toolwidget
+
+    def toolbutton(self):
+        """Return a Qt toolbutton that trigger this tool when clicked."""
+        if self._toolbutton is None:
+            self._toolbutton = QToolButton()
+            self._toolbutton.setDefaultAction(self)
+            iconsize = get_iconsize()
+            self._toolbutton.setIconSize(QSize(iconsize, iconsize))
+        return self._toolbutton
 
     def close(self):
         """Close this tool."""
@@ -66,8 +105,8 @@ class SardesToolBase(QObject):
 
     def show(self):
         """Show this tool."""
-        if self._toolwidget is not None:
-            self._toolwidget.show()
+        if self.toolwidget() is not None:
+            self._show_toolwidget()
 
     # ---- Private API
     def eventFilter(self, widget, event):
@@ -86,30 +125,15 @@ class SardesToolBase(QObject):
                 self.show()
         return super().eventFilter(widget, event)
 
-    def _create_toolbutton(self):
-        """
-        Create and return the toolbutton that is used to show this
-        tools' widget when clicked on.
-        """
-        return create_toolbutton(
-            None, icon=self.icon(), text=self.text(), tip=self.tip(),
-            triggered=self._show_toolwidget,
-            iconsize=get_iconsize()
-            )
-
     def _setup_toolwidget(self):
         """Setup this tool's main widget."""
-        self._toolwidget = self.toolwidget()
-        self._toolwidget.setWindowIcon(get_icon(self.icon()))
-        self._toolwidget.setWindowTitle(self.title())
+        self._toolwidget.setWindowIcon(self.icon())
+        self._toolwidget.setWindowTitle(self.__title__())
         self._toolwidget.setWindowFlags(
             self._toolwidget.windowFlags() | Qt.Window)
 
-    @Slot(bool)
-    def _show_toolwidget(self, checked):
+    def _show_toolwidget(self):
         """Show this tool's main widget."""
-        if self._toolwidget is None:
-            self._setup_toolwidget()
         if self._toolwidget.windowState() == Qt.WindowMinimized:
             self._toolwidget.setWindowState(Qt.WindowNoState)
         self._toolwidget.show()
@@ -121,60 +145,61 @@ class SardesTool(SardesToolBase):
     """
     Sardes abstract tool class.
 
-    A Sardes tool consists mainly of a toolbutton and a widget that
-    is shown when that toolbutton is clicked.
+    A Sardes tool is a QAction that can be used to perform an action directly
+    when triggered or to show a widget window to do more complex operations.
     """
 
-    def _create_toolwidget(self):
-        """Create and return the main widget of this tool."""
-        raise NotImplementedError
-
-    def icon(self):
+    def __init_toolwidget__(self):
         """
-        Return the icon that will be used for the toolbutton and
-        toolwidget's window.
+        Create and return the main widget that will be shown when this tool
+        is triggered.
+
+        All tools that need to show a dialog window when triggered *must*
+        reimplement this method and return a valid QWidget object.
         """
-        raise NotImplementedError
+        return NotImplementedError
 
-    def text(self):
-        """Return the text that will be used for the toolbutton."""
-        raise NotImplementedError
+    def __triggered__(self):
+        """
+        This is the function that is called when this tool is triggered.
 
-    def tip(self):
-        """Return the tooltip text that will be used for the toolbutton."""
-        raise NotImplementedError
+        By default, the widget returned by __init_toolwidget__ is shown. This
+        method can be reimplemented to perform other any other actions.
+        """
+        self.show()
 
-    def title(self):
-        """Return the title that will be used for the toolwidget's window."""
-        raise NotImplementedError
+    def __title__(self):
+        """
+        Return the title that is used for the toolwidget's window.
+
+        By default, the tool's text is used. All tools that need to set a
+        different title for their toolwidget window need to reimplement this
+        method.
+        """
+        return self.text()
 
 
-class SardesToolTest(SardesTool):
+class SardesToolExample(SardesTool):
     """
     Sardes tool concrete implementation example.
     """
 
     def __init__(self, parent):
-        super().__init__(parent, 'sardes_tool_example')
+        super().__init__(
+            parent,
+            name='sardes_tool_example',
+            text='Sardes Tool Example',
+            icon='information',
+            tip=('This is an example that show an implementation of '
+                 'a Sardes tool.'),
+            shortcut='Ctrl+E'
+            )
 
-    def _create_toolwidget(self):
+    def __init_toolwidget__(self):
         widget = QLabel('This is a Sardes tool example.')
         widget.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         widget.setFixedSize(300, 150)
         return widget
-
-    def icon(self):
-        return 'information'
-
-    def text(self):
-        return 'Sardes Tool Example'
-
-    def tip(self):
-        return ('This is an example that show an implementation of '
-                'a Sardes tool.')
-
-    def title(self):
-        return 'Sardes Tool Example'
 
 
 if __name__ == '__main__':
@@ -186,8 +211,8 @@ if __name__ == '__main__':
     mainwindow = QMainWindow()
     mainwindow.addToolBar(toolbar)
 
-    tool = SardesToolTest(parent=mainwindow)
-    toolbar.addWidget(tool.toolbutton())
+    tool = SardesToolExample(parent=mainwindow)
+    toolbar.addAction(tool)
 
     mainwindow.show()
 
