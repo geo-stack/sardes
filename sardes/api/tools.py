@@ -29,8 +29,9 @@ class SardesToolBase(QObject):
     know what you are doing.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent, name):
         super().__init__()
+        self.setObjectName(name)
         self.parent = parent
         self._toolwidget = None
         self._toolbutton = None
@@ -152,6 +153,9 @@ class SardesToolTest(SardesTool):
     """
     Sardes tool concrete implementation example.
     """
+
+    def __init__(self, parent):
+        super().__init__(parent, 'sardes_tool_example')
 
     def _create_toolwidget(self):
         widget = QLabel('This is a Sardes tool example.')
