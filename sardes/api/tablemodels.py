@@ -700,16 +700,23 @@ class SardesTableModelBase(QAbstractTableModel):
         elif str(self._datat.data.index.dtype) == 'int64':
             return max(self._datat.data.index) + 1
 
-    def add_new_row(self, new_row_index=None):
+    def add_new_row(self):
         """
         Add a new empty at the end of the table.
         """
         self.beginInsertRows(
             QModelIndex(), len(self._datat), len(self._datat))
+        index = pd.Index([self._create_new_row_index()])
+        data_edit = self._datat.add_row(index)
+        self._update_visual_data()
+        self.endInsertRows()
+        self.dataChanged.emit(
+            self.index(self.rowCount() - 1, 0),
+            self.index(self.rowCount() - 1, self.columnCount() - 1))
 
-        if new_row_index is None:
-            new_row_index = self._create_new_row_index()
-        data_edit = self._datat.add_row(new_row_index)
+        # We make the appropriate calls to update the model and GUI.
+        self.sig_data_edited.emit(data_edit)
+
         self._update_visual_data()
         self.endInsertRows()
         self.dataChanged.emit(
