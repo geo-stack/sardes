@@ -274,7 +274,16 @@ class SardesTableData(object):
 
     def add_row(self, index, values=None):
         """
-        Add a new row with the provided values at the end of the data.
+        Add one or more new rows at the end of the data using the provided
+        values.
+
+        index : Index
+            A pandas Index array that contains the indexes of the rows that
+            needs to be added to the data.
+        values: list of dict
+            A list of dict containing the values of the rows that needs to be
+            added to this SardesTableData. The keys of the dict must
+            match the data..
         """
         self._data_edits_stack.append(RowAdded(index, values or [{}], self))
         return self._data_edits_stack[-1]
