@@ -45,6 +45,7 @@ VALUES = [['str1', True, 1.111, 3, 'not editable', None],
           ['str3', True, 3.333, 29, 'not editable', None]]
 INDEXES = [uuid.uuid4() for i in range(len(VALUES))]
 
+
 @pytest.fixture
 def TABLE_DATAF():
     dataf = pd.DataFrame(
@@ -281,6 +282,8 @@ def test_toggle_column_visibility(tablewidget, qtbot):
     assert tableview.column_count() == NCOL
     assert tableview.visible_column_count() == NCOL
     assert tableview.hidden_column_count() == 0
+    assert tableview.visible_columns() == [
+        'col0', 'col1', 'col2', 'col3', 'col4', 'col5']
 
     # Hide the second, third, and fourth columns of the table.
     for logical_index in [1, 2, 3]:
@@ -291,6 +294,7 @@ def test_toggle_column_visibility(tablewidget, qtbot):
         assert horiz_header.isSectionHidden(logical_index)
     assert tableview.hidden_column_count() == 3
     assert tableview.visible_column_count() == NCOL - 3
+    assert tableview.visible_columns() == ['col0', 'col4', 'col5']
 
     # Toggle back the visibility of the second column.
     action = tableview._toggle_column_visibility_actions[1]
@@ -299,6 +303,7 @@ def test_toggle_column_visibility(tablewidget, qtbot):
     assert not horiz_header.isSectionHidden(1)
     assert tableview.hidden_column_count() == 2
     assert tableview.visible_column_count() == NCOL - 2
+    assert tableview.visible_columns() == ['col0', 'col1', 'col4', 'col5']
 
     # Restore column visibility with action 'Show all'.
     menu = tablewidget._column_options_button.menu()
@@ -309,19 +314,25 @@ def test_toggle_column_visibility(tablewidget, qtbot):
         assert not horiz_header.isSectionHidden(logical_index)
     assert tableview.visible_column_count() == NCOL
     assert tableview.hidden_column_count() == 0
+    assert tableview.visible_columns() == [
+        'col0', 'col1', 'col2', 'col3', 'col4', 'col5']
 
 
 def test_restore_columns_to_defaults(tablewidget, qtbot):
     """Test restoring the visibility and order of the columns."""
     tableview = tablewidget.tableview
     horiz_header = tableview.horizontalHeader()
+    assert tableview.visible_columns() == [
+        'col0', 'col1', 'col2', 'col3', 'col4', 'col5']
 
-    # Move the third column to first position.
+    # Move col2 to first position.
     horiz_header.moveSection(2, 0)
     assert horiz_header.logicalIndex(0) == 2
     assert horiz_header.logicalIndex(2) == 1
+    assert tableview.visible_columns() == [
+        'col2', 'col0', 'col1', 'col3', 'col4', 'col5']
 
-    # Hide the second column.
+    # Hide col1.
     logical_index = 1
     action = tableview._toggle_column_visibility_actions[logical_index]
     action.toggle()
@@ -329,6 +340,8 @@ def test_restore_columns_to_defaults(tablewidget, qtbot):
     assert horiz_header.isSectionHidden(logical_index)
     assert tableview.visible_column_count() == NCOL - 1
     assert tableview.hidden_column_count() == 1
+    assert tableview.visible_columns() == [
+        'col2', 'col0', 'col3', 'col4', 'col5']
 
     # Restore columns to defaults with action 'Restore to defaults'.
     menu = tablewidget._column_options_button.menu()
@@ -339,6 +352,8 @@ def test_restore_columns_to_defaults(tablewidget, qtbot):
     assert not horiz_header.isSectionHidden(logical_index)
     assert tableview.visible_column_count() == NCOL
     assert tableview.hidden_column_count() == 0
+    assert tableview.visible_columns() == [
+        'col0', 'col1', 'col2', 'col3', 'col4', 'col5']
 
 
 def test_edit_non_editable_cell(tablewidget, qtbot):
