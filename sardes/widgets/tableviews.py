@@ -1438,6 +1438,18 @@ class SardesTableView(QTableView):
         return self.model().rowCount()
 
     # ---- Column options
+    def visible_columns(self):
+        """
+        Return a list of column data labels that are currently visible
+        in the table ordered according to their visual index.
+        """
+        visible_columns = []
+        for i in range(self.column_count()):
+            logical_index = self.horizontalHeader().logicalIndex(i)
+            if not self.horizontalHeader().isSectionHidden(logical_index):
+                visible_columns.append(self.model().columns[logical_index])
+        return visible_columns
+
     def column_count(self):
         """Return this table number of visible and hidden columns."""
         return self.horizontalHeader().count()
