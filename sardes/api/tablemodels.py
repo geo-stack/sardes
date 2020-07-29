@@ -717,6 +717,26 @@ class SardesTableModelBase(QAbstractTableModel):
         # We make the appropriate calls to update the model and GUI.
         self.sig_data_edited.emit(data_edit)
 
+    def append_row(self, values):
+        """
+        Append one or more new rows at the end of the data using the provided
+        values.
+
+        values: list of dict
+            A list of dict containing the values of the rows that needs to be
+            added to this SardesTableData. The keys of the dict must
+            match the data..
+        """
+        if not len(values):
+            return
+
+        self.beginInsertRows(
+            QModelIndex(),
+            len(self._datat),
+            len(self._datat) + len(values) - 1)
+        index = pd.Index(
+            [self._create_new_row_index() for i in range(len(values))])
+        data_edit = self._datat.add_row(index, values)
         self._update_visual_data()
         self.endInsertRows()
         self.dataChanged.emit(
