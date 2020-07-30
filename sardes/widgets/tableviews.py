@@ -1845,6 +1845,14 @@ class SardesTableWidget(SardesPaneWidget):
         """
         return self.model().update_data()
 
+    def show_message(self, *args, **kargs):
+        """
+        Show the provided message in a modal dialog.
+
+        See the method with the same name in SardesTableView for more details.
+        """
+        self.tableview.show_message(*args, **kargs)
+
     # ---- Setup
     def eventFilter(self, widget, event):
         """
