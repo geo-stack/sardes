@@ -1728,6 +1728,8 @@ class SardesTableWidget(SardesPaneWidget):
         """
         super().__init__(parent)
         self.setAutoFillBackground(True)
+        self._tools = {}
+        self._actions = {}
 
         self.tableview = SardesTableView(
             table_model, self, multi_columns_sort, sections_movable,
@@ -1849,8 +1851,11 @@ class SardesTableWidget(SardesPaneWidget):
             actions = self.tableview._actions[section]
             if not len(actions):
                 continue
-            for action in self.tableview._actions[section]:
+            for action in actions:
                 toolbar.addAction(action)
+                tool = toolbar.widgetForAction(action)
+                self._tools[action.objectName()] = tool
+                self._actions[action.objectName()] = action
             if section != sections[-1]:
                 toolbar.addSeparator()
 
