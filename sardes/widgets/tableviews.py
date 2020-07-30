@@ -1630,6 +1630,18 @@ class SardesTableView(QTableView):
         """
         self.model().add_new_row()
 
+    def _append_row(self, values):
+        """
+        Append one or more new rows at the end of the data using the provided
+        values.
+
+        values: list of dict
+            A list of dict containing the values of the rows that needs to be
+            added to this SardesTableData. The keys of the dict must
+            match the data..
+        """
+        self.model().append_row(values)
+
     def _delete_selected_rows(self):
         """Delete rows from the table with selected indexes"""
         self.model().delete_row(self.get_rows_intersecting_selection())
