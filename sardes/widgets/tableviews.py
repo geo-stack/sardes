@@ -1928,6 +1928,37 @@ class SardesTableWidget(SardesPaneWidget):
         else:
             self.get_lower_toolbar().addSeparator()
 
+    # ---- Tools
+    def install_tool(self, tool, before=None, after=None):
+        """
+        Install the provided tool in the toolbar of this tablewidget.
+
+        The tool is inserted in the toolbar of this tablewidget before or
+        after the provided after or before action or tool. If no before or
+        after action or tool is specified, the tool is added at the end of
+        the toolbar.
+
+        Parameters
+        ----------
+        tool : SardesTool
+            A sardes tool object to install to the toolbar of this tablewidget.
+        before : str, optional
+            The name of the action or tool before which the provided tool
+            will be inserted in the toolbar of this tablewidget.
+        after : str, optional
+            The name of the action or tool after which the provided tool
+            will be inserted in the toolbar of this tablewidget.
+        """
+        if tool.objectName() in self._tools:
+            raise Warning(
+                "Cannot add tool '{}' to table '{}' because there is already "
+                "one installed with this name in this table."
+                ).format(tool.name, self.model().table_id)
+        else:
+            self._actions[tool.objectName()] = self.add_toolbar_widget(
+                tool.toolbutton(), 'upper', before, after)
+            self._tools[tool.objectName()] = tool
+
     # ---- Table view header state
     def get_table_horiz_header_state(self):
         """
