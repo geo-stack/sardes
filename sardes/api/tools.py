@@ -75,13 +75,9 @@ class SardesToolBase(QAction):
     def toolwidget(self):
         """Return the main widget of this tool."""
         if self._toolwidget is None:
-            try:
-                self._toolwidget = self.__init_toolwidget__()
-            except NotImplementedError:
-                self._toolwidget = None
-            else:
-                if self._toolwidget is not None:
-                    self._setup_toolwidget()
+            self._toolwidget = self.__init_toolwidget__()
+            if self._toolwidget is not None:
+                self._setup_toolwidget()
         return self._toolwidget
 
     def toolbutton(self):
@@ -157,7 +153,7 @@ class SardesTool(SardesToolBase):
         All tools that need to show a dialog window when triggered *must*
         reimplement this method and return a valid QWidget object.
         """
-        return NotImplementedError
+        return None
 
     def __triggered__(self):
         """
