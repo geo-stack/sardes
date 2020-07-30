@@ -1885,19 +1885,34 @@ class SardesTableWidget(SardesPaneWidget):
         self.rowcount_label.register_table(self.tableview)
 
     # ---- Toolbar
-    def add_toolbar_widget(self, widget, which='upper'):
+    def add_toolbar_widget(self, widget, which='upper', before=None,
+                           after=None):
         """
         Add a new widget to the uppermost toolbar if 'which' is 'upper',
         else add it to the lowermost toolbar.
         """
         if which == 'upper':
-            if self._upper_toolbar_separator is None:
-                self.get_upper_toolbar().addWidget(widget)
+            toolbar = self.get_upper_toolbar()
+            if before is not None:
+                before = self._actions[before]
+                action = toolbar.insertWidget(before, widget)
+            elif after is not None:
+                try:
+                    index = toolbar.actions().index(self._actions[after])
+                    before = toolbar.actions()[index + 1]
+                except IndexError:
+                    action = toolbar.addWidget(widget)
+                else:
+                    action = toolbar.insertWidget(before, widget)
             else:
-                self.get_upper_toolbar().insertWidget(
-                    self._upper_toolbar_separator, widget)
+                if self._upper_toolbar_separator is None:
+                    action = toolbar.addWidget(widget)
+                else:
+                    action = toolbar.insertWidget(
+                        self._upper_toolbar_separator, widget)
         else:
-            self.get_lower_toolbar().addWidget(widget)
+            action = self.get_lower_toolbar().addWidget(widget)
+        return action
 
     def add_toolbar_separator(self, which='upper'):
         """
