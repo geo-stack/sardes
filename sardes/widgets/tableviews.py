@@ -1672,6 +1672,22 @@ class SardesTableView(QTableView):
         self._edit_current_item()
         self.model().undo_last_data_edit()
 
+    def show_message(self, title, message, func):
+        """
+        Show the provided message in a modal dialog.
+
+        Parameters
+        ----------
+        title : str
+            The message box title to be displayed.
+        message : str
+             The message box text to be displayed.
+        func : {'about', 'critical', 'information', 'question', 'warning'}
+            The type of message box to be displayed.
+        """
+        getattr(QMessageBox, func)(
+            self, title, message, buttons=QMessageBox.Ok)
+
     def edit(self, model_index, trigger=None, event=None):
         """
         Extend Qt method to ensure that the cell of this table that is
