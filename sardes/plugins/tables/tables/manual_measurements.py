@@ -22,7 +22,7 @@ from sardes.api.tools import SardesTool
 
 class ImportFromClipboardTool(SardesTool):
     """
-    A tool to append the content on the clipboard to the manual measurements
+    A tool to append the content of the clipboard to the manual measurements
     table.
     """
 
@@ -32,7 +32,7 @@ class ImportFromClipboardTool(SardesTool):
             name='import_from_clipboard',
             text=_('Import from Clipboard'),
             icon='import_clipboard',
-            tip=_('Add content on the Clipboard to this table.')
+            tip=_('Add the content of the Clipboard to this table.')
             )
 
     def __triggered__(self):
@@ -120,7 +120,7 @@ class ImportFromClipboardTool(SardesTool):
             if len(warning_messages):
                 formatted_message = _(
                     "The following error(s) occurred while adding the "
-                    "content on the Clipboard to this table:")
+                    "content of the Clipboard to this table:")
                 formatted_message += (
                     '<ul style="margin-left:-30px"><li>{}.</li></ul>'.format(
                         ';</li><li>'.join(warning_messages)))
