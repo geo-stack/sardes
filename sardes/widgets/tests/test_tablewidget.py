@@ -460,8 +460,7 @@ def test_edit_integer(tablewidget, qtbot, mocker):
     assert pd.isnull(tableview.model().get_value_at(model_index))
 
     # Save edits.
-    patcher = mocker.patch.object(
-        QMessageBox, 'exec_', return_value=QMessageBox.Cancel)
+    mocker.patch.object(QMessageBox, 'exec_', return_value=QMessageBox.Cancel)
     qtbot.keyPress(tablewidget, Qt.Key_Enter, modifier=Qt.ControlModifier)
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
 
