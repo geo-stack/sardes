@@ -561,6 +561,42 @@ def test_add_new_empty_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     assert len(TABLE_DATAF) == 5
 
 
+def test_append_row(tablewidget, qtbot, mocker, TABLE_DATAF):
+    """
+    Test that appending one or more new rows at the end of the data
+    using some provided values is working as expecteds.
+    """
+    tableview = tablewidget.tableview
+    selection_model = tablewidget.tableview.selectionModel()
+    assert len(TABLE_DATAF) == 3
+
+    new_values = [
+        {'col0': 'str4', 'col1': True, 'col2': 4.567,
+         'col3': 123, 'col4': 'not editable', 'col5': None},
+        {'col0': 'str5', 'col1': False, 'col2': 4.567,
+         'col3': 9, 'col4': 'not editable', 'col5': None},
+        ]
+
+    # Append 2 new row to the table.
+    tablewidget.tableview._append_row(new_values)
+    assert tableview.row_count() == 5
+    assert len(TABLE_DATAF) == 3
+    assert selection_model.currentIndex() == tableview.model().index(4, 0)
+
+    # Undo the last operation.
+    tablewidget.tableview.undo_edits_action.trigger()
+    assert tableview.row_count() == len(TABLE_DATAF) == 3
+    assert selection_model.currentIndex() == tableview.model().index(4, 0)
+
+    # Append back the 2 new rows and save the results.
+    tablewidget.tableview._append_row(new_values)
+    mocker.patch.object(QMessageBox, 'exec_', return_value=QMessageBox.Save)
+    tablewidget.tableview.save_edits_action.trigger()
+    qtbot.wait(100)
+    assert tableview.row_count() == 5
+    assert len(TABLE_DATAF) == 5
+
+
 def test_delete_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     """
     Test that deleting a row in the table is working as expected.
