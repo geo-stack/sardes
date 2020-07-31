@@ -529,9 +529,9 @@ def test_clearing_non_required_cell(tablewidget, qtbot):
     assert not tableview.clear_item_action.isEnabled()
 
 
-def test_add_row(tablewidget, qtbot, mocker, TABLE_DATAF):
+def test_add_new_empty_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     """
-    Test that adding a new row to the table is working as expected.
+    Test that adding a new empty row to the table is working as expected.
     """
     tableview = tablewidget.tableview
     selection_model = tablewidget.tableview.selectionModel()
@@ -547,7 +547,7 @@ def test_add_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     assert selection_model.currentIndex() == tableview.model().index(5, 0)
 
     # Undo the last row added.
-    qtbot.keyPress(tablewidget, Qt.Key_Z, modifier=Qt.ControlModifier)
+    tablewidget.undo_edits_action.trigger()
     nrow += -1
     assert tableview.row_count() == 5
     assert len(TABLE_DATAF) == 3
