@@ -68,14 +68,14 @@ class ImportFromClipboardTool(SardesTool):
             if column in 'datetime':
                 try:
                     new_data['datetime'] = pd.to_datetime(
-                        new_data['datetime'], format="%Y-%m-%d %H:%M")
+                        new_data['datetime'], format="%Y-%m-%d %H:%M:%S")
                 except ValueError:
                     warning_messages.append(_(
-                        "Some date time data did not match the "
-                        "yyyy-mm-dd hh:mm specified format"))
+                        "Some date time data did not match the prescribed "
+                        "<i>yyyy-mm-dd hh:mm:ss</i> format"))
                     new_data['datetime'] = pd.to_datetime(
                         new_data['datetime'],
-                        format="%Y-%m-%d %H:%M",
+                        format="%Y-%m-%d %H:%M:%S",
                         errors='coerce')
             elif column == 'value':
                 try:
@@ -111,7 +111,7 @@ class ImportFromClipboardTool(SardesTool):
                     isnull2 = new_data['sampling_feature_uuid'].isnull()
                     if sum(isnull1 != isnull2):
                         warning_messages.append(_(
-                            "Some well ID data did not match any well ID "
+                            "Some well ID data did not match any well "
                             "in the database"))
         values = new_data.to_dict(orient='records')
 
