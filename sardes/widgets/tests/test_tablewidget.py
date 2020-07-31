@@ -568,7 +568,7 @@ def test_append_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     """
     tableview = tablewidget.tableview
     selection_model = tablewidget.tableview.selectionModel()
-    assert len(TABLE_DATAF) == 3
+    assert tableview.row_count() == len(TABLE_DATAF) == 3
 
     new_values = [
         {'col0': 'str4', 'col1': True, 'col2': 4.567,
@@ -582,6 +582,12 @@ def test_append_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     assert tableview.row_count() == 5
     assert len(TABLE_DATAF) == 3
     assert selection_model.currentIndex() == tableview.model().index(4, 0)
+
+    for i in range(2):
+        for j in range(6):
+            model_index = tablewidget.model().index(i+3, j)
+            assert (tablewidget.model().get_value_at(model_index) ==
+                    new_values[i][COLUMNS[j]])
 
     # Undo the last operation.
     tablewidget.tableview.undo_edits_action.trigger()
