@@ -182,6 +182,12 @@ class RowAdded(SardesDataEdit):
             values, columns=self.parent.data.columns, index=index
             ))
 
+    def __len__(self):
+        """
+        Return the number of rows that were added to the data with this edit.
+        """
+        return len(self.index)
+
     def type(self):
         """
         Return an integer that indicates the type of data edit this
