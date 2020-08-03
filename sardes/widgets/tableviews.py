@@ -1088,9 +1088,9 @@ class SardesTableView(QTableView):
                 del self._data_edit_cursor_pos[data_edit.id]
             else:
                 if data_edit.type() == SardesTableModelBase.RowAdded:
-                    model_index = self.model().index(
-                        self.model().rowCount() - 1, 0)
-                    self._ensure_visible(model_index)
+                    model_index = self.model().mapFromSource(
+                        self.source_model.index(data_edit.row[0], 0))
+                    self._ensure_visible(model_index, force=True)
                     self.setCurrentIndex(model_index)
                 elif data_edit.type() == SardesTableModelBase.ValueChanged:
                     model_index = self.model().mapFromSource(
@@ -1720,14 +1720,14 @@ class SardesTableView(QTableView):
         """Delete rows from the table with selected indexes"""
         self.model().delete_row(self.get_rows_intersecting_selection())
 
-    def _ensure_visible(self, model_index):
+    def _ensure_visible(self, model_index, force=False):
         """
         Scroll to the item located at the given model index if it is not
         currently visible in the scrollarea.
         """
         item_rect = self.visualRect(model_index)
         view_rect = self.geometry()
-        if not view_rect.contains(item_rect):
+        if not view_rect.contains(item_rect) or force:
             self.scrollTo(model_index, hint=self.PositionAtCenter)
 
     def raise_edits_error(self, model_index, message):
