@@ -544,6 +544,7 @@ def test_add_new_empty_row(tablewidget, qtbot, mocker, TABLE_DATAF):
         nrow += 1
     assert tableview.row_count() == 6
     assert len(TABLE_DATAF) == 3
+    assert selection_model.currentIndex().isValid()
     assert selection_model.currentIndex() == tableview.model().index(5, 0)
 
     # Undo the last row added.
@@ -551,6 +552,7 @@ def test_add_new_empty_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     nrow += -1
     assert tableview.row_count() == 5
     assert len(TABLE_DATAF) == 3
+    assert selection_model.currentIndex().isValid()
     assert selection_model.currentIndex() == tableview.model().index(4, 0)
 
     # Save the results.
@@ -581,7 +583,8 @@ def test_append_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     tablewidget.tableview._append_row(new_values)
     assert tableview.row_count() == 5
     assert len(TABLE_DATAF) == 3
-    assert selection_model.currentIndex() == tableview.model().index(4, 0)
+    assert selection_model.currentIndex().isValid()
+    assert selection_model.currentIndex() == tableview.model().index(3, 0)
 
     for i in range(2):
         for j in range(6):
@@ -592,7 +595,8 @@ def test_append_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     # Undo the last operation.
     tablewidget.tableview.undo_edits_action.trigger()
     assert tableview.row_count() == len(TABLE_DATAF) == 3
-    assert selection_model.currentIndex() == tableview.model().index(4, 0)
+    assert selection_model.currentIndex().isValid()
+    assert selection_model.currentIndex() == tableview.model().index(2, 0)
 
     # Append back the 2 new rows and save the results.
     tablewidget.tableview._append_row(new_values)
