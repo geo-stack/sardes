@@ -37,9 +37,15 @@ class ImportFromClipboardTool(SardesTool):
 
     def __triggered__(self):
         new_data = pd.read_clipboard(sep='\t', dtype='str', header=None)
+        if new_data.empty:
+            self.parent.show_message(
+                title=_("Import from Clipboard warning"),
+                message=_("Nothing was added to the table because the "
+                          "Clipboard was empty."),
+                func='warning')
+            return
 
         table_visible_columns = self.parent.tableview.visible_columns()
-
         data_columns_mapper = self.parent.model()._data_columns_mapper
         table_visible_labels = [
             data_columns_mapper[column].lower().replace(' ', '')
@@ -47,75 +53,51 @@ class ImportFromClipboardTool(SardesTool):
 
         new_data_columns = []
         for i in range(len(new_data.columns)):
-            new_data_i = new_data.iat[0, i].lower().replace(' ', '')
+            print(str(new_data.iat[0, i]))
+            new_data_i = (
+                '' if pd.isnull(new_data.iat[0, i]) else new_data.iat[0, i]
+                ).lower().replace(' ', '')
             if new_data_i in table_visible_columns:
                 new_data_columns.append(new_data_i)
             elif new_data_i in table_visible_labels:
                 index = table_visible_labels.index(new_data_i)
                 new_data_columns.append(table_visible_columns[index])
             else:
-                new_data_columns = (
-                    table_visible_columns[:len(new_data.columns)])
                 break
-        else:
+        if len(new_data.columns) == len(set(new_data_columns)):
             # This means that the headers were correctly provided in
             # the copied data. We then need to drop the first row of the data.
             new_data.drop(new_data.index[0], axis='index', inplace=True)
+        else:
+            # This means that there was a problem reading the columns name or
+            # that the columns names were not provided with the imported data.
+            new_data_columns = table_visible_columns[:len(new_data.columns)]
         new_data.columns = new_data_columns
 
         warning_messages = []
         for column in new_data.columns:
-            if column in 'datetime':
-                try:
-                    new_data['datetime'] = pd.to_datetime(
-                        new_data['datetime'], format="%Y-%m-%d %H:%M:%S")
-                except ValueError:
-                    warning_messages.append(_(
-                        "Some date time data did not match the prescribed "
-                        "<i>yyyy-mm-dd hh:mm:ss</i> format"))
-                    new_data['datetime'] = pd.to_datetime(
-                        new_data['datetime'],
-                        format="%Y-%m-%d %H:%M:%S",
-                        errors='coerce')
-            elif column == 'value':
-                try:
-                    new_data['value'] = pd.to_numeric(new_data['value'])
-                except ValueError:
-                    warning_messages.append(_(
-                        "Some water level manual measurement data could not "
-                        "be converted to numerical value"))
-                    new_data['value'] = pd.to_numeric(
-                        new_data['value'], errors='coerce')
-            elif column == 'sampling_feature_uuid':
-                isnull1 = new_data['sampling_feature_uuid'].isnull()
-                try:
-                    obs_wells = (
-                        self.parent.model().libraries['observation_wells_data']
-                        )
-                    obs_wells_dict = (
-                        obs_wells['obs_well_id']
-                        [obs_wells['obs_well_id'].isin(
-                            new_data['sampling_feature_uuid'])]
-                        .drop_duplicates()
-                        .reset_index()
-                        .set_index('obs_well_id')
-                        .to_dict()['sampling_feature_uuid']
-                        )
-                    new_data['sampling_feature_uuid'] = (
-                        new_data['sampling_feature_uuid']
-                        .map(obs_wells_dict.get)
-                        )
-                except KeyError:
-                    pass
-                else:
-                    isnull2 = new_data['sampling_feature_uuid'].isnull()
-                    if sum(isnull1 != isnull2):
-                        warning_messages.append(_(
-                            "Some well ID data did not match any well "
-                            "in the database"))
-        values = new_data.to_dict(orient='records')
+            delegate = self.parent.tableview.itemDelegateForColumn(
+                self.parent.model().columns.index(column))
+            new_data[column], warning_message = delegate.format_data(
+                new_data[column])
+            if warning_message is not None:
+                warning_messages.append(warning_message)
 
-        if values != [{'sampling_feature_uuid': None}]:
+        formatted_message = None
+        if new_data.isnull().values.flatten().all():
+            formatted_message = _(
+                "Nothing was added to the table because the Clipboard "
+                "did not contain any valid data.")
+            if new_data.size > 1 and len(warning_messages):
+                formatted_message += "<br><br>"
+                formatted_message += _(
+                    "The following error(s) occurred while trying to add the "
+                    "content of the Clipboard to this table:")
+                formatted_message += (
+                    '<ul style="margin-left:-30px"><li>{}.</li></ul>'.format(
+                        ';</li><li>'.join(warning_messages)))
+        else:
+            values = new_data.to_dict(orient='records')
             self.parent.tableview._append_row(values)
             if len(warning_messages):
                 formatted_message = _(
@@ -124,17 +106,10 @@ class ImportFromClipboardTool(SardesTool):
                 formatted_message += (
                     '<ul style="margin-left:-30px"><li>{}.</li></ul>'.format(
                         ';</li><li>'.join(warning_messages)))
-                self.parent.show_message(
-                    title=_("Import from Clipboard warning"),
-                    message=formatted_message,
-                    func='warning')
-        else:
-            # This means that the Clipboard doesn't contain any valid data
-            # to add to this table.
+        if formatted_message is not None:
             self.parent.show_message(
                 title=_("Import from Clipboard warning"),
-                message=_("The Clipboard does not contain any valid data "
-                          "to add to this table."),
+                message=formatted_message,
                 func='warning')
 
 
