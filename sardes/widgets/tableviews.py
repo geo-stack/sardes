@@ -759,6 +759,7 @@ class SardesTableView(QTableView):
         self.model().rowsRemoved.connect(self._on_selected_rowcount_changed)
         self.model().rowsInserted.connect(self._on_selected_rowcount_changed)
         self.model().modelReset.connect(self._on_selected_rowcount_changed)
+        self.model().dataChanged.connect(self._on_selected_rowcount_changed)
         self.selectionModel().selectionChanged.connect(
             self._on_selected_rowcount_changed)
 
