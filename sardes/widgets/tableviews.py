@@ -231,29 +231,6 @@ class SardesItemDelegateBase(QStyledItemDelegate):
             model_index = self.model().mapFromSource(source_model_index)
 
 
-class NotEditableDelegate(SardesItemDelegateBase):
-    """
-    A delegate used to indicate that the items in the associated
-    column are not editable.
-    """
-
-    def __init__(self, model_view):
-        super().__init__(model_view, is_required=True)
-        self.is_editable = False
-
-    def createEditor(self, *args, **kargs):
-        return None
-
-    def setEditorData(self, editor, index):
-        pass
-
-    def setModelData(self, editor, model, index):
-        pass
-
-    def clear_model_data_at(self, model_index):
-        pass
-
-
 class SardesItemDelegate(SardesItemDelegateBase):
     """
     Sardes item delegates to edit the data of displayed in a table view.
@@ -320,6 +297,65 @@ class SardesItemDelegate(SardesItemDelegateBase):
         """Validate the value of this item delegate's editor."""
         return None
 
+    def format_data(self, data):
+        """
+        Format data according to the format prescribed by this delegate so that
+        they can be safely added to the model's data.
+
+        By default, this method does nothing and return the provided data and
+        a null warning message. This method needs to be reimplemented for
+        delegates that require specific data formatting.
+
+        Parameters
+        ----------
+        data : Series
+            A pandas Series that needs to be formatted to the format
+            prescribed by this delegate so that its values can be safely
+            added to the model's data.
+
+        Returns
+        -------
+        formatted_data : Series
+            The pandas Series formatted to the format prescribed by this
+            delegates so that its values can be safely added to the
+            model's data. Elements of the Series that could not be formatted
+            according to the prescribed format are set to NaN.
+        warning_message: str
+            A text describing errors that could have occured while
+            formatting the data.
+        """
+        return data, None
+
+
+class NotEditableDelegate(SardesItemDelegate):
+    """
+    A delegate used to indicate that the items in the associated
+    column are not editable.
+    """
+
+    def __init__(self, model_view):
+        super().__init__(model_view, is_required=True)
+        self.is_editable = False
+
+    def createEditor(self, *args, **kargs):
+        return None
+
+    def setEditorData(self, *args, **kargs):
+        pass
+
+    def setModelData(self, *args, **kargs):
+        pass
+
+    def clear_model_data_at(self, *args, **kargs):
+        pass
+
+    # ---- SardesItemDelegate API
+    def get_editor_data(self, *args, **kargs):
+        pass
+
+    def set_editor_data(self, *args, **kargs):
+        pass
+
 
 class DateEditDelegate(SardesItemDelegate):
     """
@@ -343,11 +379,25 @@ class DateTimeDelegate(SardesItemDelegate):
         self.display_format = ("yyyy-MM-dd hh:mm:ss" if display_format is None
                                else display_format)
 
+    # ---- SardesItemDelegate API
     def create_editor(self, parent):
         editor = QDateTimeEdit(parent)
         editor.setCalendarPopup(True)
         editor.setDisplayFormat(self.display_format)
         return editor
+
+    def format_data(self, data):
+        fmt = "%Y-%m-%d %H:%M:%S"
+        try:
+            formatted_data = pd.to_datetime(data, format=fmt)
+            warning_message = None
+        except ValueError:
+            formatted_data = pd.to_datetime(data, format=fmt, errors='coerce')
+            warning_message = _(
+                "Some {} data did not match the prescribed "
+                "<i>yyyy-mm-dd hh:mm:ss</i> format"
+                .format(self.model()._data_columns_mapper[data.name]))
+        return formatted_data, warning_message
 
 
 class TextEditDelegate(SardesItemDelegate):
@@ -386,6 +436,7 @@ class NumEditDelegate(SardesItemDelegate):
         self._top = top
         self._decimals = decimals
 
+    # ---- SardesItemDelegate API
     def create_editor(self, parent):
         if self._decimals == 0:
             editor = QSpinBox(parent)
@@ -397,6 +448,17 @@ class NumEditDelegate(SardesItemDelegate):
         if self._top is not None:
             editor.setMaximum(self._top)
         return editor
+
+    def format_data(self, data):
+        try:
+            formatted_data = pd.to_numeric(data)
+            warning_message = None
+        except ValueError:
+            formatted_data = pd.to_numeric(data, errors='coerce')
+            warning_message = _(
+                "Some {} data could not be converted to numerical value"
+                .format(self.model()._data_columns_mapper[data.name]))
+        return formatted_data, warning_message
 
 
 class BoolEditDelegate(SardesItemDelegate):
