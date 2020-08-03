@@ -1572,22 +1572,33 @@ class SardesTableView(QTableView):
         Undo the last data edits that was added to the table.
         """
         last_edit = self.model().data_edits()[-1]
-        last_edit_cursor_pos = self._data_edit_cursor_pos[last_edit.id]
         if last_edit.type() == SardesTableModelBase.RowAdded:
-            row, col = self._data_edit_cursor_pos[last_edit.id]
-            added_row = self.model().mapFromSource(
-                self.model().sourceModel().index(*last_edit_cursor_pos)
-                ).row()
-            self.model().undo_last_data_edit()
+            # We keep the selected item. If the selected item is part of the
+            # addrow edit, which means that it will be removed by this undo
+            # operation, we select the first item above it that is not
+            # part of this edit.
+            cur_index = self.selectionModel().currentIndex()
+            sorted_rows = np.delete(
+                np.arange(self.model().rowCount()),
+                self.model()._map_row_from_source[last_edit.row])
+            if len(sorted_rows) and cur_index.isValid():
+                above_row_indexes = np.where(sorted_rows <= cur_index.row())[0]
+                if len(above_row_indexes):
+                    above_row = sorted_rows[above_row_indexes[-1]]
+                else:
+                    above_row = sorted_rows[0]
+                source_model_index = self.model().mapToSource(
+                    self.source_model.index(above_row, cur_index.column()))
+            else:
+                source_model_index = QModelIndex()
 
-            # Since the model index corresponding to the added row doesn't
-            # exist once the operation is undone, we need to select the
-            # index just above or below that index in the proxy model.
-            model_index = self.model().index(max(added_row - 1, 0), 0)
+            self.model().undo_last_data_edit()
+            model_index = self.model().mapFromSource(source_model_index)
         else:
+            last_edit_cursor_pos = self._data_edit_cursor_pos[last_edit.id]
             self.model().undo_last_data_edit()
             model_index = self.model().mapFromSource(
-                self.model().sourceModel().index(*last_edit_cursor_pos))
+                self.source_model.index(*last_edit_cursor_pos))
 
         self.selectionModel().clearSelection()
         self._ensure_visible(model_index)
