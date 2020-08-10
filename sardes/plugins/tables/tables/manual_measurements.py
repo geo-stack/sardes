@@ -46,6 +46,15 @@ class ImportFromClipboardTool(SardesTool):
             return
 
         table_visible_columns = self.parent.tableview.visible_columns()
+        if len(new_data.columns) > len(table_visible_columns):
+            self.parent.show_message(
+                title=_("Import from Clipboard warning"),
+                message=_("The Clipboard contents cannot be added to "
+                          "the table because the number of columns of the "
+                          "copied data is too large."),
+                func='warning')
+            return
+
         data_columns_mapper = self.parent.model()._data_columns_mapper
         table_visible_labels = [
             data_columns_mapper[column].lower().replace(' ', '')
