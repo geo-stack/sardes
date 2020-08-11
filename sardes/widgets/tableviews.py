@@ -356,6 +356,10 @@ class NotEditableDelegate(SardesItemDelegate):
     def set_editor_data(self, *args, **kargs):
         pass
 
+    def format_data(self, data):
+        data.loc[:] = None
+        return data, None
+
 
 class DateEditDelegate(SardesItemDelegate):
     """
