@@ -424,9 +424,45 @@ class StringEditDelegate(SardesItemDelegate):
         return self.validate_unique_constaint()
 
 
+class IntEditDelegate(SardesItemDelegate):
+    """
+    A delegate to edit an integer value in a spin box.
+    """
+
+    def __init__(self, model_view, bottom=None, top=None,
+                 unique_constraint=False):
+        super() .__init__(model_view, unique_constraint=unique_constraint)
+        self._bottom = bottom
+        self._top = top
+
+    # ---- SardesItemDelegate API
+    def create_editor(self, parent):
+        editor = QSpinBox(parent)
+        if self._bottom is not None:
+            editor.setMinimum(int(self._bottom))
+        if self._top is not None:
+            editor.setMaximum(int(self._top))
+        return editor
+
+    def format_data(self, data):
+        try:
+            formatted_data = pd.to_numeric(data)
+            warning_message = None
+        except ValueError:
+            formatted_data = pd.to_numeric(data, errors='coerce')
+            warning_message = _(
+                "Some {} data could not be converted to integer value"
+                .format(self.model()._data_columns_mapper[data.name]))
+        # We need to round the data before casting them as Int64DType to
+        # avoid "TypeError: cannot safely cast non-equivalent float64 to int64"
+        # when the data contains float numbers.
+        formatted_data = formatted_data.round().astype(pd.Int64Dtype())
+        return formatted_data, warning_message
+
+
 class NumEditDelegate(SardesItemDelegate):
     """
-    A delegate to edit a float or an integer value in a spin box.
+    A delegate to edit a float or a float value in a spin box.
     """
 
     def __init__(self, model_view, decimals=0, bottom=None, top=None,
