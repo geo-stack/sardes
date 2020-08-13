@@ -82,9 +82,8 @@ class DatabaseConnectionWorker(QObject):
 
     def _disconnect_from_db(self):
         """Close the connection with the database"""
+        print("Closing connection with database...")
         self.clear_cache()
-        print("Closing connection with database...".format(
-            type(self.db_accessor).__name__))
         if self.db_accessor is not None:
             self.db_accessor.close_connection()
         print("Connection with database closed.")
@@ -104,7 +103,7 @@ class DatabaseConnectionWorker(QObject):
         Get the data related to name from the database.
         """
         if name in self._cache:
-            print("Fetched '{}' from store.".format(name))
+            print("Fetching '{}' from store... done".format(name))
             return self._cache[name],
 
         print("Fetching '{}' from the database...".format(name), end='')
