@@ -70,9 +70,9 @@ class DatabaseConnectionWorker(QObject):
     def _connect_to_db(self, db_accessor):
         """Try to create a new connection with the database"""
         self.db_accessor = db_accessor
-        self.clear_cache()
         print("Connecting to database with {}...".format(
             type(self.db_accessor).__name__))
+        self.clear_cache()
         self.db_accessor.connect()
         if self.db_accessor._connection_error is None:
             print("Connection to database succeeded.")
