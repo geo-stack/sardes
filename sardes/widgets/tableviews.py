@@ -506,11 +506,27 @@ class BoolEditDelegate(SardesItemDelegate):
     A delegate to edit a boolean value with a combobox.
     """
 
+    # ---- SardesItemDelegate API
     def create_editor(self, parent):
         editor = QComboBox(parent)
         editor.addItem(_('Yes'), userData=True)
         editor.addItem(_('No'), userData=False)
         return editor
+
+    def format_data(self, data):
+        isnull1 = data.isnull()
+        bool_map_dict = {
+            _('Yes').lower(): True, 'yes': True, 'true': True, '1': True,
+            _('No').lower(): False, 'no': False, 'false': False, '0': False}
+        formatted_data = data.str.lower().str.strip().map(bool_map_dict.get)
+        isnull2 = formatted_data.isnull()
+        if sum(isnull1 != isnull2):
+            warning_message = _(
+                "Some {} data could notbe converted to boolean value."
+                .format(self.model()._data_columns_mapper[data.name]))
+        else:
+            warning_message = None
+        return formatted_data, warning_message
 
 
 # =============================================================================
