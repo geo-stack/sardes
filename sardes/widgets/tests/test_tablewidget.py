@@ -28,10 +28,11 @@ from sardes.api.tablemodels import SardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableWidget, NotEditableDelegate, StringEditDelegate,
-    NumEditDelegate, BoolEditDelegate, MSEC_MIN_PROGRESS_DISPLAY,
-    QMessageBox, QCheckBox)
+    IntEditDelegate, NumEditDelegate, BoolEditDelegate,
+    MSEC_MIN_PROGRESS_DISPLAY, QMessageBox, QCheckBox, ImportFromClipboardTool)
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.api.database_accessor import DatabaseAccessor
+from sardes.utils.data_operations import are_values_equal
 
 
 # =============================================================================
@@ -97,7 +98,7 @@ def tablemodel(qtbot, TABLE_DATAF):
             elif column == 'col2':
                 return NumEditDelegate(view, decimals=3)
             elif column == 'col3':
-                return NumEditDelegate(view)
+                return IntEditDelegate(view)
             else:
                 return NotEditableDelegate(view)
 
@@ -1255,7 +1256,7 @@ def test_copy_to_clipboard(tablewidget, qtbot, mocker):
     model = tablewidget.tableview.model()
     QApplication.clipboard().setText('test_test_test')
 
-    # Try to copy something to the clipboard when nothing is selected
+    # Try to copy something on the clipboard when nothing is selected
     # in the table.
     qtbot.keyPress(tableview, Qt.Key_C, modifier=Qt.ControlModifier)
     assert QApplication.clipboard().text() == 'test_test_test'
@@ -1281,6 +1282,62 @@ def test_copy_to_clipboard(tablewidget, qtbot, mocker):
     qtbot.keyPress(tableview, Qt.Key_C, modifier=Qt.ControlModifier)
     assert QApplication.clipboard().text() == (
         'Column #0\tColumn #2\nstr1\t1.111\nstr3\t3.333\n')
+
+
+def test_import_from_clipboard(tablewidget, qtbot, mocker, TABLE_DATAF):
+    """
+    Test that appending the Clipboard to a table widget works as expected.
+    """
+    tableview = tablewidget.tableview
+    selection_model = tablewidget.tableview.selectionModel()
+    horiz_header = tableview.horizontalHeader()
+
+    # We need to add the tool to import data from the clipboard explicitely.
+    tablewidget.install_tool(
+        ImportFromClipboardTool(tablewidget), after='copy_to_clipboard')
+
+    # We sort the data according to col3, we then move col3 at the first
+    # position and we hide col5.
+    tableview.sort_by_column(3, 0)
+    horiz_header.moveSection(3, 0)
+    tableview._toggle_column_visibility_actions[5].toggle()
+    assert tableview.visible_columns() == [
+        'col3', 'col0', 'col1', 'col2', 'col4']
+
+    # Add some data to the clipboard and import them into the table.
+    mocker.patch.object(QMessageBox, 'warning', return_value=QMessageBox.Ok)
+    copied_data = pd.DataFrame(
+        [[2, 'str4', 1, 9.543, 'some_string'],
+         [34.25, 'str5', 'false', 'invalid float', 1.2345],
+         ['invalid int', 'str6', 'invalid bool', 23, None],
+         ],
+        columns=['col3', 'col0', 'col1', 'col2', 'col4'])
+    copied_data.to_clipboard(excel=True, index=False, na_rep='')
+    tablewidget._tools['import_from_clipboard'].trigger()
+    assert tableview.row_count() == 6
+    assert selection_model.currentIndex() == tableview.model().index(1, 3)
+
+    expected_data = [
+        ['1',  'str2', 'No', '2.222', 'not editable'],
+        ['2', 'str4', 'Yes', '9.543', ''],
+        ['3',  'str1', 'Yes', '1.111', 'not editable'],
+        ['29', 'str3', 'Yes', '3.333', 'not editable'],
+        ['34', 'str5', 'No', '', ''],
+        ['', 'str6', '', '23.0', '']]
+    for i in range(tableview.row_count()):
+        assert tablewidget.get_data_for_row(i) == expected_data[i]
+
+    expected_values = [
+        [1,  'str2', False, 2.222, 'not editable'],
+        [2, 'str4', True, 9.543, None],
+        [3,  'str1', True, 1.111, 'not editable'],
+        [29, 'str3', True, 3.333, 'not editable'],
+        [34, 'str5', False, None, None],
+        [None, 'str6', None, 23, None]]
+    for i in range(tableview.row_count()):
+        for x1, x2 in zip(
+                tablewidget.get_values_for_row(i), expected_values[i]):
+            assert are_values_equal(x1, x2), 'error on row {}'.format(i)
 
 
 if __name__ == "__main__":
