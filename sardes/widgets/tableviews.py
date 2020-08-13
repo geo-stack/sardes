@@ -1248,8 +1248,13 @@ class SardesTableView(QTableView):
                 del self._data_edit_cursor_pos[data_edit.id]
             else:
                 if data_edit.type() == SardesTableModelBase.RowAdded:
+                    if self.visible_column_count():
+                        column = self.model().columns.index(
+                            self.visible_columns()[0])
+                    else:
+                        column = 0
                     model_index = self.model().mapFromSource(
-                        self.source_model.index(data_edit.row[0], 0))
+                        self.source_model.index(data_edit.row[0], column))
                     self._ensure_visible(model_index, force=True)
                     self.setCurrentIndex(model_index)
                 elif data_edit.type() == SardesTableModelBase.ValueChanged:
