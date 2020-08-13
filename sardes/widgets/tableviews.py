@@ -357,7 +357,7 @@ class NotEditableDelegate(SardesItemDelegate):
         pass
 
     def format_data(self, data):
-        data.loc[:] = None
+        data.values[:] = None
         return data, None
 
 
