@@ -739,7 +739,7 @@ class DatabaseConnectionManager(QObject):
                 if i > 100:
                     print("Error: unable to stop the database manager thread.")
 
-            self._running_tasks = self._pending_tasks
+            self._running_tasks = self._pending_tasks.copy()
             self._pending_tasks = []
             for task_uuid4 in self._running_tasks:
                 task, args, kargs = self._task_data[task_uuid4]
