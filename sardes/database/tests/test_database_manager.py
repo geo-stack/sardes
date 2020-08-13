@@ -149,48 +149,44 @@ def test_run_tasks_if_busy(dbmanager, dbaccessor, qtbot):
     def task_callback(dataf):
         returned_values.append(dataf)
 
-    # We send the task to the manager, but we ask to pospone the execution
-    # of each task so that they can be executed by the worker all at once.
-    dbmanager.get('something', callback=task_callback, postpone_exec=True)
-    dbmanager.get('something', callback=task_callback, postpone_exec=True)
-    dbmanager.set('something', 2, -19.5, postpone_exec=True)
-    assert len(dbmanager._queued_tasks) == 3
-    assert len(dbmanager._pending_tasks) == 0
-    assert len(dbmanager._running_tasks) == 0
+    with qtbot.waitSignal(dbmanager.sig_run_tasks_finished, timeout=5000):
+        # We send the task to the manager, but we ask to pospone the execution
+        # of each task so that they can be executed by the worker all at once.
+        dbmanager.get('something', callback=task_callback, postpone_exec=True)
+        dbmanager.get('something', callback=task_callback, postpone_exec=True)
+        dbmanager.set('something', 2, -19.5, postpone_exec=True)
+        assert len(dbmanager._queued_tasks) == 3
+        assert len(dbmanager._pending_tasks) == 0
+        assert len(dbmanager._running_tasks) == 0
 
-    # Then we ask the manager to start executing the tasks.
-    dbmanager.run_tasks()
-    assert len(dbmanager._queued_tasks) == 0
-    assert len(dbmanager._pending_tasks) == 0
-    assert len(dbmanager._running_tasks) == 3
-    assert dbmanager._db_connection_thread.isRunning()
+        # Then we ask the manager to start executing the tasks.
+        dbmanager.run_tasks()
+        assert len(dbmanager._queued_tasks) == 0
+        assert len(dbmanager._pending_tasks) == 0
+        assert len(dbmanager._running_tasks) == 3
+        assert dbmanager._db_connection_thread.isRunning()
 
-    # While the worker is running, we send another task, but postpone its
-    # execution.
-    dbmanager.set('something', 1, 0.512, postpone_exec=True)
-    assert len(dbmanager._queued_tasks) == 1
-    assert len(dbmanager._pending_tasks) == 0
-    assert len(dbmanager._running_tasks) == 3
-    assert dbmanager._db_connection_thread.isRunning()
+        # While the worker is running, we send another task, but postpone its
+        # execution.
+        dbmanager.set('something', 1, 0.512, postpone_exec=True)
+        assert len(dbmanager._queued_tasks) == 1
+        assert len(dbmanager._pending_tasks) == 0
+        assert len(dbmanager._running_tasks) == 3
+        assert dbmanager._db_connection_thread.isRunning()
 
-    # While the worker is still running, we send another task, but do not
-    # postpone its execution. This should cause this task and the previous
-    # one to be moved as pending tasks.
-    dbmanager.get('something', callback=task_callback, postpone_exec=False)
-    assert len(dbmanager._queued_tasks) == 0
-    assert len(dbmanager._pending_tasks) == 2
-    assert len(dbmanager._running_tasks) == 3
-    assert dbmanager._db_connection_thread.isRunning()
+        # While the worker is still running, we send another task, but do not
+        # postpone its execution. This should cause this task and the previous
+        # one to be moved as pending tasks.
 
-    # Once the first stack of tasks is executed, the additional 2 other tasks
-    # should be executed automatically.
+        # Once the first stack of tasks is executed, the additional 2
+        # other tasks should be executed automatically.
+        dbmanager.get('something', callback=task_callback, postpone_exec=False)
+        assert len(dbmanager._queued_tasks) == 0
+        assert len(dbmanager._pending_tasks) == 2
+        assert len(dbmanager._running_tasks) == 3
+        assert dbmanager._db_connection_thread.isRunning()
 
-    # We then wait for the worker to finish and assert that all tasks have
-    # been executed as expected.
-    qtbot.waitSignal(dbmanager.sig_run_tasks_finished)
-    qtbot.waitUntil(lambda: not dbmanager._db_connection_thread.isRunning(),
-                    timeout=3000)
-
+    # We then assert that all tasks have been executed as expected.
     assert len(dbmanager._queued_tasks) == 0
     assert len(dbmanager._pending_tasks) == 0
     assert len(dbmanager._running_tasks) == 0
