@@ -1724,8 +1724,8 @@ class SardesTableView(QTableView):
     # ---- Column options
     def visible_columns(self):
         """
-        Return a list of column data labels that are currently visible
-        in the table ordered according to their visual index.
+        Return the list of data columns that are currently visible ordered
+        according to their visual index.
         """
         visible_columns = []
         for i in range(self.column_count()):
@@ -2140,13 +2140,15 @@ class SardesTableWidget(SardesPaneWidget):
         """
         return self.model().update_data()
 
+    # ---- Tableview Public API
     def show_message(self, *args, **kargs):
-        """
-        Show the provided message in a modal dialog.
+        return self.tableview.show_message(*args, **kargs)
 
-        See the method with the same name in SardesTableView for more details.
-        """
-        self.tableview.show_message(*args, **kargs)
+    def get_data_for_row(self, *args, **kargs):
+        return self.tableview.get_data_for_row(*args, **kargs)
+
+    def get_values_for_row(self, *args, **kargs):
+        return self.tableview.get_values_for_row(*args, **kargs)
 
     # ---- Setup
     def eventFilter(self, widget, event):
