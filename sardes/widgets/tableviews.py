@@ -1692,6 +1692,35 @@ class SardesTableView(QTableView):
                 data.append(self.model().index(row, column).data())
         return data
 
+    def get_values_for_row(self, row):
+        """
+        Return the model values corresponding to the data currently displayed
+        on the given row of this table.
+
+        Note that the returned values are ordered according their respective
+        column visible index and that values associated with invisible columns
+        are not included in the returned list of values.
+
+        Parameters
+        ----------
+        row : int
+            An integer corresponding to the index of the row for which
+            the model values will be returned.
+
+        Returns
+        -------
+        data : list
+            A list of model values corresponding to the data currently
+            displayed on the given row of this table.
+        """
+        values = []
+        for i in range(self.column_count()):
+            column = self.horizontalHeader().logicalIndex(i)
+            if not self.horizontalHeader().isSectionHidden(column):
+                values.append(self.model().get_value_at(
+                    self.model().index(row, column)))
+        return values
+
     # ---- Column options
     def visible_columns(self):
         """
