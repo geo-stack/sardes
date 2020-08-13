@@ -158,8 +158,7 @@ def test_run_tasks_if_busy(dbmanager, dbaccessor, qtbot):
     assert len(dbmanager._pending_tasks) == 0
     assert len(dbmanager._running_tasks) == 0
 
-    # Then we ask the manager to start executing the tasks, but we then
-    # send another task to execute while the worker is busy.
+    # Then we ask the manager to start executing the tasks.
     dbmanager.run_tasks()
     assert len(dbmanager._queued_tasks) == 0
     assert len(dbmanager._pending_tasks) == 0
@@ -181,21 +180,12 @@ def test_run_tasks_if_busy(dbmanager, dbaccessor, qtbot):
     assert len(dbmanager._queued_tasks) == 0
     assert len(dbmanager._pending_tasks) == 2
     assert len(dbmanager._running_tasks) == 3
-
-    qtbot.waitUntil(lambda: len(dbmanager._pending_tasks) == 0, timeout=3000)
+    assert dbmanager._db_connection_thread.isRunning()
 
     # Once the first stack of tasks is executed, the additional 2 other tasks
     # should be executed automatically.
-    assert dbmanager._db_connection_thread.isRunning()
-    assert len(dbmanager._queued_tasks) == 0
-    assert len(dbmanager._pending_tasks) == 0
-    assert len(dbmanager._running_tasks) == 2
 
-    assert len(returned_values) == 2
-    assert returned_values[0]['values'].values.tolist() == [1, 2, 3, 4]
-    assert returned_values[1]['values'].values.tolist() == [1, 2, 3, 4]
-
-    # We now wait for the worker to finish and assert that all tasks have
+    # We then wait for the worker to finish and assert that all tasks have
     # been executed as expected.
     qtbot.waitSignal(dbmanager.sig_run_tasks_finished)
     qtbot.waitUntil(lambda: not dbmanager._db_connection_thread.isRunning(),
