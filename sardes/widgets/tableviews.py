@@ -491,10 +491,10 @@ class NumEditDelegate(SardesItemDelegate):
 
     def format_data(self, data):
         try:
-            formatted_data = pd.to_numeric(data)
+            formatted_data = pd.to_numeric(data).astype(float)
             warning_message = None
         except ValueError:
-            formatted_data = pd.to_numeric(data, errors='coerce')
+            formatted_data = pd.to_numeric(data, errors='coerce').astype(float)
             warning_message = _(
                 "Some {} data could not be converted to numerical value"
                 .format(self.model()._data_columns_mapper[data.name]))

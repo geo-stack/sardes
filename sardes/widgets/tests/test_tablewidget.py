@@ -1306,17 +1306,26 @@ def test_import_from_clipboard(tablewidget, qtbot, mocker, TABLE_DATAF):
 
     # Add some data to the clipboard and import them into the table.
     mocker.patch.object(QMessageBox, 'warning', return_value=QMessageBox.Ok)
-    copied_data = pd.DataFrame(
+
+    pd.DataFrame(
         [[2, 'str4', 1, 9.543, 'some_string'],
-         [34.25, 'str5', 'false', 'invalid float', 1.2345],
-         ['invalid int', 'str6', 'invalid bool', 23, None],
-         ],
-        columns=['col3', 'col0', 'col1', 'col2', 'col4'])
-    copied_data.to_clipboard(excel=True, index=False, na_rep='')
+         [34.25, 'str5', 'false', 'invalid float', 1.2345]],
+        columns=['col3', 'col0', 'col1', 'col2', 'col4']
+        ).to_clipboard(excel=True, index=False, na_rep='')
     tablewidget._tools['import_from_clipboard'].trigger()
-    assert tableview.row_count() == 6
+    assert tableview.row_count() == 5
     assert selection_model.currentIndex() == tableview.model().index(1, 3)
 
+    pd.DataFrame(
+        [['invalid int', 'str6', 'invalid bool', 23, None]],
+        columns=['col3', 'col0', 'col1', 'col2', 'col4']
+        ).to_clipboard(excel=True, index=False, na_rep='')
+    tablewidget._tools['import_from_clipboard'].trigger()
+    assert tableview.row_count() == 6
+    assert selection_model.currentIndex() == tableview.model().index(5, 3)
+
+    # Assert that the data shown in the table and saved in the model
+    # are as expected.
     expected_data = [
         ['1',  'str2', 'No', '2.222', 'not editable'],
         ['2', 'str4', 'Yes', '9.543', ''],
