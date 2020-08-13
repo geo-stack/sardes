@@ -1665,6 +1665,33 @@ class SardesTableView(QTableView):
         """Return this table number of visible rows."""
         return self.model().rowCount()
 
+    def get_data_for_row(self, row):
+        """
+        Return the data currently displayed on the given row of this table.
+
+        Note that the returned data is ordered according the columns visible
+        indexes and that data for invisible columns is not included in the
+        returned data.
+
+        Parameters
+        ----------
+        row : int
+            An integer corresponding to the index of the row for which
+            data will be returned.
+
+        Returns
+        -------
+        data : list of str
+            A list of strings corresponding to the data currently displayed
+            on the given row of this table.
+        """
+        data = []
+        for i in range(self.column_count()):
+            column = self.horizontalHeader().logicalIndex(i)
+            if not self.horizontalHeader().isSectionHidden(column):
+                data.append(self.model().index(row, column).data())
+        return data
+
     # ---- Column options
     def visible_columns(self):
         """
