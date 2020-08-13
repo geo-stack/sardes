@@ -748,17 +748,18 @@ class DatabaseConnectionManager(QObject):
         Handle when all tasks that needed to be run by the worker are
         completed.
         """
-        if len(self._data_changed):
-            self.sig_database_data_changed.emit(list(self._data_changed))
-            self._data_changed = set()
-        if len(self._tseries_data_changed):
-            self.sig_tseries_data_changed.emit(
-                list(self._tseries_data_changed))
-            self._tseries_data_changed = set()
         if len(self._pending_tasks) > 0:
-            self._run_tasks()
+            self._run_pending_tasks()
         else:
             self.sig_run_tasks_finished.emit()
+            if len(self._data_changed):
+                self.sig_database_data_changed.emit(list(self._data_changed))
+                self._data_changed = set()
+            if len(self._tseries_data_changed):
+                self.sig_tseries_data_changed.emit(
+                    list(self._tseries_data_changed))
+                self._tseries_data_changed = set()
+            print('All pending tasks were executed.')
 
     # ---- Tables
     def create_new_model_index(self, table_id):
