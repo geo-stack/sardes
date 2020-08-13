@@ -708,6 +708,7 @@ class DatabaseConnectionManager(QObject):
         self._running_tasks.remove(task_uuid4)
 
         if len(self._running_tasks) == 0:
+            # This means all tasks sent to the worker were completed.
             self._handle_run_tasks_finished()
 
     def _add_task(self, task, callback, *args, **kargs):
