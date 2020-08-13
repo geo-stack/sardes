@@ -7,13 +7,12 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
-
 # ---- Local imports
 from sardes.api.tablemodels import SardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableWidget, TextEditDelegate, NotEditableDelegate, DateTimeDelegate,
-    NumEditDelegate)
+    NumEditDelegate, ImportFromClipboardTool)
 from sardes.plugins.tables.tables.delegates import ObsWellIdEditDelegate
 
 
@@ -70,3 +69,7 @@ class ManualMeasurementsTableWidget(SardesTableWidget):
                 ('notes', _('Notes'))]
             )
         super().__init__(table_model, *args, **kargs)
+
+        # Add the tool to import data from the clipboard.
+        self.install_tool(
+            ImportFromClipboardTool(self), after='copy_to_clipboard')

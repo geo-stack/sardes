@@ -28,10 +28,11 @@ from sardes.api.tablemodels import SardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableWidget, NotEditableDelegate, StringEditDelegate,
-    NumEditDelegate, BoolEditDelegate, MSEC_MIN_PROGRESS_DISPLAY,
-    QMessageBox, QCheckBox)
+    IntEditDelegate, NumEditDelegate, BoolEditDelegate,
+    MSEC_MIN_PROGRESS_DISPLAY, QMessageBox, QCheckBox, ImportFromClipboardTool)
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.api.database_accessor import DatabaseAccessor
+from sardes.utils.data_operations import are_values_equal
 
 
 # =============================================================================
@@ -44,6 +45,7 @@ VALUES = [['str1', True, 1.111, 3, 'not editable', None],
           ['str2', False, 2.222, 1, 'not editable', None],
           ['str3', True, 3.333, 29, 'not editable', None]]
 INDEXES = [uuid.uuid4() for i in range(len(VALUES))]
+
 
 @pytest.fixture
 def TABLE_DATAF():
@@ -96,7 +98,7 @@ def tablemodel(qtbot, TABLE_DATAF):
             elif column == 'col2':
                 return NumEditDelegate(view, decimals=3)
             elif column == 'col3':
-                return NumEditDelegate(view)
+                return IntEditDelegate(view)
             else:
                 return NotEditableDelegate(view)
 
@@ -281,6 +283,8 @@ def test_toggle_column_visibility(tablewidget, qtbot):
     assert tableview.column_count() == NCOL
     assert tableview.visible_column_count() == NCOL
     assert tableview.hidden_column_count() == 0
+    assert tableview.visible_columns() == [
+        'col0', 'col1', 'col2', 'col3', 'col4', 'col5']
 
     # Hide the second, third, and fourth columns of the table.
     for logical_index in [1, 2, 3]:
@@ -291,6 +295,7 @@ def test_toggle_column_visibility(tablewidget, qtbot):
         assert horiz_header.isSectionHidden(logical_index)
     assert tableview.hidden_column_count() == 3
     assert tableview.visible_column_count() == NCOL - 3
+    assert tableview.visible_columns() == ['col0', 'col4', 'col5']
 
     # Toggle back the visibility of the second column.
     action = tableview._toggle_column_visibility_actions[1]
@@ -299,6 +304,7 @@ def test_toggle_column_visibility(tablewidget, qtbot):
     assert not horiz_header.isSectionHidden(1)
     assert tableview.hidden_column_count() == 2
     assert tableview.visible_column_count() == NCOL - 2
+    assert tableview.visible_columns() == ['col0', 'col1', 'col4', 'col5']
 
     # Restore column visibility with action 'Show all'.
     menu = tablewidget._column_options_button.menu()
@@ -309,19 +315,25 @@ def test_toggle_column_visibility(tablewidget, qtbot):
         assert not horiz_header.isSectionHidden(logical_index)
     assert tableview.visible_column_count() == NCOL
     assert tableview.hidden_column_count() == 0
+    assert tableview.visible_columns() == [
+        'col0', 'col1', 'col2', 'col3', 'col4', 'col5']
 
 
 def test_restore_columns_to_defaults(tablewidget, qtbot):
     """Test restoring the visibility and order of the columns."""
     tableview = tablewidget.tableview
     horiz_header = tableview.horizontalHeader()
+    assert tableview.visible_columns() == [
+        'col0', 'col1', 'col2', 'col3', 'col4', 'col5']
 
-    # Move the third column to first position.
+    # Move col2 to first position.
     horiz_header.moveSection(2, 0)
     assert horiz_header.logicalIndex(0) == 2
     assert horiz_header.logicalIndex(2) == 1
+    assert tableview.visible_columns() == [
+        'col2', 'col0', 'col1', 'col3', 'col4', 'col5']
 
-    # Hide the second column.
+    # Hide col1.
     logical_index = 1
     action = tableview._toggle_column_visibility_actions[logical_index]
     action.toggle()
@@ -329,6 +341,8 @@ def test_restore_columns_to_defaults(tablewidget, qtbot):
     assert horiz_header.isSectionHidden(logical_index)
     assert tableview.visible_column_count() == NCOL - 1
     assert tableview.hidden_column_count() == 1
+    assert tableview.visible_columns() == [
+        'col2', 'col0', 'col3', 'col4', 'col5']
 
     # Restore columns to defaults with action 'Restore to defaults'.
     menu = tablewidget._column_options_button.menu()
@@ -339,6 +353,8 @@ def test_restore_columns_to_defaults(tablewidget, qtbot):
     assert not horiz_header.isSectionHidden(logical_index)
     assert tableview.visible_column_count() == NCOL
     assert tableview.hidden_column_count() == 0
+    assert tableview.visible_columns() == [
+        'col0', 'col1', 'col2', 'col3', 'col4', 'col5']
 
 
 def test_edit_non_editable_cell(tablewidget, qtbot):
@@ -445,8 +461,7 @@ def test_edit_integer(tablewidget, qtbot, mocker):
     assert pd.isnull(tableview.model().get_value_at(model_index))
 
     # Save edits.
-    patcher = mocker.patch.object(
-        QMessageBox, 'exec_', return_value=QMessageBox.Cancel)
+    mocker.patch.object(QMessageBox, 'exec_', return_value=QMessageBox.Cancel)
     qtbot.keyPress(tablewidget, Qt.Key_Enter, modifier=Qt.ControlModifier)
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
 
@@ -515,9 +530,9 @@ def test_clearing_non_required_cell(tablewidget, qtbot):
     assert not tableview.clear_item_action.isEnabled()
 
 
-def test_add_row(tablewidget, qtbot, mocker, TABLE_DATAF):
+def test_add_new_empty_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     """
-    Test that adding a new row to the table is working as expected.
+    Test that adding a new empty row to the table is working as expected.
     """
     tableview = tablewidget.tableview
     selection_model = tablewidget.tableview.selectionModel()
@@ -530,18 +545,64 @@ def test_add_row(tablewidget, qtbot, mocker, TABLE_DATAF):
         nrow += 1
     assert tableview.row_count() == 6
     assert len(TABLE_DATAF) == 3
+    assert selection_model.currentIndex().isValid()
     assert selection_model.currentIndex() == tableview.model().index(5, 0)
 
     # Undo the last row added.
-    qtbot.keyPress(tablewidget, Qt.Key_Z, modifier=Qt.ControlModifier)
+    tableview.undo_edits_action.trigger()
     nrow += -1
     assert tableview.row_count() == 5
     assert len(TABLE_DATAF) == 3
+    assert selection_model.currentIndex().isValid()
     assert selection_model.currentIndex() == tableview.model().index(4, 0)
 
     # Save the results.
     mocker.patch.object(QMessageBox, 'exec_', return_value=QMessageBox.Save)
     qtbot.keyPress(tablewidget, Qt.Key_Enter, modifier=Qt.ControlModifier)
+    qtbot.wait(100)
+    assert tableview.row_count() == 5
+    assert len(TABLE_DATAF) == 5
+
+
+def test_append_row(tablewidget, qtbot, mocker, TABLE_DATAF):
+    """
+    Test that appending one or more new rows at the end of the data
+    using some provided values is working as expecteds.
+    """
+    tableview = tablewidget.tableview
+    selection_model = tablewidget.tableview.selectionModel()
+    assert tableview.row_count() == len(TABLE_DATAF) == 3
+
+    new_values = [
+        {'col0': 'str4', 'col1': True, 'col2': 4.567,
+         'col3': 123, 'col4': 'not editable', 'col5': None},
+        {'col0': 'str5', 'col1': False, 'col2': 4.567,
+         'col3': 9, 'col4': 'not editable', 'col5': None},
+        ]
+
+    # Append 2 new row to the table.
+    tablewidget.tableview._append_row(new_values)
+    assert tableview.row_count() == 5
+    assert len(TABLE_DATAF) == 3
+    assert selection_model.currentIndex().isValid()
+    assert selection_model.currentIndex() == tableview.model().index(3, 0)
+
+    for i in range(2):
+        for j in range(6):
+            model_index = tablewidget.model().index(i+3, j)
+            assert (tablewidget.model().get_value_at(model_index) ==
+                    new_values[i][COLUMNS[j]])
+
+    # Undo the last operation.
+    tablewidget.tableview.undo_edits_action.trigger()
+    assert tableview.row_count() == len(TABLE_DATAF) == 3
+    assert selection_model.currentIndex().isValid()
+    assert selection_model.currentIndex() == tableview.model().index(2, 0)
+
+    # Append back the 2 new rows and save the results.
+    tablewidget.tableview._append_row(new_values)
+    mocker.patch.object(QMessageBox, 'exec_', return_value=QMessageBox.Save)
+    tablewidget.tableview.save_edits_action.trigger()
     qtbot.wait(100)
     assert tableview.row_count() == 5
     assert len(TABLE_DATAF) == 5
@@ -1195,7 +1256,7 @@ def test_copy_to_clipboard(tablewidget, qtbot, mocker):
     model = tablewidget.tableview.model()
     QApplication.clipboard().setText('test_test_test')
 
-    # Try to copy something to the clipboard when nothing is selected
+    # Try to copy something on the clipboard when nothing is selected
     # in the table.
     qtbot.keyPress(tableview, Qt.Key_C, modifier=Qt.ControlModifier)
     assert QApplication.clipboard().text() == 'test_test_test'
@@ -1221,6 +1282,71 @@ def test_copy_to_clipboard(tablewidget, qtbot, mocker):
     qtbot.keyPress(tableview, Qt.Key_C, modifier=Qt.ControlModifier)
     assert QApplication.clipboard().text() == (
         'Column #0\tColumn #2\nstr1\t1.111\nstr3\t3.333\n')
+
+
+def test_import_from_clipboard(tablewidget, qtbot, mocker, TABLE_DATAF):
+    """
+    Test that appending the Clipboard to a table widget works as expected.
+    """
+    tableview = tablewidget.tableview
+    selection_model = tablewidget.tableview.selectionModel()
+    horiz_header = tableview.horizontalHeader()
+
+    # We need to add the tool to import data from the clipboard explicitely.
+    tablewidget.install_tool(
+        ImportFromClipboardTool(tablewidget), after='copy_to_clipboard')
+
+    # We sort the data according to col3, we then move col3 at the first
+    # position and we hide col5.
+    tableview.sort_by_column(3, 0)
+    horiz_header.moveSection(3, 0)
+    tableview._toggle_column_visibility_actions[5].toggle()
+    assert tableview.visible_columns() == [
+        'col3', 'col0', 'col1', 'col2', 'col4']
+
+    # Add some data to the clipboard and import them into the table.
+    mocker.patch.object(QMessageBox, 'warning', return_value=QMessageBox.Ok)
+
+    pd.DataFrame(
+        [[2, 'str4', 1, 9.543, 'some_string'],
+         [34.25, 'str5', 'false', 'invalid float', 1.2345]],
+        columns=['col3', 'col0', 'col1', 'col2', 'col4']
+        ).to_clipboard(excel=True, index=False, na_rep='')
+    tablewidget._tools['import_from_clipboard'].trigger()
+    assert tableview.row_count() == 5
+    assert selection_model.currentIndex() == tableview.model().index(1, 3)
+
+    pd.DataFrame(
+        [['invalid int', 'str6', 'invalid bool', 23, None]],
+        columns=['col3', 'col0', 'col1', 'col2', 'col4']
+        ).to_clipboard(excel=True, index=False, na_rep='')
+    tablewidget._tools['import_from_clipboard'].trigger()
+    assert tableview.row_count() == 6
+    assert selection_model.currentIndex() == tableview.model().index(5, 3)
+
+    # Assert that the data shown in the table and saved in the model
+    # are as expected.
+    expected_data = [
+        ['1',  'str2', 'No', '2.222', 'not editable'],
+        ['2', 'str4', 'Yes', '9.543', ''],
+        ['3',  'str1', 'Yes', '1.111', 'not editable'],
+        ['29', 'str3', 'Yes', '3.333', 'not editable'],
+        ['34', 'str5', 'No', '', ''],
+        ['', 'str6', '', '23.0', '']]
+    for i in range(tableview.row_count()):
+        assert tablewidget.get_data_for_row(i) == expected_data[i]
+
+    expected_values = [
+        [1,  'str2', False, 2.222, 'not editable'],
+        [2, 'str4', True, 9.543, None],
+        [3,  'str1', True, 1.111, 'not editable'],
+        [29, 'str3', True, 3.333, 'not editable'],
+        [34, 'str5', False, None, None],
+        [None, 'str6', None, 23, None]]
+    for i in range(tableview.row_count()):
+        for x1, x2 in zip(
+                tablewidget.get_values_for_row(i), expected_values[i]):
+            assert are_values_equal(x1, x2), 'error on row {}'.format(i)
 
 
 if __name__ == "__main__":

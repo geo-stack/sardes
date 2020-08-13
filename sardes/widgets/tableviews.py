@@ -11,7 +11,6 @@
 # ---- Standard imports
 import sys
 from datetime import datetime
-import itertools
 from math import floor, ceil
 
 # ---- Third party imports
@@ -31,6 +30,7 @@ from qtpy.QtWidgets import (
 from sardes import __appname__
 from sardes.api.panes import SardesPaneWidget
 from sardes.api.tablemodels import SardesSortFilterModel, SardesTableModelBase
+from sardes.api.tools import SardesTool
 from sardes.config.icons import get_icon
 from sardes.config.locale import _
 from sardes.config.gui import get_iconsize
@@ -231,29 +231,6 @@ class SardesItemDelegateBase(QStyledItemDelegate):
             model_index = self.model().mapFromSource(source_model_index)
 
 
-class NotEditableDelegate(SardesItemDelegateBase):
-    """
-    A delegate used to indicate that the items in the associated
-    column are not editable.
-    """
-
-    def __init__(self, model_view):
-        super().__init__(model_view, is_required=True)
-        self.is_editable = False
-
-    def createEditor(self, *args, **kargs):
-        return None
-
-    def setEditorData(self, editor, index):
-        pass
-
-    def setModelData(self, editor, model, index):
-        pass
-
-    def clear_model_data_at(self, model_index):
-        pass
-
-
 class SardesItemDelegate(SardesItemDelegateBase):
     """
     Sardes item delegates to edit the data of displayed in a table view.
@@ -320,6 +297,69 @@ class SardesItemDelegate(SardesItemDelegateBase):
         """Validate the value of this item delegate's editor."""
         return None
 
+    def format_data(self, data):
+        """
+        Format data according to the format prescribed by this delegate so that
+        they can be safely added to the model's data.
+
+        By default, this method does nothing and return the provided data and
+        a null warning message. This method needs to be reimplemented for
+        delegates that require specific data formatting.
+
+        Parameters
+        ----------
+        data : Series
+            A pandas Series that needs to be formatted to the format
+            prescribed by this delegate so that its values can be safely
+            added to the model's data.
+
+        Returns
+        -------
+        formatted_data : Series
+            The pandas Series formatted to the format prescribed by this
+            delegates so that its values can be safely added to the
+            model's data. Elements of the Series that could not be formatted
+            according to the prescribed format are set to NaN.
+        warning_message: str
+            A text describing errors that could have occured while
+            formatting the data.
+        """
+        return data, None
+
+
+class NotEditableDelegate(SardesItemDelegate):
+    """
+    A delegate used to indicate that the items in the associated
+    column are not editable.
+    """
+
+    def __init__(self, model_view):
+        super().__init__(model_view, is_required=True)
+        self.is_editable = False
+
+    def createEditor(self, *args, **kargs):
+        return None
+
+    def setEditorData(self, *args, **kargs):
+        pass
+
+    def setModelData(self, *args, **kargs):
+        pass
+
+    def clear_model_data_at(self, *args, **kargs):
+        pass
+
+    # ---- SardesItemDelegate API
+    def get_editor_data(self, *args, **kargs):
+        pass
+
+    def set_editor_data(self, *args, **kargs):
+        pass
+
+    def format_data(self, data):
+        data.loc[:] = None
+        return data, None
+
 
 class DateEditDelegate(SardesItemDelegate):
     """
@@ -343,11 +383,25 @@ class DateTimeDelegate(SardesItemDelegate):
         self.display_format = ("yyyy-MM-dd hh:mm:ss" if display_format is None
                                else display_format)
 
+    # ---- SardesItemDelegate API
     def create_editor(self, parent):
         editor = QDateTimeEdit(parent)
         editor.setCalendarPopup(True)
         editor.setDisplayFormat(self.display_format)
         return editor
+
+    def format_data(self, data):
+        fmt = "%Y-%m-%d %H:%M:%S"
+        try:
+            formatted_data = pd.to_datetime(data, format=fmt)
+            warning_message = None
+        except ValueError:
+            formatted_data = pd.to_datetime(data, format=fmt, errors='coerce')
+            warning_message = _(
+                "Some {} data did not match the prescribed "
+                "<i>yyyy-mm-dd hh:mm:ss</i> format"
+                .format(self.model()._data_columns_mapper[data.name]))
+        return formatted_data, warning_message
 
 
 class TextEditDelegate(SardesItemDelegate):
@@ -374,9 +428,45 @@ class StringEditDelegate(SardesItemDelegate):
         return self.validate_unique_constaint()
 
 
+class IntEditDelegate(SardesItemDelegate):
+    """
+    A delegate to edit an integer value in a spin box.
+    """
+
+    def __init__(self, model_view, bottom=None, top=None,
+                 unique_constraint=False):
+        super() .__init__(model_view, unique_constraint=unique_constraint)
+        self._bottom = bottom
+        self._top = top
+
+    # ---- SardesItemDelegate API
+    def create_editor(self, parent):
+        editor = QSpinBox(parent)
+        if self._bottom is not None:
+            editor.setMinimum(int(self._bottom))
+        if self._top is not None:
+            editor.setMaximum(int(self._top))
+        return editor
+
+    def format_data(self, data):
+        try:
+            formatted_data = pd.to_numeric(data)
+            warning_message = None
+        except ValueError:
+            formatted_data = pd.to_numeric(data, errors='coerce')
+            warning_message = _(
+                "Some {} data could not be converted to integer value"
+                .format(self.model()._data_columns_mapper[data.name]))
+        # We need to round the data before casting them as Int64DType to
+        # avoid "TypeError: cannot safely cast non-equivalent float64 to int64"
+        # when the data contains float numbers.
+        formatted_data = formatted_data.round().astype(pd.Int64Dtype())
+        return formatted_data, warning_message
+
+
 class NumEditDelegate(SardesItemDelegate):
     """
-    A delegate to edit a float or an integer value in a spin box.
+    A delegate to edit a float or a float value in a spin box.
     """
 
     def __init__(self, model_view, decimals=0, bottom=None, top=None,
@@ -386,6 +476,7 @@ class NumEditDelegate(SardesItemDelegate):
         self._top = top
         self._decimals = decimals
 
+    # ---- SardesItemDelegate API
     def create_editor(self, parent):
         if self._decimals == 0:
             editor = QSpinBox(parent)
@@ -398,17 +489,148 @@ class NumEditDelegate(SardesItemDelegate):
             editor.setMaximum(self._top)
         return editor
 
+    def format_data(self, data):
+        try:
+            formatted_data = pd.to_numeric(data).astype(float)
+            warning_message = None
+        except ValueError:
+            formatted_data = pd.to_numeric(data, errors='coerce').astype(float)
+            warning_message = _(
+                "Some {} data could not be converted to numerical value"
+                .format(self.model()._data_columns_mapper[data.name]))
+        return formatted_data, warning_message
+
 
 class BoolEditDelegate(SardesItemDelegate):
     """
     A delegate to edit a boolean value with a combobox.
     """
 
+    # ---- SardesItemDelegate API
     def create_editor(self, parent):
         editor = QComboBox(parent)
         editor.addItem(_('Yes'), userData=True)
         editor.addItem(_('No'), userData=False)
         return editor
+
+    def format_data(self, data):
+        isnull1 = data.isnull()
+        bool_map_dict = {
+            _('Yes').lower(): True, 'yes': True, 'true': True, '1': True,
+            _('No').lower(): False, 'no': False, 'false': False, '0': False}
+        formatted_data = data.str.lower().str.strip().map(bool_map_dict.get)
+        isnull2 = formatted_data.isnull()
+        if sum(isnull1 != isnull2):
+            warning_message = _(
+                "Some {} data could notbe converted to boolean value."
+                .format(self.model()._data_columns_mapper[data.name]))
+        else:
+            warning_message = None
+        return formatted_data, warning_message
+
+
+# =============================================================================
+# ---- Tools
+# =============================================================================
+class ImportFromClipboardTool(SardesTool):
+    """
+    A tool to append the Clipboard contents to a Sardes table widget.
+    """
+
+    def __init__(self, parent):
+        super().__init__(
+            parent,
+            name='import_from_clipboard',
+            text=_('Import from Clipboard'),
+            icon='import_clipboard',
+            tip=_('Add the Clipboard contents to this table.')
+            )
+
+    def __triggered__(self):
+        new_data = pd.read_clipboard(sep='\t', dtype='str', header=None)
+        if new_data.empty:
+            self.parent.show_message(
+                title=_("Import from Clipboard warning"),
+                message=_("Nothing was added to the table because the "
+                          "Clipboard was empty."),
+                func='warning')
+            return
+
+        table_visible_columns = self.parent.tableview.visible_columns()
+        if len(new_data.columns) > len(table_visible_columns):
+            self.parent.show_message(
+                title=_("Import from Clipboard warning"),
+                message=_("The Clipboard contents cannot be added to "
+                          "the table because the number of columns of the "
+                          "copied data is too large."),
+                func='warning')
+            return
+
+        data_columns_mapper = self.parent.model()._data_columns_mapper
+        table_visible_labels = [
+            data_columns_mapper[column].lower().replace(' ', '')
+            for column in table_visible_columns]
+
+        new_data_columns = []
+        for i in range(len(new_data.columns)):
+            new_data_i = (
+                '' if pd.isnull(new_data.iat[0, i]) else new_data.iat[0, i]
+                ).lower().replace(' ', '')
+            if new_data_i in table_visible_columns:
+                new_data_columns.append(new_data_i)
+            elif new_data_i in table_visible_labels:
+                index = table_visible_labels.index(new_data_i)
+                new_data_columns.append(table_visible_columns[index])
+            else:
+                break
+        if len(new_data.columns) == len(set(new_data_columns)):
+            # This means that the headers were correctly provided in
+            # the copied data. We then need to drop the first row of the data.
+            new_data.drop(new_data.index[0], axis='index', inplace=True)
+        else:
+            # This means that there was a problem reading one or more column
+            # names, that  or
+            # that the columns names were not provided with the imported data.
+            new_data_columns = table_visible_columns[:len(new_data.columns)]
+        new_data.columns = new_data_columns
+
+        warning_messages = []
+        for column in new_data.columns:
+            delegate = self.parent.tableview.itemDelegateForColumn(
+                self.parent.model().columns.index(column))
+            new_data[column], warning_message = delegate.format_data(
+                new_data[column])
+            if warning_message is not None:
+                warning_messages.append(warning_message)
+
+        formatted_message = None
+        if new_data.isnull().values.flatten().all():
+            formatted_message = _(
+                "Nothing was added to the table because the Clipboard "
+                "did not contain any valid data.")
+            if new_data.size > 1 and len(warning_messages):
+                formatted_message += "<br><br>"
+                formatted_message += _(
+                    "The following error(s) occurred while trying to add the "
+                    "Clipboard contents to this table:")
+                formatted_message += (
+                    '<ul style="margin-left:-30px"><li>{}.</li></ul>'.format(
+                        ';</li><li>'.join(warning_messages)))
+        else:
+            values = new_data.to_dict(orient='records')
+            self.parent.tableview._append_row(values)
+            if len(warning_messages):
+                formatted_message = _(
+                    "The following error(s) occurred while adding the "
+                    "Clipboard contents to this table:")
+                formatted_message += (
+                    '<ul style="margin-left:-30px"><li>{}.</li></ul>'.format(
+                        ';</li><li>'.join(warning_messages)))
+        if formatted_message is not None:
+            self.parent.show_message(
+                title=_("Import from Clipboard warning"),
+                message=formatted_message,
+                func='warning')
 
 
 # =============================================================================
@@ -759,6 +981,7 @@ class SardesTableView(QTableView):
         self.model().rowsRemoved.connect(self._on_selected_rowcount_changed)
         self.model().rowsInserted.connect(self._on_selected_rowcount_changed)
         self.model().modelReset.connect(self._on_selected_rowcount_changed)
+        self.model().dataChanged.connect(self._on_selected_rowcount_changed)
         self.selectionModel().selectionChanged.connect(
             self._on_selected_rowcount_changed)
 
@@ -820,7 +1043,8 @@ class SardesTableView(QTableView):
                       "so you can paste it somewhere else."),
                 triggered=self.copy_to_clipboard,
                 shortcut='Ctrl+C',
-                context=Qt.WidgetShortcut)
+                context=Qt.WidgetShortcut,
+                name='copy_to_clipboard')
             self._actions['io'] = [copy_to_clipboard_action]
             self.addActions(self._actions['io'])
 
@@ -833,17 +1057,19 @@ class SardesTableView(QTableView):
                 tip=_("Edit the data of the currently focused cell."),
                 triggered=self._edit_current_item,
                 shortcut=['Enter', 'Return'],
-                context=Qt.WidgetShortcut)
+                context=Qt.WidgetShortcut,
+                name='edit_item')
             self._actions['edit'].append(self.edit_item_action)
         if 'new_row' not in self._disabled_actions:
-            new_row_action = create_action(
+            self.new_row_action = create_action(
                 self, _("New Item"),
                 icon='add_row',
                 tip=_("Create a new item."),
                 triggered=self._add_new_row,
                 shortcut=['Ctrl++', 'Ctrl+='],
-                context=Qt.WidgetShortcut)
-            self._actions['edit'].append(new_row_action)
+                context=Qt.WidgetShortcut,
+                name='new_row')
+            self._actions['edit'].append(self.new_row_action)
         if 'delete_row' not in self._disabled_actions:
             self.delete_row_action = create_action(
                 self, _("Delete Item"),
@@ -851,7 +1077,8 @@ class SardesTableView(QTableView):
                 tip=_("Delete selected items from the table."),
                 triggered=self._delete_selected_rows,
                 shortcut='Ctrl+-',
-                context=Qt.WidgetShortcut)
+                context=Qt.WidgetShortcut,
+                name='delete_row')
             self._actions['edit'].append(self.delete_row_action)
         if 'clear_item' not in self._disabled_actions:
             self.clear_item_action = create_action(
@@ -860,7 +1087,8 @@ class SardesTableView(QTableView):
                 tip=_("Set the currently focused item to NULL."),
                 triggered=self._clear_current_item,
                 shortcut='Delete',
-                context=Qt.WidgetShortcut)
+                context=Qt.WidgetShortcut,
+                name='clear_item')
             self._actions['edit'].append(self.clear_item_action)
         if 'save_edits' not in self._disabled_actions:
             self.save_edits_action = create_action(
@@ -869,7 +1097,8 @@ class SardesTableView(QTableView):
                 tip=_('Save all edits made to the table in the database.'),
                 triggered=lambda: self._save_data_edits(force=False),
                 shortcut=['Ctrl+Enter', 'Ctrl+Return'],
-                context=Qt.WidgetShortcut)
+                context=Qt.WidgetShortcut,
+                name='sav_edits')
             self.save_edits_action.setEnabled(False)
             self._actions['edit'].append(self.save_edits_action)
         if 'cancel_edits' not in self._disabled_actions:
@@ -879,7 +1108,8 @@ class SardesTableView(QTableView):
                 tip=_('Cancel all edits made to the table since last save.'),
                 triggered=self._cancel_data_edits,
                 shortcut='Ctrl+Delete',
-                context=Qt.WidgetShortcut)
+                context=Qt.WidgetShortcut,
+                name='cancel_edits')
             self.cancel_edits_action.setEnabled(False)
             self._actions['edit'].append(self.cancel_edits_action)
         if 'undo_edits' not in self._disabled_actions:
@@ -889,7 +1119,8 @@ class SardesTableView(QTableView):
                 tip=_('Undo last edit made to the table.'),
                 triggered=self._undo_last_data_edit,
                 shortcut='Ctrl+Z',
-                context=Qt.WidgetShortcut)
+                context=Qt.WidgetShortcut,
+                name='undo_edits')
             self.undo_edits_action.setEnabled(False)
             self._actions['edit'].append(self.undo_edits_action)
         self.addActions(self._actions['edit'])
@@ -902,16 +1133,16 @@ class SardesTableView(QTableView):
                 tip=_("Selects all items in the table."),
                 triggered=self.select_all,
                 shortcut='Ctrl+A',
-                context=Qt.WidgetShortcut)
-
+                context=Qt.WidgetShortcut,
+                name='select_all')
             select_clear_action = create_action(
                 self, _("Clear All"),
                 icon='select_clear',
                 tip=_("Clears the selection in the table."),
                 triggered=lambda _: self.selectionModel().clearSelection(),
                 shortcut='Escape',
-                context=Qt.WidgetShortcut)
-
+                context=Qt.WidgetShortcut,
+                name='clear_selection')
             select_row_action = create_action(
                 self, _("Select Row"),
                 icon='select_row',
@@ -921,8 +1152,8 @@ class SardesTableView(QTableView):
                       "selected."),
                 triggered=self.select_row,
                 shortcut='Shift+Space',
-                context=Qt.WidgetShortcut)
-
+                context=Qt.WidgetShortcut,
+                name='select_row')
             select_column_action = create_action(
                 self, _("Select Column"),
                 icon='select_column',
@@ -932,8 +1163,8 @@ class SardesTableView(QTableView):
                       "be selected."),
                 triggered=self.select_column,
                 shortcut='Ctrl+Space',
-                context=Qt.WidgetShortcut)
-
+                context=Qt.WidgetShortcut,
+                name='select_column')
             self._actions['selection'] = [
                 select_all_action, select_clear_action, select_row_action,
                 select_column_action]
@@ -948,8 +1179,8 @@ class SardesTableView(QTableView):
                 shortcut="Ctrl+<",
                 context=Qt.WidgetShortcut,
                 triggered=lambda _:
-                    self.sort_by_current_column(Qt.AscendingOrder))
-
+                    self.sort_by_current_column(Qt.AscendingOrder),
+                name='sort_ascending')
             sort_descending_action = create_action(
                 self, _("Sort Descending"),
                 icon='sort_descending',
@@ -958,16 +1189,16 @@ class SardesTableView(QTableView):
                 shortcut="Ctrl+>",
                 context=Qt.WidgetShortcut,
                 triggered=lambda _:
-                    self.sort_by_current_column(Qt.DescendingOrder))
-
+                    self.sort_by_current_column(Qt.DescendingOrder),
+                name='sort_descending')
             sort_clear_action = create_action(
                 self, _("Clear Sort"),
                 icon='sort_clear',
                 tip=_("Clear all sorts applied to the columns of the table."),
                 triggered=lambda _: self.clear_sort(),
                 shortcut="Ctrl+.",
-                context=Qt.WidgetShortcut)
-
+                context=Qt.WidgetShortcut,
+                name='sort_clear')
             self._actions['sort'] = [sort_ascending_action,
                                      sort_descending_action,
                                      sort_clear_action]
@@ -1017,9 +1248,14 @@ class SardesTableView(QTableView):
                 del self._data_edit_cursor_pos[data_edit.id]
             else:
                 if data_edit.type() == SardesTableModelBase.RowAdded:
-                    model_index = self.model().index(
-                        self.model().rowCount() - 1, 0)
-                    self._ensure_visible(model_index)
+                    if self.visible_column_count():
+                        column = self.model().columns.index(
+                            self.visible_columns()[0])
+                    else:
+                        column = 0
+                    model_index = self.model().mapFromSource(
+                        self.source_model.index(data_edit.row[0], column))
+                    self._ensure_visible(model_index, force=True)
                     self.setCurrentIndex(model_index)
                 elif data_edit.type() == SardesTableModelBase.ValueChanged:
                     model_index = self.model().mapFromSource(
@@ -1429,7 +1665,75 @@ class SardesTableView(QTableView):
         """Return this table number of visible rows."""
         return self.model().rowCount()
 
+    def get_data_for_row(self, row):
+        """
+        Return the data currently displayed on the given row of this table.
+
+        Note that the returned data is ordered according the columns visible
+        indexes and that data for invisible columns is not included in the
+        returned data.
+
+        Parameters
+        ----------
+        row : int
+            An integer corresponding to the index of the row for which
+            data will be returned.
+
+        Returns
+        -------
+        data : list of str
+            A list of strings corresponding to the data currently displayed
+            on the given row of this table.
+        """
+        data = []
+        for i in range(self.column_count()):
+            column = self.horizontalHeader().logicalIndex(i)
+            if not self.horizontalHeader().isSectionHidden(column):
+                data.append(self.model().index(row, column).data())
+        return data
+
+    def get_values_for_row(self, row):
+        """
+        Return the model values corresponding to the data currently displayed
+        on the given row of this table.
+
+        Note that the returned values are ordered according their respective
+        column visible index and that values associated with invisible columns
+        are not included in the returned list of values.
+
+        Parameters
+        ----------
+        row : int
+            An integer corresponding to the index of the row for which
+            the model values will be returned.
+
+        Returns
+        -------
+        data : list
+            A list of model values corresponding to the data currently
+            displayed on the given row of this table.
+        """
+        values = []
+        for i in range(self.column_count()):
+            column = self.horizontalHeader().logicalIndex(i)
+            if not self.horizontalHeader().isSectionHidden(column):
+                values.append(self.model().get_value_at(
+                    self.model().index(row, column)))
+        return values
+
     # ---- Column options
+    def visible_columns(self):
+        """
+        Return the list of data columns that are currently visible ordered
+        according to their visual index.
+        """
+        visible_columns = []
+        for i in range(self.column_count()):
+            logical_index = self.horizontalHeader().logicalIndex(i)
+            if not self.horizontalHeader().isSectionHidden(logical_index):
+                visible_columns.append(self.model().columns[logical_index])
+        return visible_columns
+
     def column_count(self):
         """Return this table number of visible and hidden columns."""
         return self.horizontalHeader().count()
@@ -1552,22 +1856,33 @@ class SardesTableView(QTableView):
         Undo the last data edits that was added to the table.
         """
         last_edit = self.model().data_edits()[-1]
-        last_edit_cursor_pos = self._data_edit_cursor_pos[last_edit.id]
         if last_edit.type() == SardesTableModelBase.RowAdded:
-            row, col = self._data_edit_cursor_pos[last_edit.id]
-            added_row = self.model().mapFromSource(
-                self.model().sourceModel().index(*last_edit_cursor_pos)
-                ).row()
-            self.model().undo_last_data_edit()
+            # We keep the selected item. If the selected item is part of the
+            # addrow edit, which means that it will be removed by this undo
+            # operation, we select the first item above it that is not
+            # part of this edit.
+            cur_index = self.selectionModel().currentIndex()
+            sorted_rows = np.delete(
+                np.arange(self.model().rowCount()),
+                self.model()._map_row_from_source[last_edit.row])
+            if len(sorted_rows) and cur_index.isValid():
+                above_row_indexes = np.where(sorted_rows <= cur_index.row())[0]
+                if len(above_row_indexes):
+                    above_row = sorted_rows[above_row_indexes[-1]]
+                else:
+                    above_row = sorted_rows[0]
+                source_model_index = self.model().mapToSource(
+                    self.source_model.index(above_row, cur_index.column()))
+            else:
+                source_model_index = QModelIndex()
 
-            # Since the model index corresponding to the added row doesn't
-            # exist once the operation is undone, we need to select the
-            # index just above or below that index in the proxy model.
-            model_index = self.model().index(max(added_row - 1, 0), 0)
+            self.model().undo_last_data_edit()
+            model_index = self.model().mapFromSource(source_model_index)
         else:
+            last_edit_cursor_pos = self._data_edit_cursor_pos[last_edit.id]
             self.model().undo_last_data_edit()
             model_index = self.model().mapFromSource(
-                self.model().sourceModel().index(*last_edit_cursor_pos))
+                self.source_model.index(*last_edit_cursor_pos))
 
         self.selectionModel().clearSelection()
         self._ensure_visible(model_index)
@@ -1610,18 +1925,30 @@ class SardesTableView(QTableView):
         """
         self.model().add_new_row()
 
+    def _append_row(self, values):
+        """
+        Append one or more new rows at the end of the data using the provided
+        values.
+
+        values: list of dict
+            A list of dict containing the values of the rows that needs to be
+            added to this SardesTableData. The keys of the dict must
+            match the data..
+        """
+        self.model().append_row(values)
+
     def _delete_selected_rows(self):
         """Delete rows from the table with selected indexes"""
         self.model().delete_row(self.get_rows_intersecting_selection())
 
-    def _ensure_visible(self, model_index):
+    def _ensure_visible(self, model_index, force=False):
         """
         Scroll to the item located at the given model index if it is not
         currently visible in the scrollarea.
         """
         item_rect = self.visualRect(model_index)
         view_rect = self.geometry()
-        if not view_rect.contains(item_rect):
+        if not view_rect.contains(item_rect) or force:
             self.scrollTo(model_index, hint=self.PositionAtCenter)
 
     def raise_edits_error(self, model_index, message):
@@ -1639,6 +1966,22 @@ class SardesTableView(QTableView):
         self.setCurrentIndex(model_index)
         self._edit_current_item()
         self.model().undo_last_data_edit()
+
+    def show_message(self, title, message, func):
+        """
+        Show the provided message in a modal dialog.
+
+        Parameters
+        ----------
+        title : str
+            The message box title to be displayed.
+        message : str
+             The message box text to be displayed.
+        func : {'about', 'critical', 'information', 'question', 'warning'}
+            The type of message box to be displayed.
+        """
+        getattr(QMessageBox, func)(
+            self, title, message, buttons=QMessageBox.Ok)
 
     def edit(self, model_index, trigger=None, event=None):
         """
@@ -1696,6 +2039,8 @@ class SardesTableWidget(SardesPaneWidget):
         """
         super().__init__(parent)
         self.setAutoFillBackground(True)
+        self._tools = {}
+        self._actions = {}
 
         self.tableview = SardesTableView(
             table_model, self, multi_columns_sort, sections_movable,
@@ -1795,6 +2140,16 @@ class SardesTableWidget(SardesPaneWidget):
         """
         return self.model().update_data()
 
+    # ---- Tableview Public API
+    def show_message(self, *args, **kargs):
+        return self.tableview.show_message(*args, **kargs)
+
+    def get_data_for_row(self, *args, **kargs):
+        return self.tableview.get_data_for_row(*args, **kargs)
+
+    def get_values_for_row(self, *args, **kargs):
+        return self.tableview.get_values_for_row(*args, **kargs)
+
     # ---- Setup
     def eventFilter(self, widget, event):
         """
@@ -1817,8 +2172,11 @@ class SardesTableWidget(SardesPaneWidget):
             actions = self.tableview._actions[section]
             if not len(actions):
                 continue
-            for action in self.tableview._actions[section]:
+            for action in actions:
                 toolbar.addAction(action)
+                tool = toolbar.widgetForAction(action)
+                self._tools[action.objectName()] = tool
+                self._actions[action.objectName()] = action
             if section != sections[-1]:
                 toolbar.addSeparator()
 
@@ -1848,19 +2206,34 @@ class SardesTableWidget(SardesPaneWidget):
         self.rowcount_label.register_table(self.tableview)
 
     # ---- Toolbar
-    def add_toolbar_widget(self, widget, which='upper'):
+    def add_toolbar_widget(self, widget, which='upper', before=None,
+                           after=None):
         """
         Add a new widget to the uppermost toolbar if 'which' is 'upper',
         else add it to the lowermost toolbar.
         """
         if which == 'upper':
-            if self._upper_toolbar_separator is None:
-                self.get_upper_toolbar().addWidget(widget)
+            toolbar = self.get_upper_toolbar()
+            if before is not None:
+                before = self._actions[before]
+                action = toolbar.insertWidget(before, widget)
+            elif after is not None:
+                try:
+                    index = toolbar.actions().index(self._actions[after])
+                    before = toolbar.actions()[index + 1]
+                except IndexError:
+                    action = toolbar.addWidget(widget)
+                else:
+                    action = toolbar.insertWidget(before, widget)
             else:
-                self.get_upper_toolbar().insertWidget(
-                    self._upper_toolbar_separator, widget)
+                if self._upper_toolbar_separator is None:
+                    action = toolbar.addWidget(widget)
+                else:
+                    action = toolbar.insertWidget(
+                        self._upper_toolbar_separator, widget)
         else:
-            self.get_lower_toolbar().addWidget(widget)
+            action = self.get_lower_toolbar().addWidget(widget)
+        return action
 
     def add_toolbar_separator(self, which='upper'):
         """
@@ -1875,6 +2248,37 @@ class SardesTableWidget(SardesPaneWidget):
                     self._upper_toolbar_separator)
         else:
             self.get_lower_toolbar().addSeparator()
+
+    # ---- Tools
+    def install_tool(self, tool, before=None, after=None):
+        """
+        Install the provided tool in the toolbar of this tablewidget.
+
+        The tool is inserted in the toolbar of this tablewidget before or
+        after the provided after or before action or tool. If no before or
+        after action or tool is specified, the tool is added at the end of
+        the toolbar.
+
+        Parameters
+        ----------
+        tool : SardesTool
+            A sardes tool object to install to the toolbar of this tablewidget.
+        before : str, optional
+            The name of the action or tool before which the provided tool
+            will be inserted in the toolbar of this tablewidget.
+        after : str, optional
+            The name of the action or tool after which the provided tool
+            will be inserted in the toolbar of this tablewidget.
+        """
+        if tool.objectName() in self._tools:
+            raise Warning(
+                "Cannot add tool '{}' to table '{}' because there is already "
+                "one installed with this name in this table."
+                ).format(tool.name, self.model().table_id)
+        else:
+            self._actions[tool.objectName()] = self.add_toolbar_widget(
+                tool.toolbutton(), 'upper', before, after)
+            self._tools[tool.objectName()] = tool
 
     # ---- Table view header state
     def get_table_horiz_header_state(self):

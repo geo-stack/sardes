@@ -39,7 +39,7 @@ def center_widget_to_another(widget, other_widget):
 
 def create_action(parent, text=None, shortcut=None, icon=None, tip=None,
                   toggled=None, triggered=None, data=None, menurole=None,
-                  context=Qt.WindowShortcut):
+                  context=Qt.WindowShortcut, name=None):
     """Create and return a QAction with the provided settings."""
     action = QAction(text, parent)
     if triggered is not None:
@@ -63,6 +63,8 @@ def create_action(parent, text=None, shortcut=None, icon=None, tip=None,
             action.setShortcuts(shortcut)
         else:
             action.setShortcut(shortcut)
+    if name is not None:
+        action.setObjectName(name)
 
     action.setShortcutContext(context)
 

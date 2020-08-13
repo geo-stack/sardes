@@ -67,6 +67,11 @@ def mainwindow(qtbot, mocker, dbconnmanager, dbaccessor):
             self.plugin = SARDES_PLUGIN_CLASS(self)
             self.plugin.register_plugin()
 
+        def closeEvent(self, event):
+            self.plugin.close_plugin()
+            self.db_connection_manager.close()
+            event.accept()
+
     mainwindow = MainWindowMock()
     mainwindow.resize(1200, 750)
     mainwindow.show()
