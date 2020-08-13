@@ -732,8 +732,12 @@ class DatabaseConnectionManager(QObject):
                 len(self._pending_tasks)))
             # Even though the worker has executed all its tasks,
             # we may still need to wait a little for it to stop properly.
+            i = 0
             while self._db_connection_thread.isRunning():
                 sleep(0.1)
+                i += 1
+                if i > 100:
+                    print("Error: unable to stop the database manager thread.")
 
             self._running_tasks = self._pending_tasks
             self._pending_tasks = []
