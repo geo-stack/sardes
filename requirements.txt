@@ -13,5 +13,4 @@ sqlalchemy
 geoalchemy2
 sqlalchemy_utils
 pillow
-xlwt
 xlsxwriter
