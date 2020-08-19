@@ -105,8 +105,8 @@ FA_ICONS = {
         ('mdi.file-download',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'file_export': [
-        ('mdi.file-export',),
-        {'color': ICON_COLOR, 'scale_factor': 1.1}],
+        ('mdi.file-export-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'file_image': [
         ('mdi.file-image',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
