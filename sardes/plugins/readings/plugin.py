@@ -28,7 +28,7 @@ from sardes.widgets.tableviews import (
     SardesTableWidget, NumEditDelegate, NotEditableDelegate,
     SardesStackedTableWidget)
 from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
-from .tools.save2file import SaveReadingsToExcelTool
+from .tools.save2excel import SaveReadingsToExcelTool
 
 
 """Readings plugin"""
