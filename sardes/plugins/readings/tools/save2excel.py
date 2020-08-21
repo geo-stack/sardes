@@ -107,6 +107,12 @@ def _format_reading_data(dataf, repere_data):
         top_casing_alt = repere_data['top_casing_alt']
         data[DataType.WaterLevel] = (
             top_casing_alt - data[DataType.WaterLevel])
+
+    # Rename columns.
+    data.columns = [_("Date of reading"),
+                    _("Water level altitude (m)"),
+                    _("Water temperature (°C)")
+                    ]
     return data
 
 
@@ -143,9 +149,8 @@ def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
     data_header_style = workbook.add_format({
         'font_name': 'Calibri', 'font_size': 11,
         'align': 'right', 'valign': 'bottom'})
-    worksheet.write(4, 0, _("Date of reading"), data_header_style)
-    worksheet.write(4, 1, _("Water level altitude (m)"), data_header_style)
-    worksheet.write(4, 2, _("Water temperature (°C)"), data_header_style)
+    for i, column in enumerate(data.columns):
+        worksheet.write(4, i, column, data_header_style)
 
     # Write the file header.
     worksheet.set_default_row(15)
