@@ -63,7 +63,7 @@ class SaveReadingsToExcelTool(SardesTool):
         """
         sheet_name = _('Piezometry')
 
-        repere_data = self.parent.model().libraries['repere_data']
+        repere_data = self.parent.model()._repere_data
         obs_well_data = self.parent.model()._obs_well_data
         formatted_data = _format_reading_data(
             self.parent.model().dataf, repere_data)
@@ -101,11 +101,12 @@ def _format_reading_data(dataf, repere_data):
         .reset_index(drop=True)
         )
     data = data[['datetime', DataType.WaterLevel, DataType.WaterTemp]]
+
+    # Convert water level in altitude.
     if not repere_data.empty:
-        top_casing_alt = repere_data.iloc[0]['top_casing_alt']
+        top_casing_alt = repere_data['top_casing_alt']
         data[DataType.WaterLevel] = (
             top_casing_alt - data[DataType.WaterLevel])
-    print(data)
     return data
 
 
@@ -180,7 +181,6 @@ def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
                              'align': 'right', 'valign': 'vcenter'}))
 
     if not repere_data.empty:
-        repere_data = repere_data.iloc[0]
         alt_value = "{:0.2f} ({})".format(
             repere_data['top_casing_alt'] - repere_data['casing_length'],
             _('Geodesic') if repere_data['is_alt_geodesic'] else
