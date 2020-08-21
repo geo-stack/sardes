@@ -114,14 +114,24 @@ class ReadingsTableWidget(SardesTableWidget):
         self._parent = parent
         self.plot_viewer = None
 
-    def update_model(self):
+    def update_model_librairies(self):
+        self.model().db_connection_manager.get(
+            'repere_data',
+            callback=lambda repere_data: self.model().set_model_library(
+                repere_data[repere_data['sampling_feature_uuid'] ==
+                            self.model()._obs_well_uuid],
+                'repere_data')
+            )
+
+    def update_model_data(self):
         self.model().sig_data_about_to_be_updated.emit()
 
         # Get the timeseries data for that observation well.
         self.model().db_connection_manager.get_timeseries_for_obs_well(
             self.model()._obs_well_uuid,
             [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
-            callback=self.set_model_data)
+            callback=self.set_model_data
+            )
 
     def set_model_data(self, dataf):
         self.model().set_model_data(dataf)
@@ -348,7 +358,8 @@ class Readings(SardesPlugin):
         if self.dockwindow.is_docked():
             self.main.register_table(table_widget.tableview)
 
-        table_widget.update_model()
+        table_widget.update_model_librairies()
+        table_widget.update_model_data()
 
     def _update_readings_tables(self, obs_well_ids):
         """
@@ -357,7 +368,9 @@ class Readings(SardesPlugin):
         """
         for obs_well_id in obs_well_ids:
             if obs_well_id in self._tseries_data_tables:
-                self._tseries_data_tables[obs_well_id].update_model()
+                table = self._tseries_data_tables[obs_well_id]
+                table.update_model_librairies()
+                table.update_model_data()
 
     # ---- Plots
     def _request_plot_readings(self, obs_well_data):
