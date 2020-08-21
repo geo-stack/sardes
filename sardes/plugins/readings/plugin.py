@@ -28,6 +28,7 @@ from sardes.widgets.tableviews import (
     SardesTableWidget, NumEditDelegate, NotEditableDelegate,
     SardesStackedTableWidget)
 from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
+from .tools.save2file import SaveReadingsToExcelTool
 
 
 """Readings plugin"""
@@ -329,6 +330,9 @@ class Readings(SardesPlugin):
             iconsize=get_iconsize()
             )
         table_widget.add_toolbar_widget(show_plot_btn)
+
+        table_widget.install_tool(SaveReadingsToExcelTool(table_widget),
+                                  after='copy_to_clipboard')
 
         # Set the title of the window.
         table_widget.setWindowTitle(_("Observation well {} ({})").format(
