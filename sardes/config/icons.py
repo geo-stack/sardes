@@ -104,6 +104,9 @@ FA_ICONS = {
     'file_download': [
         ('mdi.file-download',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'file_excel': [
+        ('mdi.file-excel-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'file_export': [
         ('mdi.file-export-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],

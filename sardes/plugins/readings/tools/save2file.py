@@ -39,9 +39,9 @@ class SaveReadingsToExcelTool(SardesTool):
         super().__init__(
                 parent,
                 name='save_readings_to_file',
-                text=_("Export Readings"),
-                icon='file_export',
-                tip=_('Save formatted readings data to an Excel file.')
+                text=_("Create XLSX Document"),
+                icon='file_excel',
+                tip=_('Save daily readings data in an Excel document.')
                 )
         self.file_saver = SafeFileSaver(
             parent=parent, name_filters=self.NAMEFILTERS, title=_("Save File"))
