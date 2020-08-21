@@ -96,11 +96,10 @@ def _format_reading_data(dataf, repere_data):
         .dropna(subset=[DataType.WaterLevel])
         .droplevel(0, axis=0).drop('datetime', axis=1)
         .reset_index(drop=False)
-        .sort_values(by=['datetime', 'install_depth'],
-                     ascending=[True, True])
+        .sort_values(by=['datetime', 'install_depth'], ascending=[True, True])
         .drop_duplicates(subset='datetime', keep='first')
+        .reset_index(drop=True)
         )
-    data['datetime'] = data['datetime'].dt.date
     data = data[['datetime', DataType.WaterLevel, DataType.WaterTemp]]
     if not repere_data.empty:
         top_casing_alt = repere_data.iloc[0]['top_casing_alt']
