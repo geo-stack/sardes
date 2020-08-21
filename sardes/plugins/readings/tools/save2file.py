@@ -48,3 +48,99 @@ def _format_reading_data(dataf):
     data = data[['datetime', DataType.WaterLevel, DataType.WaterTemp]]
     return data
 
+
+def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
+                               company_logo_filename=None):
+    """
+    Save data in an excel workbook using the specified filename and sheetname.
+
+    https://xlsxwriter.readthedocs.io/format.html
+    """
+    if not filename.endswith('.xlsx'):
+        filename += '.xlsx'
+
+    # Write the data to the file.
+    writer = pd.ExcelWriter(filename, engine='xlsxwriter')
+    data.to_excel(
+        writer, sheet_name=sheetname, startrow=5,
+        header=False, index=False, float_format="%.2f"
+        )
+
+    workbook = writer.book
+    worksheet = writer.sheets[sheetname]
+
+    # Setup the columns format.
+    # https://xlsxwriter.readthedocs.io/example_pandas_column_formats.html
+    # https://github.com/python-excel/xlwt/blob/master/examples/num_formats.py
+    date_format = workbook.add_format({'num_format': 'YYYY-MM-DD'})
+    num_format = workbook.add_format({'num_format': '0.00'})
+    worksheet.set_column('A:A', 25, date_format)
+    worksheet.set_column('B:B', 25, num_format)
+    worksheet.set_column('C:C', 34, num_format)
+
+    # Write the data header.
+    data_header_style = workbook.add_format({
+        'font_name': 'Calibri', 'font_size': 11,
+        'align': 'right', 'valign': 'bottom'})
+    worksheet.write(4, 0, _("Date of reading"), data_header_style)
+    worksheet.write(4, 1, _("Water level altitude (m)"), data_header_style)
+    worksheet.write(4, 2, _("Water temperature (°C)"), data_header_style)
+
+    # Write the file header.
+    worksheet.set_default_row(15)
+    worksheet.set_row(0, 30)
+    worksheet.set_row(1, 30)
+    worksheet.set_row(2, 30)
+
+    # https://xlsxwriter.readthedocs.io/example_pandas_header_format.html
+    worksheet.write(
+        0, 1, _('Municipality:'),
+        workbook.add_format({'font_name': 'Times New Roman', 'font_size': 12,
+                             'bold': True, 'top': 6, 'left': 6,
+                             'align': 'right', 'valign': 'vcenter'}))
+    worksheet.write(
+        0, 2, obs_well_data['municipality'],
+        workbook.add_format({'font_name': 'Times New Roman', 'font_size': 12,
+                             'bold': True, 'top': 6, 'right': 6,
+                             'align': 'center', 'valign': 'vcenter'}))
+    worksheet.write(
+        1, 1, _('Piezometer number:'),
+        workbook.add_format({'font_name': 'Times New Roman', 'font_size': 12,
+                             'bold': True, 'left': 6,
+                             'align': 'right', 'valign': 'vcenter'}))
+    worksheet.write(
+        1, 2, obs_well_data['obs_well_id'],
+        workbook.add_format({'font_name': 'Times New Roman', 'font_size': 12,
+                             'bold': True, 'right': 6,
+                             'align': 'center', 'valign': 'vcenter'}))
+    worksheet.write(
+        2, 1, _('Ground elevation (m):'),
+        workbook.add_format({'font_name': 'Times New Roman', 'font_size': 12,
+                             'bold': True, 'bottom': 6, 'left': 6,
+                             'align': 'right', 'valign': 'vcenter'}))
+    worksheet.write(
+        2, 2, 'not available yet',
+        workbook.add_format({'font_name': 'Times New Roman', 'font_size': 12,
+                             'bold': True, 'bottom': 6, 'right': 6,
+                             'align': 'center', 'valign': 'vcenter'}))
+
+    # Add the corporate logo to the file.
+    if company_logo_filename is not None:
+        img = Image.open(company_logo_filename)
+
+        width, height = img.size
+        img_scale = 170 / width
+
+        image_data = BytesIO()
+        img.convert('RGB').save(image_data, 'JPEG', quality=100)
+
+        worksheet.insert_image(
+            0, 0, 'logo.jpg',
+            options={'x_scale': img_scale, 'y_scale': img_scale,
+                     'image_data': image_data}
+            )
+
+    try:
+        writer.save()
+    except FileCreateError:
+        raise PermissionError
