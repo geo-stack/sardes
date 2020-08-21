@@ -61,11 +61,15 @@ class SaveReadingsToExcelTool(SardesTool):
         Resample daily, format and save the readings data of this tool's
         parent table in an excel workbook.
         """
-        data = _format_reading_data(self.parent.model().dataf)
-        obs_well_data = self.parent.model()._obs_well_data
         sheet_name = _('Piezometry')
+
+        repere_data = self.parent.model().libraries['repere_data']
+        obs_well_data = self.parent.model()._obs_well_data
+        formatted_data = _format_reading_data(
+            self.parent.model().dataf, repere_data)
+
         _save_reading_data_to_xlsx(
-            filename, sheet_name, data, obs_well_data,
+            filename, sheet_name, formatted_data, obs_well_data, repere_data,
             self.get_company_logo_filename())
 
     def get_company_logo_filename(self):
@@ -80,7 +84,7 @@ class SaveReadingsToExcelTool(SardesTool):
                 return osp.join(config_dir, file)
 
 
-def _format_reading_data(dataf):
+def _format_reading_data(dataf, repere_data):
     """
     Resample readings data on a daily basis and format it so that
     it can be saved in an Excel workbook.
@@ -98,11 +102,16 @@ def _format_reading_data(dataf):
         )
     data['datetime'] = data['datetime'].dt.date
     data = data[['datetime', DataType.WaterLevel, DataType.WaterTemp]]
+    if not repere_data.empty:
+        top_casing_alt = repere_data.iloc[0]['top_casing_alt']
+        data[DataType.WaterLevel] = (
+            top_casing_alt - data[DataType.WaterLevel])
+    print(data)
     return data
 
 
 def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
-                               company_logo_filename=None):
+                               repere_data, company_logo_filename=None):
     """
     Save data in an excel workbook using the specified filename and sheetname.
 
@@ -170,8 +179,18 @@ def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
         workbook.add_format({'font_name': 'Times New Roman', 'font_size': 12,
                              'bold': True, 'bottom': 6, 'left': 6,
                              'align': 'right', 'valign': 'vcenter'}))
+
+    if not repere_data.empty:
+        repere_data = repere_data.iloc[0]
+        alt_value = "{:0.2f} ({})".format(
+            repere_data['top_casing_alt'] - repere_data['casing_length'],
+            _('Geodesic') if repere_data['is_alt_geodesic'] else
+            _('Approximated')
+            )
+    else:
+        alt_value = _('Not Available')
     worksheet.write(
-        2, 2, 'not available yet',
+        2, 2, alt_value,
         workbook.add_format({'font_name': 'Times New Roman', 'font_size': 12,
                              'bold': True, 'bottom': 6, 'right': 6,
                              'align': 'center', 'valign': 'vcenter'}))
