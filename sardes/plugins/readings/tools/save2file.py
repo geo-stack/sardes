@@ -28,6 +28,58 @@ from sardes.config.main import CONF
 from sardes.api.tools import SardesTool
 from sardes.utils.fileio import SafeFileSaver
 
+
+class SaveReadingsToExcelTool(SardesTool):
+    """
+    A tool to format and save readings data to an Excel workbook.
+    """
+    NAMEFILTERS = ["Excel Workbook (*.xlsx)"]
+
+    def __init__(self, parent):
+        super().__init__(
+                parent,
+                name='save_readings_to_file',
+                text=_("Export Readings"),
+                icon='file_export',
+                tip=_('Save formatted readings data to an Excel file.')
+                )
+        self.file_saver = SafeFileSaver(
+            parent=parent, name_filters=self.NAMEFILTERS, title=_("Save File"))
+
+    # ---- SardesTool API
+    def __triggered__(self):
+        obs_well_id = self.parent.model()._obs_well_data['obs_well_id']
+        savedir = CONF.get('main', 'savedir', get_home_dir())
+        filename = osp.join(
+            savedir, 'readings_{}.xlsx'.format(obs_well_id))
+        self.file_saver.savefile(self.save_readings_to_file, filename)
+        if self.file_saver.savedir != savedir:
+            CONF.set('main', 'savedir', self.file_saver.savedir)
+
+    def save_readings_to_file(self, filename, selectedfilter):
+        """
+        Resample daily, format and save the readings data of this tool's
+        parent table in an excel workbook.
+        """
+        data = _format_reading_data(self.parent.model().dataf)
+        obs_well_data = self.parent.model()._obs_well_data
+        sheet_name = _('Piezometry')
+        _save_reading_data_to_xlsx(
+            filename, sheet_name, data, obs_well_data,
+            self.get_company_logo_filename())
+
+    def get_company_logo_filename(self):
+        """
+        Return the absolute file path of the image to use a a company logo
+        in the excel files.
+        """
+        config_dir = get_config_dir(__appname__)
+        for file in os.listdir(config_dir):
+            root, ext = osp.splitext(file)
+            if root == 'company_logo':
+                return osp.join(config_dir, file)
+
+
 def _format_reading_data(dataf):
     """
     Resample readings data on a daily basis and format it so that
