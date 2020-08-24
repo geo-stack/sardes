@@ -201,7 +201,8 @@ def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
         img = Image.open(company_logo_filename)
 
         width, height = img.size
-        img_scale = 170 / width
+        img_scale = min(170 / width, 125 / height)
+
         # Fill transparent background if any.
         if img.mode in ('RGBA', 'LA'):
             background = Image.new(img.mode[:-1], img.size, (250, 250, 250))
