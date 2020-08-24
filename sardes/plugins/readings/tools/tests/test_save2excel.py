@@ -24,11 +24,13 @@ import pytest
 import pandas as pd
 from qtpy.QtCore import Qt
 
+
 # ---- Local imports
 from sardes.api.timeseries import DataType
 from sardes.plugins.readings.tools.save2excel import (
     _format_reading_data, _save_reading_data_to_xlsx)
 from sardes.database.database_manager import DatabaseConnectionManager
+from .tools.save2excel import SaveReadingsToExcelTool
 
 
 # =============================================================================
@@ -64,6 +66,13 @@ def repere_data():
          'is_alt_geodesic': True})
 
 
+@pytest.fixture
+def obs_well_data():
+    return pd.Series(
+        {'municipality': 'municipality_test',
+         'obs_well_id': '0123456'})
+
+
 # =============================================================================
 # ---- Tests
 # =============================================================================
@@ -87,6 +96,35 @@ def test_format_reading_data(source_data, repere_data):
     assert formatted_data.equals(expected_data)
 
 
+def test_save_reading_data_to_xlsx(tmp_path, source_data, repere_data,
+                                   obs_well_data):
+    """
+    Test that publishing daily readings data to Excell is working as
+    expected.
+    """
+    filename = osp.join(tmp_path, 'test_save_readings_to_excel')
+    sheetname = 'test_sheet1'
+    _save_reading_data_to_xlsx(
+        filename, sheetname, source_data, obs_well_data,
+        repere_data, company_logo_filename=None)
+    assert osp.exists(filename + '.xlsx')
+
+    exported_data = pd.read_excel(
+        filename + '.xlsx', dtype='str', header=None)
+
+    assert exported_data.shape == (8, 3)
+    assert exported_data.iat[0, 2] == 'municipality_test'
+    assert exported_data.iat[1, 2] == '0123456'
+    assert exported_data.iat[2, 2] == '100.00 (Geodesic)'
+
+    assert exported_data.iat[4, 0] == 'Date of reading'
+    assert exported_data.iat[4, 1] == 'Water level altitude (m)'
+    assert exported_data.iat[4, 2] == 'Water temperature (°C)'
+
+    assert exported_data.iat[7, 0] == '2005-11-04 00:00:00'
+    assert exported_data.iat[7, 1] == '99.9'
+    assert exported_data.iat[7, 2] == '-5.1'
+
+
 if __name__ == "__main__":
     pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
-
