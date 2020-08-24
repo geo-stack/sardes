@@ -202,6 +202,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
         img_scale = min(170 / width, 125 / height)
 
         # Fill transparent background if any.
+        # https://github.com/python-pillow/Pillow/issues/2609#issuecomment-313922483
         if img.mode in ('RGBA', 'LA'):
             background = Image.new(img.mode[:-1], img.size, (250, 250, 250))
             background.paste(img, img.split()[-1])
