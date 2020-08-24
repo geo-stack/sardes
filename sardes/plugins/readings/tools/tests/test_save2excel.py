@@ -150,7 +150,18 @@ def test_save_readings_to_excel_tool(tmp_path, save_to_excel_tool, mocker):
     Test that the tool to save daily readings data to Excel is working as
     expected.
     """
-    selectedfilename = osp.join(tmp_path, 'test_save_readings_to_excel.xlsx')
+
+    # Save a file without a logo.
+    selectedfilename = osp.join(tmp_path, 'test_save_readings_to_excel')
+    selectedfilter = "Excel Workbook (*.xlsx)"
+    mocker.patch.object(QFileDialog, 'getSaveFileName',
+                        return_value=(selectedfilename, selectedfilter))
+
+    save_to_excel_tool.trigger()
+    assert osp.exists(selectedfilename + '.xlsx')
+
+    # Save a file with a logo.
+    selectedfilename = osp.join(tmp_path, 'test_save_readings_to_excel2')
     selectedfilter = "Excel Workbook (*.xlsx)"
     mocker.patch.object(QFileDialog, 'getSaveFileName',
                         return_value=(selectedfilename, selectedfilter))
@@ -161,7 +172,7 @@ def test_save_readings_to_excel_tool(tmp_path, save_to_excel_tool, mocker):
                         return_value=company_logo_filename)
 
     save_to_excel_tool.trigger()
-    assert osp.exists(selectedfilename)
+    assert osp.exists(selectedfilename + '.xlsx')
 
 
 if __name__ == "__main__":
