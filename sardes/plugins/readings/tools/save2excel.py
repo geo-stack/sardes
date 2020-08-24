@@ -61,15 +61,11 @@ class SaveReadingsToExcelTool(SardesTool):
         Resample daily, format and save the readings data of this tool's
         parent table in an excel workbook.
         """
-        sheet_name = _('Piezometry')
-
-        repere_data = self.parent.model()._repere_data
-        obs_well_data = self.parent.model()._obs_well_data
-        formatted_data = _format_reading_data(
-            self.parent.model().dataf, repere_data)
-
         _save_reading_data_to_xlsx(
-            filename, sheet_name, formatted_data, obs_well_data, repere_data,
+            filename, _('Piezometry'),
+            self.parent.model().dataf,
+            self.parent.model()._obs_well_data,
+            self.parent.model()._repere_data,
             self.get_company_logo_filename())
 
     def get_company_logo_filename(self):
@@ -128,6 +124,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
 
     # Write the data to the file.
     writer = pd.ExcelWriter(filename, engine='xlsxwriter')
+    data = _format_reading_data(data, repere_data)
     data.to_excel(
         writer, sheet_name=sheetname, startrow=5,
         header=False, index=False, float_format="%.2f"
