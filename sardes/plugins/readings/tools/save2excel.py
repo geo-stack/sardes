@@ -202,6 +202,11 @@ def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
 
         width, height = img.size
         img_scale = 170 / width
+        # Fill transparent background if any.
+        if img.mode in ('RGBA', 'LA'):
+            background = Image.new(img.mode[:-1], img.size, (250, 250, 250))
+            background.paste(img, img.split()[-1])
+            img = background
 
         image_data = BytesIO()
         img.convert('RGB').save(image_data, 'JPEG', quality=100)
