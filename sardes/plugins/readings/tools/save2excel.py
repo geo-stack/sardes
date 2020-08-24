@@ -15,16 +15,15 @@ import os.path as osp
 from io import BytesIO
 
 # ---- Third party imports
-from appconfigs.base import get_home_dir, get_config_dir
+from appconfigs.base import get_home_dir
 import pandas as pd
 from PIL import Image
 from xlsxwriter.exceptions import FileCreateError
 
 # ---- Local imports
-from sardes import __appname__
 from sardes.api.timeseries import DataType
 from sardes.config.locale import _
-from sardes.config.main import CONF
+from sardes.config.main import CONF, CONFIG_DIR
 from sardes.api.tools import SardesTool
 from sardes.utils.fileio import SafeFileSaver
 
@@ -73,11 +72,10 @@ class SaveReadingsToExcelTool(SardesTool):
         Return the absolute file path of the image to use a a company logo
         in the excel files.
         """
-        config_dir = get_config_dir(__appname__)
-        for file in os.listdir(config_dir):
+        for file in os.listdir(CONFIG_DIR):
             root, ext = osp.splitext(file)
             if root == 'company_logo':
-                return osp.join(config_dir, file)
+                return osp.join(CONFIG_DIR, file)
 
 
 def _format_reading_data(dataf, repere_data):
