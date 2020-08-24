@@ -25,6 +25,7 @@ from qtpy.QtWidgets import QToolBar
 from sardes.utils.fileio import QFileDialog
 
 # ---- Local imports
+from sardes import __rootdir__
 from sardes.api.timeseries import DataType
 from sardes.plugins.readings.tools.save2excel import (
     _format_reading_data, _save_reading_data_to_xlsx)
@@ -153,6 +154,11 @@ def test_save_readings_to_excel_tool(tmp_path, save_to_excel_tool, mocker):
     selectedfilter = "Excel Workbook (*.xlsx)"
     mocker.patch.object(QFileDialog, 'getSaveFileName',
                         return_value=(selectedfilename, selectedfilter))
+
+    company_logo_filename = osp.join(
+        __rootdir__, 'ressources', 'icons', 'sardes.png')
+    mocker.patch.object(SaveReadingsToExcelTool, 'get_company_logo_filename',
+                        return_value=company_logo_filename)
 
     save_to_excel_tool.trigger()
     assert osp.exists(selectedfilename)
