@@ -14,7 +14,6 @@ Tests for the SaveReadingsToExcelTool.
 # ---- Standard imports
 import os
 import os.path as osp
-import sys
 from unittest.mock import Mock
 os.environ['SARDES_PYTEST'] = 'True'
 
@@ -22,15 +21,14 @@ os.environ['SARDES_PYTEST'] = 'True'
 from numpy import nan
 import pytest
 import pandas as pd
-from qtpy.QtCore import Qt
-
+from qtpy.QtWidgets import QToolBar
+from sardes.utils.fileio import QFileDialog
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
 from sardes.plugins.readings.tools.save2excel import (
     _format_reading_data, _save_reading_data_to_xlsx)
-from sardes.database.database_manager import DatabaseConnectionManager
-from .tools.save2excel import SaveReadingsToExcelTool
+from sardes.plugins.readings.tools.save2excel import SaveReadingsToExcelTool
 
 
 # =============================================================================
@@ -71,6 +69,26 @@ def obs_well_data():
     return pd.Series(
         {'municipality': 'municipality_test',
          'obs_well_id': '0123456'})
+
+
+@pytest.fixture
+def save_to_excel_tool(qtbot, source_data, repere_data, obs_well_data):
+
+    class ParentToolbar(QToolBar):
+        def model(self):
+            model = Mock()
+            model._obs_well_data = obs_well_data
+            model._repere_data = repere_data
+            model.dataf = source_data
+            return model
+
+    toolbar = ParentToolbar()
+    tool = SaveReadingsToExcelTool(toolbar)
+
+    toolbar.addAction(tool)
+    qtbot.addWidget(toolbar)
+    toolbar.show()
+    return tool
 
 
 # =============================================================================
@@ -124,6 +142,20 @@ def test_save_reading_data_to_xlsx(tmp_path, source_data, repere_data,
     assert exported_data.iat[7, 0] == '2005-11-04 00:00:00'
     assert exported_data.iat[7, 1] == '99.9'
     assert exported_data.iat[7, 2] == '-5.1'
+
+
+def test_save_readings_to_excel_tool(tmp_path, save_to_excel_tool, mocker):
+    """
+    Test that the tool to save daily readings data to Excel is working as
+    expected.
+    """
+    selectedfilename = osp.join(tmp_path, 'test_save_readings_to_excel.xlsx')
+    selectedfilter = "Excel Workbook (*.xlsx)"
+    mocker.patch.object(QFileDialog, 'getSaveFileName',
+                        return_value=(selectedfilename, selectedfilter))
+
+    save_to_excel_tool.trigger()
+    assert osp.exists(selectedfilename)
 
 
 if __name__ == "__main__":
