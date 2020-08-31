@@ -36,12 +36,12 @@ class SaveReadingsToExcelTool(SardesTool):
 
     def __init__(self, parent):
         super().__init__(
-                parent,
-                name='save_readings_to_file',
-                text=_("Create XLSX Document"),
-                icon='file_excel',
-                tip=_('Save daily readings data in an Excel document.')
-                )
+            parent,
+            name='save_readings_to_file',
+            text=_("Create XLSX Document"),
+            icon='file_excel',
+            tip=_('Save daily readings data in an Excel document.')
+            )
         self.file_saver = SafeFileSaver(
             parent=parent, name_filters=self.NAMEFILTERS, title=_("Save File"))
 
@@ -121,20 +121,23 @@ def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
         filename += '.xlsx'
 
     # Write the data to the file.
-    writer = pd.ExcelWriter(filename, engine='xlsxwriter')
+    # https://xlsxwriter.readthedocs.io/example_pandas_datetime.html
+    writer = pd.ExcelWriter(
+        filename, engine='xlsxwriter',
+        datetime_format='yyyy-mm-dd', date_format='yyyy-mm-dd')
     data = _format_reading_data(data, repere_data)
     data.to_excel(
-        writer, sheet_name=sheetname, startrow=5,
-        header=False, index=False, float_format="%.2f"
-        )
+        writer, sheet_name=sheetname, startrow=5, header=False, index=False)
 
     workbook = writer.book
     worksheet = writer.sheets[sheetname]
 
     # Setup the columns format.
+    # Note that for date and datetime, the format needs to be specified
+    # in the writer directly.
     # https://xlsxwriter.readthedocs.io/example_pandas_column_formats.html
     # https://github.com/python-excel/xlwt/blob/master/examples/num_formats.py
-    date_format = workbook.add_format({'num_format': 'YYYY-MM-DD'})
+    date_format = workbook.add_format({'num_format': 'yyyy-mm-dd'})
     num_format = workbook.add_format({'num_format': '0.00'})
     worksheet.set_column('A:A', 25, date_format)
     worksheet.set_column('B:B', 25, num_format)
