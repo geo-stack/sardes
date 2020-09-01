@@ -52,14 +52,16 @@ class ManagerBase(QObject):
     """
     sig_run_tasks_finished = Signal()
 
-    def __init__(self, worker):
+    def __init__(self):
         super().__init__()
+        self._worker = None
+
         self._task_callbacks = {}
+        self._task_data = {}
+
         self._running_tasks = []
         self._queued_tasks = []
         self._pending_tasks = []
-        self._task_data = {}
-
         # Queued tasks are tasks whose execution has not been requested yet.
         # This happens when we want the Worker to execute a list of tasks
         # in a single run. All queued tasks are dumped in the list of pending
@@ -70,18 +72,6 @@ class ManagerBase(QObject):
         # as the worker becomes available.
         #
         # Running tasks are tasks that are being executed by the worker.
-
-        self._worker = worker
-        self._thread = QThread()
-        self._project_worker.moveToThread(self._thread)
-        self._thread.started.connect(self._project_worker.run_tasks)
-
-        # Connect the worker signals to handlers.
-        self._worker.sig_task_completed.connect(
-            self._exec_task_callback)
-
-        # Setup the table models manager.
-        self._confirm_before_saving_edits = True
 
     def run_tasks(self):
         """
@@ -95,6 +85,17 @@ class ManagerBase(QObject):
     def worker(self):
         """Return the worker that is installed on this manager."""
         return self._worker
+
+    def set_worker(self, worker):
+        """"Install the provided worker on this manager"""
+        self._worker = worker
+        self._thread = QThread()
+        self._worker.moveToThread(self._thread)
+        self._thread.started.connect(self._worker.run_tasks)
+
+        # Connect the worker signals to handlers.
+        self._worker.sig_task_completed.connect(
+            self._exec_task_callback)
 
     # ---- Private API
     @Slot(object, object)
@@ -156,5 +157,5 @@ class ManagerBase(QObject):
             self._pending_tasks = []
             for task_uuid4 in self._running_tasks:
                 task, args, kargs = self._task_data[task_uuid4]
-                self._project_worker.add_task(task_uuid4, task, *args, **kargs)
+                self._worker.add_task(task_uuid4, task, *args, **kargs)
             self._thread.start()
