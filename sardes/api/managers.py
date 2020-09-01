@@ -44,7 +44,7 @@ class WorkerBase(QObject):
         self.thread().quit()
 
 
-class ManagerBase(QObject):
+class TaskManagerBase(QObject):
     """
     A basic manager to handle tasks that need to be executed in a different
     thread than that of the main application to avoid blocking the GUI event
