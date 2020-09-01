@@ -21,18 +21,17 @@ from qtpy.QtCore import QObject, QThread, Signal, Slot
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
+from sardes.api.managers import WorkerBase
 
 
-class DatabaseConnectionWorker(QObject):
+class DatabaseConnectionWorker(WorkerBase):
     """
     A simple worker to create a new database session without blocking the gui.
     """
-    sig_task_completed = Signal(object, object)
 
-    def __init__(self, parent=None):
-        super(DatabaseConnectionWorker, self).__init__(parent)
+    def __init__(self):
+        super().__init__()
         self.db_accessor = None
-        self._tasks = OrderedDict()
 
         # Setup a cache structure for the tables and libraries.
         self._cache = {}
@@ -43,23 +42,6 @@ class DatabaseConnectionWorker(QObject):
         """
         print("Clearing the database worker cache... done.")
         self._cache = {}
-
-    # ---- Task management
-    def add_task(self, task_uuid4, task, *args, **kargs):
-        """
-        Add a task to the stack that will be executed when the thread of
-        this worker is started.
-        """
-        self._tasks[task_uuid4] = (task, args, kargs)
-
-    def run_tasks(self):
-        """Execute the tasks that were added to the stack."""
-        for task_uuid4, (task, args, kargs) in self._tasks.items():
-            method_to_exec = getattr(self, '_' + task)
-            returned_values = method_to_exec(*args, **kargs)
-            self.sig_task_completed.emit(task_uuid4, returned_values)
-        self._tasks = OrderedDict()
-        self.thread().quit()
 
     # ---- Worker connection state
     def is_connected(self):
