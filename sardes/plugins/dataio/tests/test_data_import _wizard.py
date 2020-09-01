@@ -478,7 +478,7 @@ def test_duplicates_with_multiple_sondes(
                  DataType.WaterEC, 'sonde_id'])
     merged_data['datetime'] = pd.to_datetime(
         merged_data['datetime'], format="%Y-%m-%d %H:%M:%S")
-    mocker.patch.object(dbmanager._db_connection_worker,
+    mocker.patch.object(dbmanager._worker,
                         '_get_timeseries_for_obs_well',
                         return_value=(merged_data,))
 
@@ -491,7 +491,7 @@ def test_duplicates_with_multiple_sondes(
          'well_municipality': "Saint-Paul-d'Abbotsford",
          'sonde_brand_model': 'Solinst LTC M100 Edge',
          'well_name': '03037041'})
-    mocker.patch.object(dbmanager._db_connection_worker,
+    mocker.patch.object(dbmanager._worker,
                         '_get_sonde_installation_info',
                         return_value=(sonde_installation,))
 
