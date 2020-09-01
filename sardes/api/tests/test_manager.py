@@ -19,7 +19,7 @@ import pytest
 import pandas as pd
 
 # ---- Local imports
-from sardes.api.managers import WorkerBase, TaskManagerBase
+from sardes.api.taskmanagers import WorkerBase, TaskManagerBase
 
 
 # =============================================================================
@@ -59,7 +59,7 @@ def task_manager(worker, qtbot):
 # =============================================================================
 # ---- Tests
 # =============================================================================
-def test_run_tasks_if_posponed(task_manager, qtbot):
+def test_run_tasks(task_manager, qtbot):
     """
     Test that the task manager is managing queued tasks as expected.
     """
