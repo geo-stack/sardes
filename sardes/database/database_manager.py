@@ -17,11 +17,11 @@ import datetime
 # ---- Third party imports
 import pandas as pd
 from pandas import DataFrame
-from qtpy.QtCore import QObject, QThread, Signal, Slot
+from qtpy.QtCore import QObject, Signal, Slot
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
-from sardes.api.managers import WorkerBase
+from sardes.api.managers import WorkerBase, ManagerBase
 
 
 class DatabaseConnectionWorker(WorkerBase):
@@ -419,48 +419,23 @@ class SardesModelsManager(QObject):
         self.sig_models_data_changed.emit()
 
 
-class DatabaseConnectionManager(QObject):
+class DatabaseConnectionManager(ManagerBase):
     sig_database_connected = Signal(object, object)
     sig_database_disconnected = Signal()
     sig_database_is_connecting = Signal()
     sig_database_connection_changed = Signal(bool)
     sig_database_data_changed = Signal(list)
     sig_tseries_data_changed = Signal(list)
-    sig_run_tasks_finished = Signal()
     sig_models_data_changed = Signal()
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self):
+        super().__init__()
         self._is_connecting = False
         self._data_changed = set()
         self._tseries_data_changed = set()
 
-        self._task_callbacks = {}
-        self._running_tasks = []
-        self._queued_tasks = []
-        self._pending_tasks = []
-        self._task_data = {}
-
-        # Queued tasks are tasks whose execution has not been requested yet.
-        # This happens when we want the Worker to execute a list of tasks
-        # in a single run. All queued tasks are dumped in the list of pending
-        # tasks when `run_task` is called.
-        #
-        # Pending tasks are tasks whose execution was postponed due to
-        # the fact that the worker was busy. These tasks are run as soon
-        # as the worker become available.
-        #
-        # Running tasks are tasks that are being executed by the worker.
-
-        self._db_connection_worker = DatabaseConnectionWorker()
-        self._db_connection_thread = QThread()
-        self._db_connection_worker.moveToThread(self._db_connection_thread)
-        self._db_connection_thread.started.connect(
-            self._db_connection_worker.run_tasks)
-
-        # Connect the worker signals to handlers.
-        self._db_connection_worker.sig_task_completed.connect(
-            self._exec_task_callback)
+        self.set_worker(DatabaseConnectionWorker())
+        self.sig_run_tasks_finished.connect(self._handle_run_tasks_finished)
 
         # Setup the table models manager.
         self.models_manager = SardesModelsManager(self)
@@ -470,7 +445,7 @@ class DatabaseConnectionManager(QObject):
 
     def is_connected(self):
         """Return whether a connection to a database is currently active."""
-        return self._db_connection_worker.is_connected()
+        return self.worker().is_connected()
 
     def is_connecting(self):
         """
@@ -510,7 +485,7 @@ class DatabaseConnectionManager(QObject):
         Return a new index that can be used subsequently to add new item
         to the data related to name in the database.
         """
-        return self._db_connection_worker._create_index(name)
+        return self.worker()._create_index(name)
 
     def set(self, *args, callback=None, postpone_exec=False):
         """
@@ -537,12 +512,6 @@ class DatabaseConnectionManager(QObject):
         """Close the connection with the database"""
         self._add_task('disconnect_from_db', self._handle_disconnect_from_db)
         self.run_tasks()
-
-    def run_tasks(self):
-        """
-        Execute all the tasks that were added to the stack.
-        """
-        self._run_tasks()
 
     def close(self):
         """Close this database connection manager."""
@@ -574,7 +543,7 @@ class DatabaseConnectionManager(QObject):
                 self.run_tasks()
         else:
             tseries_groups = (
-                self._db_connection_worker._get_timeseries_for_obs_well(
+                self.worker()._get_timeseries_for_obs_well(
                     obs_well_id, data_types)
                 )[0]
             if callback is not None:
@@ -652,7 +621,7 @@ class DatabaseConnectionManager(QObject):
         if not postpone_exec:
             self.run_tasks()
 
-    # ---- Tasks handlers
+    # ---- Handlers
     @Slot(object, object)
     def _handle_connect_to_db(self, connection, connection_error):
         """
@@ -671,81 +640,18 @@ class DatabaseConnectionManager(QObject):
         self.sig_database_disconnected.emit()
         self.sig_database_connection_changed.emit(self.is_connected())
 
-    @Slot(object, object)
-    def _exec_task_callback(self, task_uuid4, returned_values):
-        """
-        This is the (only) slot that is called after a task is completed
-        by the worker.
-        """
-        # Run the callback associated with the specified task UUID if any.
-        if self._task_callbacks[task_uuid4] is not None:
-            try:
-                self._task_callbacks[task_uuid4](*returned_values)
-            except TypeError:
-                self._task_callbacks[task_uuid4]()
-
-        # Clean up internal variables.
-        del self._task_callbacks[task_uuid4]
-        del self._task_data[task_uuid4]
-        self._running_tasks.remove(task_uuid4)
-
-        if len(self._running_tasks) == 0:
-            # This means all tasks sent to the worker were completed.
-            self._handle_run_tasks_finished()
-
-    def _add_task(self, task, callback, *args, **kargs):
-        task_uuid4 = uuid.uuid4()
-        self._task_callbacks[task_uuid4] = callback
-        self._queued_tasks.append(task_uuid4)
-        self._task_data[task_uuid4] = (task, args, kargs)
-
-    def _run_tasks(self):
-        """
-        Execute all the tasks that were added to the stack.
-        """
-        self._pending_tasks.extend(self._queued_tasks)
-        self._queued_tasks = []
-        self._run_pending_tasks()
-
-    def _run_pending_tasks(self):
-        """Execute all pending tasks."""
-        if len(self._running_tasks) == 0:
-            print('Executing {} pending tasks...'.format(
-                len(self._pending_tasks)))
-            # Even though the worker has executed all its tasks,
-            # we may still need to wait a little for it to stop properly.
-            i = 0
-            while self._db_connection_thread.isRunning():
-                sleep(0.1)
-                i += 1
-                if i > 100:
-                    print("Error: unable to stop the database manager thread.")
-
-            self._running_tasks = self._pending_tasks.copy()
-            self._pending_tasks = []
-            for task_uuid4 in self._running_tasks:
-                task, args, kargs = self._task_data[task_uuid4]
-                self._db_connection_worker.add_task(
-                    task_uuid4, task, *args, **kargs)
-            self._db_connection_thread.start()
-
     def _handle_run_tasks_finished(self):
         """
         Handle when all tasks that needed to be run by the worker are
         completed.
         """
-        if len(self._pending_tasks) > 0:
-            self._run_pending_tasks()
-        else:
-            self.sig_run_tasks_finished.emit()
-            if len(self._data_changed):
-                self.sig_database_data_changed.emit(list(self._data_changed))
-                self._data_changed = set()
-            if len(self._tseries_data_changed):
-                self.sig_tseries_data_changed.emit(
-                    list(self._tseries_data_changed))
-                self._tseries_data_changed = set()
-            print('All pending tasks were executed.')
+        if len(self._data_changed):
+            self.sig_database_data_changed.emit(list(self._data_changed))
+            self._data_changed = set()
+        if len(self._tseries_data_changed):
+            self.sig_tseries_data_changed.emit(
+                list(self._tseries_data_changed))
+            self._tseries_data_changed = set()
 
     # ---- Tables
     def create_new_model_index(self, table_id):
