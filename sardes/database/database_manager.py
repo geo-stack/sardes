@@ -21,7 +21,7 @@ from qtpy.QtCore import QObject, Signal, Slot
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
-from sardes.api.managers import WorkerBase, ManagerBase
+from sardes.api.taskmanagers import WorkerBase, TaskManagerBase
 
 
 class DatabaseConnectionWorker(WorkerBase):
@@ -419,7 +419,7 @@ class SardesModelsManager(QObject):
         self.sig_models_data_changed.emit()
 
 
-class DatabaseConnectionManager(ManagerBase):
+class DatabaseConnectionManager(TaskManagerBase):
     sig_database_connected = Signal(object, object)
     sig_database_disconnected = Signal()
     sig_database_is_connecting = Signal()
