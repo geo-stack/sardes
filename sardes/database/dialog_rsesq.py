@@ -15,7 +15,7 @@ from qtpy.QtWidgets import (QHBoxLayout, QLabel, QLineEdit, QSpinBox)
 # ---- Local imports
 from sardes.api.database_dialog import DatabaseConnectDialogBase
 from sardes.config.locale import _
-from sardes.database.accessor_rsesq import DatabaseAccessorRSESQ
+from sardes.database.accessors import DatabaseAccessorRSESQ
 
 
 class DatabaseConnectDialogRSESQ(DatabaseConnectDialogBase):
