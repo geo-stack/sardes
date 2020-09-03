@@ -1152,7 +1152,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return data
 
     def add_timeseries_data(self, tseries_data, sampling_feature_uuid,
-                            install_uuid=None, dropna=True):
+                            install_uuid=None):
         """
         Save in the database a set of timeseries data associated with the
         given well and sonde installation id.
