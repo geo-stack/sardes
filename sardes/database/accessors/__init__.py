@@ -7,3 +7,4 @@
 # Licensed under the terms of the MIT License.
 # -----------------------------------------------------------------------------
 
+from sardes.database.accessors.accessor_demo import DatabaseAccessorDemo

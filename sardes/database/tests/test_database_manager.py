@@ -20,7 +20,7 @@ import pandas as pd
 
 # ---- Local imports
 from sardes.database.database_manager import DatabaseConnectionManager
-from sardes.database.accessor_demo import DatabaseAccessorDemo
+from sardes.database.accessors import DatabaseAccessorDemo
 
 
 # =============================================================================
