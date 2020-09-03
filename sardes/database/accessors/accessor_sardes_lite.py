@@ -1182,7 +1182,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     Observation.observation_id))
                 .one())[0] + 1
         except TypeError:
-            observation_id = 0
+            observation_id = 1
 
         self._session.add(Observation(
             observation_id=observation_id,
@@ -1198,7 +1198,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     TimeSeriesChannel.channel_id))
                 .one())[0] + 1
         except TypeError:
-            channel_id = 0
+            channel_id = 1
 
         channel_ids = []
         for column in tseries_data:
