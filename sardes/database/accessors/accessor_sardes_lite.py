@@ -1152,53 +1152,84 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return data
 
     def add_timeseries_data(self, tseries_data, sampling_feature_uuid,
-                            install_uuid=None, dropna=True):
+                            install_uuid=None):
         """
         Save in the database a set of timeseries data associated with the
         given well and sonde installation id.
         """
-        # We create a new observation.
+        # Format the dataframe.
+        tseries_data = tseries_data.set_index(
+            'datetime', drop=True, append=False)
+        tseries_data = tseries_data.drop(
+            [col for col in tseries_data.columns if col not in DataType],
+            axis=1, errors='ignore').dropna(axis=1, how='all')
+        tseries_data = tseries_data.dropna(axis=1, how='all')
+        if tseries_data.empty:
+            return
+
+        # Create and add a new observation to the database.
         if install_uuid is not None:
             process_id = (
                 self._session.query(SondeInstallation)
                 .filter(SondeInstallation.install_uuid == install_uuid)
-                .one().process_id
-                )
+                .one().process_id)
         else:
             process_id = None
-        new_observation = Observation(
+
+        try:
+            observation_id = (
+                self._session.query(func.max(
+                    Observation.observation_id))
+                .one())[0] + 1
+        except TypeError:
+            observation_id = 1
+
+        self._session.add(Observation(
+            observation_id=observation_id,
             sampling_feature_uuid=sampling_feature_uuid,
             process_id=process_id,
-            obs_datetime=min(tseries_data['datetime']),
-            obs_type_id=7
+            obs_datetime=min(tseries_data.index),
+            obs_type_id=7))
+
+        # Create and add a new channel for each data type in the dataset.
+        try:
+            channel_id = (
+                self._session.query(func.max(
+                    TimeSeriesChannel.channel_id))
+                .one())[0] + 1
+        except TypeError:
+            channel_id = 1
+
+        channel_ids = []
+        for column in tseries_data:
+            channel_ids.append(channel_id)
+            self._session.add(TimeSeriesChannel(
+                channel_id=channel_id,
+                obs_property_id=self._get_observed_property_id(column),
+                observation_id=observation_id
+                ))
+            channel_id += 1
+
+        # Set the channel ids as the column names of the dataset.
+        tseries_data.columns = channel_ids
+        tseries_data.columns.name = 'channel_id'
+
+        # Format the data so that they can directly be inserted in
+        # the database with pandas.
+        tseries_data = (
+            tseries_data
+            .stack()
+            .rename('value')
+            .reset_index()
+            .dropna(subset=['value'])
             )
-        self._session.add(new_observation)
+
+        # Save the formatted timeseries data to the database.
         self._session.commit()
-
-        for data_type in DataType:
-            if data_type not in tseries_data.columns:
-                continue
-            if dropna is True:
-                tseries_data_type = tseries_data[
-                    ['datetime', data_type]].dropna(subset=[data_type])
-            if not len(tseries_data_type):
-                continue
-
-            new_tseries_channel = TimeSeriesChannel(
-                obs_property_id=self._get_observed_property_id(data_type),
-                observation_id=new_observation.observation_id
-                )
-            self._session.add(new_tseries_channel)
-            self._session.commit()
-
-            values = tseries_data_type[data_type].values
-            date_times = list(pd.to_datetime(tseries_data_type['datetime']))
-            for date_time, value in zip(date_times, values):
-                self._session.add(TimeSeriesData(
-                    datetime=date_time,
-                    value=value,
-                    channel_id=new_tseries_channel.channel_id))
-            self._session.commit()
+        tseries_data.to_sql(
+            'timeseries_data', self._session.bind,
+            if_exists='append', index=False, method='multi', chunksize=10000)
+        self._session.commit()
 
         # Update the data overview for the given sampling feature.
         self._refresh_sampling_feature_data_overview(
