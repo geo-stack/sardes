@@ -26,7 +26,7 @@ import pandas as pd
 # ---- Local imports
 from sardes.api.timeseries import DataType
 from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
-from sardes.database.accessor_sardes_lite import (
+from sardes.database.accessors.accessor_sardes_lite import (
     DatabaseAccessorSardesLite, init_database, CURRENT_SCHEMA_VERSION)
 
 
