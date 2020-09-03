@@ -40,7 +40,7 @@ def dbaccessor(qtbot):
         del sys.modules['sardes.database.accessors.accessor_demo']
     except KeyError:
         pass
-    from sardes.database.accessors import DatabaseAccessorDemo
+    from sardes.database.accessors.accessor_demo import DatabaseAccessorDemo
     return DatabaseAccessorDemo()
 
 
