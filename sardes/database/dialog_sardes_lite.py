@@ -14,7 +14,7 @@ from qtpy.QtWidgets import QHBoxLayout, QLabel, QLineEdit
 # ---- Local imports
 from sardes.api.database_dialog import DatabaseConnectDialogBase
 from sardes.config.locale import _
-from sardes.database.accessor_sardes_lite import DatabaseAccessorSardesLite
+from sardes.database.accessors import DatabaseAccessorSardesLite
 from sardes.widgets.path import PathBoxWidget
 
 

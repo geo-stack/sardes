@@ -684,8 +684,7 @@ class DatabaseConnectionManager(TaskManagerBase):
 
 
 if __name__ == '__main__':
-    from sardes.database.accessor_sardes_lite import (
-        DatabaseAccessorSardesLite)
+    from sardes.database.accessors import DatabaseAccessorSardesLite
     from sardes.api.timeseries import DataType
 
     db_accessor = DatabaseAccessorSardesLite(

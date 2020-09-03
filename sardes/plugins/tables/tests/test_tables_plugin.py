@@ -24,9 +24,9 @@ from qtpy.QtWidgets import QMainWindow
 
 # ---- Local imports
 from sardes.database.database_manager import DatabaseConnectionManager
-from sardes.database.accessor_demo import DatabaseAccessorDemo
+from sardes.database.accessors import DatabaseAccessorDemo
 from sardes.plugins.tables import SARDES_PLUGIN_CLASS
-from sardes.database.accessor_demo import SONDE_MODELS_LIB
+from sardes.database.accessors.accessor_demo import SONDE_MODELS_LIB
 from sardes.widgets.tableviews import (MSEC_MIN_PROGRESS_DISPLAY, QMessageBox)
 
 

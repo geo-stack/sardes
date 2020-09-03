@@ -18,7 +18,7 @@ from qtpy.QtCore import QObject, QThread, Signal, Slot
 
 class WorkerBase(QObject):
     """
-    A worker to communicate with the project database without blocking the gui.
+    A worker to execute tasks without blocking the gui.
     """
     sig_task_completed = Signal(object, object)
 

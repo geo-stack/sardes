@@ -40,10 +40,10 @@ def dbaccessor(qtbot):
     # We need to do this to make sure the demo database is reinitialized
     # after each test.
     try:
-        del sys.modules['sardes.database.accessor_demo']
+        del sys.modules['sardes.database.accessors.accessor_demo']
     except KeyError:
         pass
-    from sardes.database.accessor_demo import DatabaseAccessorDemo
+    from sardes.database.accessors.accessor_demo import DatabaseAccessorDemo
     return DatabaseAccessorDemo()
 
 

@@ -913,7 +913,7 @@ class DataImportWizard(SardesPaneWidget):
 
 if __name__ == '__main__':
     from sardes.database.database_manager import DatabaseConnectionManager
-    from sardes.database.accessor_demo import DatabaseAccessorDemo
+    from sardes.database.accessors import DatabaseAccessorDemo
 
     app = QApplication(sys.argv)
 
