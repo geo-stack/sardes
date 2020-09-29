@@ -401,8 +401,7 @@ class DataImportWizard(SardesPaneWidget):
         else:
             self.duplicates_msgbox.set_message(_(
                 "Data for {} of these readings was found in the database."
-                .format(nbr_duplicated)
-                ))
+                ).format(nbr_duplicated))
             self.duplicates_msgbox.show()
         self._update_button_state(is_updating=False)
 
@@ -722,10 +721,10 @@ class DataImportWizard(SardesPaneWidget):
         if _error:
             QMessageBox.critical(
                 self,
-                _(_("Read Data Error")),
+                _("Read Data Error"),
                 _('An error occured while atempting to read data from<br>'
-                  '<i>{}</i><br><br><font color="{}">{}:</font> {}')
-                .format(self._filename, RED, type(_error).__name__, _error)
+                  '<i>{}</i><br><br><font color="{}">{}:</font> {}'
+                  ).format(self._filename, RED, type(_error).__name__, _error)
                 )
             return
 
@@ -781,8 +780,7 @@ class DataImportWizard(SardesPaneWidget):
                 _("This operation will potentially add {} duplicate "
                   "readings to the database.<br><br>"
                   "Are you sure you want to continue?<br><br>"
-                  .format(nbr_duplicated)
-                  ),
+                  ).format(nbr_duplicated),
                 parent=self,
                 buttons=QMessageBox.Yes | QMessageBox.No)
 
@@ -850,9 +848,8 @@ class DataImportWizard(SardesPaneWidget):
                   "<i>{}</i> in <i>{}</i>.<br><br>"
                   "Would you like to replace the file in "
                   "the destination or skip moving this input file?"
-                  .format(osp.basename(destination_fpath),
-                          osp.dirname(destination_fpath))
-                  ),
+                  ).format(osp.basename(destination_fpath),
+                           osp.dirname(destination_fpath)),
                 parent=self,
                 buttons=QMessageBox.Yes | QMessageBox.No
                 )
