@@ -10,8 +10,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1.0\n"
-"POT-Creation-Date: 2020-09-29 11:29-0400\n"
-"PO-Revision-Date: 2020-09-30 01:06-0400\n"
+"POT-Creation-Date: 2020-10-08 15:20-0400\n"
+"PO-Revision-Date: 2020-10-08 15:21-0400\n"
 "Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs."
 "ca.com>\n"
 "Language-Team: Python\n"
@@ -156,6 +156,9 @@ msgid ""
 "'{}' does not appear to be a Sardes SQLite database. The application id set "
 "in the database is {}, but should be {}."
 msgstr ""
+"'{}' ne semble pas être une base de données Sardes SQLite. L'identifiant de "
+"l'application qui est défini dans la base de données est {} alors qu'il "
+"devrait être {}."
 
 #: ..\sardes\database\accessors\accessor_sardes_lite.py:483
 msgid ""
@@ -182,6 +185,11 @@ msgid ""
 "\n"
 "Click 'Connect' to start testing Sardes in demo mode."
 msgstr ""
+"Il s'agit d'un mode démo pour tester Sardes sans avoir besoin de se "
+"connecter à une base de données. Notez que toutes les modifications "
+"apportées en mode démo seront perdues au redémarrage de Sardes.\n"
+"\n"
+"Cliquez sur 'Connecter' pour commencer à tester Sardes en mode démo."
 
 #: ..\sardes\database\dialog_rsesq.py:50
 #: ..\sardes\database\dialog_sardes_lite.py:44
@@ -327,7 +335,7 @@ msgstr "Période"
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:155
 msgid "Sonde Installation Info"
-msgstr "Installation de la sonde"
+msgstr "Sonde installation"
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:167
 msgid "Previous Date"
@@ -335,7 +343,7 @@ msgstr "Date précédente"
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:169
 msgid "Delta Date"
-msgstr ""
+msgstr "Écart date"
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:172
 msgid "Previous Water Level"
@@ -414,6 +422,7 @@ msgstr "Données enregistrées avec succès dans la base de données."
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:402
 msgid "Data for {} of these readings was found in the database."
 msgstr ""
+"Des données existent déjà dans la base de données pour {} de ces lectures ."
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:553
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:622
@@ -501,13 +510,16 @@ msgstr "Enregistrement des données dans la base de données en cours..."
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:846
 msgid "Replace or Skip Moving Input File"
-msgstr ""
+msgstr "Remplacer ou ignorer le déplacement du fichier"
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:847
 msgid ""
 "There is already a file named <i>{}</i> in <i>{}</i>.<br><br>Would you like "
 "to replace the file in the destination or skip moving this input file?"
 msgstr ""
+"Il existe déjà un fichier nommé <i>{}</i> dans la destination <i>{}</i>."
+"<br><br>Souhaitez-vous remplacer le fichier dans la destination ou ignorer "
+"le déplacement de ce fichier?"
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:868
 msgid "Moving Input File Error"
@@ -518,6 +530,8 @@ msgid ""
 "Error moving <i>{}</i> to <i>{}</i>.<br><br>Would you like to choose another "
 "location?"
 msgstr ""
+"Erreur lors du déplacement du fichier <i>{}</i> vers <i>{}</i>."
+"<br><br>Souhaitez-vous choisir un autre emplacement?"
 
 #: ..\sardes\plugins\librairies\plugin.py:46
 msgid "Librairies"
@@ -626,7 +640,7 @@ msgstr "Tables"
 
 #: ..\sardes\plugins\tables\tables\delegates.py:54
 msgid "Some {} data did not match any well in the database"
-msgstr ""
+msgstr "Certains {} ne correspondaient à aucun puits de la base de données"
 
 #: ..\sardes\plugins\tables\tables\manual_measurements.py:63
 msgid "Manual Measurements"
@@ -663,7 +677,7 @@ msgstr "Oui"
 #: ..\sardes\widgets\tableviews.py:513 ..\sardes\widgets\tableviews.py:520
 #: ..\sardes\widgets\tests\test_tablewidget.py:107
 msgid "No"
-msgstr "Nbre"
+msgstr "Non"
 
 #: ..\sardes\plugins\tables\tables\observation_wells.py:91
 msgid "Observation Wells"
@@ -757,7 +771,7 @@ msgstr "Sonde installations"
 
 #: ..\sardes\plugins\tables\tables\sonde_installations.py:92
 msgid "Brand Model Serial"
-msgstr ""
+msgstr "Sonde"
 
 #: ..\sardes\plugins\tables\tables\sonde_installations.py:95
 msgid "Depth (m)"
@@ -814,8 +828,10 @@ msgstr "Modifier l'emplacement"
 #: ..\sardes\widgets\tableviews.py:211
 msgid ""
 "<b>Duplicate key value violates unique constraint.</b><br><br>The {} <i>{}</"
-"i> already exists. Please use another value"
+"i> already exists. Please use another value."
 msgstr ""
+"<b>La valeur de la clé enfreint la contrainte d'unicité.</b> La valeur {} "
+"existe déjà pour le champ <i>{}</i>. Veuillez utiliser une autre valeur."
 
 #: ..\sardes\widgets\tableviews.py:400
 msgid ""
@@ -931,7 +947,7 @@ msgstr "Effacer"
 
 #: ..\sardes\widgets\tableviews.py:1088
 msgid "Set the currently focused item to NULL."
-msgstr ""
+msgstr "Définir une valeur nulle pour la cellule avec le curseur."
 
 #: ..\sardes\widgets\tableviews.py:1096
 msgid "Save edits"
@@ -986,6 +1002,9 @@ msgid ""
 "Select the entire row of the current selection. If the current selection "
 "spans multiple rows, all rows that intersect the selection will be selected."
 msgstr ""
+"Sélectionner toute la ligne correspondant à la sélection courante. Si la "
+"sélection courante s'étend sur plusieurs lignes, toutes les lignes recoupant "
+"la sélection seront sélectionnées."
 
 #: ..\sardes\widgets\tableviews.py:1159
 msgid "Select Column"
@@ -997,6 +1016,9 @@ msgid ""
 "spans multiple columns, all columns that intersect the selection will be "
 "selected."
 msgstr ""
+"Sélectionner toute la colonne correspondant à la sélection courante. Si la "
+"sélection courante s'étend sur plusieurs colonnes, toutes les colonnes "
+"recoupant la sélection seront sélectionnées."
 
 #: ..\sardes\widgets\tableviews.py:1176
 msgid "Sort Ascending"
@@ -1082,17 +1104,13 @@ msgstr "Restaurer les valeurs par défaut"
 msgid "Show all"
 msgstr "Montrer tout"
 
-#: ..\sardes\widgets\tests\test_tablewidget.py:43
-msgid "Column #{}"
-msgstr ""
-
 #: ..\sardes\widgets\timeseries.py:704
 msgid "manual"
-msgstr ""
+msgstr "manuel"
 
 #: ..\sardes\widgets\timeseries.py:974
 msgid "Use {} + scroll to zoom the graph"
-msgstr ""
+msgstr "Utiliser {} + la molette de souris pour zoomer sur le graphique"
 
 #: ..\sardes\widgets\timeseries.py:1028
 msgid "Save the figure to a file"
@@ -1112,11 +1130,12 @@ msgstr "Réinitialiser la vue d'origine"
 
 #: ..\sardes\widgets\timeseries.py:1057
 msgid "Pan"
-msgstr ""
+msgstr "Déplacer"
 
 #: ..\sardes\widgets\timeseries.py:1058
 msgid "Pan axes with left mouse, zoom with right"
 msgstr ""
+"Déplacer les axes avec le bouton gauche de la souris et zoomer avec le droit"
 
 #: ..\sardes\widgets\timeseries.py:1067
 msgid "Zoom"
@@ -1136,6 +1155,9 @@ msgstr "Zoom arrière"
 msgid ""
 "Zoom the graph out. You can also use {}+scroll down to zoom the graph out."
 msgstr ""
+"Faire un zoom arrière sur le graphique. Vous pouvez également effectuer "
+"cette action en pressant {} et en défilant vers le bas avec la molette de la "
+"souris."
 
 #: ..\sardes\widgets\timeseries.py:1092
 msgid "Zoom in"
@@ -1144,6 +1166,9 @@ msgstr "Zoom avant"
 #: ..\sardes\widgets\timeseries.py:1093
 msgid "Zoom the graph in. You can also use {}+scroll up to zoom the graph in."
 msgstr ""
+"Faire un zoom avant sur le graphique. Vous pouvez également effectuer cette "
+"action en pressant {} et en défilant vers le haut avec la molette de la "
+"souris."
 
 #: ..\sardes\widgets\timeseries.py:1171
 msgid "Graph is empty"
@@ -1157,6 +1182,8 @@ msgstr "Élément du graphique"
 msgid ""
 "Select a graph element so that you can format it and zoom and pan the data."
 msgstr ""
+"Sélectionnez un élément du graphique pour pouvoir formater les données et "
+"zoomer et déplacer les axes de l'élément correspondant."
 
 #: ..\sardes\widgets\timeseries.py:1187 ..\sardes\widgets\timeseries.py:1199
 msgid "pt"
@@ -1171,6 +1198,8 @@ msgid ""
 "Enter a value from 0 pt to 99 pt to change the line width of the plot of the "
 "currently selected time series."
 msgstr ""
+"Entrez une valeur comprise entre 0 et 99 points pour modifier l'épaisseur de "
+"la ligne du tracé de la série chronologique actuellement sélectionnée."
 
 #: ..\sardes\widgets\timeseries.py:1200
 msgid "Marker Size"
@@ -1181,3 +1210,5 @@ msgid ""
 "Enter a value from 0 pt to 99 pt to change the marker size of the plot of "
 "the currently selected time series."
 msgstr ""
+"Entrez une valeur comprise entre 0 et 99 points pour modifier la taille des "
+"marqueurs du tracé de la série chronologique actuellement sélectionnée."

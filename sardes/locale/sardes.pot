@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2020-09-29 11:29-0400\n"
+"POT-Creation-Date: 2020-10-08 15:20-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -736,7 +736,7 @@ msgid "Modify Location"
 msgstr ""
 
 #: ..\sardes\widgets\tableviews.py:211
-msgid "<b>Duplicate key value violates unique constraint.</b><br><br>The {} <i>{}</i> already exists. Please use another value"
+msgid "<b>Duplicate key value violates unique constraint.</b><br><br>The {} <i>{}</i> already exists. Please use another value."
 msgstr ""
 
 #: ..\sardes\widgets\tableviews.py:400
@@ -958,10 +958,6 @@ msgstr ""
 
 #: ..\sardes\widgets\tableviews.py:2347
 msgid "Show all"
-msgstr ""
-
-#: ..\sardes\widgets\tests\test_tablewidget.py:43
-msgid "Column #{}"
 msgstr ""
 
 #: ..\sardes\widgets\timeseries.py:704
