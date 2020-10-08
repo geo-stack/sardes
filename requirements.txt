@@ -7,7 +7,7 @@ numpy == 1.16.*
 pandas == 0.25.*
 psycopg2
 pyqt5 == 5.12.*
-qtawesome
+qtawesome == 0.7.*
 qtpy
 sqlalchemy
 geoalchemy2
