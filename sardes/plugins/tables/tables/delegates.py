@@ -17,7 +17,7 @@ from sardes.widgets.tableviews import SardesItemDelegate
 
 class ObsWellIdEditDelegate(SardesItemDelegate):
     """
-    A delegate to select an obsercation well from the list of existing well
+    A delegate to select an observation well from the list of existing well
     in the database.
     """
 
