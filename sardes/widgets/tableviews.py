@@ -211,7 +211,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
             return _(
                 "<b>Duplicate key value violates unique constraint.</b>"
                 "<br><br>"
-                "The {} <i>{}</i> already exists. Please use another value"
+                "The {} <i>{}</i> already exists. Please use another value."
                 ).format(field_name, edited_value, field_name)
         else:
             return None
@@ -400,7 +400,7 @@ class DateTimeDelegate(SardesItemDelegate):
             warning_message = _(
                 "Some {} data did not match the prescribed "
                 "<i>yyyy-mm-dd hh:mm:ss</i> format"
-                .format(self.model()._data_columns_mapper[data.name]))
+                ).format(self.model()._data_columns_mapper[data.name])
         return formatted_data, warning_message
 
 
@@ -456,7 +456,7 @@ class IntEditDelegate(SardesItemDelegate):
             formatted_data = pd.to_numeric(data, errors='coerce')
             warning_message = _(
                 "Some {} data could not be converted to integer value"
-                .format(self.model()._data_columns_mapper[data.name]))
+                ).format(self.model()._data_columns_mapper[data.name])
         # We need to round the data before casting them as Int64DType to
         # avoid "TypeError: cannot safely cast non-equivalent float64 to int64"
         # when the data contains float numbers.
@@ -497,7 +497,7 @@ class NumEditDelegate(SardesItemDelegate):
             formatted_data = pd.to_numeric(data, errors='coerce').astype(float)
             warning_message = _(
                 "Some {} data could not be converted to numerical value"
-                .format(self.model()._data_columns_mapper[data.name]))
+                ).format(self.model()._data_columns_mapper[data.name])
         return formatted_data, warning_message
 
 
@@ -523,7 +523,7 @@ class BoolEditDelegate(SardesItemDelegate):
         if sum(isnull1 != isnull2):
             warning_message = _(
                 "Some {} data could notbe converted to boolean value."
-                .format(self.model()._data_columns_mapper[data.name]))
+                ).format(self.model()._data_columns_mapper[data.name])
         else:
             warning_message = None
         return formatted_data, warning_message
@@ -653,8 +653,9 @@ class RowCountLabel(QLabel):
         """
         Set the text displayed by this rowcount label.
         """
-        self.setText(_("{} out of {} row(s) selected" + " ")
-                     .format(selected_row_count, visible_row_count))
+        text = _("{} out of {} row(s) selected").format(
+            selected_row_count, visible_row_count)
+        self.setText(text + " ")
 
     def register_table(self, table):
         """
