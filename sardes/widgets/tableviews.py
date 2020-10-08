@@ -211,7 +211,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
             return _(
                 "<b>Duplicate key value violates unique constraint.</b>"
                 "<br><br>"
-                "The {} <i>{}</i> already exists. Please use another value"
+                "The {} <i>{}</i> already exists. Please use another value."
                 ).format(field_name, edited_value, field_name)
         else:
             return None
