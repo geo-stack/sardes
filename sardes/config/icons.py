@@ -98,6 +98,9 @@ FA_ICONS = {
     'eye_on': [
         ('mdi.eye',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
+    'image': [
+        ('mdi.image-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'failed': [
         ('mdi.alert-circle-outline',),
         {'color': RED, 'scale_factor': 1.3}],
