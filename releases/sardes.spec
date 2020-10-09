@@ -12,12 +12,16 @@ added_files = [('../sardes/ressources/icons/*.png', 'ressources/icons'),
                ('../sardes/ressources/sardes_splash.png', 'ressources'),
                ('../sardes/ressources/sardes_banner.png', 'ressources'),
                ('../sardes/locale/fr/LC_MESSAGES/*.mo', 'locale/fr/LC_MESSAGES')]
-
 a = Analysis(['../sardes/app/mainwindow.py'],
              pathex=['C:\\Program Files (x86)\\Windows Kits\\10\\Redist\\ucrt\\DLLs\\x64'],
-             binaries=[],
+             binaries=[('C:\\Windows\\System32\\vcruntime140_1.dll', '.')],
              datas=added_files ,
-             hiddenimports=['win32timezone', 'sqlalchemy.ext.baked'],
+             hiddenimports=[
+                 'win32timezone', 'sqlalchemy.ext.baked', 'PIL.BmpImagePlugin',
+                 'PIL.Jpeg2KImagePlugin', 'PIL.JpegImagePlugin',
+                 'PIL.PngImagePlugin', 'PIL.TiffImagePlugin',
+                 'PIL.WmfImagePlugin', 'pkg_resources.py2_warn'
+                 ],
              hookspath=[],
              runtime_hooks=[],
              excludes=['PySide', 'PyQt4'],

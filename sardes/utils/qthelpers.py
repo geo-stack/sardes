@@ -12,7 +12,6 @@
 # ---- Standard imports
 from datetime import datetime
 from math import pi
-import sys
 from time import strptime
 
 # ---- Third party imports
@@ -39,7 +38,7 @@ def center_widget_to_another(widget, other_widget):
 
 def create_action(parent, text=None, shortcut=None, icon=None, tip=None,
                   toggled=None, triggered=None, data=None, menurole=None,
-                  context=Qt.WindowShortcut):
+                  context=Qt.WindowShortcut, name=None):
     """Create and return a QAction with the provided settings."""
     action = QAction(text, parent)
     if triggered is not None:
@@ -63,6 +62,8 @@ def create_action(parent, text=None, shortcut=None, icon=None, tip=None,
             action.setShortcuts(shortcut)
         else:
             action.setShortcut(shortcut)
+    if name is not None:
+        action.setObjectName(name)
 
     action.setShortcutContext(context)
 
@@ -112,7 +113,8 @@ def create_toolbutton(parent, text=None, shortcut=None, icon=None, tip=None,
         button.setCheckable(True)
     if shortcut is not None:
         if isinstance(shortcut, (list, tuple)):
-            button.setShortcuts(shortcut)
+            for sc in shortcut:
+                button.setShortcut(sc)
         else:
             button.setShortcut(shortcut)
     if iconsize is not None:

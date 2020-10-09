@@ -16,6 +16,7 @@ print('Starting SARDES...')
 # ---- Setup the main Qt application.
 import sys
 from qtpy.QtWidgets import QApplication
+from time import sleep
 app = QApplication(sys.argv)
 
 # ---- Setup the splash screen.
@@ -34,7 +35,7 @@ import importlib
 
 # ---- Third party imports
 splash.showMessage(_("Importing third party Python modules..."))
-from qtpy.QtCore import Qt, QUrl, Slot
+from qtpy.QtCore import Qt, QUrl, Slot, QEvent
 from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
                             QMessageBox, QToolButton)
@@ -48,6 +49,7 @@ from sardes.config.locale import (get_available_translations, get_lang_conf,
                                   LANGUAGE_CODES, set_lang_conf)
 from sardes.config.main import CONFIG_DIR
 from sardes.database.database_manager import DatabaseConnectionManager
+from sardes.widgets.tableviews import RowCountLabel
 from sardes.utils.qthelpers import (
     create_action, create_mainwindow_toolbar, create_toolbar_stretcher,
     create_toolbutton, qbytearray_to_hexstate, hexstate_to_qbytearray)
@@ -63,6 +65,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowIcon(get_icon('master'))
         self.setWindowTitle(__namever__)
+        self.setCentralWidget(None)
+        self.setDockNestingEnabled(True)
         if platform.system() == 'Windows':
             import ctypes
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
@@ -73,6 +77,7 @@ class MainWindow(QMainWindow):
         self.toolbars = []
         self.thirdparty_plugins = []
         self.internal_plugins = []
+        self._is_panes_and_toolbars_locked = False
 
         # Setup the database connection manager.
         print("Setting up the database connection manager...", end=' ')
@@ -85,7 +90,9 @@ class MainWindow(QMainWindow):
 
     def setup(self):
         """Setup the main window"""
+        self.installEventFilter(self)
         self._setup_options_menu_toolbar()
+        self.setup_statusbar()
         self._restore_window_geometry()
         self.setup_internal_plugins()
         self.setup_thirdparty_plugins()
@@ -93,14 +100,6 @@ class MainWindow(QMainWindow):
         # Note: The window state must be restored after the setup of the
         # plugins and toolbars.
         self._restore_window_state()
-
-        # Connect to database if options is True.
-        # NOTE: This must be done after all internal and thirdparty plugins
-        # have been registered in case they are connected to the database
-        # manager connection signals.
-        if self.databases_plugin.get_option('auto_connect_to_database'):
-            self.db_connection_manager.connect_to_db(
-                self.databases_plugin.connect_to_database())
 
     def setup_internal_plugins(self):
         """Setup Sardes internal plugins."""
@@ -113,9 +112,19 @@ class MainWindow(QMainWindow):
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
         print("Loading the {} plugin...".format(plugin_title), end=' ')
         splash.showMessage(_("Loading the {} plugin...").format(plugin_title))
-        plugin = SARDES_PLUGIN_CLASS(self)
-        plugin.register_plugin()
-        self.internal_plugins.append(plugin)
+        self.tables_plugin = SARDES_PLUGIN_CLASS(self)
+        self.tables_plugin.register_plugin()
+        self.internal_plugins.append(self.tables_plugin)
+        print("done")
+
+        # Librairies plugin.
+        from sardes.plugins.librairies import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        splash.showMessage(_("Loading the {} plugin...").format(plugin_title))
+        self.librairies_plugin = SARDES_PLUGIN_CLASS(self)
+        self.librairies_plugin.register_plugin()
+        self.internal_plugins.append(self.librairies_plugin)
         print("done")
 
         # Database plugin.
@@ -127,6 +136,28 @@ class MainWindow(QMainWindow):
         self.databases_plugin = SARDES_PLUGIN_CLASS(self)
         self.databases_plugin.register_plugin()
         self.internal_plugins.append(self.databases_plugin)
+        print("done")
+
+        # Import Data Wizard.
+        from sardes.plugins.dataio import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        splash.showMessage(_("Loading the {} plugin...")
+                           .format(SARDES_PLUGIN_CLASS.get_plugin_title()))
+        self.data_import_plugin = SARDES_PLUGIN_CLASS(self)
+        self.data_import_plugin.register_plugin()
+        self.internal_plugins.append(self.data_import_plugin)
+        print("done")
+
+        # Time Data plugin.
+        from sardes.plugins.readings import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        splash.showMessage(_("Loading the {} plugin...")
+                           .format(SARDES_PLUGIN_CLASS.get_plugin_title()))
+        self.readings_plugin = SARDES_PLUGIN_CLASS(self)
+        self.readings_plugin.register_plugin()
+        self.internal_plugins.append(self.readings_plugin)
         print("done")
 
     def setup_thirdparty_plugins(self):
@@ -157,16 +188,47 @@ class MainWindow(QMainWindow):
                 raise Warning(
                     "{}: This module is already loaded.".format(module_name))
 
+    # ---- Tables
+    def register_table(self, table):
+        """
+        Register a SardesTableView to the mainwindow.
+        """
+        self.tables_row_count.register_table(table)
+
+    def unregister_table(self, table):
+        """
+        Un-register a SardesTableView from the mainwindow.
+        """
+        self.tables_row_count.unregister_table(table)
+
+    # ---- Statusbar
+    def setup_statusbar(self):
+        """
+        Setup the status bar of the mainwindow.
+        """
+        statusbar = self.statusBar()
+        statusbar.setSizeGripEnabled(False)
+
+        # Number of row(s) selected.
+        self.tables_row_count = RowCountLabel()
+        statusbar.addPermanentWidget(self.tables_row_count)
+
     # ---- Toolbar setup
     @Slot(bool)
-    def toggle_lock_dockwidgets_and_toolbars(self, checked):
+    def toggle_lock_dockwidgets_and_toolbars(self, locked):
         """
         Lock or unlock this mainwindow dockwidgets and toolbars.
         """
+        self._is_panes_and_toolbars_locked = locked
+        self.lock_dockwidgets_and_toolbars_action.setIcon(
+            get_icon('pane_lock' if locked else 'pane_unlock'))
+        self.lock_dockwidgets_and_toolbars_action.setText(
+            _('Unlock panes and toolbars') if locked else
+            _('Lock panes and toolbars'))
         for plugin in self.internal_plugins + self.thirdparty_plugins:
-            plugin.lock_pane_and_toolbar(checked)
+            plugin.lock_pane_and_toolbar(locked)
         for toolbar in self.toolbars:
-            toolbar.setMovable(not checked)
+            toolbar.setMovable(not locked)
 
     # ---- Setup options button and menu
     def _setup_options_menu_toolbar(self):
@@ -237,9 +299,14 @@ class MainWindow(QMainWindow):
         self.lock_dockwidgets_and_toolbars_action = create_action(
             self, _('Lock panes and toolbars'),
             shortcut='Ctrl+Shift+F5', context=Qt.ApplicationShortcut,
-            toggled=(lambda checked:
-                     self.toggle_lock_dockwidgets_and_toolbars(checked))
+            triggered=(
+                lambda checked: self.toggle_lock_dockwidgets_and_toolbars(
+                    not self._is_panes_and_toolbars_locked))
             )
+
+        self.reset_window_layout_action = create_action(
+            self, _('Reset window layout'), icon='reset_layout',
+            triggered=self.reset_window_layout)
 
         # Create help related actions and menus.
         report_action = create_action(
@@ -260,7 +327,8 @@ class MainWindow(QMainWindow):
         options_menu_items = [
             self.lang_menu, preferences_action, None, self.panes_menu,
             self.toolbars_menu, self.lock_dockwidgets_and_toolbars_action,
-            None, report_action, about_action, exit_action
+            self.reset_window_layout_action, None, report_action, about_action,
+            exit_action
             ]
         for item in options_menu_items:
             if item is None:
@@ -286,7 +354,70 @@ class MainWindow(QMainWindow):
                 _("The language has been set to <i>{}</i>. Restart Sardes to "
                   "apply this change.").format(LANGUAGE_CODES[lang]))
 
+    # ---- Plugin interactions
+    def view_timeseries_data(self, sampling_feature_uuid):
+        """
+        Create and show a table to visualize the timeseries data related
+        to the given sampling feature uuid.
+        """
+        self.readings_plugin.view_timeseries_data(sampling_feature_uuid)
+
     # ---- Main window settings
+    @Slot()
+    def reset_window_layout(self):
+        """
+        Reset window layout to default
+        """
+        answer = QMessageBox.warning(
+            self, _("Reset Window Layout"),
+            _("Window layout will be reset to default settings.<br><br>"
+              "Do you want to continue?"),
+            QMessageBox.Yes | QMessageBox.No)
+        if answer == QMessageBox.Yes:
+            self.setup_default_layout()
+
+    def setup_default_layout(self):
+        """
+        Setup the default layout for Sardes mainwindow.
+        """
+        self.setUpdatesEnabled(False)
+
+        # Make sure all plugins are docked and visible.
+        self.tables_plugin.dockwindow.dock()
+        self.librairies_plugin.dockwindow.dock()
+        self.data_import_plugin.dockwindow.dock()
+        self.readings_plugin.dockwindow.dock()
+
+        # Split dockwidgets.
+        # Note that we use both directions to ensure proper update in case
+        # the tables plugin is already in a tabbed docked area. In that case,
+        # doing only the horizontal orientation simply adds the other plugin
+        # to the tabbed docked area instead of next to it.
+        for orientation in [Qt.Vertical, Qt.Horizontal]:
+            self.splitDockWidget(
+                self.tables_plugin.dockwidget(),
+                self.data_import_plugin.dockwidget(),
+                orientation)
+
+        # Tabify dockwidget.
+        self.tabifyDockWidget(
+            self.tables_plugin.dockwidget(),
+            self.readings_plugin.dockwidget())
+        self.tabifyDockWidget(
+            self.readings_plugin.dockwidget(),
+            self.librairies_plugin.dockwidget())
+
+        # Resize dockwidgets.
+        wf2 = int(500 / self.width() * 100)
+        wf1 = 100 - wf2
+        dockwidgets = [self.tables_plugin.dockwidget(),
+                       self.data_import_plugin.dockwidget()]
+        width_fractions = [wf1, wf2]
+        self.resizeDocks(dockwidgets, width_fractions, Qt.Horizontal)
+
+        self.tables_plugin.switch_to_plugin()
+        self.setUpdatesEnabled(True)
+
     def _restore_window_geometry(self):
         """
         Restore the geometry of this mainwindow from the value saved
@@ -312,11 +443,15 @@ class MainWindow(QMainWindow):
         Restore the state of this mainwindow’s toolbars and dockwidgets from
         the value saved in the config.
         """
+        # We setup the default layout configuration first.
+        self.setup_default_layout()
+
+        # Then we appply saved configuration if it exists.
         hexstate = CONF.get('main', 'window/state', None)
         if hexstate:
             hexstate = hexstate_to_qbytearray(hexstate)
             self.restoreState(hexstate)
-        self.lock_dockwidgets_and_toolbars_action.setChecked(
+        self.toggle_lock_dockwidgets_and_toolbars(
             CONF.get('main', 'panes_and_toolbars_locked'))
 
     def _save_window_state(self):
@@ -327,9 +462,33 @@ class MainWindow(QMainWindow):
         hexstate = qbytearray_to_hexstate(self.saveState())
         CONF.set('main', 'window/state', hexstate)
         CONF.set('main', 'panes_and_toolbars_locked',
-                 self.lock_dockwidgets_and_toolbars_action.isChecked())
+                 self._is_panes_and_toolbars_locked)
 
     # ---- Qt method override/extension
+    def eventFilter(self, widget, event):
+        """
+        An event filter to prevent status tips from buttons and menus
+        to show in the status bar.
+        """
+        if event.type() == QEvent.StatusTip:
+            return True
+        return False
+
+    def show(self):
+        """
+        Extend Qt method to call show_plugin on each installed plugin.
+        """
+        super().show()
+        for plugin in self.internal_plugins + self.thirdparty_plugins:
+            plugin.show_plugin()
+
+        # Connect to database if options is True.
+        # NOTE: This must be done after all internal and thirdparty plugins
+        # have been registered in case they are connected to the database
+        # manager connection signals.
+        if self.databases_plugin.get_option('auto_connect_to_database'):
+            self.databases_plugin.connect_to_database()
+
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
         print('Closing SARDES...')
@@ -342,6 +501,12 @@ class MainWindow(QMainWindow):
 
         # Close the database connection manager.
         self.db_connection_manager.close()
+        count = 0
+        while self.db_connection_manager.is_connected():
+            sleep(0.1)
+            count += 1
+            if count == 1000:
+                break
 
         event.accept()
 

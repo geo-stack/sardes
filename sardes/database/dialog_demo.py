@@ -15,7 +15,7 @@ from qtpy.QtWidgets import QLabel
 # ---- Local imports
 from sardes.api.database_dialog import DatabaseConnectDialogBase
 from sardes.config.locale import _
-from sardes.database.accessor_demo import DatabaseAccessorDemo
+from sardes.database.accessors import DatabaseAccessorDemo
 
 
 class DatabaseConnectDialogDemo(DatabaseConnectDialogBase):

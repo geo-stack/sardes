@@ -1,7 +1,9 @@
 [run]
 omit = 
+    # Omit tests
     */tests/*
-data_file = .coverage
+    # Omit scripts
+    */scripts/*
 
 [report]
 # Regexes for lines to exclude from consideration

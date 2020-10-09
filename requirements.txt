@@ -1,11 +1,16 @@
+atomicwrites
 appconfigs
-keyring
-matplotlib == 2.2.*
+HydroSensorReader >= 1.7.4
+keyring == 19.2.*
+matplotlib == 3.1.*
 numpy == 1.16.*
-pandas
+pandas == 0.25.*
 psycopg2
-pyqt5 <=5.12.2
-qtawesome
+pyqt5 == 5.12.*
+qtawesome == 0.7.*
 qtpy
 sqlalchemy
 geoalchemy2
+sqlalchemy_utils
+pillow
+xlsxwriter

@@ -8,17 +8,16 @@
 # -----------------------------------------------------------------------------
 
 # ---- Third party imports
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QApplication, QFileDialog
-
+import pandas as pd
+from qtpy.QtCore import Signal
 
 # ---- Local imports
-from sardes.widgets.timeseries import TimeSeriesPlotViewer
+from sardes.api.tablemodels import SardesTableModel
 from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import (
-    SardesTableModel, SardesTableWidget, StringEditDelegate, BoolEditDelegate,
+    SardesTableWidget, StringEditDelegate, BoolEditDelegate,
     NumEditDelegate, NotEditableDelegate, TextEditDelegate)
 
 
@@ -27,38 +26,20 @@ class ObsWellsTableModel(SardesTableModel):
     A table model to display the list of observation wells that are saved
     in the database.
     """
-    # The label that will be used to reference this table in the GUI.
-    TABLE_TITLE = _('Observation Wells')
 
-    # An id that will be used to reference this table in the code and
-    # in the user configurations.
-    TABLE_ID = 'table_observation_wells'
-
-    # A list of tuple that maps the keys of the columns dataframe with their
-    # corresponding human readable label to use in the GUI.
-    __data_columns_mapper__ = [
-        ('obs_well_id', _('Well ID')),
-        ('common_name', _('Common Name')),
-        ('municipality', _('Municipality')),
-        ('aquifer_type', _('Aquifer')),
-        ('aquifer_code', _('Aquifer Code')),
-        ('confinement', _('Confinement')),
-        ('in_recharge_zone', _('Recharge Zone')),
-        ('is_influenced', _('Influenced')),
-        ('latitude', _('Latitude')),
-        ('longitude', _('Longitude')),
-        ('is_station_active', _('Active')),
-        ('obs_well_notes', _('Notes'))
-        ]
-
-    def fetch_model_data(self, *args, **kargs):
+    def set_model_data(self, dataf, dataf_columns_mapper=None):
         """
-        Fetch the observation well data for this table model.
-        """
-        self.db_connection_manager.get_observation_wells_data(
-            callback=self.set_model_data)
+        Extend SardesTableModelBase base class method to make sure we use
+        a column dtype that is capable to handle integer nan values.
 
-    # ---- Delegates
+        See https://pandas.pydata.org/pandas-docs/stable/user_guide/
+            gotchas.html#support-for-integer-na
+        """
+        if 'aquifer_code' not in dataf.columns:
+            dataf['aquifer_code'] = None
+        dataf['aquifer_code'] = dataf['aquifer_code'].astype(pd.Int64Dtype())
+        return super().set_model_data(dataf, dataf_columns_mapper)
+
     def create_delegate_for_column(self, view, column):
         """
         Create the item delegate that the view need to use when editing the
@@ -71,96 +52,100 @@ class ObsWellsTableModel(SardesTableModel):
             return StringEditDelegate(view, unique_constraint=True,
                                       is_required=True)
         elif column in ['municipality', 'is_influenced', 'common_name',
-                        'in_recharge_zone', 'confinement', 'aquifer_type',
-                        'aquifer_code']:
+                        'in_recharge_zone', 'confinement', 'aquifer_type']:
             return StringEditDelegate(view)
+        elif column in ['aquifer_code']:
+            return NumEditDelegate(view, decimals=0, bottom=0, top=999)
         elif column in ['obs_well_notes']:
             return TextEditDelegate(view)
         elif column in ['latitude', 'longitude']:
             return NumEditDelegate(view, 16, -180, 180)
         else:
-            return NotEditableDelegate(self)
+            return NotEditableDelegate(view)
 
-    # ---- Data edits
-    def save_data_edits(self):
+    # ---- Visual Data
+    def logical_to_visual_data(self, visual_dataf):
         """
-        Save all data edits to the database.
+        Transform logical data to visual data.
         """
-        for edits in self._dataf_edits:
-            for edit in edits:
-                if edit.type() == self.ValueChanged:
-                    self.db_connection_manager.save_observation_well_data(
-                        edit.dataf_index, edit.dataf_column,
-                        edit.edited_value, postpone_exec=True)
-        self.db_connection_manager.run_tasks()
+        try:
+            obs_wells_stats = self.libraries['observation_wells_data_overview']
+        except KeyError:
+            pass
+        else:
+            for column in ['first_date', 'last_date', 'mean_water_level']:
+                if column in obs_wells_stats.columns:
+                    visual_dataf[column] = obs_wells_stats[column]
+        visual_dataf['is_station_active'] = (
+            visual_dataf['is_station_active']
+            .map({True: _('Yes'), False: _('No')}.get)
+            )
+        return visual_dataf
 
 
 class ObsWellsTableWidget(SardesTableWidget):
+    sig_view_data = Signal(object, bool)
 
-    def __init__(self, db_connection_manager, parent=None):
-        table_model = ObsWellsTableModel(db_connection_manager)
-        super().__init__(table_model, parent)
+    def __init__(self, *args, **kargs):
+        table_model = ObsWellsTableModel(
+            table_title=_('Observation Wells'),
+            table_id='table_observation_wells',
+            data_columns_mapper=[
+                ('obs_well_id', _('Well ID')),
+                ('common_name', _('Common Name')),
+                ('municipality', _('Municipality')),
+                ('aquifer_type', _('Aquifer')),
+                ('aquifer_code', _('Aquifer Code')),
+                ('confinement', _('Confinement')),
+                ('in_recharge_zone', _('Recharge Zone')),
+                ('is_influenced', _('Influenced')),
+                ('latitude', _('Latitude')),
+                ('longitude', _('Longitude')),
+                ('first_date', _('First Date')),
+                ('last_date', _('Last Date')),
+                ('mean_water_level', _('Mean level (m)')),
+                ('is_station_active', _('Active')),
+                ('obs_well_notes', _('Notes'))]
+            )
+        super().__init__(table_model, *args, **kargs)
 
         self.add_toolbar_separator()
-        self.add_toolbar_widget(self._create_show_data_button())
+        for button in self._create_extra_toolbuttons():
+            self.add_toolbar_widget(button)
+
+    # ---- SardesPaneWidget public API
+    def register_to_plugin(self, plugin):
+        """Register this table with the given plugin."""
+        self.sig_view_data.connect(plugin.main.view_timeseries_data)
 
     # ---- Timeseries
     def get_current_obs_well_data(self):
         """
         Return the observation well data relative to the currently selected
-        row in the table.
+        rows in the table.
         """
-        return self.tableview.get_current_row_data()
+        try:
+            return self.tableview.get_current_row_data().iloc[0]
+        except AttributeError:
+            return None
 
-    def _create_show_data_button(self):
-        toolbutton = create_toolbutton(
+    def _create_extra_toolbuttons(self):
+        self.show_data_btn = create_toolbutton(
             self,
-            icon='show_plot',
-            text=_("Show data"),
-            tip=_('Show the data of the timeseries acquired in the currently '
-                  'selected observation well in an interactive '
-                  'plot viewer.'),
-            shortcut='Ctrl+P',
-            triggered=lambda _: self._show_timeseries_plot_viewer(),
+            icon='show_data_table',
+            text=_("View data"),
+            tip=_('Open a table showing all readings saved in the database '
+                  'for the currently selected observation well.'),
+            triggered=self._view_current_timeseries_data,
             iconsize=get_iconsize()
             )
-        return toolbutton
+        return [self.show_data_btn]
 
-    def _show_timeseries_plot_viewer(self, *args, **kargs):
+    def _view_current_timeseries_data(self):
         """
-        Handle when a row is double-clicked in the table.
+        Emit a signal to show the timeseries data saved in the database for
+        the currently selected observation well in the table.
         """
-        self.tableview.setFocus()
-        current_obs_well = self.get_current_obs_well_data()
-        if current_obs_well is not None:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-
-            # Get the timeseries data for that observation well.
-            self.db_connection_manager.get_timeseries_for_obs_well(
-                current_obs_well.index.values[0],
-                ['NIV_EAU', 'TEMP'],
-                self._show_timeseries)
-
-    def _show_timeseries(self, tseries_groups):
-        """
-        Create and show a timeseries plot viewer to visualize interactively
-        the timeseries data contained in tseries_groups.
-        """
-        viewer = TimeSeriesPlotViewer(self)
-
-        # Set the title of the window.
-        current_obs_well_data = self.get_current_obs_well_data().iloc[0]
-        viewer.setWindowTitle(_("Observation well {} ({})").format(
-            current_obs_well_data['obs_well_id'],
-            current_obs_well_data['municipality'])
-            )
-
-        # Setup the water level axe.
-        # where = 'left'
-        for tseries_group in tseries_groups:
-            # Create a new axe to hold the timeseries for the monitored
-            # property related to this group of timeseries.
-            viewer.create_axe(tseries_group)
-
-        QApplication.restoreOverrideCursor()
-        viewer.show()
+        current_obs_well_data = self.get_current_obs_well_data()
+        if current_obs_well_data is not None:
+            self.sig_view_data.emit(current_obs_well_data.name, False)

@@ -7,6 +7,9 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+# ---- Standard imports
+import uuid
+
 # ---- Third party imports
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QMainWindow
@@ -27,6 +30,9 @@ class SardesPaneWidget(QMainWindow):
         super().__init__(parent)
         self._upper_toolbar = None
         self._lower_toolbar = None
+        self.setObjectName(str(uuid.uuid4()))
+        self.setStyleSheet("QMainWindow#%s {border: 0px;}" % self.objectName())
+        self.setContextMenuPolicy(Qt.NoContextMenu)
 
     # ---- Setup
     def _setup_upper_toolbar(self):
@@ -59,4 +65,8 @@ class SardesPaneWidget(QMainWindow):
 
     def set_iconsize(self, iconsize):
         """Set the icon size of this pane toolbars."""
+        pass
+
+    def register_to_plugin(self, plugin):
+        """Register the current widget to the given plugin."""
         pass

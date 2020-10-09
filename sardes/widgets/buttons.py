@@ -23,17 +23,114 @@ from sardes.config.gui import get_iconsize
 from sardes.utils.qthelpers import create_action
 
 
-class DropdownToolButton(QToolButton):
+class ToggleVisibilityMenu(QMenu):
+    def mouseReleaseEvent(self, event):
+        """
+        Override Qt method to prevent menu from closing when an action
+        is toggled.
+        """
+        action = self.activeAction()
+        if action:
+            action.setChecked(not action.isChecked())
+        event.accept()
+
+
+class ToggleVisibilityToolButton(QToolButton):
+    sig_item_clicked = Signal(object, bool)
+
+    def __init__(self, iconsize, parent=None):
+        super().__init__(parent)
+        self.setIcon(get_icon('eye_on'))
+        self.setIconSize(QSize(iconsize, iconsize))
+
+        self.setMenu(ToggleVisibilityMenu(self))
+        self.setPopupMode(self.InstantPopup)
+        self.menu().installEventFilter(self)
+
+    def count(self):
+        """
+        Return the number of items in this ToggleVisibilityToolButton.
+        """
+        return len(self.menu().actions())
+
+    def create_action(self, name, item):
+        """
+        Create and add a new action to this button's menu.
+        """
+        action = create_action(
+            self, name,
+            toggled=lambda toggle:
+                self.sig_item_clicked.emit(item, toggle),
+            data=item)
+        self.menu().addAction(action)
+        action.setChecked(True)
+        self.setEnabled(self.count() > 0)
+        return action
+
+    def remove_action(self, item):
+        """
+        Remove the action corresponding to the given item from this
+        toolbutton menu.
+        """
+        for action in self.menu().actions():
+            if action.data() == item:
+                self.menu().removeAction(action)
+        if self.count() == 0:
+            self.setEnabled(False)
+
+
+class LeftAlignedToolButton(QToolButton):
+    def paintEvent(self, event):
+        """
+        Override Qt method to align the icon and text to the left, else they
+        are centered horiztonlly to the button width.
+        """
+        sp = QStylePainter(self)
+        opt = QStyleOptionToolButton()
+        self.initStyleOption(opt)
+
+        # Draw background.
+        opt.text = ''
+        opt.icon = QIcon()
+        sp.drawComplexControl(QStyle.CC_ToolButton, opt)
+
+        # Draw icon.
+        QStyle.PM_ButtonMargin
+        sp.drawItemPixmap(opt.rect,
+                          Qt.AlignLeft | Qt.AlignVCenter,
+                          self.icon().pixmap(self.iconSize()))
+
+        # Draw text.
+        hspacing = QApplication.instance().style().pixelMetric(
+            QStyle.PM_ButtonMargin)
+        if not self.icon().isNull():
+            hspacing += self.iconSize().width()
+        opt.rect.translate(hspacing, 0)
+        sp.drawItemText(opt.rect,
+                        Qt.AlignLeft | Qt.AlignVCenter,
+                        self.palette(),
+                        True,
+                        self.text())
+
+
+class DropdownToolButton(LeftAlignedToolButton):
     """
     A toolbutton with a dropdown menu that acts like a combobox, but keeps the
     style of a toolbutton.
     """
     sig_checked_action_changed = Signal(QAction)
 
-    def __init__(self, icon, iconsize, parent=None):
+    def __init__(self, icon=None, iconsize=None, parent=None,
+                 placeholder_text=''):
         super().__init__(parent)
-        self.setIcon(get_icon(icon))
-        self.setIconSize(QSize(iconsize, iconsize))
+        self._adjust_size_to_content = True
+        self._placeholder_text = placeholder_text
+
+        self.setMinimumWidth(100)
+        if icon is not None:
+            self.setIcon(get_icon(icon))
+        if iconsize is not None:
+            self.setIconSize(QSize(iconsize, iconsize))
         self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
 
         self.setMenu(QMenu(self))
@@ -45,6 +142,15 @@ class DropdownToolButton(QToolButton):
         self.setSizePolicy(policy)
 
         self._action_group = QActionGroup(self)
+
+        self.setEnabled(False)
+        self.setText(self._placeholder_text)
+
+    def count(self):
+        """
+        Return the number of items in this DropdownToolButton.
+        """
+        return len(self.menu().actions())
 
     def eventFilter(self, widget, event):
         """
@@ -68,7 +174,20 @@ class DropdownToolButton(QToolButton):
                                data=data)
         self.menu().addAction(action)
         action.setChecked(True)
+        self.setEnabled(self.count() > 0)
         return action
+
+    def remove_action(self, data):
+        """
+        Remove the action corresponding to the given data.
+        """
+        for action in self.menu().actions():
+            if action.data() == data:
+                self.action_group().removeAction(action)
+                self.menu().removeAction(action)
+        if self.count() == 0:
+            self.setEnabled(False)
+            self.setText(self._placeholder_text)
 
     def action_group(self):
         """
@@ -81,6 +200,13 @@ class DropdownToolButton(QToolButton):
         Return the currently checked action of this button's menu.
         """
         return self._action_group.checkedAction()
+
+    def setCheckedAction(self, index):
+        """
+        Set the currently checked action to the action located at the given
+        index in the list.
+        """
+        self.action_group().actions()[index].setChecked(True)
 
     def wheelEvent(self, event):
         """
@@ -105,34 +231,10 @@ class DropdownToolButton(QToolButton):
         """
         if toggle:
             self.setText(self.checked_action().text() if
-                         self.checked_action() else '')
+                         self.checked_action() else self._placeholder_text)
             self.sig_checked_action_changed.emit(self.checked_action())
-
-    def paintEvent(self, event):
-        """
-        Override Qt method to align the icon and text to the left.
-        """
-        sp = QStylePainter(self)
-        opt = QStyleOptionToolButton()
-        self.initStyleOption(opt)
-
-        # Draw background.
-        opt.text = ''
-        opt.icon = QIcon()
-        sp.drawComplexControl(QStyle.CC_ToolButton, opt)
-
-        # Draw icon.
-        sp.drawItemPixmap(opt.rect,
-                          Qt.AlignLeft | Qt.AlignVCenter,
-                          self.icon().pixmap(self.iconSize()))
-
-        # Draw text.
-        opt.rect.translate(self.iconSize().width() + 3, 0)
-        sp.drawItemText(opt.rect,
-                        Qt.AlignLeft | Qt.AlignVCenter,
-                        self.palette(),
-                        True,
-                        self.text())
+        if self._adjust_size_to_content and self.width() > self.minimumWidth():
+            self.setMinimumWidth(self.width())
 
 
 class SemiExclusiveButtonGroup(QObject):
@@ -225,16 +327,21 @@ class SemiExclusiveButtonGroup(QObject):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
+    visibility_btn = ToggleVisibilityToolButton(get_iconsize())
+    visibility_btn.create_action('Item #1', object())
+    visibility_btn.create_action('Item #2', object())
+    visibility_btn.create_action('Item #3', object())
+
     button = DropdownToolButton('checklist', get_iconsize())
     for i in range(3):
-        button.create_action('Action #{}'.format(i),
+        button.create_action('Item #{}'.format(i),
                              'Data of Action #{}'.format(i))
-
     button.sig_checked_action_changed.connect(
         lambda action: print('{} toggled'.format(action.text()))
         )
 
     toolbar = QToolBar()
+    toolbar.addWidget(visibility_btn)
     toolbar.addWidget(button)
     toolbar.show()
 

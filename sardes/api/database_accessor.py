@@ -11,23 +11,108 @@
 from abc import ABC, abstractmethod
 
 # ---- Third party imports
+import pandas as pd
 from pandas import Series, DataFrame
-
-# ---- Local imports
-from sardes.api.timeseries import TimeSeriesGroup, TimeSeries
 
 
 class DatabaseAccessorBase(ABC):
+    """
+    Basic functionality for Sardes database accessor.
+
+    WARNING: Don't override any methods or attributes present here unless you
+    know what you are doing.
+    """
+
+    def __init__(self):
+        self._connection = None
+        self._connection_error = None
+        self._temp_indexes = {}
+
+    # ---- Public API
+    def get(self, name, *args, **kargs):
+        """
+        Get the data related to name from the database.
+        """
+        method_to_exec = getattr(self, 'get_' + name)
+        result = method_to_exec(*args, **kargs)
+        try:
+            result.name = name
+        except AttributeError:
+            pass
+        return result
+
+    def set(self, name, *args, **kargs):
+        """
+        Save the data related to name in the database.
+        """
+        getattr(self, 'set_' + name)(*args, **kargs)
+
+    def add(self, name, primary_key, values={}):
+        """
+        Add a new item to the data related to name in the database using
+        the given primary_key and values.
+        """
+        getattr(self, 'add_' + name)(primary_key, values)
+        self.del_temp_index(name, primary_key)
+
+    def delete(self, name, primary_key):
+        """
+        Delte the item related to name in the database using the given
+        primary_key.
+        """
+        getattr(self, 'delete_' + name)(primary_key)
+        self.del_temp_index(name, primary_key)
+
+    def create_index(self, name):
+        """
+        Return a new index that can be used subsequently to add a new item
+        related to name in the database.
+        """
+        new_index = self._create_index(name)
+        self.add_temp_index(name, new_index)
+        return new_index
+
+    def connect(self):
+        """
+        Create a new connection object to communicate with the database.
+        """
+        self._temp_indexes = {}
+        return self._connect()
+
+    # ---- Temp indexes
+    def temp_indexes(self, name):
+        """
+        Return a list of temporary indexes that were requested by the manager,
+        but but haven't been commited yet to the database.
+        """
+        return self._temp_indexes.get(name, [])
+
+    def add_temp_index(self, name, index):
+        """
+        Add index to the list of temporary indexes for the data related
+        to name.
+        """
+        self._temp_indexes[name] = self._temp_indexes.get(name, []) + [index]
+
+    def del_temp_index(self, name, index):
+        """
+        Remove index from the list of temporary indexes for the data related
+        to name.
+        """
+        if name in self._temp_indexes:
+            try:
+                self._temp_indexes[name].remove(index)
+            except ValueError:
+                pass
+
+
+class DatabaseAccessor(DatabaseAccessorBase):
     """
     Sardes database accessor class.
 
     All database accessors *must* inherit this class and reimplement
     its interface.
     """
-
-    def __init__(self, *args, **kargs):
-        self._connection = None
-        self._connection_error = None
 
     # ---- Database connection
     @abstractmethod
@@ -43,7 +128,7 @@ class DatabaseAccessorBase(ABC):
         pass
 
     @abstractmethod
-    def connect(self):
+    def _connect(self):
         """
         Create a new connection object to communicate with the database.
         """
@@ -56,23 +141,70 @@ class DatabaseAccessorBase(ABC):
         """
         pass
 
-    # ---- Observation wells
-    @property
-    @abstractmethod
-    def observation_wells(self):
+    # --- Indexes
+    def _create_index(self, name):
         """
-        Return the list of observation wells that are saved in the
-        database.
+        Return a new index that can be used subsequently to add a new item
+        related to name in the database.
+
+        Note that you need to take into account temporary indexes that might
+        have been requested by the database manager but haven't been
+        commited yet to the database.
+        """
+        raise NotImplementedError
+
+    # ---- Observation Wells
+    def get_observation_wells_data_overview(self):
+        """
+        Return a :class:`pandas.DataFrame` containing an overview of
+        the water level data that are available for each observation well
+        of the monitoring network.
 
         Returns
         -------
-        list of str
-            A list of strings corresponding to the name given to the
-            observation wells that are saved in the database.
-        """
-        pass
+        :class:`pandas.DataFrame`
+            A :class:`pandas.DataFrame` containing an overview of
+            the water level data that are available for each observation well
+            of the monitoring network.
 
-    def save_observation_well_data(self, sampling_feature_id, attribute_name,
+            The row indexes of the dataframe must correspond to the
+            observation well IDs, which are unique identifiers used to
+            reference the wells in the database.
+
+            The dataframe can contain any of the following optional columns.
+
+            Optional Columns
+            ~~~~~~~~~~~~~~~~
+            - first_date: datetime
+                The date of the first water level measurements made in each
+                observation well.
+            - last_date: datetime
+                The date of the last water level measurements made in each
+                observation well.
+            - mean_water_level: float
+                The average water level value calculated over the whole
+                monitoring period for each well.
+        """
+        raise NotImplementedError
+
+    def add_observation_wells_data(self, sampling_feature_id,
+                                   attribute_values):
+        """
+        Add a new observation well to the database using the provided
+        sampling feature ID and attribute values.
+
+        Parameters
+        ----------
+        sampling_feature_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the observation well
+            in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values for the new
+            observation well.
+        """
+        raise NotImplementedError
+
+    def set_observation_wells_data(self, sampling_feature_id, attribute_name,
                                    value):
         """
         Save in the database the new attribute value for the observation well
@@ -138,10 +270,10 @@ class DatabaseAccessorBase(ABC):
             - aquifer_code: int
                 A code that represents the combination of aquifer type and
                 confinement for the well.
-            - in_recharge_zone: bool
+            - in_recharge_zone: str
                 Indicates whether the observation well is located in or in
                 the proximity a recharge zone.
-            - is_influenced: bool
+            - is_influenced: str
                 Indicates whether the water levels measured in that well are
                 influenced or not by anthropic phenomenon.
             - elevation: float
@@ -152,9 +284,82 @@ class DatabaseAccessorBase(ABC):
             - obs_well_notes: str
                 Any notes related to the observation well.
         """
-        return DataFrame([])
+        raise NotImplementedError
 
-    # ---- Sondes
+    # ---- Repere
+    def add_repere_data(self, repere_id, attribute_values):
+        """
+        Add a new observation well repere data to the database using the
+        provided repere ID and attribute values.
+
+        Parameters
+        ----------
+        repere_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the observation well
+            repere data in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values for the new
+            observation well repere data.
+        """
+        raise NotImplementedError
+
+    def set_repere_data(self, repere_id, attribute_name, attribute_value):
+        """
+        Save in the database the new attribute value for the observation well
+        repere data corresponding to the specified ID.
+
+        Parameters
+        ----------
+        repere_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the observation well
+            repere data in the database.
+        attribute_name: str
+            Name of the attribute of the observation well repere data for
+            which the value need to be updated in the database.
+        value: object
+            Value that need to be updated for the corresponding attribute and
+            repere data.
+        """
+        raise NotImplementedError
+
+    def get_repere_data(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the information related
+        to observation wells repere data.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A :class:`pandas.DataFrame` containing the information related
+            to observation wells repere data.
+
+            The row indexes of the dataframe must correspond to the IDs
+            used to reference the repere data in the database.
+
+            The dataframe can contain any of the columns that are listed below.
+
+            Columns
+            ~~~~~~~~~~~~~~~~
+            - sampling_feature_uuid: int, :class:`uuid.UUID`
+                A unique identifier that is used to reference the observation
+                well for which the repere data are associated.
+            - top_casing_alt: float
+                The altitude values given in meters of the top of the
+                observation wells' casing.
+            - casing_length: str
+                The lenght of the casing above ground level given in meters.
+            - start_date: datetime
+                The date and time after which repere data are valid.
+            - end_date: datetime
+                The date and time before which repere data are valid.
+            - is_alt_geodesic: bool
+                Whether the top_casing_alt value is geodesic.
+            - repere_note: bool
+                Any note related to the repere data.
+        """
+        raise NotImplementedError
+
+    # ---- Sonde Brands and Models Library
     def get_sonde_models_lib(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -182,7 +387,22 @@ class DatabaseAccessorBase(ABC):
             - sonde_model: str
                 A sonde model.
         """
-        return DataFrame([])
+        raise NotImplementedError
+
+    # ---- Sondes Inventory
+    def add_sondes_data(self, sonde_id, attribute_values):
+        """
+        Add a new sonde to the database using the provided sonde ID
+        and attribute values.
+
+        Parameters
+        ----------
+        sonde_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the sonde in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values for the new sonde.
+        """
+        raise NotImplementedError
 
     def get_sondes_data(self):
         """
@@ -235,9 +455,9 @@ class DatabaseAccessorBase(ABC):
             - sonde_model: str
                 The model of the sonde.
         """
-        return DataFrame([])
+        raise NotImplementedError
 
-    def save_sonde_data(self, sonde_id, attribute_name, value):
+    def set_sondes_data(self, sonde_id, attribute_name, value):
         """
         Save in the database the new attribute value for the sonde
         corresponding to the specified sonde UID.
@@ -257,72 +477,249 @@ class DatabaseAccessorBase(ABC):
         """
         raise NotImplementedError
 
-    # ---- Monitored properties
-    @property
-    @abstractmethod
-    def monitored_properties(self):
+    # ---- Sonde installations
+    def add_sonde_installations(self, installation_id, attribute_values):
         """
-        Returns the list of properties for which time data is stored in the
-        database.
+        Add a new sonde installation to the database using the provided ID
+        and attribute values.
+
+        Parameters
+        ----------
+        installation_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the sonde installation
+            in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values for the new
+            sonde installation.
+        """
+        raise NotImplementedError
+
+    def set_sonde_installations(self, installation_id, attribute_name, value):
+        """
+        Save in the database the new attribute value for the sonde
+        installation corresponding to the specified id.
+
+        Parameters
+        ----------
+        installation_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the sonde installation
+            in the database.
+        attribute_name: str
+            Name of the attribute of the sonde installation for which the
+            value need to be updated in the database.
+        value: object
+            Value that need to be updated for the corresponding attribute and
+            sonde installation id.
+        """
+        raise NotImplementedError
+
+    def get_sonde_installations(self):
+        """
+        Return a :class:`pandas.DataFrame` containing information related to
+        sonde installations made in the observation wells of the monitoring
+        network.
 
         Returns
         -------
-        list of str
-            A list of strings corresponding to the properties for which time
-            data is stored in the database.
-        """
-        pass
+        :class:`pandas.DataFrame`
+            A :class:`pandas.DataFrame` containing information related to
+            sonde installations made in the observation wells of the monitoring
+            network.
 
-    @abstractmethod
-    def get_monitored_property_name(self, monitored_property):
-        """
-        Return the common human readable name for the corresponding
-        monitored property.
+            The row indexes of the dataframe must correspond to the
+            IDs used to reference each installation in the database.
 
-        Returns
-        -------
-        str
-            A string corresponding to the common human readable name used to
-            reference this monitored property in the GUI and the graphs.
-        """
-        pass
+            The dataframe must contain the following columns.
 
-    @abstractmethod
-    def get_monitored_property_units(self, monitored_property):
+            Required Columns
+            ~~~~~~~~~~~~~~~~
+            - sampling_feature_uuid: object
+                A unique identifier that is used to reference the observation
+                well in which the sonde are installed.
+            - sonde_uuid: object
+                A unique identifier used to reference each sonde in the
+                database.
+            - start_date: datetime
+                The date and time at which the sonde was installed in the well.
+            - end_date: datetime
+                The date and time at which the sonde was removed from the well.
+            - install_depth: float
+                The depth at which the sonde was installed in the well.
         """
-        Return the units in which the time data for this monitored property
-        are saved in the database.
-
-        Returns
-        -------
-        str
-            A string corresponding to the units in which the time data for
-            this monitored property are saved in the database.
-        """
-        pass
+        raise NotImplementedError
 
     # ---- Timeseries
-    @abstractmethod
-    def get_timeseries_for_obs_well(self, obs_well_id, monitored_property):
+    def get_timeseries_for_obs_well(self, obs_well_id, data_type):
         """
-        Return a :class:`TimeSeriesGroup` containing the :class:`TimeSeries`
-        holding the data acquired in the observation well for the
-        specified monitored property.
+        Return a pandas dataframe containing the readings for the given
+        data type and observation well.
 
         Parameters
         ----------
         obs_well_id: object
             A unique identifier that is used to reference the observation well
             in the database.
-        monitored_property: object
-            The identifier used to reference the property for which we want
-            to extract the time data from the database.
+        data_type: :class:`sardes.api.timeseries.DataType`
+            The type of time data that we want to extract from the database.
 
         Returns
         -------
-        :class:`TimeSeriesGroup`
-            A :class:`TimeSeriesGroup` containing the :class:`TimeSeries`
-            holding the data acquired in the observation well for the
-            specified monitored property.
+        tseries_dataf: pandas.DataFrame
+            A pandas dataframe containing the readings for a given data type
+            and obervation well.
+            Time must be saved as datetime in a column named 'datetime'.
+            The column in which the numerical values are stored must be a
+            member of:class:`sardes.api.timeseries.DataType`.
+            Finally, the an observation ID and a sonde serial number must be
+            provided for each value and stored in columns named, respectively,
+            'obs_id' and 'sonde_id'.
         """
-        pass
+        raise NotImplementedError
+
+    def save_timeseries_data_edits(self, tseries_edits):
+        """
+        Save in the database a set of edits that were made to to timeseries
+        data that were already saved in the database.
+
+        Parameters
+        ----------
+        tseries_edits: pandas.DataFrame
+            A multi-indexes pandas dataframe that contains the edited
+            numerical values that need to be saved in the database.
+            The indexes of the dataframe correspond, respectively, to the
+            datetime (datetime), observation ID (str) and the data type
+            (DataType) corresponding to the edited value.
+        """
+        raise NotImplementedError
+
+    def add_timeseries_data(self, tseries_data, obs_well_uuid,
+                            sonde_installation_uuid=None):
+        """
+        Save in the database a set of timeseries data associated with the
+        given well and sonde installation id.
+
+        Parameters
+        ----------
+        tseries_data: pandas.DataFrame
+            A pandas dataframe where time is saved as datetime in a column
+            named 'datetime'. The columns in which the numerical values are
+            saved must be a member of :class:`sardes.api.timeseries.DataType`
+            enum.
+        obs_well_id: int, :class:`uuid.UUID`
+            A unique identifier that is used to reference in the database
+            the observation well in which the data were measured.
+        installation_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the sonde installation, if
+            any, corresponding to the current set of data.
+        """
+        raise NotImplementedError
+
+    def delete_timeseries_data(self, tseries_dels):
+        """
+        Delete data in the database for the observation IDs, datetime and
+        data type specified in tseries_dels.
+
+        Parameters
+        ----------
+        tseries_dels: pandas.DataFrame
+            A pandas dataframe that contains the observation IDs, datetime,
+            and datatype for which timeseries data need to be deleted
+            from the database.
+        """
+        raise NotImplementedError
+
+    # ---- Manual Measurements
+    def add_manual_measurements(self, measurement_id, attribute_values):
+        """
+        Add a new manual measurement to the database using the provided ID
+        and attribute values.
+
+        Parameters
+        ----------
+        measurement_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the manual measurement
+            in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values for the new
+            manual measurement.
+        """
+        raise NotImplementedError
+
+    def get_manual_measurements(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the water level manual
+        measurements made in the observation wells for the entire monitoring
+        network.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A :class:`pandas.DataFrame` containing the information related
+            to the observation wells that are saved in the database.
+
+            The row indexes of the dataframe must correspond to the
+            IDs used to reference each manual measurement in the database.
+
+            The dataframe must contain the following columns.
+
+            Required Columns
+            ~~~~~~~~~~~~~~~~
+            - sampling_feature_uuid: object
+                A unique identifier that is used to reference the observation
+                well in the database in which the manual measurement was made.
+            - datetime: :class:`datetime.Datetime`
+                A datetime object corresponding to the date and time when the
+                manual measurement was made in the well.
+            - value: float
+                The value of the water level that was measured manually
+                in the well.
+            - notes: str
+                Any notes related to the manual measurement.
+        """
+        raise NotImplementedError
+
+    def set_manual_measurements(self, measurement_id, attribute_name, value):
+        """
+        Save in the database the new attribute value for the manual
+        measurement  corresponding to the specified id.
+
+        Parameters
+        ----------
+        measurement_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the manual measurement
+            in the database.
+        attribute_name: str
+            Name of the attribute of the manual measurement for which the
+            value need to be updated in the database.
+        value: object
+            Value that need to be updated for the corresponding attribute and
+            manual measurement id.
+        """
+        raise NotImplementedError
+
+
+# ---- Utilities
+def init_tseries_edits():
+    """
+    Init and return an empty multiindex pandas dataframe that can be
+    used to edit timeseries data in the database with
+    :func:`DatabaseAccessor.save_timeseries_data_edits`.
+    """
+    tseries_edits = pd.DataFrame(
+        [], columns=['datetime', 'obs_id', 'data_type', 'value'])
+    tseries_edits.set_index(
+        'datetime', inplace=True, drop=True)
+    tseries_edits.set_index(
+        'obs_id', inplace=True, drop=True, append=True)
+    tseries_edits.set_index(
+        'data_type', inplace=True, drop=True, append=True)
+    return tseries_edits
+
+
+def init_tseries_dels():
+    """
+    Init and return an empty pandas dataframe that can be
+    used to delete timeseries data from the database with
+    :func:`DatabaseAccessor.delete_timeseries_data`.
+    """
+    return pd.DataFrame([], columns=['obs_id', 'datetime', 'data_type'])

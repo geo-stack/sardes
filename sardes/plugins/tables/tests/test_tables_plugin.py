@@ -12,7 +12,6 @@ Tests for the DatabaseConnectionWidget.
 """
 
 # ---- Standard imports
-# ---- Standard imports
 import os
 import os.path as osp
 from unittest.mock import Mock
@@ -25,13 +24,10 @@ from qtpy.QtWidgets import QMainWindow
 
 # ---- Local imports
 from sardes.database.database_manager import DatabaseConnectionManager
-from sardes.database.accessor_demo import (
-    DatabaseAccessorDemo, OBS_WELLS_DF, SONDE_MODELS_LIB, SONDES_DATA)
+from sardes.database.accessors import DatabaseAccessorDemo
 from sardes.plugins.tables import SARDES_PLUGIN_CLASS
-from sardes.plugins.tables.tables.sondes_inventory import (
-    SondesInventoryTableModel)
-from sardes.plugins.tables.tables.observation_wells import (
-    ObsWellsTableModel)
+from sardes.database.accessors.accessor_demo import SONDE_MODELS_LIB
+from sardes.widgets.tableviews import (MSEC_MIN_PROGRESS_DISPLAY, QMessageBox)
 
 
 # =============================================================================
@@ -50,6 +46,12 @@ def mainwindow(qtbot, mocker, dbconnmanager):
             super().__init__()
             self.panes_menu = Mock()
             self.db_connection_manager = dbconnmanager
+
+            self.view_timeseries_data = Mock()
+            self.plot_timeseries_data = Mock()
+
+            self.register_table = Mock()
+            self.unregister_table = Mock()
 
             self.plugin = SARDES_PLUGIN_CLASS(self)
             self.plugin.register_plugin()
@@ -70,18 +72,54 @@ def mainwindow(qtbot, mocker, dbconnmanager):
 # =============================================================================
 # ---- Tests
 # =============================================================================
-def test_tables_plugin_init(mainwindow):
+def test_tables_plugin_init(mainwindow, qtbot):
     """Test that the databse connection manager is initialized correctly."""
+    tabwidget = mainwindow.plugin.tabwidget
+    plugin = mainwindow.plugin
+    models_manager = mainwindow.db_connection_manager.models_manager
+
     assert mainwindow.plugin
-    assert len(mainwindow.plugin._tables) == 2
+    assert mainwindow.plugin.table_count() == 5
+    assert len(models_manager._table_models) == 5
 
     # Table Observation Wells.
-    tablewidget = mainwindow.plugin._tables[ObsWellsTableModel.TABLE_ID]
-    assert tablewidget.tableview.row_count() == len(OBS_WELLS_DF)
+    for current_index in range(mainwindow.plugin.table_count()):
+        tabwidget.setCurrentIndex(current_index)
+        qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
+        assert tabwidget.currentWidget() == plugin.current_table()
+        for index in range(mainwindow.plugin.table_count()):
+            table = tabwidget.widget(index)
+            table_id = table.get_table_id()
+            if index <= current_index:
+                assert table.tableview.row_count() > 0
+                assert len(models_manager._queued_model_updates[table_id]) == 0
+            else:
+                assert table.tableview.row_count() == 0
+                assert (len(models_manager._queued_model_updates[table_id]) ==
+                        len(models_manager._models_req_data[table_id]))
+            assert tabwidget.tabText(index) == table.get_table_title()
 
-    # Table Sondes Inventory.
-    tablewidget = mainwindow.plugin._tables[SondesInventoryTableModel.TABLE_ID]
-    assert tablewidget.tableview.row_count() == len(SONDES_DATA)
+
+def test_disconnect_from_database(mainwindow, qtbot):
+    """
+    Test that the data are cleared as expected when disconnecting from the
+    database.
+    """
+    # Circle through all tables so that their data are fetched from the
+    # database.
+    tabwidget = mainwindow.plugin.tabwidget
+    for index in range(mainwindow.plugin.table_count()):
+        tabwidget.setCurrentIndex(index)
+        qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
+        table = tabwidget.widget(index)
+        assert table.tableview.row_count() > 0
+
+    # Disconnect from the database.
+    mainwindow.db_connection_manager.disconnect_from_db()
+    qtbot.wait(300)
+    for index in range(mainwindow.plugin.table_count()):
+        table = tabwidget.widget(index)
+        assert table.tableview.row_count() == 0
 
 
 # =============================================================================
@@ -91,17 +129,19 @@ def test_edit_sonde_model(mainwindow, qtbot):
     """
     Test editing sonde brand in the sondes inventory table.
     """
-    tablewidget = mainwindow.plugin._tables[SondesInventoryTableModel.TABLE_ID]
+    tabwidget = mainwindow.plugin.tabwidget
+    tablewidget = mainwindow.plugin._tables['table_sondes_inventory']
     tableview = tablewidget.tableview
     model = tablewidget.tableview.model()
 
     # We need to select the tab corresponding to the table sondes inventory.
     mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
+    qtbot.wait(1000)
 
     # Select the first cell of the table.
     model_index = tableview.model().index(0, 0)
-    assert model_index.data() == 'Solinst Barologger M1.5 Gold'
-    assert model.get_value_at(model_index) == 0
+    assert model_index.data() == 'Solinst Barologger M1.5'
+    assert model.get_value_at(model_index) == 3
 
     qtbot.mouseClick(
         tableview.viewport(),
@@ -114,21 +154,59 @@ def test_edit_sonde_model(mainwindow, qtbot):
 
     # Assert the editor of the item delegate is showing the right data.
     editor = tableview.itemDelegate(model_index).editor
-    assert editor.currentData() == 0
-    assert editor.currentText() == 'Solinst Barologger M1.5 Gold'
+    assert editor.currentData() == 3
+    assert editor.currentText() == 'Solinst Barologger M1.5'
     assert editor.count() == len(SONDE_MODELS_LIB)
 
     # Select a new value and accept the edit.
-    editor.setCurrentIndex(editor.findData(7))
+    editor.setCurrentIndex(editor.findData(8))
     qtbot.keyPress(editor, Qt.Key_Enter)
     assert tableview.state() != tableview.EditingState
     assert model_index.data() == 'Telog 2 Druck'
-    assert model.get_value_at(model_index) == 7
+    assert model.get_value_at(model_index) == 8
+    assert tabwidget.tabText(1) == tablewidget.get_table_title() + '*'
 
     # Undo the last edit.
-    tableview. _undo_last_data_edit()
-    assert model_index.data() == 'Solinst Barologger M1.5 Gold'
-    assert model.get_value_at(model_index) == 0
+    tableview._undo_last_data_edit()
+    assert model_index.data() == 'Solinst Barologger M1.5'
+    assert model.get_value_at(model_index) == 3
+    assert tabwidget.tabText(1) == tablewidget.get_table_title()
+
+
+def test_save_data_edits(mainwindow, qtbot):
+    """
+    Assert that tables data is updated correctly after edits are saved.
+    """
+    table_obs_well = mainwindow.plugin._tables['table_observation_wells']
+    table_man_meas = mainwindow.plugin._tables['table_manual_measurements']
+
+    # We need first to select the tab corresponding to the table manual
+    # measurements and assert the value displayed in cell at index (1, 1).
+    mainwindow.plugin.tabwidget.setCurrentWidget(table_man_meas)
+    qtbot.wait(1000)
+    model_index = table_man_meas.tableview.model().index(0, 0)
+    assert model_index.data() == '03037041'
+
+    # We now switch to table observation wells and do an edit to the table's
+    # data programmatically.
+    mainwindow.plugin.tabwidget.setCurrentWidget(table_obs_well)
+    qtbot.wait(1000)
+    model_index = table_obs_well.tableview.model().index(0, 0)
+    assert model_index.data() == '03037041'
+    table_obs_well.tableview.model().set_data_edit_at(
+        model_index, '03037041_modif')
+    assert model_index.data() == '03037041_modif'
+
+    # We now save the edits.
+    table_obs_well.tableview.model().save_data_edits()
+    qtbot.wait(100)
+
+    # We switch back to table manual measurements and assert that the changes
+    # made in table observation wells were reflected here as expected.
+    mainwindow.plugin.tabwidget.setCurrentWidget(table_man_meas)
+    qtbot.wait(1000)
+    model_index = table_man_meas.tableview.model().index(0, 0)
+    assert model_index.data() == '03037041_modif'
 
 
 if __name__ == "__main__":

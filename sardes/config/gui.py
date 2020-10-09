@@ -14,12 +14,17 @@ from qtpy.QtWidgets import QApplication, QStyle
 ICON_COLOR = '#202020'
 GREEN = '#00aa00'
 RED = '#CC0000'
+YELLOW = '#ffa500'
+YELLOWLIGHT = '#fcf7b6'
 
-INIT_MAINWINDOW_SIZE = (900, 450)
+INIT_MAINWINDOW_SIZE = (1260, 740)
 
 
-def get_iconsize():
-    return 24
+def get_iconsize(size='normal'):
+    if size == 'normal':
+        return 24
+    elif size == 'small':
+        return 18
 
 
 def get_layout_horizontal_spacing():
