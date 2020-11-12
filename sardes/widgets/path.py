@@ -38,6 +38,7 @@ class PathBoxWidget(QFrame):
         self.browse_btn.clicked.connect(self.browse_path)
 
         self.path_lineedit = QLineEdit()
+        self.path_lineedit.setReadOnly(True)
         self.path_lineedit.setText(path)
         self.path_lineedit.setToolTip(path)
         self.path_lineedit.setFixedHeight(
