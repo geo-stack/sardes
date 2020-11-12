@@ -428,6 +428,30 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         else:
             return uuid.uuid4()
 
+    # ---- Database setup
+    def init_database(self):
+        """
+        Initialize the tables and attributes of a new database.
+        """
+        tables = [Location, SamplingFeatureType, SamplingFeature,
+                  SamplingFeatureMetadata, SamplingFeatureDataOverview,
+                  SondeFeature, SondeModel, SondeInstallation, Process, Repere,
+                  ObservationType, Observation, ObservedProperty,
+                  GenericNumericalData, TimeSeriesChannel,
+                  TimeSeriesData, PumpType, PumpInstallation]
+        dialect = self._engine.dialect
+        for table in tables:
+            if dialect.has_table(self._session, table.__tablename__):
+                continue
+            Base.metadata.create_all(self._engine, tables=[table.__table__])
+            for item_attrs in table.initial_attrs():
+                self._session.add(table(**item_attrs))
+            self._session.commit()
+        self._session.commit()
+
+        self.execute("PRAGMA application_id = {}".format(APPLICATION_ID))
+        self.execute("PRAGMA user_version = {}".format(CURRENT_SCHEMA_VERSION))
+
     # ---- Database connection
     def _create_engine(self):
         """Create a SQL Alchemy engine."""
@@ -1401,27 +1425,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 # =============================================================================
 # ---- Utilities
 # =============================================================================
-def init_database(accessor):
-    tables = [Location, SamplingFeatureType, SamplingFeature,
-              SamplingFeatureMetadata, SamplingFeatureDataOverview,
-              SondeFeature, SondeModel, SondeInstallation, Process, Repere,
-              ObservationType, Observation, ObservedProperty,
-              GenericNumericalData, TimeSeriesChannel,
-              TimeSeriesData, PumpType, PumpInstallation]
-    dialect = accessor._engine.dialect
-    for table in tables:
-        if dialect.has_table(accessor._session, table.__tablename__):
-            continue
-        Base.metadata.create_all(accessor._engine, tables=[table.__table__])
-        for item_attrs in table.initial_attrs():
-            accessor._session.add(table(**item_attrs))
-        accessor._session.commit()
-    accessor._session.commit()
-
-    accessor.execute("PRAGMA application_id = {}".format(APPLICATION_ID))
-    accessor.execute("PRAGMA user_version = {}".format(CURRENT_SCHEMA_VERSION))
-
-
 if __name__ == "__main__":
     accessor_sardeslite = DatabaseAccessorSardesLite('D:/rsesq_test.db')
     accessor_sardeslite.connect()
