@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-
+# -----------------------------------------------------------------------------
 # Copyright © SARDES Project Contributors
 # https://github.com/cgq-qgc/sardes
 #
 # This file is part of SARDES.
 # Licensed under the terms of the GNU General Public License.
+# -----------------------------------------------------------------------------
 
 # ---- Standard library imports
 import sys
@@ -21,8 +22,12 @@ from PIL import Image
 import numpy as np
 
 # ---- Local imports
+from sardes.config.locale import _
 from sardes import __rootdir__
-from readers import MDDELCC_RSESQ_Reader
+from sardes.api.tools import SardesTool
+
+mpl.rc('font', **{'family': 'sans-serif', 'sans-serif': ['Calibri']})
+
 
 workdir = "C:/Users/User/OneDrive/INRS/2017 - Projet INRS PACC"
 reader = MDDELCC_RSESQ_Reader(workdir)
