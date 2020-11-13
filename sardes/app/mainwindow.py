@@ -131,8 +131,7 @@ class MainWindow(QMainWindow):
         from sardes.plugins.databases import SARDES_PLUGIN_CLASS
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
         print("Loading the {} plugin...".format(plugin_title), end=' ')
-        splash.showMessage(_("Loading the {} plugin...")
-                           .format(SARDES_PLUGIN_CLASS.get_plugin_title()))
+        splash.showMessage(_("Loading the {} plugin...").format(plugin_title))
         self.databases_plugin = SARDES_PLUGIN_CLASS(self)
         self.databases_plugin.register_plugin()
         self.internal_plugins.append(self.databases_plugin)
@@ -142,8 +141,7 @@ class MainWindow(QMainWindow):
         from sardes.plugins.dataio import SARDES_PLUGIN_CLASS
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
         print("Loading the {} plugin...".format(plugin_title), end=' ')
-        splash.showMessage(_("Loading the {} plugin...")
-                           .format(SARDES_PLUGIN_CLASS.get_plugin_title()))
+        splash.showMessage(_("Loading the {} plugin...").format(plugin_title))
         self.data_import_plugin = SARDES_PLUGIN_CLASS(self)
         self.data_import_plugin.register_plugin()
         self.internal_plugins.append(self.data_import_plugin)
@@ -153,8 +151,7 @@ class MainWindow(QMainWindow):
         from sardes.plugins.readings import SARDES_PLUGIN_CLASS
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
         print("Loading the {} plugin...".format(plugin_title), end=' ')
-        splash.showMessage(_("Loading the {} plugin...")
-                           .format(SARDES_PLUGIN_CLASS.get_plugin_title()))
+        splash.showMessage(_("Loading the {} plugin...").format(plugin_title))
         self.readings_plugin = SARDES_PLUGIN_CLASS(self)
         self.readings_plugin.register_plugin()
         self.internal_plugins.append(self.readings_plugin)
