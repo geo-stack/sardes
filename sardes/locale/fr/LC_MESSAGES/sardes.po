@@ -10,8 +10,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1.0\n"
-"POT-Creation-Date: 2020-10-08 15:20-0400\n"
-"PO-Revision-Date: 2020-10-08 15:21-0400\n"
+"POT-Creation-Date: 2020-11-13 08:55-0500\n"
+"PO-Revision-Date: 2020-11-13 08:56-0500\n"
 "Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs."
 "ca.com>\n"
 "Language-Team: Python\n"
@@ -143,15 +143,15 @@ msgstr ""
 "La disposition de l'interface sera réinitialisée à la configuration par "
 "défaut.<br><br> Voulez-vous continuer?"
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:448
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:472
 msgid "'{}' does not exist."
 msgstr "'{}' n'existe pas."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:454
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:478
 msgid "'{}' is not a valid database file."
 msgstr "'{}' n'est pas un fichier de base de données valide."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:475
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:499
 msgid ""
 "'{}' does not appear to be a Sardes SQLite database. The application id set "
 "in the database is {}, but should be {}."
@@ -160,7 +160,7 @@ msgstr ""
 "l'application qui est défini dans la base de données est {} alors qu'il "
 "devrait être {}."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:483
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:507
 msgid ""
 "The version of this database is {} and is outdated. Please update your "
 "database to version {} and try again."
@@ -168,7 +168,7 @@ msgstr ""
 "La version de cette base de données est {} et est obsolète. Veuillez mettre "
 "à jour votre base de données à la version {} et réessayer."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:489
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:513
 msgid ""
 "Your Sardes application is outdated and does not support databases whose "
 "version is higher than {}. Please update Sardes and try again."
@@ -192,7 +192,7 @@ msgstr ""
 "Cliquez sur 'Connecter' pour commencer à tester Sardes en mode démo."
 
 #: ..\sardes\database\dialog_rsesq.py:50
-#: ..\sardes\database\dialog_sardes_lite.py:44
+#: ..\sardes\database\dialog_sardes_lite.py:67
 msgid "Database :"
 msgstr "Base de données :"
 
@@ -215,6 +215,43 @@ msgstr "Mot de passe :"
 #: ..\sardes\database\dialog_rsesq.py:60
 msgid "Encoding :"
 msgstr "Encodage :"
+
+#: ..\sardes\database\dialog_sardes_lite.py:49
+msgid "Select Database"
+msgstr "Sélectionner une base de données"
+
+#: ..\sardes\database\dialog_sardes_lite.py:50
+msgid "Select an existing Sardes SQLite database."
+msgstr "Sélectionnez une base de données Sardes SQLite existante."
+
+#: ..\sardes\database\dialog_sardes_lite.py:55
+msgid "Create..."
+msgstr "Créer..."
+
+#: ..\sardes\database\dialog_sardes_lite.py:59
+msgid "Create Database"
+msgstr "Créer une base de données"
+
+#: ..\sardes\database\dialog_sardes_lite.py:60
+msgid "Create a new Sardes SQLite database."
+msgstr "Créer une nouvelle base de données Sardes SQLite."
+
+#: ..\sardes\database\dialog_sardes_lite.py:110
+msgid "New Database"
+msgstr "Nouvelle base de données"
+
+#: ..\sardes\database\dialog_sardes_lite.py:134
+msgid "New Database Error"
+msgstr "Erreur de création de la BD"
+
+#: ..\sardes\database\dialog_sardes_lite.py:135
+msgid ""
+"Cannot overwrite Sardes database at <i>{}</i>  because it is already in use "
+"by another application or user."
+msgstr ""
+"L'opération d'enregistrement de la base de données ne peut pas être "
+"effectuée car le fichier <i>{}</i> est utilisé par une autre application ou "
+"un autre utilisateur."
 
 #: ..\sardes\plugins\databases\plugin.py:32
 msgid "Database Connector"
@@ -821,7 +858,7 @@ msgstr "Fichier en cours d'utilisation"
 msgid "Browse..."
 msgstr "Parcourir..."
 
-#: ..\sardes\widgets\path.py:69
+#: ..\sardes\widgets\path.py:71
 msgid "Modify Location"
 msgstr "Modifier l'emplacement"
 
@@ -1212,3 +1249,6 @@ msgid ""
 msgstr ""
 "Entrez une valeur comprise entre 0 et 99 points pour modifier la taille des "
 "marqueurs du tracé de la série chronologique actuellement sélectionnée."
+
+#~ msgid "Select Data"
+#~ msgstr "Sélectionner les données"
