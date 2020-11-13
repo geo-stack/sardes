@@ -56,3 +56,35 @@ class DatabaseConnectDialogSardesLite(DatabaseConnectDialogBase):
         an interface to.
         """
         return {'database': self.dbname_widget.path()}
+
+    def create_database(self, filename):
+        """
+        Create a new database using the provided database filename.
+
+        Parameters
+        ----------
+        filename : str
+            The absolute filepath where we want to create the database.
+        """
+        if osp.exists(filename):
+            try:
+                os.remove(filename)
+            except PermissionError:
+                QApplication.restoreOverrideCursor()
+                QMessageBox.warning(
+                    self.main,
+                    _('New Database Error'),
+                    _("Cannot overwrite Sardes database at <i>{}</i>  "
+                      "because it is already in use by another "
+                      "application or user."
+                      .format(filename)),
+                    QMessageBox.Ok)
+                self.select_new_database(filename)
+                return
+
+        print("Creating database {}...".format(filename))
+        accessor = DatabaseAccessorSardesLite(filename)
+        accessor.init_database()
+        accessor.close_connection()
+        self.set_database_kargs({'database': filename})
+        print("Database {} created successfully.".format(filename))
