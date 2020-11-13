@@ -53,6 +53,11 @@ class DatabaseConnectDialogSardesLite(DatabaseConnectDialogBase):
 
         self.add_widget(QLabel(_("Database :")), 0, 0)
         self.add_widget(self.dbname_widget, 0, 1)
+        self.dbname_widget.browse_btn.setToolTip(format_tooltip(
+            text=_("Select Database"),
+            tip=_("Select an existing Sardes SQLite database."),
+            shortcuts=None
+            ))
         self.add_stretch(1)
 
     def set_database_kargs(self, kargs):
