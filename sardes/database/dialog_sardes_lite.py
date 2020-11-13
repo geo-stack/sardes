@@ -7,14 +7,22 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+# ---- Standard imports
+import os
+import os.path as osp
 
 # ---- Third party imports
-from qtpy.QtWidgets import QHBoxLayout, QLabel, QLineEdit
+from qtpy.QtWidgets import (
+    QApplication, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton,
+    QFileDialog, QGridLayout, QWidget)
 
 # ---- Local imports
 from sardes.api.database_dialog import DatabaseConnectDialogBase
 from sardes.config.locale import _
+from sardes.config.ospath import (
+    get_select_file_dialog_dir, set_select_file_dialog_dir)
 from sardes.database.accessors import DatabaseAccessorSardesLite
+from sardes.utils.qthelpers import format_tooltip, create_toolbutton
 from sardes.widgets.path import PathBoxWidget
 
 
@@ -29,6 +37,8 @@ class DatabaseConnectDialogSardesLite(DatabaseConnectDialogBase):
     # is providing an interface to.
     __DatabaseAccessor__ = DatabaseAccessorSardesLite
     __database_type_name__ = 'Sardes SQLite'
+
+    FILEFILTER = 'Sardes SQLite Database (*.db)'
 
     def __init__(self):
         super().__init__()
@@ -56,6 +66,35 @@ class DatabaseConnectDialogSardesLite(DatabaseConnectDialogBase):
         an interface to.
         """
         return {'database': self.dbname_widget.path()}
+
+    # ---- Manage database creation
+    def select_new_database(self, filename=None):
+        """
+        Open a file dialog to allow the user to select a filename
+        that will be used to create a new Sardes database.
+
+        Parameters
+        ----------
+        filename : str
+            The absolute path of the default database file that will be set in
+            the file dialog.
+        """
+        if filename is None:
+            dirname = get_select_file_dialog_dir()
+            filename = osp.join(dirname, 'SardesDatabase1.db')
+            i = 1
+            while osp.exists(filename):
+                i += 1
+                filename = osp.join(dirname, 'SardesDatabase{}.db'.format(i))
+
+        filename, filefilter = QFileDialog.getSaveFileName(
+            self, _('New Database'), filename, self.FILEFILTER)
+        if filename:
+            filename = osp.abspath(filename)
+            set_select_file_dialog_dir(osp.dirname(filename))
+            if not filename.endswith('.db'):
+                filename += '.db'
+            self.create_database(filename)
 
     def create_database(self, filename):
         """
