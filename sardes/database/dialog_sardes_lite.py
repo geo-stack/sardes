@@ -58,6 +58,8 @@ class DatabaseConnectDialogSardesLite(DatabaseConnectDialogBase):
             tip=_("Select an existing Sardes SQLite database."),
             shortcuts=None
             ))
+        self.dbname_widget.path_lineedit.setMinimumWidth(200)
+
         self.add_stretch(1)
 
     def set_database_kargs(self, kargs):
