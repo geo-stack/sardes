@@ -45,12 +45,6 @@ class DatabaseConnectDialogSardesLite(DatabaseConnectDialogBase):
 
         self.dbname_widget = PathBoxWidget(
             path_type='getOpenFileName', filters=self.FILEFILTER)
-
-        self.encoding_lineedit = QLineEdit()
-        encoding_layout = QHBoxLayout()
-        encoding_layout.addWidget(self.encoding_lineedit)
-        encoding_layout.addStretch(1)
-
         self.add_widget(QLabel(_("Database :")), 0, 0)
         self.add_widget(self.dbname_widget, 0, 1)
         self.dbname_widget.browse_btn.setToolTip(format_tooltip(
