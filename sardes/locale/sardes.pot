@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2020-10-08 15:20-0400\n"
+"POT-Creation-Date: 2020-11-13 08:55-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -126,23 +126,23 @@ msgstr ""
 msgid "Window layout will be reset to default settings.<br><br>Do you want to continue?"
 msgstr ""
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:448
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:472
 msgid "'{}' does not exist."
 msgstr ""
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:454
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:478
 msgid "'{}' is not a valid database file."
 msgstr ""
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:475
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:499
 msgid "'{}' does not appear to be a Sardes SQLite database. The application id set in the database is {}, but should be {}."
 msgstr ""
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:483
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:507
 msgid "The version of this database is {} and is outdated. Please update your database to version {} and try again."
 msgstr ""
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:489
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:513
 msgid "Your Sardes application is outdated and does not support databases whose version is higher than {}. Please update Sardes and try again."
 msgstr ""
 
@@ -154,7 +154,7 @@ msgid ""
 msgstr ""
 
 #: ..\sardes\database\dialog_rsesq.py:50
-#: ..\sardes\database\dialog_sardes_lite.py:44
+#: ..\sardes\database\dialog_sardes_lite.py:67
 msgid "Database :"
 msgstr ""
 
@@ -176,6 +176,38 @@ msgstr ""
 
 #: ..\sardes\database\dialog_rsesq.py:60
 msgid "Encoding :"
+msgstr ""
+
+#: ..\sardes\database\dialog_sardes_lite.py:49
+msgid "Select Database"
+msgstr ""
+
+#: ..\sardes\database\dialog_sardes_lite.py:50
+msgid "Select an existing Sardes SQLite database."
+msgstr ""
+
+#: ..\sardes\database\dialog_sardes_lite.py:55
+msgid "Create..."
+msgstr ""
+
+#: ..\sardes\database\dialog_sardes_lite.py:59
+msgid "Create Database"
+msgstr ""
+
+#: ..\sardes\database\dialog_sardes_lite.py:60
+msgid "Create a new Sardes SQLite database."
+msgstr ""
+
+#: ..\sardes\database\dialog_sardes_lite.py:110
+msgid "New Database"
+msgstr ""
+
+#: ..\sardes\database\dialog_sardes_lite.py:134
+msgid "New Database Error"
+msgstr ""
+
+#: ..\sardes\database\dialog_sardes_lite.py:135
+msgid "Cannot overwrite Sardes database at <i>{}</i>  because it is already in use by another application or user."
 msgstr ""
 
 #: ..\sardes\plugins\databases\plugin.py:32
@@ -731,7 +763,7 @@ msgstr ""
 msgid "Browse..."
 msgstr ""
 
-#: ..\sardes\widgets\path.py:69
+#: ..\sardes\widgets\path.py:71
 msgid "Modify Location"
 msgstr ""
 

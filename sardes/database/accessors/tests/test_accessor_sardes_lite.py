@@ -16,8 +16,9 @@ module. Therefore, the tests must be run sequentially and in the right order.
 
 # ---- Standard imports
 import datetime
+import os
 import os.path as osp
-import sqlite3
+os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import pytest
@@ -27,7 +28,7 @@ import pandas as pd
 from sardes.api.timeseries import DataType
 from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
 from sardes.database.accessors.accessor_sardes_lite import (
-    DatabaseAccessorSardesLite, init_database, CURRENT_SCHEMA_VERSION)
+    DatabaseAccessorSardesLite, CURRENT_SCHEMA_VERSION)
 
 
 # =============================================================================
@@ -38,7 +39,8 @@ def dbaccessor(tmp_path_factory):
     tmp_path = tmp_path_factory.mktemp("database")
     dbaccessor = DatabaseAccessorSardesLite(
         osp.join(tmp_path, 'sqlite_database_test.db'))
-    init_database(dbaccessor)
+    dbaccessor.init_database()
+    dbaccessor.close_connection()
     return dbaccessor
 
 

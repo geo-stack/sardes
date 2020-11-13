@@ -46,6 +46,7 @@ class PathBoxWidget(QFrame):
 
         layout = QGridLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(3)
         layout.addWidget(self.path_lineedit, 0, 0)
         layout.addWidget(self.browse_btn, 0, 1)
 
