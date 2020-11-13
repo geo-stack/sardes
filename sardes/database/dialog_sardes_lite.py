@@ -45,8 +45,6 @@ class DatabaseConnectDialogSardesLite(DatabaseConnectDialogBase):
 
         self.dbname_widget = PathBoxWidget(
             path_type='getOpenFileName', filters=self.FILEFILTER)
-        self.add_widget(QLabel(_("Database :")), 0, 0)
-        self.add_widget(self.dbname_widget, 0, 1)
         self.dbname_widget.browse_btn.setToolTip(format_tooltip(
             text=_("Select Database"),
             tip=_("Select an existing Sardes SQLite database."),
@@ -54,11 +52,31 @@ class DatabaseConnectDialogSardesLite(DatabaseConnectDialogBase):
             ))
         self.dbname_widget.path_lineedit.setMinimumWidth(200)
 
+        self.create_btn = QPushButton(_("Create..."))
+        self.create_btn.setDefault(False)
+        self.create_btn.setAutoDefault(False)
+        self.create_btn.setToolTip(format_tooltip(
+            text=_("Create Database"),
+            tip=_("Create a new Sardes SQLite database."),
+            shortcuts=None
+            ))
+        self.create_btn.clicked.connect(lambda _: self.select_new_database())
+        self.dbname_widget.layout().addWidget(self.create_btn, 0, 2)
+
+        self.form_layout.setRowMinimumHeight(0, 15)
+        self.add_widget(QLabel(_("Database :")), 1, 0)
+        self.add_widget(self.dbname_widget, 1, 1)
         self.add_stretch(1)
+
+    @property
+    def browse_btn(self):
+        return self.dbname_widget.browse_btn
 
     def set_database_kargs(self, kargs):
         if 'database' in kargs:
             self.dbname_widget.set_path(kargs['database'])
+            self.dbname_widget.path_lineedit.setToolTip(
+                kargs['database'])
 
     def get_database_kargs(self):
         """
