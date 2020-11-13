@@ -72,7 +72,7 @@ class DatabaseConnectDialogBase(QGroupBox):
         """
         return self.__database_type_desc__
 
-    def database_accessor(self):
+    def create_database_accessor(self):
         """
         Return an instance of the database accessor class this dialog
         is providing an interface to.
