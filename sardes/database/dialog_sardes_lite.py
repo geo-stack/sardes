@@ -134,8 +134,7 @@ class DatabaseConnectDialogSardesLite(DatabaseConnectDialogBase):
                     _('New Database Error'),
                     _("Cannot overwrite Sardes database at <i>{}</i>  "
                       "because it is already in use by another "
-                      "application or user."
-                      .format(filename)),
+                      "application or user.").format(filename),
                     QMessageBox.Ok)
                 self.select_new_database(filename)
                 return
