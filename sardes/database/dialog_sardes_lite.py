@@ -44,7 +44,7 @@ class DatabaseConnectDialogSardesLite(DatabaseConnectDialogBase):
         super().__init__()
 
         self.dbname_widget = PathBoxWidget(
-            path_type='getOpenFileName', filters='*.db')
+            path_type='getOpenFileName', filters=self.FILEFILTER)
 
         self.encoding_lineedit = QLineEdit()
         encoding_layout = QHBoxLayout()
