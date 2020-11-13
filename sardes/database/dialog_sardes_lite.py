@@ -13,8 +13,7 @@ import os.path as osp
 
 # ---- Third party imports
 from qtpy.QtWidgets import (
-    QApplication, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton,
-    QFileDialog, QGridLayout, QWidget)
+    QApplication, QLabel, QMessageBox, QPushButton, QFileDialog)
 
 # ---- Local imports
 from sardes.api.database_dialog import DatabaseConnectDialogBase
@@ -22,7 +21,7 @@ from sardes.config.locale import _
 from sardes.config.ospath import (
     get_select_file_dialog_dir, set_select_file_dialog_dir)
 from sardes.database.accessors import DatabaseAccessorSardesLite
-from sardes.utils.qthelpers import format_tooltip, create_toolbutton
+from sardes.utils.qthelpers import format_tooltip
 from sardes.widgets.path import PathBoxWidget
 
 
