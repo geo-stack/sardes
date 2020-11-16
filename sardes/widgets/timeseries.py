@@ -1142,8 +1142,9 @@ class TimeSeriesPlotViewer(QMainWindow):
 
         self.clear_selected_data_button = create_toolbutton(
             self, icon='clear_selected_data',
-            text=_("Clear"),
-            tip=_('Clear all selected data'),
+            text=_("Clear Data Selection"),
+            tip=_('Clear data selection for the currently selected '
+                  'time series.'),
             triggered=self.canvas.figure.clear_selected_data,
             iconsize=get_iconsize())
         toolbar.addWidget(self.clear_selected_data_button)
