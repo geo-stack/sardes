@@ -1104,50 +1104,50 @@ class TimeSeriesPlotViewer(QMainWindow):
         # so these buttons are just a source of confusion for the moment. We
         # will add them back later.
 
-        # toolbar.addSeparator()
+        toolbar.addSeparator()
 
-        # self.drag_select_data_button = create_toolbutton(
-        #     self, icon='drag_select',
-        #     text=_("Select Data"),
-        #     tip=_('Select data by clicking with the mouse and dragging'
-        #           ' the cursor over a rectangular region on the graph.'),
-        #     toggled=self.canvas.drag_select_data,
-        #     iconsize=get_iconsize())
-        # toolbar.addWidget(self.drag_select_data_button)
-        # self._navig_and_select_buttongroup.add_button(
-        #     self.drag_select_data_button)
+        self.drag_select_data_button = create_toolbutton(
+            self, icon='drag_select',
+            text=_("Select Data"),
+            tip=_('Select data by clicking with the mouse and dragging'
+                  ' the cursor over a rectangular region on the graph.'),
+            toggled=self.canvas.drag_select_data,
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.drag_select_data_button)
+        self._navig_and_select_buttongroup.add_button(
+            self.drag_select_data_button)
 
-        # self.hspan_select_data_button = create_toolbutton(
-        #     self, icon='hspan_select',
-        #     text=_("Select Data"),
-        #     tip=_('Select data by clicking with the mouse and dragging'
-        #           ' the cursor horizontally over a given period on'
-        #           ' the graph.'),
-        #     toggled=self.canvas.hspan_select_data,
-        #     iconsize=get_iconsize())
-        # toolbar.addWidget(self.hspan_select_data_button)
-        # self._navig_and_select_buttongroup.add_button(
-        #     self.hspan_select_data_button)
+        self.hspan_select_data_button = create_toolbutton(
+            self, icon='hspan_select',
+            text=_("Select Data"),
+            tip=_('Select data by clicking with the mouse and dragging'
+                  ' the cursor horizontally over a given period on'
+                  ' the graph.'),
+            toggled=self.canvas.hspan_select_data,
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.hspan_select_data_button)
+        self._navig_and_select_buttongroup.add_button(
+            self.hspan_select_data_button)
 
-        # self.vspan_select_data_button = create_toolbutton(
-        #     self, icon='vspan_select',
-        #     text=_("Select Data"),
-        #     tip=_('Select data by clicking with the mouse and dragging'
-        #           ' the cursor vertically over a given span of the data on'
-        #           ' the graph.'),
-        #     toggled=self.canvas.vspan_select_data,
-        #     iconsize=get_iconsize())
-        # toolbar.addWidget(self.vspan_select_data_button)
-        # self._navig_and_select_buttongroup.add_button(
-        #     self.vspan_select_data_button)
+        self.vspan_select_data_button = create_toolbutton(
+            self, icon='vspan_select',
+            text=_("Select Data"),
+            tip=_('Select data by clicking with the mouse and dragging'
+                  ' the cursor vertically over a given span of the data on'
+                  ' the graph.'),
+            toggled=self.canvas.vspan_select_data,
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.vspan_select_data_button)
+        self._navig_and_select_buttongroup.add_button(
+            self.vspan_select_data_button)
 
-        # self.clear_selected_data_button = create_toolbutton(
-        #     self, icon='clear_selected_data',
-        #     text=_("Clear"),
-        #     tip=_('Clear all selected data'),
-        #     triggered=self.canvas.figure.clear_selected_data,
-        #     iconsize=get_iconsize())
-        # toolbar.addWidget(self.clear_selected_data_button)
+        self.clear_selected_data_button = create_toolbutton(
+            self, icon='clear_selected_data',
+            text=_("Clear"),
+            tip=_('Clear all selected data'),
+            triggered=self.canvas.figure.clear_selected_data,
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.clear_selected_data_button)
 
     def _setup_axes_toolbar(self):
         """
