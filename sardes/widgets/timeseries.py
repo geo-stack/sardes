@@ -23,18 +23,17 @@ from matplotlib.transforms import Bbox
 from matplotlib.widgets import RectangleSelector, SpanSelector
 from matplotlib.dates import num2date, date2num
 import numpy as np
-from qtpy.QtCore import (Qt, Slot, QSize, QTimer, Signal, QPropertyAnimation)
+from qtpy.QtCore import (Qt, Slot, QTimer, Signal, QPropertyAnimation)
 from qtpy.QtGui import QGuiApplication, QKeySequence, QImage
-from qtpy.QtWidgets import (QAction, QApplication, QMainWindow, QLabel,
-                            QDoubleSpinBox, QWidget, QHBoxLayout,
-                            QGridLayout, QGraphicsOpacityEffect)
+from qtpy.QtWidgets import (
+    QAction, QApplication, QMainWindow, QLabel, QWidget, QGridLayout,
+    QGraphicsOpacityEffect)
 import pandas as pd
 from pandas.plotting import register_matplotlib_converters
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
 from sardes.config.locale import _
-from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
 from sardes.utils.qthelpers import (
     center_widget_to_another, create_mainwindow_toolbar, create_toolbutton,
