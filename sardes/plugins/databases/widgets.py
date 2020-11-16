@@ -123,7 +123,8 @@ class DatabaseConnectionWidget(QDialog):
         dialog if any.
         """
         if self.get_current_database_dialog():
-            return self.get_current_database_dialog().database_accessor()
+            return (
+                self.get_current_database_dialog().create_database_accessor())
         else:
             return None
 

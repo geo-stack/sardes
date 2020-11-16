@@ -16,7 +16,7 @@ from sardes.widgets.tableviews import SardesTableWidget, TextEditDelegate
 
 class SondeModelsTableModel(SardesTableModel):
     """
-    A table model to display a list of sonde brand models that can that
+    A table model to display a list of sonde brand models that
     are available to use in the SondesInventory table.
     """
 
