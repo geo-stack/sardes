@@ -23,7 +23,6 @@ from xlsxwriter.exceptions import FileCreateError
 # ---- Local imports
 from sardes.api.timeseries import DataType
 from sardes.config.locale import _
-from sardes.config.main import CONF, CONFIG_DIR
 from sardes.api.tools import SardesTool
 from sardes.utils.fileio import SafeFileSaver
 
@@ -67,16 +66,8 @@ class SaveReadingsToExcelTool(SardesTool):
             self.parent.model()._repere_data,
             self.get_company_logo_filename())
 
-    def get_company_logo_filename(self):
         """
-        Return the absolute file path of the image to use a a company logo
-        in the excel files.
         """
-        for file in os.listdir(CONFIG_DIR):
-            root, ext = osp.splitext(file)
-            if root == 'company_logo':
-                return osp.join(CONFIG_DIR, file)
-
 
 
 def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
