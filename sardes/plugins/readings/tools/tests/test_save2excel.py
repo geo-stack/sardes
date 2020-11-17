@@ -82,6 +82,10 @@ def save_to_excel_tool(qtbot, source_data, repere_data, obs_well_data):
             model.dataf = source_data
             return model
 
+        def get_formatted_data(self):
+            return format_reading_data(
+                source_data, repere_data['top_casing_alt'])
+
     toolbar = ParentToolbar()
     tool = SaveReadingsToExcelTool(toolbar)
 
@@ -150,8 +154,8 @@ def test_save_readings_to_excel_tool(tmp_path, save_to_excel_tool, mocker):
 
     company_logo_filename = osp.join(
         __rootdir__, 'ressources', 'icons', 'sardes.png')
-    mocker.patch.object(SaveReadingsToExcelTool, 'get_company_logo_filename',
-                        return_value=company_logo_filename)
+    mocker.patch('sardes.config.ospath.get_company_logo_filename',
+                 return_value=company_logo_filename)
 
     save_to_excel_tool.trigger()
     assert osp.exists(selectedfilename + '.xlsx')
