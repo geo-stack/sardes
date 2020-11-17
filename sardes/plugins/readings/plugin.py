@@ -23,6 +23,7 @@ from sardes.config.main import CONF
 from sardes.api.tablemodels import SardesTableModel
 from sardes.api.timeseries import DataType
 from sardes.utils.qthelpers import create_toolbutton
+from sardes.utils.data_operations import format_reading_data
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
 from sardes.widgets.tableviews import (
     SardesTableWidget, NumEditDelegate, NotEditableDelegate,
@@ -147,6 +148,16 @@ class ReadingsTableWidget(SardesTableWidget):
         if self.plot_viewer is not None:
             self.plot_viewer.update_data(
                 self.model().dataf, self.model()._obs_well_data)
+
+    def get_formatted_data(self):
+        """
+        Return a dataframe contraining formatted readings data.
+        """
+        reference_altitude = (
+            self.model()._repere_data['top_casing_alt'] if
+            not self.model()._repere_data.empty else None)
+        return format_reading_data(
+            self.model().dataf, reference_altitude)
 
     def plot_readings(self):
         """
