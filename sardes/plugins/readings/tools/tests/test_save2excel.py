@@ -28,6 +28,7 @@ from sardes import __rootdir__
 from sardes.api.timeseries import DataType
 from sardes.plugins.readings.tools.save2excel import (
     _save_reading_data_to_xlsx, SaveReadingsToExcelTool, QFileDialog)
+from sardes.utils.tests.test_data_operations import format_reading_data
 
 
 # =============================================================================
@@ -99,10 +100,13 @@ def test_save_reading_data_to_xlsx(tmp_path, source_data, repere_data,
     Test that publishing daily readings data to Excell is working as
     expected.
     """
+    formatted_data = format_reading_data(
+        source_data, repere_data['top_casing_alt'])
+
     filename = osp.join(tmp_path, 'test_save_readings_to_excel')
     sheetname = 'test_sheet1'
     _save_reading_data_to_xlsx(
-        filename, sheetname, source_data, obs_well_data,
+        filename, sheetname, formatted_data, obs_well_data,
         repere_data, company_logo_filename=None)
     assert osp.exists(filename + '.xlsx')
 
