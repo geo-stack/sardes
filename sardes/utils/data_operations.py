@@ -11,6 +11,7 @@
 import itertools
 
 # ---- Third party imports
+from numpy import nan
 import pandas as pd
 
 # ---- Local imports
@@ -56,6 +57,9 @@ def format_reading_data(data, reference_altitude=None):
     data = (
         data
         .dropna(subset=[DataType.WaterLevel])
+        # We need to replace nan values by a placeholder float to avoid
+        # the bug that was reported in #cgq-qgc/sardes#362.
+        .fillna({'install_depth': -999})
         # For each day, we keep the reading closest to midnight.
         .groupby('install_depth').resample('D', on='datetime').first()
         .dropna(subset=[DataType.WaterLevel])
@@ -67,6 +71,7 @@ def format_reading_data(data, reference_altitude=None):
         .drop_duplicates(subset='datetime', keep='first')
         .reset_index(drop=True)
         )
+    data['install_depth'] = data['install_depth'].replace({-999: nan})
 
     # Convert water level in altitude.
     if reference_altitude is not None:
