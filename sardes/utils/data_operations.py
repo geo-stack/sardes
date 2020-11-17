@@ -57,21 +57,17 @@ def format_reading_data(data, reference_altitude=None):
     data = (
         data
         .dropna(subset=[DataType.WaterLevel])
-        # We need to replace nan values by a placeholder float to avoid
-        # the bug that was reported in #cgq-qgc/sardes#362.
-        .fillna({'install_depth': -999})
-        # For each day, we keep the reading closest to midnight.
-        .groupby('install_depth').resample('D', on='datetime').first()
+        # We keep the readings closest to midnight.
+        .groupby('obs_id').resample('D', on='datetime').first()
         .dropna(subset=[DataType.WaterLevel])
         .droplevel(0, axis=0).drop('datetime', axis=1)
         .reset_index(drop=False)
         .sort_values(by=['datetime', 'install_depth'],
                      ascending=[True, True])
-        # We keep the reding measured closest to the surface.
+        # We keep the reading measured closest to the surface.
         .drop_duplicates(subset='datetime', keep='first')
         .reset_index(drop=True)
         )
-    data['install_depth'] = data['install_depth'].replace({-999: nan})
 
     # Convert water level in altitude.
     if reference_altitude is not None:
