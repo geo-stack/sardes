@@ -78,37 +78,6 @@ class SaveReadingsToExcelTool(SardesTool):
                 return osp.join(CONFIG_DIR, file)
 
 
-def _format_reading_data(dataf, repere_data):
-    """
-    Resample readings data on a daily basis and format it so that
-    it can be saved in an Excel workbook.
-    """
-    data = (
-        dataf
-        .dropna(subset=[DataType.WaterLevel])
-        .groupby('install_depth').resample('D', on='datetime').first()
-        .dropna(subset=[DataType.WaterLevel])
-        .droplevel(0, axis=0).drop('datetime', axis=1)
-        .reset_index(drop=False)
-        .sort_values(by=['datetime', 'install_depth'], ascending=[True, True])
-        .drop_duplicates(subset='datetime', keep='first')
-        .reset_index(drop=True)
-        )
-    data = data[['datetime', DataType.WaterLevel, DataType.WaterTemp]]
-
-    # Convert water level in altitude.
-    if not repere_data.empty:
-        top_casing_alt = repere_data['top_casing_alt']
-        data[DataType.WaterLevel] = (
-            top_casing_alt - data[DataType.WaterLevel])
-
-    # Rename columns.
-    data.columns = [_("Date of reading"),
-                    _("Water level altitude (m)"),
-                    _("Water temperature (°C)")
-                    ]
-    return data
-
 
 def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
                                repere_data, company_logo_filename=None):
