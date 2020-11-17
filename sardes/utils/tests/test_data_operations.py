@@ -31,6 +31,7 @@ from sardes.utils.data_operations import intervals_extract, format_reading_data
 def source_data():
     source_data = pd.DataFrame(
         data=[
+            ['1970-05-01 01:00:00', '64640', 0.1, nan, nan],
             ['2005-11-01 01:00:00', '64640', 1.1, -1.1, 3.16],
             ['2005-11-01 13:00:00', '64640', 1.2, -1.2, 3.16],
             ['2005-11-03 01:00:00', '64640', nan, -2.1, 3.16],
@@ -60,6 +61,7 @@ def test_format_reading_data(source_data):
     reference_altitude = 105
     expected_data = pd.DataFrame(
         data=[
+            ['1970-05-01', '64640', reference_altitude - 0.1, nan, nan],
             ['2005-11-01', '64640', reference_altitude - 1.1, -1.1, 3.16],
             ['2005-11-03', '64640', reference_altitude - 4.1, -4.2, 7.16],
             ['2005-11-04', '64640', reference_altitude - 5.1, -5.1, 3.16]],
