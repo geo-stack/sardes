@@ -22,14 +22,12 @@ from numpy import nan
 import pytest
 import pandas as pd
 from qtpy.QtWidgets import QToolBar
-from sardes.utils.fileio import QFileDialog
 
 # ---- Local imports
 from sardes import __rootdir__
 from sardes.api.timeseries import DataType
 from sardes.plugins.readings.tools.save2excel import (
-    _format_reading_data, _save_reading_data_to_xlsx)
-from sardes.plugins.readings.tools.save2excel import SaveReadingsToExcelTool
+    _save_reading_data_to_xlsx, SaveReadingsToExcelTool, QFileDialog)
 
 
 # =============================================================================
@@ -95,26 +93,6 @@ def save_to_excel_tool(qtbot, source_data, repere_data, obs_well_data):
 # =============================================================================
 # ---- Tests
 # =============================================================================
-def test_format_reading_data(source_data, repere_data):
-    """
-    Test that formating daily reading data for publishing is working
-    as expected.
-    """
-    expected_data = pd.DataFrame(
-        data=[
-            ['2005-11-01', 105 - 1.1, -1.1],
-            ['2005-11-03', 105 - 4.1, -4.2],
-            ['2005-11-04', 105 - 5.1, -5.1]],
-        columns=[
-            "Date of reading", "Water level altitude (m)",
-            "Water temperature (°C)"])
-    expected_data["Date of reading"] = pd.to_datetime(
-        expected_data["Date of reading"], format="%Y-%m-%d")
-
-    formatted_data = _format_reading_data(source_data, repere_data)
-    assert formatted_data.equals(expected_data)
-
-
 def test_save_reading_data_to_xlsx(tmp_path, source_data, repere_data,
                                    obs_well_data):
     """
