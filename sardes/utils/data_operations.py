@@ -11,7 +11,11 @@
 import itertools
 
 # ---- Third party imports
+from numpy import nan
 import pandas as pd
+
+# ---- Local imports
+from sardes.api.timeseries import DataType
 
 
 def are_values_equal(x1, x2):
@@ -44,3 +48,29 @@ def intervals_extract(iterable):
                                         lambda v: v[1] - v[0]):
         group = list(group)
         yield [group[0][1], group[-1][1]]
+
+
+def format_reading_data(data, reference_altitude=None):
+    """
+    Format readings data for publication.
+    """
+    data = (
+        data
+        .dropna(subset=[DataType.WaterLevel])
+        # We keep the readings closest to midnight.
+        .groupby('obs_id').resample('D', on='datetime').first()
+        .dropna(subset=[DataType.WaterLevel])
+        .droplevel(0, axis=0).drop('datetime', axis=1)
+        .reset_index(drop=False)
+        .sort_values(by=['datetime', 'install_depth'],
+                     ascending=[True, True])
+        # We keep the reading measured closest to the surface.
+        .drop_duplicates(subset='datetime', keep='first')
+        .reset_index(drop=True)
+        )
+
+    # Convert water level in altitude.
+    if reference_altitude is not None:
+        data[DataType.WaterLevel] = (
+            reference_altitude - data[DataType.WaterLevel])
+    return data
