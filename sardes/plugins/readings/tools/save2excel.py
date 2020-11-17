@@ -105,8 +105,9 @@ class SaveReadingsToExcelTool(SardesTool):
             QApplication.processEvents()
 
 
-def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
-                               repere_data, company_logo_filename=None):
+def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
+                               obs_well_data, repere_data,
+                               company_logo_filename=None):
     """
     Save data in an excel workbook using the specified filename and sheetname.
 
@@ -116,18 +117,19 @@ def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
         filename += '.xlsx'
 
     # Rename the columns of the dataset.
-    data = data[['datetime', DataType.WaterLevel, DataType.WaterTemp]]
-    data.columns = [_("Date of reading"),
-                    _("Water level altitude (m)"),
-                    _("Water temperature (°C)")
-                    ]
+    formatted_data = formatted_data[
+        ['datetime', DataType.WaterLevel, DataType.WaterTemp]]
+    formatted_data.columns = [
+        _("Date of reading"),
+        _("Water level altitude (m)"),
+        _("Water temperature (°C)")]
 
     # Write the data to the file.
     # https://xlsxwriter.readthedocs.io/example_pandas_datetime.html
     writer = pd.ExcelWriter(
         filename, engine='xlsxwriter',
         datetime_format='yyyy-mm-dd', date_format='yyyy-mm-dd')
-    data.to_excel(
+    formatted_data.to_excel(
         writer, sheet_name=sheetname, startrow=5, header=False, index=False)
 
     workbook = writer.book
@@ -148,7 +150,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
     data_header_style = workbook.add_format({
         'font_name': 'Calibri', 'font_size': 11,
         'align': 'right', 'valign': 'bottom'})
-    for i, column in enumerate(data.columns):
+    for i, column in enumerate(formatted_data.columns):
         worksheet.write(4, i, column, data_header_style)
 
     # Write the file header.
