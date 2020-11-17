@@ -15,24 +15,26 @@ import os.path as osp
 from io import BytesIO
 
 # ---- Third party imports
-from appconfigs.base import get_home_dir
 import pandas as pd
 from PIL import Image
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QApplication, QFileDialog, QMessageBox
 from xlsxwriter.exceptions import FileCreateError
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
 from sardes.config.locale import _
-from sardes.config.main import CONF, CONFIG_DIR
+from sardes.config.ospath import (
+    get_select_file_dialog_dir, set_select_file_dialog_dir,
+    get_company_logo_filename)
 from sardes.api.tools import SardesTool
-from sardes.utils.fileio import SafeFileSaver
 
 
 class SaveReadingsToExcelTool(SardesTool):
     """
     A tool to format and save readings data to an Excel workbook.
     """
-    NAMEFILTERS = ["Excel Workbook (*.xlsx)"]
+    NAMEFILTERS = "Excel Workbook (*.xlsx)"
 
     def __init__(self, parent):
         super().__init__(
@@ -42,76 +44,70 @@ class SaveReadingsToExcelTool(SardesTool):
             icon='file_excel',
             tip=_('Save daily readings data in an Excel document.')
             )
-        self.file_saver = SafeFileSaver(
-            parent=parent, name_filters=self.NAMEFILTERS, title=_("Save File"))
 
     # ---- SardesTool API
     def __triggered__(self):
-        obs_well_id = self.parent.model()._obs_well_data['obs_well_id']
-        savedir = CONF.get('main', 'savedir', get_home_dir())
-        filename = osp.join(
-            savedir, 'readings_{}.xlsx'.format(obs_well_id))
-        self.file_saver.savefile(self.save_readings_to_file, filename)
-        if self.file_saver.savedir != savedir:
-            CONF.set('main', 'savedir', self.file_saver.savedir)
+        self.select_save_file(filename=None)
 
-    def save_readings_to_file(self, filename, selectedfilter):
+    # ---- Public API
+    def select_save_file(self, filename=None):
         """
-        Resample daily, format and save the readings data of this tool's
+        Open a file dialog to allow the user to select a location
+        where to save the Excel file.
+
+        Parameters
+        ----------
+        filename : str
+            The absolute path of the default filename that will be set in
+            the file dialog.
+        """
+        obs_well_id = self.parent.model()._obs_well_data['obs_well_id']
+        if filename is None:
+            filename = osp.join(
+                get_select_file_dialog_dir(),
+                'readings_{}.xlsx'.format(obs_well_id))
+
+        filename, filefilter = QFileDialog.getSaveFileName(
+            self.parent, _("Save File"), filename, self.NAMEFILTERS)
+        if filename:
+            filename = osp.abspath(filename)
+            set_select_file_dialog_dir(osp.dirname(filename))
+            if not filename.endswith('.xlsx'):
+                filename += '.xlsx'
+            self.save_readings_to_file(filename)
+
+    def save_readings_to_file(self, filename):
+        """
+        Save the resampled and formatted readings data of this tool's
         parent table in an excel workbook.
         """
-        _save_reading_data_to_xlsx(
-            filename, _('Piezometry'),
-            self.parent.model().dataf,
-            self.parent.model()._obs_well_data,
-            self.parent.model()._repere_data,
-            self.get_company_logo_filename())
-
-    def get_company_logo_filename(self):
-        """
-        Return the absolute file path of the image to use a a company logo
-        in the excel files.
-        """
-        for file in os.listdir(CONFIG_DIR):
-            root, ext = osp.splitext(file)
-            if root == 'company_logo':
-                return osp.join(CONFIG_DIR, file)
-
-
-def _format_reading_data(dataf, repere_data):
-    """
-    Resample readings data on a daily basis and format it so that
-    it can be saved in an Excel workbook.
-    """
-    data = (
-        dataf
-        .dropna(subset=[DataType.WaterLevel])
-        .groupby('install_depth').resample('D', on='datetime').first()
-        .dropna(subset=[DataType.WaterLevel])
-        .droplevel(0, axis=0).drop('datetime', axis=1)
-        .reset_index(drop=False)
-        .sort_values(by=['datetime', 'install_depth'], ascending=[True, True])
-        .drop_duplicates(subset='datetime', keep='first')
-        .reset_index(drop=True)
-        )
-    data = data[['datetime', DataType.WaterLevel, DataType.WaterTemp]]
-
-    # Convert water level in altitude.
-    if not repere_data.empty:
-        top_casing_alt = repere_data['top_casing_alt']
-        data[DataType.WaterLevel] = (
-            top_casing_alt - data[DataType.WaterLevel])
-
-    # Rename columns.
-    data.columns = [_("Date of reading"),
-                    _("Water level altitude (m)"),
-                    _("Water temperature (°C)")
-                    ]
-    return data
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.processEvents()
+        try:
+            _save_reading_data_to_xlsx(
+                filename, _('Piezometry'),
+                self.parent.get_formatted_data(),
+                self.parent.model()._obs_well_data,
+                self.parent.model()._repere_data,
+                get_company_logo_filename())
+        except PermissionError:
+            QApplication.restoreOverrideCursor()
+            QApplication.processEvents()
+            QMessageBox.warning(
+                self.parent,
+                _('File in Use'),
+                _("The save file operation cannot be completed because the "
+                  "file is in use by another application or user."),
+                QMessageBox.Ok)
+            self.select_save_file(filename)
+        else:
+            QApplication.restoreOverrideCursor()
+            QApplication.processEvents()
 
 
-def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
-                               repere_data, company_logo_filename=None):
+def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
+                               obs_well_data, repere_data,
+                               company_logo_filename=None):
     """
     Save data in an excel workbook using the specified filename and sheetname.
 
@@ -120,13 +116,20 @@ def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
     if not filename.endswith('.xlsx'):
         filename += '.xlsx'
 
+    # Rename the columns of the dataset.
+    formatted_data = formatted_data[
+        ['datetime', DataType.WaterLevel, DataType.WaterTemp]]
+    formatted_data.columns = [
+        _("Date of reading"),
+        _("Water level altitude (m)"),
+        _("Water temperature (°C)")]
+
     # Write the data to the file.
     # https://xlsxwriter.readthedocs.io/example_pandas_datetime.html
     writer = pd.ExcelWriter(
         filename, engine='xlsxwriter',
         datetime_format='yyyy-mm-dd', date_format='yyyy-mm-dd')
-    data = _format_reading_data(data, repere_data)
-    data.to_excel(
+    formatted_data.to_excel(
         writer, sheet_name=sheetname, startrow=5, header=False, index=False)
 
     workbook = writer.book
@@ -147,7 +150,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, data, obs_well_data,
     data_header_style = workbook.add_format({
         'font_name': 'Calibri', 'font_size': 11,
         'align': 'right', 'valign': 'bottom'})
-    for i, column in enumerate(data.columns):
+    for i, column in enumerate(formatted_data.columns):
         worksheet.write(4, i, column, data_header_style)
 
     # Write the file header.
