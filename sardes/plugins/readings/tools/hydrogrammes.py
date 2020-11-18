@@ -141,27 +141,44 @@ class HydrographCanvas(FigureCanvasQTAgg):
         for spine in ax.spines.values():
             spine.set_edgecolor(grid_color)
 
-        # Plot data before data. Data before 1980 precede the use of
-        # electronic probes, and therefore we use different rules to plot
-        # these data.
-        data_av_1980 = (
-            data[data['datetime'] < datetime.datetime(1980, 1, 1)].copy())
-        data_av_1980['timediff'] = (
-            data_av_1980['datetime'].diff() > datetime.timedelta(365))
-        data_av_1980['timediff'] = data_av_1980['timediff'].cumsum()
-        for group in data_av_1980.groupby('timediff'):
+        # Plot data acquired with an automated logger.
+        data_sonde_id = data[data['sonde_id'].notnull()].copy()
+        data_sonde_id['timediff'] = (
+            data_sonde_id['datetime'].diff() > datetime.timedelta(1))
+        data_sonde_id['timediff'] = data_sonde_id['timediff'].cumsum()
+        for group in data_sonde_id.groupby('timediff'):
             ax.plot(group[1]['datetime'],
                     group[1][DataType.WaterLevel],
                     color=line_color)
 
-        # Plot the data after 1980 that were most likely aquired with
-        # automated logger.
-        data_af_1980 = (
-            data[data['datetime'] >= datetime.datetime(1980, 1, 1)].copy())
-        data_af_1980['timediff'] = (
-            data_af_1980['datetime'].diff() > datetime.timedelta(1))
-        data_af_1980['timediff'] = data_af_1980['timediff'].cumsum()
-        for group in data_af_1980.groupby('timediff'):
+        # Plot data for which we do not have a sonde id.
+
+        # For these data, we use different rules to plot the data acquired
+        # before 2000 then after. Data acquired after 2000 were most likely
+        # acquired with a logger, but the information was not entered
+        # in the database.
+        data_nosonde_id = data[data['sonde_id'].isnull()].copy()
+
+        data_av_2000 = (
+            data_nosonde_id
+            [data_nosonde_id['datetime'] < datetime.datetime(2000, 1, 1)]
+            .copy())
+        data_av_2000['timediff'] = (
+            data_av_2000['datetime'].diff() > datetime.timedelta(365))
+        data_av_2000['timediff'] = data_av_2000['timediff'].cumsum()
+        for group in data_av_2000.groupby('timediff'):
+            ax.plot(group[1]['datetime'],
+                    group[1][DataType.WaterLevel],
+                    color=line_color)
+
+        data_af_2000 = (
+            data_nosonde_id
+            [data_nosonde_id['datetime'] >= datetime.datetime(2000, 1, 1)]
+            .copy())
+        data_af_2000['timediff'] = (
+            data_af_2000['datetime'].diff() > datetime.timedelta(1))
+        data_af_2000['timediff'] = data_af_2000['timediff'].cumsum()
+        for group in data_af_2000.groupby('timediff'):
             ax.plot(group[1]['datetime'],
                     group[1][DataType.WaterLevel],
                     color=line_color)
