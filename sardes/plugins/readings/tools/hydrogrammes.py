@@ -131,7 +131,7 @@ class HydrographCanvas(FigureCanvasQTAgg):
         grid_color = '0.65'
 
         ax = self.figure.add_axes([0, 0, 1, 1], frameon=True)
-        ax.set_ylabel("Water level altitude (m)", fontsize=23, labelpad=20)
+        ax.set_ylabel(_("Water level altitude (m)"), fontsize=23, labelpad=20)
         ax.grid(axis='both', ls='-', color=grid_color, which='major')
         ax.tick_params(axis='both', direction='out', labelsize=16, length=3,
                        pad=10, color=grid_color)
