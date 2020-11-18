@@ -159,7 +159,7 @@ class HydrographCanvas(FigureCanvasQTAgg):
         data_af_1980 = (
             data[data['datetime'] >= datetime.datetime(1980, 1, 1)].copy())
         data_af_1980['timediff'] = (
-            data_af_1980['datetime'].diff() > datetime.timedelta(365))
+            data_af_1980['datetime'].diff() > datetime.timedelta(1))
         data_af_1980['timediff'] = data_af_1980['timediff'].cumsum()
         for group in data_af_1980.groupby('timediff'):
             ax.plot(group[1]['datetime'],
