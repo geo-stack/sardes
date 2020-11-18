@@ -245,7 +245,7 @@ class HydrographCanvas(FigureCanvasQTAgg):
         copyright_text = ax.text(
             margin_width / fwidth,
             created_on_text.get_window_extent(renderer).y0 / fig.bbox.height,
-            "© Gouvernement du Québec - {}".format(now.year),
+            _("© {} Government of Quebec").format(now.year),
             va='top', transform=fig.transFigure+offset
             )
         url_text = ax.text(
