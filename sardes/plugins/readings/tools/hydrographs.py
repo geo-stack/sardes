@@ -243,27 +243,37 @@ class HydrographCanvas(FigureCanvasQTAgg):
             fontweight='bold', linespacing=1.5,
             transform=fig.transFigure + offset)
 
-        # Add the logo.
-        img = Image.open(get_company_logo_filename())
-        img_width, img_height = img.size
+        # Add the company logo.
         logo_height = int(0.7 * fig.dpi)
-        logo_width = int(img_width / img_height * logo_height)
-        img = img.resize((logo_width, logo_height), Image.LANCZOS)
-
-        bbox_xaxis_bottom = ax.xaxis.get_ticklabel_extents(renderer)[0]
-        logo_x0 = max(ax.bbox.x1, bbox_xaxis_bottom.x1) - logo_width
         logo_y0 = margin_width * fig.dpi
-        fig.figimage(img, logo_x0, logo_y0, alpha=1, zorder=0,
-                     url='http://www.environnement.gouv.qc.ca/')
+
+        logo_filename = get_company_logo_filename()
+        bbox_xaxis_bottom = ax.xaxis.get_ticklabel_extents(renderer)[0]
+        if logo_filename is not None:
+            img = Image.open(get_company_logo_filename())
+            img_width, img_height = img.size
+            logo_width = int(img_width / img_height * logo_height)
+            img = img.resize((logo_width, logo_height), Image.LANCZOS)
+
+            logo_x0 = fig.bbox.width - margin_width * fig.dpi - logo_width
+            fig.figimage(img, logo_x0, logo_y0, alpha=1, zorder=0,
+                         url='http://www.environnement.gouv.qc.ca/')
+        else:
+            logo_width = 0
+            logo_x0 = fig.bbox.width - margin_width * fig.dpi
 
         # Add a blue delimitation line.
         rect1_height = 6 / 72 * fig.dpi / fig.bbox.height
         rect1_y0 = (logo_height + logo_y0) / fig.bbox.height - rect1_height
         rect1_x0 = margin_width / fwidth
-        rect1_width = (logo_x0 - 12/72 * fig.dpi) / fig.bbox.width - rect1_x0
-        rect1 = Rectangle((rect1_x0, rect1_y0), rect1_width, rect1_height,
-                          fc=line_color, ec=line_color,
-                          transform=fig.transFigure, clip_on=False, zorder=0)
+        if logo_filename is not None:
+            rect1_width = (
+                (logo_x0 - 12/72 * fig.dpi) / fig.bbox.width - rect1_x0)
+        else:
+            rect1_width = (logo_x0 / fig.bbox.width) - rect1_x0
+        rect1 = Rectangle(
+            (rect1_x0, rect1_y0), rect1_width, rect1_height, fc=line_color,
+            ec=line_color, clip_on=False, zorder=0, transform=fig.transFigure)
         ax.add_patch(rect1)
 
         # Add the date, copyright notice and url.
