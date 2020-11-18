@@ -8,10 +8,8 @@
 # -----------------------------------------------------------------------------
 
 # ---- Standard library imports
-import sys
 import os.path as osp
 import datetime
-import locale
 from math import floor, ceil
 
 # ---- Third party library imports
@@ -22,11 +20,9 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import MultipleLocator
-import matplotlib.pyplot as plt
 from PIL import Image
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QApplication, QFileDialog, QMessageBox
-import numpy as np
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
@@ -34,7 +30,6 @@ from sardes.config.locale import _
 from sardes.config.ospath import (
     get_select_file_dialog_dir, set_select_file_dialog_dir,
     get_company_logo_filename)
-from sardes import __rootdir__
 from sardes.api.tools import SardesTool
 
 mpl.rc('font', **{'family': 'sans-serif', 'sans-serif': ['Calibri']})
