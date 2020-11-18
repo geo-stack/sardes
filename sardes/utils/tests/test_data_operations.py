@@ -58,10 +58,8 @@ def source_data():
 @pytest.fixture
 def repere_data():
     return pd.DataFrame(
-        [[105, 1, True,
-          datetime.datetime(1970, 5, 1, 1), datetime.datetime(2005, 11, 1, 1)],
-         [104.5, 0.5, True,
-          datetime.datetime(2005, 11, 1, 1), None]],
+        [[105, 1, True, datetime(1970, 5, 1, 1), datetime(2005, 11, 1, 1)],
+         [104.5, 0.5, True, datetime(2005, 11, 1, 1), None]],
         columns=['top_casing_alt', 'casing_length', 'is_alt_geodesic',
                  'start_date', 'end_date']
         )
