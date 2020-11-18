@@ -141,20 +141,27 @@ class HydrographCanvas(FigureCanvasQTAgg):
         for spine in ax.spines.values():
             spine.set_edgecolor(grid_color)
 
-        # Plot the data for the period preceding the use of electronic probes.
-        data1 = data[data['sonde_id'].isnull()].copy()
-        data1['timediff'] = data1['datetime'].diff() > datetime.timedelta(365)
-        data1['timediff'] = data1['timediff'].cumsum().copy()
-        for group in data1.groupby('timediff'):
+        # Plot data before data. Data before 1980 precede the use of
+        # electronic probes, and therefore we use different rules to plot
+        # these data.
+        data_av_1980 = (
+            data[data['datetime'] < datetime.datetime(1980, 1, 1)].copy())
+        data_av_1980['timediff'] = (
+            data_av_1980['datetime'].diff() > datetime.timedelta(365))
+        data_av_1980['timediff'] = data_av_1980['timediff'].cumsum()
+        for group in data_av_1980.groupby('timediff'):
             ax.plot(group[1]['datetime'],
                     group[1][DataType.WaterLevel],
                     color=line_color)
 
-        # Plot the data from automated logger.
-        data2 = data[data['sonde_id'].notnull()].copy()
-        data2['timediff'] = data2['datetime'].diff() > datetime.timedelta(1)
-        data2['timediff'] = data2['timediff'].cumsum()
-        for group in data2.groupby('timediff'):
+        # Plot the data after 1980 that were most likely aquired with
+        # automated logger.
+        data_af_1980 = (
+            data[data['datetime'] >= datetime.datetime(1980, 1, 1)].copy())
+        data_af_1980['timediff'] = (
+            data_af_1980['datetime'].diff() > datetime.timedelta(365))
+        data_af_1980['timediff'] = data_af_1980['timediff'].cumsum()
+        for group in data_af_1980.groupby('timediff'):
             ax.plot(group[1]['datetime'],
                     group[1][DataType.WaterLevel],
                     color=line_color)
@@ -344,7 +351,6 @@ if __name__ == '__main__':
                 repere_data_for_well)
             pdf.savefig(hydrograph.figure)
             count += 1
-            break
 
 # # Add the piezometer information.
 # fig.canvas.draw()
