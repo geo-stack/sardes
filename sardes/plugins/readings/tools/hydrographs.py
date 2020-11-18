@@ -276,7 +276,7 @@ class HydrographCanvas(FigureCanvasQTAgg):
         created_on_text = ax.text(
             margin_width / fwidth,
             rect1.get_window_extent(renderer).y0 / fig.bbox.height,
-            _("Created on {}").format(now.strftime('%d/%m/%Y')),
+            _("Created on {}").format(now.strftime('%Y-%m-%d')),
             va='top', transform=fig.transFigure + offset
             )
         offset = ScaledTranslation(0/72, -4/72, fig.dpi_scale_trans)
