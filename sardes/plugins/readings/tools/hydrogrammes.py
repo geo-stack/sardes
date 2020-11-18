@@ -214,13 +214,12 @@ class HydrographCanvas(FigureCanvasQTAgg):
 
         # Add the figure title.
         self.draw()
-        title_text = _(
-            'Municipality: {}\nObservation Well: {}'
-            ).format(obs_well_data['municipality'],
-                     obs_well_data['obs_well_id'])
         offset = ScaledTranslation(0, -margin_width, fig.dpi_scale_trans)
         fig_title = ax.text(
-            0.5, 1, title_text, ha='center', va='top', fontsize=20,
+            0.5, 1,
+            _('Municipality: {}\nObservation Well: {}').format(
+                obs_well_data['municipality'], obs_well_data['obs_well_id']),
+            ha='center', va='top', fontsize=20,
             fontweight='bold', linespacing=1.5,
             transform=fig.transFigure + offset)
 
@@ -319,6 +318,7 @@ if __name__ == '__main__':
     dbaccessor = DatabaseAccessorSardesLite(
         'D:/Desktop/rsesq_prod_21072020_v1.db')
 
+    obs_wells_data = dbaccessor.get_observation_wells_data()
     repere_data = dbaccessor.get_repere_data()
 
     with PdfPages('D:/hydrographs_example.pdf') as pdf:
