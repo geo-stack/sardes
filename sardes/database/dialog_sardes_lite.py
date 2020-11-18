@@ -12,6 +12,7 @@ import os
 import os.path as osp
 
 # ---- Third party imports
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QApplication, QLabel, QMessageBox, QPushButton, QFileDialog)
 
@@ -123,11 +124,14 @@ class DatabaseConnectDialogSardesLite(DatabaseConnectDialogBase):
         filename : str
             The absolute filepath where we want to create the database.
         """
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.processEvents()
         if osp.exists(filename):
             try:
                 os.remove(filename)
             except PermissionError:
                 QApplication.restoreOverrideCursor()
+                QApplication.processEvents()
                 QMessageBox.warning(
                     self.main,
                     _('New Database Error'),
@@ -144,3 +148,5 @@ class DatabaseConnectDialogSardesLite(DatabaseConnectDialogBase):
         accessor.close_connection()
         self.set_database_kargs({'database': filename})
         print("Database {} created successfully.".format(filename))
+        QApplication.restoreOverrideCursor()
+        QApplication.processEvents()
