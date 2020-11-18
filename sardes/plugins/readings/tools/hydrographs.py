@@ -100,7 +100,8 @@ class HydrographTool(SardesTool):
         try:
             hydrograph = HydrographCanvas(
                 self.parent.get_formatted_data(),
-                self.parent.model()._obs_well_data)
+                self.parent.model()._obs_well_data,
+                self.parent.model()._repere_data)
             hydrograph.figure.savefig(filename, dpi=300)
             pass
         except PermissionError:
