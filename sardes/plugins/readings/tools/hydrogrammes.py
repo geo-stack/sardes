@@ -296,45 +296,40 @@ class HydrographCanvas(FigureCanvasQTAgg):
 
 # %%
 
-def test_hydrograph():
-    dbaccessor = DatabaseAccessorSardesLite(
-        'D:/Desktop/rsesq_prod_21072020_v1.db')
-    dbmanager = DatabaseConnectionManager()
-
-    dbmanager.connect_to_db(dbaccessor)
-    sampling_feature_uuid = (
-        dbaccessor._get_sampling_feature_uuid_from_name('01070002'))
-    readings = dbmanager.get_timeseries_for_obs_well(
-        sampling_feature_uuid,
-        [DataType.WaterLevel, DataType.WaterTemp],
-        callback=None,
-        postpone_exec=False, main_thread=True)
-
-    obs_wells_data = dbaccessor.get_observation_wells_data().loc[
-        sampling_feature_uuid]
-
-    repere_data = dbaccessor.get_repere_data()
-    repere_data = (
-        repere_data
-        [repere_data['sampling_feature_uuid'] == sampling_feature_uuid]
-        .iloc[0]
-        )
-
-    hydrograph = HydrographCanvas(
-        format_reading_data(readings, repere_data['top_casing_alt']),
-        obs_wells_data,
-        repere_data)
-    hydrograph.figure.savefig('D:/hydrograph_test2.pdf')
-
-    dbmanager.close()
-
-
 if __name__ == '__main__':
     from sardes.database.accessors import DatabaseAccessorSardesLite
-    from sardes.database.database_manager import DatabaseConnectionManager
     from sardes.utils.data_operations import format_reading_data
-    test_hydrograph()
+    from matplotlib.backends.backend_pdf import PdfPages
 
+    dbaccessor = DatabaseAccessorSardesLite(
+        'D:/Desktop/rsesq_prod_21072020_v1.db')
+
+    repere_data = dbaccessor.get_repere_data()
+
+    with PdfPages('D:/hydrographs_example.pdf') as pdf:
+        count = 0
+        for sampling_feature_uuid in obs_wells_data.index:
+            readings = dbaccessor.get_timeseries_for_obs_well(
+                sampling_feature_uuid, DataType.WaterLevel)
+            repere_data_for_well = (
+                repere_data
+                [repere_data['sampling_feature_uuid'] ==
+                 sampling_feature_uuid]
+                .iloc[0])
+            obswell_data = obs_wells_data.loc[sampling_feature_uuid]
+            print(obswell_data['obs_well_id'],
+                  '- {} of {}'.format(count + 1, len(obs_wells_data)))
+            if readings.empty:
+                continue
+
+            hydrograph = HydrographCanvas(
+                format_reading_data(
+                    readings, repere_data_for_well['top_casing_alt']),
+                obswell_data,
+                repere_data_for_well)
+            pdf.savefig(hydrograph.figure)
+            count += 1
+            break
 
 # # Add the piezometer information.
 # fig.canvas.draw()
@@ -350,7 +345,7 @@ if __name__ == '__main__':
 #    "Latitude : {}\u00B0".format(lat),
 #    ha='left', va='top', fontsize=14, fontweight='bold',
 #    transform=fig.transFigure+offset_top)
-    
+
 # info_bot_left = ax.text(
 #    ax.bbox.x0/fig.bbox.width,
 #    info_top_left.get_window_extent(renderer).y0/fig.bbox.height,
