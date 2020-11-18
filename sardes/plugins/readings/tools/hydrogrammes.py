@@ -122,7 +122,7 @@ class HydrographCanvas(FigureCanvasQTAgg):
         fwidth = 11
         fheight = 8.5
         margin_width = 0.5
-        fig = Figure(figsize=(fwidth, fheight), facecolor='white')
+        fig = Figure(figsize=(fwidth, fheight), facecolor='white', dpi=300)
         super().__init__(fig)
 
         # data = data.set_index('datetime', drop=True)
@@ -214,7 +214,7 @@ class HydrographCanvas(FigureCanvasQTAgg):
         img_width, img_height = img.size
         logo_height = int(0.7 * fig.dpi)
         logo_width = int(img_width / img_height * logo_height)
-        img = img.resize((logo_width, logo_height), Image.BILINEAR)
+        img = img.resize((logo_width, logo_height), Image.LANCZOS)
 
         bbox_xaxis_bottom = ax.xaxis.get_ticklabel_extents(renderer)[0]
         logo_x0 = max(ax.bbox.x1, bbox_xaxis_bottom.x1) - logo_width
@@ -223,10 +223,10 @@ class HydrographCanvas(FigureCanvasQTAgg):
                      url='http://www.environnement.gouv.qc.ca/')
 
         # Add a blue delimitation line.
-        rect1_height = 8 / fig.bbox.height
+        rect1_height = 6 / 72 * fig.dpi / fig.bbox.height
         rect1_y0 = (logo_height + logo_y0) / fig.bbox.height - rect1_height
         rect1_x0 = margin_width / fwidth
-        rect1_width = (logo_x0 - 20) / fig.bbox.width - rect1_x0
+        rect1_width = (logo_x0 - 12/72 * fig.dpi) / fig.bbox.width - rect1_x0
         rect1 = Rectangle((rect1_x0, rect1_y0), rect1_width, rect1_height,
                           fc=line_color, ec=line_color,
                           transform=fig.transFigure, clip_on=False, zorder=0)
@@ -261,8 +261,8 @@ class HydrographCanvas(FigureCanvasQTAgg):
         bbox_title = fig_title.get_window_extent(renderer)
         bbox_xaxis_bottom = ax.xaxis.get_ticklabel_extents(renderer)[0]
 
-        title_pad = 24
-        logo_pad = 48
+        title_pad = 18 / 72 * fig.dpi
+        logo_pad = 36 / 72 * fig.dpi
         top_margin = (
             margin_width / fheight +
             (bbox_title.height + title_pad) / fig.bbox.height
