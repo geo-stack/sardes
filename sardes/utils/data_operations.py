@@ -54,21 +54,6 @@ def format_reading_data(data, repere_data=None):
     """
     Format readings data for publication.
     """
-    data = (
-        data
-        .dropna(subset=[DataType.WaterLevel])
-        # We keep the readings closest to midnight.
-        .groupby('obs_id').resample('D', on='datetime').first()
-        .dropna(subset=[DataType.WaterLevel])
-        .droplevel(0, axis=0).drop('datetime', axis=1)
-        .reset_index(drop=False)
-        .sort_values(by=['datetime', 'install_depth'],
-                     ascending=[True, True])
-        # We keep the reading measured closest to the surface.
-        .drop_duplicates(subset='datetime', keep='first')
-        .reset_index(drop=True)
-        )
-
     # Convert water level in altitude (above see level).
     if repere_data is not None:
         for i in range(len(repere_data)):
@@ -84,5 +69,21 @@ def format_reading_data(data, repere_data=None):
                     (data['datetime'] < end_date)]
             data.loc[indexes, DataType.WaterLevel] = (
                 reference_altitude - data.loc[indexes, DataType.WaterLevel])
+
+    # Resample data on a daily basis and remove duplicate values if any.
+    data = (
+        data
+        .dropna(subset=[DataType.WaterLevel])
+        # We keep the readings closest to midnight.
+        .groupby('obs_id').resample('D', on='datetime').first()
+        .dropna(subset=[DataType.WaterLevel])
+        .droplevel(0, axis=0).drop('datetime', axis=1)
+        .reset_index(drop=False)
+        .sort_values(by=['datetime', 'install_depth'],
+                     ascending=[True, True])
+        # We keep the reading measured closest to the surface.
+        .drop_duplicates(subset='datetime', keep='first')
+        .reset_index(drop=True)
+        )
 
     return data
