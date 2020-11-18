@@ -50,7 +50,7 @@ def intervals_extract(iterable):
         yield [group[0][1], group[-1][1]]
 
 
-def format_reading_data(data, reference_altitude=None):
+def format_reading_data(data, repere_data=None):
     """
     Format readings data for publication.
     """
@@ -69,8 +69,20 @@ def format_reading_data(data, reference_altitude=None):
         .reset_index(drop=True)
         )
 
-    # Convert water level in altitude.
-    if reference_altitude is not None:
-        data[DataType.WaterLevel] = (
-            reference_altitude - data[DataType.WaterLevel])
+    # Convert water level in altitude (above see level).
+    if repere_data is not None:
+        for i in range(len(repere_data)):
+            repere_iloc = repere_data.iloc[i]
+            reference_altitude = repere_iloc['top_casing_alt']
+            start_date = repere_iloc['start_date']
+            end_date = repere_iloc['end_date']
+            if pd.isnull(end_date):
+                indexes = data.index[data['datetime'] >= start_date]
+            else:
+                indexes = data.index[
+                    (data['datetime'] >= start_date) &
+                    (data['datetime'] < end_date)]
+            data.loc[indexes, DataType.WaterLevel] = (
+                reference_altitude - data.loc[indexes, DataType.WaterLevel])
+
     return data
