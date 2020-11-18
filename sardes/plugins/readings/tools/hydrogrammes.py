@@ -21,6 +21,7 @@ from matplotlib.transforms import ScaledTranslation
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.patches import Rectangle
+from matplotlib.ticker import MultipleLocator
 import matplotlib.pyplot as plt
 from PIL import Image
 from qtpy.QtCore import Qt
@@ -133,7 +134,7 @@ class HydrographCanvas(FigureCanvasQTAgg):
         ax = self.figure.add_axes([0, 0, 1, 1], frameon=True)
         ax.set_ylabel(_("Water level altitude (m)"), fontsize=23, labelpad=20)
         ax.grid(axis='both', ls='-', color=grid_color, which='major')
-        ax.tick_params(axis='both', direction='out', labelsize=16, length=3,
+        ax.tick_params(axis='both', direction='out', labelsize=16, length=5,
                        pad=10, color=grid_color)
         ax.tick_params(axis='both', direction='out', color=grid_color,
                        which='minor')
@@ -161,18 +162,32 @@ class HydrographCanvas(FigureCanvasQTAgg):
         # Setup the the axis range and ticks.
         ymin = data[DataType.WaterLevel].min()
         ymax = data[DataType.WaterLevel].max()
+        ymin = ymin - (ymax - ymin) * 0.025
+        ymax = ymax + (ymax - ymin) * 0.025
+
+        yscales = [0.05, 0.1, 0.2, 0.25, 0.5, 0.75, 1, 2, 5, 10]
+        yscales_minor = {
+            0.05: 0.01, 0.1: 0.02, 0.2: 0.05, 0.25: 0.05,
+            0.5: 0.1, 0.75: 0.15, 1: 0.2, 2: 0.5, 5: 1, 10: 2}
+        for yscale in yscales:
+            if (ymax - ymin) / yscale <= 12:
+                break
+        ymin = yscale * floor(ymin / yscale)
+        ymax = yscale * ceil(ymax / yscale)
+        ax.yaxis.set_major_locator(MultipleLocator(yscale))
+        ax.yaxis.set_minor_locator(MultipleLocator(yscales_minor[yscale]))
 
         year_min = data['datetime'].min().year
         year_max = data['datetime'].max().year + 1
         year_span = year_max - year_min
         if year_span <= 15:
             ax.xaxis.set_major_locator(mdates.YearLocator())
-            ax.xaxis.set_minor_locator(mdates.MonthLocator())
+            ax.xaxis.set_minor_locator(mdates.MonthLocator([4, 7, 10]))
             xmin = datetime.datetime(year_min, 1, 1)
             xmax = datetime.datetime(year_max, 1, 1)
         elif year_span <= 30:
             ax.xaxis.set_major_locator(mdates.YearLocator(2))
-            ax.xaxis.set_minor_locator(mdates.MonthLocator(3))
+            ax.xaxis.set_minor_locator(mdates.MonthLocator(7))
             xmin = datetime.datetime(2 * floor(year_min / 2), 1, 1)
             xmax = datetime.datetime(2 * ceil(year_max / 2), 1, 1)
         else:
@@ -181,7 +196,7 @@ class HydrographCanvas(FigureCanvasQTAgg):
             xmin = datetime.datetime(5 * floor(year_min / 5), 1, 1)
             xmax = datetime.datetime(5 * ceil(year_max / 5), 1, 1)
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
-        ax.axis(ymax=ymax * 1.025, ymin=ymin * 0.975, xmin=xmin, xmax=xmax)
+        ax.axis(ymax=ymax, ymin=ymin, xmin=xmin, xmax=xmax)
 
         # Setup the left and right margins.
         self.draw()
