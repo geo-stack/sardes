@@ -12,26 +12,110 @@ import sys
 import os.path as osp
 import datetime
 import locale
+from math import floor, ceil
 
 # ---- Third party library imports
 import matplotlib as mpl
+import matplotlib.dates as mdates
 from matplotlib.transforms import ScaledTranslation
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
 from PIL import Image
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QApplication, QFileDialog, QMessageBox
 import numpy as np
 
 # ---- Local imports
+from sardes.api.timeseries import DataType
 from sardes.config.locale import _
+from sardes.config.ospath import (
+    get_select_file_dialog_dir, set_select_file_dialog_dir,
+    get_company_logo_filename)
 from sardes import __rootdir__
 from sardes.api.tools import SardesTool
 
 mpl.rc('font', **{'family': 'sans-serif', 'sans-serif': ['Calibri']})
 
 
-workdir = "C:/Users/User/OneDrive/INRS/2017 - Projet INRS PACC"
-reader = MDDELCC_RSESQ_Reader(workdir)
-stations = reader.stations()
+class HydrographTool(SardesTool):
+    """
+    A tool to produce hydrograph figures for publishing from reading data.
+    """
+    NAMEFILTERS = ';;'.join(['Portable Document Format (*.pdf)',
+                             'Scalable Vector Graphics (*.svg)',
+                             'Portable Network Graphics (*.png)'
+                             'JPEG (*.jpg)'
+                             ])
+
+    def __init__(self, parent):
+        super().__init__(
+            parent,
+            name='plot_hydrograph_tool',
+            text=_("Show Hydrograph"),
+            icon='image',
+            tip=_("Create a publication ready graph of the water level data.")
+            )
+
+    def __triggered__(self):
+        self.select_save_file()
+
+    # ---- Public API
+    def select_save_file(self, filename=None):
+        """
+        Open a file dialog to allow the user to select a location and a
+        file type to save the hydrograph.
+
+        Parameters
+        ----------
+        filename : str
+            The absolute path of the default filename that will be set in
+            the file dialog.
+        """
+        obs_well_id = self.parent.model()._obs_well_data['obs_well_id']
+        if filename is None:
+            filename = osp.join(
+                get_select_file_dialog_dir(),
+                'graph_{}.pdf'.format(obs_well_id))
+
+        filename, filefilter = QFileDialog.getSaveFileName(
+            self.parent, _("Save Hydrograph"), filename, self.NAMEFILTERS)
+        if filename:
+            fext = filefilter[-5:-1]
+            if not filename.endswith(fext):
+                filename += fext
+            filename = osp.abspath(filename)
+            set_select_file_dialog_dir(osp.dirname(filename))
+            self.save_hydrograph_to_file(filename)
+
+    def save_hydrograph_to_file(self, filename):
+        """
+        Plot and save the resampled and formatted readings data of this tool's
+        parent table to pdf, svg, png or jpg file.
+        """
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.processEvents()
+        try:
+            hydrograph = HydrographCanvas(
+                self.parent.get_formatted_data(),
+                self.parent.model()._obs_well_data)
+            hydrograph.figure.savefig(filename, dpi=300)
+            pass
+        except PermissionError:
+            QApplication.restoreOverrideCursor()
+            QApplication.processEvents()
+            QMessageBox.warning(
+                self.parent,
+                _('File in Use'),
+                _("The save file operation cannot be completed because the "
+                  "file is in use by another application or user."),
+                QMessageBox.Ok)
+            self.select_save_file(filename)
+        else:
+            QApplication.restoreOverrideCursor()
+            QApplication.processEvents()
+
 
 # %%
 
