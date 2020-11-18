@@ -1,0 +1,147 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright © SARDES Project Contributors
+# https://github.com/cgq-qgc/sardes
+#
+# This file is part of SARDES.
+# Licensed under the terms of the GNU General Public License.
+# -----------------------------------------------------------------------------
+
+"""
+Tests for the HydrographTool.
+"""
+
+# ---- Standard imports
+import os
+import os.path as osp
+from unittest.mock import Mock
+os.environ['SARDES_PYTEST'] = 'True'
+
+# ---- Third party imports
+from numpy import nan
+import pytest
+import pandas as pd
+from qtpy.QtWidgets import QToolBar
+
+# ---- Local imports
+from sardes import __rootdir__
+from sardes.api.timeseries import DataType
+from sardes.plugins.readings.tools.hydrographs import (
+    HydrographTool, HydrographCanvas, QFileDialog)
+from sardes.utils.tests.test_data_operations import format_reading_data
+
+
+# =============================================================================
+# ---- Fixtures
+# =============================================================================
+@pytest.fixture
+def source_data():
+    source_data = pd.DataFrame(
+        data=[
+            ['1970-11-01 01:00:00', '64640', 1, nan, nan, 0],
+            ['1970-11-02 01:00:00', '64640', 1.2, nan, nan, 0],
+
+            ['2005-11-01 01:00:00', '64640', 1.5, 1, 3.16, 1],
+            ['2005-11-02 01:00:00', '64640', 1.6, 2, 3.16, 1],
+            ['2005-11-03 01:00:00', '64640', 1.7, 3, 3.16, 1],
+
+            ['2009-11-01 01:00:00', '64640', 0.5, 1, 3.16, 1],
+            ['2009-11-02 01:00:00', '64640', 0.6, 2, 3.16, 1],
+            ['2009-11-03 01:00:00', '64640', 0.7, 3, 3.16, 1],
+            ['2009-11-05 01:00:00', '64640', 0.8, 3, 3.16, 1],
+            ['2009-11-06 01:00:00', '64640', 0.9, 3, 3.16, 1]],
+        columns=[
+            'datetime', 'sonde_id', DataType.WaterLevel,
+            DataType.WaterTemp, 'install_depth', 'obs_id'])
+    source_data['datetime'] = pd.to_datetime(
+        source_data['datetime'], format="%Y-%m-%d %H:%M:%S")
+    return source_data
+
+
+@pytest.fixture
+def repere_data():
+    return pd.Series(
+        {'top_casing_alt': 105,
+         'casing_length': 5,
+         'is_alt_geodesic': True})
+
+
+@pytest.fixture
+def obs_well_data():
+    return pd.Series(
+        {'municipality': 'municipality_test',
+         'obs_well_id': '0123456'})
+
+
+@pytest.fixture
+def hydrograph_tool(qtbot, source_data, repere_data, obs_well_data):
+
+    class ParentToolbar(QToolBar):
+        def model(self):
+            model = Mock()
+            model._obs_well_data = obs_well_data
+            model._repere_data = repere_data
+            model.dataf = source_data
+            return model
+
+        def get_formatted_data(self):
+            return format_reading_data(
+                source_data, repere_data['top_casing_alt'])
+
+    toolbar = ParentToolbar()
+    tool = HydrographTool(toolbar)
+
+    toolbar.addAction(tool)
+    qtbot.addWidget(toolbar)
+    toolbar.show()
+    return tool
+
+
+# =============================================================================
+# ---- Tests
+# =============================================================================
+def test_create_hydrograph(tmp_path, source_data, repere_data, obs_well_data,
+                           mocker):
+    """
+    Test that creating an hydrogaph figure is working as expected.
+    """
+    # Test that it is working when no corporate logo is available.
+    mocker.patch('sardes.config.ospath.get_company_logo_filename',
+                 return_value=None)
+    HydrographCanvas(
+        format_reading_data(source_data, repere_data['top_casing_alt']),
+        obs_well_data,
+        repere_data)
+
+    # Test that it is working when a corporate logo is available.
+    company_logo_filename = osp.join(
+        __rootdir__, 'ressources', 'icons', 'sardes.png')
+    mocker.patch('sardes.config.ospath.get_company_logo_filename',
+                 return_value=company_logo_filename)
+    HydrographCanvas(
+        format_reading_data(source_data, repere_data['top_casing_alt']),
+        obs_well_data,
+        repere_data)
+
+
+def test_save_hydrograph(tmp_path, hydrograph_tool, mocker):
+    """
+    Test that creating an saving and hydrogaph figure with the tool is working
+    as expected.
+    """
+    fexts_filters = {
+        '.pdf': 'Portable Document Format (*.pdf)',
+        '.svg': 'Scalable Vector Graphics (*.svg)',
+        '.png': 'Portable Network Graphics (*.png)',
+        '.jpg': 'JPEG (*.jpg)'}
+    for fext, selectedfilter in fexts_filters.items():
+        selectedfilename = osp.join(tmp_path, 'test_save_hydrograph')
+        mocker.patch.object(QFileDialog, 'getSaveFileName',
+                            return_value=(selectedfilename, selectedfilter))
+
+        hydrograph_tool.trigger()
+        assert osp.exists(selectedfilename + fext)
+
+
+if __name__ == "__main__":
+    pytest.main(['-x', __file__, '-v', '-rw'])

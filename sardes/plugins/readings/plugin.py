@@ -29,7 +29,8 @@ from sardes.widgets.tableviews import (
     SardesTableWidget, NumEditDelegate, NotEditableDelegate,
     SardesStackedTableWidget)
 from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
-from .tools.save2excel import SaveReadingsToExcelTool
+from sardes.plugins.readings.tools import (
+    SaveReadingsToExcelTool, HydrographTool)
 
 
 """Readings plugin"""
@@ -360,6 +361,8 @@ class Readings(SardesPlugin):
             )
         table_widget.add_toolbar_widget(show_plot_btn)
 
+        table_widget.install_tool(HydrographTool(table_widget),
+                                  after='copy_to_clipboard')
         table_widget.install_tool(SaveReadingsToExcelTool(table_widget),
                                   after='copy_to_clipboard')
 
