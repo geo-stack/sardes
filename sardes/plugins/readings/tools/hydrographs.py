@@ -92,13 +92,20 @@ class HydrographTool(SardesTool):
         """
         QApplication.setOverrideCursor(Qt.WaitCursor)
         QApplication.processEvents()
+        last_repere_data = (
+            self.parent.model()._repere_data
+            .sort_values(by=['end_date'], ascending=[True])
+            .iloc[-1])
+        ground_altitude = (
+            last_repere_data['top_casing_alt'] -
+            last_repere_data['casing_length'])
+        is_alt_geodesic = last_repere_data['is_alt_geodesic']
+        hydrograph = HydrographCanvas(
+            self.parent.get_formatted_data(),
+            self.parent.model()._obs_well_data,
+            ground_altitude, is_alt_geodesic)
         try:
-            hydrograph = HydrographCanvas(
-                self.parent.get_formatted_data(),
-                self.parent.model()._obs_well_data,
-                self.parent.model()._repere_data)
             hydrograph.figure.savefig(filename, dpi=300)
-            pass
         except PermissionError:
             QApplication.restoreOverrideCursor()
             QApplication.processEvents()
@@ -115,7 +122,7 @@ class HydrographTool(SardesTool):
 
 
 class HydrographCanvas(FigureCanvasQTAgg):
-    def __init__(self, data, obs_well_data, repere_data):
+    def __init__(self, data, obs_well_data, ground_altitude, is_alt_geodesic):
         fwidth = 11
         fheight = 8.5
         margin_width = 0.5
@@ -324,10 +331,9 @@ class HydrographCanvas(FigureCanvasQTAgg):
         bbox_xaxis_bottom = ax.xaxis.get_ticklabel_extents(renderer)[0]
         bbox_yaxis_left = ax.yaxis.get_ticklabel_extents(renderer)[0]
         geodesic_text = (
-            _('Geodesic') if repere_data['is_alt_geodesic'] else
-            _('Approximated'))
+            _('Geodesic') if is_alt_geodesic else _('Approximated'))
         alt_text = _("Ground elevation: {:0.1f} m ({})").format(
-            repere_data['top_casing_alt'], geodesic_text)
+            ground_altitude, geodesic_text)
         alt_text_y0 = bbox_xaxis_bottom.y0 / fig.bbox.height
         alt_text_x0 = bbox_yaxis_left.x0 / fig.bbox.width
         offset = ScaledTranslation(0, -8/72, fig.dpi_scale_trans)
