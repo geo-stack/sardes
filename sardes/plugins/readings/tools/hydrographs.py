@@ -135,7 +135,8 @@ class HydrographCanvas(FigureCanvasQTAgg):
         grid_color = '0.65'
 
         ax = self.figure.add_axes([0, 0, 1, 1], frameon=True)
-        ax.set_ylabel(_("Water level altitude (m)"), fontsize=23, labelpad=20)
+        ax.set_ylabel(
+            _("Water level altitude (m MSL)"), fontsize=23, labelpad=20)
         ax.grid(axis='both', ls='-', color=grid_color, which='major')
         ax.tick_params(axis='both', direction='out', labelsize=16, length=5,
                        pad=10, color=grid_color)
@@ -332,7 +333,7 @@ class HydrographCanvas(FigureCanvasQTAgg):
         bbox_yaxis_left = ax.yaxis.get_ticklabel_extents(renderer)[0]
         geodesic_text = (
             _('Geodesic') if is_alt_geodesic else _('Approximated'))
-        alt_text = _("Ground elevation: {:0.1f} m ({})").format(
+        alt_text = _("Ground elevation: {:0.1f} m MSL ({})").format(
             ground_altitude, geodesic_text)
         alt_text_y0 = bbox_xaxis_bottom.y0 / fig.bbox.height
         alt_text_x0 = bbox_yaxis_left.x0 / fig.bbox.width
