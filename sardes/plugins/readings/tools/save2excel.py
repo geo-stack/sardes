@@ -130,7 +130,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
         ['datetime', DataType.WaterLevel, DataType.WaterTemp]]
     formatted_data.columns = [
         _("Date of reading"),
-        _("Water level altitude (m)"),
+        _("Water level altitude (m MSL)"),
         _("Water temperature (°C)")]
 
     # Write the data to the file.
