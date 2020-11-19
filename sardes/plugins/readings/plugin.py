@@ -52,14 +52,14 @@ class ReadingsTableModel(SardesTableModel):
 
     # ---- Database connection
     def set_repere_data(self, repere_data):
-        repere_data = repere_data[
-            repere_data['sampling_feature_uuid'] == self._obs_well_uuid]
-        if len(repere_data):
+        repere_data = (
+            repere_data
+            [repere_data['sampling_feature_uuid'] == self._obs_well_uuid]
+            .copy())
+        if not repere_data.empty:
             self._repere_data = (
                 repere_data
-                .sort_values(by=['end_date'], ascending=[True])
-                .iloc[-1]
-                )
+                .sort_values(by=['end_date'], ascending=[True]))
         else:
             self._repere_data = pd.Series([])
 
