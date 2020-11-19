@@ -227,7 +227,8 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
         worksheet.insert_image(
             0, 0, 'logo.jpg',
             options={'x_scale': img_scale, 'y_scale': img_scale,
-                     'image_data': image_data}
+                     'image_data': image_data,
+                     'x_offset': 3, 'y_offset': 3}
             )
 
     try:
