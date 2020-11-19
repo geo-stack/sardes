@@ -12,6 +12,7 @@ Tests for the HydrographTool.
 """
 
 # ---- Standard imports
+from datetime import datetime
 import os
 import os.path as osp
 from unittest.mock import Mock
@@ -60,10 +61,11 @@ def source_data():
 
 @pytest.fixture
 def repere_data():
-    return pd.Series(
-        {'top_casing_alt': 105,
-         'casing_length': 5,
-         'is_alt_geodesic': True})
+    return pd.DataFrame(
+        [[105, 5, True, datetime(2005, 11, 1, 1), None]],
+        columns=['top_casing_alt', 'casing_length', 'is_alt_geodesic',
+                 'start_date', 'end_date']
+        )
 
 
 @pytest.fixture
@@ -86,7 +88,7 @@ def hydrograph_tool(qtbot, source_data, repere_data, obs_well_data):
 
         def get_formatted_data(self):
             return format_reading_data(
-                source_data, repere_data['top_casing_alt'])
+                self.model().dataf, self.model()._repere_data)
 
     toolbar = ParentToolbar()
     tool = HydrographTool(toolbar)
@@ -105,13 +107,20 @@ def test_create_hydrograph(tmp_path, source_data, repere_data, obs_well_data,
     """
     Test that creating an hydrogaph figure is working as expected.
     """
+    last_repere_data = (
+        repere_data.sort_values(by=['end_date'], ascending=[True]).iloc[-1])
+    ground_altitude = (
+        last_repere_data['top_casing_alt'] - last_repere_data['casing_length'])
+    is_alt_geodesic = last_repere_data['is_alt_geodesic']
+
     # Test that it is working when no corporate logo is available.
     mocker.patch('sardes.config.ospath.get_company_logo_filename',
                  return_value=None)
     HydrographCanvas(
-        format_reading_data(source_data, repere_data['top_casing_alt']),
+        format_reading_data(source_data, repere_data),
         obs_well_data,
-        repere_data)
+        ground_altitude,
+        is_alt_geodesic)
 
     # Test that it is working when a corporate logo is available.
     company_logo_filename = osp.join(
@@ -119,9 +128,10 @@ def test_create_hydrograph(tmp_path, source_data, repere_data, obs_well_data,
     mocker.patch('sardes.config.ospath.get_company_logo_filename',
                  return_value=company_logo_filename)
     HydrographCanvas(
-        format_reading_data(source_data, repere_data['top_casing_alt']),
+        format_reading_data(source_data, repere_data),
         obs_well_data,
-        repere_data)
+        ground_altitude,
+        is_alt_geodesic)
 
 
 def test_save_hydrograph(tmp_path, hydrograph_tool, mocker):
