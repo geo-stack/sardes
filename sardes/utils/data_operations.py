@@ -50,12 +50,12 @@ def intervals_extract(iterable):
         yield [group[0][1], group[-1][1]]
 
 
-def format_reading_data(data, repere_data=None):
+def format_reading_data(data, repere_data):
     """
     Format readings data for publication.
     """
     # Convert water level in altitude (above see level).
-    if repere_data is not None:
+    if not repere_data.empty:
         for i in range(len(repere_data)):
             repere_iloc = repere_data.iloc[i]
             reference_altitude = repere_iloc['top_casing_alt']
