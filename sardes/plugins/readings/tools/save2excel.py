@@ -190,7 +190,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
                              'bold': True, 'right': 6,
                              'align': 'center', 'valign': 'vcenter'}))
     worksheet.write(
-        2, 1, _('Ground elevation (m):'),
+        2, 1, _('Ground altitude (m MSL):'),
         workbook.add_format({'font_name': 'Times New Roman', 'font_size': 12,
                              'bold': True, 'bottom': 6, 'left': 6,
                              'align': 'right', 'valign': 'vcenter'}))
