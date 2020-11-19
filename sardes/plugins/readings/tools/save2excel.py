@@ -130,7 +130,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
         ['datetime', DataType.WaterLevel, DataType.WaterTemp]]
     formatted_data.columns = [
         _("Date of reading"),
-        _("Water level altitude (m)"),
+        _("Water level altitude (m MSL)"),
         _("Water temperature (°C)")]
 
     # Write the data to the file.
@@ -152,7 +152,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
     date_format = workbook.add_format({'num_format': 'yyyy-mm-dd'})
     num_format = workbook.add_format({'num_format': '0.00'})
     worksheet.set_column('A:A', 25, date_format)
-    worksheet.set_column('B:B', 25, num_format)
+    worksheet.set_column('B:B', 34, num_format)
     worksheet.set_column('C:C', 34, num_format)
 
     # Write the data header.
@@ -190,7 +190,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
                              'bold': True, 'right': 6,
                              'align': 'center', 'valign': 'vcenter'}))
     worksheet.write(
-        2, 1, _('Ground elevation (m):'),
+        2, 1, _('Ground altitude (m MSL):'),
         workbook.add_format({'font_name': 'Times New Roman', 'font_size': 12,
                              'bold': True, 'bottom': 6, 'left': 6,
                              'align': 'right', 'valign': 'vcenter'}))
@@ -227,7 +227,8 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
         worksheet.insert_image(
             0, 0, 'logo.jpg',
             options={'x_scale': img_scale, 'y_scale': img_scale,
-                     'image_data': image_data}
+                     'image_data': image_data,
+                     'x_offset': 3, 'y_offset': 3}
             )
 
     try:
