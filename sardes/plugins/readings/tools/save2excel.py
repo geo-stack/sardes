@@ -84,11 +84,20 @@ class SaveReadingsToExcelTool(SardesTool):
         QApplication.setOverrideCursor(Qt.WaitCursor)
         QApplication.processEvents()
         try:
+            last_repere_data = (
+                self.parent.model()._repere_data
+                .sort_values(by=['end_date'], ascending=[True])
+                .iloc[-1])
+            ground_altitude = (
+                last_repere_data['top_casing_alt'] -
+                last_repere_data['casing_length'])
+            is_alt_geodesic = last_repere_data['is_alt_geodesic']
             _save_reading_data_to_xlsx(
                 filename, _('Piezometry'),
                 self.parent.get_formatted_data(),
                 self.parent.model()._obs_well_data,
-                self.parent.model()._repere_data,
+                ground_altitude,
+                is_alt_geodesic,
                 get_company_logo_filename())
         except PermissionError:
             QApplication.restoreOverrideCursor()
@@ -106,8 +115,8 @@ class SaveReadingsToExcelTool(SardesTool):
 
 
 def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
-                               obs_well_data, repere_data,
-                               company_logo_filename=None):
+                               obs_well_data, ground_altitude,
+                               is_alt_geodesic, company_logo_filename=None):
     """
     Save data in an excel workbook using the specified filename and sheetname.
 
@@ -186,12 +195,10 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
                              'bold': True, 'bottom': 6, 'left': 6,
                              'align': 'right', 'valign': 'vcenter'}))
 
-    if not repere_data.empty:
+    if ground_altitude is not None:
         alt_value = "{:0.2f} ({})".format(
-            repere_data['top_casing_alt'] - repere_data['casing_length'],
-            _('Geodesic') if repere_data['is_alt_geodesic'] else
-            _('Approximated')
-            )
+            ground_altitude,
+            _('Geodesic') if is_alt_geodesic else _('Approximated'))
     else:
         alt_value = _('Not Available')
     worksheet.write(
