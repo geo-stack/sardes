@@ -128,7 +128,7 @@ def test_save_reading_data_to_xlsx(tmp_path, source_data, repere_data,
     assert exported_data.iat[2, 2] == '100.00 (Geodesic)'
 
     assert exported_data.iat[4, 0] == 'Date of reading'
-    assert exported_data.iat[4, 1] == 'Water level altitude (m)'
+    assert exported_data.iat[4, 1] == 'Water level altitude (m MSL)'
     assert exported_data.iat[4, 2] == 'Water temperature (°C)'
 
     assert exported_data.iat[7, 0] == '2005-11-04 00:00:00'
