@@ -154,11 +154,8 @@ class ReadingsTableWidget(SardesTableWidget):
         """
         Return a dataframe contraining formatted readings data.
         """
-        reference_altitude = (
-            self.model()._repere_data['top_casing_alt'] if
-            not self.model()._repere_data.empty else None)
         return format_reading_data(
-            self.model().dataf, reference_altitude)
+            self.model().dataf, self.model()._repere_data)
 
     def plot_readings(self):
         """
