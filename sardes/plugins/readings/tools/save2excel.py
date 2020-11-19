@@ -152,7 +152,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
     date_format = workbook.add_format({'num_format': 'yyyy-mm-dd'})
     num_format = workbook.add_format({'num_format': '0.00'})
     worksheet.set_column('A:A', 25, date_format)
-    worksheet.set_column('B:B', 25, num_format)
+    worksheet.set_column('B:B', 34, num_format)
     worksheet.set_column('C:C', 34, num_format)
 
     # Write the data header.
