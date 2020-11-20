@@ -49,7 +49,7 @@ class HydrographTool(SardesTool):
         super().__init__(
             parent,
             name='plot_hydrograph_tool',
-            text=_("Show Hydrograph"),
+            text=_("Create Hydrograph"),
             icon='image',
             tip=_("Create a publication ready graph of the water level data.")
             )

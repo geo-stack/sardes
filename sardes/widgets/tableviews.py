@@ -1131,15 +1131,15 @@ class SardesTableView(QTableView):
             select_all_action = create_action(
                 self, _("Select All"),
                 icon='select_all',
-                tip=_("Selects all items in the table."),
+                tip=_("Select all items in the table."),
                 triggered=self.select_all,
                 shortcut='Ctrl+A',
                 context=Qt.WidgetShortcut,
                 name='select_all')
             select_clear_action = create_action(
-                self, _("Clear All"),
+                self, _("Clear Selection"),
                 icon='select_clear',
-                tip=_("Clears the selection in the table."),
+                tip=_("Clear the selection in the table."),
                 triggered=lambda _: self.selectionModel().clearSelection(),
                 shortcut='Escape',
                 context=Qt.WidgetShortcut,
