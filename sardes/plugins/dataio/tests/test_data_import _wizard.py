@@ -17,6 +17,7 @@ import os.path as osp
 from shutil import copyfile
 import sys
 import datetime
+os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import pandas as pd

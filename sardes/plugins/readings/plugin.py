@@ -41,7 +41,7 @@ class ReadingsTableModel(SardesTableModel):
         super().__init__(*args, **kargs)
         self._obs_well_data = obs_well_data
         self._obs_well_uuid = obs_well_data.name
-        self._repere_data = pd.Series([])
+        self._repere_data = pd.Series([], dtype=object)
 
     def create_delegate_for_column(self, view, column):
         if isinstance(column, DataType):
@@ -61,7 +61,7 @@ class ReadingsTableModel(SardesTableModel):
                 repere_data
                 .sort_values(by=['end_date'], ascending=[True]))
         else:
-            self._repere_data = pd.Series([])
+            self._repere_data = pd.Series([], dtype=object)
 
     def set_model_data(self, dataf):
         """
