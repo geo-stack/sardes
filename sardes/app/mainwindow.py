@@ -92,6 +92,7 @@ class MainWindow(QMainWindow):
     def setup(self):
         """Setup the main window"""
         self.installEventFilter(self)
+        self.setup_preferences()
         self.setup_options_button()
         self.setup_statusbar()
         self._restore_window_geometry()
@@ -101,6 +102,11 @@ class MainWindow(QMainWindow):
         # Note: The window state must be restored after the setup of the
         # plugins and toolbars.
         self._restore_window_state()
+
+    def setup_preferences(self):
+        """Setup Sardes config dialog."""
+        from sardes.preferences.configdialog import ConfDialog
+        self.confdialog = ConfDialog(self)
 
     def setup_internal_plugins(self):
         """Setup Sardes internal plugins."""
@@ -276,7 +282,8 @@ class MainWindow(QMainWindow):
         # Create the preference action to show the preference dialog window.
         preferences_action = create_action(
             self, _('Preferences...'), icon='preferences',
-            shortcut='Ctrl+Shift+P', context=Qt.ApplicationShortcut
+            shortcut='Ctrl+Shift+P', context=Qt.ApplicationShortcut,
+            triggered=self.confdialog.show
             )
 
         # Create the panes and toolbars menus and actions
