@@ -240,27 +240,19 @@ class MainWindow(QMainWindow):
         self.options_menu_toolbar.addWidget(create_toolbar_stretcher())
 
         # Add the tools and options button.
-        self.options_menu_button = self._create_options_menu_button()
-        self.options_menu_toolbar.addWidget(self.options_menu_button)
-
-        self.toolbars.append(self.options_menu_toolbar)
-        self.addToolBar(self.options_menu_toolbar)
-
-    def _create_options_menu_button(self):
-        """Create and return the options button of this application."""
-        options_menu_button = create_toolbutton(
+        self.options_menu_button = create_toolbutton(
             self, icon='tooloptions',
             text=_("Tools and options"),
             tip=_("Open the tools and options menu."),
             shortcut='Ctrl+Shift+T')
-        options_menu_button.setStyleSheet(
+        self.options_menu_button.setStyleSheet(
             "QToolButton::menu-indicator{image: none;}")
-        options_menu_button.setPopupMode(QToolButton.InstantPopup)
+        self.options_menu_button.setPopupMode(QToolButton.InstantPopup)
+        self.options_menu_button.setMenu(self._create_options_menu())
+        self.options_menu_toolbar.addWidget(self.options_menu_button)
 
-        # Create the tools and options menu.
-        options_menu_button.setMenu(self._create_options_menu())
-
-        return options_menu_button
+        self.toolbars.append(self.options_menu_toolbar)
+        self.addToolBar(self.options_menu_toolbar)
 
     def _create_options_menu(self):
         """Create and return the options menu of this application."""
