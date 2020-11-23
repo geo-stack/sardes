@@ -88,10 +88,11 @@ class MainWindow(QMainWindow):
         self.setup()
         splash.finish(self)
 
+    # ---- Setup
     def setup(self):
         """Setup the main window"""
         self.installEventFilter(self)
-        self._setup_options_menu_toolbar()
+        self.setup_options_button()
         self.setup_statusbar()
         self._restore_window_geometry()
         self.setup_internal_plugins()
@@ -228,7 +229,7 @@ class MainWindow(QMainWindow):
             toolbar.setMovable(not locked)
 
     # ---- Setup options button and menu
-    def _setup_options_menu_toolbar(self):
+    def setup_options_button(self):
         """
         Setup a the options menu toolbutton (hamburger menu) and add it
         to a toolbar.
