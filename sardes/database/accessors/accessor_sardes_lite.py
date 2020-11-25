@@ -43,6 +43,9 @@ APPLICATION_ID = 1013042054
 # The latest version of the database schema.
 CURRENT_SCHEMA_VERSION = 1
 
+# The format that is used to store datetime values in the database.
+DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
+
 
 # =============================================================================
 # ---- Register Adapters
@@ -1150,8 +1153,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             )
         data = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
-        data['datetime'] = pd.to_datetime(
-            data['datetime'], format="%Y-%m-%d %H:%M:%S")
+        data['datetime'] = pd.to_datetime(data['datetime'], format=DATE_FORMAT)
         data.rename(columns={'value': data_type}, inplace=True)
 
         # Add sonde serial number and installation depth to the dataframe.
@@ -1249,10 +1251,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .dropna(subset=['value'])
             )
 
-        # We need to convert pandas datetime64 to pure python datetime
-        # format in order to save them in the database with sqlite3.
-        tseries_data['datetime'] = pd.Series(
-            tseries_data['datetime'].dt.to_pydatetime(), dtype=object)
+        # We need to format pandas datetime64 to strings in order to save
+        # them in the database with sqlite3.
+        tseries_data['datetime'] = (
+            tseries_data['datetime'].dt.strftime(DATE_FORMAT))
 
         # Save the formatted timeseries data to the database.
         conn = sqlite3.connect(self._database)
