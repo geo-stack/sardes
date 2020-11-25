@@ -105,8 +105,9 @@ class MainWindow(QMainWindow):
 
     def setup_preferences(self):
         """Setup Sardes config dialog."""
-        from sardes.preferences.configdialog import ConfDialog
+        from sardes.preferences import ConfDialog, DocumentsSettingsConfPage
         self.confdialog = ConfDialog(self)
+        self.confdialog.add_confpage(DocumentsSettingsConfPage())
 
     def setup_internal_plugins(self):
         """Setup Sardes internal plugins."""
