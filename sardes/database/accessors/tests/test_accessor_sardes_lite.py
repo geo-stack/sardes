@@ -21,6 +21,7 @@ import os.path as osp
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
+import numpy as np
 import pytest
 import pandas as pd
 
@@ -34,11 +35,26 @@ from sardes.database.accessors.accessor_sardes_lite import (
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
+@pytest.fixture()
+def dbaccessor0(tmp_path):
+    """
+    A Database SQlite accessor that is reinitialized after each test.
+    """
+    dbaccessor = DatabaseAccessorSardesLite(
+        osp.join(tmp_path, 'sqlite_database_test.db'))
+    dbaccessor.init_database()
+
+    dbaccessor.connect()
+    assert dbaccessor.is_connected()
+
+    return dbaccessor
+
+
 @pytest.fixture(scope="module")
 def dbaccessor(tmp_path_factory):
     """
     A Database SQlite accessor that is connected to a database that is
-    shared among all tests but the first one.
+    shared among all tests that are inter-dependent.
     """
     tmp_path = tmp_path_factory.mktemp("database")
     dbaccessor = DatabaseAccessorSardesLite(
@@ -52,21 +68,13 @@ def dbaccessor(tmp_path_factory):
 
 
 # =============================================================================
-# ---- Tests
+# ---- Independent Tests
 # =============================================================================
-def test_connection(tmp_path):
+def test_connection(dbaccessor0):
     """
     Test that connecting to the BD fails and succeed as expected.
     """
-    # We create a specific database accessor in this test instead of using
-    # the module fixture so that we do not create problems with the database
-    # connection for the other tests.
-    dbaccessor = DatabaseAccessorSardesLite(
-        osp.join(tmp_path, 'sqlite_database_test_connection.db'))
-    dbaccessor.init_database()
-
-    dbaccessor.connect()
-    assert dbaccessor.is_connected()
+    dbaccessor = dbaccessor0
     dbaccessor.close_connection()
 
     # Assert that the connection fails if the version of the BD is outdated.
@@ -113,6 +121,39 @@ def test_connection(tmp_path):
     dbaccessor.close_connection()
 
 
+def test_add_large_timeseries_record(dbaccessor0):
+    """
+    Test that large time series record are added as expected to the database.
+
+    Regression test for cgq-qgc/sardes#378.
+    """
+    dbaccessor = dbaccessor0
+
+    sampling_feature_uuid = dbaccessor._create_index('observation_wells_data')
+    new_tseries_data = pd.DataFrame(
+        [], columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
+    new_tseries_data['datetime'] = pd.date_range(
+        start='1/1/2000', end='1/1/2020')
+    new_tseries_data[DataType.WaterLevel] = np.random.rand(
+        len(new_tseries_data))
+    new_tseries_data[DataType.WaterTemp] = np.random.rand(
+        len(new_tseries_data))
+
+    dbaccessor.add_timeseries_data(
+        new_tseries_data, sampling_feature_uuid, install_uuid=None)
+
+    wlevel_data = dbaccessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, DataType.WaterLevel)
+    assert len(wlevel_data) == 7306
+
+    wtemp_data = dbaccessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, DataType.WaterTemp)
+    assert len(wtemp_data) == 7306
+
+
+# =============================================================================
+# ---- Inter-dependent Tests
+# =============================================================================
 def test_add_observation_well(dbaccessor):
     """
     Test that adding an observation well to the database is working
