@@ -125,3 +125,60 @@ class ConfDialog(QDialog):
                 confpage.apply_changes()
             self.close()
 
+
+class ConfPage(QWidget):
+    """Base class for configuration page in Preferences"""
+    sig_config_changed = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setup_page()
+
+    def setup_page(self):
+        """Setup configuration page widget"""
+        raise NotImplementedError
+
+    def get_name(self):
+        """
+        Return the name that will be used to reference this confpage
+        in the code.
+        """
+        raise NotImplementedError
+
+    def get_label(self):
+        """
+        Return the label that will be used to reference this confpage in the
+        graphical interface.
+        """
+        raise NotImplementedError
+
+    def get_icon(self):
+        """Return configuration page icon"""
+        raise NotImplementedError
+
+    def is_modified(self):
+        return True
+
+    def apply_changes(self):
+        """Apply changes."""
+        pass
+
+    def get_from_conf(self):
+        """Get settings from configuration file."""
+        raise NotImplementedError
+
+    def load_from_conf(self):
+        """Load settings from configuration file."""
+        raise NotImplementedError
+
+    def save_to_conf(self):
+        """Save settings to configuration file."""
+        raise NotImplementedError
+
+    def showEvent(self, event):
+        self.load_from_conf()
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    sys.exit(app.exec_())
