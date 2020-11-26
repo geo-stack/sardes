@@ -116,7 +116,7 @@ def test_save_reading_data_to_xlsx(tmp_path, source_data, repere_data,
     is_alt_geodesic = last_repere_data['is_alt_geodesic']
     _save_reading_data_to_xlsx(
         filename, sheetname, formatted_data, obs_well_data,
-        ground_altitude, is_alt_geodesic, company_logo_filename=None)
+        ground_altitude, is_alt_geodesic, logo_filename=None)
     assert osp.exists(filename + '.xlsx')
 
     exported_data = pd.read_excel(
