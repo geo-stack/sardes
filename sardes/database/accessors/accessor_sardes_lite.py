@@ -43,6 +43,9 @@ APPLICATION_ID = 1013042054
 # The latest version of the database schema.
 CURRENT_SCHEMA_VERSION = 1
 
+# The format that is used to store datetime values in the database.
+DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
+
 
 # =============================================================================
 # ---- Register Adapters
@@ -1150,8 +1153,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             )
         data = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
-        data['datetime'] = pd.to_datetime(
-            data['datetime'], format="%Y-%m-%d %H:%M:%S")
+        data['datetime'] = pd.to_datetime(data['datetime'], format=DATE_FORMAT)
         data.rename(columns={'value': data_type}, inplace=True)
 
         # Add sonde serial number and installation depth to the dataframe.
@@ -1233,13 +1235,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 observation_id=observation_id
                 ))
             channel_id += 1
+        self._session.commit()
 
         # Set the channel ids as the column names of the dataset.
         tseries_data.columns = channel_ids
         tseries_data.columns.name = 'channel_id'
 
-        # Format the data so that they can directly be inserted in
-        # the database with pandas.
+        # Format the data so that they can be inserted easily in
+        # the database with sqlite3.
         tseries_data = (
             tseries_data
             .stack()
@@ -1248,12 +1251,22 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .dropna(subset=['value'])
             )
 
+        # We need to format pandas datetime64 to strings in order to save
+        # them in the database with sqlite3.
+        tseries_data['datetime'] = (
+            tseries_data['datetime'].dt.strftime(DATE_FORMAT))
+
         # Save the formatted timeseries data to the database.
-        self._session.commit()
-        tseries_data.to_sql(
-            'timeseries_data', self._session.bind,
-            if_exists='append', index=False, method='multi', chunksize=10000)
-        self._session.commit()
+        conn = sqlite3.connect(self._database)
+        cur = conn.cursor()
+        columns = ['datetime', 'channel_id', 'value']
+        sql_statement = (
+            "INSERT INTO timeseries_data ({}) VALUES (?, ?, ?)"
+            ).format(', '.join(columns))
+        for row in tseries_data[columns].itertuples(index=False, name=None):
+            cur.execute(sql_statement, row)
+        conn.commit()
+        conn.close()
 
         # Update the data overview for the given sampling feature.
         self._refresh_sampling_feature_data_overview(
