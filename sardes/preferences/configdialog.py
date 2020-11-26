@@ -157,26 +157,27 @@ class ConfPage(QWidget):
         raise NotImplementedError
 
     def is_modified(self):
-        return True
+        raise NotImplementedError
 
     def apply_changes(self):
         """Apply changes."""
         pass
 
-    def get_from_conf(self):
-        """Get settings from configuration file."""
+    def get_settings(self):
+        """Return the settings that are set in this configuration page."""
         raise NotImplementedError
 
-    def load_from_conf(self):
-        """Load settings from configuration file."""
+    def get_settings_from_conf(self):
+        """Get settings from the user configuration files."""
         raise NotImplementedError
 
-    def save_to_conf(self):
-        """Save settings to configuration file."""
+    def load_settings_from_conf(self):
+        """Load settings from the user configuration files."""
         raise NotImplementedError
 
-    def showEvent(self, event):
-        self.load_from_conf()
+    def save_settings_to_conf(self):
+        """Save settings to the user configuration files."""
+        raise NotImplementedError
 
 
 if __name__ == '__main__':
