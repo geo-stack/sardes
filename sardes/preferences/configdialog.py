@@ -109,6 +109,10 @@ class ConfDialog(QDialog):
         "Return the number of configuration pages added to this dialog."
         return len(self._confpages)
 
+    def get_confpage(self, confpage_name):
+        """Return the confpage corresponding to the given name."""
+        return self._confpages.get(confpage_name, None)
+
     def add_confpage(self, confpage):
         """Add confpage to this config dialog."""
         self._confpages[confpage.name()] = confpage
