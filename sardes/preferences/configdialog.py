@@ -12,8 +12,7 @@ import sys
 
 # ---- Third party imports
 from qtpy.QtCore import (
-    Qt, QEvent, QObject, QSize, Signal, Slot, QRect, QPoint)
-from qtpy.QtGui import QIcon
+    Qt, Signal, Slot, QRect, QPoint)
 from qtpy.QtWidgets import (
     QAbstractButton, QAction, QActionGroup, QApplication, QMenu, QSizePolicy,
     QStyle, QStyleOptionToolButton, QStylePainter, QToolBar, QToolButton,
@@ -23,11 +22,13 @@ from qtpy.QtWidgets import (
 # ---- Local imports
 from sardes.config.locale import _
 from sardes.config.icons import get_icon
-from sardes.config.gui import get_iconsize
-from sardes.utils.qthelpers import create_action
 
 
 class HorizontalTabBar(QTabBar):
+    """
+    A custom tabbar to show tabs on the side, while keeping the text
+    orientation horitontal.
+    """
     # https://www.manongdao.com/q-367474.html
 
     def tabSizeHint(self, index):
