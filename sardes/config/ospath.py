@@ -42,9 +42,8 @@ def get_documents_logo_filename():
     Return the absolute file path to the logo image to use when
     producing documents.
     """
-    logo_filename = osp.basename(
-        CONF.get('documents_settings', 'logo_filename', None))
+    logo_filename = CONF.get('documents_settings', 'logo_filename', None)
     if logo_filename is not None:
-        logo_filename = osp.join(CONFIG_DIR, logo_filename)
+        logo_filename = osp.join(CONFIG_DIR, osp.basename(logo_filename))
         if osp.exists(logo_filename):
             return logo_filename
