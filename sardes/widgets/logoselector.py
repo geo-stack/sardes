@@ -13,7 +13,7 @@ import sys
 
 # ---- Third party imports
 import qtawesome as qta
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, Signal
 from qtpy.QtGui import QColor, QPixmap
 from qtpy.QtWidgets import (
     QApplication, QPushButton, QWidget, QGraphicsDropShadowEffect,
@@ -29,6 +29,7 @@ class LogoSelector(QWidget):
     """
     A widget to select and display a logo.
     """
+    sig_logo_changed = Signal()
     FILEFILTER = 'Image (*.png ; *.bmp ; *.jpg ; *.jpeg, ; *.tif)'
 
     def __init__(self, filename=None, parent=None, logo_size=250):
@@ -125,6 +126,7 @@ class LogoSelector(QWidget):
             self._filename = filename
         QApplication.restoreOverrideCursor()
         QApplication.processEvents()
+        self.sig_logo_changed.emit()
 
     def load_default_image(self):
         """
@@ -136,6 +138,7 @@ class LogoSelector(QWidget):
             'fa.image', color='#b3b3b3'
             ).pixmap(self.logo_size, self.logo_size)
         self.logo_preview_label.setPixmap(default_image)
+        self.sig_logo_changed.emit()
 
 
 if __name__ == '__main__':
