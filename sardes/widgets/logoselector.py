@@ -29,6 +29,7 @@ class LogoSelector(QWidget):
     """
     A widget to select and display a logo.
     """
+    FILEFILTER = 'Image (*.png ; *.bmp ; *.jpg ; *.jpeg, ; *.tif)'
 
     def __init__(self, filename=None, parent=None, logo_size=250):
         super().__init__(parent=parent)
@@ -92,7 +93,7 @@ class LogoSelector(QWidget):
             self.parent() or self,
             _('Select Image'),
             get_select_file_dialog_dir(),
-            'Image (*.png ; *.bmp ; *.jpg ; *.jpeg, ; *.tif)'
+            self.FILEFILTER
             )
         if filename:
             set_select_file_dialog_dir(osp.dirname(filename))
