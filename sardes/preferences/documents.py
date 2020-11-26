@@ -83,8 +83,21 @@ class DocumentsSettingsConfPage(ConfPage):
     def get_icon(self):
         return get_icon('file_excel')
 
-    def get_from_conf(self):
-        """Get settings from configuration file."""
+    def apply_changes(self):
+        """Apply changes."""
+        self.save_to_conf()
+
+    def get_settings(self):
+        """Return the settings that are set in this configuration page."""
+        return {
+            'logo_filename': self.logo_selector.filename,
+            'site_url': self.site_url_lineedit.text(),
+            'authors_name': self.authors_name_lineedit.text(),
+            'xlsx_font': self.xlsx_font_combobox.currentFont().family(),
+            'graph_font': self.graph_font_combobox.currentFont().family(),
+            }
+
+    def get_settings_from_conf(self):
         return {
             'logo_filename': get_documents_logo_filename(),
             'site_url': CONF.get(CONF_SECTION, 'site_url', ''),
@@ -93,34 +106,27 @@ class DocumentsSettingsConfPage(ConfPage):
             'graph_font': CONF.get(CONF_SECTION, 'graph_font'),
             }
 
-    def apply_changes(self):
-        """Apply changes."""
-        self.save_to_conf()
+    def load_settings_from_conf(self):
+        settings = self.get_settings_from_conf()
+        self.logo_selector.load_image(settings['logo_filename'])
+        self.site_url_lineedit.setText(settings['site_url'])
+        self.authors_name_lineedit.setText(settings['authors_name'])
+        self.xlsx_font_combobox.setCurrentFont(QFont(settings['xlsx_font']))
+        self.graph_font_combobox.setCurrentFont(QFont(settings['graph_font']))
 
-    def load_from_conf(self):
-        """Load settings from configuration file."""
-        options = self.get_from_conf()
-        self.logo_selector.load_image(options['logo_filename'])
-        self.site_url_lineedit.setText(options['site_url'])
-        self.authors_name_lineedit.setText(options['authors_name'])
-        self.xlsx_font_combobox.setCurrentFont(QFont(options['xlsx_font']))
-        self.graph_font_combobox.setCurrentFont(QFont(options['graph_font']))
+    def save_settings_to_conf(self):
+        settings = self.get_settings()
 
-    def save_to_conf(self):
-        """Save settings to configuration file."""
         # Save fonts.
-        CONF.set(CONF_SECTION, 'xlsx_font',
-                 self.xlsx_font_combobox.currentFont().family())
-        CONF.set(CONF_SECTION, 'graph_font',
-                 self.graph_font_combobox.currentFont().family())
+        CONF.set(CONF_SECTION, 'xlsx_font', settings['xlsx_font'])
+        CONF.set(CONF_SECTION, 'graph_font', settings['graph_font'])
 
         # Save references.
-        CONF.set(CONF_SECTION, 'site_url', self.site_url_lineedit.text())
-        CONF.set(CONF_SECTION, 'authors_name',
-                 self.authors_name_lineedit.text())
+        CONF.set(CONF_SECTION, 'site_url', settings['site_url'])
+        CONF.set(CONF_SECTION, 'authors_name', settings['authors_name'])
 
         # Save logo.
-        new_logo_filename = self.logo_selector.filename
+        new_logo_filename = settings['logo_filename']
         conf_logo_filename = get_documents_logo_filename()
         if new_logo_filename != conf_logo_filename:
             # Clean up the old logo file from the config folder if any.
@@ -128,7 +134,6 @@ class DocumentsSettingsConfPage(ConfPage):
                 os.remove(conf_logo_filename)
 
             # Copy the new logo file to the config folder if not None.
-            new_logo_filename = self.logo_selector.filename
             if new_logo_filename and osp.exists(new_logo_filename):
                 conf_logo_filename = osp.join(
                     CONFIG_DIR, osp.basename(new_logo_filename))
