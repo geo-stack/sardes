@@ -27,6 +27,7 @@ from qtpy.QtWidgets import QApplication, QFileDialog, QMessageBox
 # ---- Local imports
 from sardes.api.timeseries import DataType
 from sardes.config.locale import _
+from sardes.config.main import CONF
 from sardes.config.ospath import (
     get_select_file_dialog_dir, set_select_file_dialog_dir,
     get_documents_logo_filename)
@@ -284,7 +285,7 @@ class HydrographCanvas(FigureCanvasQTAgg):
             ec=line_color, clip_on=False, zorder=0, transform=fig.transFigure)
         ax.add_patch(rect1)
 
-        # Add the date, copyright notice and url.
+        # Add the creation date., copyright notice and url.
         now = datetime.datetime.now()
         offset = ScaledTranslation(0, -8/72, fig.dpi_scale_trans)
         created_on_text = ax.text(
@@ -293,20 +294,26 @@ class HydrographCanvas(FigureCanvasQTAgg):
             _("Created on {}").format(now.strftime('%Y-%m-%d')),
             va='top', transform=fig.transFigure + offset
             )
-        offset = ScaledTranslation(0/72, -4/72, fig.dpi_scale_trans)
-        copyright_text = ax.text(
-            margin_width / fwidth,
-            created_on_text.get_window_extent(renderer).y0 / fig.bbox.height,
-            _("© {} Government of Quebec").format(now.year),
-            va='top', transform=fig.transFigure+offset
-            )
-        url_text = ax.text(
-            margin_width / fwidth,
-            copyright_text.get_window_extent(renderer).y0 / fig.bbox.height,
-            "http://www.environnement.gouv.qc.ca/eau/piezo/index.htm",
-            va='top', transform=fig.transFigure+offset,
-            url="http://www.environnement.gouv.qc.ca/eau/piezo/index.htm",
-            color='blue')
+        next_ypos = created_on_text.get_window_extent(renderer).y0
+
+        # Add the author's name.
+        authors_name = CONF.get('documents_settings', 'authors_name', '')
+        if authors_name:
+            offset = ScaledTranslation(0/72, -4/72, fig.dpi_scale_trans)
+            authors_name_text = ax.text(
+                margin_width / fwidth, next_ypos / fig.bbox.height,
+                authors_name, va='top', transform=fig.transFigure+offset
+                )
+            next_ypos = authors_name_text.get_window_extent(renderer).y0
+
+        # Add the site url.
+        site_url = CONF.get('documents_settings', 'site_url', '')
+        if site_url:
+            offset = ScaledTranslation(0/72, -4/72, fig.dpi_scale_trans)
+            site_url_text = ax.text(
+                margin_width / fwidth, next_ypos / fig.bbox.height,
+                site_url, url=site_url,
+                va='top', color='blue', transform=fig.transFigure+offset)
 
         # Setup the top and bottom margin.
         self.draw()
