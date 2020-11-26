@@ -121,15 +121,17 @@ def test_connection(dbaccessor0):
     dbaccessor.close_connection()
 
 
-def test_add_large_timeseries_record(dbaccessor0):
+def test_add_delete_large_timeseries_record(dbaccessor0):
     """
-    Test that large time series record are added as expected to the database.
+    Test that large time series record are added and deleted as expected
+    to and from the database.
 
     Regression test for cgq-qgc/sardes#378.
     """
     dbaccessor = dbaccessor0
-
     sampling_feature_uuid = dbaccessor._create_index('observation_wells_data')
+
+    # Prepare the timeseries data.
     new_tseries_data = pd.DataFrame(
         [], columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
     new_tseries_data['datetime'] = pd.date_range(
@@ -139,6 +141,7 @@ def test_add_large_timeseries_record(dbaccessor0):
     new_tseries_data[DataType.WaterTemp] = np.random.rand(
         len(new_tseries_data))
 
+    # Add timeseries data to the database.
     dbaccessor.add_timeseries_data(
         new_tseries_data, sampling_feature_uuid, install_uuid=None)
 
@@ -149,6 +152,23 @@ def test_add_large_timeseries_record(dbaccessor0):
     wtemp_data = dbaccessor.get_timeseries_for_obs_well(
         sampling_feature_uuid, DataType.WaterTemp)
     assert len(wtemp_data) == 7306
+
+    # Delete all timeseries data from the database.
+    wlevel_data['data_type'] = DataType.WaterLevel
+    wtemp_data['data_type'] = DataType.WaterTemp
+    tseries_dels = pd.concat((
+        wlevel_data[['datetime', 'obs_id', 'data_type']],
+        wtemp_data[['datetime', 'obs_id', 'data_type']]
+        ))
+    dbaccessor.delete_timeseries_data(tseries_dels)
+
+    wlevel_data = dbaccessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, DataType.WaterLevel)
+    assert len(wlevel_data) == 0
+
+    wtemp_data = dbaccessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, DataType.WaterTemp)
+    assert len(wtemp_data) == 0
 
 
 # =============================================================================
@@ -587,4 +607,4 @@ def test_delete_timeseries(dbaccessor):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw', '-s'])
+    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])

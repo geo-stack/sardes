@@ -623,7 +623,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
         ----------
         tseries_dels: pandas.DataFrame
             A pandas dataframe that contains the observation IDs, datetime,
-            and datatype for which timeseries data need to be deleted
+            and data_type for which timeseries data need to be deleted
             from the database.
         """
         raise NotImplementedError
