@@ -16,7 +16,7 @@ import qtawesome as qta
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QColor, QPixmap
 from qtpy.QtWidgets import (
-    QApplication, QPushButton, QWidget, QGraphicsDropShadowEffect, QGroupBox,
+    QApplication, QPushButton, QWidget, QGraphicsDropShadowEffect,
     QGridLayout, QLabel, QFileDialog)
 
 # ---- Local imports
@@ -76,10 +76,18 @@ class LogoSelector(QWidget):
 
     @property
     def filename(self):
+        """
+        Return the absolute filepath of the image that is currently
+        displayed as the logo.
+        """
         return (None if self._filename is None else
                 osp.abspath(self._filename))
 
     def browse_image(self):
+        """
+        Open a dialog that allows the used to select an image to display
+        as the logo.
+        """
         filename, filefilter = QFileDialog.getOpenFileName(
             self.parent() or self,
             _('Select Image'),
@@ -91,6 +99,9 @@ class LogoSelector(QWidget):
             self.load_image(filename)
 
     def load_image(self, filename):
+        """
+        Read and display the image at the specified filename as the logo.
+        """
         if filename is None or not osp.exists(filename):
             self.load_default_image()
             return
@@ -115,6 +126,10 @@ class LogoSelector(QWidget):
         QApplication.processEvents()
 
     def load_default_image(self):
+        """
+        Display a generic image to indicate to the user that no logo is
+        currently selected.
+        """
         self._filename = None
         default_image = qta.icon(
             'fa.image', color='#b3b3b3'
