@@ -95,8 +95,8 @@ class DocumentsSettingsConfPage(ConfPage):
             'logo_filename': get_documents_logo_filename(),
             'site_url': CONF.get(CONF_SECTION, 'site_url', ''),
             'authors_name': CONF.get(CONF_SECTION, 'authors_name', ''),
-            'xlsx_font': CONF.get(CONF_SECTION, 'xlsx_font', 'Arial'),
-            'graph_font': CONF.get(CONF_SECTION, 'graph_font', 'Arial'),
+            'xlsx_font': CONF.get(CONF_SECTION, 'xlsx_font'),
+            'graph_font': CONF.get(CONF_SECTION, 'graph_font'),
             }
 
     def apply_changes(self):

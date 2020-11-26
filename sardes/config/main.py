@@ -31,6 +31,11 @@ DEFAULTS = [
         {'dbtype_last_selected': 'Sardes Demo',
          'auto_connect_to_database': False,
          }
+     ),
+    ('documents_settings',
+        {'xlsx_font': 'Calibri',
+         'graph_font': 'Arial',
+         }
      )
 ]
 
