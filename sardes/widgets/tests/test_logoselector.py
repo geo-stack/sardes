@@ -49,16 +49,20 @@ def test_browse_logo(logoselector, mocker, qtbot):
     mocker.patch.object(
         QFileDialog, 'getOpenFileName',
         return_value=(DOCUMENTS_LOGO_FILENAME, logoselector.FILEFILTER))
-    qtbot.mouseClick(logoselector.browse_logo_button, Qt.LeftButton)
+
+    with qtbot.waitSignal(logoselector.sig_logo_changed):
+        qtbot.mouseClick(logoselector.browse_logo_button, Qt.LeftButton)
     assert logoselector.filename == DOCUMENTS_LOGO_FILENAME
 
 
 def test_remove_logo(logoselector, qtbot):
     """Test that removing the current logo is working as expected."""
-    logoselector.load_image(DOCUMENTS_LOGO_FILENAME)
+    with qtbot.waitSignal(logoselector.sig_logo_changed):
+        logoselector.load_image(DOCUMENTS_LOGO_FILENAME)
     assert logoselector.filename == DOCUMENTS_LOGO_FILENAME
 
-    qtbot.mouseClick(logoselector.remove_logo_button, Qt.LeftButton)
+    with qtbot.waitSignal(logoselector.sig_logo_changed):
+        qtbot.mouseClick(logoselector.remove_logo_button, Qt.LeftButton)
     assert logoselector.filename is None
 
 
