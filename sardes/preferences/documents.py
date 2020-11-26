@@ -72,7 +72,7 @@ class DocumentsSettingsConfPage(ConfPage):
         main_layout.addWidget(fonts_groupbox, 2, 0)
         main_layout.setRowStretch(3, 1)
 
-        self.load_from_conf()
+        self.load_settings_from_conf()
 
     def get_name(self):
         return 'documents_settings_confpage'
@@ -85,7 +85,7 @@ class DocumentsSettingsConfPage(ConfPage):
 
     def apply_changes(self):
         """Apply changes."""
-        self.save_to_conf()
+        self.save_settings_to_conf()
 
     def get_settings(self):
         """Return the settings that are set in this configuration page."""

@@ -129,7 +129,7 @@ class ConfDialog(QDialog):
 
 class ConfPage(QWidget):
     """Base class for configuration page in Preferences"""
-    sig_config_changed = Signal()
+    sig_settings_changed = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -178,7 +178,7 @@ class ConfPage(QWidget):
 
     def save_settings_to_conf(self):
         """Save settings to the user configuration files."""
-        raise NotImplementedError
+        return self.get_settings() != self.get_settings_from_conf()
 
 
 if __name__ == '__main__':
