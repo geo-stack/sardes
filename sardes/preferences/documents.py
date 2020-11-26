@@ -16,8 +16,7 @@ import shutil
 # ---- Third party imports
 from qtpy.QtGui import QFont
 from qtpy.QtWidgets import (
-    QApplication, QWidget, QGroupBox, QGridLayout, QLabel, QLineEdit,
-    QFontComboBox)
+    QApplication, QGroupBox, QGridLayout, QLabel, QLineEdit, QFontComboBox)
 
 # ---- Local imports
 from sardes.config.locale import _
@@ -35,6 +34,8 @@ class DocumentsSettingsConfPage(ConfPage):
     def setup_page(self):
         # Setup the logo groupbox.
         self.logo_selector = LogoSelector()
+        self.logo_selector.sig_logo_changed.connect(
+            lambda: self.sig_settings_changed.emit())
 
         logo_groupbox = QGroupBox(_("Logo"))
         logo_layout = QGridLayout(logo_groupbox)
@@ -43,7 +44,12 @@ class DocumentsSettingsConfPage(ConfPage):
 
         # Setup the information groupbox.
         self.site_url_lineedit = QLineEdit()
+        self.site_url_lineedit.editingFinished.connect(
+            lambda: self.sig_settings_changed.emit())
+
         self.authors_name_lineedit = QLineEdit()
+        self.authors_name_lineedit.editingFinished.connect(
+            lambda: self.sig_settings_changed.emit())
 
         ref_groupbox = QGroupBox(_('References'))
         ref_layout = QGridLayout(ref_groupbox)
@@ -55,7 +61,11 @@ class DocumentsSettingsConfPage(ConfPage):
 
         # Setup the font groupbox.
         self.xlsx_font_combobox = QFontComboBox()
+        self.xlsx_font_combobox.currentFontChanged.connect(
+            lambda: self.sig_settings_changed.emit())
         self.graph_font_combobox = QFontComboBox()
+        self.graph_font_combobox.currentFontChanged.connect(
+            lambda: self.sig_settings_changed.emit())
 
         fonts_groupbox = QGroupBox(_('Fonts'))
         fonts_layout = QGridLayout(fonts_groupbox)
