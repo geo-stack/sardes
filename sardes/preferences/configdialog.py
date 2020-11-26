@@ -67,6 +67,7 @@ class ConfDialog(QDialog):
     def __init__(self, main):
         super().__init__(main)
         self.main = main
+
         self.setWindowTitle(_('Preferences'))
         self.setWindowIcon(get_icon('preferences'))
         self.setWindowFlags(
@@ -103,6 +104,10 @@ class ConfDialog(QDialog):
         main_layout.addWidget(button_box)
         main_layout.setStretch(0, 1)
         main_layout.setSizeConstraint(main_layout.SetFixedSize)
+
+    def count(self):
+        "Return the number of configuration pages added to this dialog."
+        return len(self._confpages)
 
     def add_confpage(self, confpage):
         """Add confpage to this config dialog."""
