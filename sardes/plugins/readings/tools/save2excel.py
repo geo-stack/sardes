@@ -24,9 +24,10 @@ from xlsxwriter.exceptions import FileCreateError
 # ---- Local imports
 from sardes.api.timeseries import DataType
 from sardes.config.locale import _
+from sardes.config.main import CONF
 from sardes.config.ospath import (
     get_select_file_dialog_dir, set_select_file_dialog_dir,
-    get_company_logo_filename)
+    get_documents_logo_filename)
 from sardes.api.tools import SardesTool
 
 
@@ -98,7 +99,7 @@ class SaveReadingsToExcelTool(SardesTool):
                 self.parent.model()._obs_well_data,
                 ground_altitude,
                 is_alt_geodesic,
-                get_company_logo_filename())
+                get_documents_logo_filename())
         except PermissionError:
             QApplication.restoreOverrideCursor()
             QApplication.processEvents()

@@ -29,7 +29,7 @@ from sardes.api.timeseries import DataType
 from sardes.config.locale import _
 from sardes.config.ospath import (
     get_select_file_dialog_dir, set_select_file_dialog_dir,
-    get_company_logo_filename)
+    get_documents_logo_filename)
 from sardes.api.tools import SardesTool
 
 mpl.rc('font', **{'family': 'sans-serif', 'sans-serif': ['Calibri']})
@@ -255,10 +255,10 @@ class HydrographCanvas(FigureCanvasQTAgg):
         logo_height = int(0.7 * fig.dpi)
         logo_y0 = margin_width * fig.dpi
 
-        logo_filename = get_company_logo_filename()
+        logo_filename = get_documents_logo_filename()
         bbox_xaxis_bottom = ax.xaxis.get_ticklabel_extents(renderer)[0]
         if logo_filename is not None:
-            img = Image.open(get_company_logo_filename())
+            img = Image.open(logo_filename)
             img_width, img_height = img.size
             logo_width = int(img_width / img_height * logo_height)
             img = img.resize((logo_width, logo_height), Image.LANCZOS)

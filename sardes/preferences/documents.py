@@ -22,7 +22,7 @@ from qtpy.QtWidgets import (
 # ---- Local imports
 from sardes.config.locale import _
 from sardes.config.icons import get_icon
-from sardes.config.ospath import CONFIG_DIR, CONF
+from sardes.config.ospath import CONFIG_DIR, CONF, get_documents_logo_filename
 from sardes.preferences.configdialog import ConfPage
 from sardes.widgets.logoselector import LogoSelector
 
@@ -91,11 +91,8 @@ class DocumentsSettingsConfPage(ConfPage):
 
     def get_from_conf(self):
         """Get settings from configuration file."""
-        logo_filename = CONF.get(CONF_SECTION, 'logo_filename', None)
-        if logo_filename is not None:
-            logo_filename = osp.abspath(logo_filename)
         return {
-            'logo_filename': logo_filename,
+            'logo_filename': get_documents_logo_filename(),
             'site_url': CONF.get(CONF_SECTION, 'site_url', ''),
             'authors_name': CONF.get(CONF_SECTION, 'authors_name', ''),
             'xlsx_font': CONF.get(CONF_SECTION, 'xlsx_font', 'Arial'),
@@ -130,7 +127,7 @@ class DocumentsSettingsConfPage(ConfPage):
 
         # Save logo.
         new_logo_filename = self.logo_selector.filename
-        conf_logo_filename = self.get_from_conf()['logo_filename']
+        conf_logo_filename = get_documents_logo_filename()
         if new_logo_filename != conf_logo_filename:
             # Clean up the old logo file from the config folder if any.
             if conf_logo_filename and osp.exists(conf_logo_filename):
