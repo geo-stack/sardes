@@ -106,9 +106,9 @@ class ConfDialog(QDialog):
 
     def add_confpage(self, confpage):
         """Add confpage to this config dialog."""
-        self._confpages[confpage.get_name()] = confpage
+        self._confpages[confpage.name()] = confpage
         self.confpages_tabwidget.addTab(
-            confpage, confpage.get_icon(), confpage.get_label())
+            confpage, confpage.icon(), confpage.label())
         confpage.sig_settings_changed.connect(
             self._handle_confpage_settings_changed)
 
@@ -151,42 +151,76 @@ class ConfDialog(QDialog):
             self.apply_button.setEnabled(False)
 
 
-class ConfPage(QWidget):
-    """Base class for configuration page in Preferences"""
+class ConfPageBase(QWidget):
+    """
+    Basic functionality for Sardes configuration pages.
+
+    WARNING: Don't override any methods or attributes present here unless you
+    know what you are doing.
+    """
     sig_settings_changed = Signal()
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, name, label, iconname):
+        super().__init__()
+        self._name = name
+        self._label = label
+        self._icon = get_icon(iconname)
+
         self.setup_page()
+        self.load_settings_from_conf()
 
-    def setup_page(self):
-        """Setup configuration page widget"""
-        raise NotImplementedError
-
-    def get_name(self):
+    def name(self):
         """
         Return the name that will be used to reference this confpage
         in the code.
         """
-        raise NotImplementedError
+        return self._name
 
-    def get_label(self):
+    def label(self):
         """
         Return the label that will be used to reference this confpage in the
         graphical interface.
         """
-        raise NotImplementedError
+        return self._label
 
-    def get_icon(self):
+    def icon(self):
         """Return configuration page icon"""
-        raise NotImplementedError
+        return self._icon
 
     def is_modified(self):
         return self.get_settings() != self.get_settings_from_conf()
 
     def apply_changes(self):
         """Apply changes."""
-        pass
+        self.save_settings_to_conf()
+
+
+class ConfPage(ConfPageBase):
+    """
+    Sardes configuration page class.
+
+    All configuration page *must* inherit this class and
+    reimplement its interface.
+    """
+
+    def __init__(self, name, label, iconname):
+        """
+        Parameters
+        ----------
+        name: str
+            The name that is used to reference this confpage in the code.
+        label: str
+            The label that is used to reference this confpage in the
+            graphical interface.
+        icon: str or QIcon
+            The name of the icon that appears in the tab for that confpage
+            in the tab bar of the configuration dialog
+        """
+        super().__init__(name, label, iconname)
+
+    def setup_page(self):
+        """Setup configuration page widget"""
+        raise NotImplementedError
 
     def get_settings(self):
         """Return the settings that are set in this configuration page."""

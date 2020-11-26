@@ -20,7 +20,6 @@ from qtpy.QtWidgets import (
 
 # ---- Local imports
 from sardes.config.locale import _
-from sardes.config.icons import get_icon
 from sardes.config.ospath import CONFIG_DIR, CONF, get_documents_logo_filename
 from sardes.preferences.configdialog import ConfPage
 from sardes.widgets.logoselector import LogoSelector
@@ -31,6 +30,13 @@ CONF_SECTION = 'documents_settings'
 class DocumentsSettingsConfPage(ConfPage):
 
     # ---- ConfPage API
+    def __ini__(self):
+        super().__init__(
+            name='documents_settings_confpage',
+            label=_('Documents Settings'),
+            icon='file_excel'
+            )
+
     def setup_page(self):
         # Setup the logo groupbox.
         self.logo_selector = LogoSelector()
@@ -81,21 +87,6 @@ class DocumentsSettingsConfPage(ConfPage):
         main_layout.addWidget(ref_groupbox, 1, 0)
         main_layout.addWidget(fonts_groupbox, 2, 0)
         main_layout.setRowStretch(3, 1)
-
-        self.load_settings_from_conf()
-
-    def get_name(self):
-        return 'documents_settings_confpage'
-
-    def get_label(self):
-        return _('Documents Settings')
-
-    def get_icon(self):
-        return get_icon('file_excel')
-
-    def apply_changes(self):
-        """Apply changes."""
-        self.save_settings_to_conf()
 
     def get_settings(self):
         """Return the settings that are set in this configuration page."""
