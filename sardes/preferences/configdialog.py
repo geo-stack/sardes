@@ -174,11 +174,11 @@ class ConfPage(QWidget):
 
     def load_settings_from_conf(self):
         """Load settings from the user configuration files."""
-        raise NotImplementedError
+        return self.get_settings() != self.get_settings_from_conf()
 
     def save_settings_to_conf(self):
         """Save settings to the user configuration files."""
-        return self.get_settings() != self.get_settings_from_conf()
+        raise NotImplementedError
 
 
 if __name__ == '__main__':
