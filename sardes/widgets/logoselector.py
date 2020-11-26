@@ -25,10 +25,13 @@ from sardes.config.ospath import (
     get_select_file_dialog_dir, set_select_file_dialog_dir)
 
 
-class LogoSelector(QGroupBox):
+class LogoSelector(QWidget):
+    """
+    A widget to select and display a logo.
+    """
 
     def __init__(self, filename=None, parent=None, logo_size=250):
-        super().__init__('Logo', parent=parent)
+        super().__init__(parent=parent)
         self.logo_size = 250
         self._filename = filename
 

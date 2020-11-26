@@ -33,14 +33,13 @@ class DocumentsSettingsConfPage(ConfPage):
 
     # ---- ConfPage API
     def setup_page(self):
-        # Setup the layout for the left side (logo side).
+        # Setup the logo groupbox.
         self.logo_selector = LogoSelector()
 
-        left_side_widget = QWidget()
-        left_side_layout = QGridLayout(left_side_widget)
-        left_side_layout.setContentsMargins(0, 0, 0, 0)
-        left_side_layout.addWidget(self.logo_selector, 0, 0)
-        left_side_layout.setRowStretch(left_side_layout.rowCount(), 1)
+        logo_groupbox = QGroupBox(_("Logo"))
+        logo_layout = QGridLayout(logo_groupbox)
+        logo_layout.addWidget(self.logo_selector, 0, 0)
+        logo_layout.setRowStretch(1, 1)
 
         # Setup the information groupbox.
         self.site_url_lineedit = QLineEdit()
@@ -66,17 +65,12 @@ class DocumentsSettingsConfPage(ConfPage):
         fonts_layout.addWidget(self.graph_font_combobox, 1, 1)
         fonts_layout.setColumnStretch(2, 1)
 
-        right_side_widget = QWidget()
-        right_side_layout = QGridLayout(right_side_widget)
-        right_side_layout.setContentsMargins(0, 0, 0, 0)
-        right_side_layout.addWidget(ref_groupbox, 1, 0)
-        right_side_layout.addWidget(fonts_groupbox, 2, 0)
-        right_side_layout.setRowStretch(right_side_layout.rowCount(), 1)
-
         # Setup the main layout.
         main_layout = QGridLayout(self)
-        main_layout.addWidget(left_side_widget, 0, 0)
-        main_layout.addWidget(right_side_widget, 1, 0)
+        main_layout.addWidget(logo_groupbox, 0, 0)
+        main_layout.addWidget(ref_groupbox, 1, 0)
+        main_layout.addWidget(fonts_groupbox, 2, 0)
+        main_layout.setRowStretch(3, 1)
 
         self.load_from_conf()
 
