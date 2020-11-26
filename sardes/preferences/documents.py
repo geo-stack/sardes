@@ -45,7 +45,7 @@ class DocumentsSettingsConfPage(ConfPage):
         self.site_url_lineedit = QLineEdit()
         self.authors_name_lineedit = QLineEdit()
 
-        ref_groupbox = QGroupBox('References')
+        ref_groupbox = QGroupBox(_('References'))
         ref_layout = QGridLayout(ref_groupbox)
         ref_layout.addWidget(QLabel(_("Site URL:")), 0, 0)
         ref_layout.addWidget(self.site_url_lineedit, 0, 1)
@@ -57,7 +57,7 @@ class DocumentsSettingsConfPage(ConfPage):
         self.xlsx_font_combobox = QFontComboBox()
         self.graph_font_combobox = QFontComboBox()
 
-        fonts_groupbox = QGroupBox('Fonts')
+        fonts_groupbox = QGroupBox(_('Fonts'))
         fonts_layout = QGridLayout(fonts_groupbox)
         fonts_layout.addWidget(QLabel(_("XLSX Documents:")), 0, 0)
         fonts_layout.addWidget(self.xlsx_font_combobox, 0, 1)
