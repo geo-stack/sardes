@@ -30,11 +30,11 @@ CONF_SECTION = 'documents_settings'
 class DocumentsSettingsConfPage(ConfPage):
 
     # ---- ConfPage API
-    def __ini__(self):
+    def __init__(self):
         super().__init__(
             name='documents_settings_confpage',
             label=_('Documents Settings'),
-            icon='file_excel'
+            iconname='file_excel'
             )
 
     def setup_page(self):
