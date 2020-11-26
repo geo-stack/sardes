@@ -85,6 +85,7 @@ class ConfDialog(QDialog):
         self.ok_button.setAutoDefault(False)
         self.apply_button = QPushButton(_('Apply'))
         self.apply_button.setDefault(True)
+        self.apply_button.setEnabled(False)
         self.cancel_button = QPushButton(_('Cancel'))
         self.cancel_button.setDefault(False)
         self.cancel_button.setAutoDefault(False)
@@ -108,6 +109,8 @@ class ConfDialog(QDialog):
         self._confpages[confpage.get_name()] = confpage
         self.confpages_tabwidget.addTab(
             confpage, confpage.get_icon(), confpage.get_label())
+        confpage.sig_settings_changed.connect(
+            self._handle_confpage_settings_changed)
 
     @Slot(QAbstractButton)
     def _handle_button_click_event(self, button):
@@ -115,8 +118,6 @@ class ConfDialog(QDialog):
         Handle when a button is clicked on the dialog button box.
         """
         if button == self.cancel_button:
-            for confpage in self._confpages.values():
-                confpage.load_from_conf()
             self.close()
         elif button == self.apply_button:
             for confpage in self._confpages.values():
@@ -125,6 +126,29 @@ class ConfDialog(QDialog):
             for confpage in self._confpages.values():
                 confpage.apply_changes()
             self.close()
+        self.apply_button.setEnabled(False)
+
+    def closeEvent(self, event):
+        """
+        Override this QT to revert confpage settings to the value saved in
+        the user configuration files.
+        """
+        for confpage in self._confpages.values():
+            if confpage.is_modified():
+                confpage.load_settings_from_conf()
+        self.apply_button.setEnabled(False)
+        super().closeEvent(event)
+
+    def _handle_confpage_settings_changed(self):
+        """
+        Handle when the settings in one of the registered pages changed.
+        """
+        for confpage in self._confpages.values():
+            if confpage.is_modified():
+                self.apply_button.setEnabled(True)
+                break
+        else:
+            self.apply_button.setEnabled(False)
 
 
 class ConfPage(QWidget):
@@ -158,7 +182,7 @@ class ConfPage(QWidget):
         raise NotImplementedError
 
     def is_modified(self):
-        raise NotImplementedError
+        return self.get_settings() != self.get_settings_from_conf()
 
     def apply_changes(self):
         """Apply changes."""
@@ -174,7 +198,7 @@ class ConfPage(QWidget):
 
     def load_settings_from_conf(self):
         """Load settings from the user configuration files."""
-        return self.get_settings() != self.get_settings_from_conf()
+        raise NotImplementedError
 
     def save_settings_to_conf(self):
         """Save settings to the user configuration files."""
