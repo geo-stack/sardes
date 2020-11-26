@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-A script to fix the forieng keys of the 'sampling_feature' table in the
+A script to fix the foreign keys of the 'sampling_feature' table in the
 SQLite database.
 
 See cgq-qgc/sardes#310.
@@ -14,8 +14,6 @@ from sardes.database.accessor_sardes_lite import SamplingFeature
 
 
 DATABASE = 'D:/rsesq_test.db'
-# DATABASE = 'D:/rsesq_prod.db'
-# DATABASE = 'D:/rsesq_prod_sample.db'
 
 conn = sqlite3.connect(DATABASE)
 conn.execute("PRAGMA foreign_keys=OFF;")

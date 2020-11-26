@@ -1435,9 +1435,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             return None
 
 
-# =============================================================================
-# ---- Utilities
-# =============================================================================
 if __name__ == "__main__":
     accessor_sardeslite = DatabaseAccessorSardesLite('D:/rsesq_test.db')
     accessor_sardeslite.connect()
