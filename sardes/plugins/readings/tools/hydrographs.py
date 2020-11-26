@@ -33,8 +33,6 @@ from sardes.config.ospath import (
     get_documents_logo_filename)
 from sardes.api.tools import SardesTool
 
-mpl.rc('font', **{'family': 'sans-serif', 'sans-serif': ['Calibri']})
-
 
 class HydrographTool(SardesTool):
     """
@@ -104,7 +102,8 @@ class HydrographTool(SardesTool):
         hydrograph = HydrographCanvas(
             self.parent.get_formatted_data(),
             self.parent.model()._obs_well_data,
-            ground_altitude, is_alt_geodesic)
+            ground_altitude, is_alt_geodesic,
+            fontname=CONF.get('documents_settings', 'graph_font'))
         try:
             hydrograph.figure.savefig(filename, dpi=300)
         except PermissionError:
@@ -123,7 +122,8 @@ class HydrographTool(SardesTool):
 
 
 class HydrographCanvas(FigureCanvasQTAgg):
-    def __init__(self, data, obs_well_data, ground_altitude, is_alt_geodesic):
+    def __init__(self, data, obs_well_data, ground_altitude, is_alt_geodesic,
+                 fontname='Arial'):
         fwidth = 11
         fheight = 8.5
         margin_width = 0.5
@@ -137,9 +137,10 @@ class HydrographCanvas(FigureCanvasQTAgg):
 
         ax = self.figure.add_axes([0, 0, 1, 1], frameon=True)
         ax.set_ylabel(
-            _("Water level altitude (m MSL)"), fontsize=23, labelpad=20)
+            _("Water level altitude (m MSL)"), fontsize=23, labelpad=20,
+            fontname=fontname)
         ax.grid(axis='both', ls='-', color=grid_color, which='major')
-        ax.tick_params(axis='both', direction='out', labelsize=16, length=5,
+        ax.tick_params(axis='both', direction='out', length=5,
                        pad=10, color=grid_color)
         ax.tick_params(axis='both', direction='out', color=grid_color,
                        which='minor')
@@ -227,6 +228,13 @@ class HydrographCanvas(FigureCanvasQTAgg):
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
         ax.axis(ymax=ymax, ymin=ymin, xmin=xmin, xmax=xmax)
 
+        # Set the tick labels font properties.
+        self.draw()
+        ax.set_xticklabels(
+            ax.get_xticklabels(), fontname=fontname, fontsize=16)
+        ax.set_yticklabels(
+            ax.get_yticklabels(), fontname=fontname, fontsize=16)
+
         # Setup the left and right margins.
         self.draw()
         renderer = self.get_renderer()
@@ -249,7 +257,7 @@ class HydrographCanvas(FigureCanvasQTAgg):
             _('Municipality: {}\nObservation Well: {}').format(
                 obs_well_data['municipality'], obs_well_data['obs_well_id']),
             ha='center', va='top', fontsize=20,
-            fontweight='bold', linespacing=1.5,
+            fontweight='bold', fontname=fontname, linespacing=1.5,
             transform=fig.transFigure + offset)
 
         # Add the company logo.
@@ -292,7 +300,7 @@ class HydrographCanvas(FigureCanvasQTAgg):
             margin_width / fwidth,
             rect1.get_window_extent(renderer).y0 / fig.bbox.height,
             _("Created on {}").format(now.strftime('%Y-%m-%d')),
-            va='top', transform=fig.transFigure + offset
+            va='top', fontname=fontname, transform=fig.transFigure + offset
             )
         next_ypos = created_on_text.get_window_extent(renderer).y0
 
@@ -302,7 +310,8 @@ class HydrographCanvas(FigureCanvasQTAgg):
             offset = ScaledTranslation(0/72, -4/72, fig.dpi_scale_trans)
             authors_name_text = ax.text(
                 margin_width / fwidth, next_ypos / fig.bbox.height,
-                authors_name, va='top', transform=fig.transFigure+offset
+                authors_name, va='top', fontname=fontname,
+                transform=fig.transFigure+offset
                 )
             next_ypos = authors_name_text.get_window_extent(renderer).y0
 
@@ -312,7 +321,7 @@ class HydrographCanvas(FigureCanvasQTAgg):
             offset = ScaledTranslation(0/72, -4/72, fig.dpi_scale_trans)
             site_url_text = ax.text(
                 margin_width / fwidth, next_ypos / fig.bbox.height,
-                site_url, url=site_url,
+                site_url, url=site_url, fontname=fontname, fontstyle='italic',
                 va='top', color='blue', transform=fig.transFigure+offset)
 
         # Setup the top and bottom margin.
@@ -347,7 +356,8 @@ class HydrographCanvas(FigureCanvasQTAgg):
         offset = ScaledTranslation(0, -8/72, fig.dpi_scale_trans)
         ax.text(
             alt_text_x0, alt_text_y0, alt_text, ha='left', va='top',
-            fontsize=10, transform=fig.transFigure + offset)
+            fontsize=10, fontname=fontname,
+            transform=fig.transFigure + offset)
 
         self.draw()
 
