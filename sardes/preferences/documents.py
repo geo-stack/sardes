@@ -50,11 +50,11 @@ class DocumentsSettingsConfPage(ConfPage):
 
         # Setup the information groupbox.
         self.site_url_lineedit = QLineEdit()
-        self.site_url_lineedit.editingFinished.connect(
+        self.site_url_lineedit.textChanged.connect(
             lambda: self.sig_settings_changed.emit())
 
         self.authors_name_lineedit = QLineEdit()
-        self.authors_name_lineedit.editingFinished.connect(
+        self.authors_name_lineedit.textChanged.connect(
             lambda: self.sig_settings_changed.emit())
 
         ref_groupbox = QGroupBox(_('References'))
