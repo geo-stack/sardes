@@ -27,12 +27,11 @@ from qtpy.QtWidgets import QApplication, QFileDialog, QMessageBox
 # ---- Local imports
 from sardes.api.timeseries import DataType
 from sardes.config.locale import _
+from sardes.config.main import CONF
 from sardes.config.ospath import (
     get_select_file_dialog_dir, set_select_file_dialog_dir,
-    get_company_logo_filename)
+    get_documents_logo_filename)
 from sardes.api.tools import SardesTool
-
-mpl.rc('font', **{'family': 'sans-serif', 'sans-serif': ['Calibri']})
 
 
 class HydrographTool(SardesTool):
@@ -103,7 +102,8 @@ class HydrographTool(SardesTool):
         hydrograph = HydrographCanvas(
             self.parent.get_formatted_data(),
             self.parent.model()._obs_well_data,
-            ground_altitude, is_alt_geodesic)
+            ground_altitude, is_alt_geodesic,
+            fontname=CONF.get('documents_settings', 'graph_font'))
         try:
             hydrograph.figure.savefig(filename, dpi=300)
         except PermissionError:
@@ -122,7 +122,8 @@ class HydrographTool(SardesTool):
 
 
 class HydrographCanvas(FigureCanvasQTAgg):
-    def __init__(self, data, obs_well_data, ground_altitude, is_alt_geodesic):
+    def __init__(self, data, obs_well_data, ground_altitude, is_alt_geodesic,
+                 fontname='Arial'):
         fwidth = 11
         fheight = 8.5
         margin_width = 0.5
@@ -136,9 +137,10 @@ class HydrographCanvas(FigureCanvasQTAgg):
 
         ax = self.figure.add_axes([0, 0, 1, 1], frameon=True)
         ax.set_ylabel(
-            _("Water level altitude (m MSL)"), fontsize=23, labelpad=20)
+            _("Water level altitude (m MSL)"), fontsize=23, labelpad=20,
+            fontname=fontname)
         ax.grid(axis='both', ls='-', color=grid_color, which='major')
-        ax.tick_params(axis='both', direction='out', labelsize=16, length=5,
+        ax.tick_params(axis='both', direction='out', length=5,
                        pad=10, color=grid_color)
         ax.tick_params(axis='both', direction='out', color=grid_color,
                        which='minor')
@@ -226,6 +228,13 @@ class HydrographCanvas(FigureCanvasQTAgg):
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
         ax.axis(ymax=ymax, ymin=ymin, xmin=xmin, xmax=xmax)
 
+        # Set the tick labels font properties.
+        self.draw()
+        ax.set_xticklabels(
+            ax.get_xticklabels(), fontname=fontname, fontsize=16)
+        ax.set_yticklabels(
+            ax.get_yticklabels(), fontname=fontname, fontsize=16)
+
         # Setup the left and right margins.
         self.draw()
         renderer = self.get_renderer()
@@ -248,17 +257,17 @@ class HydrographCanvas(FigureCanvasQTAgg):
             _('Municipality: {}\nObservation Well: {}').format(
                 obs_well_data['municipality'], obs_well_data['obs_well_id']),
             ha='center', va='top', fontsize=20,
-            fontweight='bold', linespacing=1.5,
+            fontweight='bold', fontname=fontname, linespacing=1.5,
             transform=fig.transFigure + offset)
 
         # Add the company logo.
         logo_height = int(0.7 * fig.dpi)
         logo_y0 = margin_width * fig.dpi
 
-        logo_filename = get_company_logo_filename()
+        logo_filename = get_documents_logo_filename()
         bbox_xaxis_bottom = ax.xaxis.get_ticklabel_extents(renderer)[0]
         if logo_filename is not None:
-            img = Image.open(get_company_logo_filename())
+            img = Image.open(logo_filename)
             img_width, img_height = img.size
             logo_width = int(img_width / img_height * logo_height)
             img = img.resize((logo_width, logo_height), Image.LANCZOS)
@@ -284,29 +293,36 @@ class HydrographCanvas(FigureCanvasQTAgg):
             ec=line_color, clip_on=False, zorder=0, transform=fig.transFigure)
         ax.add_patch(rect1)
 
-        # Add the date, copyright notice and url.
+        # Add the creation date., copyright notice and url.
         now = datetime.datetime.now()
         offset = ScaledTranslation(0, -8/72, fig.dpi_scale_trans)
         created_on_text = ax.text(
             margin_width / fwidth,
             rect1.get_window_extent(renderer).y0 / fig.bbox.height,
             _("Created on {}").format(now.strftime('%Y-%m-%d')),
-            va='top', transform=fig.transFigure + offset
+            va='top', fontname=fontname, transform=fig.transFigure + offset
             )
-        offset = ScaledTranslation(0/72, -4/72, fig.dpi_scale_trans)
-        copyright_text = ax.text(
-            margin_width / fwidth,
-            created_on_text.get_window_extent(renderer).y0 / fig.bbox.height,
-            _("© {} Government of Quebec").format(now.year),
-            va='top', transform=fig.transFigure+offset
-            )
-        url_text = ax.text(
-            margin_width / fwidth,
-            copyright_text.get_window_extent(renderer).y0 / fig.bbox.height,
-            "http://www.environnement.gouv.qc.ca/eau/piezo/index.htm",
-            va='top', transform=fig.transFigure+offset,
-            url="http://www.environnement.gouv.qc.ca/eau/piezo/index.htm",
-            color='blue')
+        next_ypos = created_on_text.get_window_extent(renderer).y0
+
+        # Add the author's name.
+        authors_name = CONF.get('documents_settings', 'authors_name', '')
+        if authors_name:
+            offset = ScaledTranslation(0/72, -4/72, fig.dpi_scale_trans)
+            authors_name_text = ax.text(
+                margin_width / fwidth, next_ypos / fig.bbox.height,
+                authors_name, va='top', fontname=fontname,
+                transform=fig.transFigure+offset
+                )
+            next_ypos = authors_name_text.get_window_extent(renderer).y0
+
+        # Add the site url.
+        site_url = CONF.get('documents_settings', 'site_url', '')
+        if site_url:
+            offset = ScaledTranslation(0/72, -4/72, fig.dpi_scale_trans)
+            site_url_text = ax.text(
+                margin_width / fwidth, next_ypos / fig.bbox.height,
+                site_url, url=site_url, fontname=fontname, fontstyle='italic',
+                va='top', color='blue', transform=fig.transFigure+offset)
 
         # Setup the top and bottom margin.
         self.draw()
@@ -340,7 +356,8 @@ class HydrographCanvas(FigureCanvasQTAgg):
         offset = ScaledTranslation(0, -8/72, fig.dpi_scale_trans)
         ax.text(
             alt_text_x0, alt_text_y0, alt_text, ha='left', va='top',
-            fontsize=10, transform=fig.transFigure + offset)
+            fontsize=10, fontname=fontname,
+            transform=fig.transFigure + offset)
 
         self.draw()
 

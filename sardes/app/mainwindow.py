@@ -88,10 +88,12 @@ class MainWindow(QMainWindow):
         self.setup()
         splash.finish(self)
 
+    # ---- Setup
     def setup(self):
         """Setup the main window"""
         self.installEventFilter(self)
-        self._setup_options_menu_toolbar()
+        self.setup_preferences()
+        self.setup_options_button()
         self.setup_statusbar()
         self._restore_window_geometry()
         self.setup_internal_plugins()
@@ -100,6 +102,12 @@ class MainWindow(QMainWindow):
         # Note: The window state must be restored after the setup of the
         # plugins and toolbars.
         self._restore_window_state()
+
+    def setup_preferences(self):
+        """Setup Sardes config dialog."""
+        from sardes.preferences import ConfDialog, DocumentsSettingsConfPage
+        self.confdialog = ConfDialog(self)
+        self.confdialog.add_confpage(DocumentsSettingsConfPage())
 
     def setup_internal_plugins(self):
         """Setup Sardes internal plugins."""
@@ -228,7 +236,7 @@ class MainWindow(QMainWindow):
             toolbar.setMovable(not locked)
 
     # ---- Setup options button and menu
-    def _setup_options_menu_toolbar(self):
+    def setup_options_button(self):
         """
         Setup a the options menu toolbutton (hamburger menu) and add it
         to a toolbar.
@@ -240,29 +248,21 @@ class MainWindow(QMainWindow):
         self.options_menu_toolbar.addWidget(create_toolbar_stretcher())
 
         # Add the tools and options button.
-        self.options_menu_button = self._create_options_menu_button()
+        self.options_menu_button = create_toolbutton(
+            self, icon='tooloptions',
+            text=_("Tools and options"),
+            tip=_("Open the tools and options menu."),
+            shortcut='Ctrl+Shift+T')
+        self.options_menu_button.setStyleSheet(
+            "QToolButton::menu-indicator{image: none;}")
+        self.options_menu_button.setPopupMode(QToolButton.InstantPopup)
+        self.options_menu_button.setMenu(self.setup_options_menu())
         self.options_menu_toolbar.addWidget(self.options_menu_button)
 
         self.toolbars.append(self.options_menu_toolbar)
         self.addToolBar(self.options_menu_toolbar)
 
-    def _create_options_menu_button(self):
-        """Create and return the options button of this application."""
-        options_menu_button = create_toolbutton(
-            self, icon='tooloptions',
-            text=_("Tools and options"),
-            tip=_("Open the tools and options menu."),
-            shortcut='Ctrl+Shift+T')
-        options_menu_button.setStyleSheet(
-            "QToolButton::menu-indicator{image: none;}")
-        options_menu_button.setPopupMode(QToolButton.InstantPopup)
-
-        # Create the tools and options menu.
-        options_menu_button.setMenu(self._create_options_menu())
-
-        return options_menu_button
-
-    def _create_options_menu(self):
+    def setup_options_menu(self):
         """Create and return the options menu of this application."""
         options_menu = QMenu(self)
 
@@ -283,7 +283,8 @@ class MainWindow(QMainWindow):
         # Create the preference action to show the preference dialog window.
         preferences_action = create_action(
             self, _('Preferences...'), icon='preferences',
-            shortcut='Ctrl+Shift+P', context=Qt.ApplicationShortcut
+            shortcut='Ctrl+Shift+P', context=Qt.ApplicationShortcut,
+            triggered=self.confdialog.show
             )
 
         # Create the panes and toolbars menus and actions

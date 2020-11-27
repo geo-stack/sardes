@@ -116,7 +116,7 @@ def test_save_reading_data_to_xlsx(tmp_path, source_data, repere_data,
     is_alt_geodesic = last_repere_data['is_alt_geodesic']
     _save_reading_data_to_xlsx(
         filename, sheetname, formatted_data, obs_well_data,
-        ground_altitude, is_alt_geodesic, company_logo_filename=None)
+        ground_altitude, is_alt_geodesic, logo_filename=None)
     assert osp.exists(filename + '.xlsx')
 
     exported_data = pd.read_excel(
@@ -159,7 +159,7 @@ def test_save_readings_to_excel_tool(tmp_path, save_to_excel_tool, mocker):
 
     company_logo_filename = osp.join(
         __rootdir__, 'ressources', 'icons', 'sardes.png')
-    mocker.patch('sardes.config.ospath.get_company_logo_filename',
+    mocker.patch('sardes.config.ospath.get_documents_logo_filename',
                  return_value=company_logo_filename)
 
     save_to_excel_tool.trigger()

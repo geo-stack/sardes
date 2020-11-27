@@ -37,11 +37,13 @@ def set_select_file_dialog_dir(directory):
         CONF.set('main', 'select_file_dialog_dir', directory)
 
 
-def get_company_logo_filename():
+def get_documents_logo_filename():
     """
-    Return the absolute file path to the company logo image.
+    Return the absolute file path to the logo image to use when
+    producing documents.
     """
-    for file in os.listdir(CONFIG_DIR):
-        root, ext = osp.splitext(file)
-        if root == 'company_logo':
-            return osp.join(CONFIG_DIR, file)
+    logo_filename = CONF.get('documents_settings', 'logo_filename', None)
+    if logo_filename is not None:
+        logo_filename = osp.join(CONFIG_DIR, osp.basename(logo_filename))
+        if osp.exists(logo_filename):
+            return logo_filename
