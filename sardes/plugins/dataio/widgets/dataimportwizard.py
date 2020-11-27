@@ -124,10 +124,10 @@ class DataImportWizard(SardesPaneWidget):
 
         file_groupbox = QGroupBox(_('File Info'))
         file_layout = QFormLayout(file_groupbox)
-        file_layout.addRow(_('Input File') + ' :', self.filename_label)
-        file_layout.addRow(_('Project ID') + ' :', self.projectid_label)
-        file_layout.addRow(_('Location') + ' :', self.site_name_label)
-        file_layout.addRow(_('Serial Number') + ' :', self.serial_number_label)
+        file_layout.addRow(_('Input File:'), self.filename_label)
+        file_layout.addRow(_('Project ID:'), self.projectid_label)
+        file_layout.addRow(_('Location:'), self.site_name_label)
+        file_layout.addRow(_('Serial Number:'), self.serial_number_label)
 
         # Setup sonde installation info groupbox.
         self.sonde_label = QLabel()
@@ -138,10 +138,10 @@ class DataImportWizard(SardesPaneWidget):
         sonde_info_widget = QFrame()
         sonde_form = QFormLayout(sonde_info_widget)
         sonde_form.setContentsMargins(0, 0, 0, 0)
-        sonde_form.addRow(_('Sonde') + ' :', self.sonde_label)
-        sonde_form.addRow(_('Well') + ' :', self.obs_well_label)
-        sonde_form.addRow(_('Depth') + ' :', self.install_depth)
-        sonde_form.addRow(_('Period') + ' :', self.install_period)
+        sonde_form.addRow(_('Sonde:'), self.sonde_label)
+        sonde_form.addRow(_('Well:'), self.obs_well_label)
+        sonde_form.addRow(_('Depth:'), self.install_depth)
+        sonde_form.addRow(_('Period:'), self.install_period)
 
         self.sonde_msg_label = QLabel()
         self.sonde_msg_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
@@ -164,15 +164,15 @@ class DataImportWizard(SardesPaneWidget):
 
         previous_widget = QFrame()
         previous_layout = QGridLayout(previous_widget)
-        previous_layout.addWidget(QLabel(_('Previous Date') + ' :'), 0, 0)
+        previous_layout.addWidget(QLabel(_('Previous Date:')), 0, 0)
         previous_layout.addWidget(self.previous_date_label, 0, 1)
-        previous_layout.addWidget(QLabel(_('Delta Date') + ' :'), 1, 0)
+        previous_layout.addWidget(QLabel(_('Delta Date:')), 1, 0)
         previous_layout.addWidget(self.delta_date_label, 1, 1)
         previous_layout.addWidget(
-            QLabel(_('Previous Water Level') + ' :'), 2, 0)
+            QLabel(_('Previous Water Level:')), 2, 0)
         previous_layout.addWidget(self.previous_level_label, 2, 1)
         previous_layout.addWidget(
-            QLabel(_('Delta Water Level') + ' :'), 3, 0)
+            QLabel(_('Delta Water Level:')), 3, 0)
         previous_layout.addWidget(self.delta_level_label, 3, 1)
 
         previous_layout.setRowStretch(4, 1)
