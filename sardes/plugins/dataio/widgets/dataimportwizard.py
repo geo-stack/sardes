@@ -9,7 +9,6 @@
 
 # ---- Standard imports
 import sys
-import datetime
 import os.path as osp
 
 # ---- Third party imports
@@ -132,6 +131,7 @@ class DataImportWizard(SardesPaneWidget):
         # Setup sonde installation info groupbox.
         self.sonde_label = QLabel()
         self.obs_well_label = QLabel()
+        self.municipality_label = QLabel()
         self.install_depth = QLabel()
         self.install_period = QLabel()
 
@@ -140,6 +140,7 @@ class DataImportWizard(SardesPaneWidget):
         sonde_form.setContentsMargins(0, 0, 0, 0)
         sonde_form.addRow(_('Sonde:'), self.sonde_label)
         sonde_form.addRow(_('Well:'), self.obs_well_label)
+        sonde_form.addRow(_('Municipality:'), self.municipality_label)
         sonde_form.addRow(_('Depth:'), self.install_depth)
         sonde_form.addRow(_('Period:'), self.install_period)
 
@@ -545,6 +546,7 @@ class DataImportWizard(SardesPaneWidget):
         if self._file_reader is None:
             self.sonde_label.clear()
             self.obs_well_label.clear()
+            self.municipality_label.clear()
             self.install_depth.clear()
             self.install_period.clear()
             self.sonde_stacked_widget.setCurrentIndex(0)
@@ -561,10 +563,13 @@ class DataImportWizard(SardesPaneWidget):
                 sonde_install_data['sonde_brand_model'],
                 self._sonde_serial_no
                 ))
-            self.obs_well_label.setText('{} ({})'.format(
+            self.obs_well_label.setText('{} - {}'.format(
                 sonde_install_data['well_name'],
-                sonde_install_data['well_municipality']
+                sonde_install_data['well_common_name'],
                 ))
+            self.municipality_label.setText(
+                sonde_install_data['well_municipality']
+                )
             self.install_depth.setText('{} m'.format(
                 str(sonde_install_data['install_depth'])
                 ))
@@ -577,6 +582,7 @@ class DataImportWizard(SardesPaneWidget):
         else:
             self.sonde_label.setText(NOT_FOUND_MSG_COLORED)
             self.obs_well_label.setText(NOT_FOUND_MSG_COLORED)
+            self.municipality_label.setText(NOT_FOUND_MSG_COLORED)
             self.install_depth.setText(NOT_FOUND_MSG_COLORED)
             self.install_period.setText(NOT_FOUND_MSG_COLORED)
             self.sonde_stacked_widget.setCurrentIndex(0)
