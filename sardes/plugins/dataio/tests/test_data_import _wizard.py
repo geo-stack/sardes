@@ -29,8 +29,7 @@ from qtpy.QtCore import Qt
 from sardes.api.timeseries import DataType
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.plugins.dataio.widgets.dataimportwizard import (
-    QFileDialog, DataImportWizard, NOT_FOUND_MSG_COLORED, QMessageBox,
-    SolinstFileReader)
+    QFileDialog, DataImportWizard, QMessageBox, SolinstFileReader)
 
 
 # =============================================================================
@@ -139,10 +138,9 @@ def test_read_data(qtbot, mocker, testfiles, data_import_wizard):
             "Calixa-Lavallée")
 
     # Assert sonde installation infos.
-    assert (data_import_wizard.sonde_label.text() ==
-            'Solinst LT M10 1060487')
-    assert (data_import_wizard.obs_well_label.text() ==
-            "03040002 (Calixa-Lavallée)")
+    assert data_import_wizard.sonde_label.text() == 'Solinst LT M10 1060487'
+    assert data_import_wizard.obs_well_label.text() == '03040002 - PO-01'
+    assert data_import_wizard.municipality_label.text() == 'Calixa-Lavallée'
     assert data_import_wizard.install_depth.text() == '9.24 m'
     assert (data_import_wizard.install_period.text() ==
             '2012-05-05 19:00 to today')
@@ -202,8 +200,8 @@ def test_update_when_db_changed(qtbot, mocker, testfiles, data_import_wizard):
 
     # Assert sonde installation infos.
     assert data_import_wizard.sonde_label.text() == 'Solinst LT M10 1060487'
-    assert (data_import_wizard.obs_well_label.text() ==
-            "03040002 (Calixa-Lavallée)")
+    assert data_import_wizard.obs_well_label.text() == '03040002 - PO-01'
+    assert data_import_wizard.municipality_label.text() == 'Calixa-Lavallée'
     assert data_import_wizard.install_depth.text() == '9.24 m'
     assert (data_import_wizard.install_period.text() ==
             '2012-05-05 19:00 to today')
@@ -229,8 +227,9 @@ def test_update_when_db_changed(qtbot, mocker, testfiles, data_import_wizard):
         dbconnmanager.set('observation_wells_data', obs_well_uuid,
                           'municipality', 'New Municipality Name')
     qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
-    assert (data_import_wizard.obs_well_label.text() ==
-            "12340002 (New Municipality Name)")
+    assert data_import_wizard.obs_well_label.text() == '12340002 - PO-01'
+    assert (data_import_wizard.municipality_label.text() ==
+            'New Municipality Name')
 
 
 def test_save_data_to_database(qtbot, mocker, testfiles, data_import_wizard):
@@ -491,6 +490,7 @@ def test_duplicates_with_multiple_sondes(
          'install_depth': 10.25,
          'well_municipality': "Saint-Paul-d'Abbotsford",
          'sonde_brand_model': 'Solinst LTC M100 Edge',
+         'well_common_name': 'Saint-Paul',
          'well_name': '03037041'})
     mocker.patch.object(dbmanager._worker,
                         '_get_sonde_installation_info',
@@ -507,8 +507,9 @@ def test_duplicates_with_multiple_sondes(
     assert data_import_wizard._sonde_serial_no == '1073744'
     assert (data_import_wizard.sonde_label.text() ==
             'Solinst LTC M100 Edge 1073744')
-    assert (data_import_wizard.obs_well_label.text() ==
-            "03037041 (Saint-Paul-d'Abbotsford)")
+    assert data_import_wizard.obs_well_label.text() == "03037041 - Saint-Paul"
+    assert (data_import_wizard.municipality_label.text() ==
+            "Saint-Paul-d'Abbotsford")
     assert data_import_wizard.install_depth.text() == '10.25 m'
     assert (data_import_wizard.install_period.text() ==
             '2018-09-27 07:00 to today')
@@ -517,4 +518,4 @@ def test_duplicates_with_multiple_sondes(
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
+    pytest.main(['-x', __file__, '-v', '-rw'])
