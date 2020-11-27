@@ -72,7 +72,7 @@ class HydrographTool(SardesTool):
         if filename is None:
             filename = osp.join(
                 get_select_file_dialog_dir(),
-                'graph_{}.pdf'.format(obs_well_id))
+                _('graph_{}.pdf').format(obs_well_id))
 
         filename, filefilter = QFileDialog.getSaveFileName(
             self.parent, _("Save Hydrograph"), filename, self.NAMEFILTERS)

@@ -66,7 +66,7 @@ class SaveReadingsToExcelTool(SardesTool):
         if filename is None:
             filename = osp.join(
                 get_select_file_dialog_dir(),
-                'readings_{}.xlsx'.format(obs_well_id))
+                _('readings_{}.xlsx').format(obs_well_id))
 
         filename, filefilter = QFileDialog.getSaveFileName(
             self.parent, _("Save File"), filename, self.NAMEFILTERS)

@@ -10,8 +10,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1.0\n"
-"POT-Creation-Date: 2020-11-20 12:03-0500\n"
-"PO-Revision-Date: 2020-11-20 12:13-0500\n"
+"POT-Creation-Date: 2020-11-27 10:41-0500\n"
+"PO-Revision-Date: 2020-11-27 10:42-0500\n"
 "Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs."
 "ca.com>\n"
 "Language-Team: Python\n"
@@ -20,7 +20,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.4.1\n"
+"X-Generator: Poedit 2.4.2\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
@@ -66,17 +66,17 @@ msgid "Setting up the database connection manager..."
 msgstr ""
 "Configuration du gestionnaire de connexions à la base de données en cours..."
 
-#: ..\sardes\app\mainwindow.py:114 ..\sardes\app\mainwindow.py:124
-#: ..\sardes\app\mainwindow.py:134 ..\sardes\app\mainwindow.py:144
-#: ..\sardes\app\mainwindow.py:154 ..\sardes\app\mainwindow.py:177
+#: ..\sardes\app\mainwindow.py:122 ..\sardes\app\mainwindow.py:132
+#: ..\sardes\app\mainwindow.py:142 ..\sardes\app\mainwindow.py:152
+#: ..\sardes\app\mainwindow.py:162 ..\sardes\app\mainwindow.py:185
 msgid "Loading the {} plugin..."
 msgstr "Chargement du plugin {} en cours..."
 
-#: ..\sardes\app\mainwindow.py:223
+#: ..\sardes\app\mainwindow.py:231
 msgid "Unlock panes and toolbars"
 msgstr "Déverrouiller les volets et les barres d'outils"
 
-#: ..\sardes\app\mainwindow.py:224 ..\sardes\app\mainwindow.py:297
+#: ..\sardes\app\mainwindow.py:232 ..\sardes\app\mainwindow.py:298
 msgid "Lock panes and toolbars"
 msgstr "Verrouiller les volets et les barres d'outils"
 
@@ -96,46 +96,46 @@ msgstr "Langues"
 msgid "Preferences..."
 msgstr "Préférences..."
 
-#: ..\sardes\app\mainwindow.py:290
+#: ..\sardes\app\mainwindow.py:291
 msgid "Panes"
 msgstr "Volets"
 
-#: ..\sardes\app\mainwindow.py:293
+#: ..\sardes\app\mainwindow.py:294
 msgid "Toolbars"
 msgstr "Barres d'outils"
 
-#: ..\sardes\app\mainwindow.py:305
+#: ..\sardes\app\mainwindow.py:306
 msgid "Reset window layout"
 msgstr "Réinitialiser la disposition de l'interface"
 
-#: ..\sardes\app\mainwindow.py:310
+#: ..\sardes\app\mainwindow.py:311
 msgid "Report an issue..."
 msgstr "Signaler un problème..."
 
-#: ..\sardes\app\mainwindow.py:315
+#: ..\sardes\app\mainwindow.py:316
 msgid "About Sardes..."
 msgstr "À propos de Sardes..."
 
-#: ..\sardes\app\mainwindow.py:319
+#: ..\sardes\app\mainwindow.py:320
 msgid "Exit"
 msgstr "Quitter"
 
-#: ..\sardes\app\mainwindow.py:350
+#: ..\sardes\app\mainwindow.py:351
 msgid "Language change"
 msgstr "Changement de langue"
 
-#: ..\sardes\app\mainwindow.py:351
+#: ..\sardes\app\mainwindow.py:352
 msgid ""
 "The language has been set to <i>{}</i>. Restart Sardes to apply this change."
 msgstr ""
 "La langue a été définie sur <i>{}</i>. Redémarrez Sardes pour appliquer "
 "cette modification."
 
-#: ..\sardes\app\mainwindow.py:369
+#: ..\sardes\app\mainwindow.py:370
 msgid "Reset Window Layout"
 msgstr "Réinitialiser la disposition de l'interface"
 
-#: ..\sardes\app\mainwindow.py:370
+#: ..\sardes\app\mainwindow.py:371
 msgid ""
 "Window layout will be reset to default settings.<br><br>Do you want to "
 "continue?"
@@ -143,15 +143,15 @@ msgstr ""
 "La disposition de l'interface sera réinitialisée à la configuration par "
 "défaut.<br><br> Voulez-vous continuer?"
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:535
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:538
 msgid "'{}' does not exist."
 msgstr "'{}' n'existe pas."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:541
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:544
 msgid "'{}' is not a valid database file."
 msgstr "'{}' n'est pas un fichier de base de données valide."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:562
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:565
 msgid ""
 "'{}' does not appear to be a Sardes SQLite database. The application id set "
 "in the database is {}, but should be {}."
@@ -160,7 +160,7 @@ msgstr ""
 "l'application qui est défini dans la base de données est {} alors qu'il "
 "devrait être {}."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:570
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:573
 msgid ""
 "The version of this database is {} and is outdated. Please update your "
 "database to version {} and try again."
@@ -168,7 +168,7 @@ msgstr ""
 "La version de cette base de données est {} et est obsolète. Veuillez mettre "
 "à jour votre base de données à la version {} et réessayer."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:576
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:579
 msgid ""
 "Your Sardes application is outdated and does not support databases whose "
 "version is higher than {}. Please update Sardes and try again."
@@ -616,26 +616,30 @@ msgstr ""
 msgid "Observation well {} ({})"
 msgstr "Puits d'observation {} ({})"
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:52
+#: ..\sardes\plugins\readings\tools\hydrographs.py:51
 msgid "Create Hydrograph"
 msgstr "Créer un hydrogramme"
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:54
+#: ..\sardes\plugins\readings\tools\hydrographs.py:53
 msgid "Create a publication ready graph of the water level data."
 msgstr ""
 "Créer un graphique prêt pour la publication des données de niveau d'eau."
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:79
+#: ..\sardes\plugins\readings\tools\hydrographs.py:75
+msgid "graph_{}.pdf"
+msgstr "graphique_{}.pdf"
+
+#: ..\sardes\plugins\readings\tools\hydrographs.py:78
 msgid "Save Hydrograph"
 msgstr "Enregistrer l'hydrogramme"
 
 #: ..\sardes\plugins\readings\tools\hydrographs.py:114
-#: ..\sardes\plugins\readings\tools\save2excel.py:107
+#: ..\sardes\plugins\readings\tools\save2excel.py:110
 msgid "File in Use"
 msgstr "Fichier en cours d'utilisation"
 
 #: ..\sardes\plugins\readings\tools\hydrographs.py:115
-#: ..\sardes\plugins\readings\tools\save2excel.py:108
+#: ..\sardes\plugins\readings\tools\save2excel.py:111
 msgid ""
 "The save file operation cannot be completed because the file is in use by "
 "another application or user."
@@ -643,12 +647,12 @@ msgstr ""
 "L'opération d'enregistrement du fichier ne peut pas être effectuée car le "
 "fichier est utilisé par une autre application ou un autre utilisateur."
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:139
-#: ..\sardes\plugins\readings\tools\save2excel.py:133
+#: ..\sardes\plugins\readings\tools\hydrographs.py:140
+#: ..\sardes\plugins\readings\tools\save2excel.py:136
 msgid "Water level altitude (m MSL)"
 msgstr "Altitude du niveau d'eau (m NMM)"
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:248
+#: ..\sardes\plugins\readings\tools\hydrographs.py:257
 msgid ""
 "Municipality: {}\n"
 "Observation Well: {}"
@@ -656,67 +660,67 @@ msgstr ""
 "Municipalité : {}\n"
 "Puits d'observation : {}"
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:293
+#: ..\sardes\plugins\readings\tools\hydrographs.py:302
 msgid "Created on {}"
 msgstr "Créé le {}"
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:300
-msgid "© {} Government of Quebec"
-msgstr "© {} Gouvernement du Québec"
-
-#: ..\sardes\plugins\readings\tools\hydrographs.py:335
-#: ..\sardes\plugins\readings\tools\save2excel.py:201
+#: ..\sardes\plugins\readings\tools\hydrographs.py:351
+#: ..\sardes\plugins\readings\tools\save2excel.py:207
 msgid "Approximated"
 msgstr "Approximative"
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:335
-#: ..\sardes\plugins\readings\tools\save2excel.py:201
+#: ..\sardes\plugins\readings\tools\hydrographs.py:351
+#: ..\sardes\plugins\readings\tools\save2excel.py:207
 #: ..\sardes\plugins\tables\tables\repere.py:90
 msgid "Geodesic"
 msgstr "Géodésique"
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:336
+#: ..\sardes\plugins\readings\tools\hydrographs.py:352
 msgid "Ground altitude: {:0.1f} m MSL ({})"
 msgstr "Altitude du sol : {:0.1f} m NMM ({})"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:43
+#: ..\sardes\plugins\readings\tools\save2excel.py:44
 msgid "Create XLSX Document"
 msgstr "Créer un document XLSX"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:45
+#: ..\sardes\plugins\readings\tools\save2excel.py:46
 msgid "Save daily readings data in an Excel document."
 msgstr ""
 "Enregistrer les données de lectures quotidiennes dans un document Excel."
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:71
+#: ..\sardes\plugins\readings\tools\save2excel.py:69
+msgid "readings_{}.xlsx"
+msgstr "données_{}.xlsx"
+
+#: ..\sardes\plugins\readings\tools\save2excel.py:72
 msgid "Save File"
 msgstr "Enregistrer le fichier"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:96
+#: ..\sardes\plugins\readings\tools\save2excel.py:97
 msgid "Piezometry"
 msgstr "Piézométrie"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:132
+#: ..\sardes\plugins\readings\tools\save2excel.py:135
 msgid "Date of reading"
 msgstr "Date du relevé"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:134
+#: ..\sardes\plugins\readings\tools\save2excel.py:137
 msgid "Water temperature (°C)"
 msgstr "Température de l'eau (°C)"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:173
+#: ..\sardes\plugins\readings\tools\save2excel.py:179
 msgid "Municipality:"
 msgstr "Municipalité :"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:183
+#: ..\sardes\plugins\readings\tools\save2excel.py:189
 msgid "Piezometer number:"
 msgstr "Numéro du piézomètre :"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:193
+#: ..\sardes\plugins\readings\tools\save2excel.py:199
 msgid "Ground altitude (m MSL):"
 msgstr "Altitude du sol (m NMM) :"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:203
+#: ..\sardes\plugins\readings\tools\save2excel.py:209
 msgid "Not Available"
 msgstr "Non disponible"
 
@@ -890,6 +894,67 @@ msgstr "Perdue"
 #: ..\sardes\plugins\tables\tables\sondes_inventory.py:80
 msgid "Off Network"
 msgstr "Hors réseau"
+
+#: ..\sardes\preferences\configdialog.py:71
+msgid "Preferences"
+msgstr "Préférences"
+
+#: ..\sardes\preferences\configdialog.py:84
+msgid "OK"
+msgstr "OK"
+
+#: ..\sardes\preferences\configdialog.py:87
+msgid "Apply"
+msgstr "Appliquer"
+
+#: ..\sardes\preferences\configdialog.py:90
+#: ..\sardes\widgets\tableviews.py:1908
+msgid "Cancel"
+msgstr "Annuler"
+
+#: ..\sardes\preferences\documents.py:36
+msgid "Documents Settings"
+msgstr "Paramètres des documents"
+
+#: ..\sardes\preferences\documents.py:46
+msgid "Logo"
+msgstr "Logo"
+
+#: ..\sardes\preferences\documents.py:60
+msgid "References"
+msgstr "Références"
+
+#: ..\sardes\preferences\documents.py:62
+msgid "Site URL:"
+msgstr "Site URL :"
+
+#: ..\sardes\preferences\documents.py:64
+msgid "Author's Name:"
+msgstr "Nom de l'auteur :"
+
+#: ..\sardes\preferences\documents.py:76
+msgid "Fonts"
+msgstr "Polices"
+
+#: ..\sardes\preferences\documents.py:78
+msgid "XLSX Documents:"
+msgstr "Documents XLSX :"
+
+#: ..\sardes\preferences\documents.py:80
+msgid "Graphs:"
+msgstr "Graphiques :"
+
+#: ..\sardes\widgets\logoselector.py:66
+msgid "Change Logo..."
+msgstr "Changer le logo..."
+
+#: ..\sardes\widgets\logoselector.py:68
+msgid "Remove Logo"
+msgstr "Supprimer le logo"
+
+#: ..\sardes\widgets\logoselector.py:95
+msgid "Select Image"
+msgstr "Sélectionner une image"
 
 #: ..\sardes\widgets\path.py:35
 msgid "Browse..."
@@ -1138,16 +1203,12 @@ msgid ""
 "<br><br>This action <b>cannot</b> be undone.<br><br>"
 msgstr ""
 "Les modifications apportées à cette table seront enregistrées de manière "
-"permanente dans la base de données.<br><br>Cette action <b>ne peut</b>être "
-"annulée.<br><br>"
+"permanente dans la base de données.<br><br>Cette action <b>ne peut pas</b> "
+"être annulée.<br><br>"
 
 #: ..\sardes\widgets\tableviews.py:1907 ..\sardes\widgets\timeseries.py:1026
 msgid "Save"
 msgstr "Enregistrer"
-
-#: ..\sardes\widgets\tableviews.py:1908
-msgid "Cancel"
-msgstr "Annuler"
 
 #: ..\sardes\widgets\tableviews.py:1964
 msgid "Edits error"
@@ -1324,6 +1385,9 @@ msgid ""
 msgstr ""
 "Entrez une valeur comprise entre 0 et 99 points pour modifier la taille des "
 "marqueurs du tracé de la série chronologique actuellement sélectionnée."
+
+#~ msgid "© {} Government of Quebec"
+#~ msgstr "© {} Gouvernement du Québec"
 
 #~ msgid "Clear All"
 #~ msgstr "Effacer tout"
