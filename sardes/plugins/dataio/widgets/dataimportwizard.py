@@ -586,7 +586,7 @@ class DataImportWizard(SardesPaneWidget):
             self.install_depth.setText('{} m'.format(
                 str(sonde_install_data['install_depth'])
                 ))
-            self.install_period.setText('{} to {}'.format(
+            self.install_period.setText(_('{} to {}').format(
                 sonde_install_data['start_date'].strftime("%Y-%m-%d %H:%M"),
                 _('today') if pd.isnull(sonde_install_data['end_date']) else
                 sonde_install_data['end_date'].strftime("%Y-%m-%d %H:%M")
