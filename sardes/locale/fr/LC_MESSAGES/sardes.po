@@ -10,8 +10,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1.0\n"
-"POT-Creation-Date: 2020-11-27 09:32-0500\n"
-"PO-Revision-Date: 2020-11-27 09:41-0500\n"
+"POT-Creation-Date: 2020-11-27 10:41-0500\n"
+"PO-Revision-Date: 2020-11-27 10:42-0500\n"
 "Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs."
 "ca.com>\n"
 "Language-Team: Python\n"
@@ -943,6 +943,14 @@ msgstr "Documents XLSX :"
 #: ..\sardes\preferences\documents.py:80
 msgid "Graphs:"
 msgstr "Graphiques :"
+
+#: ..\sardes\widgets\logoselector.py:66
+msgid "Change Logo..."
+msgstr "Changer le logo..."
+
+#: ..\sardes\widgets\logoselector.py:68
+msgid "Remove Logo"
+msgstr "Supprimer le logo"
 
 #: ..\sardes\widgets\logoselector.py:95
 msgid "Select Image"
