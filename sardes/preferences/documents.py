@@ -141,6 +141,11 @@ class DocumentsSettingsConfPage(ConfPage):
                 shutil.copyfile(new_logo_filename, conf_logo_filename)
                 CONF.set(CONF_SECTION, 'logo_filename', conf_logo_filename)
 
+                # We need to change the logo selector filepath to that of the
+                # file we just copied in the config folder to ensure
+                # 'is_modified' returns False.
+                self.logo_selector._filename = conf_logo_filename
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
