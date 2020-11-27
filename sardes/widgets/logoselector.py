@@ -63,9 +63,9 @@ class LogoSelector(QWidget):
         logo_layout.setColumnStretch(0, 1)
         logo_layout.setColumnStretch(2, 1)
 
-        self.browse_logo_button = QPushButton('Change Logo...')
+        self.browse_logo_button = QPushButton(_('Change Logo...'))
         self.browse_logo_button.clicked.connect(self.browse_image)
-        self.remove_logo_button = QPushButton('Remove Logo')
+        self.remove_logo_button = QPushButton(_('Remove Logo'))
         self.remove_logo_button.clicked.connect(self.load_default_image)
 
         layout = QGridLayout(self)
