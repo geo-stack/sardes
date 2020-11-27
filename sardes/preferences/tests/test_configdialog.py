@@ -10,7 +10,6 @@
 """
 Tests for the ConfDialog class.
 """
-
 # ---- Third party imports
 import pytest
 from qtpy.QtCore import Qt
