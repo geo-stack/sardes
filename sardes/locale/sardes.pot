@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2020-11-27 10:41-0500\n"
+"POT-Creation-Date: 2020-11-27 12:22-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -267,225 +267,230 @@ msgstr ""
 msgid "Connecting to database..."
 msgstr ""
 
-#: ..\sardes\plugins\dataio\plugin.py:32
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:79
+#: ..\sardes\plugins\dataio\plugin.py:31
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:78
 msgid "Data Import Wizard"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:38
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:37
 msgid "Not found in database"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:40
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:39
 msgid "File reading error"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:51
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:50
 #: ..\sardes\plugins\readings\plugin.py:71
 msgid "Datetime"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:125
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:124
 msgid "File Info"
 msgstr ""
 
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:126
+msgid "Input File:"
+msgstr ""
+
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:127
-msgid "Input File"
+msgid "Project ID:"
 msgstr ""
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:128
-msgid "Project ID"
+msgid "Location:"
 msgstr ""
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:129
-msgid "Location"
+msgid "Serial Number:"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:130
-#: ..\sardes\plugins\tables\tables\sondes_inventory.py:74
-msgid "Serial Number"
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:133
+msgid "Well:"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:141
-msgid "Sonde"
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:137
+#: ..\sardes\plugins\readings\tools\save2excel.py:179
+msgid "Municipality:"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:142
-#: ..\sardes\plugins\tables\tables\repere.py:85
-#: ..\sardes\plugins\tables\tables\sonde_installations.py:91
-msgid "Well"
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:147
+msgid "Sonde:"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:143
-#: ..\sardes\plugins\readings\plugin.py:75
-msgid "Depth"
-msgstr ""
-
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:144
-msgid "Period"
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:153
+msgid "Depth:"
 msgstr ""
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:155
-msgid "Sonde Installation Info"
-msgstr ""
-
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:167
-msgid "Previous Date"
+msgid "Period:"
 msgstr ""
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:169
-msgid "Delta Date"
+msgid "Sonde Installation Info"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:172
-msgid "Previous Water Level"
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:181
+msgid "Previous Date:"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:175
-msgid "Delta Water Level"
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:183
+msgid "Delta Date:"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:193
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:186
+msgid "Previous Water Level:"
+msgstr ""
+
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:189
+msgid "Delta Water Level:"
+msgstr ""
+
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:207
 msgid "Previous Reading"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:211
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:225
 msgid "Move the input file to this location after loading data"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:224
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:238
 msgid "Open File"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:225
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:239
 msgid "Select one or more input data files from which time data is to be imported."
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:236
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:250
 msgid "Save to Database"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:237
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:251
 msgid "Save the currently imported time data to the database."
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:255
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:269
 msgid "Load Next File"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:256
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:270
 msgid "Load the time data of the next selected file."
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:274
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:288
 #: ..\sardes\plugins\tables\tables\observation_wells.py:136
 msgid "View data"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:275
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:289
 msgid "Show the data of the timeseries acquired in the currently selected observation well in a table."
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:373
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:387
 msgid "Previous"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:376
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:390
 msgid "Next"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:386
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:822
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:400
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:841
 msgid "Data saved sucessfully in the database."
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:402
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:416
 msgid "Data for {} of these readings was found in the database."
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:553
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:622
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:568
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:641
 msgid "Info not available because not connected to a database."
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:573
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:589
+msgid "{} to {}"
+msgstr ""
+
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:591
 msgid "today"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:651
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:670
 msgid "There is no water level stored in the database for well {} before {}."
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:668
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:687
 msgid "days"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:669
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:688
 msgid "hrs"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:670
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:689
 msgid "mins"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:693
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:712
 msgid "Loading data..."
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:709
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:728
 msgid "Failed to load data."
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:717
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:736
 msgid "Data imported sucessfully from the file."
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:724
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:743
 msgid "Read Data Error"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:725
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:744
 msgid "An error occured while atempting to read data from<br><i>{}</i><br><br><font color=\"{}\">{}:</font> {}"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:766
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:785
 msgid "Invalid Directory"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:767
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:786
 msgid "The directory specified for the option <i>{}</i> is invalid.<br><br>Please select a valid directory or uncheck that option."
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:779
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:798
 msgid "Confirm Dulicates Saving"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:780
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:799
 msgid "This operation will potentially add {} duplicate readings to the database.<br><br>Are you sure you want to continue?<br><br>"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:788
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:807
 #: ..\sardes\widgets\tableviews.py:1911
 msgid "Do not show this message again during this session."
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:800
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:819
 msgid "Saving data to the database..."
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:846
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:865
 msgid "Replace or Skip Moving Input File"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:847
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:866
 msgid "There is already a file named <i>{}</i> in <i>{}</i>.<br><br>Would you like to replace the file in the destination or skip moving this input file?"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:868
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:887
 msgid "Moving Input File Error"
 msgstr ""
 
-#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:869
+#: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:888
 msgid "Error moving <i>{}</i> to <i>{}</i>.<br><br>Would you like to choose another location?"
 msgstr ""
 
@@ -508,6 +513,10 @@ msgstr ""
 
 #: ..\sardes\plugins\readings\plugin.py:72
 msgid "Sonde Serial Number"
+msgstr ""
+
+#: ..\sardes\plugins\readings\plugin.py:75
+msgid "Depth"
 msgstr ""
 
 #: ..\sardes\plugins\readings\plugin.py:76
@@ -612,10 +621,6 @@ msgstr ""
 
 #: ..\sardes\plugins\readings\tools\save2excel.py:137
 msgid "Water temperature (°C)"
-msgstr ""
-
-#: ..\sardes\plugins\readings\tools\save2excel.py:179
-msgid "Municipality:"
 msgstr ""
 
 #: ..\sardes\plugins\readings\tools\save2excel.py:189
@@ -739,6 +744,11 @@ msgstr ""
 msgid "Repere"
 msgstr ""
 
+#: ..\sardes\plugins\tables\tables\repere.py:85
+#: ..\sardes\plugins\tables\tables\sonde_installations.py:91
+msgid "Well"
+msgstr ""
+
 #: ..\sardes\plugins\tables\tables\repere.py:86
 msgid "Top Casing Alt. (m)"
 msgstr ""
@@ -771,6 +781,10 @@ msgstr ""
 
 #: ..\sardes\plugins\tables\tables\sondes_inventory.py:70
 msgid "Sondes Inventory"
+msgstr ""
+
+#: ..\sardes\plugins\tables\tables\sondes_inventory.py:74
+msgid "Serial Number"
 msgstr ""
 
 #: ..\sardes\plugins\tables\tables\sondes_inventory.py:75
