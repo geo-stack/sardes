@@ -12,7 +12,6 @@
 from .widgets import DataImportWizard
 from sardes.api.plugins import SardesPlugin
 from sardes.config.locale import _
-from sardes.utils.qthelpers import create_mainwindow_toolbar, create_toolbutton
 
 
 """Data Input/Output plugin"""

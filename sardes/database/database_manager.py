@@ -267,6 +267,8 @@ class DatabaseConnectionWorker(WorkerBase):
         obs_well_uuid = sonde_install['sampling_feature_uuid']
         sonde_install['well_name'] = obs_wells_data.at[
             obs_well_uuid, 'obs_well_id']
+        sonde_install['well_common_name'] = obs_wells_data.at[
+            obs_well_uuid, 'common_name']
         sonde_install['well_municipality'] = obs_wells_data.at[
             obs_well_uuid, 'municipality']
 
