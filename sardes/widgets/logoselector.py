@@ -30,7 +30,7 @@ class LogoSelector(QWidget):
     A widget to select and display a logo.
     """
     sig_logo_changed = Signal()
-    FILEFILTER = 'Image (*.png ; *.bmp ; *.jpg ; *.jpeg, ; *.tif)'
+    FILEFILTER = 'Image (*.png ; *.bmp ; *.jpg ; *.jpeg ; *.tif)'
 
     def __init__(self, filename=None, parent=None, logo_size=250):
         super().__init__(parent=parent)
