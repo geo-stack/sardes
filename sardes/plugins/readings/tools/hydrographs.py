@@ -13,7 +13,6 @@ import datetime
 from math import floor, ceil
 
 # ---- Third party library imports
-import matplotlib as mpl
 import matplotlib.dates as mdates
 from matplotlib.transforms import ScaledTranslation
 from matplotlib.figure import Figure
@@ -40,7 +39,7 @@ class HydrographTool(SardesTool):
     """
     NAMEFILTERS = ';;'.join(['Portable Document Format (*.pdf)',
                              'Scalable Vector Graphics (*.svg)',
-                             'Portable Network Graphics (*.png)'
+                             'Portable Network Graphics (*.png)',
                              'JPEG (*.jpg)'
                              ])
 
