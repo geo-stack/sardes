@@ -347,7 +347,7 @@ class HydrographCanvas(FigureCanvasQTAgg):
         bbox_xaxis_bottom = ax.xaxis.get_ticklabel_extents(renderer)[0]
         bbox_yaxis_left = ax.yaxis.get_ticklabel_extents(renderer)[0]
         geodesic_text = (
-            _('Geodesic') if is_alt_geodesic else _('Approximated'))
+            _('Geodesic') if is_alt_geodesic else _('Approximate'))
         alt_text = _("Ground altitude: {:0.1f} m MSL ({})").format(
             ground_altitude, geodesic_text)
         alt_text_y0 = bbox_xaxis_bottom.y0 / fig.bbox.height
