@@ -140,7 +140,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
     # https://xlsxwriter.readthedocs.io/example_pandas_datetime.html
     writer = pd.ExcelWriter(filename, engine='xlsxwriter')
     formatted_data.to_excel(
-        writer, sheet_name=sheetname, startrow=5, startcol=1,
+        writer, sheet_name=sheetname, startrow=6, startcol=1,
         header=False, index=False)
 
     workbook = writer.book
@@ -159,20 +159,21 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
     # to set both the format of the dates and the desired cell formatting
     # with this method.
     for row, date_time in enumerate(formatted_datetimes):
-        worksheet.write_datetime(row + 5, 0, date_time)
+        worksheet.write_datetime(row + 6, 0, date_time)
 
     # Write the data header.
     data_header_style = workbook.add_format({
         'font_name': font_name, 'font_size': 11,
         'align': 'right', 'valign': 'bottom'})
     for i, column in enumerate(formatted_data_columns):
-        worksheet.write(4, i, column, data_header_style)
+        worksheet.write(5, i, column, data_header_style)
 
     # Write the file header.
     worksheet.set_default_row(15)
     worksheet.set_row(0, 30)
     worksheet.set_row(1, 30)
     worksheet.set_row(2, 30)
+    worksheet.set_row(3, 30)
 
     # https://xlsxwriter.readthedocs.io/example_pandas_header_format.html
     worksheet.write(
@@ -196,7 +197,19 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
                              'bold': True, 'right': 6,
                              'align': 'center', 'valign': 'vcenter'}))
     worksheet.write(
-        2, 1, _('Ground altitude (m MSL):'),
+        2, 1, _('Coordinates (dd):'),
+        workbook.add_format({'font_name': font_name, 'font_size': 12,
+                             'bold': True, 'left': 6,
+                             'align': 'right', 'valign': 'vcenter'}))
+    coordinates_str = '{:0.4f} ; {:0.4f}'.format(
+        obs_well_data['latitude'], obs_well_data['longitude'])
+    worksheet.write(
+        2, 2, coordinates_str,
+        workbook.add_format({'font_name': font_name, 'font_size': 12,
+                             'bold': True, 'right': 6,
+                             'align': 'center', 'valign': 'vcenter'}))
+    worksheet.write(
+        3, 1, _('Ground altitude (m MSL):'),
         workbook.add_format({'font_name': font_name, 'font_size': 12,
                              'bold': True, 'bottom': 6, 'left': 6,
                              'align': 'right', 'valign': 'vcenter'}))
@@ -208,7 +221,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
     else:
         alt_value = _('Not Available')
     worksheet.write(
-        2, 2, alt_value,
+        3, 2, alt_value,
         workbook.add_format({'font_name': font_name, 'font_size': 12,
                              'bold': True, 'bottom': 6, 'right': 6,
                              'align': 'center', 'valign': 'vcenter'}))
