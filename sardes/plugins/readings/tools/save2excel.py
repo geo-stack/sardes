@@ -9,7 +9,6 @@
 
 
 # ---- Standard library imports
-
 import os
 import os.path as osp
 from io import BytesIO
@@ -136,8 +135,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
         _("Water level altitude (m MSL)"),
         _("Water temperature (°C)")]
 
-    # Write the data to the file.
-    # https://xlsxwriter.readthedocs.io/example_pandas_datetime.html
+    # Write the numerical data to the file with pandas.
     writer = pd.ExcelWriter(filename, engine='xlsxwriter')
     formatted_data.to_excel(
         writer, sheet_name=sheetname, startrow=6, startcol=1,
@@ -146,7 +144,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
     workbook = writer.book
     worksheet = writer.sheets[sheetname]
 
-    # Setup the columns format.
+    # Setup the columns format and width.
     date_format = workbook.add_format({
         'num_format': 'yyyy-mm-dd', 'font_name': font_name})
     num_format = workbook.add_format({
@@ -155,6 +153,8 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
     worksheet.set_column('B:B', 34, num_format)
     worksheet.set_column('C:C', 34, num_format)
 
+    # Write the datetime data.
+    #
     # We do not use pandas to write the dates to Excel because it is impossible
     # to set both the format of the dates and the desired cell formatting
     # with this method.
@@ -168,13 +168,14 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
     for i, column in enumerate(formatted_data_columns):
         worksheet.write(5, i, column, data_header_style)
 
-    # Write the file header.
+    # Setup the height of the rows.
     worksheet.set_default_row(15)
     worksheet.set_row(0, 30)
     worksheet.set_row(1, 30)
     worksheet.set_row(2, 30)
     worksheet.set_row(3, 30)
 
+    # Write the file header.
     # https://xlsxwriter.readthedocs.io/example_pandas_header_format.html
     worksheet.write(
         0, 1, _('Municipality:'),
@@ -226,7 +227,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
                              'bold': True, 'bottom': 6, 'right': 6,
                              'align': 'center', 'valign': 'vcenter'}))
 
-    # Add the corporate logo to the file.
+    # Add the logo.
     if logo_filename is not None:
         img = Image.open(logo_filename)
 
