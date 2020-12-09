@@ -70,7 +70,9 @@ def repere_data():
 def obs_well_data():
     return pd.Series(
         {'municipality': 'municipality_test',
-         'obs_well_id': '0123456'})
+         'obs_well_id': '0123456',
+         'latitude': 45.12,
+         'longitude': -73.34679})
 
 
 @pytest.fixture
@@ -122,18 +124,19 @@ def test_save_reading_data_to_xlsx(tmp_path, source_data, repere_data,
     exported_data = pd.read_excel(
         filename + '.xlsx', dtype='str', header=None)
 
-    assert exported_data.shape == (8, 3)
+    assert exported_data.shape == (9, 3)
     assert exported_data.iat[0, 2] == 'municipality_test'
     assert exported_data.iat[1, 2] == '0123456'
-    assert exported_data.iat[2, 2] == '100.00 (Geodesic)'
+    assert exported_data.iat[2, 2] == '45.1200 ; -73.3468'
+    assert exported_data.iat[3, 2] == '100.00 (Geodesic)'
 
-    assert exported_data.iat[4, 0] == 'Date of reading'
-    assert exported_data.iat[4, 1] == 'Water level altitude (m MSL)'
-    assert exported_data.iat[4, 2] == 'Water temperature (°C)'
+    assert exported_data.iat[5, 0] == 'Date of reading'
+    assert exported_data.iat[5, 1] == 'Water level altitude (m MSL)'
+    assert exported_data.iat[5, 2] == 'Water temperature (°C)'
 
-    assert exported_data.iat[7, 0] == '2005-11-04 00:00:00'
-    assert exported_data.iat[7, 1] == '99.9'
-    assert exported_data.iat[7, 2] == '-5.1'
+    assert exported_data.iat[8, 0] == '2005-11-04 00:00:00'
+    assert exported_data.iat[8, 1] == '99.9'
+    assert exported_data.iat[8, 2] == '-5.1'
 
 
 def test_save_readings_to_excel_tool(tmp_path, save_to_excel_tool, mocker):
