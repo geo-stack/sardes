@@ -138,7 +138,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
     # Write the numerical data to the file with pandas.
     writer = pd.ExcelWriter(filename, engine='xlsxwriter')
     formatted_data.to_excel(
-        writer, sheet_name=sheetname, startrow=6, startcol=1,
+        writer, sheet_name=sheetname, startrow=7, startcol=1,
         header=False, index=False)
 
     workbook = writer.book
@@ -159,14 +159,14 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
     # to set both the format of the dates and the desired cell formatting
     # with this method.
     for row, date_time in enumerate(formatted_datetimes):
-        worksheet.write_datetime(row + 6, 0, date_time)
+        worksheet.write_datetime(row + 7, 0, date_time)
 
     # Write the data header.
     data_header_style = workbook.add_format({
         'font_name': font_name, 'font_size': 11,
         'align': 'right', 'valign': 'bottom'})
     for i, column in enumerate(formatted_data_columns):
-        worksheet.write(5, i, column, data_header_style)
+        worksheet.write(6, i, column, data_header_style)
 
     # Setup the height of the rows.
     worksheet.set_default_row(15)
@@ -174,6 +174,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
     worksheet.set_row(1, 30)
     worksheet.set_row(2, 30)
     worksheet.set_row(3, 30)
+    worksheet.set_row(4, 30)
 
     # Write the file header.
     # https://xlsxwriter.readthedocs.io/example_pandas_header_format.html
@@ -187,6 +188,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
         workbook.add_format({'font_name': font_name, 'font_size': 12,
                              'bold': True, 'top': 6, 'right': 6,
                              'align': 'center', 'valign': 'vcenter'}))
+
     worksheet.write(
         1, 1, _('Piezometer number:'),
         workbook.add_format({'font_name': font_name, 'font_size': 12,
@@ -197,40 +199,56 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
         workbook.add_format({'font_name': font_name, 'font_size': 12,
                              'bold': True, 'right': 6,
                              'align': 'center', 'valign': 'vcenter'}))
+
     worksheet.write(
-        2, 1, _('Coordinates (dd):'),
+        2, 1, _('Latitude (degrees):'),
         workbook.add_format({'font_name': font_name, 'font_size': 12,
                              'bold': True, 'left': 6,
                              'align': 'right', 'valign': 'vcenter'}))
-
-    latitude = obs_well_data['latitude']
-    longitude = obs_well_data['longitude']
-    if pd.isnull(latitude) or pd.isnull(longitude):
-        coordinates_str = ''
-    else:
+    if pd.notnull(obs_well_data['latitude']):
         try:
-            coordinates_str = '{:0.4f} ; {:0.4f}'.format(latitude, longitude)
+            latitude = float(obs_well_data['latitude'])
         except (ValueError, TypeError):
-            coordinates_str = ''
+            pass
+        else:
+            worksheet.write(
+                2, 2, latitude,
+                workbook.add_format({
+                    'font_name': font_name, 'font_size': 12,
+                    'bold': True, 'right': 6, 'num_format': '0.0000',
+                    'align': 'center', 'valign': 'vcenter'}))
+
     worksheet.write(
-        2, 2, coordinates_str,
+        3, 1, _('Longitude (degrees):'),
         workbook.add_format({'font_name': font_name, 'font_size': 12,
-                             'bold': True, 'right': 6,
-                             'align': 'center', 'valign': 'vcenter'}))
+                             'bold': True, 'left': 6,
+                             'align': 'right', 'valign': 'vcenter'}))
+    if pd.notnull(obs_well_data['longitude']):
+        try:
+            longitude = float(obs_well_data['longitude'])
+        except (ValueError, TypeError):
+            pass
+        else:
+            worksheet.write(
+                3, 2, longitude,
+                workbook.add_format({
+                    'font_name': font_name, 'font_size': 12,
+                    'bold': True, 'right': 6, 'num_format': '0.0000',
+                    'align': 'center', 'valign': 'vcenter'}))
+
     worksheet.write(
-        3, 1, _('Ground altitude (m MSL):'),
+        4, 1, _('Ground altitude (m MSL):'),
         workbook.add_format({'font_name': font_name, 'font_size': 12,
                              'bold': True, 'bottom': 6, 'left': 6,
                              'align': 'right', 'valign': 'vcenter'}))
-
     if ground_altitude is not None:
         alt_value = "{:0.2f} ({})".format(
             ground_altitude,
-            _('Geodesic') if is_alt_geodesic else _('Approximated'))
+            _('Geodesic') if is_alt_geodesic else _('Approximate'))
     else:
         alt_value = _('Not Available')
     worksheet.write(
-        3, 2, alt_value,
+        4, 2, alt_value,
         workbook.add_format({'font_name': font_name, 'font_size': 12,
                              'bold': True, 'bottom': 6, 'right': 6,
                              'align': 'center', 'valign': 'vcenter'}))
