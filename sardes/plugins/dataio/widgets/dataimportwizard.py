@@ -695,9 +695,9 @@ class DataImportWizard(SardesPaneWidget):
         to_add = new_dataf[['datetime']].copy()
         to_add['sonde_id'] = self._sonde_serial_no
 
-        # See https://stackoverflow.com/questions/50645297
-        self._is_duplicated = to_add.stack().isin(
-            in_db.stack().values).unstack().all(axis=1).values
+        # See https://stackoverflow.com/a/50645338/4481445
+        self._is_duplicated = to_add.apply(tuple, 1).isin(
+            in_db.apply(tuple, 1))
 
         self._update_duplicated_satus()
 

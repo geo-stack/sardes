@@ -463,6 +463,7 @@ def test_duplicates_with_multiple_sondes(
     than one synchroneous sondes is working as expected.
 
     Regression test for cgq-qgc/sardes#266
+    Regression test for cgq-qgc/sardes#392
     """
     dbmanager = data_import_wizard.db_connection_manager
 
@@ -473,7 +474,8 @@ def test_duplicates_with_multiple_sondes(
          ['2018-09-27 08:00:00', None, None, None, '1073744'],
          ['2018-09-27 11:00:00', None, None, None, '1073744'],
          ['2018-09-27 07:00:00', None, None, None, '1073747'],
-         ['2018-09-27 08:00:00', None, None, None, '1073747']],
+         ['2018-09-27 09:00:00', None, None, None, '1073747'],
+         ],
         columns=['datetime', DataType.WaterLevel, DataType.WaterTemp,
                  DataType.WaterEC, 'sonde_id'])
     merged_data['datetime'] = pd.to_datetime(
@@ -496,8 +498,8 @@ def test_duplicates_with_multiple_sondes(
                         '_get_sonde_installation_info',
                         return_value=(sonde_installation,))
 
-    # We select the input data files from the first sonde and assert
-    # that the duplicated values are flagged as expected.
+    # We select an input data files associated with sonde 1073744
+    # and assert that the duplicated values are flagged as expected.
     data_import_wizard._queued_filenames = testfiles[3:]
     data_import_wizard._load_next_queued_data_file()
     qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
