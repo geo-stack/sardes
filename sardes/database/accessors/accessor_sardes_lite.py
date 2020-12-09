@@ -1166,7 +1166,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             data.loc[data['obs_id'] == obs_id, 'install_depth'] = install_depth
 
         # Check for duplicates along the time axis.
-        duplicated = data.duplicated(subset='datetime')
+        duplicated = data.duplicated(subset=['datetime', 'sonde_id'])
         nbr_duplicated = np.sum(duplicated)
         if nbr_duplicated:
             observation_well = self._get_sampling_feature(
