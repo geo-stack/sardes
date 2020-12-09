@@ -10,8 +10,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1.0\n"
-"POT-Creation-Date: 2020-12-09 15:21-0500\n"
-"PO-Revision-Date: 2020-12-09 15:21-0500\n"
+"POT-Creation-Date: 2020-12-09 18:29-0500\n"
+"PO-Revision-Date: 2020-12-09 18:30-0500\n"
 "Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs."
 "ca.com>\n"
 "Language-Team: Python\n"
@@ -355,7 +355,7 @@ msgid "Well:"
 msgstr "Puits :"
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:137
-#: ..\sardes\plugins\readings\tools\save2excel.py:181
+#: ..\sardes\plugins\readings\tools\save2excel.py:182
 msgid "Municipality:"
 msgstr "Municipalité :"
 
@@ -674,12 +674,12 @@ msgid "Created on {}"
 msgstr "Créé le {}"
 
 #: ..\sardes\plugins\readings\tools\hydrographs.py:350
-#: ..\sardes\plugins\readings\tools\save2excel.py:221
-msgid "Approximated"
+#: ..\sardes\plugins\readings\tools\save2excel.py:247
+msgid "Approximate"
 msgstr "Approximative"
 
 #: ..\sardes\plugins\readings\tools\hydrographs.py:350
-#: ..\sardes\plugins\readings\tools\save2excel.py:221
+#: ..\sardes\plugins\readings\tools\save2excel.py:247
 #: ..\sardes\plugins\tables\tables\repere.py:90
 msgid "Geodesic"
 msgstr "Géodésique"
@@ -717,19 +717,23 @@ msgstr "Date du relevé"
 msgid "Water temperature (°C)"
 msgstr "Température de l'eau (°C)"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:191
+#: ..\sardes\plugins\readings\tools\save2excel.py:193
 msgid "Piezometer number:"
 msgstr "Numéro du piézomètre :"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:201
-msgid "Coordinates (dd):"
-msgstr "Coordonnées (dd) :"
+#: ..\sardes\plugins\readings\tools\save2excel.py:204
+msgid "Latitude (degrees):"
+msgstr "Latitude (degrés) :"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:213
+#: ..\sardes\plugins\readings\tools\save2excel.py:222
+msgid "Longitude (degrees):"
+msgstr "Longitude (degrés) :"
+
+#: ..\sardes\plugins\readings\tools\save2excel.py:240
 msgid "Ground altitude (m MSL):"
 msgstr "Altitude du sol (m NMM) :"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:223
+#: ..\sardes\plugins\readings\tools\save2excel.py:249
 msgid "Not Available"
 msgstr "Non disponible"
 
@@ -1407,6 +1411,9 @@ msgid ""
 msgstr ""
 "Entrez une valeur comprise entre 0 et 99 points pour modifier la taille des "
 "marqueurs du tracé de la série chronologique actuellement sélectionnée."
+
+#~ msgid "Coordinates (dd):"
+#~ msgstr "Coordonnées (dd) :"
 
 #~ msgid "© {} Government of Quebec"
 #~ msgstr "© {} Gouvernement du Québec"

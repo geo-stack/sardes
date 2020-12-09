@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2020-12-09 15:21-0500\n"
+"POT-Creation-Date: 2020-12-09 18:29-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -310,7 +310,7 @@ msgid "Well:"
 msgstr ""
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:137
-#: ..\sardes\plugins\readings\tools\save2excel.py:181
+#: ..\sardes\plugins\readings\tools\save2excel.py:182
 msgid "Municipality:"
 msgstr ""
 
@@ -581,12 +581,12 @@ msgid "Created on {}"
 msgstr ""
 
 #: ..\sardes\plugins\readings\tools\hydrographs.py:350
-#: ..\sardes\plugins\readings\tools\save2excel.py:221
-msgid "Approximated"
+#: ..\sardes\plugins\readings\tools\save2excel.py:247
+msgid "Approximate"
 msgstr ""
 
 #: ..\sardes\plugins\readings\tools\hydrographs.py:350
-#: ..\sardes\plugins\readings\tools\save2excel.py:221
+#: ..\sardes\plugins\readings\tools\save2excel.py:247
 #: ..\sardes\plugins\tables\tables\repere.py:90
 msgid "Geodesic"
 msgstr ""
@@ -623,19 +623,23 @@ msgstr ""
 msgid "Water temperature (°C)"
 msgstr ""
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:191
+#: ..\sardes\plugins\readings\tools\save2excel.py:193
 msgid "Piezometer number:"
 msgstr ""
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:201
-msgid "Coordinates (dd):"
+#: ..\sardes\plugins\readings\tools\save2excel.py:204
+msgid "Latitude (degrees):"
 msgstr ""
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:213
+#: ..\sardes\plugins\readings\tools\save2excel.py:222
+msgid "Longitude (degrees):"
+msgstr ""
+
+#: ..\sardes\plugins\readings\tools\save2excel.py:240
 msgid "Ground altitude (m MSL):"
 msgstr ""
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:223
+#: ..\sardes\plugins\readings\tools\save2excel.py:249
 msgid "Not Available"
 msgstr ""
 
