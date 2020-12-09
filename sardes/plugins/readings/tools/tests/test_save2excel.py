@@ -71,7 +71,7 @@ def obs_well_data():
     return pd.Series(
         {'municipality': 'municipality_test',
          'obs_well_id': '0123456',
-         'latitude': 45.12,
+         'latitude': 45,
          'longitude': -73.34679})
 
 
@@ -127,7 +127,7 @@ def test_save_reading_data_to_xlsx(tmp_path, source_data, repere_data,
     assert exported_data.shape == (9, 3)
     assert exported_data.iat[0, 2] == 'municipality_test'
     assert exported_data.iat[1, 2] == '0123456'
-    assert exported_data.iat[2, 2] == '45.1200 ; -73.3468'
+    assert exported_data.iat[2, 2] == '45.0000 ; -73.3468'
     assert exported_data.iat[3, 2] == '100.00 (Geodesic)'
 
     assert exported_data.iat[5, 0] == 'Date of reading'
@@ -137,6 +137,29 @@ def test_save_reading_data_to_xlsx(tmp_path, source_data, repere_data,
     assert exported_data.iat[8, 0] == '2005-11-04 00:00:00'
     assert exported_data.iat[8, 1] == '99.9'
     assert exported_data.iat[8, 2] == '-5.1'
+
+
+@pytest.mark.parametrize("latitude_value", [None, nan, '', 'test'])
+def test_save_readings_to_xlsx_when_bad_coord(
+        tmp_path, source_data, repere_data, obs_well_data, latitude_value):
+    """
+    Test that publishing daily readings data to Excel is working as
+    expected when the lat/lon coordinates for the monitoring station are
+    not valid.
+    """
+    obs_well_data = {
+        'municipality': 'municipality_test',
+        'obs_well_id': '0123456',
+        'latitude': latitude_value,
+        'longitude': -73.34679}
+
+    filename = osp.join(tmp_path, 'test_save_readings_to_excel.xlsx')
+    _save_reading_data_to_xlsx(
+        filename, 'test_sheet1', format_reading_data(source_data, repere_data),
+        obs_well_data, ground_altitude=100, is_alt_geodesic=True)
+
+    exported_data = pd.read_excel(filename, dtype='str', header=None)
+    assert pd.isnull(exported_data.iat[2, 2])
 
 
 def test_save_readings_to_excel_tool(tmp_path, save_to_excel_tool, mocker):

@@ -202,8 +202,16 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
         workbook.add_format({'font_name': font_name, 'font_size': 12,
                              'bold': True, 'left': 6,
                              'align': 'right', 'valign': 'vcenter'}))
-    coordinates_str = '{:0.4f} ; {:0.4f}'.format(
-        obs_well_data['latitude'], obs_well_data['longitude'])
+
+    latitude = obs_well_data['latitude']
+    longitude = obs_well_data['longitude']
+    if pd.isnull(latitude) or pd.isnull(longitude):
+        coordinates_str = ''
+    else:
+        try:
+            coordinates_str = '{:0.4f} ; {:0.4f}'.format(latitude, longitude)
+        except (ValueError, TypeError):
+            coordinates_str = ''
     worksheet.write(
         2, 2, coordinates_str,
         workbook.add_format({'font_name': font_name, 'font_size': 12,
