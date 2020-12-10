@@ -515,9 +515,10 @@ class DatabaseConnectionManager(TaskManagerBase):
         self._add_task('disconnect_from_db', self._handle_disconnect_from_db)
         self.run_tasks()
 
-    def close(self):
-        """Close this database connection manager."""
-        self.disconnect_from_db()
+    def close(self, callback=None):
+        """Close the database connection manager."""
+        self._add_task('disconnect_from_db', callback)
+        self.run_tasks()
 
     # ---- Utilities
     def get_sonde_installation_info(self, sonde_serial_no, date_time,
