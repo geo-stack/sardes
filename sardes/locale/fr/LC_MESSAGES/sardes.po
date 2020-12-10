@@ -10,8 +10,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1.0\n"
-"POT-Creation-Date: 2020-11-27 12:22-0500\n"
-"PO-Revision-Date: 2020-11-27 12:23-0500\n"
+"POT-Creation-Date: 2020-12-09 18:29-0500\n"
+"PO-Revision-Date: 2020-12-09 18:30-0500\n"
 "Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs."
 "ca.com>\n"
 "Language-Team: Python\n"
@@ -355,7 +355,7 @@ msgid "Well:"
 msgstr "Puits :"
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:137
-#: ..\sardes\plugins\readings\tools\save2excel.py:179
+#: ..\sardes\plugins\readings\tools\save2excel.py:182
 msgid "Municipality:"
 msgstr "Municipalité :"
 
@@ -625,30 +625,30 @@ msgstr ""
 msgid "Observation well {} ({})"
 msgstr "Puits d'observation {} ({})"
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:51
+#: ..\sardes\plugins\readings\tools\hydrographs.py:50
 msgid "Create Hydrograph"
 msgstr "Créer un hydrogramme"
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:53
+#: ..\sardes\plugins\readings\tools\hydrographs.py:52
 msgid "Create a publication ready graph of the water level data."
 msgstr ""
 "Créer un graphique prêt pour la publication des données de niveau d'eau."
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:75
+#: ..\sardes\plugins\readings\tools\hydrographs.py:74
 msgid "graph_{}.pdf"
 msgstr "graphique_{}.pdf"
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:78
+#: ..\sardes\plugins\readings\tools\hydrographs.py:77
 msgid "Save Hydrograph"
 msgstr "Enregistrer l'hydrogramme"
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:114
-#: ..\sardes\plugins\readings\tools\save2excel.py:110
+#: ..\sardes\plugins\readings\tools\hydrographs.py:113
+#: ..\sardes\plugins\readings\tools\save2excel.py:109
 msgid "File in Use"
 msgstr "Fichier en cours d'utilisation"
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:115
-#: ..\sardes\plugins\readings\tools\save2excel.py:111
+#: ..\sardes\plugins\readings\tools\hydrographs.py:114
+#: ..\sardes\plugins\readings\tools\save2excel.py:110
 msgid ""
 "The save file operation cannot be completed because the file is in use by "
 "another application or user."
@@ -656,12 +656,12 @@ msgstr ""
 "L'opération d'enregistrement du fichier ne peut pas être effectuée car le "
 "fichier est utilisé par une autre application ou un autre utilisateur."
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:140
-#: ..\sardes\plugins\readings\tools\save2excel.py:136
+#: ..\sardes\plugins\readings\tools\hydrographs.py:139
+#: ..\sardes\plugins\readings\tools\save2excel.py:135
 msgid "Water level altitude (m MSL)"
 msgstr "Altitude du niveau d'eau (m NMM)"
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:257
+#: ..\sardes\plugins\readings\tools\hydrographs.py:256
 msgid ""
 "Municipality: {}\n"
 "Observation Well: {}"
@@ -669,63 +669,71 @@ msgstr ""
 "Municipalité : {}\n"
 "Puits d'observation : {}"
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:302
+#: ..\sardes\plugins\readings\tools\hydrographs.py:301
 msgid "Created on {}"
 msgstr "Créé le {}"
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:351
-#: ..\sardes\plugins\readings\tools\save2excel.py:207
-msgid "Approximated"
+#: ..\sardes\plugins\readings\tools\hydrographs.py:350
+#: ..\sardes\plugins\readings\tools\save2excel.py:247
+msgid "Approximate"
 msgstr "Approximative"
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:351
-#: ..\sardes\plugins\readings\tools\save2excel.py:207
+#: ..\sardes\plugins\readings\tools\hydrographs.py:350
+#: ..\sardes\plugins\readings\tools\save2excel.py:247
 #: ..\sardes\plugins\tables\tables\repere.py:90
 msgid "Geodesic"
 msgstr "Géodésique"
 
-#: ..\sardes\plugins\readings\tools\hydrographs.py:352
+#: ..\sardes\plugins\readings\tools\hydrographs.py:351
 msgid "Ground altitude: {:0.1f} m MSL ({})"
 msgstr "Altitude du sol : {:0.1f} m NMM ({})"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:44
+#: ..\sardes\plugins\readings\tools\save2excel.py:43
 msgid "Create XLSX Document"
 msgstr "Créer un document XLSX"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:46
+#: ..\sardes\plugins\readings\tools\save2excel.py:45
 msgid "Save daily readings data in an Excel document."
 msgstr ""
 "Enregistrer les données de lectures quotidiennes dans un document Excel."
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:69
+#: ..\sardes\plugins\readings\tools\save2excel.py:68
 msgid "readings_{}.xlsx"
 msgstr "données_{}.xlsx"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:72
+#: ..\sardes\plugins\readings\tools\save2excel.py:71
 msgid "Save File"
 msgstr "Enregistrer le fichier"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:97
+#: ..\sardes\plugins\readings\tools\save2excel.py:96
 msgid "Piezometry"
 msgstr "Piézométrie"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:135
+#: ..\sardes\plugins\readings\tools\save2excel.py:134
 msgid "Date of reading"
 msgstr "Date du relevé"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:137
+#: ..\sardes\plugins\readings\tools\save2excel.py:136
 msgid "Water temperature (°C)"
 msgstr "Température de l'eau (°C)"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:189
+#: ..\sardes\plugins\readings\tools\save2excel.py:193
 msgid "Piezometer number:"
 msgstr "Numéro du piézomètre :"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:199
+#: ..\sardes\plugins\readings\tools\save2excel.py:204
+msgid "Latitude (degrees):"
+msgstr "Latitude (degrés) :"
+
+#: ..\sardes\plugins\readings\tools\save2excel.py:222
+msgid "Longitude (degrees):"
+msgstr "Longitude (degrés) :"
+
+#: ..\sardes\plugins\readings\tools\save2excel.py:240
 msgid "Ground altitude (m MSL):"
 msgstr "Altitude du sol (m NMM) :"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:209
+#: ..\sardes\plugins\readings\tools\save2excel.py:249
 msgid "Not Available"
 msgstr "Non disponible"
 
@@ -1357,30 +1365,34 @@ msgid "Clear data selection for the currently selected time series."
 msgstr ""
 "Effacer la sélection de données pour la séries temporelle sélectionnée."
 
-#: ..\sardes\widgets\timeseries.py:1171
+#: ..\sardes\widgets\timeseries.py:1164
+msgid "Toggle graph element visibility"
+msgstr ""
+
+#: ..\sardes\widgets\timeseries.py:1173
 msgid "Graph is empty"
 msgstr "Le graphique est vide"
 
-#: ..\sardes\widgets\timeseries.py:1175
+#: ..\sardes\widgets\timeseries.py:1177
 msgid "Graph Element"
 msgstr "Élément du graphique"
 
-#: ..\sardes\widgets\timeseries.py:1176
+#: ..\sardes\widgets\timeseries.py:1178
 msgid ""
 "Select a graph element so that you can format it and zoom and pan the data."
 msgstr ""
 "Sélectionnez un élément du graphique pour pouvoir formater les données et "
 "zoomer et déplacer les axes de l'élément correspondant."
 
-#: ..\sardes\widgets\timeseries.py:1187 ..\sardes\widgets\timeseries.py:1199
+#: ..\sardes\widgets\timeseries.py:1189 ..\sardes\widgets\timeseries.py:1201
 msgid "pt"
 msgstr "pt"
 
-#: ..\sardes\widgets\timeseries.py:1188
+#: ..\sardes\widgets\timeseries.py:1190
 msgid "Line Width"
 msgstr "Largeur de la ligne"
 
-#: ..\sardes\widgets\timeseries.py:1189
+#: ..\sardes\widgets\timeseries.py:1191
 msgid ""
 "Enter a value from 0 pt to 99 pt to change the line width of the plot of the "
 "currently selected time series."
@@ -1388,17 +1400,20 @@ msgstr ""
 "Entrez une valeur comprise entre 0 et 99 points pour modifier l'épaisseur de "
 "la ligne du tracé de la série chronologique actuellement sélectionnée."
 
-#: ..\sardes\widgets\timeseries.py:1200
+#: ..\sardes\widgets\timeseries.py:1202
 msgid "Marker Size"
 msgstr "Taille des marqueurs"
 
-#: ..\sardes\widgets\timeseries.py:1201
+#: ..\sardes\widgets\timeseries.py:1203
 msgid ""
 "Enter a value from 0 pt to 99 pt to change the marker size of the plot of "
 "the currently selected time series."
 msgstr ""
 "Entrez une valeur comprise entre 0 et 99 points pour modifier la taille des "
 "marqueurs du tracé de la série chronologique actuellement sélectionnée."
+
+#~ msgid "Coordinates (dd):"
+#~ msgstr "Coordonnées (dd) :"
 
 #~ msgid "© {} Government of Quebec"
 #~ msgstr "© {} Gouvernement du Québec"
