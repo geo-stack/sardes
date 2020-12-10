@@ -128,12 +128,21 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
     if not filename.endswith('.xlsx'):
         filename += '.xlsx'
 
+    data_columns = []
+    formatted_data_columns = [_("Date of reading")]
+    if DataType.WaterLevel in formatted_data.columns:
+        data_columns.append(DataType.WaterLevel)
+        formatted_data_columns.append(_("Water level altitude (m MSL)"))
+    if DataType.WaterTemp in formatted_data.columns:
+        data_columns.append(DataType.WaterTemp)
+        formatted_data_columns.append(_("Water temperature (°C)"))
+    if DataType.WaterEC in formatted_data.columns:
+        data_columns.append(DataType.WaterEC)
+        formatted_data_columns.append(
+            _("Water electrical conductivity (µS/cm)"))
+
     formatted_datetimes = formatted_data['datetime'].dt.to_pydatetime()
-    formatted_data = formatted_data[[DataType.WaterLevel, DataType.WaterTemp]]
-    formatted_data_columns = [
-        _("Date of reading"),
-        _("Water level altitude (m MSL)"),
-        _("Water temperature (°C)")]
+    formatted_data = formatted_data[data_columns]
 
     # Write the numerical data to the file with pandas.
     writer = pd.ExcelWriter(filename, engine='xlsxwriter')
@@ -150,8 +159,8 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
     num_format = workbook.add_format({
         'num_format': '0.00', 'font_name': font_name})
     worksheet.set_column('A:A', 25, date_format)
-    worksheet.set_column('B:B', 34, num_format)
-    worksheet.set_column('C:C', 34, num_format)
+    for i in range(len(data_columns)):
+        worksheet.set_column(i+1, i+1, 34, num_format)
 
     # Write the datetime data.
     #
