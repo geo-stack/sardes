@@ -32,9 +32,17 @@ from sardes.app.mainwindow import MainWindow, QMessageBox
 def mainwindow(qtbot, mocker):
     """A fixture for Sardes main window."""
     mainwindow = MainWindow()
-    qtbot.addWidget(mainwindow)
     mainwindow.show()
-    return mainwindow
+    qtbot.waitForWindowShown(mainwindow)
+
+    # We need to wait for the mainwindow to be initialized correctly.
+    qtbot.wait(150)
+    yield mainwindow
+
+    # We need to wait for the mainwindow to close properly to avoid
+    # runtime errors on the c++ side.
+    with qtbot.waitSignal(mainwindow.sig_about_to_close):
+        mainwindow.close()
 
 
 # =============================================================================
@@ -55,7 +63,6 @@ def test_mainwindow_settings(qtbot, mocker):
     CONF.set('main', 'window/geometry', None)
 
     mainwindow1 = MainWindow()
-    qtbot.addWidget(mainwindow1)
     mainwindow1.show()
     qtbot.waitForWindowShown(mainwindow1)
 
@@ -79,14 +86,14 @@ def test_mainwindow_settings(qtbot, mocker):
 
     # Close the main window.
     assert CONF.get('main', 'window/geometry', None) is None
-    mainwindow1.close()
+    with qtbot.waitSignal(mainwindow1.sig_about_to_close):
+        mainwindow1.close()
     assert CONF.get('main', 'window/geometry', None) is not None
 
     # Create a new instance of the main window and assert that the size,
     # position and maximized state were restored from the previous
     # mainwindow that was closed.
     mainwindow2 = MainWindow()
-    qtbot.addWidget(mainwindow2)
     mainwindow2.show()
     qtbot.waitForWindowShown(mainwindow2)
     assert mainwindow2.isMaximized()
@@ -98,12 +105,20 @@ def test_mainwindow_settings(qtbot, mocker):
     assert mainwindow2.size() == QSize(*expected_normal_window_size)
     assert mainwindow2.pos() == QPoint(*expected_normal_window_pos)
 
+    # Close the second mainwindow.
+    with qtbot.waitSignal(mainwindow2.sig_about_to_close):
+        mainwindow2.close()
 
-def test_mainwindow_lang_change(mainwindow, qtbot, mocker):
+
+def test_mainwindow_lang_change(qtbot, mocker):
     """
     Test that the window size and position are store and restore correctly
     in and from our configs.
     """
+    mainwindow = MainWindow()
+    mainwindow.show()
+    qtbot.waitForWindowShown(mainwindow)
+
     # Check that English is the default selected language.
     lang_actions = mainwindow.lang_menu.actions()
     checked_actions = [act for act in lang_actions if act.isChecked()]
@@ -117,13 +132,12 @@ def test_mainwindow_lang_change(mainwindow, qtbot, mocker):
     fr_action.toggle()
 
     # Close and delete the window.
-    mainwindow.close()
-    qtbot.wait(5)
+    with qtbot.waitSignal(mainwindow.sig_about_to_close):
+        mainwindow.close()
 
     # Create a new instance of the main window and assert that the
     # language was changed for Français.
     mainwindow_restart = MainWindow()
-    qtbot.addWidget(mainwindow_restart)
     mainwindow_restart.show()
     qtbot.waitForWindowShown(mainwindow_restart)
 
@@ -131,6 +145,10 @@ def test_mainwindow_lang_change(mainwindow, qtbot, mocker):
     checked_actions = [act for act in lang_actions if act.isChecked()]
     assert len(checked_actions) == 1
     assert checked_actions[0].text() == 'Français'
+
+    # Close the second mainwindow.
+    with qtbot.waitSignal(mainwindow_restart.sig_about_to_close):
+        mainwindow_restart.close()
 
 
 def test_reset_window_layout(mainwindow, qtbot, mocker):
@@ -196,4 +214,4 @@ def test_view_readings(mainwindow, qtbot):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', os.path.basename(__file__), '-v', '-rw'])
+    pytest.main(['-x', __file__, '-v', '-rw'])
