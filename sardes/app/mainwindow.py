@@ -35,14 +35,14 @@ import importlib
 
 # ---- Third party imports
 splash.showMessage(_("Importing third party Python modules..."))
-from qtpy.QtCore import Qt, QUrl, Slot, QEvent
+from qtpy.QtCore import Qt, QUrl, Slot, QEvent, Signal
 from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
                             QMessageBox, QToolButton)
 
 # ---- Local imports
 splash.showMessage(_("Importing local Python modules..."))
-from sardes import __namever__, __project_url__
+from sardes import __namever__, __project_url__, __appname__
 from sardes.config.main import CONF
 from sardes.config.icons import get_icon
 from sardes.config.locale import (get_available_translations, get_lang_conf,
@@ -61,6 +61,8 @@ GITHUB_ISSUES_URL = __project_url__ + "/issues"
 
 
 class MainWindow(QMainWindow):
+    sig_about_to_close = Signal()
+
     def __init__(self):
         super().__init__()
         self.setWindowIcon(get_icon('master'))
@@ -71,6 +73,8 @@ class MainWindow(QMainWindow):
             import ctypes
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
                 __namever__)
+
+        self._is_closing = None
 
         # Toolbars and plugins
         self.visible_toolbars = []
@@ -489,24 +493,33 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
-        print('Closing SARDES...')
-        self._save_window_geometry()
-        self._save_window_state()
+        if self._is_closing is None:
+            print('Closing {}...'.format(__appname__))
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            self._is_closing = True
 
-        # Close all internal and thirdparty plugins.
-        for plugin in self.internal_plugins + self.thirdparty_plugins:
-            plugin.close_plugin()
+            self._save_window_geometry()
+            self._save_window_state()
 
-        # Close the database connection manager.
-        self.db_connection_manager.close()
-        count = 0
-        while self.db_connection_manager.is_connected():
-            sleep(0.1)
-            count += 1
-            if count == 1000:
-                break
+            # Close all internal and thirdparty plugins.
+            for plugin in self.internal_plugins + self.thirdparty_plugins:
+                plugin.close_plugin()
 
-        event.accept()
+            # Close the database connection manager.
+            self.db_connection_manager.close(
+                callback=self._handle_project_manager_closed)
+        elif self._is_closing is True:
+            event.ignore()
+        elif self._is_closing is False:
+            self.sig_about_to_close.emit()
+            event.accept()
+
+    def _handle_project_manager_closed(self, *args, **kargs):
+        """
+        Close Gwire after the project manager has been safely closed.
+        """
+        self._is_closing = False
+        self.close()
 
     def createPopupMenu(self):
         """
