@@ -211,39 +211,39 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
 
     worksheet.write(
         2, 1, _('Latitude (degrees):'),
-        workbook.add_format({'font_name': font_name, 'font_size': 12,
-                             'bold': True, 'left': 6,
-                             'align': 'right', 'valign': 'vcenter'}))
+        workbook.add_format({
+            'font_name': font_name, 'font_size': 12, 'bold': True, 'left': 6,
+            'align': 'right', 'valign': 'vcenter'}))
     if pd.notnull(obs_well_data['latitude']):
         try:
             latitude = float(obs_well_data['latitude'])
         except (ValueError, TypeError):
-            pass
-        else:
-            worksheet.write(
-                2, 2, latitude,
-                workbook.add_format({
-                    'font_name': font_name, 'font_size': 12,
-                    'bold': True, 'right': 6, 'num_format': '0.0000',
-                    'align': 'center', 'valign': 'vcenter'}))
+            latitude = ''
+    else:
+        latitude = ''
+    worksheet.write(
+        2, 2, latitude,
+        workbook.add_format({
+            'font_name': font_name, 'font_size': 12, 'bold': True, 'right': 6,
+            'num_format': '0.0000', 'align': 'center', 'valign': 'vcenter'}))
 
     worksheet.write(
         3, 1, _('Longitude (degrees):'),
-        workbook.add_format({'font_name': font_name, 'font_size': 12,
-                             'bold': True, 'left': 6,
-                             'align': 'right', 'valign': 'vcenter'}))
+        workbook.add_format({
+            'font_name': font_name, 'font_size': 12, 'bold': True, 'left': 6,
+            'align': 'right', 'valign': 'vcenter'}))
     if pd.notnull(obs_well_data['longitude']):
         try:
             longitude = float(obs_well_data['longitude'])
         except (ValueError, TypeError):
-            pass
-        else:
-            worksheet.write(
-                3, 2, longitude,
-                workbook.add_format({
-                    'font_name': font_name, 'font_size': 12,
-                    'bold': True, 'right': 6, 'num_format': '0.0000',
-                    'align': 'center', 'valign': 'vcenter'}))
+            longitude = ''
+    else:
+        longitude = ''
+    worksheet.write(
+        3, 2, longitude,
+        workbook.add_format({
+            'font_name': font_name, 'font_size': 12, 'bold': True, 'right': 6,
+            'num_format': '0.0000', 'align': 'center', 'valign': 'vcenter'}))
 
     worksheet.write(
         4, 1, _('Ground altitude (m MSL):'),
