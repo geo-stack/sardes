@@ -160,7 +160,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
         'num_format': '0.00', 'font_name': font_name})
     worksheet.set_column('A:A', 25, date_format)
     for i in range(len(data_columns)):
-        worksheet.set_column(i+1, i+1, 34, num_format)
+        worksheet.set_column(i+1, i+1, 36.75, num_format)
 
     # Write the datetime data.
     #
