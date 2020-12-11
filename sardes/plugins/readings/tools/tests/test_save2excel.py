@@ -39,19 +39,21 @@ from sardes.utils.tests.test_data_operations import format_reading_data
 def source_data():
     source_data = pd.DataFrame(
         data=[
-            ['2005-11-01 01:00:00', '64640', 1.1, -1.1, 3.16, 1],
-            ['2005-11-01 13:00:00', '64640', 1.2, -1.2, 3.16, 1],
-            ['2005-11-03 01:00:00', '64640', nan, -2.1, 3.16, 1],
-            ['2005-11-03 13:00:00', '64640', nan, -2.2, 3.16, 1],
-            ['2005-11-03 00:30:00', '64640', 3.1, -3.1, 9.25, 2],
-            ['2005-11-03 12:30:00', '64640', 3.2, -3.2, 9.25, 2],
-            ['2005-11-03 01:00:00', '64640', 4.1, nan, 7.16, 3],
-            ['2005-11-03 13:00:00', '64640', 4.2, -4.2, 7.16, 3],
-            ['2005-11-04 01:00:00', '64640', 5.1, -5.1, 3.16, 4],
-            ['2005-11-04 13:00:00', '64640', 5.2, -5.2, 3.16, 5]],
+            ['2005-11-01 01:00:00', '64640', 1.1, -1.1,   nan,  3.16, 1],
+            ['2005-11-01 13:00:00', '64640', 1.2, -1.2,   nan,  3.16, 1],
+            ['2005-11-03 01:00:00', '64640', nan, -2.1,   nan,  3.16, 1],
+            ['2005-11-03 13:00:00', '64640', nan,  nan,   nan,  3.16, 1],
+            ['2005-11-04 01:00:00', '64640', 5.1, -5.1, 100.9,  3.16, 4],
+            ['2005-11-04 13:00:00', '64640', 5.2, -5.2, 100.10, 3.16, 5],
+
+            ['2005-11-03 00:30:00', '20640', 3.1, -3.1, 100.5,  9.25, 2],
+            ['2005-11-03 12:30:00', '20640', 3.2, -3.2, 100.6,  9.25, 2],
+
+            ['2005-11-03 01:00:00', '78901', 4.1,  nan, 100.7,  7.16, 3],
+            ['2005-11-03 13:00:00', '78901', 4.2, -4.2, 100.8,  7.16, 3]],
         columns=[
             'datetime', 'sonde_id', DataType.WaterLevel,
-            DataType.WaterTemp, 'install_depth', 'obs_id'])
+            DataType.WaterTemp, DataType.WaterEC, 'install_depth', 'obs_id'])
     source_data['datetime'] = pd.to_datetime(
         source_data['datetime'], format="%Y-%m-%d %H:%M:%S")
     return source_data
@@ -105,7 +107,7 @@ def save_to_excel_tool(qtbot, source_data, repere_data, obs_well_data):
 def test_save_reading_data_to_xlsx(tmp_path, source_data, repere_data,
                                    obs_well_data):
     """
-    Test that publishing daily readings data to Excell is working as
+    Test that publishing daily readings data to Excel is working as
     expected.
     """
     filename = osp.join(tmp_path, 'test_save_readings_to_excel')
@@ -124,7 +126,7 @@ def test_save_reading_data_to_xlsx(tmp_path, source_data, repere_data,
     exported_data = pd.read_excel(
         filename + '.xlsx', dtype='str', header=None)
 
-    assert exported_data.shape == (10, 3)
+    assert exported_data.shape == (10, 4)
     assert exported_data.iat[0, 2] == 'municipality_test'
     assert exported_data.iat[1, 2] == '0123456'
     assert exported_data.iat[2, 2] == '45'
@@ -195,4 +197,4 @@ def test_save_readings_to_excel_tool(tmp_path, save_to_excel_tool, mocker):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
+    pytest.main(['-x', __file__, '-v', '-rw'])
