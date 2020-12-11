@@ -14,4 +14,4 @@ geoalchemy2
 sqlalchemy_utils
 pillow
 xlsxwriter
-xlrd == 0.1.*
+xlrd == 1.*
