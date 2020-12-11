@@ -136,10 +136,12 @@ def test_save_reading_data_to_xlsx(tmp_path, source_data, repere_data,
     assert exported_data.iat[6, 0] == 'Date of reading'
     assert exported_data.iat[6, 1] == 'Water level altitude (m MSL)'
     assert exported_data.iat[6, 2] == 'Water temperature (°C)'
+    assert exported_data.iat[6, 3] == 'Water electrical conductivity (µS/cm)'
 
     assert exported_data.iat[9, 0] == '2005-11-04 00:00:00'
     assert exported_data.iat[9, 1] == '99.9'
     assert exported_data.iat[9, 2] == '-5.1'
+    assert exported_data.iat[9, 3] == '100.9'
 
 
 @pytest.mark.parametrize("value", [None, nan, '', 'test'])
