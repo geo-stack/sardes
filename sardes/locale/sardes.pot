@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2020-12-09 18:29-0500\n"
+"POT-Creation-Date: 2020-12-11 10:16-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -52,77 +52,77 @@ msgstr ""
 msgid "Importing local Python modules..."
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:84
+#: ..\sardes\app\mainwindow.py:88
 msgid "Setting up the database connection manager..."
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:122 ..\sardes\app\mainwindow.py:132
-#: ..\sardes\app\mainwindow.py:142 ..\sardes\app\mainwindow.py:152
-#: ..\sardes\app\mainwindow.py:162 ..\sardes\app\mainwindow.py:185
+#: ..\sardes\app\mainwindow.py:126 ..\sardes\app\mainwindow.py:136
+#: ..\sardes\app\mainwindow.py:146 ..\sardes\app\mainwindow.py:156
+#: ..\sardes\app\mainwindow.py:166 ..\sardes\app\mainwindow.py:189
 msgid "Loading the {} plugin..."
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:231
+#: ..\sardes\app\mainwindow.py:235
 msgid "Unlock panes and toolbars"
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:232 ..\sardes\app\mainwindow.py:298
+#: ..\sardes\app\mainwindow.py:236 ..\sardes\app\mainwindow.py:302
 msgid "Lock panes and toolbars"
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:253
+#: ..\sardes\app\mainwindow.py:257
 msgid "Tools and options"
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:254
+#: ..\sardes\app\mainwindow.py:258
 msgid "Open the tools and options menu."
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:270
+#: ..\sardes\app\mainwindow.py:274
 msgid "Languages"
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:285
+#: ..\sardes\app\mainwindow.py:289
 msgid "Preferences..."
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:291
+#: ..\sardes\app\mainwindow.py:295
 msgid "Panes"
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:294
+#: ..\sardes\app\mainwindow.py:298
 msgid "Toolbars"
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:306
+#: ..\sardes\app\mainwindow.py:310
 msgid "Reset window layout"
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:311
+#: ..\sardes\app\mainwindow.py:315
 msgid "Report an issue..."
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:316
+#: ..\sardes\app\mainwindow.py:320
 msgid "About Sardes..."
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:320
+#: ..\sardes\app\mainwindow.py:324
 msgid "Exit"
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:351
+#: ..\sardes\app\mainwindow.py:355
 msgid "Language change"
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:352
+#: ..\sardes\app\mainwindow.py:356
 msgid "The language has been set to <i>{}</i>. Restart Sardes to apply this change."
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:370
+#: ..\sardes\app\mainwindow.py:374
 msgid "Reset Window Layout"
 msgstr ""
 
-#: ..\sardes\app\mainwindow.py:371
+#: ..\sardes\app\mainwindow.py:375
 msgid "Window layout will be reset to default settings.<br><br>Do you want to continue?"
 msgstr ""
 
@@ -310,7 +310,7 @@ msgid "Well:"
 msgstr ""
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:137
-#: ..\sardes\plugins\readings\tools\save2excel.py:182
+#: ..\sardes\plugins\readings\tools\save2excel.py:191
 msgid "Municipality:"
 msgstr ""
 
@@ -581,12 +581,12 @@ msgid "Created on {}"
 msgstr ""
 
 #: ..\sardes\plugins\readings\tools\hydrographs.py:350
-#: ..\sardes\plugins\readings\tools\save2excel.py:247
+#: ..\sardes\plugins\readings\tools\save2excel.py:256
 msgid "Approximate"
 msgstr ""
 
 #: ..\sardes\plugins\readings\tools\hydrographs.py:350
-#: ..\sardes\plugins\readings\tools\save2excel.py:247
+#: ..\sardes\plugins\readings\tools\save2excel.py:256
 #: ..\sardes\plugins\tables\tables\repere.py:90
 msgid "Geodesic"
 msgstr ""
@@ -615,31 +615,35 @@ msgstr ""
 msgid "Piezometry"
 msgstr ""
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:134
+#: ..\sardes\plugins\readings\tools\save2excel.py:132
 msgid "Date of reading"
 msgstr ""
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:136
+#: ..\sardes\plugins\readings\tools\save2excel.py:138
 msgid "Water temperature (°C)"
 msgstr ""
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:193
+#: ..\sardes\plugins\readings\tools\save2excel.py:142
+msgid "Water electrical conductivity (µS/cm)"
+msgstr ""
+
+#: ..\sardes\plugins\readings\tools\save2excel.py:202
 msgid "Piezometer number:"
 msgstr ""
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:204
+#: ..\sardes\plugins\readings\tools\save2excel.py:213
 msgid "Latitude (degrees):"
 msgstr ""
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:222
+#: ..\sardes\plugins\readings\tools\save2excel.py:231
 msgid "Longitude (degrees):"
 msgstr ""
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:240
+#: ..\sardes\plugins\readings\tools\save2excel.py:249
 msgid "Ground altitude (m MSL):"
 msgstr ""
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:249
+#: ..\sardes\plugins\readings\tools\save2excel.py:258
 msgid "Not Available"
 msgstr ""
 
