@@ -179,11 +179,12 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
 
     # Setup the height of the rows.
     worksheet.set_default_row(15)
-    worksheet.set_row(0, 30)
-    worksheet.set_row(1, 30)
-    worksheet.set_row(2, 30)
-    worksheet.set_row(3, 30)
-    worksheet.set_row(4, 30)
+    header_row_height = 22
+    worksheet.set_row(0, header_row_height)
+    worksheet.set_row(1, header_row_height)
+    worksheet.set_row(2, header_row_height)
+    worksheet.set_row(3, header_row_height)
+    worksheet.set_row(4, header_row_height)
 
     # Write the file header.
     # https://xlsxwriter.readthedocs.io/example_pandas_header_format.html
