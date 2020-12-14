@@ -253,7 +253,7 @@ class HydrographCanvas(FigureCanvasQTAgg):
         offset = ScaledTranslation(0, -margin_width, fig.dpi_scale_trans)
         fig_title = ax.text(
             0.5, 1,
-            _('Municipality: {}\nObservation Well: {}').format(
+            _('Municipality: {}\nStation: {}').format(
                 obs_well_data['municipality'], obs_well_data['obs_well_id']),
             ha='center', va='top', fontsize=20,
             fontweight='bold', fontname=fontname, linespacing=1.5,

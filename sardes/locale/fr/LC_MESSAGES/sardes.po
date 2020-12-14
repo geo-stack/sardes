@@ -10,8 +10,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1.0\n"
-"POT-Creation-Date: 2020-12-11 10:16-0500\n"
-"PO-Revision-Date: 2020-12-11 10:17-0500\n"
+"POT-Creation-Date: 2020-12-11 13:57-0500\n"
+"PO-Revision-Date: 2020-12-11 14:02-0500\n"
 "Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs."
 "ca.com>\n"
 "Language-Team: Python\n"
@@ -664,10 +664,10 @@ msgstr "Altitude du niveau d'eau (m NMM)"
 #: ..\sardes\plugins\readings\tools\hydrographs.py:256
 msgid ""
 "Municipality: {}\n"
-"Observation Well: {}"
+"Station: {}"
 msgstr ""
 "Municipalité : {}\n"
-"Puits d'observation : {}"
+"Station : {}"
 
 #: ..\sardes\plugins\readings\tools\hydrographs.py:301
 msgid "Created on {}"
@@ -722,8 +722,8 @@ msgid "Water electrical conductivity (µS/cm)"
 msgstr "Conductivité électrique de l'eau (µS/cm)"
 
 #: ..\sardes\plugins\readings\tools\save2excel.py:202
-msgid "Piezometer number:"
-msgstr "Numéro du piézomètre :"
+msgid "Station number:"
+msgstr "Numéro de la station :"
 
 #: ..\sardes\plugins\readings\tools\save2excel.py:213
 msgid "Latitude (degrees):"
@@ -1415,6 +1415,9 @@ msgid ""
 msgstr ""
 "Entrez une valeur comprise entre 0 et 99 points pour modifier la taille des "
 "marqueurs du tracé de la série chronologique actuellement sélectionnée."
+
+#~ msgid "Piezometer number:"
+#~ msgstr "Numéro du piézomètre :"
 
 #~ msgid "Coordinates (dd):"
 #~ msgstr "Coordonnées (dd) :"

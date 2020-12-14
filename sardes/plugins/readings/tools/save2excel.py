@@ -199,7 +199,7 @@ def _save_reading_data_to_xlsx(filename, sheetname, formatted_data,
                              'align': 'center', 'valign': 'vcenter'}))
 
     worksheet.write(
-        1, 1, _('Piezometer number:'),
+        1, 1, _('Station number:'),
         workbook.add_format({'font_name': font_name, 'font_size': 12,
                              'bold': True, 'left': 6,
                              'align': 'right', 'valign': 'vcenter'}))
