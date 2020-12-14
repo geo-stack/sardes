@@ -10,8 +10,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1.0\n"
-"POT-Creation-Date: 2020-12-11 13:57-0500\n"
-"PO-Revision-Date: 2020-12-11 14:02-0500\n"
+"POT-Creation-Date: 2020-12-14 09:38-0500\n"
+"PO-Revision-Date: 2020-12-14 09:39-0500\n"
 "Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs."
 "ca.com>\n"
 "Language-Team: Python\n"
@@ -143,15 +143,15 @@ msgstr ""
 "La disposition de l'interface sera réinitialisée à la configuration par "
 "défaut.<br><br> Voulez-vous continuer?"
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:538
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:475
 msgid "'{}' does not exist."
 msgstr "'{}' n'existe pas."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:544
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:481
 msgid "'{}' is not a valid database file."
 msgstr "'{}' n'est pas un fichier de base de données valide."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:565
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:502
 msgid ""
 "'{}' does not appear to be a Sardes SQLite database. The application id set "
 "in the database is {}, but should be {}."
@@ -160,7 +160,7 @@ msgstr ""
 "l'application qui est défini dans la base de données est {} alors qu'il "
 "devrait être {}."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:573
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:510
 msgid ""
 "The version of this database is {} and is outdated. Please update your "
 "database to version {} and try again."
@@ -168,7 +168,7 @@ msgstr ""
 "La version de cette base de données est {} et est obsolète. Veuillez mettre "
 "à jour votre base de données à la version {} et réessayer."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:579
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:516
 msgid ""
 "Your Sardes application is outdated and does not support databases whose "
 "version is higher than {}. Please update Sardes and try again."
@@ -355,7 +355,7 @@ msgid "Well:"
 msgstr "Puits :"
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:137
-#: ..\sardes\plugins\readings\tools\save2excel.py:191
+#: ..\sardes\plugins\readings\tools\save2excel.py:192
 msgid "Municipality:"
 msgstr "Municipalité :"
 
@@ -674,12 +674,12 @@ msgid "Created on {}"
 msgstr "Créé le {}"
 
 #: ..\sardes\plugins\readings\tools\hydrographs.py:350
-#: ..\sardes\plugins\readings\tools\save2excel.py:256
+#: ..\sardes\plugins\readings\tools\save2excel.py:257
 msgid "Approximate"
 msgstr "Approximative"
 
 #: ..\sardes\plugins\readings\tools\hydrographs.py:350
-#: ..\sardes\plugins\readings\tools\save2excel.py:256
+#: ..\sardes\plugins\readings\tools\save2excel.py:257
 #: ..\sardes\plugins\tables\tables\repere.py:90
 msgid "Geodesic"
 msgstr "Géodésique"
@@ -721,23 +721,23 @@ msgstr "Température de l'eau (°C)"
 msgid "Water electrical conductivity (µS/cm)"
 msgstr "Conductivité électrique de l'eau (µS/cm)"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:202
+#: ..\sardes\plugins\readings\tools\save2excel.py:203
 msgid "Station number:"
 msgstr "Numéro de la station :"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:213
+#: ..\sardes\plugins\readings\tools\save2excel.py:214
 msgid "Latitude (degrees):"
 msgstr "Latitude (degrés) :"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:231
+#: ..\sardes\plugins\readings\tools\save2excel.py:232
 msgid "Longitude (degrees):"
 msgstr "Longitude (degrés) :"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:249
+#: ..\sardes\plugins\readings\tools\save2excel.py:250
 msgid "Ground altitude (m MSL):"
 msgstr "Altitude du sol (m NMM) :"
 
-#: ..\sardes\plugins\readings\tools\save2excel.py:258
+#: ..\sardes\plugins\readings\tools\save2excel.py:259
 msgid "Not Available"
 msgstr "Non disponible"
 
@@ -1369,34 +1369,30 @@ msgid "Clear data selection for the currently selected time series."
 msgstr ""
 "Effacer la sélection de données pour la séries temporelle sélectionnée."
 
-#: ..\sardes\widgets\timeseries.py:1164
-msgid "Toggle graph element visibility"
-msgstr ""
-
-#: ..\sardes\widgets\timeseries.py:1173
+#: ..\sardes\widgets\timeseries.py:1171
 msgid "Graph is empty"
 msgstr "Le graphique est vide"
 
-#: ..\sardes\widgets\timeseries.py:1177
+#: ..\sardes\widgets\timeseries.py:1175
 msgid "Graph Element"
 msgstr "Élément du graphique"
 
-#: ..\sardes\widgets\timeseries.py:1178
+#: ..\sardes\widgets\timeseries.py:1176
 msgid ""
 "Select a graph element so that you can format it and zoom and pan the data."
 msgstr ""
 "Sélectionnez un élément du graphique pour pouvoir formater les données et "
 "zoomer et déplacer les axes de l'élément correspondant."
 
-#: ..\sardes\widgets\timeseries.py:1189 ..\sardes\widgets\timeseries.py:1201
+#: ..\sardes\widgets\timeseries.py:1187 ..\sardes\widgets\timeseries.py:1199
 msgid "pt"
 msgstr "pt"
 
-#: ..\sardes\widgets\timeseries.py:1190
+#: ..\sardes\widgets\timeseries.py:1188
 msgid "Line Width"
 msgstr "Largeur de la ligne"
 
-#: ..\sardes\widgets\timeseries.py:1191
+#: ..\sardes\widgets\timeseries.py:1189
 msgid ""
 "Enter a value from 0 pt to 99 pt to change the line width of the plot of the "
 "currently selected time series."
@@ -1404,11 +1400,11 @@ msgstr ""
 "Entrez une valeur comprise entre 0 et 99 points pour modifier l'épaisseur de "
 "la ligne du tracé de la série chronologique actuellement sélectionnée."
 
-#: ..\sardes\widgets\timeseries.py:1202
+#: ..\sardes\widgets\timeseries.py:1200
 msgid "Marker Size"
 msgstr "Taille des marqueurs"
 
-#: ..\sardes\widgets\timeseries.py:1203
+#: ..\sardes\widgets\timeseries.py:1201
 msgid ""
 "Enter a value from 0 pt to 99 pt to change the marker size of the plot of "
 "the currently selected time series."
