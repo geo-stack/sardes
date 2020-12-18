@@ -16,8 +16,12 @@ print('Starting SARDES...')
 # ---- Setup the main Qt application.
 import sys
 from qtpy.QtWidgets import QApplication
+from qtpy.QtCore import QLocale
 from time import sleep
 app = QApplication(sys.argv)
+
+# Enforce using dots as decimal separators for the whole application.
+QLocale.setDefault(QLocale(QLocale.C))
 
 # ---- Setup the splash screen.
 from sardes.widgets.splash import SplashScreen
@@ -544,6 +548,7 @@ def except_hook(cls, exception, traceback):
 
 if __name__ == '__main__':
     sys.excepthook = except_hook
+
     main = MainWindow()
 
     from PyQt5.QtWidgets import QStyleFactory
