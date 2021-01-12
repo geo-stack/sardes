@@ -225,6 +225,23 @@ class DatabaseConnectionWorker(WorkerBase):
         self.db_accessor.delete_timeseries_data(tseries_dels)
         print("...timeseries data deleted sucessfully.")
 
+    # ---- Construction Logs
+    def _get_construction_log(self, sampling_feature_uuid):
+        """
+        Return the data of the construction log file attached to the
+        specified sampling_feature_uuid.
+        """
+        return self.db_accessor.get_construction_log(sampling_feature_uuid)
+
+    def _set_construction_log(self, sampling_feature_uuid, filename):
+        """
+        Attach the data of a construction log file to the
+        specified sampling_feature_uuid.
+        """
+        if 'stations_with_construction_log' in self._cache:
+            del self._cache['stations_with_construction_log']
+        self.db_accessor.set_construction_log(sampling_feature_uuid, filename)
+
     # ---- Utilities
     def _get_sonde_installation_info(self, sonde_serial_no, date_time):
         """
@@ -621,6 +638,29 @@ class DatabaseConnectionManager(TaskManagerBase):
         self._data_changed.add('observation_wells_data_overview')
         self._tseries_data_changed.add(obs_well_id)
         self._add_task('delete_timeseries_data', callback, tseries_dels)
+        if not postpone_exec:
+            self.run_tasks()
+
+    # ---- Construction Log
+    def get_construction_log(self, sampling_feature_uuid, callback=None,
+                             postpone_exec=False):
+        """
+        Return the data of the construction log file attached to the
+        specified sampling_feature_uuid.
+        """
+        self._add_task('get_construction_log', callback, sampling_feature_uuid)
+        if not postpone_exec:
+            self.run_tasks()
+
+    def set_construction_log(self, sampling_feature_uuid, filename,
+                             callback=None, postpone_exec=False):
+        """
+        Attach the data of a construction log file to the
+        specified sampling_feature_uuid.
+        """
+        self._data_changed.add('stations_with_construction_log')
+        self._add_task('set_construction_log', callback,
+                       sampling_feature_uuid, filename)
         if not postpone_exec:
             self.run_tasks()
 
