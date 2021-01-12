@@ -10,12 +10,13 @@
 # ---- Third party imports
 import pandas as pd
 from qtpy.QtCore import Signal
+from qtpy.QtWidgets import QMenu
 
 # ---- Local imports
 from sardes.api.tablemodels import SardesTableModel
 from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
-from sardes.utils.qthelpers import create_toolbutton
+from sardes.utils.qthelpers import create_toolbutton, create_action
 from sardes.widgets.tableviews import (
     SardesTableWidget, StringEditDelegate, BoolEditDelegate,
     NumEditDelegate, NotEditableDelegate, TextEditDelegate)
@@ -130,6 +131,7 @@ class ObsWellsTableWidget(SardesTableWidget):
             return None
 
     def _create_extra_toolbuttons(self):
+        # Setup show data button.
         self.show_data_btn = create_toolbutton(
             self,
             icon='show_data_table',
@@ -139,7 +141,38 @@ class ObsWellsTableWidget(SardesTableWidget):
             triggered=self._view_current_timeseries_data,
             iconsize=get_iconsize()
             )
-        return [self.show_data_btn]
+
+        # Setup construction log button.
+        self.construction_log_btn = create_toolbutton(
+            self,
+            icon='water_well',
+            text=_("Construction Log"),
+            iconsize=get_iconsize())
+
+        attach_construction_log_action = create_action(
+            self,
+            _("Attach Construction Log"),
+            tip=_("Attach a construction log file to the "
+                  "currently selected observation well."),
+            icon='attachment',
+            triggered=self._handle_attach_drillog_request)
+        self.show_construction_log_action = create_action(
+            self,
+            _("Show Construction Log"),
+            tip=_("Show the construction log file attached to the "
+                  "currently selected observation well."),
+            icon='magnifying_glass',
+            triggered=self._handle_show_drillog_request)
+
+        construction_log_menu = QMenu()
+        construction_log_menu.addAction(attach_construction_log_action)
+        construction_log_menu.addAction(self.show_construction_log_action)
+
+        self.construction_log_btn.setMenu(construction_log_menu)
+        self.construction_log_btn.setPopupMode(
+            self.construction_log_btn.InstantPopup)
+
+        return [self.show_data_btn, self.construction_log_btn]
 
     def _view_current_timeseries_data(self):
         """
@@ -149,3 +182,17 @@ class ObsWellsTableWidget(SardesTableWidget):
         current_obs_well_data = self.get_current_obs_well_data()
         if current_obs_well_data is not None:
             self.sig_view_data.emit(current_obs_well_data.name, False)
+
+    def _handle_attach_drillog_request(self):
+        """
+        Handle when a request is made by the user to attach a drillog to
+        the currently selected station.
+        """
+        pass
+
+    def _handle_show_drillog_request(self):
+        """
+        Handle when a request is made by the user to show the drillog attached
+        to the currently selected station.
+        """
+        pass
