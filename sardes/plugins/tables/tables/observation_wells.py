@@ -232,12 +232,13 @@ class ObsWellsTableWidget(SardesTableWidget):
         Handle when a request is made by the user to attach a construction log
         to the currently selected station.
         """
+        obs_well_id = self.get_current_obs_well_data()['obs_well_id']
         namefilters = (
             'Construction Log '
             '(*.png ; *.bmp ; *.jpg ; *.jpeg ; *.tif ; *.pdf)')
         filename, filefilter = QFileDialog.getOpenFileName(
             self.parent() or self,
-            _('Select Construction Log'),
+            _('Select Construction Log for Station {}').format(obs_well_id),
             get_select_file_dialog_dir(),
             namefilters)
         if filename:
