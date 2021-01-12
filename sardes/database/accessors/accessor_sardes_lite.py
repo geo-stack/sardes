@@ -156,7 +156,7 @@ class SamplingFeatureAttachment(BaseMixin, Base):
     attachment_id = Column(Integer, primary_key=True)
     attachment_type = Column(Integer)
     attachment_data = Column(BLOB)
-    attachment_fext = Column(String)
+    attachment_fname = Column(String)
     sampling_feature_uuid = Column(
         UUIDType(binary=False),
         ForeignKey('sampling_feature.sampling_feature_uuid'))
