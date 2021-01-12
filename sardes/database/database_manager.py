@@ -242,6 +242,15 @@ class DatabaseConnectionWorker(WorkerBase):
             del self._cache['stations_with_construction_log']
         self.db_accessor.set_construction_log(sampling_feature_uuid, filename)
 
+    def _del_construction_log(self, sampling_feature_uuid):
+        """
+        Delete from the database the construction log file currently
+        attached to the specified sampling_feature_uuid.
+        """
+        if 'stations_with_construction_log' in self._cache:
+            del self._cache['stations_with_construction_log']
+        self.db_accessor.del_construction_log(sampling_feature_uuid)
+
     # ---- Utilities
     def _get_sonde_installation_info(self, sonde_serial_no, date_time):
         """
