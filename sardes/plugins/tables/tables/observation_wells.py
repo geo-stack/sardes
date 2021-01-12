@@ -97,6 +97,7 @@ class ObsWellsTableWidget(SardesTableWidget):
     sig_view_data = Signal(object, bool)
     sig_attach_construction_log = Signal(object, object)
     sig_show_construction_log = Signal(object)
+    sig_remove_construction_log = Signal(object)
 
     def __init__(self, *args, **kargs):
         table_model = ObsWellsTableModel(
@@ -130,16 +131,14 @@ class ObsWellsTableWidget(SardesTableWidget):
         """Register this table with the given plugin."""
         self.sig_view_data.connect(plugin.main.view_timeseries_data)
         self.sig_attach_construction_log.connect(
-            lambda sampling_feature_uuid, filename:
-            plugin.main.db_connection_manager.set_construction_log(
-                sampling_feature_uuid, filename)
-            )
+            plugin.main.db_connection_manager.set_construction_log)
         self.sig_show_construction_log.connect(
             lambda sampling_feature_uuid:
                 plugin.main.db_connection_manager.get_construction_log(
                     sampling_feature_uuid,
-                    callback=self._show_construction_log)
-                )
+                    callback=self._show_construction_log))
+        self.sig_remove_construction_log.connect(
+            plugin.main.db_connection_manager.del_construction_log)
 
     # ---- Timeseries
     def get_current_obs_well_data(self):
@@ -185,10 +184,18 @@ class ObsWellsTableWidget(SardesTableWidget):
                   "currently selected observation well."),
             icon='magnifying_glass',
             triggered=self._handle_show_construction_log_request)
+        self.remove_construction_log_action = create_action(
+            self,
+            _("Remove Construction Log"),
+            tip=_("Remove the construction log file attached to the "
+                  "currently selected observation well."),
+            icon='delete_data',
+            triggered=self._handle_remove_construction_log_request)
 
         construction_log_menu = QMenu()
         construction_log_menu.addAction(self.attach_construction_log_action)
         construction_log_menu.addAction(self.show_construction_log_action)
+        construction_log_menu.addAction(self.remove_construction_log_action)
         construction_log_menu.aboutToShow.connect(
             self._handle_construction_log_menu_aboutToShow)
 
@@ -213,11 +220,14 @@ class ObsWellsTableWidget(SardesTableWidget):
         if obs_well_data is None:
             self.attach_construction_log_action.setEnabled(False)
             self.show_construction_log_action.setEnabled(False)
+            self.remove_construction_log_action.setEnabled(False)
         else:
             self.attach_construction_log_action.setEnabled(True)
-            self.show_construction_log_action.setEnabled(
+            log_exists = (
                 obs_well_data.name in
                 self.model().libraries['stations_with_construction_log'])
+            self.show_construction_log_action.setEnabled(log_exists)
+            self.remove_construction_log_action.setEnabled(log_exists)
 
     # ---- Construction Log
     def _show_construction_log(self, data, name):
@@ -249,8 +259,16 @@ class ObsWellsTableWidget(SardesTableWidget):
 
     def _handle_show_construction_log_request(self):
         """
-        Handle when a request is made by the user to show the drillog attached
-        to the currently selected station.
+        Handle when a request is made by the user to show the construction log
+        attached to the currently selected station.
         """
         sampling_feature_uuid = self.get_current_obs_well_data().name
         self.sig_show_construction_log.emit(sampling_feature_uuid)
+
+    def _handle_remove_construction_log_request(self):
+        """
+        Handle when a request is made by the user to remove the construction
+        log attached to the currently selected station.
+        """
+        sampling_feature_uuid = self.get_current_obs_well_data().name
+        self.sig_remove_construction_log.emit(sampling_feature_uuid)
