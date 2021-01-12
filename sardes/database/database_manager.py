@@ -664,6 +664,18 @@ class DatabaseConnectionManager(TaskManagerBase):
         if not postpone_exec:
             self.run_tasks()
 
+    def del_construction_log(self, sampling_feature_uuid, callback=None,
+                             postpone_exec=False):
+        """
+        Delete from the database the construction log file currently
+        attached to the specified sampling_feature_uuid.
+        """
+        self._data_changed.add('stations_with_construction_log')
+        self._add_task(
+            'del_construction_log', callback, sampling_feature_uuid)
+        if not postpone_exec:
+            self.run_tasks()
+
     # ---- Handlers
     @Slot(object, object)
     def _handle_connect_to_db(self, connection, connection_error):
