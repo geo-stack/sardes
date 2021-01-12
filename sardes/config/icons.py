@@ -68,6 +68,9 @@ FA_ICONS = {
     'commit_changes': [
         ('mdi.check-circle-outline',),
         {'color': GREEN, 'scale_factor': 1.2}],
+    'construction_log': [
+        ('mdi.bolt',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'copy_clipboard': [
         ('mdi.content-copy',),
         {'color': ICON_COLOR, 'scale_factor': 1}],
@@ -253,9 +256,6 @@ FA_ICONS = {
     'warning': [
         ('mdi.alert-outline',),
         {'color': YELLOW, 'scale_factor': 1.3}],
-    'water_well': [
-        ('mdi.water-well-outline',),
-        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'zoom_in': [
         ('mdi.plus-circle-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],

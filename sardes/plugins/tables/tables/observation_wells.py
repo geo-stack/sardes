@@ -167,7 +167,7 @@ class ObsWellsTableWidget(SardesTableWidget):
         # Setup construction log button.
         self.construction_log_btn = create_toolbutton(
             self,
-            icon='water_well',
+            icon='construction_log',
             text=_("Construction Log"),
             iconsize=get_iconsize())
 
