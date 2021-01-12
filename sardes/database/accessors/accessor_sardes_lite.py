@@ -788,6 +788,24 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             query.statement, query.session.bind, coerce_float=True)
         return result['sampling_feature_uuid'].values.tolist()
 
+    def get_construction_log(self, sampling_feature_uuid):
+        """
+        Return the data of the construction log file attached to the
+        specified sampling_feature_uuid.
+        """
+        try:
+            construction_log_attachment = (
+                self._session.query(SamplingFeatureAttachment)
+                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .filter(SamplingFeatureAttachment.attachment_type == 1)
+                .one())
+        except NoResultFound:
+            return (None, None)
+        else:
+            return (construction_log_attachment.attachment_data,
+                    construction_log_attachment.attachment_fname)
+
     # ---- Repere
     def _get_repere_data(self, repere_id):
         """
