@@ -228,15 +228,15 @@ class DatabaseConnectionWorker(WorkerBase):
     # ---- Construction Logs
     def _get_construction_log(self, sampling_feature_uuid):
         """
-        Return the data of the construction log file attached to the
-        specified sampling_feature_uuid.
+        Return the data and filename of the construction log file
+        attached to the specified sampling_feature_uuid.
         """
         return self.db_accessor.get_construction_log(sampling_feature_uuid)
 
     def _set_construction_log(self, sampling_feature_uuid, filename):
         """
-        Attach the data of a construction log file to the
-        specified sampling_feature_uuid.
+        Save and attach the given construction log file to the
+        specified sampling_feature_uuid in the database.
         """
         if 'stations_with_construction_log' in self._cache:
             del self._cache['stations_with_construction_log']
@@ -645,8 +645,8 @@ class DatabaseConnectionManager(TaskManagerBase):
     def get_construction_log(self, sampling_feature_uuid, callback=None,
                              postpone_exec=False):
         """
-        Return the data of the construction log file attached to the
-        specified sampling_feature_uuid.
+        Return the data and filename of the construction log file
+        attached to the specified sampling_feature_uuid.
         """
         self._add_task('get_construction_log', callback, sampling_feature_uuid)
         if not postpone_exec:
@@ -655,8 +655,8 @@ class DatabaseConnectionManager(TaskManagerBase):
     def set_construction_log(self, sampling_feature_uuid, filename,
                              callback=None, postpone_exec=False):
         """
-        Attach the data of a construction log file to the
-        specified sampling_feature_uuid.
+        Save and attach the given construction log file to the
+        specified sampling_feature_uuid in the database.
         """
         self._data_changed.add('stations_with_construction_log')
         self._add_task('set_construction_log', callback,
