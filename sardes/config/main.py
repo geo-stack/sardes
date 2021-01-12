@@ -9,6 +9,7 @@
 
 # ---- Standard imports
 import os
+import os.path as osp
 
 # ---- Third party imports
 from appconfigs.user import UserConfig
@@ -20,6 +21,10 @@ from sardes import __appname__
 CONFIG_DIR = get_config_dir(__appname__)
 if bool(os.environ.get('SARDES_PYTEST')):
     CONFIG_DIR += '_pytest'
+
+TEMP_DIR = osp.join(CONFIG_DIR, 'Temp')
+if not osp.exists(TEMP_DIR):
+    os.makedirs(TEMP_DIR)
 
 DEFAULTS = [
     ('main',
