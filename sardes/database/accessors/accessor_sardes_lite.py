@@ -24,7 +24,7 @@ from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
                         UniqueConstraint, Index)
 from sqlalchemy.exc import DBAPIError, ProgrammingError, OperationalError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.types import TEXT, VARCHAR, Boolean
+from sqlalchemy.types import TEXT, VARCHAR, Boolean, BLOB
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.engine.url import URL
 from sqlalchemy_utils import UUIDType
@@ -41,7 +41,7 @@ from sardes.api.timeseries import DataType
 APPLICATION_ID = 1013042054
 
 # The latest version of the database schema.
-CURRENT_SCHEMA_VERSION = 1
+CURRENT_SCHEMA_VERSION = 2
 
 # The format that is used to store datetime values in the database.
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
@@ -144,6 +144,22 @@ class SamplingFeatureType(BaseMixin, Base):
     sampling_feature_type_id = Column(Integer, primary_key=True)
     sampling_feature_type_desc = Column(String)
     sampling_feature_type_abb = Column(String)
+
+
+class SamplingFeatureAttachment(BaseMixin, Base):
+    """
+    An object used to map the 'sampling_feature_attachment' table.
+    """
+    __tablename__ = 'sampling_feature_attachment'
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    attachment_id = Column(Integer, primary_key=True)
+    attachment_type = Column(Integer)
+    attachment_data = Column(BLOB)
+    attachment_fext = Column(String)
+    sampling_feature_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('sampling_feature.sampling_feature_uuid'))
 
 
 class SamplingFeatureMetadata(BaseMixin, Base):
@@ -441,7 +457,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                   SondeFeature, SondeModel, SondeInstallation, Process, Repere,
                   ObservationType, Observation, ObservedProperty,
                   GenericNumericalData, TimeSeriesChannel,
-                  TimeSeriesData, PumpType, PumpInstallation]
+                  TimeSeriesData, SamplingFeatureAttachment]
         dialect = self._engine.dialect
         for table in tables:
             if dialect.has_table(self._session, table.__tablename__):
