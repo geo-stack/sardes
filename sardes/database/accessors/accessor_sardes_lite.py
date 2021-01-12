@@ -774,6 +774,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         data['mean_water_level'] = data['mean_water_level'].round(decimals=3)
         return data
 
+    # ---- Construction Logs
     def get_stations_with_construction_log(self):
         """
         Return a list of sampling_feature_uuid for which a construction log
@@ -833,6 +834,26 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 log.attachment_data = memoryview(f.read())
         log.attachment_fname = osp.basename(filename)
         self._session.commit()
+
+    def del_construction_log(self, sampling_feature_uuid,):
+        """
+        Delete the data of the construction log file attached to the
+        specified sampling_feature_uuid.
+        """
+        try:
+            log = (
+                self._session.query(SamplingFeatureAttachment)
+                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .filter(SamplingFeatureAttachment.attachment_type == 1)
+                .one())
+        except NoResultFound:
+            # This means there is currently no construction log attached to
+            # the specified sampling_feature_uuid.
+            pass
+        else:
+            self._session.delete(log)
+            self._session.commit()
 
     # ---- Repere
     def _get_repere_data(self, repere_id):
