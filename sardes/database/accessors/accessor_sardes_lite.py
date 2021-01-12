@@ -1512,15 +1512,16 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
 
 if __name__ == "__main__":
-    accessor_sardeslite = DatabaseAccessorSardesLite('D:/rsesq_test.db')
-    accessor_sardeslite.connect()
+    database = "D:/Desktop/rsesq_prod_21072020_v1.db"
+    accessor = DatabaseAccessorSardesLite(database)
+    accessor.init_database()
+    accessor.connect()
 
-    # init_database(accessor_sardeslite)
+    obs_wells = accessor.get_observation_wells_data()
+    sonde_data = accessor.get_sondes_data()
+    sonde_models_lib = accessor.get_sonde_models_lib()
+    sonde_installations = accessor.get_sonde_installations()
+    repere_data = accessor.get_repere_data()
 
-    obs_wells = accessor_sardeslite.get_observation_wells_data()
-    sonde_data = accessor_sardeslite.get_sondes_data()
-    sonde_models_lib = accessor_sardeslite.get_sonde_models_lib()
-    sonde_installations = accessor_sardeslite.get_sonde_installations()
-    repere_data = accessor_sardeslite.get_repere_data()
-
-    accessor_sardeslite.close_connection()
+    stations_with_log = accessor.get_stations_with_construction_log()
+    accessor.close_connection()
