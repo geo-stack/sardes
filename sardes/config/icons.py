@@ -81,8 +81,8 @@ FA_ICONS = {
         ('mdi.power-plug-off',),
         {'color': RED, 'scale_factor': 1.3}],
     'delete_data': [
-        ('mdi.delete-forever',),
-        {'color': ICON_COLOR, 'scale_factor': 1.4}],
+        ('mdi.delete-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'drag_select': [
         ('mdi.shape-square-plus',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
