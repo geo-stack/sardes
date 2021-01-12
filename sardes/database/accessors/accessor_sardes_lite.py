@@ -806,6 +806,34 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             return (construction_log_attachment.attachment_data,
                     construction_log_attachment.attachment_fname)
 
+    def set_construction_log(self, sampling_feature_uuid, filename):
+        """
+        Attach the data of a construction log file to the
+        specified sampling_feature_uuid.
+        """
+        try:
+            # We first check if a construction log is already attached to
+            # the monitoring station.
+            log = (
+                self._session.query(SamplingFeatureAttachment)
+                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .filter(SamplingFeatureAttachment.attachment_type == 1)
+                .one())
+        except NoResultFound:
+            # This means we need to add a new sampling feature attachment
+            # to save the new construction log.
+            log = SamplingFeatureAttachment(
+                attachment_type=1,
+                sampling_feature_uuid=sampling_feature_uuid)
+            self._session.add(log)
+
+        if osp.exists(filename):
+            with open(filename, 'rb') as f:
+                log.attachment_data = memoryview(f.read())
+        log.attachment_fname = osp.basename(filename)
+        self._session.commit()
+
     # ---- Repere
     def _get_repere_data(self, repere_id):
         """
