@@ -234,7 +234,7 @@ class ObsWellsTableWidget(SardesTableWidget):
         """
         namefilters = (
             'Construction Log '
-            '(*.png ; *.bmp ; *.jpg ; *.jpeg ; *.tif ; *.pdf ; *.svg)')
+            '(*.png ; *.bmp ; *.jpg ; *.jpeg ; *.tif ; *.pdf)')
         filename, filefilter = QFileDialog.getOpenFileName(
             self.parent() or self,
             _('Select Construction Log'),
