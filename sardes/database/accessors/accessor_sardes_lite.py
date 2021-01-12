@@ -774,6 +774,20 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         data['mean_water_level'] = data['mean_water_level'].round(decimals=3)
         return data
 
+    def get_stations_with_construction_log(self):
+        """
+        Return a list of sampling_feature_uuid for which a construction log
+        is saved in the database.
+        """
+        query = (
+            self._session.query(
+                SamplingFeatureAttachment.sampling_feature_uuid)
+            .filter(SamplingFeatureAttachment.attachment_type == 1)
+            )
+        result = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
+        return result['sampling_feature_uuid'].values.tolist()
+
     # ---- Repere
     def _get_repere_data(self, repere_id):
         """
