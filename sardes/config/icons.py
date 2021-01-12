@@ -30,6 +30,9 @@ FA_ICONS = {
     'add_row': [
         ('mdi.table-row-plus-after',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
+    'attachment': [
+        ('mdi.attachment',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'browse_files': [
         ('fa5.folder-open',),
         {'color': ICON_COLOR, 'scale_factor': 1}],
@@ -156,6 +159,9 @@ FA_ICONS = {
                      {'scale_factor': 1.65,
                       'offset': (0.25, 0),
                       'color': ICON_COLOR}]}],
+    'magnifying_glass': [
+        ('mdi.magnify',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'menu_down': [
         ('mdi.menu-down',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
@@ -247,6 +253,9 @@ FA_ICONS = {
     'warning': [
         ('mdi.alert-outline',),
         {'color': YELLOW, 'scale_factor': 1.3}],
+    'water_well': [
+        ('mdi.water-well-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'zoom_in': [
         ('mdi.plus-circle-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
