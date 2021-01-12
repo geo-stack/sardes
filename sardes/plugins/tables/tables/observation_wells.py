@@ -168,18 +168,20 @@ class ObsWellsTableWidget(SardesTableWidget):
             self,
             icon='construction_log',
             text=_("Construction Log"),
+            tip=_("Open the menu to add a construction log to the "
+                  "currently selected well or to view or delete an "
+                  "existing construction log."),
             iconsize=get_iconsize())
-
         self.attach_construction_log_action = create_action(
             self,
-            _("Attach Construction Log"),
+            _("Attach Construction Log..."),
             tip=_("Attach a construction log file to the "
                   "currently selected observation well."),
             icon='attachment',
             triggered=self._handle_attach_construction_log_request)
         self.show_construction_log_action = create_action(
             self,
-            _("Show Construction Log"),
+            _("Show Construction Log..."),
             tip=_("Show the construction log file attached to the "
                   "currently selected observation well."),
             icon='magnifying_glass',
