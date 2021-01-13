@@ -95,9 +95,14 @@ class ObsWellsTableModel(SardesTableModel):
 
 class ObsWellsTableWidget(SardesTableWidget):
     sig_view_data = Signal(object, bool)
+
     sig_attach_construction_log = Signal(object, object)
     sig_show_construction_log = Signal(object)
     sig_remove_construction_log = Signal(object)
+
+    sig_construction_log_removed = Signal()
+    sig_construction_log_attached = Signal()
+    sig_construction_log_shown = Signal()
 
     def __init__(self, *args, **kargs):
         table_model = ObsWellsTableModel(
@@ -131,14 +136,24 @@ class ObsWellsTableWidget(SardesTableWidget):
         """Register this table with the given plugin."""
         self.sig_view_data.connect(plugin.main.view_timeseries_data)
         self.sig_attach_construction_log.connect(
-            plugin.main.db_connection_manager.set_construction_log)
+            lambda sampling_feature_uuid, filename:
+                plugin.main.db_connection_manager.set_construction_log(
+                    sampling_feature_uuid,
+                    filename,
+                    callback=self.sig_construction_log_attached.emit)
+                )
         self.sig_show_construction_log.connect(
             lambda sampling_feature_uuid:
                 plugin.main.db_connection_manager.get_construction_log(
                     sampling_feature_uuid,
-                    callback=self._open_construction_log_in_external))
+                    callback=self._open_construction_log_in_external)
+                )
         self.sig_remove_construction_log.connect(
-            plugin.main.db_connection_manager.del_construction_log)
+            lambda sampling_feature_uuid:
+                plugin.main.db_connection_manager.del_construction_log(
+                    sampling_feature_uuid,
+                    callback=self.sig_construction_log_removed.emit)
+                )
 
     # ---- Timeseries
     def get_current_obs_well_data(self):
@@ -238,17 +253,6 @@ class ObsWellsTableWidget(SardesTableWidget):
             self.show_construction_log_action.setEnabled(log_exists)
             self.remove_construction_log_action.setEnabled(log_exists)
 
-    def _open_construction_log_in_external(self, data, name):
-        """
-        Open the construction log in an external application that is
-        choosen by the OS.
-        """
-        temp_path = tempfile.mkdtemp(dir=TEMP_DIR)
-        temp_filename = osp.join(temp_path, name)
-        with open(temp_filename, 'wb') as f:
-            f.write(data)
-        os.startfile(temp_filename)
-
     def _handle_attach_construction_log_request(self):
         """
         Handle when a request is made by the user to attach a construction log
@@ -284,3 +288,15 @@ class ObsWellsTableWidget(SardesTableWidget):
         """
         sampling_feature_uuid = self.get_current_obs_well_data().name
         self.sig_remove_construction_log.emit(sampling_feature_uuid)
+
+    def _open_construction_log_in_external(self, data, name):
+        """
+        Open the construction log in an external application that is
+        choosen by the OS.
+        """
+        temp_path = tempfile.mkdtemp(dir=TEMP_DIR)
+        temp_filename = osp.join(temp_path, name)
+        with open(temp_filename, 'wb') as f:
+            f.write(data)
+        os.startfile(temp_filename)
+        self.sig_construction_log_shown.emit()
