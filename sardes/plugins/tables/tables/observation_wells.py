@@ -136,7 +136,7 @@ class ObsWellsTableWidget(SardesTableWidget):
             lambda sampling_feature_uuid:
                 plugin.main.db_connection_manager.get_construction_log(
                     sampling_feature_uuid,
-                    callback=self._show_construction_log))
+                    callback=self._open_construction_log_in_external))
         self.sig_remove_construction_log.connect(
             plugin.main.db_connection_manager.del_construction_log)
 
@@ -216,7 +216,14 @@ class ObsWellsTableWidget(SardesTableWidget):
         if current_obs_well_data is not None:
             self.sig_view_data.emit(current_obs_well_data.name, False)
 
+    # ---- Construction Log
     def _handle_construction_log_menu_aboutToShow(self):
+        """
+        Handle when the construction log menu is about to be shown so that
+        we can disable/enable the items depending on the availability or
+        not of a construction log for the currently selected monitoring
+        station.
+        """
         self.tableview.setFocus()
         obs_well_data = self.get_current_obs_well_data()
         if obs_well_data is None:
@@ -231,8 +238,11 @@ class ObsWellsTableWidget(SardesTableWidget):
             self.show_construction_log_action.setEnabled(log_exists)
             self.remove_construction_log_action.setEnabled(log_exists)
 
-    # ---- Construction Log
-    def _show_construction_log(self, data, name):
+    def _open_construction_log_in_external(self, data, name):
+        """
+        Open the construction log in an external application that is
+        choosen by the OS.
+        """
         temp_path = tempfile.mkdtemp(dir=TEMP_DIR)
         temp_filename = osp.join(temp_path, name)
         with open(temp_filename, 'wb') as f:
