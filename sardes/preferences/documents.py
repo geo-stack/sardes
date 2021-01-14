@@ -34,7 +34,7 @@ class DocumentsSettingsConfPage(ConfPage):
         super().__init__(
             name='documents_settings_confpage',
             label=_('Documents Settings'),
-            iconname='file_excel'
+            iconname='file_settings'
             )
 
     def setup_page(self):

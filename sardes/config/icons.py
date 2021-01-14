@@ -125,6 +125,9 @@ FA_ICONS = {
     'file_next': [
         ('mdi.arrow-right-bold',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'file_settings': [
+        ('mdi.file-settings-variant-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'fmt_line_weight': [
         ('mdi.format-line-weight',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
