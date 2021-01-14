@@ -210,4 +210,4 @@ def test_save_data_edits(mainwindow, qtbot):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
+    pytest.main(['-x', __file__, '-v', '-rw'])
