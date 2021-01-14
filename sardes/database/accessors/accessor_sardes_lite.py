@@ -24,7 +24,7 @@ from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
                         UniqueConstraint, Index)
 from sqlalchemy.exc import DBAPIError, ProgrammingError, OperationalError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.types import TEXT, VARCHAR, Boolean
+from sqlalchemy.types import TEXT, VARCHAR, Boolean, BLOB
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.engine.url import URL
 from sqlalchemy_utils import UUIDType
@@ -41,7 +41,7 @@ from sardes.api.timeseries import DataType
 APPLICATION_ID = 1013042054
 
 # The latest version of the database schema.
-CURRENT_SCHEMA_VERSION = 1
+CURRENT_SCHEMA_VERSION = 2
 
 # The format that is used to store datetime values in the database.
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
@@ -144,6 +144,22 @@ class SamplingFeatureType(BaseMixin, Base):
     sampling_feature_type_id = Column(Integer, primary_key=True)
     sampling_feature_type_desc = Column(String)
     sampling_feature_type_abb = Column(String)
+
+
+class SamplingFeatureAttachment(BaseMixin, Base):
+    """
+    An object used to map the 'sampling_feature_attachment' table.
+    """
+    __tablename__ = 'sampling_feature_attachment'
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    attachment_id = Column(Integer, primary_key=True)
+    attachment_type = Column(Integer)
+    attachment_data = Column(BLOB)
+    attachment_fname = Column(String)
+    sampling_feature_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('sampling_feature.sampling_feature_uuid'))
 
 
 class SamplingFeatureMetadata(BaseMixin, Base):
@@ -441,7 +457,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                   SondeFeature, SondeModel, SondeInstallation, Process, Repere,
                   ObservationType, Observation, ObservedProperty,
                   GenericNumericalData, TimeSeriesChannel,
-                  TimeSeriesData, PumpType, PumpInstallation]
+                  TimeSeriesData, SamplingFeatureAttachment]
         dialect = self._engine.dialect
         for table in tables:
             if dialect.has_table(self._session, table.__tablename__):
@@ -757,6 +773,87 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # Round mean value.
         data['mean_water_level'] = data['mean_water_level'].round(decimals=3)
         return data
+
+    # ---- Construction Logs
+    def get_stations_with_construction_log(self):
+        """
+        Return a list of sampling_feature_uuid for which a construction log
+        is saved in the database.
+        """
+        query = (
+            self._session.query(
+                SamplingFeatureAttachment.sampling_feature_uuid)
+            .filter(SamplingFeatureAttachment.attachment_type == 1)
+            )
+        result = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
+        return result['sampling_feature_uuid'].values.tolist()
+
+    def get_construction_log(self, sampling_feature_uuid):
+        """
+        Return the data of the construction log file attached to the
+        specified sampling_feature_uuid.
+        """
+        try:
+            construction_log_attachment = (
+                self._session.query(SamplingFeatureAttachment)
+                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .filter(SamplingFeatureAttachment.attachment_type == 1)
+                .one())
+        except NoResultFound:
+            return (None, None)
+        else:
+            return (construction_log_attachment.attachment_data,
+                    construction_log_attachment.attachment_fname)
+
+    def set_construction_log(self, sampling_feature_uuid, filename):
+        """
+        Attach the data of a construction log file to the
+        specified sampling_feature_uuid.
+        """
+        try:
+            # We first check if a construction log is already attached to
+            # the monitoring station.
+            log = (
+                self._session.query(SamplingFeatureAttachment)
+                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .filter(SamplingFeatureAttachment.attachment_type == 1)
+                .one())
+        except NoResultFound:
+            # This means we need to add a new sampling feature attachment
+            # to save the new construction log.
+            log = SamplingFeatureAttachment(
+                attachment_type=1,
+                sampling_feature_uuid=sampling_feature_uuid)
+            self._session.add(log)
+
+        if osp.exists(filename):
+            with open(filename, 'rb') as f:
+                log.attachment_data = memoryview(f.read())
+        log.attachment_fname = osp.basename(filename)
+        self._session.commit()
+
+    def del_construction_log(self, sampling_feature_uuid,):
+        """
+        Delete the data of the construction log file attached to the
+        specified sampling_feature_uuid.
+        """
+        try:
+            log = (
+                self._session.query(SamplingFeatureAttachment)
+                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .filter(SamplingFeatureAttachment.attachment_type == 1)
+                .one())
+        except NoResultFound:
+            # This means there is currently no construction log attached to
+            # the specified sampling_feature_uuid.
+            pass
+        else:
+            self._session.delete(log)
+            self._session.commit()
 
     # ---- Repere
     def _get_repere_data(self, repere_id):
@@ -1436,15 +1533,16 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
 
 if __name__ == "__main__":
-    accessor_sardeslite = DatabaseAccessorSardesLite('D:/rsesq_test.db')
-    accessor_sardeslite.connect()
+    database = "D:/Desktop/rsesq_prod_21072020_v1.db"
+    accessor = DatabaseAccessorSardesLite(database)
+    accessor.init_database()
+    accessor.connect()
 
-    # init_database(accessor_sardeslite)
+    obs_wells = accessor.get_observation_wells_data()
+    sonde_data = accessor.get_sondes_data()
+    sonde_models_lib = accessor.get_sonde_models_lib()
+    sonde_installations = accessor.get_sonde_installations()
+    repere_data = accessor.get_repere_data()
 
-    obs_wells = accessor_sardeslite.get_observation_wells_data()
-    sonde_data = accessor_sardeslite.get_sondes_data()
-    sonde_models_lib = accessor_sardeslite.get_sonde_models_lib()
-    sonde_installations = accessor_sardeslite.get_sonde_installations()
-    repere_data = accessor_sardeslite.get_repere_data()
-
-    accessor_sardeslite.close_connection()
+    stations_with_log = accessor.get_stations_with_construction_log()
+    accessor.close_connection()

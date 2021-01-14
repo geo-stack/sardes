@@ -24,6 +24,7 @@ os.environ['SARDES_PYTEST'] = 'True'
 import numpy as np
 import pytest
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
@@ -169,6 +170,41 @@ def test_add_delete_large_timeseries_record(dbaccessor0):
     wtemp_data = dbaccessor.get_timeseries_for_obs_well(
         sampling_feature_uuid, DataType.WaterTemp)
     assert len(wtemp_data) == 0
+
+
+def test_add_get_del_construction_logs(dbaccessor0, tmp_path):
+    """
+    Test that adding, getting and deleting construction logs in the database
+    is working as expected.
+    """
+    assert dbaccessor0.get_stations_with_construction_log() == []
+
+    # Add a new observation well to the database.
+    sampling_feature_uuid = dbaccessor0._create_index('observation_wells_data')
+    dbaccessor0.add_observation_wells_data(
+        sampling_feature_uuid, attribute_values={})
+
+    for fext in ['.png', '.jpg', '.jpeg', '.tif', '.pdf']:
+        # Create a dummy construction log file.
+        filename = osp.join(tmp_path, 'test_construction_log') + fext
+        fig, ax = plt.subplots()
+        ax.plot([1, 2, 3, 4])
+        fig.savefig(filename)
+
+        # Attach the construction log file.
+        dbaccessor0.set_construction_log(sampling_feature_uuid, filename)
+        assert dbaccessor0.get_stations_with_construction_log() == [
+            sampling_feature_uuid]
+
+        # Retrieve the construction log file from the database.
+        data, name = dbaccessor0.get_construction_log(sampling_feature_uuid)
+        assert name == osp.basename(filename)
+        with open(filename, 'rb') as f:
+            assert f.read() == data
+
+    # Remove the construction log file from the database.
+    dbaccessor0.del_construction_log(sampling_feature_uuid)
+    assert dbaccessor0.get_stations_with_construction_log() == []
 
 
 # =============================================================================

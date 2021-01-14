@@ -113,7 +113,8 @@ class Tables(SardesPlugin):
         self._create_and_register_table(
             ObsWellsTableWidget,
             'observation_wells_data',
-            ['observation_wells_data_overview'])
+            ['observation_wells_data_overview',
+             'stations_with_construction_log'])
         self._create_and_register_table(
             SondesInventoryTableWidget,
             'sondes_data',

@@ -47,7 +47,7 @@ from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
 # ---- Local imports
 splash.showMessage(_("Importing local Python modules..."))
 from sardes import __namever__, __project_url__, __appname__
-from sardes.config.main import CONF
+from sardes.config.main import CONF, TEMP_DIR
 from sardes.config.icons import get_icon
 from sardes.config.locale import (get_available_translations, get_lang_conf,
                                   LANGUAGE_CODES, set_lang_conf)
@@ -57,6 +57,7 @@ from sardes.widgets.tableviews import RowCountLabel
 from sardes.utils.qthelpers import (
     create_action, create_mainwindow_toolbar, create_toolbar_stretcher,
     create_toolbutton, qbytearray_to_hexstate, hexstate_to_qbytearray)
+from sardes.utils.fileio import delete_folder_recursively
 
 from multiprocessing import freeze_support
 freeze_support()
@@ -508,6 +509,11 @@ class MainWindow(QMainWindow):
             # Close all internal and thirdparty plugins.
             for plugin in self.internal_plugins + self.thirdparty_plugins:
                 plugin.close_plugin()
+
+            # Clean temp files.
+            print('Cleaning temp files...', end=' ')
+            delete_folder_recursively(TEMP_DIR)
+            print('done')
 
             # Close the database connection manager.
             self.db_connection_manager.close(

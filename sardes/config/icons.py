@@ -30,6 +30,9 @@ FA_ICONS = {
     'add_row': [
         ('mdi.table-row-plus-after',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
+    'attachment': [
+        ('mdi.attachment',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'browse_files': [
         ('fa5.folder-open',),
         {'color': ICON_COLOR, 'scale_factor': 1}],
@@ -65,6 +68,9 @@ FA_ICONS = {
     'commit_changes': [
         ('mdi.check-circle-outline',),
         {'color': GREEN, 'scale_factor': 1.2}],
+    'construction_log': [
+        ('mdi.bolt',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'copy_clipboard': [
         ('mdi.content-copy',),
         {'color': ICON_COLOR, 'scale_factor': 1}],
@@ -75,8 +81,8 @@ FA_ICONS = {
         ('mdi.power-plug-off',),
         {'color': RED, 'scale_factor': 1.3}],
     'delete_data': [
-        ('mdi.delete-forever',),
-        {'color': ICON_COLOR, 'scale_factor': 1.4}],
+        ('mdi.delete-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'drag_select': [
         ('mdi.shape-square-plus',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
@@ -156,6 +162,9 @@ FA_ICONS = {
                      {'scale_factor': 1.65,
                       'offset': (0.25, 0),
                       'color': ICON_COLOR}]}],
+    'magnifying_glass': [
+        ('mdi.magnify',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'menu_down': [
         ('mdi.menu-down',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],

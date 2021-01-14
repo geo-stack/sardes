@@ -7,15 +7,25 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+
+# ---- Standard imports
+import os
+import os.path as osp
+import tempfile
+
 # ---- Third party imports
 import pandas as pd
 from qtpy.QtCore import Signal
+from qtpy.QtWidgets import QMenu, QFileDialog
 
 # ---- Local imports
 from sardes.api.tablemodels import SardesTableModel
 from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
-from sardes.utils.qthelpers import create_toolbutton
+from sardes.config.main import TEMP_DIR
+from sardes.config.ospath import (
+    get_select_file_dialog_dir, set_select_file_dialog_dir)
+from sardes.utils.qthelpers import create_toolbutton, create_action
 from sardes.widgets.tableviews import (
     SardesTableWidget, StringEditDelegate, BoolEditDelegate,
     NumEditDelegate, NotEditableDelegate, TextEditDelegate)
@@ -86,6 +96,14 @@ class ObsWellsTableModel(SardesTableModel):
 class ObsWellsTableWidget(SardesTableWidget):
     sig_view_data = Signal(object, bool)
 
+    sig_attach_construction_log = Signal(object, object)
+    sig_show_construction_log = Signal(object)
+    sig_remove_construction_log = Signal(object)
+
+    sig_construction_log_removed = Signal()
+    sig_construction_log_attached = Signal()
+    sig_construction_log_shown = Signal()
+
     def __init__(self, *args, **kargs):
         table_model = ObsWellsTableModel(
             table_title=_('Observation Wells'),
@@ -117,6 +135,25 @@ class ObsWellsTableWidget(SardesTableWidget):
     def register_to_plugin(self, plugin):
         """Register this table with the given plugin."""
         self.sig_view_data.connect(plugin.main.view_timeseries_data)
+        self.sig_attach_construction_log.connect(
+            lambda sampling_feature_uuid, filename:
+                plugin.main.db_connection_manager.set_construction_log(
+                    sampling_feature_uuid,
+                    filename,
+                    callback=self.sig_construction_log_attached.emit)
+                )
+        self.sig_show_construction_log.connect(
+            lambda sampling_feature_uuid:
+                plugin.main.db_connection_manager.get_construction_log(
+                    sampling_feature_uuid,
+                    callback=self._open_construction_log_in_external)
+                )
+        self.sig_remove_construction_log.connect(
+            lambda sampling_feature_uuid:
+                plugin.main.db_connection_manager.del_construction_log(
+                    sampling_feature_uuid,
+                    callback=self.sig_construction_log_removed.emit)
+                )
 
     # ---- Timeseries
     def get_current_obs_well_data(self):
@@ -130,6 +167,7 @@ class ObsWellsTableWidget(SardesTableWidget):
             return None
 
     def _create_extra_toolbuttons(self):
+        # Setup show data button.
         self.show_data_btn = create_toolbutton(
             self,
             icon='show_data_table',
@@ -139,7 +177,50 @@ class ObsWellsTableWidget(SardesTableWidget):
             triggered=self._view_current_timeseries_data,
             iconsize=get_iconsize()
             )
-        return [self.show_data_btn]
+
+        # Setup construction log button.
+        self.construction_log_btn = create_toolbutton(
+            self,
+            icon='construction_log',
+            text=_("Construction Log"),
+            tip=_("Open the menu to add a construction log to the "
+                  "currently selected well or to view or delete an "
+                  "existing construction log."),
+            iconsize=get_iconsize())
+        self.attach_construction_log_action = create_action(
+            self,
+            _("Attach Construction Log..."),
+            tip=_("Attach a construction log file to the "
+                  "currently selected observation well."),
+            icon='attachment',
+            triggered=self._handle_attach_construction_log_request)
+        self.show_construction_log_action = create_action(
+            self,
+            _("Show Construction Log..."),
+            tip=_("Show the construction log file attached to the "
+                  "currently selected observation well."),
+            icon='magnifying_glass',
+            triggered=self._handle_show_construction_log_request)
+        self.remove_construction_log_action = create_action(
+            self,
+            _("Remove Construction Log"),
+            tip=_("Remove the construction log file attached to the "
+                  "currently selected observation well."),
+            icon='delete_data',
+            triggered=self._handle_remove_construction_log_request)
+
+        construction_log_menu = QMenu()
+        construction_log_menu.addAction(self.attach_construction_log_action)
+        construction_log_menu.addAction(self.show_construction_log_action)
+        construction_log_menu.addAction(self.remove_construction_log_action)
+        construction_log_menu.aboutToShow.connect(
+            self._handle_construction_log_menu_aboutToShow)
+
+        self.construction_log_btn.setMenu(construction_log_menu)
+        self.construction_log_btn.setPopupMode(
+            self.construction_log_btn.InstantPopup)
+
+        return [self.show_data_btn, self.construction_log_btn]
 
     def _view_current_timeseries_data(self):
         """
@@ -149,3 +230,73 @@ class ObsWellsTableWidget(SardesTableWidget):
         current_obs_well_data = self.get_current_obs_well_data()
         if current_obs_well_data is not None:
             self.sig_view_data.emit(current_obs_well_data.name, False)
+
+    # ---- Construction Log
+    def _handle_construction_log_menu_aboutToShow(self):
+        """
+        Handle when the construction log menu is about to be shown so that
+        we can disable/enable the items depending on the availability or
+        not of a construction log for the currently selected monitoring
+        station.
+        """
+        self.tableview.setFocus()
+        obs_well_data = self.get_current_obs_well_data()
+        if obs_well_data is None:
+            self.attach_construction_log_action.setEnabled(False)
+            self.show_construction_log_action.setEnabled(False)
+            self.remove_construction_log_action.setEnabled(False)
+        else:
+            self.attach_construction_log_action.setEnabled(True)
+            log_exists = (
+                obs_well_data.name in
+                self.model().libraries['stations_with_construction_log'])
+            self.show_construction_log_action.setEnabled(log_exists)
+            self.remove_construction_log_action.setEnabled(log_exists)
+
+    def _handle_attach_construction_log_request(self):
+        """
+        Handle when a request is made by the user to attach a construction log
+        to the currently selected station.
+        """
+        obs_well_id = self.get_current_obs_well_data()['obs_well_id']
+        namefilters = (
+            'Construction Log '
+            '(*.png ; *.bmp ; *.jpg ; *.jpeg ; *.tif ; *.pdf)')
+        filename, filefilter = QFileDialog.getOpenFileName(
+            self.parent() or self,
+            _('Select Construction Log for Station {}').format(obs_well_id),
+            get_select_file_dialog_dir(),
+            namefilters)
+        if filename:
+            set_select_file_dialog_dir(osp.dirname(filename))
+            sampling_feature_uuid = self.get_current_obs_well_data().name
+            self.sig_attach_construction_log.emit(
+                sampling_feature_uuid, filename)
+
+    def _handle_show_construction_log_request(self):
+        """
+        Handle when a request is made by the user to show the construction log
+        attached to the currently selected station.
+        """
+        sampling_feature_uuid = self.get_current_obs_well_data().name
+        self.sig_show_construction_log.emit(sampling_feature_uuid)
+
+    def _handle_remove_construction_log_request(self):
+        """
+        Handle when a request is made by the user to remove the construction
+        log attached to the currently selected station.
+        """
+        sampling_feature_uuid = self.get_current_obs_well_data().name
+        self.sig_remove_construction_log.emit(sampling_feature_uuid)
+
+    def _open_construction_log_in_external(self, data, name):
+        """
+        Open the construction log in an external application that is
+        choosen by the OS.
+        """
+        temp_path = tempfile.mkdtemp(dir=TEMP_DIR)
+        temp_filename = osp.join(temp_path, name)
+        with open(temp_filename, 'wb') as f:
+            f.write(data)
+        os.startfile(temp_filename)
+        self.sig_construction_log_shown.emit()
