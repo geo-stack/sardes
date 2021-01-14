@@ -159,6 +159,7 @@ def test_construction_log_tool(mainwindow, constructlog, qtbot, mocker):
     assert table.remove_construction_log_action.isEnabled()
 
     # Show the newly added construction log in an external application.
+    mocker.patch('os.startfile')
     with qtbot.waitSignal(table.sig_construction_log_shown):
         table.show_construction_log_action.trigger()
 
