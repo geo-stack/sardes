@@ -174,6 +174,16 @@ class MainWindow(QMainWindow):
         self.internal_plugins.append(self.readings_plugin)
         print("done")
 
+        # Piezometric Network plugin.
+        from sardes.plugins.network import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        splash.showMessage(_("Loading the {} plugin...").format(plugin_title))
+        self.network_plugin = SARDES_PLUGIN_CLASS(self)
+        self.network_plugin.register_plugin()
+        self.internal_plugins.append(self.network_plugin)
+        print("done")
+
     def setup_thirdparty_plugins(self):
         """Setup Sardes third party plugins."""
         installed_thirdparty_plugins = []
