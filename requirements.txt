@@ -15,3 +15,4 @@ sqlalchemy_utils
 pillow
 xlsxwriter
 xlrd == 1.*
+simplekml
