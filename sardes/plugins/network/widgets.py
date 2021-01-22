@@ -87,8 +87,8 @@ class PublishNetworkDialog(QDialog):
             lambda _: self.iri_graphs_ledit.setEnabled(
                 self.iri_graphs_chbox.isChecked()))
 
-        iri_groupbox = QGroupBox(_('Attached Files'))
-        iri_layout = QGridLayout(iri_groupbox)
+        self.iri_groupbox = QGroupBox(_('Attached Files'))
+        iri_layout = QGridLayout(self.iri_groupbox)
         iri_layout.addWidget(self.iri_data_chbox, 0, 0)
         iri_layout.addWidget(self.iri_logs_chbox, 1, 0)
         iri_layout.addWidget(self.iri_graphs_chbox, 2, 0)
@@ -129,7 +129,7 @@ class PublishNetworkDialog(QDialog):
 
         # Setup the main layout.
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(iri_groupbox)
+        main_layout.addWidget(self.iri_groupbox)
         main_layout.addSpacing(15)
         main_layout.addWidget(self.status_bar)
         main_layout.addWidget(button_box)
@@ -173,12 +173,14 @@ class PublishNetworkDialog(QDialog):
     def start_publishing(self, filename):
         self._publishing_in_progress = True
         self.publish_button.setEnabled(False)
+        self.iri_groupbox.setEnabled(False)
         self.status_bar.show(_("Publishing piezometric network data..."))
         self.sig_start_publish_network_request.emit(filename)
 
     def stop_publishing(self):
         self._publishing_in_progress = False
         self.publish_button.setEnabled(True)
+        self.iri_groupbox.setEnabled(True)
         self.status_bar.show_sucess_icon(
             message=_("Piezometric network data published successfully."))
 
