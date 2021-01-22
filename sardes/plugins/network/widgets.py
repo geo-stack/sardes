@@ -11,15 +11,12 @@
 # ---- Standard imports
 import datetime
 import os.path as osp
-import sys
 
 # ---- Third party imports
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
-    QApplication, QAbstractButton, QCheckBox, QComboBox, QDialog,
-    QDialogButtonBox, QHBoxLayout, QLabel, QPushButton, QStackedWidget,
-    QVBoxLayout, QGridLayout, QLineEdit, QFileDialog, QGroupBox,
-    QMessageBox)
+    QCheckBox, QDialog, QDialogButtonBox, QLabel, QPushButton, QVBoxLayout,
+    QGridLayout, QLineEdit, QFileDialog, QGroupBox, QMessageBox)
 
 # ---- Local imports
 from sardes.config.icons import get_icon
@@ -157,6 +154,9 @@ class PublishNetworkDialog(QDialog):
 
     # ---- Handlers
     def _select_kml_save_file(self):
+        """
+        Open a dialog that allows the user to select a kml file.
+        """
         dirname = get_select_file_dialog_dir()
         filename = _('Piezometric_Network_{}.kml').format(
             datetime.datetime.now().strftime('%Y-%m-%d'))
@@ -172,6 +172,9 @@ class PublishNetworkDialog(QDialog):
             self.start_publishing(filename)
 
     def start_publishing(self, filename):
+        """
+        Start the publishing of the piezometric network.
+        """
         self._publishing_in_progress = True
         self.publish_button.setEnabled(False)
         self.iri_groupbox.setEnabled(False)
@@ -179,6 +182,9 @@ class PublishNetworkDialog(QDialog):
         self.sig_start_publish_network_request.emit(filename)
 
     def stop_publishing(self, result):
+        """
+        Stop the publishing of the piezometric network.
+        """
         self._publishing_in_progress = False
         self.publish_button.setEnabled(True)
         self.iri_groupbox.setEnabled(True)
@@ -190,8 +196,12 @@ class PublishNetworkDialog(QDialog):
                 message=_("Failed to publish piezometric network data."))
 
     def closeEvent(self, event):
-        """Override Qt method to emit a signal when closing."""
+        """
+        Override Qt method to prevent closing this dialog when the piezometric
+        network is being published.
+        """
         if self._publishing_in_progress:
+            # Ask the user if he wants to cancel the publishing process.
             answer = QMessageBox.question(
                 self, _("Cancel Publishing"),
                 _("This action will cancel the publishing process.<br><br>"
@@ -208,7 +218,3 @@ class PublishNetworkDialog(QDialog):
         else:
             self.sig_closed.emit()
             super().closeEvent(event)
-
-
-if __name__ == '__main__':
-    pass
