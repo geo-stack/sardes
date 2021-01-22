@@ -18,7 +18,8 @@ from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
     QApplication, QAbstractButton, QCheckBox, QComboBox, QDialog,
     QDialogButtonBox, QHBoxLayout, QLabel, QPushButton, QStackedWidget,
-    QVBoxLayout, QGridLayout, QLineEdit, QFileDialog, QGroupBox)
+    QVBoxLayout, QGridLayout, QLineEdit, QFileDialog, QGroupBox,
+    QMessageBox)
 
 # ---- Local imports
 from sardes.config.icons import get_icon
@@ -34,7 +35,7 @@ class PublishNetworkDialog(QDialog):
     """
     sig_closed = Signal()
     sig_start_publish_network_request = Signal(str)
-    sig_stop_publish_network_request = Signal()
+    sig_cancel_publish_network_request = Signal()
 
     def __init__(self, parent=None, is_iri_data=False, iri_data='',
                  is_iri_logs=False, iri_logs='', is_iri_graphs=False,
@@ -177,19 +178,33 @@ class PublishNetworkDialog(QDialog):
         self.status_bar.show(_("Publishing piezometric network data..."))
         self.sig_start_publish_network_request.emit(filename)
 
-    def stop_publishing(self):
+    def stop_publishing(self, result):
         self._publishing_in_progress = False
         self.publish_button.setEnabled(True)
         self.iri_groupbox.setEnabled(True)
-        self.status_bar.show_sucess_icon(
-            message=_("Piezometric network data published successfully."))
+        if result is True:
+            self.status_bar.show_sucess_icon(
+                message=_("Piezometric network data published successfully."))
+        else:
+            self.status_bar.show_fail_icon(
+                message=_("Failed to publish piezometric network data."))
 
     def closeEvent(self, event):
         """Override Qt method to emit a signal when closing."""
         if self._publishing_in_progress:
-            event.ignore()
-            print('This action will stop the publication process. Do'
-                  'you want to continue?')
+            answer = QMessageBox.question(
+                self, _("Cancel Publishing"),
+                _("This action will cancel the publishing process.<br><br>"
+                  "Do you want to continue?"),
+                QMessageBox.Yes | QMessageBox.No)
+            if answer == QMessageBox.Yes:
+                self.sig_cancel_publish_network_request.emit()
+
+                event.accept()
+                self.sig_closed.emit()
+                super().closeEvent(event)
+            else:
+                event.ignore()
         else:
             self.sig_closed.emit()
             super().closeEvent(event)

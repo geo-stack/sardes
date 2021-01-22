@@ -45,6 +45,7 @@ class DatabaseConnectionWorker(WorkerBase):
 
         # Setup a cache structure for the tables and libraries.
         self._cache = {}
+        self._stop_kml_publishing = False
 
     def clear_cache(self):
         """
@@ -319,6 +320,7 @@ class DatabaseConnectionWorker(WorkerBase):
     # ---- Publish Network Data
     def _publish_to_kml(self, kml_filename, iri_data=None, iri_logs=None,
                         iri_graphs=None):
+        self._stop_kml_publishing = False
         files_dirname = osp.join(
             osp.dirname(kml_filename),
             osp.splitext(osp.basename(kml_filename))[0] + '_files'
@@ -362,6 +364,9 @@ class DatabaseConnectionWorker(WorkerBase):
         progress = 0
         progress_total = len(stations_data)
         for loc in unique_locations:
+            if self._stop_kml_publishing:
+                return False,
+
             pnt = fol.newpoint(coords=[loc])
             pnt.style = pnt_style
 
@@ -501,6 +506,7 @@ class DatabaseConnectionWorker(WorkerBase):
             pnt_desc += '<br/>]]>'
             pnt.description = pnt_desc
         kml.save(kml_filename)
+        return True,
 
 
 class SardesModelsManager(QObject):
