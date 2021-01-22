@@ -47,6 +47,13 @@ class PiezometricNetwork(SardesPlugin):
         self.publish_dialog.sig_start_publish_network_request.connect(
             self._start_publishing_network)
 
+        self.main.db_connection_manager.sig_publish_progress.connect(
+            lambda progress_percent:
+                self.publish_dialog.status_bar.set_label(
+                    _("Publishing piezometric network data...") +
+                    ' {:0.1f}%'.format(progress_percent))
+            )
+
     def create_mainwindow_toolbars(self):
         toolbar = create_mainwindow_toolbar("Publish toolbar")
 
@@ -87,11 +94,15 @@ class PiezometricNetwork(SardesPlugin):
         pass
 
     def _start_publishing_network(self, filename):
-        self.main.db_connection_manager.publish_to_kml(
-            filename=filename,
-            iri_data=self.publish_dialog.iri_data(),
-            callback=self._stop_publishing_network
-            )
+        args = {'filename': filename,
+                'callback': self._stop_publishing_network}
+        if self.publish_dialog.is_iri_data():
+            args['iri_data'] = self.publish_dialog.iri_data()
+        if self.publish_dialog.is_iri_logs():
+            args['iri_logs'] = self.publish_dialog.iri_logs()
+        if self.publish_dialog.is_iri_graphs():
+            args['iri_graphs'] = self.publish_dialog.iri_graphs()
+        self.main.db_connection_manager.publish_to_kml(**args)
 
     def _stop_publishing_network(self):
         self.publish_dialog.stop_publishing()
