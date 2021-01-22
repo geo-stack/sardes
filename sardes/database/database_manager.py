@@ -7,21 +7,28 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
-
 # ---- Standard imports
 import uuid
 from collections import OrderedDict
 from time import sleep
 import datetime
+import os.path as osp
+import os
 
 # ---- Third party imports
 import pandas as pd
 from pandas import DataFrame
 from qtpy.QtCore import QObject, Signal, Slot
+import simplekml
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
 from sardes.api.taskmanagers import WorkerBase, TaskManagerBase
+from sardes.config.locale import _
+from sardes.utils.data_operations import format_reading_data
+from sardes.plugins.readings.tools.save2excel import _save_reading_data_to_xlsx
+from sardes.config.ospath import get_documents_logo_filename
+from sardes.config.main import CONF
 
 
 class DatabaseConnectionWorker(WorkerBase):
@@ -305,6 +312,129 @@ class DatabaseConnectionWorker(WorkerBase):
             sonde_model_id, 'sonde_brand_model']
 
         return sonde_install,
+
+    # ---- Publish Network Data
+    def _publish_to_kml(self, kml_filename, iri_data=None, logs_data=None,
+                        graphs_data=None,):
+        files_dirname = osp.join(
+            osp.dirname(kml_filename),
+            osp.splitext(osp.basename(kml_filename))[0] + '_files'
+            )
+        data_dirname = osp.join(files_dirname, 'data')
+
+        # Initialize a new KML document.
+        kml = simplekml.Kml()
+        fol = simplekml.Folder()
+        kml.document = fol
+
+        # Define the style for the plasemarks.
+        pnt_style = simplekml.Style()
+        pnt_style.iconstyle.icon.href = (
+            'http://maps.google.com/mapfiles/kml/paddle/blu-circle.png')
+        pnt_style.iconstyle.scale = 0.8
+        pnt_style.labelstyle.color = 'bfffffff'
+        pnt_style.labelstyle.scale = 0.8
+
+        repere_data, = self._get('repere_data')
+        stations_data, = self._get('observation_wells_data')
+        stations_data['locations'] = list(zip(
+            stations_data['longitude'].astype(float).round(decimals=4),
+            stations_data['latitude'].astype(float).round(decimals=4)
+            ))
+        unique_locations = (
+            stations_data[['locations']]
+            .drop_duplicates(['locations'])
+            .values.flatten().tolist()
+            )
+
+        n = 0
+        for loc in unique_locations:
+            pnt = fol.newpoint(coords=[loc])
+            pnt.style = pnt_style
+
+            loc_stations_data = (
+                stations_data[stations_data['locations'] == loc]
+                .sort_values(['obs_well_id'], ascending=True))
+
+            n += len(loc_stations_data)
+
+            municipality = loc_stations_data['municipality'].values[0]
+            pnt.name = municipality
+
+            pnt_desc = '<![CDATA['
+            for station_uuid, station_data in loc_stations_data.iterrows():
+                station_data = stations_data.loc[station_uuid]
+                station_repere_data = (
+                    repere_data
+                    [repere_data['sampling_feature_uuid'] == station_uuid]
+                    .copy())
+                if not station_repere_data.empty:
+                    station_repere_data = (
+                        station_repere_data
+                        .sort_values(by=['end_date'], ascending=[True]))
+                else:
+                    station_repere_data = pd.Series([], dtype=object)
+                readings, = self._get_timeseries_for_obs_well(
+                    station_uuid,
+                    data_types=[DataType.WaterLevel,
+                                DataType.WaterTemp,
+                                DataType.WaterEC]
+                    )
+
+                pnt_desc += '{} = {}<br/>'.format(
+                    _('Station'),
+                    station_data['obs_well_id'])
+                pnt_desc += '{} = {:0.4f}<br/>'.format(
+                    _('Longitude'),
+                    station_data['longitude'])
+                pnt_desc += '{} = {:0.4f}<br/>'.format(
+                    _('Latitude'),
+                    station_data['latitude'])
+                pnt_desc += '{} = {}<br/>'.format(
+                    _('Water-table'),
+                    station_data['confinement'])
+                pnt_desc += '{} = {}<br/>'.format(
+                    _('Influenced'),
+                    station_data['is_influenced'])
+
+                if not readings.empty:
+                    last_reading = max(readings['datetime'])
+                    pnt_desc += '<br/>{} = {}<br/>'.format(
+                        _('Last reading'),
+                        last_reading.strftime('%Y-%m-%d'))
+                if not readings.empty and iri_data is not None:
+                    if not osp.exists(data_dirname):
+                        os.makedirs(data_dirname)
+
+                    formatted_data = format_reading_data(
+                        readings, station_repere_data)
+                    xlsx_filename = osp.join(
+                        data_dirname,
+                        _('readings_{}.xlsx').format(
+                            station_data['obs_well_id']))
+
+                    last_repere_data = station_repere_data.iloc[-1]
+                    ground_altitude = (
+                        last_repere_data['top_casing_alt'] -
+                        last_repere_data['casing_length'])
+                    is_alt_geodesic = last_repere_data['is_alt_geodesic']
+                    _save_reading_data_to_xlsx(
+                        xlsx_filename,
+                        _('Piezometry'),
+                        formatted_data,
+                        station_data,
+                        ground_altitude,
+                        is_alt_geodesic,
+                        logo_filename=get_documents_logo_filename(),
+                        font_name=CONF.get('documents_settings', 'xlsx_font')
+                        )
+                if station_uuid != loc_stations_data.index[-1]:
+                    pnt_desc += '--<br/>'
+            pnt_desc += '<br/>]]>'
+            pnt.description = pnt_desc
+            if n >= 15:
+                break
+        kml.save(kml_filename)
 
 
 class SardesModelsManager(QObject):
@@ -745,6 +875,13 @@ class DatabaseConnectionManager(TaskManagerBase):
         Save all data edits to the database.
         """
         self.models_manager.save_model_edits(table_id)
+
+    # ---- Publish Network Data
+    def publish_to_kml(self, filename, iri_data=None, logs_data=None,
+                       graphs_data=None, callback=None, postpone_exec=False):
+        self._add_task('publish_to_kml', callback, filename, iri_data)
+        if not postpone_exec:
+            self.run_tasks()
 
 
 if __name__ == '__main__':
