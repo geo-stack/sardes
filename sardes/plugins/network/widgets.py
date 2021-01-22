@@ -42,8 +42,7 @@ class PublishNetworkDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle(_('Publish Piezometric Network Data'))
         self.setWindowFlags(
-            self.windowFlags() & ~Qt.WindowContextHelpButtonHint |
-            Qt.WindowMinimizeButtonHint)
+            self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setWindowIcon(get_icon('publish_piezometric_network'))
         self.setModal(False)
         self.setWindowModality(Qt.ApplicationModal)
@@ -107,7 +106,7 @@ class PublishNetworkDialog(QDialog):
         iri_layout.addWidget(self.iri_data_ledit, 0, 4)
         iri_layout.addWidget(self.iri_logs_ledit, 1, 4)
         iri_layout.addWidget(self.iri_graphs_ledit, 2, 4)
-        iri_layout.setColumnMinimumWidth(4, 350)
+        iri_layout.setColumnMinimumWidth(4, 400)
 
         # Setup the status bar.
         self.status_bar = ProcessStatusBar()
