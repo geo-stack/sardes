@@ -320,7 +320,31 @@ class DatabaseConnectionWorker(WorkerBase):
     # ---- Publish Network Data
     def _publish_to_kml(self, kml_filename, iri_data=None, iri_logs=None,
                         iri_graphs=None):
+        """
+        Publish the piezometric network data to the specified kml filename.
+
+        Parameters
+        ----------
+        kml_filename : str
+            The absolute path where to save the kml file.
+        iri_data : str, optional
+            The IRI where the readings data files are going to be hosted.
+            The default is None.
+        iri_logs : str, optional
+            The IRI where the construction logs are going to be hosted.
+            The default is None.
+        iri_graphs : str, optional
+            The IRI where the hydrographs are going to be hosted.
+            The default is None.
+
+        Returns
+        -------
+        results : bool
+            Whether the publishing of the piezometric network was successful.
+        """
         self._stop_kml_publishing = False
+
+        # Create the files and folder architecture.
         files_dirname = osp.join(
             osp.dirname(kml_filename),
             osp.splitext(osp.basename(kml_filename))[0] + '_files'
@@ -954,6 +978,9 @@ class DatabaseConnectionManager(TaskManagerBase):
     # ---- Publish Network Data
     def publish_to_kml(self, filename, iri_data=None, iri_logs=None,
                        iri_graphs=None, callback=None, postpone_exec=False):
+        """
+        Publish the piezometric network data to the specified kml filename.
+        """
         self._add_task('publish_to_kml', callback, filename,
                        iri_data, iri_logs, iri_graphs)
         if not postpone_exec:
