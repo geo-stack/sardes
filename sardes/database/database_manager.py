@@ -26,11 +26,11 @@ import simplekml
 from sardes.api.timeseries import DataType
 from sardes.api.taskmanagers import WorkerBase, TaskManagerBase
 from sardes.config.locale import _
-from sardes.utils.data_operations import format_reading_data
-from sardes.plugins.readings.tools.save2excel import _save_reading_data_to_xlsx
 from sardes.config.ospath import get_documents_logo_filename
 from sardes.config.main import CONF
-from sardes.plugins.readings.tools.hydrographs import HydrographCanvas
+from sardes.tools.hydrographs import HydrographCanvas
+from sardes.tools.save2excel import _save_reading_data_to_xlsx
+from sardes.utils.data_operations import format_reading_data
 
 
 class DatabaseConnectionWorker(WorkerBase):

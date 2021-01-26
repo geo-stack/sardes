@@ -29,8 +29,7 @@ from sardes.widgets.tableviews import (
     SardesTableWidget, NumEditDelegate, NotEditableDelegate,
     SardesStackedTableWidget)
 from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
-from sardes.plugins.readings.tools import (
-    SaveReadingsToExcelTool, HydrographTool)
+from sardes.tools import SaveReadingsToExcelTool, HydrographTool
 
 
 """Readings plugin"""

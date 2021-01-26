@@ -27,7 +27,7 @@ from qtpy.QtWidgets import QToolBar
 # ---- Local imports
 from sardes import __rootdir__
 from sardes.api.timeseries import DataType
-from sardes.plugins.readings.tools.hydrographs import (
+from sardes.tools.hydrographs import (
     HydrographTool, HydrographCanvas, QFileDialog)
 from sardes.utils.tests.test_data_operations import format_reading_data
 
