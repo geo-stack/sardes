@@ -12,25 +12,11 @@
 # moving forward, and remember to keep your UI out of the way.
 # http://blog.teamtreehouse.com/10-user-interface-design-fundamentals
 
-print('Starting SARDES...')
-# ---- Setup the main Qt application.
-import sys
-from qtpy.QtWidgets import QApplication
-from qtpy.QtCore import QLocale
-from time import sleep
-app = QApplication(sys.argv)
-
 # Enforce using dots as decimal separators for the whole application.
+from qtpy.QtCore import QLocale
 QLocale.setDefault(QLocale(QLocale.C))
 
-# ---- Setup the splash screen.
-from sardes.widgets.splash import SplashScreen
-from sardes.config.locale import _
-splash = SplashScreen()
-
-
 # ---- Standard imports
-splash.showMessage(_("Importing standard Python modules..."))
 import os
 import os.path as osp
 import platform
@@ -38,21 +24,22 @@ import sys
 import importlib
 
 # ---- Third party imports
-splash.showMessage(_("Importing third party Python modules..."))
 from qtpy.QtCore import Qt, QUrl, Slot, QEvent, Signal
 from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
                             QMessageBox, QToolButton)
 
 # ---- Local imports
-splash.showMessage(_("Importing local Python modules..."))
+# Note: when possible, move imports of widgets and plugins exactly where they
+# are needed in MainWindow to speed up perceived startup time.
+
 from sardes import __namever__, __project_url__, __appname__
 from sardes.config.main import CONF, TEMP_DIR
 from sardes.config.icons import get_icon
-from sardes.config.locale import (get_available_translations, get_lang_conf,
-                                  LANGUAGE_CODES, set_lang_conf)
+from sardes.config.locale import (
+    _, get_available_translations, get_lang_conf,
+    LANGUAGE_CODES, set_lang_conf)
 from sardes.config.main import CONFIG_DIR
-from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.widgets.tableviews import RowCountLabel
 from sardes.utils.qthelpers import (
     create_action, create_mainwindow_toolbar, create_toolbar_stretcher,
@@ -70,6 +57,7 @@ class SardesMainWindowBase(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.splash = splash
         self.setWindowIcon(get_icon('master'))
         self.setWindowTitle(__namever__)
         self.setCentralWidget(None)
@@ -89,13 +77,18 @@ class SardesMainWindowBase(QMainWindow):
         self._is_panes_and_toolbars_locked = False
 
         # Setup the database connection manager.
+        from sardes.database.database_manager import DatabaseConnectionManager
         print("Setting up the database connection manager...", end=' ')
-        splash.showMessage(_("Setting up the database connection manager..."))
+        self.set_splash(_("Setting up the database connection manager..."))
         self.db_connection_manager = DatabaseConnectionManager()
         print("done")
 
         self.setup()
-        splash.finish(self)
+
+    def set_splash(self, message):
+        """Set splash message."""
+        if self.splash is not None:
+            self.splash.showMessage(message)
 
     # ---- Setup
     def setup(self):
@@ -138,7 +131,7 @@ class SardesMainWindowBase(QMainWindow):
                     if module_spec:
                         module = module_spec.loader.load_module()
                         sys.modules[module_name] = module
-                        splash.showMessage(
+                        self.set_splash(
                             _("Loading the {} plugin...").format(
                                 module.SARDES_PLUGIN_CLASS.get_plugin_title()))
                         plugin = module.SARDES_PLUGIN_CLASS(self)
@@ -571,7 +564,12 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     sys.excepthook = except_hook
 
+    from sardes.widgets.splash import SplashScreen
+    splash = SplashScreen()
+    splash.showMessage(_("Initializing {}...").format(__namever__))
+
     main = SardesMainWindow(splash)
+    splash.finish(main)
 
     from PyQt5.QtWidgets import QStyleFactory
     app.setStyle(QStyleFactory.create('WindowsVista'))
