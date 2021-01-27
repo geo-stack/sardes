@@ -55,7 +55,7 @@ GITHUB_ISSUES_URL = __project_url__ + "/issues"
 class SardesMainWindowBase(QMainWindow):
     sig_about_to_close = Signal()
 
-    def __init__(self):
+    def __init__(self, splash=None):
         super().__init__()
         self.splash = splash
         self.setWindowIcon(get_icon('master'))
