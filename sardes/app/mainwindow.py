@@ -52,7 +52,7 @@ freeze_support()
 GITHUB_ISSUES_URL = __project_url__ + "/issues"
 
 
-class SardesMainWindowBase(QMainWindow):
+class MainWindowBase(QMainWindow):
     sig_about_to_close = Signal()
 
     def __init__(self, splash=None):
@@ -425,7 +425,7 @@ class SardesMainWindowBase(QMainWindow):
         return filteredMenu
 
 
-class SardesMainWindow(SardesMainWindowBase):
+class MainWindow(MainWindowBase):
 
     # ---- Plugin interactions
     def view_timeseries_data(self, sampling_feature_uuid):
@@ -568,7 +568,7 @@ if __name__ == '__main__':
     splash = SplashScreen()
     splash.showMessage(_("Initializing {}...").format(__namever__))
 
-    main = SardesMainWindow(splash)
+    main = MainWindow(splash)
     splash.finish(main)
 
     from PyQt5.QtWidgets import QStyleFactory
