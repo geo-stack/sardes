@@ -158,13 +158,11 @@ class DatabaseConnectionWorker(WorkerBase):
 
         # Fetch the data.
         readings = None
-        tseries_groups = []
         date_types = []
         try:
             for data_type in data_types:
                 tseries_dataf = self.db_accessor.get_timeseries_for_obs_well(
                     sampling_feature_uuid, data_type)
-                tseries_groups.append(tseries_dataf)
 
                 if tseries_dataf.empty:
                     continue
