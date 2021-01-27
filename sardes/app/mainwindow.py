@@ -65,7 +65,7 @@ freeze_support()
 GITHUB_ISSUES_URL = __project_url__ + "/issues"
 
 
-class MainWindow(QMainWindow):
+class SardesMainWindowBase(QMainWindow):
     sig_about_to_close = Signal()
 
     def __init__(self):
@@ -120,59 +120,7 @@ class MainWindow(QMainWindow):
 
     def setup_internal_plugins(self):
         """Setup Sardes internal plugins."""
-        # NOTE: We must import each internal plugin explicitely here or else
-        # we would have to add each of them as hidden import to the pyinstaller
-        # spec file for them to be packaged as part of the Sardes binary.
-
-        # Tables plugin.
-        from sardes.plugins.tables import SARDES_PLUGIN_CLASS
-        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
-        print("Loading the {} plugin...".format(plugin_title), end=' ')
-        splash.showMessage(_("Loading the {} plugin...").format(plugin_title))
-        self.tables_plugin = SARDES_PLUGIN_CLASS(self)
-        self.tables_plugin.register_plugin()
-        self.internal_plugins.append(self.tables_plugin)
-        print("done")
-
-        # Librairies plugin.
-        from sardes.plugins.librairies import SARDES_PLUGIN_CLASS
-        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
-        print("Loading the {} plugin...".format(plugin_title), end=' ')
-        splash.showMessage(_("Loading the {} plugin...").format(plugin_title))
-        self.librairies_plugin = SARDES_PLUGIN_CLASS(self)
-        self.librairies_plugin.register_plugin()
-        self.internal_plugins.append(self.librairies_plugin)
-        print("done")
-
-        # Database plugin.
-        from sardes.plugins.databases import SARDES_PLUGIN_CLASS
-        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
-        print("Loading the {} plugin...".format(plugin_title), end=' ')
-        splash.showMessage(_("Loading the {} plugin...").format(plugin_title))
-        self.databases_plugin = SARDES_PLUGIN_CLASS(self)
-        self.databases_plugin.register_plugin()
-        self.internal_plugins.append(self.databases_plugin)
-        print("done")
-
-        # Import Data Wizard.
-        from sardes.plugins.dataio import SARDES_PLUGIN_CLASS
-        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
-        print("Loading the {} plugin...".format(plugin_title), end=' ')
-        splash.showMessage(_("Loading the {} plugin...").format(plugin_title))
-        self.data_import_plugin = SARDES_PLUGIN_CLASS(self)
-        self.data_import_plugin.register_plugin()
-        self.internal_plugins.append(self.data_import_plugin)
-        print("done")
-
-        # Time Data plugin.
-        from sardes.plugins.readings import SARDES_PLUGIN_CLASS
-        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
-        print("Loading the {} plugin...".format(plugin_title), end=' ')
-        splash.showMessage(_("Loading the {} plugin...").format(plugin_title))
-        self.readings_plugin = SARDES_PLUGIN_CLASS(self)
-        self.readings_plugin.register_plugin()
-        self.internal_plugins.append(self.readings_plugin)
-        print("done")
+        pass
 
     def setup_thirdparty_plugins(self):
         """Setup Sardes third party plugins."""
@@ -361,14 +309,6 @@ class MainWindow(QMainWindow):
                 _("The language has been set to <i>{}</i>. Restart Sardes to "
                   "apply this change.").format(LANGUAGE_CODES[lang]))
 
-    # ---- Plugin interactions
-    def view_timeseries_data(self, sampling_feature_uuid):
-        """
-        Create and show a table to visualize the timeseries data related
-        to the given sampling feature uuid.
-        """
-        self.readings_plugin.view_timeseries_data(sampling_feature_uuid)
-
     # ---- Main window settings
     @Slot()
     def reset_window_layout(self):
@@ -382,48 +322,6 @@ class MainWindow(QMainWindow):
             QMessageBox.Yes | QMessageBox.No)
         if answer == QMessageBox.Yes:
             self.setup_default_layout()
-
-    def setup_default_layout(self):
-        """
-        Setup the default layout for Sardes mainwindow.
-        """
-        self.setUpdatesEnabled(False)
-
-        # Make sure all plugins are docked and visible.
-        self.tables_plugin.dockwindow.dock()
-        self.librairies_plugin.dockwindow.dock()
-        self.data_import_plugin.dockwindow.dock()
-        self.readings_plugin.dockwindow.dock()
-
-        # Split dockwidgets.
-        # Note that we use both directions to ensure proper update in case
-        # the tables plugin is already in a tabbed docked area. In that case,
-        # doing only the horizontal orientation simply adds the other plugin
-        # to the tabbed docked area instead of next to it.
-        for orientation in [Qt.Vertical, Qt.Horizontal]:
-            self.splitDockWidget(
-                self.tables_plugin.dockwidget(),
-                self.data_import_plugin.dockwidget(),
-                orientation)
-
-        # Tabify dockwidget.
-        self.tabifyDockWidget(
-            self.tables_plugin.dockwidget(),
-            self.readings_plugin.dockwidget())
-        self.tabifyDockWidget(
-            self.readings_plugin.dockwidget(),
-            self.librairies_plugin.dockwidget())
-
-        # Resize dockwidgets.
-        wf2 = int(500 / self.width() * 100)
-        wf1 = 100 - wf2
-        dockwidgets = [self.tables_plugin.dockwidget(),
-                       self.data_import_plugin.dockwidget()]
-        width_fractions = [wf1, wf2]
-        self.resizeDocks(dockwidgets, width_fractions, Qt.Horizontal)
-
-        self.tables_plugin.switch_to_plugin()
-        self.setUpdatesEnabled(True)
 
     def _restore_window_geometry(self):
         """
@@ -489,13 +387,6 @@ class MainWindow(QMainWindow):
         for plugin in self.internal_plugins + self.thirdparty_plugins:
             plugin.show_plugin()
 
-        # Connect to database if options is True.
-        # NOTE: This must be done after all internal and thirdparty plugins
-        # have been registered in case they are connected to the database
-        # manager connection signals.
-        if self.databases_plugin.get_option('auto_connect_to_database'):
-            self.databases_plugin.connect_to_database()
-
     def closeEvent(self, event):
         """Reimplement Qt closeEvent."""
         if self._is_closing is None:
@@ -541,6 +432,128 @@ class MainWindow(QMainWindow):
         return filteredMenu
 
 
+class SardesMainWindow(SardesMainWindowBase):
+
+    # ---- Plugin interactions
+    def view_timeseries_data(self, sampling_feature_uuid):
+        """
+        Create and show a table to visualize the timeseries data related
+        to the given sampling feature uuid.
+        """
+        self.readings_plugin.view_timeseries_data(sampling_feature_uuid)
+
+    def setup_default_layout(self):
+        """
+        Setup the default layout for Sardes mainwindow.
+        """
+        self.setUpdatesEnabled(False)
+
+        # Make sure all plugins are docked and visible.
+        self.tables_plugin.dockwindow.dock()
+        self.librairies_plugin.dockwindow.dock()
+        self.data_import_plugin.dockwindow.dock()
+        self.readings_plugin.dockwindow.dock()
+
+        # Split dockwidgets.
+        # Note that we use both directions to ensure proper update in case
+        # the tables plugin is already in a tabbed docked area. In that case,
+        # doing only the horizontal orientation simply adds the other plugin
+        # to the tabbed docked area instead of next to it.
+        for orientation in [Qt.Vertical, Qt.Horizontal]:
+            self.splitDockWidget(
+                self.tables_plugin.dockwidget(),
+                self.data_import_plugin.dockwidget(),
+                orientation)
+
+        # Tabify dockwidget.
+        self.tabifyDockWidget(
+            self.tables_plugin.dockwidget(),
+            self.readings_plugin.dockwidget())
+        self.tabifyDockWidget(
+            self.readings_plugin.dockwidget(),
+            self.librairies_plugin.dockwidget())
+
+        # Resize dockwidgets.
+        wf2 = int(500 / self.width() * 100)
+        wf1 = 100 - wf2
+        dockwidgets = [self.tables_plugin.dockwidget(),
+                       self.data_import_plugin.dockwidget()]
+        width_fractions = [wf1, wf2]
+        self.resizeDocks(dockwidgets, width_fractions, Qt.Horizontal)
+
+        self.tables_plugin.switch_to_plugin()
+        self.setUpdatesEnabled(True)
+
+    def setup_internal_plugins(self):
+        """Setup Sardes internal plugins."""
+        # NOTE: We must import each internal plugin explicitely here or else
+        # we would have to add each of them as hidden import to the pyinstaller
+        # spec file for them to be packaged as part of the Sardes binary.
+
+        # Tables plugin.
+        from sardes.plugins.tables import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        self.set_splash(_("Loading the {} plugin...").format(plugin_title))
+        self.tables_plugin = SARDES_PLUGIN_CLASS(self)
+        self.tables_plugin.register_plugin()
+        self.internal_plugins.append(self.tables_plugin)
+        print("done")
+
+        # Librairies plugin.
+        from sardes.plugins.librairies import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        self.set_splash(_("Loading the {} plugin...").format(plugin_title))
+        self.librairies_plugin = SARDES_PLUGIN_CLASS(self)
+        self.librairies_plugin.register_plugin()
+        self.internal_plugins.append(self.librairies_plugin)
+        print("done")
+
+        # Database plugin.
+        from sardes.plugins.databases import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        self.set_splash(_("Loading the {} plugin...").format(plugin_title))
+        self.databases_plugin = SARDES_PLUGIN_CLASS(self)
+        self.databases_plugin.register_plugin()
+        self.internal_plugins.append(self.databases_plugin)
+        print("done")
+
+        # Import Data Wizard.
+        from sardes.plugins.dataio import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        self.set_splash(_("Loading the {} plugin...").format(plugin_title))
+        self.data_import_plugin = SARDES_PLUGIN_CLASS(self)
+        self.data_import_plugin.register_plugin()
+        self.internal_plugins.append(self.data_import_plugin)
+        print("done")
+
+        # Time Data plugin.
+        from sardes.plugins.readings import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        self.set_splash(_("Loading the {} plugin...").format(plugin_title))
+        self.readings_plugin = SARDES_PLUGIN_CLASS(self)
+        self.readings_plugin.register_plugin()
+        self.internal_plugins.append(self.readings_plugin)
+        print("done")
+
+    def show(self):
+        """
+        Extend Qt method to call show_plugin on each installed plugin.
+        """
+        super().show()
+
+        # Connect to database if options is True.
+        # NOTE: This must be done after all internal and thirdparty plugins
+        # have been registered in case they are connected to the database
+        # manager connection signals.
+        if self.databases_plugin.get_option('auto_connect_to_database'):
+            self.databases_plugin.connect_to_database()
+
+
 def except_hook(cls, exception, traceback):
     """
     Used to override the default sys except hook so that this application
@@ -553,9 +566,12 @@ def except_hook(cls, exception, traceback):
 
 
 if __name__ == '__main__':
+    print('Starting SARDES...')
+
+    app = QApplication(sys.argv)
     sys.excepthook = except_hook
 
-    main = MainWindow()
+    main = SardesMainWindow(splash)
 
     from PyQt5.QtWidgets import QStyleFactory
     app.setStyle(QStyleFactory.create('WindowsVista'))
