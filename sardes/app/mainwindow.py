@@ -90,6 +90,15 @@ class MainWindowBase(QMainWindow):
         if self.splash is not None:
             self.splash.showMessage(message)
 
+    # ---- Public API
+    def setup_default_layout(self):
+        """Setup the default layout for Sardes mainwindow."""
+        pass
+
+    def setup_internal_plugins(self):
+        """Setup Sardes internal plugins."""
+        pass
+
     # ---- Setup
     def setup(self):
         """Setup the main window"""
@@ -110,10 +119,6 @@ class MainWindowBase(QMainWindow):
         from sardes.preferences import ConfDialog, DocumentsSettingsConfPage
         self.confdialog = ConfDialog(self)
         self.confdialog.add_confpage(DocumentsSettingsConfPage())
-
-    def setup_internal_plugins(self):
-        """Setup Sardes internal plugins."""
-        pass
 
     def setup_thirdparty_plugins(self):
         """Setup Sardes third party plugins."""
