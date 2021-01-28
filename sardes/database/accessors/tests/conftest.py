@@ -11,7 +11,7 @@
 
 
 # ---- Standard imports
-from datetime import datetime
+from datetime import datetime, date
 import os.path as osp
 from random import randrange
 import uuid
@@ -88,6 +88,63 @@ def manual_measurements(obswells_data):
 
 
 @pytest.fixture
+def sonde_models():
+    return pd.DataFrame(
+        [['Solinst', 'Barologger M1.5 Gold'],
+         ['Solinst', 'LT M10 Gold'],
+         ['Solinst', 'LT M10 Edge'],
+         ['Solinst', 'Barologger M1.5'],
+         ['Solinst', 'LT M10'],
+         ['Solinst', 'LT M20 Gold'],
+         ['Solinst', 'L M10'],
+         ['Telog 1', 'Druck'],
+         ['Telog 2', 'Druck'],
+         ['In-Situ', 'Troll']],
+        columns=['sonde_brand', 'sonde_model']
+        )
+
+
+@pytest.fixture
+def sondes_data():
+    data = [
+        [2, '1016042', date(2006, 3, 30), pd.NaT,
+         False, False, False, False, None],
+        [2, '1031928', date(2008, 6, 4), pd.NaT,
+         False, False, False, False, None],
+        [2, '1021777', date(2007, 3, 26), pd.NaT,
+         False, False, False, False, None],
+        [1, '1016387', date(2006, 3, 30), pd.NaT,
+         False, False, False, False, None]]
+    return pd.DataFrame(
+        data,
+        index=[uuid.uuid4() for row in data],
+        columns=['sonde_model_id', 'sonde_serial_no',
+                 'date_reception', 'date_withdrawal', 'in_repair',
+                 'out_of_order', 'lost', 'off_network', 'sonde_notes']
+        )
+
+
+@pytest.fixture
+def sondes_installation(obswells_data, sondes_data):
+    data = [
+        [datetime(2006, 8, 24, 18), pd.NaT, 9.02,
+         obswells_data.index[0], sondes_data.index[0]],
+        [datetime(2009, 7, 24, 19), pd.NaT, 7.19,
+         obswells_data.index[1], sondes_data.index[1]],
+        [datetime(2007, 11, 14, 19), pd.NaT, 10.1,
+         obswells_data.index[2], sondes_data.index[2]],
+        [datetime(2007, 11, 14, 19), pd.NaT, 2.0,
+         obswells_data.index[2], sondes_data.index[3]]
+        ]
+    return pd.DataFrame(
+        data,
+        index=[uuid.uuid4() for row in data],
+        columns=['start_date', 'end_date', 'install_depth',
+                 'sampling_feature_uuid', 'sonde_uuid']
+        )
+
+
+@pytest.fixture
 def readings_data():
     readings_data = pd.DataFrame(
         [], columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
@@ -111,7 +168,8 @@ def constructlog(tmp_path):
 @pytest.fixture
 def database_filler(
         obswells_data, constructlog, readings_data,
-        repere_data, manual_measurements):
+        repere_data, manual_measurements, sondes_data,
+        sondes_installation):
 
     def fill_database(dbaccessor):
         for obs_well_uuid, obs_well_data in obswells_data.iterrows():
@@ -132,5 +190,13 @@ def database_filler(
         # Add manual measurements.
         for index, row in manual_measurements.iterrows():
             dbaccessor.add_manual_measurements(index, row.to_dict())
+
+        # Add sonde data.
+        for index, row in sondes_data.iterrows():
+            dbaccessor.add_sondes_data(index, row.to_dict())
+
+        # Add sonde installation.
+        for index, row in sondes_installation.iterrows():
+            dbaccessor.add_sonde_installations(index, row.to_dict())
 
     return fill_database
