@@ -9,6 +9,9 @@
 
 import os.path as osp
 
+# ---- Third party imports
+from qtpy.QtCore import Signal
+
 # ---- Local imports
 from sardes.api.plugins import SardesPlugin
 from sardes.config.database import get_dbconfig, set_dbconfig
@@ -22,6 +25,7 @@ from sardes.plugins.network.widgets import PublishNetworkDialog
 
 
 class PiezometricNetwork(SardesPlugin):
+    sig_network_published = Signal()
 
     CONF_SECTION = 'piezometric_network'
 
@@ -78,6 +82,7 @@ class PiezometricNetwork(SardesPlugin):
         configuration file.
         """
         super().close_plugin()
+        self.publish_dialog.close()
         self.set_option(
             'publish/is_iri_data', self.publish_dialog.is_iri_data())
         self.set_option(
@@ -108,3 +113,4 @@ class PiezometricNetwork(SardesPlugin):
 
     def _stop_publishing_network(self, result):
         self.publish_dialog.stop_publishing(result)
+        self.sig_network_published.emit()
