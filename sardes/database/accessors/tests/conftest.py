@@ -175,6 +175,7 @@ def constructlog(tmp_path):
     fig, ax = plt.subplots()
     ax.plot([1, 2, 3, 4])
     fig.savefig(filename)
+    plt.close(fig)
     return filename
 
 

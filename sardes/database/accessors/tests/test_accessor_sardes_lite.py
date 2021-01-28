@@ -190,6 +190,7 @@ def test_add_get_del_construction_logs(dbaccessor0, tmp_path):
         fig, ax = plt.subplots()
         ax.plot([1, 2, 3, 4])
         fig.savefig(filename)
+        plt.close(fig)
 
         # Attach the construction log file.
         dbaccessor0.set_construction_log(sampling_feature_uuid, filename)
