@@ -15,18 +15,15 @@ Tests for the Readings plugin.
 import os
 import os.path as osp
 import sys
-from unittest.mock import Mock
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import pytest
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QMainWindow
 
 # ---- Local imports
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.plugins.readings import SARDES_PLUGIN_CLASS
-from sardes.widgets.tableviews import (MSEC_MIN_PROGRESS_DISPLAY, QMessageBox)
+from sardes.widgets.tableviews import QMessageBox
 from sardes.database.accessors import DatabaseAccessorSardesLite
 from sardes.app.mainwindow import MainWindowBase
 from sardes.api.timeseries import DataType
