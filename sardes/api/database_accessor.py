@@ -646,6 +646,20 @@ class DatabaseAccessor(DatabaseAccessorBase):
         attribute_values: dict
             A dictionary containing the attribute values for the new
             manual measurement.
+
+            Required elements
+            ~~~~~~~~~~~~~~~~~
+            - value: float
+                The numerical value of the water level that was
+                measured manually in the well.
+            - sampling_feature_uuid: object
+                The unique identifier that is used to reference the observation
+                well in which the manual measurement was made.
+
+            Optional elements
+            ~~~~~~~~~~~~~~~~~
+            - notes: str
+                A note related to the manual measurement.
         """
         raise NotImplementedError
 
