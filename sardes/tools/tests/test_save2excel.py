@@ -27,7 +27,7 @@ from qtpy.QtWidgets import QToolBar
 # ---- Local imports
 from sardes import __rootdir__
 from sardes.api.timeseries import DataType
-from sardes.plugins.readings.tools.save2excel import (
+from sardes.tools.save2excel import (
     _save_reading_data_to_xlsx, SaveReadingsToExcelTool, QFileDialog)
 from sardes.utils.tests.test_data_operations import format_reading_data
 

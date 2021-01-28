@@ -538,6 +538,16 @@ class MainWindow(MainWindowBase):
         self.internal_plugins.append(self.readings_plugin)
         print("done")
 
+        # Piezometric Network plugin.
+        from sardes.plugins.network import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        self.set_splash(_("Loading the {} plugin...").format(plugin_title))
+        self.network_plugin = SARDES_PLUGIN_CLASS(self)
+        self.network_plugin.register_plugin()
+        self.internal_plugins.append(self.network_plugin)
+        print("done")
+
     def show(self):
         """
         Extend Qt method to call show_plugin on each installed plugin.

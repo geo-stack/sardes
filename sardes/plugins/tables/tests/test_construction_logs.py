@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 """
-Tests for the ObsWellsTableWidget construction well tool.
+Tests for the station construction log tool.
 """
 
 # ---- Standard imports
@@ -18,100 +18,61 @@ from unittest.mock import Mock
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
-import matplotlib.pyplot as plt
-import pandas as pd
 import pytest
-from qtpy.QtCore import Qt, QPoint
-from qtpy.QtWidgets import QMainWindow, QFileDialog
+from qtpy.QtCore import QPoint
+from qtpy.QtWidgets import QFileDialog
 
 # ---- Local imports
-from sardes.database.database_manager import DatabaseConnectionManager
+from sardes.app.mainwindow import MainWindowBase
 from sardes.plugins.tables import SARDES_PLUGIN_CLASS
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 from sardes.database.accessors.accessor_sardes_lite import (
     DatabaseAccessorSardesLite)
 
 
-OBS_WELLS_DF = pd.DataFrame(
-    [['03037041', "St-Paul-d'Abbotsford", "Saint-Paul-d'Abbotsford",
-      'MT', 'Confined', 3, 'No', 'No', 45.445178, -72.828773, True, None],
-     ['02200001', "Réserve de Duchénier", "Saint-Narcisse-de-Rimouski",
-      'ROC', 'Unconfined', 2, 'Yes', 'No', 48.20282, -68.52795, True, None],
-     ['02167001', 'Matane', 'Matane',
-      'MT', 'Captive', 3, 'No', 'Yes', 48.81151, -67.53562, True, None],
-     ['02600001', "L'Islet", "L'Islet",
-      'ROC', 'Unconfined', 2, 'Yes', 'No', 47.093526, -70.338989, True, None],
-     ['03040002', 'PO-01', 'Calixa-Lavallée',
-      'ROC', 'Confined', 1, 'No', 'No', 45.74581, -73.28024, True, None]],
-    columns=['obs_well_id', 'common_name', 'municipality',
-             'aquifer_type', 'confinement', 'aquifer_code',
-             'in_recharge_zone', 'is_influenced', 'latitude',
-             'longitude', 'is_station_active', 'obs_well_notes'])
-
-
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def dbaccessor(tmp_path):
+def dbaccessor(tmp_path, obswells_data):
     dbaccessor = DatabaseAccessorSardesLite(
         osp.join(tmp_path, 'sqlite_database_test.db'))
     dbaccessor.init_database()
 
     # Add observation wells to the database.
-    for index, row in OBS_WELLS_DF.iterrows():
-        sampling_feature_uuid = dbaccessor._create_index(
-            'observation_wells_data')
+    for obs_well_uuid, obs_well_data in obswells_data.iterrows():
         dbaccessor.add_observation_wells_data(
-            sampling_feature_uuid,
-            attribute_values=row.to_dict())
+            obs_well_uuid, attribute_values=obs_well_data.to_dict())
     return dbaccessor
 
 
 @pytest.fixture
-def constructlog(tmp_path):
-    # Create a dummy construction log file.
-    filename = osp.join(tmp_path, 'test_construction_log.pdf')
-    fig, ax = plt.subplots()
-    ax.plot([1, 2, 3, 4])
-    fig.savefig(filename)
-    return filename
-
-
-@pytest.fixture
-def dbconnmanager(qtbot):
-    dbconnmanager = DatabaseConnectionManager()
-    return dbconnmanager
-
-
-@pytest.fixture
-def mainwindow(qtbot, mocker, dbconnmanager, dbaccessor):
-    class MainWindowMock(QMainWindow):
+def mainwindow(qtbot, mocker, dbaccessor):
+    class MainWindow(MainWindowBase):
         def __init__(self):
             super().__init__()
-            self.panes_menu = Mock()
-            self.db_connection_manager = dbconnmanager
 
+        def setup_internal_plugins(self):
             self.view_timeseries_data = Mock()
-            self.plot_timeseries_data = Mock()
-
-            self.register_table = Mock()
-            self.unregister_table = Mock()
-
             self.plugin = SARDES_PLUGIN_CLASS(self)
             self.plugin.register_plugin()
 
-    mainwindow = MainWindowMock()
+    mainwindow = MainWindow()
     mainwindow.show()
     qtbot.waitForWindowShown(mainwindow)
-    qtbot.addWidget(mainwindow)
 
+    dbconnmanager = mainwindow.db_connection_manager
     with qtbot.waitSignal(dbconnmanager.sig_database_connected, timeout=3000):
         dbconnmanager.connect_to_db(dbaccessor)
     assert dbconnmanager.is_connected()
-    qtbot.wait(1000)
+    qtbot.wait(150)
 
-    return mainwindow
+    yield mainwindow
+
+    # We need to wait for the mainwindow to close properly to avoid
+    # runtime errors on the c++ side.
+    with qtbot.waitSignal(mainwindow.sig_about_to_close):
+        mainwindow.close()
 
 
 # =============================================================================
@@ -174,6 +135,7 @@ def test_construction_log_tool(mainwindow, constructlog, qtbot, mocker):
     assert table.attach_construction_log_action.isEnabled()
     assert not table.show_construction_log_action.isEnabled()
     assert not table.remove_construction_log_action.isEnabled()
+    table.construction_log_btn.menu().close()
 
 
 if __name__ == "__main__":

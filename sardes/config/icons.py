@@ -195,6 +195,9 @@ FA_ICONS = {
     'preferences': [
         ('mdi.settings',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'publish_piezometric_network': [
+        ('mdi.earth-box',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'remove_row': [
         ('mdi.table-row-remove',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
