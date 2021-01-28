@@ -778,8 +778,8 @@ class DatabaseConnectionManager(TaskManagerBase):
 
     # ---- Timeseries
     def get_timeseries_for_obs_well(
-            self, obs_well_id, data_types, callback=None, postpone_exec=False,
-            main_thread=False):
+            self, obs_well_id, data_types=None,
+            callback=None, postpone_exec=False, main_thread=False):
         """
         Return a pandas dataframe containing the readings for the given
         data types and monitoring station.

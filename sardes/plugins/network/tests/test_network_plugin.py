@@ -27,8 +27,7 @@ from qtpy.QtWidgets import QFileDialog
 # ---- Local imports
 from sardes.app.mainwindow import MainWindowBase
 from sardes.plugins.network import SARDES_PLUGIN_CLASS
-from sardes.database.accessors.accessor_sardes_lite import (
-    DatabaseAccessorSardesLite)
+from sardes.database.accessors import DatabaseAccessorSardesLite
 
 
 # =============================================================================
