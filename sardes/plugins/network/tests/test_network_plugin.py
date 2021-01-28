@@ -94,8 +94,8 @@ def mainwindow(qtbot, mocker, dbaccessor):
 # =============================================================================
 def test_publish_to_kml_nofiles(mainwindow, qtbot, mocker, tmp_path):
     """
-    Test that deleting data in a timeseries data table is working as
-    expected.
+    Test that publishing the piezometric network to KML when no
+    attachment files are added is working as expected.
     """
     publish_dialog = mainwindow.plugin.publish_dialog
     publish_dialog.setModal(False)
@@ -120,8 +120,19 @@ def test_publish_to_kml_nofiles(mainwindow, qtbot, mocker, tmp_path):
         qtbot.mouseClick(publish_dialog.publish_button, Qt.LeftButton)
     qtbot.wait(150)
 
+    files_dirname = osp.join(tmp_path, 'test_piezo_network_files')
+    path, dirs, files = next(os.walk(osp.join(files_dirname, 'data')))
+    assert len(files) == 0
+    path, dirs, files = next(os.walk(osp.join(files_dirname, 'diagrams')))
+    assert len(files) == 0
+    path, dirs, files = next(os.walk(osp.join(files_dirname, 'graphs')))
+    assert len(files) == 0
+
 
 def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path):
+    """
+    Test that publishing the piezometric network to KML is working as expected.
+    """
     publish_dialog = mainwindow.plugin.publish_dialog
     publish_dialog.setModal(False)
     qtbot.mouseClick(mainwindow.plugin.show_publish_dialog_btn, Qt.LeftButton)
@@ -135,7 +146,7 @@ def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path):
     publish_dialog.iri_logs_ledit.setText('http://www.tests_iri_logs.ca')
     publish_dialog.iri_graphs_ledit.setText('http://www.tests_iri_graphs.ca')
 
-    selectedfilename = osp.join(tmp_path, 'test_piezo_network2.kml')
+    selectedfilename = osp.join(tmp_path, 'test_piezo_network.kml')
     selectedfilter = 'Keyhole Markup Language (*.kml)'
     mocker.patch.object(QFileDialog, 'getSaveFileName',
                         return_value=(selectedfilename, selectedfilter))
@@ -145,6 +156,14 @@ def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path):
                           timeout=50000):
         qtbot.mouseClick(publish_dialog.publish_button, Qt.LeftButton)
     qtbot.wait(150)
+
+    files_dirname = osp.join(tmp_path, 'test_piezo_network_files')
+    path, dirs, files = next(os.walk(osp.join(files_dirname, 'data')))
+    assert len(files) == 3
+    path, dirs, files = next(os.walk(osp.join(files_dirname, 'diagrams')))
+    assert len(files) == 3
+    path, dirs, files = next(os.walk(osp.join(files_dirname, 'graphs')))
+    assert len(files) == 3
 
 
 if __name__ == "__main__":
