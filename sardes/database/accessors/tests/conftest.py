@@ -105,3 +105,27 @@ def constructlog(tmp_path):
     ax.plot([1, 2, 3, 4])
     fig.savefig(filename)
     return filename
+
+
+@pytest.fixture
+def database_filler(
+        obswells_data, constructlog, readings_data,
+        repere_data, manual_measurements):
+
+    def fill_database(dbaccessor):
+        for obs_well_uuid, obs_well_data in obswells_data.iterrows():
+            dbaccessor.add_observation_wells_data(
+                obs_well_uuid, attribute_values=obs_well_data.to_dict())
+
+            # Add a construction log.
+            dbaccessor.set_construction_log(obs_well_uuid, constructlog)
+
+            # Add timeseries data.
+            dbaccessor.add_timeseries_data(
+                readings_data, obs_well_uuid, install_uuid=None)
+
+        # Add repere data to the database.
+        for index, row in repere_data.iterrows():
+            dbaccessor.add_repere_data(index, row.to_dict())
+
+    return fill_database

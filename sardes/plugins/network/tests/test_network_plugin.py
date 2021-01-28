@@ -35,27 +35,11 @@ from sardes.database.accessors.accessor_sardes_lite import (
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def dbaccessor(tmp_path, obswells_data, repere_data, constructlog,
-               readings_data):
+def dbaccessor(tmp_path, database_filler):
     dbaccessor = DatabaseAccessorSardesLite(
         osp.join(tmp_path, 'sqlite_database_test.db'))
     dbaccessor.init_database()
-
-    # Add observation wells.
-    for obs_well_uuid, obs_well_data in obswells_data.iterrows():
-        dbaccessor.add_observation_wells_data(
-            obs_well_uuid, attribute_values=obs_well_data.to_dict())
-
-        # Add a construction log.
-        dbaccessor.set_construction_log(obs_well_uuid, constructlog)
-
-        # Add timeseries data.
-        dbaccessor.add_timeseries_data(
-            readings_data, obs_well_uuid, install_uuid=None)
-
-    # Add repere data to the database.
-    for index, row in repere_data.iterrows():
-        dbaccessor.add_repere_data(index, row.to_dict())
+    database_filler(dbaccessor)
 
     return dbaccessor
 
