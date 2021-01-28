@@ -30,21 +30,20 @@ from sardes.api.timeseries import DataType
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.plugins.dataio.widgets.dataimportwizard import (
     QFileDialog, DataImportWizard, QMessageBox, SolinstFileReader)
+from sardes.database.accessors import DatabaseAccessorSardesLite
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def dbaccessor(qtbot):
-    # We need to do this to make sure the demo database is reinitialized
-    # after each test.
-    try:
-        del sys.modules['sardes.database.accessors.accessor_demo']
-    except KeyError:
-        pass
-    from sardes.database.accessors.accessor_demo import DatabaseAccessorDemo
-    return DatabaseAccessorDemo()
+def dbaccessor(tmp_path, database_filler):
+    dbaccessor = DatabaseAccessorSardesLite(
+        osp.join(tmp_path, 'sqlite_database_test.db'))
+    dbaccessor.init_database()
+    database_filler(dbaccessor)
+
+    return dbaccessor
 
 
 @pytest.fixture
@@ -92,7 +91,7 @@ def data_import_wizard(qtbot, dbconnmanager, testfiles, mocker):
 def assert_tseries_len(data_import_wizard, data_type, expected_length):
     """
     Fetch the tseries data from the database for the given observation
-    well id and data type and assert that the legnth of the data is as
+    well id and data type and assert that the length of the data is as
     expected.
     """
     tseries_data = (
@@ -232,19 +231,22 @@ def test_update_when_db_changed(qtbot, mocker, testfiles, data_import_wizard):
             'New Municipality Name')
 
 
-def test_save_data_to_database(qtbot, mocker, testfiles, data_import_wizard):
+def test_save_data_to_database(qtbot, mocker, testfiles, data_import_wizard,
+                               readings_data):
     """
     Test that saving new timeseries data to the database is working as
     expected.
     """
+    len_readings = len(readings_data)
+
     # Load the data from an inut data file.
     data_import_wizard._queued_filenames = testfiles
     data_import_wizard._load_next_queued_data_file()
     qtbot.waitUntil(lambda: data_import_wizard._is_updating is False,
                     timeout=3000)
 
-    assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826)
-    assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826)
+    assert_tseries_len(data_import_wizard, DataType.WaterLevel, len_readings)
+    assert_tseries_len(data_import_wizard, DataType.WaterTemp, len_readings)
 
     # We first try to load the data while setting an invalid directory for the
     # option to move the input data file after loading.
@@ -258,8 +260,8 @@ def test_save_data_to_database(qtbot, mocker, testfiles, data_import_wizard):
     qtbot.mouseClick(data_import_wizard.save_btn, Qt.LeftButton)
     assert patcher_msgbox_warning.call_count == 1
     assert data_import_wizard._data_saved_in_database is False
-    assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826)
-    assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826)
+    assert_tseries_len(data_import_wizard, DataType.WaterLevel, len_readings)
+    assert_tseries_len(data_import_wizard, DataType.WaterTemp, len_readings)
 
     # We now disbaled the option to move the input data file after loading and
     # try to load the data again.
@@ -269,15 +271,17 @@ def test_save_data_to_database(qtbot, mocker, testfiles, data_import_wizard):
     qtbot.waitUntil(lambda: data_import_wizard._data_saved_in_database is True,
                     timeout=3000)
     assert patcher_msgbox_warning.call_count == 1
-    assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 365)
-    assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 365)
+    assert_tseries_len(
+        data_import_wizard, DataType.WaterLevel, len_readings + 365)
+    assert_tseries_len(
+        data_import_wizard, DataType.WaterTemp, len_readings + 365)
     assert osp.exists(testfiles[0])
     qtbot.wait(300)
 
 
 @pytest.mark.parametrize('msgbox_answer', [QMessageBox.No, QMessageBox.Yes])
 def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
-                                  msgbox_answer, testfiles):
+                                  msgbox_answer, testfiles, readings_data):
     """
     Test loading data when the option to move the input file to another
     destination is checked.
@@ -317,12 +321,15 @@ def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
 
     assert osp.exists(filename) is (msgbox_answer == QMessageBox.No)
     assert patcher_msgbox_exec_.call_count == 1
-    assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 365)
-    assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 365)
+    assert_tseries_len(
+        data_import_wizard, DataType.WaterLevel, len(readings_data) + 365)
+    assert_tseries_len(
+        data_import_wizard, DataType.WaterTemp, len(readings_data) + 365)
     qtbot.wait(1000)
 
 
-def test_move_input_file_oserror(qtbot, mocker, data_import_wizard, testfiles):
+def test_move_input_file_oserror(qtbot, mocker, data_import_wizard, testfiles,
+                                 readings_data):
     """
     Test loading data when the operation to move the input data file fails.
     """
@@ -365,8 +372,10 @@ def test_move_input_file_oserror(qtbot, mocker, data_import_wizard, testfiles):
     assert patcher_msgbox_exec_.call_count == 1
     assert patcher_msgbox_warning.call_count == 1
     assert patcher_qfiledialog.call_count == 1
-    assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 365)
-    assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 365)
+    assert_tseries_len(
+        data_import_wizard, DataType.WaterLevel, len(readings_data) + 365)
+    assert_tseries_len(
+        data_import_wizard, DataType.WaterTemp, len(readings_data) + 365)
 
     assert data_import_wizard.pathbox_widget.path() == loaded_dirname_2
     assert osp.exists(osp.join(loaded_dirname_2, osp.basename(filename)))
@@ -374,7 +383,8 @@ def test_move_input_file_oserror(qtbot, mocker, data_import_wizard, testfiles):
     qtbot.wait(300)
 
 
-def test_duplicate_readings(qtbot, mocker, data_import_wizard, testfiles):
+def test_duplicate_readings(qtbot, mocker, data_import_wizard, testfiles,
+                            readings_data):
     """
     Test that duplicate readings are handled as expected by the wizard.
     """
@@ -398,8 +408,10 @@ def test_duplicate_readings(qtbot, mocker, data_import_wizard, testfiles):
     qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
 
     assert patcher_msgbox_exec_.call_count == 0
-    assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 365)
-    assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 365)
+    assert_tseries_len(
+        data_import_wizard, DataType.WaterLevel, len(readings_data) + 365)
+    assert_tseries_len(
+        data_import_wizard, DataType.WaterTemp, len(readings_data) + 365)
     assert data_import_wizard._data_saved_in_database is True
     assert data_import_wizard.datasaved_msgbox.isVisible()
     assert np.sum(data_import_wizard._is_duplicated) == 365
@@ -432,8 +444,10 @@ def test_duplicate_readings(qtbot, mocker, data_import_wizard, testfiles):
     qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
 
     assert patcher_msgbox_exec_.call_count == 1
-    assert_tseries_len(data_import_wizard, DataType.WaterLevel, 1826 + 730)
-    assert_tseries_len(data_import_wizard, DataType.WaterTemp, 1826 + 730)
+    assert_tseries_len(
+        data_import_wizard, DataType.WaterLevel, len(readings_data) + 730)
+    assert_tseries_len(
+        data_import_wizard, DataType.WaterTemp, len(readings_data) + 730)
 
     assert data_import_wizard._data_saved_in_database is True
     assert data_import_wizard.datasaved_msgbox.isVisible()

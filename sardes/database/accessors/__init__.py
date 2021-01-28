@@ -7,6 +7,5 @@
 # Licensed under the terms of the MIT License.
 # -----------------------------------------------------------------------------
 
-from sardes.database.accessors.accessor_demo import DatabaseAccessorDemo
 from sardes.database.accessors.accessor_rsesq import DatabaseAccessorRSESQ
 from sardes.database.accessors.accessor_sardes_lite import DatabaseAccessorSardesLite

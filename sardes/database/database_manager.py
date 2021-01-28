@@ -182,12 +182,9 @@ class DatabaseConnectionWorker(WorkerBase):
         duplicated = readings.duplicated(subset=['datetime', 'sonde_id'])
         nbr_duplicated = np.sum(duplicated)
         if nbr_duplicated:
-            observation_well = self._get_sampling_feature(
-                sampling_feature_uuid)
             print(("Warning: {} duplicated entrie(s) were found while "
                    "fetching readings data for well {}."
-                   ).format(nbr_duplicated,
-                            observation_well.sampling_feature_name))
+                   ).format(nbr_duplicated, obs_well_data['obs_well_id']))
 
         return readings,
 

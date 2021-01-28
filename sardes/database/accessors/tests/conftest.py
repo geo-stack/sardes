@@ -37,7 +37,11 @@ def obswells_data():
          48.20282, -68.52795, True, None],
         ['02167001', 'Matane', 'Matane',
          'MT', 'Captive', 3, 'No', 'Yes',
-         48.81151, -67.53562, True, None]]
+         48.81151, -67.53562, True, None],
+        ['03040002', 'PO-01', 'Calixa-Lavallée',
+         'ROC', 'Confined', 1, 'No', 'No',
+         45.74581, -73.28024, True, None]
+        ]
     return pd.DataFrame(
         data=data,
         index=[uuid.uuid4() for row in data],
@@ -114,7 +118,12 @@ def sondes_data():
         [5, '1021777', date(2007, 3, 26), pd.NaT,
          False, False, False, False, None],
         [1, '1016387', date(2006, 3, 30), pd.NaT,
-         False, False, False, False, None]]
+         False, False, False, False, None],
+        [4, '1060487', date(2012, 5, 5), pd.NaT,
+         False, False, False, False, None],
+        [1, '1048409', date(2010, 2, 8), pd.NaT,
+         False, False, False, False, None],
+        ]
     return pd.DataFrame(
         data,
         index=[uuid.uuid4() for row in data],
@@ -134,7 +143,11 @@ def sondes_installation(obswells_data, sondes_data):
         [datetime(2007, 11, 14, 19), pd.NaT, 10.1,
          obswells_data.index[2], sondes_data.index[2]],
         [datetime(2007, 11, 14, 19), pd.NaT, 2.0,
-         obswells_data.index[2], sondes_data.index[3]]
+         obswells_data.index[2], sondes_data.index[3]],
+        [datetime(2012, 5, 5, 19), pd.NaT, 9.24,
+         obswells_data.index[3], sondes_data.index[4]],
+        [datetime(2012, 5, 5, 19), pd.NaT, 1.0,
+         obswells_data.index[3], sondes_data.index[5]]
         ]
     return pd.DataFrame(
         data,
