@@ -1069,6 +1069,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         data = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
 
+        # Format the data.
+        data['start_date'] = pd.to_datetime(data['start_date'])
+        data['end_date'] = pd.to_datetime(data['end_date'])
+
         # Set the index of the dataframe.
         data.set_index('install_uuid', inplace=True, drop=True)
 
