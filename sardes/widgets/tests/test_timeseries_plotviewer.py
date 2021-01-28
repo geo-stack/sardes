@@ -8,17 +8,14 @@
 # -----------------------------------------------------------------------------
 
 """
-Tests for the ObservationWellTableView.
+Tests for the TimeSeriesPlotViewer.
 """
 
 # ---- Standard imports
 import os.path as osp
-import sys
 
 # ---- Third party imports
 from matplotlib.backends.backend_qt5 import QtWidgets
-import numpy as np
-import pandas as pd
 import pytest
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QApplication

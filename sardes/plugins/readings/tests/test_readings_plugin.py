@@ -27,21 +27,22 @@ from qtpy.QtWidgets import QMainWindow
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.plugins.readings import SARDES_PLUGIN_CLASS
 from sardes.widgets.tableviews import (MSEC_MIN_PROGRESS_DISPLAY, QMessageBox)
+from sardes.database.accessors import DatabaseAccessorSardesLite
+from sardes.app.mainwindow import MainWindowBase
+from sardes.api.timeseries import DataType
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def dbaccessor(qtbot):
-    # We need to do this to make sure the demo database is reinitialized
-    # after each test.
-    try:
-        del sys.modules['sardes.database.accessors.accessor_demo']
-    except KeyError:
-        pass
-    from sardes.database.accessors.accessor_demo import DatabaseAccessorDemo
-    return DatabaseAccessorDemo()
+def dbaccessor(tmp_path, database_filler):
+    dbaccessor = DatabaseAccessorSardesLite(
+        osp.join(tmp_path, 'sqlite_database_test.db'))
+    dbaccessor.init_database()
+    database_filler(dbaccessor)
+
+    return dbaccessor
 
 
 @pytest.fixture
@@ -51,61 +52,62 @@ def dbconnmanager(qtbot):
 
 
 @pytest.fixture
-def mainwindow(qtbot, mocker, dbconnmanager, dbaccessor):
-    class MainWindowMock(QMainWindow):
+def obswell_uuid(obswells_data):
+    return obswells_data.index[0]
+
+
+@pytest.fixture
+def mainwindow(qtbot, mocker, dbconnmanager, dbaccessor, obswell_uuid,
+               readings_data):
+    class MainWindowMock(MainWindowBase):
         def __init__(self):
             super().__init__()
-            self.panes_menu = Mock()
-            self.db_connection_manager = dbconnmanager
 
-            self.view_timeseries_data = Mock()
-            self.plot_timeseries_data = Mock()
-
-            self.register_table = Mock()
-            self.unregister_table = Mock()
-
+        def setup_internal_plugins(self):
             self.plugin = SARDES_PLUGIN_CLASS(self)
             self.plugin.register_plugin()
-
-        def closeEvent(self, event):
-            self.plugin.close_plugin()
-            self.db_connection_manager.close()
-            event.accept()
+            self.internal_plugins.append(self.plugin)
 
     mainwindow = MainWindowMock()
     mainwindow.resize(1200, 750)
     mainwindow.show()
     qtbot.waitForWindowShown(mainwindow)
-    qtbot.addWidget(mainwindow)
 
+    dbconnmanager = mainwindow.db_connection_manager
     with qtbot.waitSignal(dbconnmanager.sig_database_connected, timeout=3000):
         dbconnmanager.connect_to_db(dbaccessor)
     assert dbconnmanager.is_connected()
-    qtbot.wait(1000)
+    qtbot.wait(150)
 
     # Show data for observation well #1.
-    mainwindow.plugin.view_timeseries_data(0)
+    mainwindow.plugin.view_timeseries_data(obswell_uuid)
     qtbot.waitUntil(lambda: len(mainwindow.plugin._tseries_data_tables) == 1)
 
     # Wait until the data are loaded in the table.
-    table = mainwindow.plugin._tseries_data_tables[0]
-    qtbot.waitUntil(lambda: table.tableview.row_count() == 1826)
+    table = mainwindow.plugin._tseries_data_tables[obswell_uuid]
+    qtbot.waitUntil(lambda: table.tableview.row_count() == len(readings_data))
     assert table.isVisible()
 
-    return mainwindow
+    yield mainwindow
+
+    # We need to wait for the mainwindow to close properly to avoid
+    # runtime errors on the c++ side.
+    with qtbot.waitSignal(mainwindow.sig_about_to_close):
+        mainwindow.close()
 
 
 # =============================================================================
 # ---- Tests
 # =============================================================================
-def test_delete_timeseries_data(mainwindow, qtbot, mocker):
+def test_delete_timeseries_data(mainwindow, qtbot, mocker, obswell_uuid,
+                                readings_data):
     """
     Test that deleting data in a timeseries data table is working as
     expected.
 
     Regression test for cgq-qgc/sardes#210
     """
-    table = mainwindow.plugin._tseries_data_tables[0]
+    table = mainwindow.plugin._tseries_data_tables[obswell_uuid]
 
     # Select one row in the table.
     model = table.model()
@@ -137,31 +139,33 @@ def test_delete_timeseries_data(mainwindow, qtbot, mocker):
         table.tableview.save_edits_action.trigger()
     assert model.data_edit_count() == 0
     assert model.has_unsaved_data_edits() is False
-    assert table.tableview.row_count() == 1826 - 4
+    assert table.tableview.row_count() == len(readings_data) - 4
 
     # Close the timeseries table.
     mainwindow.plugin.tabwidget.tabCloseRequested.emit(0)
     qtbot.waitUntil(lambda: len(mainwindow.plugin._tseries_data_tables) == 0)
 
 
-def test_edit_then_delete_row(mainwindow, qtbot, mocker):
+def test_edit_then_delete_row(mainwindow, qtbot, mocker, obswell_uuid,
+                              readings_data):
     """
     Test that editing and then deleting data on a same row is working as
     expected.
 
     Regression test for cgq-qgc/sardes#337
     """
-    table = mainwindow.plugin._tseries_data_tables[0]
+    table = mainwindow.plugin._tseries_data_tables[obswell_uuid]
 
-    # Edit a cell on the second row of the table.
+    # Edit the water level value on the second row of the table.
+    expected_value = readings_data.iloc[2][DataType.WaterLevel]
     model_index = table.model().index(2, 2)
-    assert table.model().get_value_at(model_index) == 3.210969794207334
+    assert table.model().get_value_at(model_index) == expected_value
     edited_value = 999.99
     table.model().set_data_edit_at(model_index, edited_value)
     assert table.model().get_value_at(model_index) == 999.99
     assert table.model().data_edit_count() == 1
 
-    # Delete the secon row of the table.
+    # Delete the second row of the table.
     table.model().delete_row([2])
     assert table.model().data_edit_count() == 2
 
@@ -170,11 +174,14 @@ def test_edit_then_delete_row(mainwindow, qtbot, mocker):
     with qtbot.waitSignal(table.model().sig_data_updated, timeout=3000):
         table.tableview.save_edits_action.trigger()
 
+    # Note: the data on the second row corresponds to the data that was
+    # previously on the third row in the original dataset.
+    expected_value = readings_data.iloc[2 + 1][DataType.WaterLevel]
     model_index = table.model().index(2, 2)
-    assert table.model().get_value_at(model_index) == 3.2786624267542765
+    assert table.model().get_value_at(model_index) == expected_value
 
-    assert table.tableview.row_count() == 1826 - 1
+    assert table.tableview.row_count() == len(readings_data) - 1
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
+    pytest.main(['-x', __file__, '-v', '-rw'])

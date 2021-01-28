@@ -150,9 +150,9 @@ def readings_data():
         [], columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
     readings_data['datetime'] = pd.date_range(
         start='1/1/2015', end='31/12/2020')
-    readings_data[DataType.WaterLevel] = np.random.rand(len(readings_data))
-    readings_data[DataType.WaterTemp] = np.random.rand(len(readings_data))
-    readings_data[DataType.WaterEC] = np.random.rand(len(readings_data))
+    readings_data[DataType.WaterLevel] = np.arange(len(readings_data)) + 1
+    readings_data[DataType.WaterTemp] = -np.arange(len(readings_data)) - 1
+    readings_data[DataType.WaterEC] = np.random.rand(len(readings_data)) + 100
     return readings_data
 
 
