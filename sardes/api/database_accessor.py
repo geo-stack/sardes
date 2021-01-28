@@ -649,6 +649,9 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
             Required elements
             ~~~~~~~~~~~~~~~~~
+            - datetime :class:`datetime.Datetime`
+                A datetime object corresponding to the date and time when the
+                manual measurement was made in the well.
             - value: float
                 The numerical value of the water level that was
                 measured manually in the well.

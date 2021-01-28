@@ -82,6 +82,7 @@ def manual_measurements(obswells_data):
         [obswells_data.index[2], datetime(2016, 2, 4, 13, 26, 3), 2.03, '']]
     return pd.DataFrame(
         data,
+        index=[uuid.uuid4() for row in data],
         columns=['sampling_feature_uuid', 'datetime', 'value', 'notes']
         )
 
@@ -127,5 +128,9 @@ def database_filler(
         # Add repere data to the database.
         for index, row in repere_data.iterrows():
             dbaccessor.add_repere_data(index, row.to_dict())
+
+        # Add manual measurements.
+        for index, row in manual_measurements.iterrows():
+            dbaccessor.add_manual_measurements(index, row.to_dict())
 
     return fill_database
