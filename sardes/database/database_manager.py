@@ -17,6 +17,7 @@ import urllib
 import uuid
 
 # ---- Third party imports
+import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from qtpy.QtCore import QObject, Signal, Slot
@@ -140,63 +141,54 @@ class DatabaseConnectionWorker(WorkerBase):
         self.db_accessor.set(name, *args, **kargs)
 
     # ---- Timeseries
-    def _get_timeseries_for_obs_well(self, sampling_feature_uuid, data_types):
+    def _get_timeseries_for_obs_well(self, sampling_feature_uuid,
+                                     data_types=None):
         """
-        Get the time data acquired in the observation well for each
-        given data type.
+        Return a pandas dataframe containing the readings for the given
+        data types and monitoring station.
+
+        If no data type are specified, then return the entire dataset for
+        the specified monitoring station.
         """
-        data_types = [DataType(data_type) for data_type in data_types]
-        obs_well_data = self._get('observation_wells_data')[0]
+        # We do this like this to avoid unecessary prints in the console.
+        if 'observation_wells_data' in self._cache:
+            obs_well_data = self._cache['observation_wells_data']
+        else:
+            obs_well_data = self._get('observation_wells_data')[0]
         obs_well_data = obs_well_data.loc[sampling_feature_uuid]
 
-        # Print some info message in the console.
-        prop_names = [prop.name for prop in data_types]
-        prop_enum = (' and '.join(prop_names) if
-                     len(prop_names) == 2 else ', '.join(prop_names))
-        print("Fetching {} data for observation well {}.".format(
-            prop_enum, obs_well_data['obs_well_id']))
-
-        # Fetch the data.
-        readings = None
-        date_types = []
+        print("Fetching readings data for observation well {}..."
+              .format(obs_well_data['obs_well_id']))
         try:
-            for data_type in data_types:
-                tseries_dataf = self.db_accessor.get_timeseries_for_obs_well(
-                    sampling_feature_uuid, data_type)
-
-                if tseries_dataf.empty:
-                    continue
-                if readings is None:
-                    readings = tseries_dataf
-                else:
-                    readings = readings.merge(
-                        tseries_dataf,
-                        left_on=['datetime', 'obs_id', 'sonde_id',
-                                 'install_depth'],
-                        right_on=['datetime', 'obs_id', 'sonde_id',
-                                  'install_depth'],
-                        how='outer', sort=True)
-                date_types.append(data_type)
-            if readings is None:
-                readings = DataFrame(
-                    [],
-                    columns=['datetime', 'sonde_id', DataType(0),
-                             DataType(1), DataType(2), 'install_depth',
-                             'obs_id'])
-
-            # Reorder the columns so that the data are displayed nicely.
-            readings = readings[
-                ['datetime', 'sonde_id'] +
-                date_types +
-                ['install_depth', 'obs_id']]
-            readings = readings.sort_values('datetime', axis=0, ascending=True)
-
-            # Add metadata to the dataframe.
-            readings._metadata = ['sampling_feature_data']
-            readings.sampling_feature_data = obs_well_data
+            readings = self.db_accessor.get_timeseries_for_obs_well(
+                sampling_feature_uuid, data_types)
         except Exception as error:
+            print()
             print(type(error).__name__, end=': ')
             print(error)
+            readings = DataFrame(
+                [],
+                columns=['datetime', 'sonde_id', DataType(0),
+                         DataType(1), DataType(2), 'install_depth',
+                         'obs_id'])
+        else:
+            print(' done')
+
+        # Add metadata to the dataframe.
+        readings._metadata = ['sampling_feature_data']
+        readings.sampling_feature_data = obs_well_data
+
+        # Check for duplicates along the time axis.
+        duplicated = readings.duplicated(subset=['datetime', 'sonde_id'])
+        nbr_duplicated = np.sum(duplicated)
+        if nbr_duplicated:
+            observation_well = self._get_sampling_feature(
+                sampling_feature_uuid)
+            print(("Warning: {} duplicated entrie(s) were found while "
+                   "fetching readings data for well {}."
+                   ).format(nbr_duplicated,
+                            observation_well.sampling_feature_name))
+
         return readings,
 
     def _save_timeseries_data_edits(self, tseries_edits):
@@ -789,8 +781,11 @@ class DatabaseConnectionManager(TaskManagerBase):
             self, obs_well_id, data_types, callback=None, postpone_exec=False,
             main_thread=False):
         """
-        Get the time data acquired in the observation well for each
-        given data type.
+        Return a pandas dataframe containing the readings for the given
+        data types and monitoring station.
+
+        If no data type are specified, then return the entire dataset for
+        the specified monitoring station.
         """
         if main_thread is False:
             self._add_task('get_timeseries_for_obs_well', callback,

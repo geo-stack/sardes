@@ -549,28 +549,32 @@ class DatabaseAccessor(DatabaseAccessorBase):
         raise NotImplementedError
 
     # ---- Timeseries
-    def get_timeseries_for_obs_well(self, obs_well_id, data_type):
+    def get_timeseries_for_obs_well(self, obs_well_id, data_types=None):
         """
         Return a pandas dataframe containing the readings for the given
-        data type and observation well.
+        data types and monitoring station.
+
+        If no data type are specified, then return the entire dataset for
+        the specified monitoring station.
 
         Parameters
         ----------
         obs_well_id: object
             A unique identifier that is used to reference the observation well
             in the database.
-        data_type: :class:`sardes.api.timeseries.DataType`
-            The type of time data that we want to extract from the database.
+        data_type: list of str or list of DataType
+            A list of timeseries data types that we want to extract
+            from the database.
 
         Returns
         -------
         tseries_dataf: pandas.DataFrame
-            A pandas dataframe containing the readings for a given data type
-            and obervation well.
+            A pandas dataframe containing the readings for the given
+            data types and obervation well.
             Time must be saved as datetime in a column named 'datetime'.
-            The column in which the numerical values are stored must be a
-            member of:class:`sardes.api.timeseries.DataType`.
-            Finally, the an observation ID and a sonde serial number must be
+            The columns in which the numerical values are stored must be a
+            member of :class:`sardes.api.timeseries.DataType`.
+            Finally, the observation ID and a sonde serial number must be
             provided for each value and stored in columns named, respectively,
             'obs_id' and 'sonde_id'.
         """
