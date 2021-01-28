@@ -112,7 +112,8 @@ def test_publish_to_kml_nofiles(mainwindow, qtbot, mocker, tmp_path):
     assert len(files) == 0
 
 
-def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path):
+def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path,
+                        obswells_data):
     """
     Test that publishing the piezometric network to KML is working as expected.
     """
@@ -142,11 +143,11 @@ def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path):
 
     files_dirname = osp.join(tmp_path, 'test_piezo_network_files')
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'data')))
-    assert len(files) == 3
+    assert len(files) == len(obswells_data)
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'diagrams')))
-    assert len(files) == 3
+    assert len(files) == len(obswells_data)
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'graphs')))
-    assert len(files) == 3
+    assert len(files) == len(obswells_data)
 
 
 if __name__ == "__main__":
