@@ -12,20 +12,15 @@
 
 # ---- Standard imports
 from datetime import datetime
-import os
 import os.path as osp
 from random import randrange
 import uuid
-from unittest.mock import Mock
-os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
-from numpy import nan
+import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import pytest
-from qtpy.QtCore import Qt, QPoint
-from qtpy.QtWidgets import QMainWindow, QFileDialog
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
@@ -42,13 +37,7 @@ def obswells_data():
          48.20282, -68.52795, True, None],
         ['02167001', 'Matane', 'Matane',
          'MT', 'Captive', 3, 'No', 'Yes',
-         48.81151, -67.53562, True, None],
-        ['02600001', "L'Islet", "L'Islet",
-         'ROC', 'Unconfined', 2, 'Yes', 'No',
-         47.093526, -70.338989, True, None],
-        ['03040002', 'PO-01', 'Calixa-Lavallée',
-         'ROC', 'Confined', 1, 'No', 'No',
-         45.74581, -73.28024, True, None]]
+         48.81151, -67.53562, True, None]]
     return pd.DataFrame(
         data=data,
         index=[uuid.uuid4() for row in data],
@@ -99,26 +88,14 @@ def manual_measurements(obswells_data):
 
 @pytest.fixture
 def readings_data():
-    data = [
-        ['1970-11-01 01:00:00', 1,   nan,  nan, 0],
-        ['1970-11-02 01:00:00', 3,   nan,  nan, 0],
-
-        ['2005-11-01 01:00:00', 1,   nan, 3.16, 2],
-        ['2005-11-02 01:00:00', 2, 100.1, 3.16, 2],
-        ['2005-11-03 01:00:00', 3, 100.1, 3.16, 2],
-
-        ['2009-11-01 01:00:00', 1, 100.1, 3.16, 1],
-        ['2009-11-02 01:00:00', 2, 100.1, 3.16, 1],
-        ['2009-11-03 01:00:00', 3, 100.1, 3.16, 1],
-        ['2009-11-05 01:00:00', 3, 100.1, 3.16, 1],
-        ['2009-11-06 01:00:00', 3, 100.1, 3.16, 1]]
-    source_data = pd.DataFrame(
-        data,
-        columns=['datetime', DataType.WaterLevel,
-                 DataType.WaterTemp, DataType.WaterEC, 'obs_id'])
-    source_data['datetime'] = pd.to_datetime(
-        source_data['datetime'], format="%Y-%m-%d %H:%M:%S")
-    return source_data
+    readings_data = pd.DataFrame(
+        [], columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
+    readings_data['datetime'] = pd.date_range(
+        start='1/1/2015', end='31/12/2020')
+    readings_data[DataType.WaterLevel] = np.random.rand(len(readings_data))
+    readings_data[DataType.WaterTemp] = np.random.rand(len(readings_data))
+    readings_data[DataType.WaterEC] = np.random.rand(len(readings_data))
+    return readings_data
 
 
 @pytest.fixture

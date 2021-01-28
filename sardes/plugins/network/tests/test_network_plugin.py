@@ -50,9 +50,8 @@ def dbaccessor(tmp_path, obswells_data, repere_data, constructlog,
         dbaccessor.set_construction_log(obs_well_uuid, constructlog)
 
         # Add timeseries data.
-        for group in readings_data.groupby('obs_id'):
-            dbaccessor.add_timeseries_data(
-                group[1], obs_well_uuid, install_uuid=None)
+        dbaccessor.add_timeseries_data(
+            readings_data, obs_well_uuid, install_uuid=None)
 
     # Add repere data to the database.
     for index, row in repere_data.iterrows():
@@ -143,7 +142,7 @@ def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path):
 
     # We then ask the manager to publish network to kml.
     with qtbot.waitSignal(mainwindow.plugin.sig_network_published,
-                          timeout=10000):
+                          timeout=50000):
         qtbot.mouseClick(publish_dialog.publish_button, Qt.LeftButton)
     qtbot.wait(150)
 
