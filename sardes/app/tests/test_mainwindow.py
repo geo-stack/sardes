@@ -13,6 +13,7 @@ Tests for the mainwindow.
 
 # ---- Standard imports
 import os
+import os.path as osp
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
@@ -23,11 +24,22 @@ from qtpy.QtCore import QPoint, QSize, Qt
 from sardes.config.gui import INIT_MAINWINDOW_SIZE
 from sardes.config.main import CONF
 from sardes.app.mainwindow import MainWindow, QMessageBox
+from sardes.database.accessors import DatabaseAccessorSardesLite
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
+@pytest.fixture
+def database(tmp_path, database_filler):
+    database = osp.join(tmp_path, 'sqlite_database_test.db')
+    dbaccessor = DatabaseAccessorSardesLite(database)
+    dbaccessor.init_database()
+    database_filler(dbaccessor)
+    dbaccessor.close_connection()
+    return database
+
+
 @pytest.fixture
 def mainwindow(qtbot, mocker):
     """A fixture for Sardes main window."""
@@ -177,10 +189,18 @@ def test_reset_window_layout(mainwindow, qtbot, mocker):
 # =============================================================================
 # ---- Tests show readings
 # =============================================================================
-def test_view_readings(mainwindow, qtbot):
+def test_view_readings(mainwindow, qtbot, database, readings_data,
+                       obswells_data):
     """
     Assert that timeseries data tables are created and shown as expected.
     """
+    # Set the path to the demo database in the Sardes SQlite database dialog.
+    dbconn_widget = mainwindow.databases_plugin.db_connection_widget
+    assert dbconn_widget.dbtype_combobox.currentText() == 'Sardes SQLite'
+
+    dbialog = dbconn_widget.get_current_database_dialog()
+    dbialog.dbname_widget.set_path(database)
+
     dbmanager = mainwindow.db_connection_manager
     with qtbot.waitSignal(dbmanager.sig_database_connected, timeout=1500):
         mainwindow.databases_plugin.connect_to_database()
@@ -196,7 +216,7 @@ def test_view_readings(mainwindow, qtbot):
     qtbot.waitUntil(
         lambda: table_obs_well.get_current_obs_well_data() is not None)
     current_obs_well = table_obs_well.get_current_obs_well_data().name
-    assert current_obs_well == 0
+    assert current_obs_well == obswells_data.index[0]
 
     # Click on the button to show the readings data for the selected well.
     readings_plugin = mainwindow.readings_plugin
@@ -204,8 +224,8 @@ def test_view_readings(mainwindow, qtbot):
     qtbot.mouseClick(table_obs_well.show_data_btn, Qt.LeftButton)
     qtbot.waitUntil(lambda: len(readings_plugin._tseries_data_tables) == 1)
 
-    table = readings_plugin._tseries_data_tables[0]
-    qtbot.waitUntil(lambda: table.tableview.row_count() == 1826)
+    table = readings_plugin._tseries_data_tables[obswells_data.index[0]]
+    qtbot.waitUntil(lambda: table.tableview.row_count() == len(readings_data))
     assert table.isVisible()
 
     # Close the timeseries table.
