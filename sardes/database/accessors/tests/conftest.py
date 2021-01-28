@@ -107,11 +107,11 @@ def sonde_models():
 @pytest.fixture
 def sondes_data():
     data = [
-        [2, '1016042', date(2006, 3, 30), pd.NaT,
+        [5, '1016042', date(2006, 3, 30), pd.NaT,
          False, False, False, False, None],
-        [2, '1031928', date(2008, 6, 4), pd.NaT,
+        [5, '1031928', date(2008, 6, 4), pd.NaT,
          False, False, False, False, None],
-        [2, '1021777', date(2007, 3, 26), pd.NaT,
+        [5, '1021777', date(2007, 3, 26), pd.NaT,
          False, False, False, False, None],
         [1, '1016387', date(2006, 3, 30), pd.NaT,
          False, False, False, False, None]]
