@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 """
-Tests for the ObsWellsTableWidget construction well tool.
+Tests for the station construction log tool.
 """
 
 # ---- Standard imports
@@ -20,10 +20,10 @@ os.environ['SARDES_PYTEST'] = 'True'
 # ---- Third party imports
 import pytest
 from qtpy.QtCore import QPoint
-from qtpy.QtWidgets import QMainWindow, QFileDialog
+from qtpy.QtWidgets import QFileDialog
 
 # ---- Local imports
-from sardes.database.database_manager import DatabaseConnectionManager
+from sardes.app.mainwindow import MainWindowBase
 from sardes.plugins.tables import SARDES_PLUGIN_CLASS
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 from sardes.database.accessors.accessor_sardes_lite import (
@@ -47,39 +47,32 @@ def dbaccessor(tmp_path, obswells_data):
 
 
 @pytest.fixture
-def dbconnmanager(qtbot):
-    dbconnmanager = DatabaseConnectionManager()
-    return dbconnmanager
-
-
-@pytest.fixture
-def mainwindow(qtbot, mocker, dbconnmanager, dbaccessor):
-    class MainWindowMock(QMainWindow):
+def mainwindow(qtbot, mocker, dbaccessor):
+    class MainWindow(MainWindowBase):
         def __init__(self):
             super().__init__()
-            self.panes_menu = Mock()
-            self.db_connection_manager = dbconnmanager
 
+        def setup_internal_plugins(self):
             self.view_timeseries_data = Mock()
-            self.plot_timeseries_data = Mock()
-
-            self.register_table = Mock()
-            self.unregister_table = Mock()
-
             self.plugin = SARDES_PLUGIN_CLASS(self)
             self.plugin.register_plugin()
 
-    mainwindow = MainWindowMock()
+    mainwindow = MainWindow()
     mainwindow.show()
     qtbot.waitForWindowShown(mainwindow)
-    qtbot.addWidget(mainwindow)
 
+    dbconnmanager = mainwindow.db_connection_manager
     with qtbot.waitSignal(dbconnmanager.sig_database_connected, timeout=3000):
         dbconnmanager.connect_to_db(dbaccessor)
     assert dbconnmanager.is_connected()
-    qtbot.wait(1000)
+    qtbot.wait(150)
 
-    return mainwindow
+    yield mainwindow
+
+    # We need to wait for the mainwindow to close properly to avoid
+    # runtime errors on the c++ side.
+    with qtbot.waitSignal(mainwindow.sig_about_to_close):
+        mainwindow.close()
 
 
 # =============================================================================
@@ -142,6 +135,7 @@ def test_construction_log_tool(mainwindow, constructlog, qtbot, mocker):
     assert table.attach_construction_log_action.isEnabled()
     assert not table.show_construction_log_action.isEnabled()
     assert not table.remove_construction_log_action.isEnabled()
+    table.construction_log_btn.menu().close()
 
 
 if __name__ == "__main__":
