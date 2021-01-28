@@ -1240,6 +1240,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         If no data type are specified, then return the entire dataset for
         the specified monitoring station.
         """
+        if isinstance(data_types, str) or isinstance(data_types, DataType):
+            data_types = [data_types,]
         if data_types is None:
             data_types = [
                 DataType.WaterLevel,
