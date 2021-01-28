@@ -158,7 +158,7 @@ class DatabaseConnectionWorker(WorkerBase):
         obs_well_data = obs_well_data.loc[sampling_feature_uuid]
 
         print("Fetching readings data for observation well {}..."
-              .format(obs_well_data['obs_well_id']))
+              .format(obs_well_data['obs_well_id']), end='')
         try:
             readings = self.db_accessor.get_timeseries_for_obs_well(
                 sampling_feature_uuid, data_types)
