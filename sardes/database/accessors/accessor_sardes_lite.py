@@ -1600,4 +1600,15 @@ if __name__ == "__main__":
     repere_data = accessor.get_repere_data()
 
     stations_with_log = accessor.get_stations_with_construction_log()
+
+    overview = accessor.get_observation_wells_data_overview()
+
+    from time import perf_counter
+    t1 = perf_counter()
+    sampling_feature_uuid = (
+        accessor._get_sampling_feature_uuid_from_name('01070001'))
+    readings = accessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, [DataType.WaterLevel])
+    print(perf_counter() - t1)
+
     accessor.close_connection()
