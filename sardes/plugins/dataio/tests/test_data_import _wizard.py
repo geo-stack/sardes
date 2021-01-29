@@ -73,7 +73,6 @@ def testfiles(tmp_path):
 def data_import_wizard(qtbot, dbconnmanager, testfiles, mocker):
     data_import_wizard = DataImportWizard()
     data_import_wizard.set_database_connection_manager(dbconnmanager)
-    qtbot.addWidget(data_import_wizard)
 
     data_import_wizard.show()
     qtbot.waitForWindowShown(data_import_wizard)
@@ -82,7 +81,13 @@ def data_import_wizard(qtbot, dbconnmanager, testfiles, mocker):
     assert not data_import_wizard.duplicates_msgbox.isVisible()
     assert not data_import_wizard.datasaved_msgbox.isVisible()
 
-    return data_import_wizard
+    yield data_import_wizard
+
+    # We need to wait for the mainwindow to close properly to avoid
+    # runtime errors on the c++ side.
+    with qtbot.waitSignal(dbconnmanager.sig_database_disconnected):
+        dbconnmanager.disconnect_from_db()
+    data_import_wizard.close()
 
 
 # =============================================================================
