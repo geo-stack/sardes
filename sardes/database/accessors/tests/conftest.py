@@ -18,7 +18,8 @@ import uuid
 
 # ---- Third party imports
 import numpy as np
-import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.figure import Figure
 import pandas as pd
 import pytest
 
@@ -171,11 +172,15 @@ def readings_data():
 
 @pytest.fixture
 def constructlog(tmp_path):
-    filename = osp.join(tmp_path, 'constructlog_testfile.pdf')
-    fig, ax = plt.subplots()
+    # Note: we cannot use pyplot direectly or we encounter issues with pytest.
+    figure = Figure()
+    canvas = FigureCanvasAgg(figure)
+    ax = figure.add_axes([0.1, 0.1, 0.8, 0.8], frameon=True)
     ax.plot([1, 2, 3, 4])
-    fig.savefig(filename)
-    plt.close(fig)
+
+    filename = osp.join(tmp_path, 'constructlog_testfile.pdf')
+    figure.savefig(filename)
+
     return filename
 
 
