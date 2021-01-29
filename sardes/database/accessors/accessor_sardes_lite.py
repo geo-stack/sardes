@@ -1069,6 +1069,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         data = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
 
+        # Format the data.
+        data['start_date'] = pd.to_datetime(data['start_date'])
+        data['end_date'] = pd.to_datetime(data['end_date'])
+
         # Set the index of the dataframe.
         data.set_index('install_uuid', inplace=True, drop=True)
 
@@ -1231,48 +1235,99 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 self._session.delete(observation)
                 self._session.commit()
 
-    def get_timeseries_for_obs_well(self, sampling_feature_uuid, data_type):
+    def get_timeseries_for_obs_well(self, sampling_feature_uuid,
+                                    data_types=None):
         """
         Return a pandas dataframe containing the readings for the given
-        data type and observation well.
+        data types and monitoring station.
+
+        If no data type are specified, then return the entire dataset for
+        the specified monitoring station.
         """
-        data_type = DataType(data_type)
-        obs_property_id = self._get_observed_property_id(data_type)
-        query = (
-            self._session.query(TimeSeriesData.value,
-                                TimeSeriesData.datetime,
-                                Observation.observation_id.label('obs_id'))
-            .filter(TimeSeriesChannel.obs_property_id == obs_property_id)
-            .filter(Observation.sampling_feature_uuid == sampling_feature_uuid)
-            .filter(Observation.observation_id ==
-                    TimeSeriesChannel.observation_id)
-            .filter(TimeSeriesData.channel_id == TimeSeriesChannel.channel_id)
-            )
-        data = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
-        data['datetime'] = pd.to_datetime(data['datetime'], format=DATE_FORMAT)
-        data.rename(columns={'value': data_type}, inplace=True)
+        if isinstance(data_types, str) or isinstance(data_types, DataType):
+            data_types = [data_types,]
+        if data_types is None:
+            data_types = [
+                DataType.WaterLevel,
+                DataType.WaterTemp,
+                DataType.WaterEC]
+        else:
+            data_types = [
+                DataType[data_type] if isinstance(data_type, str) else
+                DataType(data_type) for
+                data_type in data_types]
+
+        readings_data = None
+        added_data_types = []
+        for data_type in data_types:
+            obs_property_id = self._get_observed_property_id(data_type)
+            query = (
+                self._session.query(TimeSeriesData.value,
+                                    TimeSeriesData.datetime,
+                                    Observation.observation_id.label('obs_id'))
+                .filter(TimeSeriesChannel.obs_property_id == obs_property_id)
+                .filter(Observation.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .filter(Observation.observation_id ==
+                        TimeSeriesChannel.observation_id)
+                .filter(TimeSeriesData.channel_id ==
+                        TimeSeriesChannel.channel_id)
+                )
+            tseries_data = pd.read_sql_query(
+                query.statement, query.session.bind, coerce_float=True)
+            if tseries_data.empty:
+                # This means that there is no timeseries data saved in the
+                # database for this data type.
+                continue
+
+            # Format the data.
+            tseries_data['datetime'] = pd.to_datetime(
+                tseries_data['datetime'], format=DATE_FORMAT)
+            tseries_data.rename(columns={'value': data_type}, inplace=True)
+
+            # Merge the data.
+            added_data_types.append(data_type)
+            if readings_data is None:
+                readings_data = tseries_data
+            else:
+                readings_data = readings_data.merge(
+                    tseries_data,
+                    left_on=['datetime', 'obs_id'],
+                    right_on=['datetime', 'obs_id'],
+                    how='outer', sort=True)
+        if readings_data is None:
+            # This means there is not reading saved for this monitoring
+            # station in the database.
+            return pd.DataFrame(
+                [],
+                columns=(['datetime', 'sonde_id'] +
+                         data_types +
+                         ['install_depth', 'obs_id'])
+                )
 
         # Add sonde serial number and installation depth to the dataframe.
-        data['sonde_id'] = None
-        data['install_depth'] = None
-        for obs_id in data['obs_id'].unique():
+        readings_data['sonde_id'] = None
+        readings_data['install_depth'] = None
+        for obs_id in readings_data['obs_id'].unique():
             sonde_id = self._get_sonde_serial_no_from_obs_id(obs_id)
-            data.loc[data['obs_id'] == obs_id, 'sonde_id'] = sonde_id
-            install_depth = self._get_sonde_install_depth_from_obs_id(obs_id)
-            data.loc[data['obs_id'] == obs_id, 'install_depth'] = install_depth
+            readings_data.loc[
+                readings_data['obs_id'] == obs_id, 'sonde_id'
+                ] = sonde_id
 
-        # Check for duplicates along the time axis.
-        duplicated = data.duplicated(subset=['datetime', 'sonde_id'])
-        nbr_duplicated = np.sum(duplicated)
-        if nbr_duplicated:
-            observation_well = self._get_sampling_feature(
-                sampling_feature_uuid)
-            print(("Warning: {} duplicated {} entrie(s) were found while "
-                   "fetching these data for well {}."
-                   ).format(nbr_duplicated, data_type,
-                            observation_well.sampling_feature_name))
-        return data
+            install_depth = self._get_sonde_install_depth_from_obs_id(obs_id)
+            readings_data.loc[
+                readings_data['obs_id'] == obs_id, 'install_depth'
+                ] = install_depth
+
+        # Reorder the columns so that the data are displayed nicely.
+        readings_data = readings_data[
+            ['datetime', 'sonde_id'] +
+            added_data_types +
+            ['install_depth', 'obs_id']]
+        readings_data = readings_data.sort_values(
+            'datetime', axis=0, ascending=True)
+
+        return readings_data
 
     def add_timeseries_data(self, tseries_data, sampling_feature_uuid,
                             install_uuid=None):
@@ -1284,7 +1339,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         tseries_data = tseries_data.set_index(
             'datetime', drop=True, append=False)
         tseries_data = tseries_data.drop(
-            [col for col in tseries_data.columns if col not in DataType],
+            [col for col in tseries_data.columns if
+             not isinstance(col, DataType)],
             axis=1, errors='ignore').dropna(axis=1, how='all')
         tseries_data = tseries_data.dropna(axis=1, how='all')
         if tseries_data.empty:
@@ -1545,4 +1601,15 @@ if __name__ == "__main__":
     repere_data = accessor.get_repere_data()
 
     stations_with_log = accessor.get_stations_with_construction_log()
+
+    overview = accessor.get_observation_wells_data_overview()
+
+    from time import perf_counter
+    t1 = perf_counter()
+    sampling_feature_uuid = (
+        accessor._get_sampling_feature_uuid_from_name('01070001'))
+    readings = accessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, [DataType.WaterLevel])
+    print(perf_counter() - t1)
+
     accessor.close_connection()

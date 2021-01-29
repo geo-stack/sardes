@@ -929,12 +929,13 @@ class DataImportWizard(SardesPaneWidget):
 
 if __name__ == '__main__':
     from sardes.database.database_manager import DatabaseConnectionManager
-    from sardes.database.accessors import DatabaseAccessorDemo
+    from sardes.database.accessors import DatabaseAccessorSardesLite
 
     app = QApplication(sys.argv)
 
+    database = "D:/Desktop/rsesq_prod_21072020_v1.db"
     dbconnmanager = DatabaseConnectionManager()
-    dbconnmanager.connect_to_db(DatabaseAccessorDemo())
+    dbconnmanager.connect_to_db(DatabaseAccessorSardesLite(database))
 
     dataimportwizard = DataImportWizard()
     dataimportwizard.set_database_connection_manager(dbconnmanager)

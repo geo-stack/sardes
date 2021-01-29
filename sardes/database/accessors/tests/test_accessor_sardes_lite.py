@@ -24,7 +24,8 @@ os.environ['SARDES_PYTEST'] = 'True'
 import numpy as np
 import pytest
 import pandas as pd
-import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.figure import Figure
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
@@ -186,10 +187,15 @@ def test_add_get_del_construction_logs(dbaccessor0, tmp_path):
 
     for fext in ['.png', '.jpg', '.jpeg', '.tif', '.pdf']:
         # Create a dummy construction log file.
-        filename = osp.join(tmp_path, 'test_construction_log') + fext
-        fig, ax = plt.subplots()
+        # Note: we cannot use pyplot directly or we encounter
+        # issues with pytest.
+        figure = Figure()
+        canvas = FigureCanvasAgg(figure)
+        ax = figure.add_axes([0.1, 0.1, 0.8, 0.8], frameon=True)
         ax.plot([1, 2, 3, 4])
-        fig.savefig(filename)
+
+        filename = osp.join(tmp_path, 'test_construction_log') + fext
+        figure.savefig(filename)
 
         # Attach the construction log file.
         dbaccessor0.set_construction_log(sampling_feature_uuid, filename)

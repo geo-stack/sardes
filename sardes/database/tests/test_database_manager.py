@@ -20,7 +20,7 @@ import pandas as pd
 
 # ---- Local imports
 from sardes.database.database_manager import DatabaseConnectionManager
-from sardes.database.accessors import DatabaseAccessorDemo
+from sardes.api.database_accessor import DatabaseAccessor
 
 
 # =============================================================================
@@ -41,17 +41,27 @@ def dbmanager(qtbot, mocker):
 
 @pytest.fixture
 def dbaccessor(qtbot, mocker, DATAF):
-    def get_something():
-        sleep(0.5)
-        return DATAF.copy()
+    class DatabaseAccessorMock(DatabaseAccessor):
+        dbconnection = False
 
-    def set_something(index, value):
-        sleep(0.5)
-        DATAF.loc[index, 'values'] = value
+        def _connect(self):
+            self.dbconnection = True
 
-    dbaccessor = DatabaseAccessorDemo()
-    dbaccessor.get_something = get_something
-    dbaccessor.set_something = set_something
+        def is_connected(self):
+            return self.dbconnection
+
+        def close_connection(self):
+            self.dbconnection = False
+
+        def get_something(self):
+            sleep(0.5)
+            return DATAF.copy()
+
+        def set_something(self, index, value):
+            sleep(0.5)
+            DATAF.loc[index, 'values'] = value
+
+    dbaccessor = DatabaseAccessorMock()
     return dbaccessor
 
 

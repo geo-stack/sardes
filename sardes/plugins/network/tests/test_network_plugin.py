@@ -27,35 +27,18 @@ from qtpy.QtWidgets import QFileDialog
 # ---- Local imports
 from sardes.app.mainwindow import MainWindowBase
 from sardes.plugins.network import SARDES_PLUGIN_CLASS
-from sardes.database.accessors.accessor_sardes_lite import (
-    DatabaseAccessorSardesLite)
+from sardes.database.accessors import DatabaseAccessorSardesLite
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def dbaccessor(tmp_path, obswells_data, repere_data, constructlog,
-               readings_data):
+def dbaccessor(tmp_path, database_filler):
     dbaccessor = DatabaseAccessorSardesLite(
         osp.join(tmp_path, 'sqlite_database_test.db'))
     dbaccessor.init_database()
-
-    # Add observation wells.
-    for obs_well_uuid, obs_well_data in obswells_data.iterrows():
-        dbaccessor.add_observation_wells_data(
-            obs_well_uuid, attribute_values=obs_well_data.to_dict())
-
-        # Add a construction log.
-        dbaccessor.set_construction_log(obs_well_uuid, constructlog)
-
-        # Add timeseries data.
-        dbaccessor.add_timeseries_data(
-            readings_data, obs_well_uuid, install_uuid=None)
-
-    # Add repere data to the database.
-    for index, row in repere_data.iterrows():
-        dbaccessor.add_repere_data(index, row.to_dict())
+    database_filler(dbaccessor)
 
     return dbaccessor
 
@@ -129,7 +112,8 @@ def test_publish_to_kml_nofiles(mainwindow, qtbot, mocker, tmp_path):
     assert len(files) == 0
 
 
-def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path):
+def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path,
+                        obswells_data):
     """
     Test that publishing the piezometric network to KML is working as expected.
     """
@@ -159,11 +143,11 @@ def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path):
 
     files_dirname = osp.join(tmp_path, 'test_piezo_network_files')
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'data')))
-    assert len(files) == 3
+    assert len(files) == len(obswells_data)
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'diagrams')))
-    assert len(files) == 3
+    assert len(files) == len(obswells_data)
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'graphs')))
-    assert len(files) == 3
+    assert len(files) == len(obswells_data)
 
 
 if __name__ == "__main__":

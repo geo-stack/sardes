@@ -26,8 +26,7 @@ from qtpy.QtWidgets import QFileDialog
 from sardes.app.mainwindow import MainWindowBase
 from sardes.plugins.tables import SARDES_PLUGIN_CLASS
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
-from sardes.database.accessors.accessor_sardes_lite import (
-    DatabaseAccessorSardesLite)
+from sardes.database.accessors import DatabaseAccessorSardesLite
 
 
 # =============================================================================
