@@ -1339,7 +1339,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         tseries_data = tseries_data.set_index(
             'datetime', drop=True, append=False)
         tseries_data = tseries_data.drop(
-            [col for col in tseries_data.columns if col not in DataType],
+            [col for col in tseries_data.columns if
+             not isinstance(col, DataType)],
             axis=1, errors='ignore').dropna(axis=1, how='all')
         tseries_data = tseries_data.dropna(axis=1, how='all')
         if tseries_data.empty:
