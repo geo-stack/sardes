@@ -16,7 +16,7 @@ from math import floor, ceil
 import matplotlib.dates as mdates
 from matplotlib.transforms import ScaledTranslation
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import MultipleLocator
 from PIL import Image
@@ -120,7 +120,7 @@ class HydrographTool(SardesTool):
             QApplication.processEvents()
 
 
-class HydrographCanvas(FigureCanvasQTAgg):
+class HydrographCanvas(FigureCanvasAgg):
     def __init__(self, data, obs_well_data, ground_altitude, is_alt_geodesic,
                  fontname='Arial'):
         fwidth = 11
