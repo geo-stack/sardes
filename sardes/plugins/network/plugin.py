@@ -46,7 +46,10 @@ class PiezometricNetwork(SardesPlugin):
             is_iri_logs=self.get_option('publish/is_iri_logs', False),
             iri_logs=self.get_option('publish/iri_logs', ''),
             is_iri_graphs=self.get_option('publish/is_iri_graphs', False),
-            iri_graphs=self.get_option('publish/iri_graphs', '')
+            iri_graphs=self.get_option('publish/iri_graphs', ''),
+            is_iri_geochemistry=self.get_option(
+                'publish/is_iri_geochemistry', False),
+            iri_geochemistry=self.get_option('publish/iri_geochemistry', '')
             )
         self.publish_dialog.sig_start_publish_network_request.connect(
             self._start_publishing_network)
@@ -95,6 +98,11 @@ class PiezometricNetwork(SardesPlugin):
             'publish/is_iri_graphs', self.publish_dialog.is_iri_graphs())
         self.set_option(
             'publish/iri_graphs', self.publish_dialog.iri_graphs())
+        self.set_option(
+            'publish/is_iri_geochemistry',
+            self.publish_dialog.is_iri_geochemistry())
+        self.set_option(
+            'publish/iri_geochemistry', self.publish_dialog.iri_geochemistry())
 
     # ---- Publish Network
     def _cancel_publishing_network(self):
