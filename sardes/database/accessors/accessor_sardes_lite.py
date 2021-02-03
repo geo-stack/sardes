@@ -775,22 +775,21 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return data
 
     # ---- Attachments
-    def get_stations_with_attachement(self, attachment_type):
+    def get_stored_attachments_info(self):
         """
-        Return a list of sampling_feature_uuid for which a file of the
-        specified type is attached in the database.
+        Return a pandas dataframe containing a list of sampling_feature_uuid
+        and attachment_type for which a file is attached in the database.
         """
         query = (
             self._session.query(
-                SamplingFeatureAttachment.sampling_feature_uuid)
-            .filter(SamplingFeatureAttachment.attachment_type ==
-                    attachment_type)
+                SamplingFeatureAttachment.sampling_feature_uuid,
+                SamplingFeatureAttachment.attachment_type)
             )
         result = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
-        return result['sampling_feature_uuid'].values.tolist()
+        return result
 
-    def get_attachement(self, sampling_feature_uuid, attachment_type):
+    def get_attachment(self, sampling_feature_uuid, attachment_type):
         """
         Return the data of the file of the specified type that is
         attached to the specified station.
@@ -808,15 +807,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         else:
             return (attachment.attachment_data, attachment.attachment_fname)
 
-    def set_attachement(self, sampling_feature_uuid, attachment_type,
-                        filename):
+    def set_attachment(self, sampling_feature_uuid, attachment_type,
+                       filename):
         """
         Attach the data of a file to the specified sampling_feature_uuid.
         """
         try:
             # We first check if a file of this type is already attached to
             # the monitoring station.
-            attachement = (
+            attachment = (
                 self._session.query(SamplingFeatureAttachment)
                 .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
                         sampling_feature_uuid)
@@ -825,24 +824,24 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 .one())
         except NoResultFound:
             # This means we need to add a new attachment to save the file.
-            attachement = SamplingFeatureAttachment(
+            attachment = SamplingFeatureAttachment(
                 attachment_type=1,
                 sampling_feature_uuid=sampling_feature_uuid)
-            self._session.add(attachement)
+            self._session.add(attachment)
 
         if osp.exists(filename):
             with open(filename, 'rb') as f:
-                attachement.attachment_data = memoryview(f.read())
-        attachement.attachment_fname = osp.basename(filename)
+                attachment.attachment_data = memoryview(f.read())
+        attachment.attachment_fname = osp.basename(filename)
         self._session.commit()
 
-    def del_attachement(self, sampling_feature_uuid, attachment_type):
+    def del_attachment(self, sampling_feature_uuid, attachment_type):
         """
         Delete the data of the file of the specified type that is attached
         to the specified sampling_feature_uuid.
         """
         try:
-            attachement = (
+            attachment = (
                 self._session.query(SamplingFeatureAttachment)
                 .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
                         sampling_feature_uuid)
@@ -854,37 +853,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             # the specified sampling_feature_uuid.
             pass
         else:
-            self._session.delete(attachement)
+            self._session.delete(attachment)
             self._session.commit()
-
-    # ---- Construction Logs
-    def get_stations_with_construction_log(self):
-        """
-        Return a list of sampling_feature_uuid for which a construction log
-        is saved in the database.
-        """
-        return self.get_stations_with_attachement(attachment_type=1)
-
-    def get_construction_log(self, sampling_feature_uuid):
-        """
-        Return the data of the construction log file attached to the
-        specified sampling_feature_uuid.
-        """
-        return self.get_attachement(sampling_feature_uuid, 1)
-
-    def set_construction_log(self, sampling_feature_uuid, filename):
-        """
-        Attach the data of a construction log file to the
-        specified sampling_feature_uuid.
-        """
-        self.set_attachement(sampling_feature_uuid, 1, filename)
-
-    def del_construction_log(self, sampling_feature_uuid):
-        """
-        Delete the data of the construction log file attached to the
-        specified sampling_feature_uuid.
-        """
-        self.del_attachement(sampling_feature_uuid, 1)
 
     # ---- Repere
     def _get_repere_data(self, repere_id):
@@ -1620,7 +1590,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
 
 if __name__ == "__main__":
-    database = "D:/Desktop/rsesq_prod_21072020_v1.db"
+    database = "D:/Desktop/rsesq_prod_02-02-2021.db"
     accessor = DatabaseAccessorSardesLite(database)
     accessor.init_database()
     accessor.connect()
@@ -1631,10 +1601,9 @@ if __name__ == "__main__":
     sonde_installations = accessor.get_sonde_installations()
     repere_data = accessor.get_repere_data()
 
-    stations_with_log = accessor.get_stations_with_construction_log()
+    stored_attachments_info = accessor.get_stored_attachments_info()
 
     overview = accessor.get_observation_wells_data_overview()
-
     from time import perf_counter
     t1 = perf_counter()
     sampling_feature_uuid = (
