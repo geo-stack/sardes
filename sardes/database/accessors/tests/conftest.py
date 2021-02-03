@@ -196,7 +196,7 @@ def database_filler(
                 obs_well_uuid, attribute_values=obs_well_data.to_dict())
 
             # Add a construction log.
-            dbaccessor.set_construction_log(obs_well_uuid, constructlog)
+            dbaccessor.set_attachment(obs_well_uuid, 1, constructlog)
 
             # Add timeseries data.
             dbaccessor.add_timeseries_data(
