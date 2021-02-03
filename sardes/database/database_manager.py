@@ -446,8 +446,7 @@ class DatabaseConnectionWorker(WorkerBase):
                     is_alt_geodesic = last_repere_data['is_alt_geodesic']
                 if iri_logs is not None:
                     log_data, log_fame = (
-                        self.db_accessor.get_construction_log(
-                            station_uuid))
+                        self.db_accessor.get_attachment(station_uuid, 1))
 
                 # Generate the attached files and add the urls.
                 files_urls = ''
