@@ -137,21 +137,22 @@ class ObsWellsTableWidget(SardesTableWidget):
         self.sig_view_data.connect(plugin.main.view_timeseries_data)
         self.sig_attach_construction_log.connect(
             lambda sampling_feature_uuid, filename:
-                plugin.main.db_connection_manager.set_construction_log(
+                plugin.main.db_connection_manager.set_attachment(
                     sampling_feature_uuid,
+                    1,
                     filename,
                     callback=self.sig_construction_log_attached.emit)
                 )
         self.sig_show_construction_log.connect(
             lambda sampling_feature_uuid:
-                plugin.main.db_connection_manager.get_construction_log(
-                    sampling_feature_uuid,
+                plugin.main.db_connection_manager.get_attachment(
+                    sampling_feature_uuid, 1,
                     callback=self._open_construction_log_in_external)
                 )
         self.sig_remove_construction_log.connect(
             lambda sampling_feature_uuid:
-                plugin.main.db_connection_manager.del_construction_log(
-                    sampling_feature_uuid,
+                plugin.main.db_connection_manager.del_attachment(
+                    sampling_feature_uuid, 1,
                     callback=self.sig_construction_log_removed.emit)
                 )
 
@@ -248,8 +249,9 @@ class ObsWellsTableWidget(SardesTableWidget):
         else:
             self.attach_construction_log_action.setEnabled(True)
             log_exists = (
-                obs_well_data.name in
-                self.model().libraries['stations_with_construction_log'])
+                self.model().libraries['stored_attachments_info'] ==
+                [obs_well_data.name, 1]
+                ).all(1).any()
             self.show_construction_log_action.setEnabled(log_exists)
             self.remove_construction_log_action.setEnabled(log_exists)
 

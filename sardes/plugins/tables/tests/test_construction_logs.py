@@ -89,7 +89,7 @@ def test_construction_log_tool(mainwindow, constructlog, qtbot, mocker):
 
     table = mainwindow.plugin.current_table()
     assert table.get_table_id() == 'table_observation_wells'
-    assert len(table.model().libraries['stations_with_construction_log']) == 0
+    assert len(table.model().libraries['stored_attachments_info']) == 0
 
     # Select the second cell of the table.
     model_index = table.model().index(1, 0)
@@ -110,7 +110,7 @@ def test_construction_log_tool(mainwindow, constructlog, qtbot, mocker):
     with qtbot.waitSignal(table.sig_construction_log_attached):
         table.attach_construction_log_action.trigger()
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
-    assert len(table.model().libraries['stations_with_construction_log']) == 1
+    assert len(table.model().libraries['stored_attachments_info']) == 1
 
     pos = table.construction_log_btn.mapToGlobal(QPoint(0, 0))
     table.construction_log_btn.menu().popup(pos)
@@ -127,7 +127,7 @@ def test_construction_log_tool(mainwindow, constructlog, qtbot, mocker):
     with qtbot.waitSignal(table.sig_construction_log_removed):
         table.remove_construction_log_action.trigger()
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
-    assert len(table.model().libraries['stations_with_construction_log']) == 0
+    assert len(table.model().libraries['stored_attachments_info']) == 0
 
     pos = table.construction_log_btn.mapToGlobal(QPoint(0, 0))
     table.construction_log_btn.menu().popup(pos)
