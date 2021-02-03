@@ -223,31 +223,35 @@ class DatabaseConnectionWorker(WorkerBase):
         self.db_accessor.delete_timeseries_data(tseries_dels)
         print("...timeseries data deleted sucessfully.")
 
-    # ---- Construction Logs
-    def _get_construction_log(self, sampling_feature_uuid):
+    # ---- Attachments
+    def _get_attachment(self, sampling_feature_uuid, attachment_type):
         """
-        Return the data and filename of the construction log file
-        attached to the specified sampling_feature_uuid.
+        Return the data and filename of the attachment of the given type that
+        is attached to the specified sampling_feature_uuid.
         """
-        return self.db_accessor.get_construction_log(sampling_feature_uuid)
+        return self.db_accessor.get_attachment(
+            sampling_feature_uuid, attachment_type)
 
-    def _set_construction_log(self, sampling_feature_uuid, filename):
+    def _set_attachment(self, sampling_feature_uuid, attachment_type,
+                        filename):
         """
-        Save and attach the given construction log file to the
-        specified sampling_feature_uuid in the database.
+        Save and attach the given attachment to the specified
+        sampling_feature_uuid in the database.
         """
-        if 'stations_with_construction_log' in self._cache:
-            del self._cache['stations_with_construction_log']
-        self.db_accessor.set_construction_log(sampling_feature_uuid, filename)
+        if 'stored_attachments_info' in self._cache:
+            del self._cache['stored_attachments_info']
+        self.db_accessor.set_attachment(
+            sampling_feature_uuid, attachment_type, filename)
 
-    def _del_construction_log(self, sampling_feature_uuid):
+    def _del_attachment(self, sampling_feature_uuid, attachment_type):
         """
-        Delete from the database the construction log file currently
-        attached to the specified sampling_feature_uuid.
+        Delete from the database the attachment of the specified type that
+        is currently attached to the specified sampling_feature_uuid.
         """
-        if 'stations_with_construction_log' in self._cache:
-            del self._cache['stations_with_construction_log']
-        self.db_accessor.del_construction_log(sampling_feature_uuid)
+        if 'stored_attachments_info' in self._cache:
+            del self._cache['stored_attachments_info']
+        self.db_accessor.del_attachment(
+            sampling_feature_uuid, attachment_type)
 
     # ---- Utilities
     def _get_sonde_installation_info(self, sonde_serial_no, date_time):
@@ -869,38 +873,40 @@ class DatabaseConnectionManager(TaskManagerBase):
         if not postpone_exec:
             self.run_tasks()
 
-    # ---- Construction Log
-    def get_construction_log(self, sampling_feature_uuid, callback=None,
-                             postpone_exec=False):
+    # ---- Attachments
+    def get_attachment(self, sampling_feature_uuid, attachment_type,
+                       callback=None, postpone_exec=False):
         """
-        Return the data and filename of the construction log file
-        attached to the specified sampling_feature_uuid.
+        Return the data and filename of the attachment of the given type that
+        is attached to the specified sampling_feature_uuid.
         """
-        self._add_task('get_construction_log', callback, sampling_feature_uuid)
+        self._add_task('get_attachment', callback,
+                       sampling_feature_uuid, attachment_type)
         if not postpone_exec:
             self.run_tasks()
 
-    def set_construction_log(self, sampling_feature_uuid, filename,
-                             callback=None, postpone_exec=False):
+    def set_attachment(self, sampling_feature_uuid, attachment_type,
+                       filename, callback=None, postpone_exec=False):
         """
-        Save and attach the given construction log file to the
-        specified sampling_feature_uuid in the database.
+        Save and attach the given attachment to the specified
+        sampling_feature_uuid in the database.
         """
-        self._data_changed.add('stations_with_construction_log')
-        self._add_task('set_construction_log', callback,
-                       sampling_feature_uuid, filename)
+        self._data_changed.add('stored_attachments_info')
+        self._add_task('set_attachment', callback,
+                       sampling_feature_uuid, attachment_type, filename)
         if not postpone_exec:
             self.run_tasks()
 
-    def del_construction_log(self, sampling_feature_uuid, callback=None,
-                             postpone_exec=False):
+    def del_attachment(self, sampling_feature_uuid, attachment_type,
+                       callback=None, postpone_exec=False):
         """
-        Delete from the database the construction log file currently
-        attached to the specified sampling_feature_uuid.
+        Delete from the database the attachment of the specified type that
+        is currently attached to the specified sampling_feature_uuid.
         """
-        self._data_changed.add('stations_with_construction_log')
+        self._data_changed.add('stored_attachments_info')
         self._add_task(
-            'del_construction_log', callback, sampling_feature_uuid)
+            'del_attachment', callback,
+            sampling_feature_uuid, attachment_type)
         if not postpone_exec:
             self.run_tasks()
 
