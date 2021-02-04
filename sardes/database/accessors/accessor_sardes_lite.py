@@ -423,6 +423,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Session = sessionmaker(bind=self._engine)
         self._session = Session()
 
+    def version(self):
+        """Return the current version of the database."""
+        return self.execute("PRAGMA user_version").first()[0]
+
+    def application_id(self):
+        """Return the application id of the database."""
+        return self.execute("PRAGMA application_id").first()[0]
+
     def execute(self, sql_request, **kwargs):
         """Execute a SQL statement construct and return a ResultProxy."""
         try:
@@ -511,8 +519,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._connection = None
             self._connection_error = e
         else:
-            app_id = conn.execute("PRAGMA application_id").first()[0]
-            version = conn.execute("PRAGMA user_version").first()[0]
+            app_id = self.application_id()
+            version = self.version()
             if app_id != APPLICATION_ID:
                 self._connection = None
                 self._connection_error = sqlite3.DatabaseError(_(
