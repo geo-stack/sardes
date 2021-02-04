@@ -310,7 +310,7 @@ class DatabaseConnectionWorker(WorkerBase):
 
     # ---- Publish Network Data
     def _publish_to_kml(self, kml_filename, iri_data=None, iri_logs=None,
-                        iri_graphs=None, iri_geochemistry=None):
+                        iri_graphs=None, iri_quality=None):
         """
         Publish the piezometric network data to the specified kml filename.
 
@@ -327,8 +327,8 @@ class DatabaseConnectionWorker(WorkerBase):
         iri_graphs : str, optional
             The IRI where the hydrographs are going to be hosted.
             The default is None.
-        iri_geochemistry : str, optional
-            The IRI where the geochemical analysis results are going
+        iri_quality : str, optional
+            The IRI where the water quality reports are going
             to be hosted. The default is None.
 
         Returns
@@ -352,9 +352,9 @@ class DatabaseConnectionWorker(WorkerBase):
         graphs_dirname = osp.join(files_dirname, 'graphs')
         if not osp.exists(graphs_dirname):
             os.makedirs(graphs_dirname)
-        geochmical_dirname = os.join(files_dirname, 'geochemistry')
-        if not osp.exists(geochmical_dirname):
-            os.makedirs(geochmical_dirname)
+        quality_dirname = os.join(files_dirname, 'quality')
+        if not osp.exists(quality_dirname):
+            os.makedirs(quality_dirname)
 
         # Initialize a new KML document.
         kml = simplekml.Kml()
@@ -453,8 +453,8 @@ class DatabaseConnectionWorker(WorkerBase):
                 if iri_logs is not None:
                     log_data, log_fame = (
                         self.db_accessor.get_attachment(station_uuid, 1))
-                if iri_geochemistry is not None:
-                    geochmical_data, geochmical_fame = (
+                if iri_quality is not None:
+                    quality_data, quality_fame = (
                         self.db_accessor.get_attachment(station_uuid, 2))
 
                 # Generate the attached files and add the urls.
@@ -520,16 +520,15 @@ class DatabaseConnectionWorker(WorkerBase):
                         safe='/:')
                     files_urls += '<a href="{}">{}</a><br/>'.format(
                         url, _("Graphs"))
-                if (iri_geochemistry is not None and
-                        geochmical_data is not None):
-                    root, ext = osp.splitext(geochmical_fame)
-                    geochmical_filename = _('geochemistry_{}{}').format(
+                if iri_quality is not None and quality_data is not None:
+                    root, ext = osp.splitext(quality_fame)
+                    quality_filename = _('waterquality_{}{}').format(
                         station_data['obs_well_id'], ext)
-                    geochmical_savepath = osp.join(
-                        geochmical_dirname, geochmical_filename)
+                    quality_savepath = osp.join(
+                        quality_dirname, quality_filename)
                     try:
-                        with open(geochmical_savepath, 'wb') as f:
-                            f.write(geochmical_data)
+                        with open(quality_savepath, 'wb') as f:
+                            f.write(quality_data)
                     except PermissionError as e:
                         print(e)
 
@@ -537,7 +536,7 @@ class DatabaseConnectionWorker(WorkerBase):
                         urllib.parse.urljoin(iri_logs, log_filename),
                         safe='/:')
                     files_urls += '<a href="{}">{}</a><br/>'.format(
-                        url, _("Geochemistry"))
+                        url, _("Water Quality"))
                 if files_urls:
                     pnt_desc += '<br/>' + files_urls
 

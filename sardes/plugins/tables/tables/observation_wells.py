@@ -129,7 +129,7 @@ class ObsWellsTableWidget(SardesTableWidget):
         self.sig_view_data.connect(plugin.main.view_timeseries_data)
         self.construction_logs_manager.set_dbmanager(
             plugin.main.db_connection_manager)
-        self.geochemical_analysis_results_manager.set_dbmanager(
+        self.water_quality_reports.set_dbmanager(
             plugin.main.db_connection_manager)
 
     # ---- Timeseries
@@ -182,35 +182,35 @@ class ObsWellsTableWidget(SardesTableWidget):
                 "selected station.")
             )
 
-        # Setup geochemical analysis results manager.
-        self.geochemical_analysis_results_manager = FileAttachmentManager(
-            self, icon='geochemistry', attachment_type=2,
+        # Setup water quality reports manager.
+        self.water_quality_reports = FileAttachmentManager(
+            self, icon='water_quality', attachment_type=2,
             qfiledialog_namefilters=(
-                _('Geochemical Analysis Results') +
+                _('Water Quality Report') +
                 ' (*.xls ; *.xlsx ; *.csv, ; *.txt)'),
             qfiledialog_title=_(
-                'Select a Geochemical Analysis Results file for Station {}'),
-            text=_("Geochemical Analysis Results"),
+                'Select a water quality report for Station {}'),
+            text=_("Water Quality Report"),
             tooltip=_(
-                "Open the menu to add a construction log to the currently "
+                "Open the menu to add a water quality report to the currently "
                 "selected station or to view or delete an existing "
-                "construction log."),
-            attach_text=_("Attach Geochemical Analysis Results..."),
+                "report."),
+            attach_text=_("Attach Water Quality Report..."),
             attach_tooltip=_(
-                "Attach a geochemical analysis results file to the currently "
+                "Attach a water quality report to the currently "
                 "selected station."),
-            show_text=_("Show Geochemical Analysis Results..."),
+            show_text=_("Show Water Quality Report..."),
             show_tooltip=_(
-                "Show the geochemical analysis results file attached to the "
+                "Show the water quality report attached to the "
                 "currently selected station."),
-            remove_text=_("Remove Geochemical Analysis Results"),
+            remove_text=_("Remove Water Quality Report"),
             remove_tooltip=_(
-                "Remove the geochemical analysis results file attached to the "
+                "Remove the water quality report attached to the "
                 "currently selected station.")
             )
 
         return [self.show_data_btn, self.construction_logs_manager.toolbutton,
-                self.geochemical_analysis_results_manager.toolbutton]
+                self.water_quality_reports.toolbutton]
 
     def _view_current_timeseries_data(self):
         """

@@ -36,8 +36,7 @@ class PublishNetworkDialog(QDialog):
 
     def __init__(self, parent=None, is_iri_data=False, iri_data='',
                  is_iri_logs=False, iri_logs='', is_iri_graphs=False,
-                 iri_graphs='', is_iri_geochemistry=False,
-                 iri_geochemistry=''):
+                 iri_graphs='', is_iri_quality=False, iri_quality=''):
         super().__init__(parent)
         self.setWindowTitle(_('Publish Piezometric Network Data'))
         self.setWindowFlags(
@@ -48,12 +47,10 @@ class PublishNetworkDialog(QDialog):
 
         self._publishing_in_progress = False
         self._setup(is_iri_data, iri_data, is_iri_logs, iri_logs,
-                    is_iri_graphs, iri_graphs, is_iri_geochemistry,
-                    iri_geochemistry)
+                    is_iri_graphs, iri_graphs, is_iri_quality, iri_quality)
 
     def _setup(self, is_iri_data, iri_data, is_iri_logs, iri_logs,
-               is_iri_graphs, iri_graphs, is_iri_geochemistry,
-               iri_geochemistry):
+               is_iri_graphs, iri_graphs, is_iri_quality, iri_quality):
         """
         Setup the dialog with the provided settings.
         """
@@ -70,9 +67,9 @@ class PublishNetworkDialog(QDialog):
         self.iri_graphs_ledit.setText(iri_graphs)
         self.iri_graphs_ledit.setEnabled(is_iri_graphs)
 
-        self.iri_geochemistry_ledit = QLineEdit()
-        self.iri_geochemistry_ledit.setText(iri_geochemistry)
-        self.iri_geochemistry_ledit.setEnabled(is_iri_geochemistry)
+        self.iri_quality_ledit = QLineEdit()
+        self.iri_quality_ledit.setText(iri_quality)
+        self.iri_quality_ledit.setEnabled(is_iri_quality)
 
         self.iri_data_chbox = QCheckBox(_("Readings Data"))
         self.iri_data_chbox.setChecked(is_iri_data)
@@ -92,18 +89,18 @@ class PublishNetworkDialog(QDialog):
             lambda _: self.iri_graphs_ledit.setEnabled(
                 self.iri_graphs_chbox.isChecked()))
 
-        self.iri_geochemistry_chbox = QCheckBox(_("Geochemistry"))
-        self.iri_geochemistry_chbox.setChecked(is_iri_geochemistry)
-        self.iri_geochemistry_chbox.stateChanged.connect(
-            lambda _: self.iri_geochemistry_ledit.setEnabled(
-                self.iri_geochemistry_chbox.isChecked()))
+        self.iri_quality_chbox = QCheckBox(_("Water Quality"))
+        self.iri_quality_chbox.setChecked(is_iri_quality)
+        self.iri_quality_chbox.stateChanged.connect(
+            lambda _: self.iri_quality_ledit.setEnabled(
+                self.iri_quality_chbox.isChecked()))
 
         self.iri_groupbox = QGroupBox(_('Attached Files'))
         iri_layout = QGridLayout(self.iri_groupbox)
         iri_layout.addWidget(self.iri_data_chbox, 0, 0)
         iri_layout.addWidget(self.iri_logs_chbox, 1, 0)
         iri_layout.addWidget(self.iri_graphs_chbox, 2, 0)
-        iri_layout.addWidget(self.iri_geochemistry_chbox, 3, 0)
+        iri_layout.addWidget(self.iri_quality_chbox, 3, 0)
 
         iri_layout.setColumnMinimumWidth(1, 25)
 
@@ -115,7 +112,7 @@ class PublishNetworkDialog(QDialog):
         iri_layout.addWidget(self.iri_data_ledit, 0, 3)
         iri_layout.addWidget(self.iri_logs_ledit, 1, 3)
         iri_layout.addWidget(self.iri_graphs_ledit, 2, 3)
-        iri_layout.addWidget(self.iri_geochemistry_ledit, 3, 3)
+        iri_layout.addWidget(self.iri_quality_ledit, 3, 3)
         iri_layout.setColumnMinimumWidth(3, 400)
 
         # Setup the status bar.
@@ -164,11 +161,11 @@ class PublishNetworkDialog(QDialog):
     def iri_graphs(self):
         return self.iri_graphs_ledit.text()
 
-    def is_iri_geochemistry(self):
-        return self.iri_geochemistry_chbox.isChecked()
+    def is_iri_quality(self):
+        return self.iri_quality_chbox.isChecked()
 
-    def iri_geochemistry(self):
-        return self.iri_geochemistry_ledit.text()
+    def iri_quality(self):
+        return self.iri_quality_ledit.text()
 
     # ---- Handlers
     def _select_kml_save_file(self):

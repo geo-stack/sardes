@@ -47,9 +47,9 @@ class PiezometricNetwork(SardesPlugin):
             iri_logs=self.get_option('publish/iri_logs', ''),
             is_iri_graphs=self.get_option('publish/is_iri_graphs', False),
             iri_graphs=self.get_option('publish/iri_graphs', ''),
-            is_iri_geochemistry=self.get_option(
-                'publish/is_iri_geochemistry', False),
-            iri_geochemistry=self.get_option('publish/iri_geochemistry', '')
+            is_iri_quality=self.get_option(
+                'publish/is_iri_quality', False),
+            iri_quality=self.get_option('publish/iri_quality', '')
             )
         self.publish_dialog.sig_start_publish_network_request.connect(
             self._start_publishing_network)
@@ -99,10 +99,10 @@ class PiezometricNetwork(SardesPlugin):
         self.set_option(
             'publish/iri_graphs', self.publish_dialog.iri_graphs())
         self.set_option(
-            'publish/is_iri_geochemistry',
-            self.publish_dialog.is_iri_geochemistry())
+            'publish/is_iri_quality',
+            self.publish_dialog.is_iri_quality())
         self.set_option(
-            'publish/iri_geochemistry', self.publish_dialog.iri_geochemistry())
+            'publish/iri_quality', self.publish_dialog.iri_quality())
 
     # ---- Publish Network
     def _cancel_publishing_network(self):
@@ -117,8 +117,8 @@ class PiezometricNetwork(SardesPlugin):
             args['iri_logs'] = self.publish_dialog.iri_logs()
         if self.publish_dialog.is_iri_graphs():
             args['iri_graphs'] = self.publish_dialog.iri_graphs()
-        if self.publish_dialog.is_iri_geochemistry():
-            args['iri_geochemistry'] = self.publish_dialog.iri_geochemistry()
+        if self.publish_dialog.is_iri_quality():
+            args['iri_quality'] = self.publish_dialog.iri_quality()
 
         self.main.db_connection_manager.publish_to_kml(**args)
 
