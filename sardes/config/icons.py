@@ -134,6 +134,9 @@ FA_ICONS = {
     'fmt_marker_size': [
         ('mdi.circle-medium',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'geochemistry': [
+        ('mdi.beaker-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'home': [
         ('mdi.home',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
