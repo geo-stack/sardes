@@ -17,6 +17,7 @@ from random import randrange
 import uuid
 
 # ---- Third party imports
+import xlsxwriter
 import numpy as np
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
@@ -185,10 +186,20 @@ def constructlog(tmp_path):
 
 
 @pytest.fixture
+def waterquality(tmp_path):
+    filename = osp.join(tmp_path, 'waterquality_testfile.xlsx')
+    workbook = xlsxwriter.Workbook(filename)
+    worksheet = workbook.add_worksheet()
+    workbook.close()
+
+    return filename
+
+
+@pytest.fixture
 def database_filler(
         obswells_data, constructlog, readings_data,
         repere_data, manual_measurements, sondes_data,
-        sondes_installation):
+        sondes_installation, waterquality):
 
     def fill_database(dbaccessor):
         for obs_well_uuid, obs_well_data in obswells_data.iterrows():
@@ -197,6 +208,9 @@ def database_filler(
 
             # Add a construction log.
             dbaccessor.set_attachment(obs_well_uuid, 1, constructlog)
+
+            # Add a water quality report.
+            dbaccessor.set_attachment(obs_well_uuid, 2, waterquality)
 
             # Add timeseries data.
             dbaccessor.add_timeseries_data(

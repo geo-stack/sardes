@@ -87,10 +87,12 @@ def test_publish_to_kml_nofiles(mainwindow, qtbot, mocker, tmp_path):
     assert not publish_dialog.is_iri_data()
     assert not publish_dialog.is_iri_logs()
     assert not publish_dialog.is_iri_graphs()
+    assert not publish_dialog.is_iri_quality()
 
     assert publish_dialog.iri_data() == ''
     assert publish_dialog.iri_logs() == ''
     assert publish_dialog.iri_graphs() == ''
+    assert publish_dialog.iri_quality() == ''
 
     selectedfilename = osp.join(tmp_path, 'test_piezo_network.kml')
     selectedfilter = 'Keyhole Markup Language (*.kml)'
@@ -110,6 +112,8 @@ def test_publish_to_kml_nofiles(mainwindow, qtbot, mocker, tmp_path):
     assert len(files) == 0
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'graphs')))
     assert len(files) == 0
+    path, dirs, files = next(os.walk(osp.join(files_dirname, 'quality')))
+    assert len(files) == 0
 
 
 def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path,
@@ -125,10 +129,12 @@ def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path,
     publish_dialog.iri_data_chbox.setChecked(True)
     publish_dialog.iri_logs_chbox.setChecked(True)
     publish_dialog.iri_graphs_chbox.setChecked(True)
+    publish_dialog.iri_quality_chbox.setChecked(True)
 
     publish_dialog.iri_data_ledit.setText('http://www.tests_iri_data.ca')
     publish_dialog.iri_logs_ledit.setText('http://www.tests_iri_logs.ca')
     publish_dialog.iri_graphs_ledit.setText('http://www.tests_iri_graphs.ca')
+    publish_dialog.iri_quality_ledit.setText('http://www.tests_iri_quality.ca')
 
     selectedfilename = osp.join(tmp_path, 'test_piezo_network.kml')
     selectedfilter = 'Keyhole Markup Language (*.kml)'
@@ -147,6 +153,8 @@ def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path,
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'diagrams')))
     assert len(files) == len(obswells_data)
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'graphs')))
+    assert len(files) == len(obswells_data)
+    path, dirs, files = next(os.walk(osp.join(files_dirname, 'quality')))
     assert len(files) == len(obswells_data)
 
 
