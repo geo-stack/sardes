@@ -423,6 +423,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Session = sessionmaker(bind=self._engine)
         self._session = Session()
 
+    def version(self):
+        """Return the current version of the database."""
+        return self.execute("PRAGMA user_version").first()[0]
+
+    def application_id(self):
+        """Return the application id of the database."""
+        return self.execute("PRAGMA application_id").first()[0]
+
     def execute(self, sql_request, **kwargs):
         """Execute a SQL statement construct and return a ResultProxy."""
         try:
