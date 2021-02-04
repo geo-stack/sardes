@@ -160,7 +160,7 @@ class ObsWellsTableWidget(SardesTableWidget):
                 _('Construction Log') +
                 ' (*.png ; *.bmp ; *.jpg ; *.jpeg ; *.tif ; *.pdf)'),
             qfiledialog_title=_(
-                'Select a Construction Log for Station {} for Station {}'),
+                'Select a Construction Log for Station {}'),
             text=_("Construction Logs"),
             tooltip=_(
                 "Open the menu to add a construction log to the currently "
@@ -261,7 +261,8 @@ class FileAttachmentManager(QObject):
         Return the name of the station that is currently selected
         in the table in which this file attachment manager is installed.
         """
-        return self.tablewidget.get_current_obs_well_data()['obs_well_id']
+        station_data = self.tablewidget.get_current_obs_well_data()
+        return station_data['obs_well_id']
 
     def is_attachment_exists(self):
         """
