@@ -519,8 +519,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._connection = None
             self._connection_error = e
         else:
-            app_id = conn.execute("PRAGMA application_id").first()[0]
-            version = conn.execute("PRAGMA user_version").first()[0]
+            app_id = self.application_id()
+            version = self.version()
             if app_id != APPLICATION_ID:
                 self._connection = None
                 self._connection_error = sqlite3.DatabaseError(_(
