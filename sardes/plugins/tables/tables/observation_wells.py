@@ -129,6 +129,8 @@ class ObsWellsTableWidget(SardesTableWidget):
         self.sig_view_data.connect(plugin.main.view_timeseries_data)
         self.construction_logs_manager.set_dbmanager(
             plugin.main.db_connection_manager)
+        self.geochemical_analysis_results_manager.set_dbmanager(
+            plugin.main.db_connection_manager)
 
     # ---- Timeseries
     def get_current_obs_well_data(self):
@@ -180,7 +182,35 @@ class ObsWellsTableWidget(SardesTableWidget):
                 "selected station.")
             )
 
-        return [self.show_data_btn, self.construction_logs_manager.toolbutton]
+        # Setup geochemical analysis results manager.
+        self.geochemical_analysis_results_manager = FileAttachmentManager(
+            self, icon='geochemistry', attachment_type=2,
+            qfiledialog_namefilters=(
+                _('Geochemical Analysis Results') +
+                ' (*.xls ; *.xlsx ; *.csv, ; *.txt)'),
+            qfiledialog_title=_(
+                'Select a Geochemical Analysis Results file for Station {}'),
+            text=_("Geochemical Analysis Results"),
+            tooltip=_(
+                "Open the menu to add a construction log to the currently "
+                "selected station or to view or delete an existing "
+                "construction log."),
+            attach_text=_("Attach Geochemical Analysis Results..."),
+            attach_tooltip=_(
+                "Attach a geochemical analysis results file to the currently "
+                "selected station."),
+            show_text=_("Show Geochemical Analysis Results..."),
+            show_tooltip=_(
+                "Show the geochemical analysis results file attached to the "
+                "currently selected station."),
+            remove_text=_("Remove Geochemical Analysis Results"),
+            remove_tooltip=_(
+                "Remove the geochemical analysis results file attached to the "
+                "currently selected station.")
+            )
+
+        return [self.show_data_btn, self.construction_logs_manager.toolbutton,
+                self.geochemical_analysis_results_manager.toolbutton]
 
     def _view_current_timeseries_data(self):
         """
@@ -308,7 +338,7 @@ class FileAttachmentManager(QObject):
             if self.dbmanager is not None:
                 station_id = self.current_station_id()
                 self.dbmanager.set_attachment(
-                    station_id, 1, filename,
+                    station_id, self.attachment_type, filename,
                     callback=self.sig_attachment_added.emit)
 
     def _handle_show_request(self):
@@ -319,7 +349,9 @@ class FileAttachmentManager(QObject):
         if self.dbmanager is not None:
             station_id = self.current_station_id()
             self.dbmanager.get_attachment(
-                station_id, 1, callback=self._open_attachment_in_external)
+                station_id,
+                self.attachment_type,
+                callback=self._open_attachment_in_external)
 
     def _handle_remove_request(self):
         """
@@ -329,7 +361,9 @@ class FileAttachmentManager(QObject):
         if self.dbmanager is not None:
             station_id = self.current_station_id()
             self.dbmanager.del_attachment(
-                station_id, 1, callback=self.sig_attachment_removed.emit)
+                station_id,
+                self.attachment_type,
+                callback=self.sig_attachment_removed.emit)
 
     # ---- Callbacks
     def _open_attachment_in_external(self, data, name):
