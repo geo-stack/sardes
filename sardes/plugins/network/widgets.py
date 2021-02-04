@@ -71,7 +71,7 @@ class PublishNetworkDialog(QDialog):
         self.iri_quality_ledit.setText(iri_quality)
         self.iri_quality_ledit.setEnabled(is_iri_quality)
 
-        self.iri_data_chbox = QCheckBox(_("Readings Data"))
+        self.iri_data_chbox = QCheckBox(_("Data"))
         self.iri_data_chbox.setChecked(is_iri_data)
         self.iri_data_chbox.stateChanged.connect(
             lambda _: self.iri_data_ledit.setEnabled(
