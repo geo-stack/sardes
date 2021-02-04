@@ -178,7 +178,8 @@ def test_add_get_del_construction_logs(dbaccessor0, tmp_path):
     Test that adding, getting and deleting construction logs in the database
     is working as expected.
     """
-    assert dbaccessor0.get_stations_with_construction_log() == []
+    attachment_type = 1
+    assert dbaccessor0.get_stored_attachments_info().empty
 
     # Add a new observation well to the database.
     sampling_feature_uuid = dbaccessor0._create_index('observation_wells_data')
@@ -198,19 +199,20 @@ def test_add_get_del_construction_logs(dbaccessor0, tmp_path):
         figure.savefig(filename)
 
         # Attach the construction log file.
-        dbaccessor0.set_construction_log(sampling_feature_uuid, filename)
-        assert dbaccessor0.get_stations_with_construction_log() == [
-            sampling_feature_uuid]
+        dbaccessor0.set_attachment(
+            sampling_feature_uuid, attachment_type, filename)
+        assert len(dbaccessor0.get_stored_attachments_info()) == 1
 
         # Retrieve the construction log file from the database.
-        data, name = dbaccessor0.get_construction_log(sampling_feature_uuid)
+        data, name = dbaccessor0.get_attachment(
+            sampling_feature_uuid, attachment_type)
         assert name == osp.basename(filename)
         with open(filename, 'rb') as f:
             assert f.read() == data
 
     # Remove the construction log file from the database.
-    dbaccessor0.del_construction_log(sampling_feature_uuid)
-    assert dbaccessor0.get_stations_with_construction_log() == []
+    dbaccessor0.del_attachment(sampling_feature_uuid, attachment_type)
+    assert dbaccessor0.get_stored_attachments_info().empty
 
 
 # =============================================================================

@@ -84,12 +84,14 @@ def test_construction_log_tool(mainwindow, constructlog, qtbot, mocker):
     """
     # Make sure the obervation wells table is visible.
     tabwidget = mainwindow.plugin.tabwidget
+
     tabwidget.setCurrentIndex(0)
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
 
     table = mainwindow.plugin.current_table()
+    constructlogs_manager = table.construction_logs_manager
     assert table.get_table_id() == 'table_observation_wells'
-    assert len(table.model().libraries['stations_with_construction_log']) == 0
+    assert len(table.model().libraries['stored_attachments_info']) == 0
 
     # Select the second cell of the table.
     model_index = table.model().index(1, 0)
@@ -98,43 +100,43 @@ def test_construction_log_tool(mainwindow, constructlog, qtbot, mocker):
 
     # Make sure the state of the construction log menu is as expected.
     # Note that we need to show the menu to trigger an update of its state.
-    pos = table.construction_log_btn.mapToGlobal(QPoint(0, 0))
-    table.construction_log_btn.menu().popup(pos)
-    assert table.attach_construction_log_action.isEnabled()
-    assert not table.show_construction_log_action.isEnabled()
-    assert not table.remove_construction_log_action.isEnabled()
+    pos = constructlogs_manager.toolbutton.mapToGlobal(QPoint(0, 0))
+    constructlogs_manager.toolbutton.menu().popup(pos)
+    assert constructlogs_manager.attach_action.isEnabled()
+    assert not constructlogs_manager.show_action.isEnabled()
+    assert not constructlogs_manager.remove_action.isEnabled()
 
     # Attach a construction log to the currently selected piezometric station.
     mocker.patch.object(
         QFileDialog, 'getOpenFileName', return_value=(constructlog, None))
-    with qtbot.waitSignal(table.sig_construction_log_attached):
-        table.attach_construction_log_action.trigger()
+    with qtbot.waitSignal(constructlogs_manager.sig_attachment_added):
+        constructlogs_manager.attach_action.trigger()
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
-    assert len(table.model().libraries['stations_with_construction_log']) == 1
+    assert len(table.model().libraries['stored_attachments_info']) == 1
 
-    pos = table.construction_log_btn.mapToGlobal(QPoint(0, 0))
-    table.construction_log_btn.menu().popup(pos)
-    assert table.attach_construction_log_action.isEnabled()
-    assert table.show_construction_log_action.isEnabled()
-    assert table.remove_construction_log_action.isEnabled()
+    pos = constructlogs_manager.toolbutton.mapToGlobal(QPoint(0, 0))
+    constructlogs_manager.toolbutton.menu().popup(pos)
+    assert constructlogs_manager.attach_action.isEnabled()
+    assert constructlogs_manager.show_action.isEnabled()
+    assert constructlogs_manager.remove_action.isEnabled()
 
     # Show the newly added construction log in an external application.
     mocker.patch('os.startfile')
-    with qtbot.waitSignal(table.sig_construction_log_shown):
-        table.show_construction_log_action.trigger()
+    with qtbot.waitSignal(constructlogs_manager.sig_attachment_shown):
+        constructlogs_manager.show_action.trigger()
 
     # Delete the newly added construction log from the database.
-    with qtbot.waitSignal(table.sig_construction_log_removed):
-        table.remove_construction_log_action.trigger()
+    with qtbot.waitSignal(constructlogs_manager.sig_attachment_removed):
+        constructlogs_manager.remove_action.trigger()
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
-    assert len(table.model().libraries['stations_with_construction_log']) == 0
+    assert len(table.model().libraries['stored_attachments_info']) == 0
 
-    pos = table.construction_log_btn.mapToGlobal(QPoint(0, 0))
-    table.construction_log_btn.menu().popup(pos)
-    assert table.attach_construction_log_action.isEnabled()
-    assert not table.show_construction_log_action.isEnabled()
-    assert not table.remove_construction_log_action.isEnabled()
-    table.construction_log_btn.menu().close()
+    pos = constructlogs_manager.toolbutton.mapToGlobal(QPoint(0, 0))
+    constructlogs_manager.toolbutton.menu().popup(pos)
+    assert constructlogs_manager.attach_action.isEnabled()
+    assert not constructlogs_manager.show_action.isEnabled()
+    assert not constructlogs_manager.remove_action.isEnabled()
+    constructlogs_manager.toolbutton.menu().close()
 
 
 if __name__ == "__main__":
