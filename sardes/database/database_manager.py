@@ -349,6 +349,9 @@ class DatabaseConnectionWorker(WorkerBase):
         graphs_dirname = osp.join(files_dirname, 'graphs')
         if not osp.exists(graphs_dirname):
             os.makedirs(graphs_dirname)
+        geochmical_dirname = os.join(files_dirname, 'geochemistry')
+        if not osp.exists(geochmical_dirname):
+            os.makedirs(geochmical_dirname)
 
         # Initialize a new KML document.
         kml = simplekml.Kml()
@@ -447,6 +450,9 @@ class DatabaseConnectionWorker(WorkerBase):
                 if iri_logs is not None:
                     log_data, log_fame = (
                         self.db_accessor.get_attachment(station_uuid, 1))
+                if iri_geochemistry is not None:
+                    geochmical_data, geochmical_fame = (
+                        self.db_accessor.get_attachment(station_uuid, 2))
 
                 # Generate the attached files and add the urls.
                 files_urls = ''
@@ -511,6 +517,24 @@ class DatabaseConnectionWorker(WorkerBase):
                         safe='/:')
                     files_urls += '<a href="{}">{}</a><br/>'.format(
                         url, _("Graphs"))
+                if (iri_geochemistry is not None and
+                        geochmical_data is not None):
+                    root, ext = osp.splitext(geochmical_fame)
+                    geochmical_filename = _('geochemistry_{}{}').format(
+                        station_data['obs_well_id'], ext)
+                    geochmical_savepath = osp.join(
+                        geochmical_dirname, geochmical_filename)
+                    try:
+                        with open(geochmical_savepath, 'wb') as f:
+                            f.write(geochmical_data)
+                    except PermissionError as e:
+                        print(e)
+
+                    url = urllib.parse.quote(
+                        urllib.parse.urljoin(iri_logs, log_filename),
+                        safe='/:')
+                    files_urls += '<a href="{}">{}</a><br/>'.format(
+                        url, _("Geochemistry"))
                 if files_urls:
                     pnt_desc += '<br/>' + files_urls
 
