@@ -496,7 +496,7 @@ class DatabaseConnectionWorker(WorkerBase):
                     url = urllib.parse.quote(
                         iri_logs + '/' + log_filename, safe='/:')
                     files_urls += '<a href="{}">{}</a><br/>'.format(
-                        url, _("Diagrams"))
+                        url, _("Diagram"))
                 if iri_graphs is not None and not readings.empty:
                     graph_filename = _('graph_{}.pdf').format(
                         station_data['obs_well_id'])
@@ -516,7 +516,7 @@ class DatabaseConnectionWorker(WorkerBase):
                     url = urllib.parse.quote(
                         iri_graphs + '/' + graph_filename, safe='/:')
                     files_urls += '<a href="{}">{}</a><br/>'.format(
-                        url, _("Graphs"))
+                        url, _("Graph"))
                 if iri_quality is not None and quality_data is not None:
                     root, ext = osp.splitext(quality_fame)
                     quality_filename = _('water_quality_{}{}').format(
