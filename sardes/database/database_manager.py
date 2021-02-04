@@ -352,7 +352,7 @@ class DatabaseConnectionWorker(WorkerBase):
         graphs_dirname = osp.join(files_dirname, 'graphs')
         if not osp.exists(graphs_dirname):
             os.makedirs(graphs_dirname)
-        quality_dirname = os.join(files_dirname, 'quality')
+        quality_dirname = osp.join(files_dirname, 'quality')
         if not osp.exists(quality_dirname):
             os.makedirs(quality_dirname)
 
