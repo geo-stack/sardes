@@ -423,6 +423,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Session = sessionmaker(bind=self._engine)
         self._session = Session()
 
+    def version(self):
+        """Return the current version of the database."""
+        return self.execute("PRAGMA user_version").first()[0]
+
+    def application_id(self):
+        """Return the application id of the database."""
+        return self.execute("PRAGMA application_id").first()[0]
+
     def execute(self, sql_request, **kwargs):
         """Execute a SQL statement construct and return a ResultProxy."""
         try:
@@ -511,8 +519,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._connection = None
             self._connection_error = e
         else:
-            app_id = conn.execute("PRAGMA application_id").first()[0]
-            version = conn.execute("PRAGMA user_version").first()[0]
+            app_id = self.application_id()
+            version = self.version()
             if app_id != APPLICATION_ID:
                 self._connection = None
                 self._connection_error = sqlite3.DatabaseError(_(
@@ -774,85 +782,86 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         data['mean_water_level'] = data['mean_water_level'].round(decimals=3)
         return data
 
-    # ---- Construction Logs
-    def get_stations_with_construction_log(self):
+    # ---- Attachments
+    def get_stored_attachments_info(self):
         """
-        Return a list of sampling_feature_uuid for which a construction log
-        is saved in the database.
+        Return a pandas dataframe containing a list of sampling_feature_uuid
+        and attachment_type for which a file is attached in the database.
         """
         query = (
             self._session.query(
-                SamplingFeatureAttachment.sampling_feature_uuid)
-            .filter(SamplingFeatureAttachment.attachment_type == 1)
+                SamplingFeatureAttachment.sampling_feature_uuid,
+                SamplingFeatureAttachment.attachment_type)
             )
         result = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
-        return result['sampling_feature_uuid'].values.tolist()
+        return result
 
-    def get_construction_log(self, sampling_feature_uuid):
+    def get_attachment(self, sampling_feature_uuid, attachment_type):
         """
-        Return the data of the construction log file attached to the
-        specified sampling_feature_uuid.
+        Return the data of the file of the specified type that is
+        attached to the specified station.
         """
         try:
-            construction_log_attachment = (
+            attachment = (
                 self._session.query(SamplingFeatureAttachment)
                 .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
                         sampling_feature_uuid)
-                .filter(SamplingFeatureAttachment.attachment_type == 1)
+                .filter(SamplingFeatureAttachment.attachment_type ==
+                        attachment_type)
                 .one())
         except NoResultFound:
             return (None, None)
         else:
-            return (construction_log_attachment.attachment_data,
-                    construction_log_attachment.attachment_fname)
+            return (attachment.attachment_data, attachment.attachment_fname)
 
-    def set_construction_log(self, sampling_feature_uuid, filename):
+    def set_attachment(self, sampling_feature_uuid, attachment_type,
+                       filename):
         """
-        Attach the data of a construction log file to the
-        specified sampling_feature_uuid.
+        Attach the data of a file to the specified sampling_feature_uuid.
         """
         try:
-            # We first check if a construction log is already attached to
+            # We first check if a file of this type is already attached to
             # the monitoring station.
-            log = (
+            attachment = (
                 self._session.query(SamplingFeatureAttachment)
                 .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
                         sampling_feature_uuid)
-                .filter(SamplingFeatureAttachment.attachment_type == 1)
+                .filter(SamplingFeatureAttachment.attachment_type ==
+                        attachment_type)
                 .one())
         except NoResultFound:
-            # This means we need to add a new sampling feature attachment
-            # to save the new construction log.
-            log = SamplingFeatureAttachment(
+            # This means we need to add a new attachment to save the file.
+            attachment = SamplingFeatureAttachment(
                 attachment_type=1,
                 sampling_feature_uuid=sampling_feature_uuid)
-            self._session.add(log)
+            self._session.add(attachment)
 
         if osp.exists(filename):
             with open(filename, 'rb') as f:
-                log.attachment_data = memoryview(f.read())
-        log.attachment_fname = osp.basename(filename)
+                attachment.attachment_data = memoryview(f.read())
+        attachment.attachment_fname = osp.basename(filename)
         self._session.commit()
 
-    def del_construction_log(self, sampling_feature_uuid,):
+    def del_attachment(self, sampling_feature_uuid, attachment_type):
         """
-        Delete the data of the construction log file attached to the
-        specified sampling_feature_uuid.
+        Delete the data of the file of the specified type that is attached
+        to the specified sampling_feature_uuid.
         """
         try:
-            log = (
+            attachment = (
                 self._session.query(SamplingFeatureAttachment)
                 .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
                         sampling_feature_uuid)
-                .filter(SamplingFeatureAttachment.attachment_type == 1)
+                .filter(SamplingFeatureAttachment.attachment_type ==
+                        attachment_type)
                 .one())
         except NoResultFound:
-            # This means there is currently no construction log attached to
+            # This means there is currently no file of this type attached to
             # the specified sampling_feature_uuid.
             pass
         else:
-            self._session.delete(log)
+            self._session.delete(attachment)
             self._session.commit()
 
     # ---- Repere
@@ -1589,7 +1598,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
 
 if __name__ == "__main__":
-    database = "D:/Desktop/rsesq_prod_21072020_v1.db"
+    database = "D:/Desktop/rsesq_prod_02-02-2021.db"
     accessor = DatabaseAccessorSardesLite(database)
     accessor.init_database()
     accessor.connect()
@@ -1600,10 +1609,9 @@ if __name__ == "__main__":
     sonde_installations = accessor.get_sonde_installations()
     repere_data = accessor.get_repere_data()
 
-    stations_with_log = accessor.get_stations_with_construction_log()
+    stored_attachments_info = accessor.get_stored_attachments_info()
 
     overview = accessor.get_observation_wells_data_overview()
-
     from time import perf_counter
     t1 = perf_counter()
     sampling_feature_uuid = (
