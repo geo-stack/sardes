@@ -998,12 +998,13 @@ class DatabaseConnectionManager(TaskManagerBase):
 
     # ---- Publish Network Data
     def publish_to_kml(self, filename, iri_data=None, iri_logs=None,
-                       iri_graphs=None, callback=None, postpone_exec=False):
+                       iri_graphs=None, iri_quality=None, callback=None,
+                       postpone_exec=False):
         """
         Publish the piezometric network data to the specified kml filename.
         """
         self._add_task('publish_to_kml', callback, filename,
-                       iri_data, iri_logs, iri_graphs)
+                       iri_data, iri_logs, iri_graphs, iri_quality)
         if not postpone_exec:
             self.run_tasks()
 
