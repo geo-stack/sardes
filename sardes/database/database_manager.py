@@ -522,7 +522,7 @@ class DatabaseConnectionWorker(WorkerBase):
                         url, _("Graphs"))
                 if iri_quality is not None and quality_data is not None:
                     root, ext = osp.splitext(quality_fame)
-                    quality_filename = _('waterquality_{}{}').format(
+                    quality_filename = _('water_quality_{}{}').format(
                         station_data['obs_well_id'], ext)
                     quality_savepath = osp.join(
                         quality_dirname, quality_filename)
