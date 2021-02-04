@@ -310,7 +310,7 @@ class DatabaseConnectionWorker(WorkerBase):
 
     # ---- Publish Network Data
     def _publish_to_kml(self, kml_filename, iri_data=None, iri_logs=None,
-                        iri_graphs=None):
+                        iri_graphs=None, iri_geochemistry=None):
         """
         Publish the piezometric network data to the specified kml filename.
 
@@ -327,6 +327,9 @@ class DatabaseConnectionWorker(WorkerBase):
         iri_graphs : str, optional
             The IRI where the hydrographs are going to be hosted.
             The default is None.
+        iri_geochemistry : str, optional
+            The IRI where the geochemical analysis results are going
+            to be hosted. The default is None.
 
         Returns
         -------
