@@ -479,8 +479,7 @@ class DatabaseConnectionWorker(WorkerBase):
                         print(e)
 
                     url = urllib.parse.quote(
-                        urllib.parse.urljoin(iri_data, xlsx_filename),
-                        safe='/:')
+                        iri_data + '/' + xlsx_filename, safe='/:')
                     files_urls += '<a href="{}">{}</a><br/>'.format(
                         url, _("Data"))  # Données
                 if iri_logs is not None and log_data is not None:
@@ -495,8 +494,7 @@ class DatabaseConnectionWorker(WorkerBase):
                         print(e)
 
                     url = urllib.parse.quote(
-                        urllib.parse.urljoin(iri_logs, log_filename),
-                        safe='/:')
+                        iri_logs + '/' + log_filename, safe='/:')
                     files_urls += '<a href="{}">{}</a><br/>'.format(
                         url, _("Diagrams"))
                 if iri_graphs is not None and not readings.empty:
@@ -516,8 +514,7 @@ class DatabaseConnectionWorker(WorkerBase):
                         print(e)
 
                     url = urllib.parse.quote(
-                        urllib.parse.urljoin(iri_graphs, graph_filename),
-                        safe='/:')
+                        iri_graphs + '/' + graph_filename, safe='/:')
                     files_urls += '<a href="{}">{}</a><br/>'.format(
                         url, _("Graphs"))
                 if iri_quality is not None and quality_data is not None:
@@ -533,8 +530,7 @@ class DatabaseConnectionWorker(WorkerBase):
                         print(e)
 
                     url = urllib.parse.quote(
-                        urllib.parse.urljoin(iri_logs, log_filename),
-                        safe='/:')
+                        iri_quality + '/' + quality_filename, safe='/:')
                     files_urls += '<a href="{}">{}</a><br/>'.format(
                         url, _("Water Quality"))
                 if files_urls:
