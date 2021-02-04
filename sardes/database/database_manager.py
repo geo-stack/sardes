@@ -310,7 +310,7 @@ class DatabaseConnectionWorker(WorkerBase):
 
     # ---- Publish Network Data
     def _publish_to_kml(self, kml_filename, iri_data=None, iri_logs=None,
-                        iri_graphs=None):
+                        iri_graphs=None, iri_quality=None):
         """
         Publish the piezometric network data to the specified kml filename.
 
@@ -327,6 +327,9 @@ class DatabaseConnectionWorker(WorkerBase):
         iri_graphs : str, optional
             The IRI where the hydrographs are going to be hosted.
             The default is None.
+        iri_quality : str, optional
+            The IRI where the water quality reports are going
+            to be hosted. The default is None.
 
         Returns
         -------
@@ -349,6 +352,9 @@ class DatabaseConnectionWorker(WorkerBase):
         graphs_dirname = osp.join(files_dirname, 'graphs')
         if not osp.exists(graphs_dirname):
             os.makedirs(graphs_dirname)
+        quality_dirname = osp.join(files_dirname, 'quality')
+        if not osp.exists(quality_dirname):
+            os.makedirs(quality_dirname)
 
         # Initialize a new KML document.
         kml = simplekml.Kml()
@@ -447,6 +453,9 @@ class DatabaseConnectionWorker(WorkerBase):
                 if iri_logs is not None:
                     log_data, log_fame = (
                         self.db_accessor.get_attachment(station_uuid, 1))
+                if iri_quality is not None:
+                    quality_data, quality_fame = (
+                        self.db_accessor.get_attachment(station_uuid, 2))
 
                 # Generate the attached files and add the urls.
                 files_urls = ''
@@ -470,8 +479,7 @@ class DatabaseConnectionWorker(WorkerBase):
                         print(e)
 
                     url = urllib.parse.quote(
-                        urllib.parse.urljoin(iri_data, xlsx_filename),
-                        safe='/:')
+                        iri_data + '/' + xlsx_filename, safe='/:')
                     files_urls += '<a href="{}">{}</a><br/>'.format(
                         url, _("Data"))  # Données
                 if iri_logs is not None and log_data is not None:
@@ -486,8 +494,7 @@ class DatabaseConnectionWorker(WorkerBase):
                         print(e)
 
                     url = urllib.parse.quote(
-                        urllib.parse.urljoin(iri_logs, log_filename),
-                        safe='/:')
+                        iri_logs + '/' + log_filename, safe='/:')
                     files_urls += '<a href="{}">{}</a><br/>'.format(
                         url, _("Diagrams"))
                 if iri_graphs is not None and not readings.empty:
@@ -507,10 +514,25 @@ class DatabaseConnectionWorker(WorkerBase):
                         print(e)
 
                     url = urllib.parse.quote(
-                        urllib.parse.urljoin(iri_graphs, graph_filename),
-                        safe='/:')
+                        iri_graphs + '/' + graph_filename, safe='/:')
                     files_urls += '<a href="{}">{}</a><br/>'.format(
                         url, _("Graphs"))
+                if iri_quality is not None and quality_data is not None:
+                    root, ext = osp.splitext(quality_fame)
+                    quality_filename = _('water_quality_{}{}').format(
+                        station_data['obs_well_id'], ext)
+                    quality_savepath = osp.join(
+                        quality_dirname, quality_filename)
+                    try:
+                        with open(quality_savepath, 'wb') as f:
+                            f.write(quality_data)
+                    except PermissionError as e:
+                        print(e)
+
+                    url = urllib.parse.quote(
+                        iri_quality + '/' + quality_filename, safe='/:')
+                    files_urls += '<a href="{}">{}</a><br/>'.format(
+                        url, _("Water Quality"))
                 if files_urls:
                     pnt_desc += '<br/>' + files_urls
 
@@ -972,12 +994,13 @@ class DatabaseConnectionManager(TaskManagerBase):
 
     # ---- Publish Network Data
     def publish_to_kml(self, filename, iri_data=None, iri_logs=None,
-                       iri_graphs=None, callback=None, postpone_exec=False):
+                       iri_graphs=None, iri_quality=None, callback=None,
+                       postpone_exec=False):
         """
         Publish the piezometric network data to the specified kml filename.
         """
         self._add_task('publish_to_kml', callback, filename,
-                       iri_data, iri_logs, iri_graphs)
+                       iri_data, iri_logs, iri_graphs, iri_quality)
         if not postpone_exec:
             self.run_tasks()
 

@@ -134,6 +134,9 @@ FA_ICONS = {
     'fmt_marker_size': [
         ('mdi.circle-medium',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'geochemistry': [
+        ('mdi.beaker-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'home': [
         ('mdi.home',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
@@ -262,6 +265,9 @@ FA_ICONS = {
     'warning': [
         ('mdi.alert-outline',),
         {'color': YELLOW, 'scale_factor': 1.3}],
+    'water_quality': [
+        ('mdi.cup-water',),
+        {'color': ICON_COLOR, 'scale_factor': 1.0}],
     'zoom_in': [
         ('mdi.plus-circle-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],

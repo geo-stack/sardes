@@ -833,7 +833,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         except NoResultFound:
             # This means we need to add a new attachment to save the file.
             attachment = SamplingFeatureAttachment(
-                attachment_type=1,
+                attachment_type=attachment_type,
                 sampling_feature_uuid=sampling_feature_uuid)
             self._session.add(attachment)
 
