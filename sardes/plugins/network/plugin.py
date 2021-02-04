@@ -117,6 +117,9 @@ class PiezometricNetwork(SardesPlugin):
             args['iri_logs'] = self.publish_dialog.iri_logs()
         if self.publish_dialog.is_iri_graphs():
             args['iri_graphs'] = self.publish_dialog.iri_graphs()
+        if self.publish_dialog.is_iri_geochemistry():
+            args['iri_geochemistry'] = self.publish_dialog.iri_geochemistry()
+
         self.main.db_connection_manager.publish_to_kml(**args)
 
     def _stop_publishing_network(self, result):
