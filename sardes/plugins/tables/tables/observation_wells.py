@@ -15,7 +15,7 @@ import tempfile
 
 # ---- Third party imports
 import pandas as pd
-from qtpy.QtCore import Signal
+from qtpy.QtCore import Signal, QObject
 from qtpy.QtWidgets import QMenu, QFileDialog
 
 # ---- Local imports
@@ -96,14 +96,6 @@ class ObsWellsTableModel(SardesTableModel):
 class ObsWellsTableWidget(SardesTableWidget):
     sig_view_data = Signal(object, bool)
 
-    sig_attach_construction_log = Signal(object, object)
-    sig_show_construction_log = Signal(object)
-    sig_remove_construction_log = Signal(object)
-
-    sig_construction_log_removed = Signal()
-    sig_construction_log_attached = Signal()
-    sig_construction_log_shown = Signal()
-
     def __init__(self, *args, **kargs):
         table_model = ObsWellsTableModel(
             table_title=_('Observation Wells'),
@@ -135,26 +127,8 @@ class ObsWellsTableWidget(SardesTableWidget):
     def register_to_plugin(self, plugin):
         """Register this table with the given plugin."""
         self.sig_view_data.connect(plugin.main.view_timeseries_data)
-        self.sig_attach_construction_log.connect(
-            lambda sampling_feature_uuid, filename:
-                plugin.main.db_connection_manager.set_attachment(
-                    sampling_feature_uuid,
-                    1,
-                    filename,
-                    callback=self.sig_construction_log_attached.emit)
-                )
-        self.sig_show_construction_log.connect(
-            lambda sampling_feature_uuid:
-                plugin.main.db_connection_manager.get_attachment(
-                    sampling_feature_uuid, 1,
-                    callback=self._open_construction_log_in_external)
-                )
-        self.sig_remove_construction_log.connect(
-            lambda sampling_feature_uuid:
-                plugin.main.db_connection_manager.del_attachment(
-                    sampling_feature_uuid, 1,
-                    callback=self.sig_construction_log_removed.emit)
-                )
+        self.construction_logs_manager.set_dbmanager(
+            plugin.main.db_connection_manager)
 
     # ---- Timeseries
     def get_current_obs_well_data(self):
@@ -179,49 +153,34 @@ class ObsWellsTableWidget(SardesTableWidget):
             iconsize=get_iconsize()
             )
 
-        # Setup construction log button.
-        self.construction_log_btn = create_toolbutton(
-            self,
-            icon='construction_log',
-            text=_("Construction Log"),
-            tip=_("Open the menu to add a construction log to the "
-                  "currently selected well or to view or delete an "
-                  "existing construction log."),
-            iconsize=get_iconsize())
-        self.attach_construction_log_action = create_action(
-            self,
-            _("Attach Construction Log..."),
-            tip=_("Attach a construction log file to the "
-                  "currently selected observation well."),
-            icon='attachment',
-            triggered=self._handle_attach_construction_log_request)
-        self.show_construction_log_action = create_action(
-            self,
-            _("Show Construction Log..."),
-            tip=_("Show the construction log file attached to the "
-                  "currently selected observation well."),
-            icon='magnifying_glass',
-            triggered=self._handle_show_construction_log_request)
-        self.remove_construction_log_action = create_action(
-            self,
-            _("Remove Construction Log"),
-            tip=_("Remove the construction log file attached to the "
-                  "currently selected observation well."),
-            icon='delete_data',
-            triggered=self._handle_remove_construction_log_request)
+        # Setup construction logs manager.
+        self.construction_logs_manager = FileAttachmentManager(
+            self, icon='construction_log', attachment_type=1,
+            qfiledialog_namefilters=(
+                _('Construction Log') +
+                ' (*.png ; *.bmp ; *.jpg ; *.jpeg ; *.tif ; *.pdf)'),
+            qfiledialog_title=_(
+                'Select a Construction Log for Station {} for Station {}'),
+            text=_("Construction Logs"),
+            tooltip=_(
+                "Open the menu to add a construction log to the currently "
+                "selected station or to view or delete an existing "
+                "construction log."),
+            attach_text=_("Attach Construction Log..."),
+            attach_tooltip=_(
+                "Attach a construction log to the currently "
+                "selected station."),
+            show_text=_("Show Construction Log..."),
+            show_tooltip=_(
+                "Show the construction log attached to the currently "
+                "selected station."),
+            remove_text=_("Remove Construction Log"),
+            remove_tooltip=_(
+                "Remove the construction log attached to the currently "
+                "selected station.")
+            )
 
-        construction_log_menu = QMenu()
-        construction_log_menu.addAction(self.attach_construction_log_action)
-        construction_log_menu.addAction(self.show_construction_log_action)
-        construction_log_menu.addAction(self.remove_construction_log_action)
-        construction_log_menu.aboutToShow.connect(
-            self._handle_construction_log_menu_aboutToShow)
-
-        self.construction_log_btn.setMenu(construction_log_menu)
-        self.construction_log_btn.setPopupMode(
-            self.construction_log_btn.InstantPopup)
-
-        return [self.show_data_btn, self.construction_log_btn]
+        return [self.show_data_btn, self.construction_logs_manager.toolbutton]
 
     def _view_current_timeseries_data(self):
         """
@@ -232,73 +191,154 @@ class ObsWellsTableWidget(SardesTableWidget):
         if current_obs_well_data is not None:
             self.sig_view_data.emit(current_obs_well_data.name, False)
 
-    # ---- Construction Log
-    def _handle_construction_log_menu_aboutToShow(self):
-        """
-        Handle when the construction log menu is about to be shown so that
-        we can disable/enable the items depending on the availability or
-        not of a construction log for the currently selected monitoring
-        station.
-        """
-        self.tableview.setFocus()
-        obs_well_data = self.get_current_obs_well_data()
-        if obs_well_data is None:
-            self.attach_construction_log_action.setEnabled(False)
-            self.show_construction_log_action.setEnabled(False)
-            self.remove_construction_log_action.setEnabled(False)
-        else:
-            self.attach_construction_log_action.setEnabled(True)
-            log_exists = (
-                self.model().libraries['stored_attachments_info'] ==
-                [obs_well_data.name, 1]
-                ).all(1).any()
-            self.show_construction_log_action.setEnabled(log_exists)
-            self.remove_construction_log_action.setEnabled(log_exists)
 
-    def _handle_attach_construction_log_request(self):
+class FileAttachmentManager(QObject):
+    """
+    A class to handle adding, viewing, and removing file attachments
+    in the database.
+    """
+    sig_attach_request = Signal(object, object, object)
+
+    sig_attachment_added = Signal()
+    sig_attachment_shown = Signal()
+    sig_attachment_removed = Signal()
+
+    def __init__(self, tablewidget, icon, attachment_type,
+                 qfiledialog_namefilters, qfiledialog_title,
+                 text, tooltip, attach_text, attach_tooltip, show_text,
+                 show_tooltip, remove_text, remove_tooltip):
+        super().__init__()
+        self.dbmanager = None
+
+        self.tablewidget = tablewidget
+        self.attachment_type = attachment_type
+
+        self.qfiledialog_namefilters = qfiledialog_namefilters
+        self.qfiledialog_title = qfiledialog_title
+
+        self.toolbutton = create_toolbutton(
+            tablewidget, text=text, tip=tooltip, icon=icon,
+            iconsize=get_iconsize())
+        self.attach_action = create_action(
+            tablewidget, text=attach_text, tip=attach_tooltip,
+            icon='attachment', triggered=self._handle_attach_request)
+        self.show_action = create_action(
+            tablewidget, text=show_text, tip=show_tooltip,
+            icon='magnifying_glass', triggered=self._handle_show_request)
+        self.remove_action = create_action(
+            tablewidget, text=remove_text, tip=remove_tooltip,
+            icon='delete_data', triggered=self._handle_remove_request)
+
+        menu = QMenu()
+        menu.addAction(self.attach_action)
+        menu.addAction(self.show_action)
+        menu.addAction(self.remove_action)
+        menu.aboutToShow.connect(self._handle_menu_aboutToShow)
+
+        self.toolbutton.setMenu(menu)
+        self.toolbutton.setPopupMode(self.toolbutton.InstantPopup)
+
+    def set_dbmanager(self, dbmanager):
         """
-        Handle when a request is made by the user to attach a construction log
+        Set the database manager for this file attachment manager.
+        """
+        self.dbmanager = dbmanager
+
+    # ---- Convenience Methods
+    def current_station_id(self):
+        """
+        Return the id of the station that is currently selected
+        in the table in which this file attachment manager is installed.
+        """
+        station_data = self.tablewidget.get_current_obs_well_data()
+        if station_data is None:
+            return None
+        else:
+            return station_data.name
+
+    def current_station_name(self):
+        """
+        Return the name of the station that is currently selected
+        in the table in which this file attachment manager is installed.
+        """
+        return self.tablewidget.get_current_obs_well_data()['obs_well_id']
+
+    def is_attachment_exists(self):
+        """
+        Return whether an attachment exists in the database for the
+        currently selected station in the table.
+        """
+        return (
+            self.tablewidget.model().libraries['stored_attachments_info'] ==
+            [self.current_station_id(), self.attachment_type]
+            ).all(1).any()
+
+    # ---- Handlers
+    def _handle_menu_aboutToShow(self):
+        """
+        Handle when the menu is about to be shown so that we can
+        disable/enable the items depending on the availability or
+        not of an attachment for the currently selected station.
+        """
+        self.tablewidget.tableview.setFocus()
+        station_id = self.current_station_id()
+        if station_id is None:
+            self.attach_action.setEnabled(False)
+            self.show_action.setEnabled(False)
+            self.remove_action.setEnabled(False)
+        else:
+            is_attachment_exists = self.is_attachment_exists()
+            self.attach_action.setEnabled(True)
+            self.show_action.setEnabled(is_attachment_exists)
+            self.remove_action.setEnabled(is_attachment_exists)
+
+    def _handle_attach_request(self):
+        """
+        Handle when a request is made by the user to add an attachment
         to the currently selected station.
         """
-        obs_well_id = self.get_current_obs_well_data()['obs_well_id']
-        namefilters = (
-            'Construction Log '
-            '(*.png ; *.bmp ; *.jpg ; *.jpeg ; *.tif ; *.pdf)')
         filename, filefilter = QFileDialog.getOpenFileName(
-            self.parent() or self,
-            _('Select Construction Log for Station {}').format(obs_well_id),
+            self.tablewidget.parent() or self.tablewidget,
+            self.qfiledialog_title.format(self.current_station_name()),
             get_select_file_dialog_dir(),
-            namefilters)
+            self.qfiledialog_namefilters)
         if filename:
             set_select_file_dialog_dir(osp.dirname(filename))
-            sampling_feature_uuid = self.get_current_obs_well_data().name
-            self.sig_attach_construction_log.emit(
-                sampling_feature_uuid, filename)
+            if self.dbmanager is not None:
+                station_id = self.current_station_id()
+                self.dbmanager.set_attachment(
+                    station_id, 1, filename,
+                    callback=self.sig_attachment_added.emit)
 
-    def _handle_show_construction_log_request(self):
+    def _handle_show_request(self):
         """
-        Handle when a request is made by the user to show the construction log
-        attached to the currently selected station.
+        Handle when a request is made by the user to show the attachment
+        of the currently selected station.
         """
-        sampling_feature_uuid = self.get_current_obs_well_data().name
-        self.sig_show_construction_log.emit(sampling_feature_uuid)
+        if self.dbmanager is not None:
+            station_id = self.current_station_id()
+            self.dbmanager.get_attachment(
+                station_id, 1, callback=self._open_attachment_in_external)
 
-    def _handle_remove_construction_log_request(self):
+    def _handle_remove_request(self):
         """
-        Handle when a request is made by the user to remove the construction
-        log attached to the currently selected station.
+        Handle when a request is made by the user to remove the attachment
+        of the currently selected station.
         """
-        sampling_feature_uuid = self.get_current_obs_well_data().name
-        self.sig_remove_construction_log.emit(sampling_feature_uuid)
+        if self.dbmanager is not None:
+            station_id = self.current_station_id()
+            self.dbmanager.del_attachment(
+                station_id, 1, callback=self.sig_attachment_removed.emit)
 
-    def _open_construction_log_in_external(self, data, name):
+    # ---- Callbacks
+    def _open_attachment_in_external(self, data, name):
         """
-        Open the construction log in an external application that is
-        choosen by the OS.
+        Open the attachment file in an external application that is
+        chosen by the OS.
         """
         temp_path = tempfile.mkdtemp(dir=TEMP_DIR)
         temp_filename = osp.join(temp_path, name)
         with open(temp_filename, 'wb') as f:
             f.write(data)
         os.startfile(temp_filename)
-        self.sig_construction_log_shown.emit()
+        self.sig_attachment_shown.emit()
