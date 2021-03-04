@@ -1169,6 +1169,11 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             query.statement, query.session.bind, coerce_float=True)
         measurements.set_index('gen_num_value_uuid', inplace=True, drop=True)
 
+        # Make sure datetime data is considered as datetime.
+        # This is required to avoid problems when the manual measurements
+        # table is empty. See cgq-qgc/sardes#427.
+        measurements['datetime'] = pd.to_datetime(measurements['datetime'])
+
         return measurements
 
     def set_manual_measurements(self, gen_num_value_uuid, attribute_name,
