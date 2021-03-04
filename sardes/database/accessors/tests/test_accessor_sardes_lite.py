@@ -687,5 +687,4 @@ def test_delete_timeseries(dbaccessor):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', __file__, '-v', '-rw', '-s',
-                 '-k', 'test_manual_measurements'])
+    pytest.main(['-x', __file__, '-v', '-rw'])
