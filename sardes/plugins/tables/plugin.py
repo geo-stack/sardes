@@ -112,34 +112,39 @@ class Tables(SardesPlugin):
     def _setup_tables(self):
         self._create_and_register_table(
             ObsWellsTableWidget,
-            'observation_wells_data',
-            ['observation_wells_data_overview',
-             'stored_attachments_info'])
+            data_name='observation_wells_data',
+            lib_names=['observation_wells_data_overview',
+                       'stored_attachments_info'],
+            disabled_actions=['delete_row'])
         self._create_and_register_table(
             SondesInventoryTableWidget,
-            'sondes_data',
-            ['sonde_models_lib'])
+            data_name='sondes_data',
+            lib_names=['sonde_models_lib'],
+            disabled_actions=['delete_row'])
         self._create_and_register_table(
             ManualMeasurementsTableWidget,
-            'manual_measurements',
-            ['observation_wells_data'])
+            data_name='manual_measurements',
+            lib_names=['observation_wells_data'])
         self._create_and_register_table(
             SondeInstallationsTableWidget,
-            'sonde_installations',
-            ['observation_wells_data',
-             'sondes_data',
-             'sonde_models_lib'])
+            data_name='sonde_installations',
+            lib_names=['observation_wells_data',
+                       'sondes_data',
+                       'sonde_models_lib'],
+            disabled_actions=['delete_row'])
         self._create_and_register_table(
             RepereTableWidget,
-            'repere_data',
-            ['observation_wells_data'])
+            data_name='repere_data',
+            lib_names=['observation_wells_data'],
+            disabled_actions=['delete_row'])
 
         # Setup the current active tab from the value saved in the configs.
         self.tabwidget.setCurrentIndex(
             self.get_option('last_focused_tab', 0))
 
-    def _create_and_register_table(self, TableClass, data_name, lib_names):
-        table = TableClass(disabled_actions=['delete_row'])
+    def _create_and_register_table(self, TableClass, data_name, lib_names,
+                                   disabled_actions=None):
+        table = TableClass(disabled_actions=disabled_actions)
 
         self.main.db_connection_manager.register_model(
             table.model(), data_name, lib_names)
