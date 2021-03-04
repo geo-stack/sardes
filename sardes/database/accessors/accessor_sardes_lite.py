@@ -1182,7 +1182,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             observation = self._get_observation(measurement.observation_id)
             observation.sampling_feature_uuid = attribute_value
         elif attribute_name == 'datetime':
-            observation = self._get_observation(measurement.observation_uuid)
+            observation = self._get_observation(measurement.observation_id)
             observation.obs_datetime = attribute_value
         elif attribute_name == 'value':
             measurement.gen_num_value = float(attribute_value)

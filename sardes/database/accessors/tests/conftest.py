@@ -203,6 +203,7 @@ def database_filler(
 
     def fill_database(dbaccessor):
         for obs_well_uuid, obs_well_data in obswells_data.iterrows():
+            # Add the observation well.
             dbaccessor.add_observation_wells_data(
                 obs_well_uuid, attribute_values=obs_well_data.to_dict())
 
