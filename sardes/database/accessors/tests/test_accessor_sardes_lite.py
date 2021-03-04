@@ -24,6 +24,7 @@ os.environ['SARDES_PYTEST'] = 'True'
 import numpy as np
 import pytest
 import pandas as pd
+from pandas.api.types import is_datetime64_any_dtype
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 
@@ -227,11 +228,19 @@ def test_manual_measurements(dbaccessor0, obswells_data, manual_measurements):
         dbaccessor0.add_observation_wells_data(
             obs_well_uuid, attribute_values=obs_well_data.to_dict())
 
+    # Test the empty manual measurement dataframe is formatted as expected.
+    # This covers the issue reported at cgq-qgc/sardes#427.
+    saved_manual_measurements = dbaccessor0.get_manual_measurements()
+    assert saved_manual_measurements.empty
+    assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
+
     # Add manual measurements.
     for index, row in manual_measurements.iterrows():
         dbaccessor0.add_manual_measurements(index, row.to_dict())
-    assert (dbaccessor0.get_manual_measurements().to_dict() ==
-            manual_measurements.to_dict())
+
+    saved_manual_measurements = dbaccessor0.get_manual_measurements()
+    assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
+    assert saved_manual_measurements.to_dict() == manual_measurements.to_dict()
 
     # Edit a manual measurement.
     gen_num_value_uuid = manual_measurements.index[0]
@@ -247,6 +256,7 @@ def test_manual_measurements(dbaccessor0, obswells_data, manual_measurements):
             gen_num_value_uuid, attribute_name, attribute_value)
 
     saved_manual_measurements = dbaccessor0.get_manual_measurements()
+    assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
     assert (saved_manual_measurements.loc[gen_num_value_uuid].to_dict() ==
             edited_values)
 
