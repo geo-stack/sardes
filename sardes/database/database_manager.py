@@ -8,13 +8,10 @@
 # -----------------------------------------------------------------------------
 
 # ---- Standard imports
-from collections import OrderedDict
 import datetime
 import os
 import os.path as osp
-from time import sleep
 import urllib
-import uuid
 
 # ---- Third party imports
 import numpy as np
