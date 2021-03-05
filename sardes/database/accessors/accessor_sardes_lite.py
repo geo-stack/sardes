@@ -1274,7 +1274,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         the specified monitoring station.
         """
         if isinstance(data_types, str) or isinstance(data_types, DataType):
-            data_types = [data_types,]
+            data_types = [data_types, ]
         if data_types is None:
             data_types = [
                 DataType.WaterLevel,
