@@ -260,6 +260,12 @@ def test_manual_measurements(dbaccessor0, obswells_data, manual_measurements):
     assert (saved_manual_measurements.loc[gen_num_value_uuid].to_dict() ==
             edited_values)
 
+    # Delete a manual measurements.
+    dbaccessor0.delete_manual_measurements(gen_num_value_uuid)
+    saved_manual_measurements = dbaccessor0.get_manual_measurements()
+    assert (saved_manual_measurements.to_dict() ==
+            manual_measurements.iloc[1:].to_dict())
+
 
 # =============================================================================
 # ---- Inter-dependent Tests
