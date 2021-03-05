@@ -19,6 +19,7 @@ import uuid
 # ---- Third party imports
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_list_like
 from sqlalchemy import create_engine, extract, func, and_
 from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
                         UniqueConstraint, Index)
@@ -1195,6 +1196,20 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             measurement.gen_num_value_notes = attribute_value
         self._session.commit()
 
+    def delete_manual_measurements(self, gen_num_value_uuids):
+        """
+        Delete the manual measurements corresponding to the specified
+        gen_num_value_uuids.
+        """
+        if not is_list_like(gen_num_value_uuids):
+            gen_num_value_uuids = [gen_num_value_uuids, ]
+        for gen_num_value_uuid in gen_num_value_uuids:
+            measurement = self._get_generic_num_value(gen_num_value_uuid)
+            observation = self._get_observation(measurement.observation_id)
+            self._session.delete(observation)
+            self._session.delete(measurement)
+        self._session.commit()
+
     # ---- Timeseries
     def _get_timeseriesdata(self, date_time, obs_id, data_type):
         """
@@ -1259,7 +1274,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         the specified monitoring station.
         """
         if isinstance(data_types, str) or isinstance(data_types, DataType):
-            data_types = [data_types,]
+            data_types = [data_types, ]
         if data_types is None:
             data_types = [
                 DataType.WaterLevel,
