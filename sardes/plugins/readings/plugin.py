@@ -389,11 +389,3 @@ class Readings(SardesPlugin):
                 table = self._tseries_data_tables[obs_well_id]
                 table.update_model_metadata()
                 table.update_model_data()
-
-    # ---- Plots
-    def _request_plot_readings(self, obs_well_data):
-        """
-        Handle when a request has been made to show the data of the currently
-        selected well in a plot.
-        """
-        self.view_timeseries_data(obs_well_data.name)
