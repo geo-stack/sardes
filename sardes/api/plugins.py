@@ -547,8 +547,7 @@ class SardesPlugin(SardesPluginBase):
         is_visible = self.get_option('is_visible', False)
         is_docked = self.get_option('is_docked', True)
         if is_visible and not is_docked:
-            self.dockwindow.show()
-            self.dockwindow.raise_()
+            self.dockwindow.undock()
 
     def close_plugin(self):
         """
