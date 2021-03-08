@@ -252,5 +252,26 @@ def test_close_plugins_when_undocked(mainwindow, qtbot):
     # the mainwindow is done in the mainwindow fixture deconstruction,
     # so we do not need to assert this here.
 
+
+def test_restart_plugins_when_undocked(mainwindow, qtbot):
+    """
+    Test that each plugin are reinitialized correctly in an undocked state
+    as per the previous test and test that docking the plugin back in the
+    mainwindow is working as expected.
+    """
+    count = 0
+    for plugin in mainwindow.internal_plugins:
+        if plugin.dockwindow is not None:
+            count += 1
+            assert not plugin.dockwindow.is_docked()
+            assert plugin.dockwindow.isVisible()
+
+            # Dock the plugin back in the mainwindow.
+            plugin.dockwindow.dock()
+            assert plugin.dockwindow.is_docked()
+            assert plugin.dockwindow.isVisible()
+    assert count > 0
+
+
 if __name__ == "__main__":
     pytest.main(['-x', __file__, '-v', '-rw'])
