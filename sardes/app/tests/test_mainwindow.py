@@ -56,6 +56,11 @@ def mainwindow(qtbot, mocker):
     with qtbot.waitSignal(mainwindow.sig_about_to_close):
         mainwindow.close()
 
+    # Make sure all plugins dockwindow are closed.
+    for plugin in mainwindow.internal_plugins:
+        if plugin.dockwindow is not None:
+            assert not plugin.dockwindow.isVisible()
+
 
 # =============================================================================
 # ---- Tests for MainWindow
@@ -186,9 +191,6 @@ def test_reset_window_layout(mainwindow, qtbot, mocker):
     assert mainwindow.readings_plugin.dockwindow.is_visible()
 
 
-# =============================================================================
-# ---- Tests show readings
-# =============================================================================
 def test_view_readings(mainwindow, qtbot, database, readings_data,
                        obswells_data):
     """
@@ -232,6 +234,23 @@ def test_view_readings(mainwindow, qtbot, database, readings_data,
     readings_plugin.tabwidget.tabCloseRequested.emit(0)
     qtbot.waitUntil(lambda: len(readings_plugin._tseries_data_tables) == 0)
 
+
+def test_close_plugins_when_undocked(mainwindow, qtbot):
+    """
+    Test that each plugins are closed correctly when they are undocked.
+    """
+    count = 0
+    for plugin in mainwindow.internal_plugins:
+        if plugin.dockwindow is not None:
+            count += 1
+            assert plugin.dockwindow.is_docked()
+            plugin.dockwindow.undock()
+            assert not plugin.dockwindow.is_docked()
+    assert count > 0
+
+    # The assertion that each plugin's dockwindow is closed alonside
+    # the mainwindow is done in the mainwindow fixture deconstruction,
+    # so we do not need to assert this here.
 
 if __name__ == "__main__":
     pytest.main(['-x', __file__, '-v', '-rw'])
