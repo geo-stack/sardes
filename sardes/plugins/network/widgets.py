@@ -96,23 +96,37 @@ class PublishNetworkDialog(QDialog):
                 self.iri_quality_chbox.isChecked()))
 
         self.iri_groupbox = QGroupBox(_('Attached Files'))
+
+        help_qlabel = QLabel(_(
+            "Select the attachments you want to generate and attach to "
+            "the kml file. "
+            "The IRI (Internationalized Resource Identifier) fields "
+            "correspond to the paths of the folders where the attachments "
+            "will be hosted once published."
+            ))
+        help_qlabel.setWordWrap(True)
+        help_qlabel.setTextInteractionFlags(Qt.TextSelectableByMouse)
+
         iri_layout = QGridLayout(self.iri_groupbox)
-        iri_layout.addWidget(self.iri_data_chbox, 0, 0)
-        iri_layout.addWidget(self.iri_logs_chbox, 1, 0)
-        iri_layout.addWidget(self.iri_graphs_chbox, 2, 0)
-        iri_layout.addWidget(self.iri_quality_chbox, 3, 0)
+
+        iri_layout.addWidget(help_qlabel, 0, 0, 1, 4)
+
+        iri_layout.addWidget(self.iri_data_chbox, 1, 0)
+        iri_layout.addWidget(self.iri_logs_chbox, 2, 0)
+        iri_layout.addWidget(self.iri_graphs_chbox, 3, 0)
+        iri_layout.addWidget(self.iri_quality_chbox, 4, 0)
 
         iri_layout.setColumnMinimumWidth(1, 25)
 
-        iri_layout.addWidget(QLabel(_("IRI:")), 0, 2)
         iri_layout.addWidget(QLabel(_("IRI:")), 1, 2)
         iri_layout.addWidget(QLabel(_("IRI:")), 2, 2)
         iri_layout.addWidget(QLabel(_("IRI:")), 3, 2)
+        iri_layout.addWidget(QLabel(_("IRI:")), 4, 2)
 
-        iri_layout.addWidget(self.iri_data_ledit, 0, 3)
-        iri_layout.addWidget(self.iri_logs_ledit, 1, 3)
-        iri_layout.addWidget(self.iri_graphs_ledit, 2, 3)
-        iri_layout.addWidget(self.iri_quality_ledit, 3, 3)
+        iri_layout.addWidget(self.iri_data_ledit, 1, 3)
+        iri_layout.addWidget(self.iri_logs_ledit, 2, 3)
+        iri_layout.addWidget(self.iri_graphs_ledit, 3, 3)
+        iri_layout.addWidget(self.iri_quality_ledit, 4, 3)
         iri_layout.setColumnMinimumWidth(3, 400)
 
         # Setup the status bar.
@@ -233,3 +247,12 @@ class PublishNetworkDialog(QDialog):
         else:
             self.sig_closed.emit()
             super().closeEvent(event)
+
+
+if __name__ == '__main__':
+    import sys
+    from qtpy.QtWidgets import QApplication
+    app = QApplication(sys.argv)
+    dialog = PublishNetworkDialog()
+    dialog.show()
+    sys.exit(app.exec_())
