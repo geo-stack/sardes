@@ -407,6 +407,7 @@ class MainWindowBase(QMainWindow):
             # Close the database connection manager.
             self.db_connection_manager.close(
                 callback=self._handle_project_manager_closed)
+            event.ignore()
         elif self._is_closing is True:
             event.ignore()
         elif self._is_closing is False:
