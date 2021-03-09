@@ -221,6 +221,21 @@ class ObsWellsTableWidget(SardesTableWidget):
         if current_obs_well_data is not None:
             self.sig_view_data.emit(current_obs_well_data.name, False)
 
+    def show_in_google_maps(self):
+        """
+        Search the monitoring station in Google map on the
+        appropriate Web browser for the user’s desktop environment.
+        """
+        current_obs_well_data = self.get_current_obs_well_data()
+        if current_obs_well_data is not None:
+            lat_dd = current_obs_well_data['latitude']
+            lon_dd = current_obs_well_data['longitude']
+            url = ("https://www.google.com/maps/search/"
+                   "?api=1&query={},{}"
+                   ).format(lat_dd, lon_dd)
+            return QDesktopServices.openUrl(QUrl(url))
+        return False
+
 
 class FileAttachmentManager(QObject):
     """
