@@ -468,7 +468,6 @@ class Readings(SardesPlugin):
         run_tasks = False
         for obs_well_uuid in obs_well_uuids:
             if obs_well_uuid in self._tseries_data_tables:
-                print('COUCOU MOTHERFUCKER')
                 run_tasks = True
                 table = self._tseries_data_tables[obs_well_uuid]
                 datatypes = [DataType.WaterLevel,
