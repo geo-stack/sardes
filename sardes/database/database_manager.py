@@ -834,7 +834,7 @@ class DatabaseConnectionManager(TaskManagerBase):
             The indexes of the dataframe correspond, respectively, to the
             datetime (datetime), observation ID (str) and the data type
             (DataType) corresponding to the edited value.
-       obs_well_id: object
+        obs_well_id: object
             A unique identifier used to reference the observation well in
             the database for which time series data will be edited.
         """

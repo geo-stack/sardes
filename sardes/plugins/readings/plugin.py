@@ -41,6 +41,8 @@ class ReadingsTableModel(SardesTableModel):
         self._obs_well_data = obs_well_data
         self._obs_well_uuid = obs_well_data.name
         self._repere_data = pd.Series([], dtype=object)
+        self._manual_measurements = pd.DataFrame(
+            [], columns=['datetime', 'value'])
 
     def create_delegate_for_column(self, view, column):
         if isinstance(column, DataType):
@@ -50,6 +52,21 @@ class ReadingsTableModel(SardesTableModel):
             return NotEditableDelegate(view)
 
     # ---- Database connection
+    def set_obs_well_data(self, obs_well_data):
+        self._obs_well_data = obs_well_data.loc[self._obs_well_uuid]
+        self._table_title = str(self._obs_well_data['obs_well_id'])
+
+    def manual_measurements(self):
+        return self._manual_measurements
+
+    def set_manual_measurements(self, manual_measurements):
+        self._manual_measurements = (
+            manual_measurements
+            [manual_measurements['sampling_feature_uuid'] ==
+             self._obs_well_uuid]
+            [['datetime', 'value']]
+            .copy())
+
     def set_repere_data(self, repere_data):
         repere_data = (
             repere_data
@@ -128,31 +145,44 @@ class ReadingsTableWidget(SardesTableWidget):
         self._parent = parent
         self.plot_viewer = None
 
-    def update_model_metadata(self):
-        self.model().db_connection_manager.get(
-            'repere_data', callback=self.model().set_repere_data)
+    def set_obs_well_data(self, obs_well_data):
+        """Set the observation well data of the model and plot viewer."""
+        self.model().set_obs_well_data(obs_well_data)
+        if self.plot_viewer is not None:
+            self.update_plot_viewer_title()
 
-    def update_model_data(self):
-        self.model().sig_data_about_to_be_updated.emit()
+    def set_repere_data(self, repere_data):
+        """Set the repere data of the model."""
+        self.model().set_repere_data(repere_data)
 
-        # Get the timeseries data for that observation well.
-        self.model().db_connection_manager.get_timeseries_for_obs_well(
-            self.model()._obs_well_uuid,
-            [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
-            callback=self.set_model_data
-            )
+    def set_manual_measurements(self, measurements):
+        """
+        Set the water level manual measurements of the model and plot viewer.
+        """
+        self.model().set_manual_measurements(measurements)
+        if self.plot_viewer is not None:
+            self.plot_viewer.set_manual_measurements(
+                DataType.WaterLevel, self.model().manual_measurements())
 
     def set_model_data(self, dataf):
+        """
+        Set the readings data of the model and plot viewer.
+        """
+        self.model().sig_data_about_to_be_updated.emit()
         self.model().set_model_data(dataf)
         self.model().sig_data_updated.emit()
         if self.plot_viewer is not None:
             self.plot_viewer.update_data(
                 self.model().dataf, self.model()._obs_well_data)
 
+            # We need to set the manual measurements again because the axes
+            # are completely cleansed from the figure whn the data are
+            # updated. See cgq-qgc/sardes#409.
+            self.plot_viewer.set_manual_measurements(
+                DataType.WaterLevel, self.model().manual_measurements())
+
     def get_formatted_data(self):
-        """
-        Return a dataframe contraining formatted readings data.
-        """
+        """Return a dataframe contraining formatted readings data."""
         return format_reading_data(
             self.model().dataf, self.model()._repere_data)
 
@@ -166,20 +196,12 @@ class ReadingsTableWidget(SardesTableWidget):
 
             self.plot_viewer = TimeSeriesPlotViewer(parent=None)
             self.plot_viewer.setWindowIcon(get_icon('show_plot'))
-
-            # Set the title of the window.
-            window_title = '{}'.format(obs_well_data['obs_well_id'])
-            if obs_well_data['common_name']:
-                window_title += ' - {}'.format(obs_well_data['common_name'])
-            if obs_well_data['municipality']:
-                window_title += ' ({})'.format(obs_well_data['municipality'])
-            self.plot_viewer.setWindowTitle(window_title)
+            self.update_plot_viewer_title()
 
             # Set the data of the plot viewer.
             self.plot_viewer.set_data(self.model().dataf, obs_well_data)
-            self.model().db_connection_manager.get(
-                'manual_measurements',
-                callback=self._set_plotviewer_manual_measurements)
+            self.plot_viewer.set_manual_measurements(
+                DataType.WaterLevel, self.model().manual_measurements())
 
         if self.plot_viewer.windowState() == Qt.WindowMinimized:
             self.plot_viewer.setWindowState(Qt.WindowNoState)
@@ -187,15 +209,18 @@ class ReadingsTableWidget(SardesTableWidget):
         self.plot_viewer.activateWindow()
         self.plot_viewer.raise_()
 
-    def _set_plotviewer_manual_measurements(self, measurements):
+    def update_plot_viewer_title(self):
         """
-        Set the water level manual measurements of the plot viewer.
+        Setup the window title of the plot viewer.
         """
-        obs_well_uuid = self.model()._obs_well_data.name
-        measurements = measurements[
-            measurements['sampling_feature_uuid'] == obs_well_uuid]
-        self.plot_viewer.set_manual_measurements(
-            DataType.WaterLevel, measurements[['datetime', 'value']])
+        obs_well_data = self.model()._obs_well_data
+
+        window_title = '{}'.format(obs_well_data['obs_well_id'])
+        if obs_well_data['common_name']:
+            window_title += ' - {}'.format(obs_well_data['common_name'])
+        if obs_well_data['municipality']:
+            window_title += ' ({})'.format(obs_well_data['municipality'])
+        self.plot_viewer.setWindowTitle(window_title)
 
     # ---- Qt overrides
     def closeEvent(self, event):
@@ -258,7 +283,9 @@ class Readings(SardesPlugin):
         """
         super().register_plugin()
         self.main.db_connection_manager.sig_tseries_data_changed.connect(
-            self._update_readings_tables)
+            self._handle_tseries_data_changed)
+        self.main.db_connection_manager.sig_database_data_changed.connect(
+            self._handle_database_data_changed)
         self.main.db_connection_manager.sig_database_disconnected.connect(
             self.tabwidget.close_all_tables)
 
@@ -285,18 +312,6 @@ class Readings(SardesPlugin):
             self.main.unregister_table(table.tableview)
 
     # ---- Private methods
-    def _update_tab_names(self):
-        """
-        Append a '*' symbol at the end of a tab name when its corresponding
-        table have unsaved edits.
-        """
-        for index in range(self.count()):
-            table = self.tabwidget.widget(index)
-            tab_text = table.get_table_title()
-            if table.tableview.model().has_unsaved_data_edits():
-                tab_text += '*'
-            self.tabwidget.setTabText(index, tab_text)
-
     @Slot(object)
     def _handle_data_table_destroyed(self, obs_well_uuid):
         """
@@ -355,7 +370,8 @@ class Readings(SardesPlugin):
             triggered=table_widget.plot_readings,
             iconsize=get_iconsize()
             )
-        table_widget.add_toolbar_widget(show_plot_btn)
+        table_widget._actions['plot_data'] = table_widget.add_toolbar_widget(
+            show_plot_btn)
 
         table_widget.install_tool(HydrographTool(table_widget),
                                   after='copy_to_clipboard')
@@ -376,24 +392,91 @@ class Readings(SardesPlugin):
         if self.dockwindow.is_docked():
             self.main.register_table(table_widget.tableview)
 
-        table_widget.update_model_metadata()
-        table_widget.update_model_data()
+        self.main.db_connection_manager.get(
+            'manual_measurements',
+            callback=table_widget.set_manual_measurements,
+            postpone_exec=True)
+        self.main.db_connection_manager.get(
+            'repere_data',
+            callback=table_widget.set_repere_data,
+            postpone_exec=True)
+        self.main.db_connection_manager.get_timeseries_for_obs_well(
+            obs_well_uuid,
+            [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
+            callback=table_widget.set_model_data,
+            postpone_exec=True)
+        self.main.db_connection_manager.run_tasks()
 
-    def _update_readings_tables(self, obs_well_ids):
+    # ---- Database Changes Handlers
+    def _handle_database_data_changed(self, data_names):
+        """
+        Handle when data needed by the readings table changed.
+        """
+        run_tasks = False
+        for name in data_names:
+            if name in ['manual_measurements']:
+                run_tasks = True
+                self.main.db_connection_manager.get(
+                    'manual_measurements',
+                    callback=self._set_manual_measurements,
+                    postpone_exec=True)
+            if name in ['repere_data']:
+                run_tasks = True
+                self.main.db_connection_manager.get(
+                    'repere_data',
+                    callback=self._set_repere_data,
+                    postpone_exec=True)
+            if name in ['observation_wells_data']:
+                run_tasks = True
+                self.main.db_connection_manager.get(
+                    'observation_wells_data',
+                    callback=self._set_obs_well_data,
+                    postpone_exec=True)
+        if run_tasks is True:
+            self.main.db_connection_manager.run_tasks()
+
+    def _set_obs_well_data(self, obs_well_data):
+        """
+        Set the observation well data for all readings tables currently
+        opened in Sardes.
+        """
+        for obs_well_uuid, table in self._tseries_data_tables.items():
+            table.set_obs_well_data(obs_well_data)
+        self.tabwidget._update_tab_names()
+
+    def _set_manual_measurements(self, manual_measurements):
+        """
+        Set the manual measurements for all readings tables currently
+        opened in Sardes.
+        """
+        for obs_well_uuid, table in self._tseries_data_tables.items():
+            table.set_manual_measurements(manual_measurements)
+
+    def _set_repere_data(self, repere_data):
+        """
+        Set the repere data for all readings tables currently
+        opened in Sardes.
+        """
+        for obs_well_uuid, table in self._tseries_data_tables.items():
+            table.set_repere_data(repere_data)
+
+    def _handle_tseries_data_changed(self, obs_well_uuids):
         """
         Update the readings tables according to the provided list of
-        observation well ids.
+        observation well uuids.
         """
-        for obs_well_id in obs_well_ids:
-            if obs_well_id in self._tseries_data_tables:
-                table = self._tseries_data_tables[obs_well_id]
-                table.update_model_metadata()
-                table.update_model_data()
-
-    # ---- Plots
-    def _request_plot_readings(self, obs_well_data):
-        """
-        Handle when a request has been made to show the data of the currently
-        selected well in a plot.
-        """
-        self.view_timeseries_data(obs_well_data.name)
+        run_tasks = False
+        for obs_well_uuid in obs_well_uuids:
+            if obs_well_uuid in self._tseries_data_tables:
+                run_tasks = True
+                table = self._tseries_data_tables[obs_well_uuid]
+                datatypes = [DataType.WaterLevel,
+                             DataType.WaterTemp,
+                             DataType.WaterEC]
+                self.main.db_connection_manager.get_timeseries_for_obs_well(
+                    obs_well_uuid,
+                    datatypes,
+                    callback=table.set_model_data,
+                    postpone_exec=True)
+        if run_tasks is True:
+            self.main.db_connection_manager.run_tasks()
