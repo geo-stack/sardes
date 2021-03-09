@@ -21,12 +21,14 @@ os.environ['SARDES_PYTEST'] = 'True'
 import pytest
 
 # ---- Local imports
+from sardes.api.database_accessor import init_tseries_edits
+from sardes.api.timeseries import DataType
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.plugins.readings import SARDES_PLUGIN_CLASS
 from sardes.widgets.tableviews import QMessageBox
 from sardes.database.accessors import DatabaseAccessorSardesLite
 from sardes.app.mainwindow import MainWindowBase
-from sardes.api.timeseries import DataType
+
 
 
 # =============================================================================
@@ -84,6 +86,9 @@ def mainwindow(qtbot, mocker, dbconnmanager, dbaccessor, obswell_uuid,
     table = mainwindow.plugin._tseries_data_tables[obswell_uuid]
     qtbot.waitUntil(lambda: table.tableview.row_count() == len(readings_data))
     assert table.isVisible()
+    assert not table.model()._repere_data.empty
+    assert (table.model().manual_measurements()['value'].values.tolist() ==
+            [5.23, 4.36, 4.91])
 
     yield mainwindow
 
@@ -92,10 +97,46 @@ def mainwindow(qtbot, mocker, dbconnmanager, dbaccessor, obswell_uuid,
     with qtbot.waitSignal(mainwindow.sig_about_to_close):
         mainwindow.close()
 
+    for table in mainwindow.plugin._tseries_data_tables.values():
+        assert not table.isVisible()
+        assert table.plot_viewer is None
+
 
 # =============================================================================
 # ---- Tests
 # =============================================================================
+def test_plot_viewer(mainwindow, qtbot, obswell_uuid, readings_data):
+    """
+    Test that plotting the monitoring data is working as expected.
+    """
+    table = mainwindow.plugin._tseries_data_tables[obswell_uuid]
+    assert table.plot_viewer is None
+
+    # Test that the plot viewer is created as expected.
+    table.plot_readings()
+    assert table.plot_viewer.isVisible()
+    assert (table.plot_viewer.windowTitle() ==
+            "03037041 - St-Paul-d'Abbotsford (Saint-Paul-d'Abbotsford)")
+
+    # Assert that the axes were created as expected.
+    assert len(table.plot_viewer.canvas.figure.tseries_axes_list) == 3
+    ax_wlvl = table.plot_viewer.canvas.figure.tseries_axes_list[0]
+    assert ax_wlvl.tseries_group.data_type == DataType.WaterLevel
+    ax_wtemp = table.plot_viewer.canvas.figure.tseries_axes_list[1]
+    assert ax_wtemp.tseries_group.data_type == DataType.WaterTemp
+    ax_wec = table.plot_viewer.canvas.figure.tseries_axes_list[2]
+    assert ax_wec.tseries_group.data_type == DataType.WaterEC
+
+    # Assert that the manual measurements were plotted as expected.
+    artist = ax_wlvl._mpl_artist_handles['manual_measurements']
+    assert (list(artist.get_ydata()) == [5.23, 4.36, 4.91])
+
+    # Assert that the monitoring data were plotted as expected.
+    artist = ax_wlvl._mpl_artist_handles['data'][1]
+    assert (list(artist.get_ydata()) ==
+            readings_data[DataType.WaterLevel].values.tolist())
+
+
 def test_delete_timeseries_data(mainwindow, qtbot, mocker, obswell_uuid,
                                 readings_data):
     """
