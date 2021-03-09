@@ -1160,6 +1160,8 @@ class TimeSeriesPlotViewer(QMainWindow):
 
         # Axes visibility.
         self.visible_axes_btn = ToggleVisibilityToolButton(get_iconsize())
+        self.visible_axes_btn.setToolTip(
+            _("Toggle graph element visibility"))
         self.visible_axes_btn.sig_item_clicked.connect(
             self._handle_axe_visibility_changed)
         self.axes_toolbar.addWidget(self.visible_axes_btn)
