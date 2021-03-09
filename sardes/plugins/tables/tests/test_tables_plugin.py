@@ -20,7 +20,8 @@ os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import pytest
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, QUrl
+from qtpy.QtGui import QDesktopServices
 
 # ---- Local imports
 from sardes.plugins.tables import SARDES_PLUGIN_CLASS
@@ -123,6 +124,37 @@ def test_disconnect_from_database(mainwindow, qtbot):
     for index in range(mainwindow.plugin.table_count()):
         table = tabwidget.widget(index)
         assert table.tableview.row_count() == 0
+
+
+# =============================================================================
+# ---- Tests Table Observation Wells
+# =============================================================================
+def test_show_in_google_maps(mainwindow, qtbot, mocker):
+    """
+    Test that the tool to show the currently selected well in Google maps is
+    working as expected.
+    """
+    tablewidget = mainwindow.plugin._tables['table_observation_wells']
+    tableview = tablewidget.tableview
+    tablemodel = tablewidget.model()
+
+    # Select the tab corresponding to the manual measurements.
+    mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
+    qtbot.wait(300)
+
+    # We are selecting the first well in the table.
+    selection_model = tableview.selectionModel()
+    selection_model.setCurrentIndex(
+        tablemodel.index(0, 0), selection_model.SelectCurrent)
+
+    # We are patching QDesktopServices.openUrl because we don't want to
+    # slow down tests by opening web pages on an external browser.
+    patcher_qdesktopservices = mocker.patch.object(
+        QDesktopServices, 'openUrl', return_value=True)
+    tablewidget.show_in_google_maps()
+    patcher_qdesktopservices.assert_called_once_with(QUrl(
+        'https://www.google.com/maps/search/?api=1&query=45.445178,-72.828773'
+        ))
 
 
 # =============================================================================
