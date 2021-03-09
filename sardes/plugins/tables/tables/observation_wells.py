@@ -238,6 +238,8 @@ class ObsWellsTableWidget(SardesTableWidget):
         """
         Search the monitoring station in Google map on the
         appropriate Web browser for the user’s desktop environment.
+
+        https://developers.google.com/maps/documentation/urls/get-started
         """
         current_obs_well_data = self.get_current_obs_well_data()
         if current_obs_well_data is not None:
