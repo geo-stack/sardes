@@ -137,6 +137,68 @@ def test_plot_viewer(mainwindow, qtbot, obswell_uuid, readings_data):
             readings_data[DataType.WaterLevel].values.tolist())
 
 
+def test_plot_viewer_update(mainwindow, qtbot, obswell_uuid):
+    """
+    Test that the plot viewer is updated as expected when the monitoring data
+    and metadata of the observation well are modified.
+    """
+    table = mainwindow.plugin._tseries_data_tables[obswell_uuid]
+    table.plot_readings()
+    dbconnmanager = mainwindow.db_connection_manager
+
+    # Test that a change in the observation well data is reflected as
+    # expected in the plot viewer.
+    with qtbot.waitSignal(dbconnmanager.sig_database_data_changed):
+        dbconnmanager.set(
+            'observation_wells_data', obswell_uuid,
+            'obs_well_id', '12345', postpone_exec=True)
+        dbconnmanager.set(
+            'observation_wells_data', obswell_uuid,
+            'common_name', 'well_common_name', postpone_exec=True)
+        dbconnmanager.set(
+            'observation_wells_data', obswell_uuid,
+            'municipality', 'well_municipality', postpone_exec=True)
+        dbconnmanager.run_tasks()
+
+    expected_win_title = "12345 - well_common_name (well_municipality)"
+    qtbot.waitUntil(
+        lambda: table.plot_viewer.windowTitle() == expected_win_title)
+
+    # Test that a change in the manual measurements is reflected as
+    # expected in the plot viewer.
+    with qtbot.waitSignal(dbconnmanager.sig_database_data_changed):
+        dbconnmanager.set(
+            'manual_measurements',
+            table.model().manual_measurements().index[0],
+            'value', 1.5678)
+
+    ax_wlvl = table.plot_viewer.canvas.figure.tseries_axes_list[0]
+    artist = ax_wlvl._mpl_artist_handles['manual_measurements']
+    qtbot.waitUntil(lambda: list(artist.get_ydata()) == [1.5678, 4.36, 4.91])
+
+    # Test that a change in the readings data is reflected as
+    # expected in the plot viewer.
+    with qtbot.waitSignal(dbconnmanager.sig_tseries_data_changed):
+        tseries_edits = init_tseries_edits()
+        tseries_edits.loc[
+            (table.model().dataf['datetime'].iloc[0],
+             table.model().dataf['obs_id'].iloc[0],
+             DataType.WaterLevel),
+            'value'] = 103.25
+        dbconnmanager.save_timeseries_data_edits(
+            tseries_edits, obswell_uuid)
+    qtbot.wait(300)
+
+    ax_wlvl = table.plot_viewer.canvas.figure.tseries_axes_list[0]
+    artist_wlvl = ax_wlvl._mpl_artist_handles['data'][1]
+    qtbot.waitUntil(lambda: artist_wlvl.get_ydata()[0] == 103.25)
+
+    # We still need to assert that the manual measurements were not cleared
+    # in the process. See cgq-qgc/sardes#409.
+    artist_measurements_ = ax_wlvl._mpl_artist_handles['manual_measurements']
+    assert (list(artist_measurements_.get_ydata()) == [1.5678, 4.36, 4.91])
+
+
 def test_delete_timeseries_data(mainwindow, qtbot, mocker, obswell_uuid,
                                 readings_data):
     """
