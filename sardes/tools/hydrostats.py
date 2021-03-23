@@ -109,16 +109,15 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
     """
     A matplotlib canvas where the figure is drawn.
     """
-    BASE_ZOOM_SCALE = 1.25
 
     def __init__(self):
         figure = SatisticalHydrographFigure(figsize=(8, 6), facecolor='white')
         super().__init__(figure)
         self._setup_axes()
-        self.wlevels = None
+        wlevels = None
+        self._cur_year = 2016
         self._last_month = 12
         self._pool = 'all'
-        self._cur_year = 2016
 
         # Setup a matplotlib navigation toolbar, but hide it.
         toolbar = NavigationToolbar2QT(self, self)
@@ -134,14 +133,6 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
         ax.tick_params(axis='x', which='both', length=3)
         ax.tick_params(axis='y', which='both', length=0)
 
-        # Setup yaxis.
-        ax.set_ylabel("Niveau d'eau en m sous la surface",
-                      fontsize=16, labelpad=10)
-
-        # Setup xaxis.
-        ax.set_xticks(np.arange(-0.5, 11.51))
-        ax.set_xticklabels([])
-
     def copy_to_clipboard(self):
         buf = io.BytesIO()
         self.figure.savefig(buf)
@@ -150,13 +141,106 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
 
     def set_data(self, wlevels):
         self.wlevels = wlevels
-        self._cur_year = np.max(self.wlevels.index.year)
-        self.plot_statistical_hydrograph()
+        self.figure.plot_statistical_hydrograph(wlevels)
 
-    def plot_statistical_hydrograph(self):
+
+class SatisticalHydrographFigure(Figure):
+    def __init__(self, *args, **kargs):
+        super().__init__(*args, **kargs)
+        self.set_tight_layout(True)
+        self.xlabelpad = 10
+        self.ylabelpad = 10
+
+    def tight_layout(self, *args, **kargs):
+        """
+        Override matplotlib method to setup the margins of the axes.
+        """
+        if len(self.axes) == 0:
+            return
+        try:
+            # This is required when saving the figure in some format like
+            # pdf and svg.
+            renderer = self.canvas.get_renderer()
+        except AttributeError:
+            self.canvas.draw()
+            return
+
+        figborderpad = 15
+
+        figbbox = self.bbox
+        fheight = self.get_figheight()
+        fwidth = self.get_figwidth()
+
+        ax = self.axes[0]
+        axbbox = ax.bbox
+
+        bbox_xaxis_bottom, bbox_xaxis_top = (
+            ax.xaxis.get_ticklabel_extents(renderer))
+        bbox_yaxis_left, bbox_yaxis_right = (
+            ax.yaxis.get_ticklabel_extents(renderer))
+
+        bbox_yaxis_label = ax.yaxis.label.get_window_extent(renderer)
+        bbox_xaxis_label = ax.xaxis.label.get_window_extent(renderer)
+
+        # Calculate left margin width.
+        yaxis_width = axbbox.x0 - bbox_yaxis_left.x0
+        ylabel_width = bbox_yaxis_label.width + self.ylabelpad
+        left_margin = (
+            yaxis_width + ylabel_width + figborderpad
+            ) / figbbox.width
+
+        # Calculate right margin width.
+        xaxis_width = max(
+            bbox_xaxis_bottom.x1 - axbbox.x1,
+            bbox_xaxis_top.x1 - axbbox.x1,
+            0)
+        right_margin = (xaxis_width + figborderpad) / figbbox.width
+
+        # Calculate bottom margin height.
+        xaxis_height = axbbox.y0 - bbox_xaxis_bottom.y0
+        xlabel_height = bbox_xaxis_label.height + self.xlabelpad
+        print(xlabel_height)
+        bottom_margin = (
+            xaxis_height + xlabel_height + figborderpad
+            ) / figbbox.height
+        
+        # # Calculate top margin height.
+        # top_margin = self.setp['top_margin']
+        # if top_margin is None:
+        #     cursorinfotext_height = (
+        #         self.cursor.infotextheight + self.cursor.infotextpad if
+        #         self.cursor else 0
+        #         )
+        #     top_margin = (
+        #         figborderpad + cursorinfotext_height
+        #         ) / figbbox.height
+
+        top_margin = 0.5 / fheight
+
+        ax.set_position([
+            left_margin, bottom_margin,
+            1 - left_margin - right_margin, 1 - bottom_margin - top_margin
+            ])
+
+    def set_size_inches(self, *args, **kargs):
+        """
+        Override matplotlib method to force a call to tight_layout when
+        set_size_inches is called. This allow to keep the size of the margins
+        fixed when the canvas of this figure is resized.
+        """
+        super().set_size_inches(*args, **kargs)
+        self.tight_layout()
+
+
+    def plot_statistical_hydrograph(self, wlevels):
         # Organize month order and define first and last datetime value
         # for the current data.
-        ax = self.figure.axes[0]
+        ax = self.axes[0]
+        ax.clear()
+        if wlevels is None or wlevels.empty:
+            return
+
+        self._cur_year = np.max(wlevels.index.year)
         if self._last_month == 12:
             year_lbl = '{} {:d}'.format(_("Year"), self._cur_year)
             mth_idx = np.arange(12)
@@ -175,7 +259,7 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
         # Generate the percentiles.
         q = [100, 90, 75, 50, 25, 10, 0]
         percentiles, nyear = compute_monthly_statistics(
-            self.wlevels, q, self._pool)
+            wlevels, q, self._pool)
 
         # Plot the percentiles.
         xpos = np.arange(12)
@@ -189,31 +273,38 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
         ax.plot(xpos, percentiles[mth_idx, 3], '^k')
 
         # Plot the current water level data series.
-        cur_wlevels = self.wlevels[
-            (self.wlevels.index >= dtstart) & (self.wlevels.index <= dtend)]
+        cur_wlevels = wlevels[
+            (wlevels.index >= dtstart) & (wlevels.index <= dtend)]
         cur_rel_time = cur_wlevels.index.dayofyear.values / 365 * 12 - 0.5
         ax.plot(cur_rel_time, cur_wlevels.values, '.', color='red', ms=3.5)
 
-        # Axe limits.
+        # Set xaxis label.
+        ax.set_xlabel(year_lbl, fontsize=16, labelpad=30)
+
+        # Setup yaxis.
+        ax.set_ylabel("Niveau d'eau en m sous la surface",
+                      fontsize=16, labelpad=10)
+
+        # Axe limits and ticks.
         ymax = max(np.max(percentiles), np.max(cur_wlevels.values))
         ymin = min(np.min(percentiles), np.min(cur_wlevels.values))
         yrange = ymax - ymin
-        yoffset = 0.1 / self.figure.get_figwidth() * yrange
+        yoffset = 0.1 / self.get_figwidth() * yrange
         ax.axis([-0.75, 11.75, ymin-yoffset, ymax+yoffset])
         ax.invert_yaxis()
 
-        # Set xaxis label.
-        ax.set_xlabel(year_lbl, fontsize=16, labelpad=30)
+        ax.set_xticks(np.arange(-0.5, 11.51))
+        ax.set_xticklabels([])
 
         xlabelspos = np.arange(12)
         y = ymax+yoffset
         for m, n, x in zip(MONTHS[mth_idx], nyear[mth_idx], xlabelspos):
             offset = transforms.ScaledTranslation(
-                0, -5/72, self.figure.dpi_scale_trans)
+                0, -5/72, self.dpi_scale_trans)
             ax.text(x, y, m, ha='center', va='top', fontsize=12,
                     transform=ax.transData+offset)
             offset = transforms.ScaledTranslation(
-                0, -18/72, self.figure.dpi_scale_trans)
+                0, -18/72, self.dpi_scale_trans)
             ax.text(x, y, '(%d)' % n, ha='center', va='top', fontsize=9,
                     transform=ax.transData+offset)
 
@@ -226,8 +317,8 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
         We to do this because we want the text to be placed below each
         legend handle.
         """
-        ax = self.figure.axes[0]
-        ax2 = self.figure.add_axes([0, 0, 1, 1], facecolor=None)
+        ax = self.axes[0]
+        ax2 = self.add_axes([0, 0, 1, 1], facecolor=None)
         ax2.axis('off')
 
         labels = ['<10', '10-24', '25-75', '76-90', '>90',
@@ -240,15 +331,15 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
         handletextpad = 5
 
         trans_text = (
-            self.figure.dpi_scale_trans +
+            self.dpi_scale_trans +
             ScaledTranslation(0, 1, ax.transAxes) +
-            ScaledTranslation(0, borderaxespad/72, self.figure.dpi_scale_trans)
+            ScaledTranslation(0, borderaxespad/72, self.dpi_scale_trans)
             )
         trans_patch = (
-            self.figure.dpi_scale_trans +
+            self.dpi_scale_trans +
             ScaledTranslation(0, 1, ax.transAxes) +
             ScaledTranslation(0, (borderaxespad + fontsize + handletextpad)/72,
-                              self.figure.dpi_scale_trans))
+                              self.dpi_scale_trans))
         for i in range(5):
             patch = mpl.patches.Rectangle(
                 (handlelength * i + labelspacing * i, 0),
@@ -274,37 +365,6 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
         ax2.text(handlelength * (i + 1/2) + labelspacing * i, 0, labels[i],
                  ha='center', va='bottom', fontsize=fontsize,
                  transform=trans_text)
-
-
-class SatisticalHydrographFigure(Figure):
-    def __init__(self, *args, **kargs):
-        super().__init__(*args, **kargs)
-        self.set_tight_layout(True)
-
-    def tight_layout(self, *args, **kargs):
-        """
-        Override matplotlib method to setup the margins of the axes.
-        """
-        if len(self.axes):
-            fheight = self.get_figheight()
-            fwidth = self.get_figwidth()
-            left_margin = 0.85 / fwidth
-            right_margin = 0.1 / fwidth
-            bottom_margin = 0.8 / fheight
-            top_margin = 0.5 / fheight
-            self.axes[0].set_position([
-                left_margin, bottom_margin,
-                1 - left_margin - right_margin, 1 - bottom_margin - top_margin
-                ])
-
-    def set_size_inches(self, *args, **kargs):
-        """
-        Override matplotlib method to force a call to tight_layout when
-        set_size_inches is called. This allow to keep the size of the margins
-        fixed when the canvas of this figure is resized.
-        """
-        super().set_size_inches(*args, **kargs)
-        self.tight_layout()
 
 
 def compute_monthly_statistics(tseries, q, pool='all'):
