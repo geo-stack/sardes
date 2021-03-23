@@ -39,24 +39,24 @@ MONTHS = np.array(['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun',
 
 
 class SatisticalHydrographTool(SardesTool):
-    def _create_toolwidget(self):
-        data = (self.parent.model()
-                .dataf[[DataType.WaterLevel, 'datetime']]
-                .set_index('datetime', drop=True))
+    def __init__(self, parent):
+        super().__init__(
+            parent,
+            name='statistical_hydrograph_tool',
+            text=_("Statistical Hydrograph"),
+            icon='show_barplot',
+            tip=_("Show the statistical hydrograph for this record.")
+            )
+
+    def __init_toolwidget__(self):
         toolwidget = SatisticalHydrographWidget()
-        toolwidget.canvas.set_data(data)
+        toolwidget.canvas.set_data(
+            self.parent.model()
+            .dataf[[DataType.WaterLevel, 'datetime']]
+            .set_index('datetime', drop=True))
         return toolwidget
 
-    def icon(self):
-        return 'show_barplot'
-
-    def text(self):
-        return _("Statistical Hydrograph")
-
-    def tip(self):
-        return _('Show a statistical hydrograph.')
-
-    def title(self):
+    def __title__(self):
         obs_well_data = self.parent.model()._obs_well_data
         window_title = '{}'.format(obs_well_data['obs_well_id'])
         if obs_well_data['common_name']:

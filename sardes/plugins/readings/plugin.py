@@ -373,7 +373,7 @@ class Readings(SardesPlugin):
         table_widget._actions['plot_data'] = table_widget.add_toolbar_widget(
             show_plot_btn)
 
-        # Add statistical hydrographs.
+        # Add tools to the table.
         table_widget.install_tool(SatisticalHydrographTool(table_widget))
 
         table_widget.install_tool(HydrographTool(table_widget),
