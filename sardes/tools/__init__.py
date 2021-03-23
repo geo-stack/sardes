@@ -8,3 +8,4 @@
 # -----------------------------------------------------------------------------
 from .save2excel import SaveReadingsToExcelTool
 from .hydrographs import HydrographTool
+from .hydrostats import SatisticalHydrographTool

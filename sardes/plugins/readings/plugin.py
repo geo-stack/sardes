@@ -14,7 +14,6 @@ from sardes.config.locale import _
 # ---- Third party imports
 import pandas as pd
 from qtpy.QtCore import Qt, Slot
-from qtpy.QtWidgets import QApplication
 
 # ---- Local imports
 from sardes.config.icons import get_icon
@@ -29,8 +28,8 @@ from sardes.widgets.tableviews import (
     SardesTableWidget, NumEditDelegate, NotEditableDelegate,
     SardesStackedTableWidget)
 from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
-from .tools.hydrostats import SatisticalHydrographTool
-from sardes.tools import SaveReadingsToExcelTool, HydrographTool
+from sardes.tools import (
+    SaveReadingsToExcelTool, HydrographTool, SatisticalHydrographTool)
 
 
 """Readings plugin"""
