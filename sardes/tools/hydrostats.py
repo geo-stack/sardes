@@ -38,35 +38,62 @@ MONTHS = np.array(['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun',
                    'Jui', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'])
 
 
-class SatisticalHydrographFigure(Figure):
-    def __init__(self, *args, **kargs):
-        super().__init__(*args, **kargs)
-        self.set_tight_layout(True)
+class SatisticalHydrographTool(SardesTool):
+    def _create_toolwidget(self):
+        data = (self.parent.model()
+                .dataf[[DataType.WaterLevel, 'datetime']]
+                .set_index('datetime', drop=True))
+        toolwidget = SatisticalHydrographWidget()
+        toolwidget.canvas.set_data(data)
+        return toolwidget
 
-    def tight_layout(self, *args, **kargs):
-        """
-        Override matplotlib method to setup the margins of the axes.
-        """
-        if len(self.axes):
-            fheight = self.get_figheight()
-            fwidth = self.get_figwidth()
-            left_margin = 0.85 / fwidth
-            right_margin = 0.1 / fwidth
-            bottom_margin = 0.8 / fheight
-            top_margin = 0.5 / fheight
-            self.axes[0].set_position([
-                left_margin, bottom_margin,
-                1 - left_margin - right_margin, 1 - bottom_margin - top_margin
-                ])
+    def icon(self):
+        return 'show_barplot'
 
-    def set_size_inches(self, *args, **kargs):
-        """
-        Override matplotlib method to force a call to tight_layout when
-        set_size_inches is called. This allow to keep the size of the margins
-        fixed when the canvas of this figure is resized.
-        """
-        super().set_size_inches(*args, **kargs)
-        self.tight_layout()
+    def text(self):
+        return _("Statistical Hydrograph")
+
+    def tip(self):
+        return _('Show a statistical hydrograph.')
+
+    def title(self):
+        obs_well_data = self.parent.model()._obs_well_data
+        window_title = '{}'.format(obs_well_data['obs_well_id'])
+        if obs_well_data['common_name']:
+            window_title += ' - {}'.format(obs_well_data['common_name'])
+        if obs_well_data['municipality']:
+            window_title += ' ({})'.format(obs_well_data['municipality'])
+        return window_title
+
+
+class SatisticalHydrographWidget(QMainWindow):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.canvas = SatisticalHydrographCanvas()
+        self.setContextMenuPolicy(Qt.NoContextMenu)
+        self.setCentralWidget(self.canvas)
+        self.setup_toolbar()
+
+    def setup_toolbar(self):
+        toolbar = create_mainwindow_toolbar("stat hydrograph toolbar")
+        self.addToolBar(toolbar)
+        self.save_figure_btn = create_toolbutton(
+            self, icon='save',
+            text=_("Save"),
+            tip=_('Save the figure to a file'),
+            shortcut='Ctrl+S',
+            triggered=self.canvas.toolbar.save_figure,
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.save_figure_btn)
+
+        self.copy_to_clipboard_btn = create_toolbutton(
+            self, icon='copy_clipboard',
+            text=_("Copy"),
+            tip=_("Put a copy of the figure on the Clipboard."),
+            triggered=self.canvas.copy_to_clipboard,
+            shortcut='Ctrl+C',
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.copy_to_clipboard_btn)
 
 
 class SatisticalHydrographCanvas(FigureCanvasQTAgg):
@@ -240,62 +267,35 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
                  transform=trans_text)
 
 
-class SatisticalHydrographWidget(QMainWindow):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.canvas = SatisticalHydrographCanvas()
-        self.setContextMenuPolicy(Qt.NoContextMenu)
-        self.setCentralWidget(self.canvas)
-        self.setup_toolbar()
+class SatisticalHydrographFigure(Figure):
+    def __init__(self, *args, **kargs):
+        super().__init__(*args, **kargs)
+        self.set_tight_layout(True)
 
-    def setup_toolbar(self):
-        toolbar = create_mainwindow_toolbar("stat hydrograph toolbar")
-        self.addToolBar(toolbar)
-        self.save_figure_btn = create_toolbutton(
-            self, icon='save',
-            text=_("Save"),
-            tip=_('Save the figure to a file'),
-            shortcut='Ctrl+S',
-            triggered=self.canvas.toolbar.save_figure,
-            iconsize=get_iconsize())
-        toolbar.addWidget(self.save_figure_btn)
+    def tight_layout(self, *args, **kargs):
+        """
+        Override matplotlib method to setup the margins of the axes.
+        """
+        if len(self.axes):
+            fheight = self.get_figheight()
+            fwidth = self.get_figwidth()
+            left_margin = 0.85 / fwidth
+            right_margin = 0.1 / fwidth
+            bottom_margin = 0.8 / fheight
+            top_margin = 0.5 / fheight
+            self.axes[0].set_position([
+                left_margin, bottom_margin,
+                1 - left_margin - right_margin, 1 - bottom_margin - top_margin
+                ])
 
-        self.copy_to_clipboard_btn = create_toolbutton(
-            self, icon='copy_clipboard',
-            text=_("Copy"),
-            tip=_("Put a copy of the figure on the Clipboard."),
-            triggered=self.canvas.copy_to_clipboard,
-            shortcut='Ctrl+C',
-            iconsize=get_iconsize())
-        toolbar.addWidget(self.copy_to_clipboard_btn)
-
-
-class SatisticalHydrographTool(SardesTool):
-    def _create_toolwidget(self):
-        data = (self.parent.model()
-                .dataf[[DataType.WaterLevel, 'datetime']]
-                .set_index('datetime', drop=True))
-        toolwidget = SatisticalHydrographWidget()
-        toolwidget.canvas.set_data(data)
-        return toolwidget
-
-    def icon(self):
-        return 'show_barplot'
-
-    def text(self):
-        return _("Statistical Hydrograph")
-
-    def tip(self):
-        return _('Show a statistical hydrograph.')
-
-    def title(self):
-        obs_well_data = self.parent.model()._obs_well_data
-        window_title = '{}'.format(obs_well_data['obs_well_id'])
-        if obs_well_data['common_name']:
-            window_title += ' - {}'.format(obs_well_data['common_name'])
-        if obs_well_data['municipality']:
-            window_title += ' ({})'.format(obs_well_data['municipality'])
-        return window_title
+    def set_size_inches(self, *args, **kargs):
+        """
+        Override matplotlib method to force a call to tight_layout when
+        set_size_inches is called. This allow to keep the size of the margins
+        fixed when the canvas of this figure is resized.
+        """
+        super().set_size_inches(*args, **kargs)
+        self.tight_layout()
 
 
 def compute_monthly_statistics(tseries, q, pool='all'):
