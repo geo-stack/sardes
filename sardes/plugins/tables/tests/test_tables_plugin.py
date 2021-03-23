@@ -12,6 +12,7 @@ Tests for the Tables plugin.
 """
 
 # ---- Standard imports
+import datetime
 import os
 import os.path as osp
 from unittest.mock import Mock
@@ -19,7 +20,8 @@ os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import pytest
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, QUrl
+from qtpy.QtGui import QDesktopServices
 
 # ---- Local imports
 from sardes.plugins.tables import SARDES_PLUGIN_CLASS
@@ -122,6 +124,107 @@ def test_disconnect_from_database(mainwindow, qtbot):
     for index in range(mainwindow.plugin.table_count()):
         table = tabwidget.widget(index)
         assert table.tableview.row_count() == 0
+
+
+# =============================================================================
+# ---- Tests Table Observation Wells
+# =============================================================================
+def test_show_in_google_maps(mainwindow, qtbot, mocker):
+    """
+    Test that the tool to show the currently selected well in Google maps is
+    working as expected.
+    """
+    tablewidget = mainwindow.plugin._tables['table_observation_wells']
+    tableview = tablewidget.tableview
+    tablemodel = tablewidget.model()
+
+    # Select the tab corresponding to the manual measurements.
+    mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
+    qtbot.wait(300)
+
+    # We are selecting the first well in the table.
+    selection_model = tableview.selectionModel()
+    selection_model.setCurrentIndex(
+        tablemodel.index(0, 0), selection_model.SelectCurrent)
+
+    # We are patching QDesktopServices.openUrl because we don't want to
+    # slow down tests by opening web pages on an external browser.
+    patcher_qdesktopservices = mocker.patch.object(
+        QDesktopServices, 'openUrl', return_value=True)
+    tablewidget.show_in_google_maps()
+    patcher_qdesktopservices.assert_called_once_with(QUrl(
+        'https://www.google.com/maps/search/?api=1&query=45.445178,-72.828773'
+        ))
+
+
+# =============================================================================
+# ---- Tests Table Manual Measurements
+# =============================================================================
+def test_table_manual_measurements(mainwindow, qtbot, dbaccessor,
+                                   manual_measurements, obswells_data):
+    tablewidget = mainwindow.plugin._tables['table_manual_measurements']
+    tableview = tablewidget.tableview
+    tablemodel = tablewidget.model()
+
+    # Select the tab corresponding to the manual measurements.
+    mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
+    qtbot.wait(300)
+
+    assert mainwindow.plugin.current_table() == tablewidget
+    assert tableview.row_count() == len(manual_measurements)
+    assert tableview.column_count() == len(manual_measurements.columns)
+
+    # Add a new manual measurement.
+    new_row = len(manual_measurements)
+    tableview.new_row_action.trigger()
+    assert tablemodel.data_edit_count() == 1
+    assert tableview.row_count() == len(manual_measurements) + 1
+    assert (tableview.get_data_for_row(new_row) == ['', '', '', ''])
+
+    # Save the edits.
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablemodel.save_data_edits()
+    assert tablemodel.data_edit_count() == 0
+    assert (tableview.get_data_for_row(new_row) == ['', '', '', ''])
+
+    # Edit the data of the newly added row.
+    edited_data = [obswells_data.index[1],
+                   datetime.datetime(2001, 8, 2, 12, 34, 20),
+                   1.2345,
+                   'test_edit_newrow']
+    for i, value in enumerate(edited_data):
+        model_index = tablemodel.index(new_row, i)
+        assert tableview.is_data_editable_at(model_index)
+        tablemodel.set_data_edit_at(model_index, value)
+
+    assert tablemodel.data_edit_count() == i + 1
+    assert (tableview.get_data_for_row(new_row) ==
+            ['02200001', '2001-08-02 12:34', '1.2345', 'test_edit_newrow'])
+
+    # Save the edits.
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablemodel.save_data_edits()
+    assert tablemodel.data_edit_count() == 0
+    assert (tableview.get_data_for_row(new_row) ==
+            ['02200001', '2001-08-02 12:34', '1.2345', 'test_edit_newrow'])
+
+    # Delete the last two rows of the table.
+    selection_model = tableview.selectionModel()
+    selection_model.setCurrentIndex(
+        tablemodel.index(new_row, 0), selection_model.SelectCurrent)
+    selection_model.select(
+        tablemodel.index(new_row - 1, 0), selection_model.Select)
+    assert (tableview.get_rows_intersecting_selection() ==
+            [new_row - 1, new_row])
+
+    tableview.delete_row_action.trigger()
+    assert tablemodel.data_edit_count() == 1
+
+    # Save the edits.
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablemodel.save_data_edits()
+    assert tablemodel.data_edit_count() == 0
+    assert tableview.row_count() == len(manual_measurements) - 1
 
 
 # =============================================================================

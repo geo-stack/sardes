@@ -24,6 +24,7 @@ os.environ['SARDES_PYTEST'] = 'True'
 import numpy as np
 import pytest
 import pandas as pd
+from pandas.api.types import is_datetime64_any_dtype
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 
@@ -213,6 +214,57 @@ def test_add_get_del_construction_logs(dbaccessor0, tmp_path):
     # Remove the construction log file from the database.
     dbaccessor0.del_attachment(sampling_feature_uuid, attachment_type)
     assert dbaccessor0.get_stored_attachments_info().empty
+
+
+def test_manual_measurements(dbaccessor0, obswells_data, manual_measurements):
+    """
+    Test that adding, editing and retrieving manual water level measurements
+    is working as expected.
+
+    Regression test for cgq-qgc/sardes#424
+    """
+    # Add the observation wells.
+    for obs_well_uuid, obs_well_data in obswells_data.iterrows():
+        dbaccessor0.add_observation_wells_data(
+            obs_well_uuid, attribute_values=obs_well_data.to_dict())
+
+    # Test the empty manual measurement dataframe is formatted as expected.
+    # This covers the issue reported at cgq-qgc/sardes#427.
+    saved_manual_measurements = dbaccessor0.get_manual_measurements()
+    assert saved_manual_measurements.empty
+    assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
+
+    # Add manual measurements.
+    for index, row in manual_measurements.iterrows():
+        dbaccessor0.add_manual_measurements(index, row.to_dict())
+
+    saved_manual_measurements = dbaccessor0.get_manual_measurements()
+    assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
+    assert saved_manual_measurements.to_dict() == manual_measurements.to_dict()
+
+    # Edit a manual measurement.
+    gen_num_value_uuid = manual_measurements.index[0]
+    old_values = manual_measurements.loc[gen_num_value_uuid].to_dict()
+    edited_values = {
+        'sampling_feature_uuid': obswells_data.index[1],
+        'datetime': datetime.datetime(2008, 1, 13, 11, 4, 23),
+        'value': 7.45,
+        'notes': 'test_edit_manual_measurements'}
+    for attribute_name, attribute_value in edited_values.items():
+        assert attribute_value != old_values[attribute_name]
+        dbaccessor0.set_manual_measurements(
+            gen_num_value_uuid, attribute_name, attribute_value)
+
+    saved_manual_measurements = dbaccessor0.get_manual_measurements()
+    assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
+    assert (saved_manual_measurements.loc[gen_num_value_uuid].to_dict() ==
+            edited_values)
+
+    # Delete a manual measurements.
+    dbaccessor0.delete_manual_measurements(gen_num_value_uuid)
+    saved_manual_measurements = dbaccessor0.get_manual_measurements()
+    assert (saved_manual_measurements.to_dict() ==
+            manual_measurements.iloc[1:].to_dict())
 
 
 # =============================================================================
@@ -651,4 +703,4 @@ def test_delete_timeseries(dbaccessor):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
+    pytest.main(['-x', __file__, '-v', '-rw'])

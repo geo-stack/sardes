@@ -15,7 +15,8 @@ import tempfile
 
 # ---- Third party imports
 import pandas as pd
-from qtpy.QtCore import Signal, QObject
+from qtpy.QtCore import Signal, QObject, QUrl
+from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import QMenu, QFileDialog
 
 # ---- Local imports
@@ -155,6 +156,17 @@ class ObsWellsTableWidget(SardesTableWidget):
             iconsize=get_iconsize()
             )
 
+        # Setup show in Google map button.
+        self.show_gmap_btn = create_toolbutton(
+            self,
+            icon='map_search',
+            text=_("Show in Google Maps"),
+            tip=_("Show the currently selected observation "
+                  "well in Google Maps."),
+            triggered=self.show_in_google_maps,
+            iconsize=get_iconsize()
+            )
+
         # Setup construction logs manager.
         self.construction_logs_manager = FileAttachmentManager(
             self, icon='construction_log', attachment_type=1,
@@ -209,7 +221,8 @@ class ObsWellsTableWidget(SardesTableWidget):
                 "currently selected station.")
             )
 
-        return [self.show_data_btn, self.construction_logs_manager.toolbutton,
+        return [self.show_data_btn, self.show_gmap_btn,
+                self.construction_logs_manager.toolbutton,
                 self.water_quality_reports.toolbutton]
 
     def _view_current_timeseries_data(self):
@@ -220,6 +233,23 @@ class ObsWellsTableWidget(SardesTableWidget):
         current_obs_well_data = self.get_current_obs_well_data()
         if current_obs_well_data is not None:
             self.sig_view_data.emit(current_obs_well_data.name, False)
+
+    def show_in_google_maps(self):
+        """
+        Search the monitoring station in Google map on the
+        appropriate Web browser for the user’s desktop environment.
+
+        https://developers.google.com/maps/documentation/urls/get-started
+        """
+        current_obs_well_data = self.get_current_obs_well_data()
+        if current_obs_well_data is not None:
+            lat_dd = current_obs_well_data['latitude']
+            lon_dd = current_obs_well_data['longitude']
+            url = ("https://www.google.com/maps/search/"
+                   "?api=1&query={},{}"
+                   ).format(lat_dd, lon_dd)
+            return QDesktopServices.openUrl(QUrl(url))
+        return False
 
 
 class FileAttachmentManager(QObject):

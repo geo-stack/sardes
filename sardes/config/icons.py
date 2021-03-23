@@ -171,6 +171,9 @@ FA_ICONS = {
     'magnifying_glass': [
         ('mdi.magnify',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
+    'map_search': [
+        ('mdi.map-search-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'menu_down': [
         ('mdi.menu-down',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],

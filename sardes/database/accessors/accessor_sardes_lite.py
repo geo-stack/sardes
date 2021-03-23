@@ -19,6 +19,7 @@ import uuid
 # ---- Third party imports
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_list_like
 from sqlalchemy import create_engine, extract, func, and_
 from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
                         UniqueConstraint, Index)
@@ -1169,6 +1170,11 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             query.statement, query.session.bind, coerce_float=True)
         measurements.set_index('gen_num_value_uuid', inplace=True, drop=True)
 
+        # Make sure datetime data is considered as datetime.
+        # This is required to avoid problems when the manual measurements
+        # table is empty. See cgq-qgc/sardes#427.
+        measurements['datetime'] = pd.to_datetime(measurements['datetime'])
+
         return measurements
 
     def set_manual_measurements(self, gen_num_value_uuid, attribute_name,
@@ -1182,12 +1188,26 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             observation = self._get_observation(measurement.observation_id)
             observation.sampling_feature_uuid = attribute_value
         elif attribute_name == 'datetime':
-            observation = self._get_observation(measurement.observation_uuid)
+            observation = self._get_observation(measurement.observation_id)
             observation.obs_datetime = attribute_value
         elif attribute_name == 'value':
             measurement.gen_num_value = float(attribute_value)
         elif attribute_name == 'notes':
             measurement.gen_num_value_notes = attribute_value
+        self._session.commit()
+
+    def delete_manual_measurements(self, gen_num_value_uuids):
+        """
+        Delete the manual measurements corresponding to the specified
+        gen_num_value_uuids.
+        """
+        if not is_list_like(gen_num_value_uuids):
+            gen_num_value_uuids = [gen_num_value_uuids, ]
+        for gen_num_value_uuid in gen_num_value_uuids:
+            measurement = self._get_generic_num_value(gen_num_value_uuid)
+            observation = self._get_observation(measurement.observation_id)
+            self._session.delete(observation)
+            self._session.delete(measurement)
         self._session.commit()
 
     # ---- Timeseries
@@ -1254,7 +1274,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         the specified monitoring station.
         """
         if isinstance(data_types, str) or isinstance(data_types, DataType):
-            data_types = [data_types,]
+            data_types = [data_types, ]
         if data_types is None:
             data_types = [
                 DataType.WaterLevel,
