@@ -79,7 +79,10 @@ class SardesToolBase(QAction):
     def toolwidget(self):
         """Return the main widget of this tool."""
         if self._toolwidget is None:
-            self._toolwidget = self.__init_toolwidget__()
+            # We only create the toolwidget when it is needed to reduce
+            # the startup time and footprint of the application.
+            self._toolwidget = self.__create_toolwidget__()
+            self.update()
         return self._toolwidget
 
     def toolbutton(self):
@@ -145,7 +148,7 @@ class SardesTool(SardesToolBase):
     when triggered or to show a widget window to do more complex operations.
     """
 
-    def __init_toolwidget__(self):
+    def __create_toolwidget__(self):
         """
         Create and return the main widget that will be shown when this tool
         is triggered.
@@ -159,7 +162,7 @@ class SardesTool(SardesToolBase):
         """
         This is the function that is called when this tool is triggered.
 
-        By default, the widget returned by __init_toolwidget__ is shown. This
+        By default, the widget returned by __create_toolwidget__ is shown. This
         method can be reimplemented to perform other any other actions.
         """
         self.show()
@@ -195,7 +198,7 @@ class SardesToolExample(SardesTool):
             shortcut='Ctrl+E'
             )
 
-    def __init_toolwidget__(self):
+    def __create_toolwidget__(self):
         widget = QLabel('This is a Sardes tool example.')
         widget.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         widget.setFixedSize(300, 150)
