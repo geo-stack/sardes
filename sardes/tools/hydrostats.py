@@ -48,12 +48,20 @@ class SatisticalHydrographTool(SardesTool):
             tip=_("Show the statistical hydrograph for this record.")
             )
 
-    def __init_toolwidget__(self):
+    # ---- SardesTool API
+    def __update__(self):
+        if self.toolwidget() is not None:
+            data = self.parent.get_formatted_data()
+            try:
+                data = (data[[DataType.WaterLevel, 'datetime']]
+                        .set_index('datetime', drop=True))
+            except KeyError:
+                pass
+            self.toolwidget().canvas.set_data(data)
+            self.toolwidget().setWindowTitle(self.__title__())
+
+    def __create_toolwidget__(self):
         toolwidget = SatisticalHydrographWidget()
-        toolwidget.canvas.set_data(
-            self.parent.model()
-            .dataf[[DataType.WaterLevel, 'datetime']]
-            .set_index('datetime', drop=True))
         return toolwidget
 
     def __title__(self):
@@ -77,6 +85,7 @@ class SatisticalHydrographWidget(QMainWindow):
     def setup_toolbar(self):
         toolbar = create_mainwindow_toolbar("stat hydrograph toolbar")
         self.addToolBar(toolbar)
+
         self.save_figure_btn = create_toolbutton(
             self, icon='save',
             text=_("Save"),
