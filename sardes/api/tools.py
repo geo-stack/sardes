@@ -72,6 +72,10 @@ class SardesToolBase(QAction):
         parent.installEventFilter(self)
 
     # ---- Public API
+    def update(self):
+        """Update the tool and its associated toolwidget if any."""
+        self.__update__()
+
     def toolwidget(self):
         """Return the main widget of this tool."""
         if self._toolwidget is None:
@@ -169,6 +173,10 @@ class SardesTool(SardesToolBase):
         method.
         """
         return self._text
+
+    def __update__(self):
+        """Update the tool and its associated toolwidget if any."""
+        raise NotImplementedError
 
 
 class SardesToolExample(SardesTool):
