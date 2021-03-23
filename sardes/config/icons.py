@@ -128,6 +128,9 @@ FA_ICONS = {
     'hspan_select': [
         ('mdi.arrow-expand-horizontal',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'import_clipboard': [
+        ('mdi.clipboard-plus-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'information': [
         ('mdi.information-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],

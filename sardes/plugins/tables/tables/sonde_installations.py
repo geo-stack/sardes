@@ -54,7 +54,7 @@ class SondeInstallationsTableModel(SardesTableModel):
             obs_wells_data = self.libraries['observation_wells_data']
             visual_dataf['sampling_feature_uuid'] = (
                 visual_dataf['sampling_feature_uuid']
-                .replace(obs_wells_data['obs_well_id'].to_dict())
+                .map(obs_wells_data['obs_well_id'].to_dict().get)
                 )
         except KeyError:
             pass
@@ -69,7 +69,7 @@ class SondeInstallationsTableModel(SardesTableModel):
                 .apply(lambda x: ' - '.join(x), axis=1))
             visual_dataf['sonde_uuid'] = (
                 visual_dataf['sonde_uuid']
-                .replace(sondes_data['sonde_brand_model_serial'].to_dict())
+                .map(sondes_data['sonde_brand_model_serial'].to_dict().get)
                 )
         except KeyError:
             pass

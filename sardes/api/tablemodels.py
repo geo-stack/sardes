@@ -182,6 +182,12 @@ class RowAdded(SardesDataEdit):
             values, columns=self.parent.data.columns, index=index
             ))
 
+    def __len__(self):
+        """
+        Return the number of rows that were added to the data with this edit.
+        """
+        return len(self.index)
+
     def type(self):
         """
         Return an integer that indicates the type of data edit this
@@ -272,12 +278,20 @@ class SardesTableData(object):
         """
         return self.data.copy()
 
-    def add_row(self, new_index, values=None):
+    def add_row(self, index, values=None):
         """
-        Add a new row with the provided values at the end of the data.
+        Add one or more new rows at the end of the data using the provided
+        values.
+
+        index : Index
+            A pandas Index array that contains the indexes of the rows that
+            needs to be added to the data.
+        values: list of dict
+            A list of dict containing the values of the rows that needs to be
+            added to this SardesTableData. The keys of the dict must
+            match the data..
         """
-        self._data_edits_stack.append(RowAdded(
-            pd.Index([new_index]), [values or {}], self))
+        self._data_edits_stack.append(RowAdded(index, values or [{}], self))
         return self._data_edits_stack[-1]
 
     def delete_row(self, rows):
@@ -692,16 +706,43 @@ class SardesTableModelBase(QAbstractTableModel):
         elif str(self._datat.data.index.dtype) == 'int64':
             return max(self._datat.data.index) + 1
 
-    def add_new_row(self, new_row_index=None):
+    def add_new_row(self):
         """
         Add a new empty at the end of the table.
         """
         self.beginInsertRows(
             QModelIndex(), len(self._datat), len(self._datat))
+        index = pd.Index([self._create_new_row_index()])
+        data_edit = self._datat.add_row(index)
+        self._update_visual_data()
+        self.endInsertRows()
+        self.dataChanged.emit(
+            self.index(self.rowCount() - 1, 0),
+            self.index(self.rowCount() - 1, self.columnCount() - 1))
 
-        if new_row_index is None:
-            new_row_index = self._create_new_row_index()
-        data_edit = self._datat.add_row(new_row_index)
+        # We make the appropriate calls to update the model and GUI.
+        self.sig_data_edited.emit(data_edit)
+
+    def append_row(self, values):
+        """
+        Append one or more new rows at the end of the data using the provided
+        values.
+
+        values: list of dict
+            A list of dict containing the values of the rows that needs to be
+            added to this SardesTableData. The keys of the dict must
+            match the data..
+        """
+        if not len(values):
+            return
+
+        self.beginInsertRows(
+            QModelIndex(),
+            len(self._datat),
+            len(self._datat) + len(values) - 1)
+        index = pd.Index(
+            [self._create_new_row_index() for i in range(len(values))])
+        data_edit = self._datat.add_row(index, values)
         self._update_visual_data()
         self.endInsertRows()
         self.dataChanged.emit(

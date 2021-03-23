@@ -20,7 +20,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QToolBar, QMainWindow
 
 # ---- Local imports
-from sardes.api.tools import SardesToolTest
+from sardes.api.tools import SardesToolExample
 
 
 # =============================================================================
@@ -33,7 +33,7 @@ def mainwindow(qtbot):
     mainwindow = QMainWindow()
     mainwindow.addToolBar(toolbar)
 
-    tool = SardesToolTest(parent=mainwindow)
+    tool = SardesToolExample(parent=mainwindow)
     toolbar.addWidget(tool.toolbutton())
     mainwindow.tool = tool
 

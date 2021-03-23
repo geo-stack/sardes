@@ -11,6 +11,7 @@
 from qtpy.QtWidgets import QComboBox
 
 # ---- Local imports
+from sardes.config.locale import _
 from sardes.widgets.tableviews import SardesItemDelegate
 
 
@@ -20,6 +21,7 @@ class ObsWellIdEditDelegate(SardesItemDelegate):
     in the database.
     """
 
+    # ---- SardesItemDelegate API
     def create_editor(self, parent):
         editor = QComboBox(parent)
 
@@ -30,6 +32,31 @@ class ObsWellIdEditDelegate(SardesItemDelegate):
             editor.addItem(obs_well_data.loc[index, 'obs_well_id'],
                            userData=index)
         return editor
+
+    def format_data(self, data):
+        isnull1 = data.isnull()
+        try:
+            obs_wells = (
+                self.model().libraries['observation_wells_data'])
+            obs_wells_dict = (
+                obs_wells['obs_well_id']
+                [obs_wells['obs_well_id'].isin(data)]
+                .drop_duplicates()
+                .reset_index()
+                .set_index('obs_well_id')
+                .to_dict()['sampling_feature_uuid'])
+        except KeyError:
+            obs_wells_dict = {}
+        else:
+            formatted_data = data.map(obs_wells_dict.get)
+            isnull2 = formatted_data.isnull()
+            if sum(isnull1 != isnull2):
+                warning_message = _(
+                    "Some {} data did not match any well in the database"
+                    .format(self.model()._data_columns_mapper[data.name]))
+            else:
+                warning_message = None
+        return formatted_data, warning_message
 
 
 class SondeModelEditDelegate(SardesItemDelegate):

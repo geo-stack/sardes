@@ -70,9 +70,9 @@ class DatabaseConnectionWorker(QObject):
     def _connect_to_db(self, db_accessor):
         """Try to create a new connection with the database"""
         self.db_accessor = db_accessor
-        self.clear_cache()
         print("Connecting to database with {}...".format(
             type(self.db_accessor).__name__))
+        self.clear_cache()
         self.db_accessor.connect()
         if self.db_accessor._connection_error is None:
             print("Connection to database succeeded.")
@@ -82,9 +82,8 @@ class DatabaseConnectionWorker(QObject):
 
     def _disconnect_from_db(self):
         """Close the connection with the database"""
+        print("Closing connection with database...")
         self.clear_cache()
-        print("Closing connection with database...".format(
-            type(self.db_accessor).__name__))
         if self.db_accessor is not None:
             self.db_accessor.close_connection()
         print("Connection with database closed.")
@@ -104,7 +103,7 @@ class DatabaseConnectionWorker(QObject):
         Get the data related to name from the database.
         """
         if name in self._cache:
-            print("Fetched '{}' from store.".format(name))
+            print("Fetching '{}' from store... done".format(name))
             return self._cache[name],
 
         print("Fetching '{}' from the database...".format(name), end='')
@@ -709,6 +708,7 @@ class DatabaseConnectionManager(QObject):
         self._running_tasks.remove(task_uuid4)
 
         if len(self._running_tasks) == 0:
+            # This means all tasks sent to the worker were completed.
             self._handle_run_tasks_finished()
 
     def _add_task(self, task, callback, *args, **kargs):
@@ -723,13 +723,23 @@ class DatabaseConnectionManager(QObject):
         """
         self._pending_tasks.extend(self._queued_tasks)
         self._queued_tasks = []
+        self._run_pending_tasks()
+
+    def _run_pending_tasks(self):
+        """Execute all pending tasks."""
         if len(self._running_tasks) == 0:
+            print('Executing {} pending tasks...'.format(
+                len(self._pending_tasks)))
             # Even though the worker has executed all its tasks,
             # we may still need to wait a little for it to stop properly.
+            i = 0
             while self._db_connection_thread.isRunning():
                 sleep(0.1)
+                i += 1
+                if i > 100:
+                    print("Error: unable to stop the database manager thread.")
 
-            self._running_tasks = self._pending_tasks
+            self._running_tasks = self._pending_tasks.copy()
             self._pending_tasks = []
             for task_uuid4 in self._running_tasks:
                 task, args, kargs = self._task_data[task_uuid4]
@@ -742,17 +752,18 @@ class DatabaseConnectionManager(QObject):
         Handle when all tasks that needed to be run by the worker are
         completed.
         """
-        if len(self._data_changed):
-            self.sig_database_data_changed.emit(list(self._data_changed))
-            self._data_changed = set()
-        if len(self._tseries_data_changed):
-            self.sig_tseries_data_changed.emit(
-                list(self._tseries_data_changed))
-            self._tseries_data_changed = set()
         if len(self._pending_tasks) > 0:
-            self._run_tasks()
+            self._run_pending_tasks()
         else:
             self.sig_run_tasks_finished.emit()
+            if len(self._data_changed):
+                self.sig_database_data_changed.emit(list(self._data_changed))
+                self._data_changed = set()
+            if len(self._tseries_data_changed):
+                self.sig_tseries_data_changed.emit(
+                    list(self._tseries_data_changed))
+                self._tseries_data_changed = set()
+            print('All pending tasks were executed.')
 
     # ---- Tables
     def create_new_model_index(self, table_id):
