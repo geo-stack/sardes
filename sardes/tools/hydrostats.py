@@ -324,13 +324,3 @@ def compute_monthly_statistics(tseries, q, pool='all'):
 
     percentiles = [np.percentile(v, q) for v in mly_values]
     return np.array(percentiles), np.array(nyear)
-
-
-# def plot_10yrs_annual_statistical_hydrograph(sid, cur_year, last_month=12,
-#                                              filename=None, pool='all'):
-
-#     # Add title: Station name and ID.
-#     mpad = mpl.transforms.ScaledTranslation(0, -5/72, fig.dpi_scale_trans)
-#     title = "{}\nStation {}".format(stn_name, stn_id)
-#     ax2.text(1, 1, title, ha='right', va='top', fontsize=12,
-#              transform=ax2.transAxes+mpad)
