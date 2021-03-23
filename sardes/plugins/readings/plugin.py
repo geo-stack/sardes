@@ -23,13 +23,15 @@ from sardes.config.main import CONF
 from sardes.api.tablemodels import SardesTableModel
 from sardes.api.timeseries import DataType
 from sardes.utils.qthelpers import create_toolbutton
+from sardes.utils.data_operations import format_reading_data
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
 from sardes.widgets.tableviews import (
     SardesTableWidget, NumEditDelegate, NotEditableDelegate,
     SardesStackedTableWidget)
 from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
 from .tools.hydrostats import SatisticalHydrographTool
-from .tools.save2excel import SaveReadingsToExcelTool
+from sardes.plugins.readings.tools import (
+    SaveReadingsToExcelTool, HydrographTool)
 
 
 """Readings plugin"""
@@ -40,7 +42,7 @@ class ReadingsTableModel(SardesTableModel):
         super().__init__(*args, **kargs)
         self._obs_well_data = obs_well_data
         self._obs_well_uuid = obs_well_data.name
-        self._repere_data = pd.Series([])
+        self._repere_data = pd.Series([], dtype=object)
 
     def create_delegate_for_column(self, view, column):
         if isinstance(column, DataType):
@@ -51,16 +53,16 @@ class ReadingsTableModel(SardesTableModel):
 
     # ---- Database connection
     def set_repere_data(self, repere_data):
-        repere_data = repere_data[
-            repere_data['sampling_feature_uuid'] == self._obs_well_uuid]
-        if len(repere_data):
+        repere_data = (
+            repere_data
+            [repere_data['sampling_feature_uuid'] == self._obs_well_uuid]
+            .copy())
+        if not repere_data.empty:
             self._repere_data = (
                 repere_data
-                .sort_values(by=['end_date'], ascending=[True])
-                .iloc[-1]
-                )
+                .sort_values(by=['end_date'], ascending=[True]))
         else:
-            self._repere_data = pd.Series([])
+            self._repere_data = pd.Series([], dtype=object)
 
     def set_model_data(self, dataf):
         """
@@ -148,6 +150,13 @@ class ReadingsTableWidget(SardesTableWidget):
         if self.plot_viewer is not None:
             self.plot_viewer.update_data(
                 self.model().dataf, self.model()._obs_well_data)
+
+    def get_formatted_data(self):
+        """
+        Return a dataframe contraining formatted readings data.
+        """
+        return format_reading_data(
+            self.model().dataf, self.model()._repere_data)
 
     def plot_readings(self):
         """
@@ -351,9 +360,14 @@ class Readings(SardesPlugin):
         table_widget.add_toolbar_widget(show_plot_btn)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         # Add statistical hydrographs.
         table_widget.install_tool(SatisticalHydrographTool(table_widget))
 =======
+=======
+        table_widget.install_tool(HydrographTool(table_widget),
+                                  after='copy_to_clipboard')
+>>>>>>> origin/release_0.10.0
         table_widget.install_tool(SaveReadingsToExcelTool(table_widget),
                                   after='copy_to_clipboard')
 >>>>>>> refs/remotes/origin/release_0.9.2

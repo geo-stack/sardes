@@ -17,7 +17,7 @@ from sardes.widgets.tableviews import SardesItemDelegate
 
 class ObsWellIdEditDelegate(SardesItemDelegate):
     """
-    A delegate to select an obsercation well from the list of existing well
+    A delegate to select an observation well from the list of existing well
     in the database.
     """
 
@@ -53,7 +53,7 @@ class ObsWellIdEditDelegate(SardesItemDelegate):
             if sum(isnull1 != isnull2):
                 warning_message = _(
                     "Some {} data did not match any well in the database"
-                    .format(self.model()._data_columns_mapper[data.name]))
+                    ).format(self.model()._data_columns_mapper[data.name])
             else:
                 warning_message = None
         return formatted_data, warning_message

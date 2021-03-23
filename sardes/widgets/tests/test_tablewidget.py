@@ -40,7 +40,7 @@ from sardes.utils.data_operations import are_values_equal
 # =============================================================================
 NCOL = 6
 COLUMNS = ['col{}'.format(i) for i in range(NCOL)]
-HEADERS = [_('Column #{}').format(i) for i in range(NCOL)]
+HEADERS = ['Column #{}'.format(i) for i in range(NCOL)]
 VALUES = [['str1', True, 1.111, 3, 'not editable', None],
           ['str2', False, 2.222, 1, 'not editable', None],
           ['str3', True, 3.333, 29, 'not editable', None]]
@@ -1350,4 +1350,4 @@ def test_import_from_clipboard(tablewidget, qtbot, mocker, TABLE_DATAF):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
+    pytest.main(['-x', __file__, '-v', '-rw'])

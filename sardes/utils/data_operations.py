@@ -11,7 +11,11 @@
 import itertools
 
 # ---- Third party imports
+from numpy import nan
 import pandas as pd
+
+# ---- Local imports
+from sardes.api.timeseries import DataType
 
 
 def are_values_equal(x1, x2):
@@ -44,3 +48,42 @@ def intervals_extract(iterable):
                                         lambda v: v[1] - v[0]):
         group = list(group)
         yield [group[0][1], group[-1][1]]
+
+
+def format_reading_data(data, repere_data):
+    """
+    Format readings data for publication.
+    """
+    # Convert water level in altitude (above see level).
+    if not repere_data.empty:
+        for i in range(len(repere_data)):
+            repere_iloc = repere_data.iloc[i]
+            reference_altitude = repere_iloc['top_casing_alt']
+            start_date = repere_iloc['start_date']
+            end_date = repere_iloc['end_date']
+            if pd.isnull(end_date):
+                indexes = data.index[data['datetime'] >= start_date]
+            else:
+                indexes = data.index[
+                    (data['datetime'] >= start_date) &
+                    (data['datetime'] < end_date)]
+            data.loc[indexes, DataType.WaterLevel] = (
+                reference_altitude - data.loc[indexes, DataType.WaterLevel])
+
+    # Resample data on a daily basis and remove duplicate values if any.
+    data = (
+        data
+        .dropna(subset=[DataType.WaterLevel])
+        # We keep the readings closest to midnight.
+        .groupby('obs_id').resample('D', on='datetime').first()
+        .dropna(subset=[DataType.WaterLevel])
+        .droplevel(0, axis=0).drop('datetime', axis=1)
+        .reset_index(drop=False)
+        .sort_values(by=['datetime', 'install_depth'],
+                     ascending=[True, True])
+        # We keep the reading measured closest to the surface.
+        .drop_duplicates(subset='datetime', keep='first')
+        .reset_index(drop=True)
+        )
+
+    return data

@@ -4,7 +4,9 @@
 # https://github.com/cgq-qgc/sardes
 #
 # This file is part of SARDES.
-# Licensed under the terms of the GNU General Public License.
+# Licensed under the terms of the MIT License.
 # -----------------------------------------------------------------------------
-from .save2excel import SaveReadingsToExcelTool
-from .hydrographs import HydrographTool
+
+from sardes.database.accessors.accessor_demo import DatabaseAccessorDemo
+from sardes.database.accessors.accessor_rsesq import DatabaseAccessorRSESQ
+from sardes.database.accessors.accessor_sardes_lite import DatabaseAccessorSardesLite
