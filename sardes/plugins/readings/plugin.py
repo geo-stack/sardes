@@ -29,6 +29,7 @@ from sardes.widgets.tableviews import (
     SardesStackedTableWidget)
 from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
 from .tools.hydrostats import SatisticalHydrographTool
+from .tools.save2excel import SaveReadingsToExcelTool
 
 
 """Readings plugin"""
@@ -39,6 +40,7 @@ class ReadingsTableModel(SardesTableModel):
         super().__init__(*args, **kargs)
         self._obs_well_data = obs_well_data
         self._obs_well_uuid = obs_well_data.name
+        self._repere_data = pd.Series([])
 
     def create_delegate_for_column(self, view, column):
         if isinstance(column, DataType):
@@ -48,6 +50,18 @@ class ReadingsTableModel(SardesTableModel):
             return NotEditableDelegate(view)
 
     # ---- Database connection
+    def set_repere_data(self, repere_data):
+        repere_data = repere_data[
+            repere_data['sampling_feature_uuid'] == self._obs_well_uuid]
+        if len(repere_data):
+            self._repere_data = (
+                repere_data
+                .sort_values(by=['end_date'], ascending=[True])
+                .iloc[-1]
+                )
+        else:
+            self._repere_data = pd.Series([])
+
     def set_model_data(self, dataf):
         """
         Format the data contained in the list of timeseries group and
@@ -114,14 +128,19 @@ class ReadingsTableWidget(SardesTableWidget):
         self._parent = parent
         self.plot_viewer = None
 
-    def update_model(self):
+    def update_model_metadata(self):
+        self.model().db_connection_manager.get(
+            'repere_data', callback=self.model().set_repere_data)
+
+    def update_model_data(self):
         self.model().sig_data_about_to_be_updated.emit()
 
         # Get the timeseries data for that observation well.
         self.model().db_connection_manager.get_timeseries_for_obs_well(
             self.model()._obs_well_uuid,
             [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
-            callback=self.set_model_data)
+            callback=self.set_model_data
+            )
 
     def set_model_data(self, dataf):
         self.model().set_model_data(dataf)
@@ -331,8 +350,13 @@ class Readings(SardesPlugin):
             )
         table_widget.add_toolbar_widget(show_plot_btn)
 
+<<<<<<< HEAD
         # Add statistical hydrographs.
         table_widget.install_tool(SatisticalHydrographTool(table_widget))
+=======
+        table_widget.install_tool(SaveReadingsToExcelTool(table_widget),
+                                  after='copy_to_clipboard')
+>>>>>>> refs/remotes/origin/release_0.9.2
 
         # Set the title of the window.
         table_widget.setWindowTitle(_("Observation well {} ({})").format(
@@ -348,7 +372,8 @@ class Readings(SardesPlugin):
         if self.dockwindow.is_docked():
             self.main.register_table(table_widget.tableview)
 
-        table_widget.update_model()
+        table_widget.update_model_metadata()
+        table_widget.update_model_data()
 
     def _update_readings_tables(self, obs_well_ids):
         """
@@ -357,7 +382,9 @@ class Readings(SardesPlugin):
         """
         for obs_well_id in obs_well_ids:
             if obs_well_id in self._tseries_data_tables:
-                self._tseries_data_tables[obs_well_id].update_model()
+                table = self._tseries_data_tables[obs_well_id]
+                table.update_model_metadata()
+                table.update_model_data()
 
     # ---- Plots
     def _request_plot_readings(self, obs_well_data):

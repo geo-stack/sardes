@@ -76,8 +76,6 @@ class SardesToolBase(QAction):
         """Return the main widget of this tool."""
         if self._toolwidget is None:
             self._toolwidget = self.__init_toolwidget__()
-            if self._toolwidget is not None:
-                self._setup_toolwidget()
         return self._toolwidget
 
     def toolbutton(self):
@@ -121,17 +119,15 @@ class SardesToolBase(QAction):
                 self.show()
         return super().eventFilter(widget, event)
 
-    def _setup_toolwidget(self):
-        """Setup this tool's main widget."""
-        self._toolwidget.setWindowIcon(self.icon())
-        self._toolwidget.setWindowTitle(self.__title__())
-        self._toolwidget.setWindowFlags(
-            self._toolwidget.windowFlags() | Qt.Window)
-
     def _show_toolwidget(self):
         """Show this tool's main widget."""
         if self._toolwidget.windowState() == Qt.WindowMinimized:
             self._toolwidget.setWindowState(Qt.WindowNoState)
+        if self._toolwidget.windowType() == Qt.Widget:
+            self._toolwidget.setWindowFlags(
+                self._toolwidget.windowFlags() | Qt.Window)
+        self._toolwidget.setWindowIcon(self.icon())
+        self._toolwidget.setWindowTitle(self.__title__())
         self._toolwidget.show()
         self._toolwidget.activateWindow()
         self._toolwidget.raise_()
@@ -172,7 +168,7 @@ class SardesTool(SardesToolBase):
         different title for their toolwidget window need to reimplement this
         method.
         """
-        return self.text()
+        return self._text
 
 
 class SardesToolExample(SardesTool):

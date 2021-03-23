@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 """
-Tests for the DatabaseConnectionWidget.
+Tests for the Readings plugin.
 """
 
 # ---- Standard imports

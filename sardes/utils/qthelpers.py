@@ -12,7 +12,6 @@
 # ---- Standard imports
 from datetime import datetime
 from math import pi
-import sys
 from time import strptime
 
 # ---- Third party imports
