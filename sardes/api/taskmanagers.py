@@ -121,8 +121,8 @@ class TaskManagerBase(QObject):
             if len(self._pending_tasks) > 0:
                 self._run_pending_tasks()
             else:
-                self.sig_run_tasks_finished.emit()
                 print('All pending tasks were executed.')
+                self.sig_run_tasks_finished.emit()
 
     def _add_task(self, task, callback, *args, **kargs):
         task_uuid4 = uuid.uuid4()
