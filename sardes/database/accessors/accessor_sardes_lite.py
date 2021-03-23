@@ -24,7 +24,7 @@ from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
                         UniqueConstraint, Index)
 from sqlalchemy.exc import DBAPIError, ProgrammingError, OperationalError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.types import TEXT, VARCHAR, Boolean
+from sqlalchemy.types import TEXT, VARCHAR, Boolean, BLOB
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.engine.url import URL
 from sqlalchemy_utils import UUIDType
@@ -41,7 +41,10 @@ from sardes.api.timeseries import DataType
 APPLICATION_ID = 1013042054
 
 # The latest version of the database schema.
-CURRENT_SCHEMA_VERSION = 1
+CURRENT_SCHEMA_VERSION = 2
+
+# The format that is used to store datetime values in the database.
+DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 
 
 # =============================================================================
@@ -141,6 +144,22 @@ class SamplingFeatureType(BaseMixin, Base):
     sampling_feature_type_id = Column(Integer, primary_key=True)
     sampling_feature_type_desc = Column(String)
     sampling_feature_type_abb = Column(String)
+
+
+class SamplingFeatureAttachment(BaseMixin, Base):
+    """
+    An object used to map the 'sampling_feature_attachment' table.
+    """
+    __tablename__ = 'sampling_feature_attachment'
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    attachment_id = Column(Integer, primary_key=True)
+    attachment_type = Column(Integer)
+    attachment_data = Column(BLOB)
+    attachment_fname = Column(String)
+    sampling_feature_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('sampling_feature.sampling_feature_uuid'))
 
 
 class SamplingFeatureMetadata(BaseMixin, Base):
@@ -404,6 +423,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Session = sessionmaker(bind=self._engine)
         self._session = Session()
 
+    def version(self):
+        """Return the current version of the database."""
+        return self.execute("PRAGMA user_version").first()[0]
+
+    def application_id(self):
+        """Return the application id of the database."""
+        return self.execute("PRAGMA application_id").first()[0]
+
     def execute(self, sql_request, **kwargs):
         """Execute a SQL statement construct and return a ResultProxy."""
         try:
@@ -438,7 +465,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                   SondeFeature, SondeModel, SondeInstallation, Process, Repere,
                   ObservationType, Observation, ObservedProperty,
                   GenericNumericalData, TimeSeriesChannel,
-                  TimeSeriesData, PumpType, PumpInstallation]
+                  TimeSeriesData, SamplingFeatureAttachment]
         dialect = self._engine.dialect
         for table in tables:
             if dialect.has_table(self._session, table.__tablename__):
@@ -492,8 +519,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._connection = None
             self._connection_error = e
         else:
-            app_id = conn.execute("PRAGMA application_id").first()[0]
-            version = conn.execute("PRAGMA user_version").first()[0]
+            app_id = self.application_id()
+            version = self.version()
             if app_id != APPLICATION_ID:
                 self._connection = None
                 self._connection_error = sqlite3.DatabaseError(_(
@@ -755,6 +782,88 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         data['mean_water_level'] = data['mean_water_level'].round(decimals=3)
         return data
 
+    # ---- Attachments
+    def get_stored_attachments_info(self):
+        """
+        Return a pandas dataframe containing a list of sampling_feature_uuid
+        and attachment_type for which a file is attached in the database.
+        """
+        query = (
+            self._session.query(
+                SamplingFeatureAttachment.sampling_feature_uuid,
+                SamplingFeatureAttachment.attachment_type)
+            )
+        result = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
+        return result
+
+    def get_attachment(self, sampling_feature_uuid, attachment_type):
+        """
+        Return the data of the file of the specified type that is
+        attached to the specified station.
+        """
+        try:
+            attachment = (
+                self._session.query(SamplingFeatureAttachment)
+                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .filter(SamplingFeatureAttachment.attachment_type ==
+                        attachment_type)
+                .one())
+        except NoResultFound:
+            return (None, None)
+        else:
+            return (attachment.attachment_data, attachment.attachment_fname)
+
+    def set_attachment(self, sampling_feature_uuid, attachment_type,
+                       filename):
+        """
+        Attach the data of a file to the specified sampling_feature_uuid.
+        """
+        try:
+            # We first check if a file of this type is already attached to
+            # the monitoring station.
+            attachment = (
+                self._session.query(SamplingFeatureAttachment)
+                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .filter(SamplingFeatureAttachment.attachment_type ==
+                        attachment_type)
+                .one())
+        except NoResultFound:
+            # This means we need to add a new attachment to save the file.
+            attachment = SamplingFeatureAttachment(
+                attachment_type=attachment_type,
+                sampling_feature_uuid=sampling_feature_uuid)
+            self._session.add(attachment)
+
+        if osp.exists(filename):
+            with open(filename, 'rb') as f:
+                attachment.attachment_data = memoryview(f.read())
+        attachment.attachment_fname = osp.basename(filename)
+        self._session.commit()
+
+    def del_attachment(self, sampling_feature_uuid, attachment_type):
+        """
+        Delete the data of the file of the specified type that is attached
+        to the specified sampling_feature_uuid.
+        """
+        try:
+            attachment = (
+                self._session.query(SamplingFeatureAttachment)
+                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .filter(SamplingFeatureAttachment.attachment_type ==
+                        attachment_type)
+                .one())
+        except NoResultFound:
+            # This means there is currently no file of this type attached to
+            # the specified sampling_feature_uuid.
+            pass
+        else:
+            self._session.delete(attachment)
+            self._session.commit()
+
     # ---- Repere
     def _get_repere_data(self, repere_id):
         """
@@ -969,6 +1078,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         data = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True)
 
+        # Format the data.
+        data['start_date'] = pd.to_datetime(data['start_date'])
+        data['end_date'] = pd.to_datetime(data['end_date'])
+
         # Set the index of the dataframe.
         data.set_index('install_uuid', inplace=True, drop=True)
 
@@ -1131,49 +1244,99 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 self._session.delete(observation)
                 self._session.commit()
 
-    def get_timeseries_for_obs_well(self, sampling_feature_uuid, data_type):
+    def get_timeseries_for_obs_well(self, sampling_feature_uuid,
+                                    data_types=None):
         """
         Return a pandas dataframe containing the readings for the given
-        data type and observation well.
+        data types and monitoring station.
+
+        If no data type are specified, then return the entire dataset for
+        the specified monitoring station.
         """
-        data_type = DataType(data_type)
-        obs_property_id = self._get_observed_property_id(data_type)
-        query = (
-            self._session.query(TimeSeriesData.value,
-                                TimeSeriesData.datetime,
-                                Observation.observation_id.label('obs_id'))
-            .filter(TimeSeriesChannel.obs_property_id == obs_property_id)
-            .filter(Observation.sampling_feature_uuid == sampling_feature_uuid)
-            .filter(Observation.observation_id ==
-                    TimeSeriesChannel.observation_id)
-            .filter(TimeSeriesData.channel_id == TimeSeriesChannel.channel_id)
-            )
-        data = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
-        data['datetime'] = pd.to_datetime(
-            data['datetime'], format="%Y-%m-%d %H:%M:%S")
-        data.rename(columns={'value': data_type}, inplace=True)
+        if isinstance(data_types, str) or isinstance(data_types, DataType):
+            data_types = [data_types,]
+        if data_types is None:
+            data_types = [
+                DataType.WaterLevel,
+                DataType.WaterTemp,
+                DataType.WaterEC]
+        else:
+            data_types = [
+                DataType[data_type] if isinstance(data_type, str) else
+                DataType(data_type) for
+                data_type in data_types]
+
+        readings_data = None
+        added_data_types = []
+        for data_type in data_types:
+            obs_property_id = self._get_observed_property_id(data_type)
+            query = (
+                self._session.query(TimeSeriesData.value,
+                                    TimeSeriesData.datetime,
+                                    Observation.observation_id.label('obs_id'))
+                .filter(TimeSeriesChannel.obs_property_id == obs_property_id)
+                .filter(Observation.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .filter(Observation.observation_id ==
+                        TimeSeriesChannel.observation_id)
+                .filter(TimeSeriesData.channel_id ==
+                        TimeSeriesChannel.channel_id)
+                )
+            tseries_data = pd.read_sql_query(
+                query.statement, query.session.bind, coerce_float=True)
+            if tseries_data.empty:
+                # This means that there is no timeseries data saved in the
+                # database for this data type.
+                continue
+
+            # Format the data.
+            tseries_data['datetime'] = pd.to_datetime(
+                tseries_data['datetime'], format=DATE_FORMAT)
+            tseries_data.rename(columns={'value': data_type}, inplace=True)
+
+            # Merge the data.
+            added_data_types.append(data_type)
+            if readings_data is None:
+                readings_data = tseries_data
+            else:
+                readings_data = readings_data.merge(
+                    tseries_data,
+                    left_on=['datetime', 'obs_id'],
+                    right_on=['datetime', 'obs_id'],
+                    how='outer', sort=True)
+        if readings_data is None:
+            # This means there is not reading saved for this monitoring
+            # station in the database.
+            return pd.DataFrame(
+                [],
+                columns=(['datetime', 'sonde_id'] +
+                         data_types +
+                         ['install_depth', 'obs_id'])
+                )
 
         # Add sonde serial number and installation depth to the dataframe.
-        data['sonde_id'] = None
-        data['install_depth'] = None
-        for obs_id in data['obs_id'].unique():
+        readings_data['sonde_id'] = None
+        readings_data['install_depth'] = None
+        for obs_id in readings_data['obs_id'].unique():
             sonde_id = self._get_sonde_serial_no_from_obs_id(obs_id)
-            data.loc[data['obs_id'] == obs_id, 'sonde_id'] = sonde_id
-            install_depth = self._get_sonde_install_depth_from_obs_id(obs_id)
-            data.loc[data['obs_id'] == obs_id, 'install_depth'] = install_depth
+            readings_data.loc[
+                readings_data['obs_id'] == obs_id, 'sonde_id'
+                ] = sonde_id
 
-        # Check for duplicates along the time axis.
-        duplicated = data.duplicated(subset='datetime')
-        nbr_duplicated = np.sum(duplicated)
-        if nbr_duplicated:
-            observation_well = self._get_sampling_feature(
-                sampling_feature_uuid)
-            print(("Warning: {} duplicated {} entrie(s) were found while "
-                   "fetching these data for well {}."
-                   ).format(nbr_duplicated, data_type,
-                            observation_well.sampling_feature_name))
-        return data
+            install_depth = self._get_sonde_install_depth_from_obs_id(obs_id)
+            readings_data.loc[
+                readings_data['obs_id'] == obs_id, 'install_depth'
+                ] = install_depth
+
+        # Reorder the columns so that the data are displayed nicely.
+        readings_data = readings_data[
+            ['datetime', 'sonde_id'] +
+            added_data_types +
+            ['install_depth', 'obs_id']]
+        readings_data = readings_data.sort_values(
+            'datetime', axis=0, ascending=True)
+
+        return readings_data
 
     def add_timeseries_data(self, tseries_data, sampling_feature_uuid,
                             install_uuid=None):
@@ -1185,7 +1348,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         tseries_data = tseries_data.set_index(
             'datetime', drop=True, append=False)
         tseries_data = tseries_data.drop(
-            [col for col in tseries_data.columns if col not in DataType],
+            [col for col in tseries_data.columns if
+             not isinstance(col, DataType)],
             axis=1, errors='ignore').dropna(axis=1, how='all')
         tseries_data = tseries_data.dropna(axis=1, how='all')
         if tseries_data.empty:
@@ -1233,13 +1397,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 observation_id=observation_id
                 ))
             channel_id += 1
+        self._session.commit()
 
         # Set the channel ids as the column names of the dataset.
         tseries_data.columns = channel_ids
         tseries_data.columns.name = 'channel_id'
 
-        # Format the data so that they can directly be inserted in
-        # the database with pandas.
+        # Format the data so that they can be inserted easily in
+        # the database with sqlite3.
         tseries_data = (
             tseries_data
             .stack()
@@ -1248,12 +1413,22 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .dropna(subset=['value'])
             )
 
+        # We need to format pandas datetime64 to strings in order to save
+        # them in the database with sqlite3.
+        tseries_data['datetime'] = (
+            tseries_data['datetime'].dt.strftime(DATE_FORMAT))
+
         # Save the formatted timeseries data to the database.
-        self._session.commit()
-        tseries_data.to_sql(
-            'timeseries_data', self._session.bind,
-            if_exists='append', index=False, method='multi', chunksize=10000)
-        self._session.commit()
+        conn = sqlite3.connect(self._database)
+        cur = conn.cursor()
+        columns = ['datetime', 'channel_id', 'value']
+        sql_statement = (
+            "INSERT INTO timeseries_data ({}) VALUES (?, ?, ?)"
+            ).format(', '.join(columns))
+        for row in tseries_data[columns].itertuples(index=False, name=None):
+            cur.execute(sql_statement, row)
+        conn.commit()
+        conn.close()
 
         # Update the data overview for the given sampling feature.
         self._refresh_sampling_feature_data_overview(
@@ -1422,19 +1597,27 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             return None
 
 
-# =============================================================================
-# ---- Utilities
-# =============================================================================
 if __name__ == "__main__":
-    accessor_sardeslite = DatabaseAccessorSardesLite('D:/rsesq_test.db')
-    accessor_sardeslite.connect()
+    database = "D:/Desktop/rsesq_prod_02-02-2021.db"
+    accessor = DatabaseAccessorSardesLite(database)
+    accessor.init_database()
+    accessor.connect()
 
-    # init_database(accessor_sardeslite)
+    obs_wells = accessor.get_observation_wells_data()
+    sonde_data = accessor.get_sondes_data()
+    sonde_models_lib = accessor.get_sonde_models_lib()
+    sonde_installations = accessor.get_sonde_installations()
+    repere_data = accessor.get_repere_data()
 
-    obs_wells = accessor_sardeslite.get_observation_wells_data()
-    sonde_data = accessor_sardeslite.get_sondes_data()
-    sonde_models_lib = accessor_sardeslite.get_sonde_models_lib()
-    sonde_installations = accessor_sardeslite.get_sonde_installations()
-    repere_data = accessor_sardeslite.get_repere_data()
+    stored_attachments_info = accessor.get_stored_attachments_info()
 
-    accessor_sardeslite.close_connection()
+    overview = accessor.get_observation_wells_data_overview()
+    from time import perf_counter
+    t1 = perf_counter()
+    sampling_feature_uuid = (
+        accessor._get_sampling_feature_uuid_from_name('01070001'))
+    readings = accessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, [DataType.WaterLevel])
+    print(perf_counter() - t1)
+
+    accessor.close_connection()

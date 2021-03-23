@@ -7,27 +7,38 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
-
 # ---- Standard imports
-import uuid
 from collections import OrderedDict
-from time import sleep
 import datetime
+import os
+import os.path as osp
+from time import sleep
+import urllib
+import uuid
 
 # ---- Third party imports
+import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from qtpy.QtCore import QObject, Signal, Slot
+import simplekml
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
 from sardes.api.taskmanagers import WorkerBase, TaskManagerBase
+from sardes.config.locale import _
+from sardes.config.ospath import get_documents_logo_filename
+from sardes.config.main import CONF
+from sardes.tools.hydrographs import HydrographCanvas
+from sardes.tools.save2excel import _save_reading_data_to_xlsx
+from sardes.utils.data_operations import format_reading_data
 
 
 class DatabaseConnectionWorker(WorkerBase):
     """
     A simple worker to create a new database session without blocking the gui.
     """
+    sig_publish_progress = Signal(float)
 
     def __init__(self):
         super().__init__()
@@ -35,6 +46,7 @@ class DatabaseConnectionWorker(WorkerBase):
 
         # Setup a cache structure for the tables and libraries.
         self._cache = {}
+        self._stop_kml_publishing = False
 
     def clear_cache(self):
         """
@@ -129,65 +141,51 @@ class DatabaseConnectionWorker(WorkerBase):
         self.db_accessor.set(name, *args, **kargs)
 
     # ---- Timeseries
-    def _get_timeseries_for_obs_well(self, sampling_feature_uuid, data_types):
+    def _get_timeseries_for_obs_well(self, sampling_feature_uuid,
+                                     data_types=None):
         """
-        Get the time data acquired in the observation well for each
-        given data type.
+        Return a pandas dataframe containing the readings for the given
+        data types and monitoring station.
+
+        If no data type are specified, then return the entire dataset for
+        the specified monitoring station.
         """
-        data_types = [DataType(data_type) for data_type in data_types]
-        obs_well_data = self._get('observation_wells_data')[0]
+        # We do this like this to avoid unecessary prints in the console.
+        if 'observation_wells_data' in self._cache:
+            obs_well_data = self._cache['observation_wells_data']
+        else:
+            obs_well_data = self._get('observation_wells_data')[0]
         obs_well_data = obs_well_data.loc[sampling_feature_uuid]
 
-        # Print some info message in the console.
-        prop_names = [prop.name for prop in data_types]
-        prop_enum = (' and '.join(prop_names) if
-                     len(prop_names) == 2 else ', '.join(prop_names))
-        print("Fetching {} data for observation well {}.".format(
-            prop_enum, obs_well_data['obs_well_id']))
-
-        # Fetch the data.
-        readings = None
-        tseries_groups = []
-        date_types = []
+        print("Fetching readings data for observation well {}..."
+              .format(obs_well_data['obs_well_id']), end='')
         try:
-            for data_type in data_types:
-                tseries_dataf = self.db_accessor.get_timeseries_for_obs_well(
-                    sampling_feature_uuid, data_type)
-                tseries_groups.append(tseries_dataf)
-
-                if tseries_dataf.empty:
-                    continue
-                if readings is None:
-                    readings = tseries_dataf
-                else:
-                    readings = readings.merge(
-                        tseries_dataf,
-                        left_on=['datetime', 'obs_id', 'sonde_id',
-                                 'install_depth'],
-                        right_on=['datetime', 'obs_id', 'sonde_id',
-                                  'install_depth'],
-                        how='outer', sort=True)
-                date_types.append(data_type)
-            if readings is None:
-                readings = DataFrame(
-                    [],
-                    columns=['datetime', 'sonde_id', DataType(0),
-                             DataType(1), DataType(2), 'install_depth',
-                             'obs_id'])
-
-            # Reorder the columns so that the data are displayed nicely.
-            readings = readings[
-                ['datetime', 'sonde_id'] +
-                date_types +
-                ['install_depth', 'obs_id']]
-            readings = readings.sort_values('datetime', axis=0, ascending=True)
-
-            # Add metadata to the dataframe.
-            readings._metadata = ['sampling_feature_data']
-            readings.sampling_feature_data = obs_well_data
+            readings = self.db_accessor.get_timeseries_for_obs_well(
+                sampling_feature_uuid, data_types)
         except Exception as error:
+            print()
             print(type(error).__name__, end=': ')
             print(error)
+            readings = DataFrame(
+                [],
+                columns=['datetime', 'sonde_id', DataType(0),
+                         DataType(1), DataType(2), 'install_depth',
+                         'obs_id'])
+        else:
+            print(' done')
+
+        # Add metadata to the dataframe.
+        readings._metadata = ['sampling_feature_data']
+        readings.sampling_feature_data = obs_well_data
+
+        # Check for duplicates along the time axis.
+        duplicated = readings.duplicated(subset=['datetime', 'sonde_id'])
+        nbr_duplicated = np.sum(duplicated)
+        if nbr_duplicated:
+            print(("Warning: {} duplicated entrie(s) were found while "
+                   "fetching readings data for well {}."
+                   ).format(nbr_duplicated, obs_well_data['obs_well_id']))
+
         return readings,
 
     def _save_timeseries_data_edits(self, tseries_edits):
@@ -224,6 +222,36 @@ class DatabaseConnectionWorker(WorkerBase):
             del self._cache['observation_wells_data_overview']
         self.db_accessor.delete_timeseries_data(tseries_dels)
         print("...timeseries data deleted sucessfully.")
+
+    # ---- Attachments
+    def _get_attachment(self, sampling_feature_uuid, attachment_type):
+        """
+        Return the data and filename of the attachment of the given type that
+        is attached to the specified sampling_feature_uuid.
+        """
+        return self.db_accessor.get_attachment(
+            sampling_feature_uuid, attachment_type)
+
+    def _set_attachment(self, sampling_feature_uuid, attachment_type,
+                        filename):
+        """
+        Save and attach the given attachment to the specified
+        sampling_feature_uuid in the database.
+        """
+        if 'stored_attachments_info' in self._cache:
+            del self._cache['stored_attachments_info']
+        self.db_accessor.set_attachment(
+            sampling_feature_uuid, attachment_type, filename)
+
+    def _del_attachment(self, sampling_feature_uuid, attachment_type):
+        """
+        Delete from the database the attachment of the specified type that
+        is currently attached to the specified sampling_feature_uuid.
+        """
+        if 'stored_attachments_info' in self._cache:
+            del self._cache['stored_attachments_info']
+        self.db_accessor.del_attachment(
+            sampling_feature_uuid, attachment_type)
 
     # ---- Utilities
     def _get_sonde_installation_info(self, sonde_serial_no, date_time):
@@ -267,6 +295,8 @@ class DatabaseConnectionWorker(WorkerBase):
         obs_well_uuid = sonde_install['sampling_feature_uuid']
         sonde_install['well_name'] = obs_wells_data.at[
             obs_well_uuid, 'obs_well_id']
+        sonde_install['well_common_name'] = obs_wells_data.at[
+            obs_well_uuid, 'common_name']
         sonde_install['well_municipality'] = obs_wells_data.at[
             obs_well_uuid, 'municipality']
 
@@ -277,6 +307,242 @@ class DatabaseConnectionWorker(WorkerBase):
             sonde_model_id, 'sonde_brand_model']
 
         return sonde_install,
+
+    # ---- Publish Network Data
+    def _publish_to_kml(self, kml_filename, iri_data=None, iri_logs=None,
+                        iri_graphs=None, iri_quality=None):
+        """
+        Publish the piezometric network data to the specified kml filename.
+
+        Parameters
+        ----------
+        kml_filename : str
+            The absolute path where to save the kml file.
+        iri_data : str, optional
+            The IRI where the readings data files are going to be hosted.
+            The default is None.
+        iri_logs : str, optional
+            The IRI where the construction logs are going to be hosted.
+            The default is None.
+        iri_graphs : str, optional
+            The IRI where the hydrographs are going to be hosted.
+            The default is None.
+        iri_quality : str, optional
+            The IRI where the water quality reports are going
+            to be hosted. The default is None.
+
+        Returns
+        -------
+        results : bool
+            Whether the publishing of the piezometric network was successful.
+        """
+        self._stop_kml_publishing = False
+
+        # Create the files and folder architecture.
+        files_dirname = osp.join(
+            osp.dirname(kml_filename),
+            osp.splitext(osp.basename(kml_filename))[0] + '_files'
+            )
+        data_dirname = osp.join(files_dirname, 'data')
+        if not osp.exists(data_dirname):
+            os.makedirs(data_dirname)
+        logs_dirname = osp.join(files_dirname, 'diagrams')
+        if not osp.exists(logs_dirname):
+            os.makedirs(logs_dirname)
+        graphs_dirname = osp.join(files_dirname, 'graphs')
+        if not osp.exists(graphs_dirname):
+            os.makedirs(graphs_dirname)
+        quality_dirname = osp.join(files_dirname, 'quality')
+        if not osp.exists(quality_dirname):
+            os.makedirs(quality_dirname)
+
+        # Initialize a new KML document.
+        kml = simplekml.Kml()
+        fol = simplekml.Folder()
+        kml.document = fol
+
+        # Define the style for the plasemarks.
+        pnt_style = simplekml.Style()
+        pnt_style.iconstyle.icon.href = (
+            'http://maps.google.com/mapfiles/kml/paddle/blu-circle.png')
+        pnt_style.iconstyle.scale = 0.8
+        pnt_style.labelstyle.color = 'bfffffff'
+        pnt_style.labelstyle.scale = 0.8
+
+        repere_data, = self._get('repere_data')
+        stations_data_overview, = self._get('observation_wells_data_overview')
+        stations_data, = self._get('observation_wells_data')
+        stations_data['locations'] = list(zip(
+            stations_data['longitude'].astype(float).round(decimals=4),
+            stations_data['latitude'].astype(float).round(decimals=4)
+            ))
+        unique_locations = (
+            stations_data[['locations']]
+            .drop_duplicates(['locations'])
+            .values.flatten().tolist()
+            )
+
+        progress = 0
+        progress_total = len(stations_data)
+        for loc in unique_locations:
+            if self._stop_kml_publishing:
+                return False,
+
+            pnt = fol.newpoint(coords=[loc])
+            pnt.style = pnt_style
+
+            loc_stations_data = (
+                stations_data[stations_data['locations'] == loc]
+                .sort_values(['obs_well_id'], ascending=True))
+
+            municipality = loc_stations_data['municipality'].values[0]
+            pnt.name = municipality
+
+            pnt_desc = '<![CDATA['
+            for station_uuid, station_data in loc_stations_data.iterrows():
+                progress += 1
+                station_data = stations_data.loc[station_uuid]
+                station_repere_data = (
+                    repere_data
+                    [repere_data['sampling_feature_uuid'] == station_uuid]
+                    .copy())
+                if not station_repere_data.empty:
+                    station_repere_data = (
+                        station_repere_data
+                        .sort_values(by=['end_date'], ascending=[True]))
+                else:
+                    station_repere_data = pd.Series([], dtype=object)
+
+                pnt_desc += '{} = {}<br/>'.format(
+                    _('Station'),
+                    station_data['obs_well_id'])
+                pnt_desc += '{} = {:0.4f}<br/>'.format(
+                    _('Longitude'),
+                    station_data['longitude'])
+                pnt_desc += '{} = {:0.4f}<br/>'.format(
+                    _('Latitude'),
+                    station_data['latitude'])
+                pnt_desc += '{} = {}<br/>'.format(
+                    _('Water-table'),
+                    station_data['confinement'])
+                pnt_desc += '{} = {}<br/>'.format(
+                    _('Influenced'),
+                    station_data['is_influenced'])
+
+                if station_uuid in stations_data_overview:
+                    last_reading = (stations_data_overview
+                                    .loc[station_uuid]['last_date'])
+                    pnt_desc += '<br/>{} = {}<br/>'.format(
+                        _('Last reading'),
+                        last_reading.strftime('%Y-%m-%d'))
+
+                # Fetch data from the database.
+                if iri_data is not None or iri_graphs is not None:
+                    readings, = self._get_timeseries_for_obs_well(
+                        station_uuid,
+                        data_types=[DataType.WaterLevel,
+                                    DataType.WaterTemp,
+                                    DataType.WaterEC])
+                    formatted_data = format_reading_data(
+                        readings, station_repere_data)
+                    last_repere_data = station_repere_data.iloc[-1]
+                    ground_altitude = (
+                        last_repere_data['top_casing_alt'] -
+                        last_repere_data['casing_length'])
+                    is_alt_geodesic = last_repere_data['is_alt_geodesic']
+                if iri_logs is not None:
+                    log_data, log_fame = (
+                        self.db_accessor.get_attachment(station_uuid, 1))
+                if iri_quality is not None:
+                    quality_data, quality_fame = (
+                        self.db_accessor.get_attachment(station_uuid, 2))
+
+                # Generate the attached files and add the urls.
+                files_urls = ''
+                if iri_data is not None and not readings.empty:
+                    xlsx_filename = _('readings_{}.xlsx').format(
+                        station_data['obs_well_id'])
+                    xlsx_savepath = osp.join(data_dirname, xlsx_filename)
+                    try:
+                        _save_reading_data_to_xlsx(
+                            xlsx_savepath,
+                            _('Piezometry'),
+                            formatted_data,
+                            station_data,
+                            ground_altitude,
+                            is_alt_geodesic,
+                            logo_filename=get_documents_logo_filename(),
+                            font_name=CONF.get(
+                                'documents_settings', 'xlsx_font')
+                            )
+                    except PermissionError as e:
+                        print(e)
+
+                    url = urllib.parse.quote(
+                        iri_data + '/' + xlsx_filename, safe='/:')
+                    files_urls += '<a href="{}">{}</a><br/>'.format(
+                        url, _("Data"))  # Données
+                if iri_logs is not None and log_data is not None:
+                    root, ext = osp.splitext(log_fame)
+                    log_filename = _('diagram_{}{}').format(
+                        station_data['obs_well_id'], ext)
+                    log_savepath = osp.join(logs_dirname, log_filename)
+                    try:
+                        with open(log_savepath, 'wb') as f:
+                            f.write(log_data)
+                    except PermissionError as e:
+                        print(e)
+
+                    url = urllib.parse.quote(
+                        iri_logs + '/' + log_filename, safe='/:')
+                    files_urls += '<a href="{}">{}</a><br/>'.format(
+                        url, _("Diagram"))
+                if iri_graphs is not None and not readings.empty:
+                    graph_filename = _('graph_{}.pdf').format(
+                        station_data['obs_well_id'])
+                    graph_savepath = osp.join(graphs_dirname, graph_filename)
+                    hydrograph = HydrographCanvas(
+                        formatted_data,
+                        station_data,
+                        ground_altitude,
+                        is_alt_geodesic,
+                        fontname=CONF.get('documents_settings', 'graph_font')
+                        )
+                    try:
+                        hydrograph.figure.savefig(graph_savepath, dpi=300)
+                    except PermissionError as e:
+                        print(e)
+
+                    url = urllib.parse.quote(
+                        iri_graphs + '/' + graph_filename, safe='/:')
+                    files_urls += '<a href="{}">{}</a><br/>'.format(
+                        url, _("Graph"))
+                if iri_quality is not None and quality_data is not None:
+                    root, ext = osp.splitext(quality_fame)
+                    quality_filename = _('water_quality_{}{}').format(
+                        station_data['obs_well_id'], ext)
+                    quality_savepath = osp.join(
+                        quality_dirname, quality_filename)
+                    try:
+                        with open(quality_savepath, 'wb') as f:
+                            f.write(quality_data)
+                    except PermissionError as e:
+                        print(e)
+
+                    url = urllib.parse.quote(
+                        iri_quality + '/' + quality_filename, safe='/:')
+                    files_urls += '<a href="{}">{}</a><br/>'.format(
+                        url, _("Water Quality"))
+                if files_urls:
+                    pnt_desc += '<br/>' + files_urls
+
+                if station_uuid != loc_stations_data.index[-1]:
+                    pnt_desc += '--<br/>'
+                self.sig_publish_progress.emit(progress / progress_total * 100)
+            pnt_desc += '<br/>]]>'
+            pnt.description = pnt_desc
+        kml.save(kml_filename)
+        return True,
 
 
 class SardesModelsManager(QObject):
@@ -427,6 +693,7 @@ class DatabaseConnectionManager(TaskManagerBase):
     sig_database_data_changed = Signal(list)
     sig_tseries_data_changed = Signal(list)
     sig_models_data_changed = Signal()
+    sig_publish_progress = Signal(float)
 
     def __init__(self):
         super().__init__()
@@ -436,6 +703,8 @@ class DatabaseConnectionManager(TaskManagerBase):
 
         self.set_worker(DatabaseConnectionWorker())
         self.sig_run_tasks_finished.connect(self._handle_run_tasks_finished)
+        self.worker().sig_publish_progress.connect(
+            self.sig_publish_progress.emit)
 
         # Setup the table models manager.
         self.models_manager = SardesModelsManager(self)
@@ -513,9 +782,10 @@ class DatabaseConnectionManager(TaskManagerBase):
         self._add_task('disconnect_from_db', self._handle_disconnect_from_db)
         self.run_tasks()
 
-    def close(self):
-        """Close this database connection manager."""
-        self.disconnect_from_db()
+    def close(self, callback=None):
+        """Close the database connection manager."""
+        self._add_task('disconnect_from_db', callback)
+        self.run_tasks()
 
     # ---- Utilities
     def get_sonde_installation_info(self, sonde_serial_no, date_time,
@@ -530,11 +800,14 @@ class DatabaseConnectionManager(TaskManagerBase):
 
     # ---- Timeseries
     def get_timeseries_for_obs_well(
-            self, obs_well_id, data_types, callback=None, postpone_exec=False,
-            main_thread=False):
+            self, obs_well_id, data_types=None,
+            callback=None, postpone_exec=False, main_thread=False):
         """
-        Get the time data acquired in the observation well for each
-        given data type.
+        Return a pandas dataframe containing the readings for the given
+        data types and monitoring station.
+
+        If no data type are specified, then return the entire dataset for
+        the specified monitoring station.
         """
         if main_thread is False:
             self._add_task('get_timeseries_for_obs_well', callback,
@@ -621,6 +894,43 @@ class DatabaseConnectionManager(TaskManagerBase):
         if not postpone_exec:
             self.run_tasks()
 
+    # ---- Attachments
+    def get_attachment(self, sampling_feature_uuid, attachment_type,
+                       callback=None, postpone_exec=False):
+        """
+        Return the data and filename of the attachment of the given type that
+        is attached to the specified sampling_feature_uuid.
+        """
+        self._add_task('get_attachment', callback,
+                       sampling_feature_uuid, attachment_type)
+        if not postpone_exec:
+            self.run_tasks()
+
+    def set_attachment(self, sampling_feature_uuid, attachment_type,
+                       filename, callback=None, postpone_exec=False):
+        """
+        Save and attach the given attachment to the specified
+        sampling_feature_uuid in the database.
+        """
+        self._data_changed.add('stored_attachments_info')
+        self._add_task('set_attachment', callback,
+                       sampling_feature_uuid, attachment_type, filename)
+        if not postpone_exec:
+            self.run_tasks()
+
+    def del_attachment(self, sampling_feature_uuid, attachment_type,
+                       callback=None, postpone_exec=False):
+        """
+        Delete from the database the attachment of the specified type that
+        is currently attached to the specified sampling_feature_uuid.
+        """
+        self._data_changed.add('stored_attachments_info')
+        self._add_task(
+            'del_attachment', callback,
+            sampling_feature_uuid, attachment_type)
+        if not postpone_exec:
+            self.run_tasks()
+
     # ---- Handlers
     @Slot(object, object)
     def _handle_connect_to_db(self, connection, connection_error):
@@ -682,13 +992,25 @@ class DatabaseConnectionManager(TaskManagerBase):
         """
         self.models_manager.save_model_edits(table_id)
 
+    # ---- Publish Network Data
+    def publish_to_kml(self, filename, iri_data=None, iri_logs=None,
+                       iri_graphs=None, iri_quality=None, callback=None,
+                       postpone_exec=False):
+        """
+        Publish the piezometric network data to the specified kml filename.
+        """
+        self._add_task('publish_to_kml', callback, filename,
+                       iri_data, iri_logs, iri_graphs, iri_quality)
+        if not postpone_exec:
+            self.run_tasks()
+
 
 if __name__ == '__main__':
     from sardes.database.accessors import DatabaseAccessorSardesLite
     from sardes.api.timeseries import DataType
 
     db_accessor = DatabaseAccessorSardesLite(
-        'D:/rsesq_prod_sample_2020-03-04.db')
+        'D:/Desktop/rsesq_prod_21072020_v1.db')
     dbmanager = DatabaseConnectionManager()
     dbmanager.connect_to_db(db_accessor)
     sampling_feature_uuid = (
@@ -700,3 +1022,5 @@ if __name__ == '__main__':
         callback=None,
         postpone_exec=False, main_thread=True)
     print(readings)
+    
+    dbmanager.close()

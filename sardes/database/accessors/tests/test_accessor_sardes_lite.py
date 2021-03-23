@@ -21,38 +21,62 @@ import os.path as osp
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
+import numpy as np
 import pytest
 import pandas as pd
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.figure import Figure
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
 from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
 from sardes.database.accessors.accessor_sardes_lite import (
-    DatabaseAccessorSardesLite, CURRENT_SCHEMA_VERSION)
+    DatabaseAccessorSardesLite, CURRENT_SCHEMA_VERSION, DATE_FORMAT)
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
+@pytest.fixture()
+def dbaccessor0(tmp_path):
+    """
+    A Database SQlite accessor that is reinitialized after each test.
+    """
+    dbaccessor = DatabaseAccessorSardesLite(
+        osp.join(tmp_path, 'sqlite_database_test.db'))
+    dbaccessor.init_database()
+
+    dbaccessor.connect()
+    assert dbaccessor.is_connected()
+
+    return dbaccessor
+
+
 @pytest.fixture(scope="module")
 def dbaccessor(tmp_path_factory):
+    """
+    A Database SQlite accessor that is connected to a database that is
+    shared among all tests that are inter-dependent.
+    """
     tmp_path = tmp_path_factory.mktemp("database")
     dbaccessor = DatabaseAccessorSardesLite(
         osp.join(tmp_path, 'sqlite_database_test.db'))
     dbaccessor.init_database()
-    dbaccessor.close_connection()
+
+    dbaccessor.connect()
+    assert dbaccessor.is_connected()
+
     return dbaccessor
 
 
 # =============================================================================
-# ---- Tests
+# ---- Independent Tests
 # =============================================================================
-def test_connection(dbaccessor):
+def test_connection(dbaccessor0):
     """
     Test that connecting to the BD fails and succeed as expected.
     """
-    dbaccessor.connect()
-    assert dbaccessor.is_connected()
+    dbaccessor = dbaccessor0
     dbaccessor.close_connection()
 
     # Assert that the connection fails if the version of the BD is outdated.
@@ -99,6 +123,101 @@ def test_connection(dbaccessor):
     dbaccessor.close_connection()
 
 
+def test_add_delete_large_timeseries_record(dbaccessor0):
+    """
+    Test that large time series record are added and deleted as expected
+    to and from the database.
+
+    Regression test for cgq-qgc/sardes#378.
+    """
+    dbaccessor = dbaccessor0
+    sampling_feature_uuid = dbaccessor._create_index('observation_wells_data')
+
+    # Prepare the timeseries data.
+    new_tseries_data = pd.DataFrame(
+        [], columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
+    new_tseries_data['datetime'] = pd.date_range(
+        start='1/1/2000', end='1/1/2020')
+    new_tseries_data[DataType.WaterLevel] = np.random.rand(
+        len(new_tseries_data))
+    new_tseries_data[DataType.WaterTemp] = np.random.rand(
+        len(new_tseries_data))
+
+    # Add timeseries data to the database.
+    dbaccessor.add_timeseries_data(
+        new_tseries_data, sampling_feature_uuid, install_uuid=None)
+
+    wlevel_data = dbaccessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, DataType.WaterLevel)
+    assert len(wlevel_data) == 7306
+
+    wtemp_data = dbaccessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, DataType.WaterTemp)
+    assert len(wtemp_data) == 7306
+
+    # Delete all timeseries data from the database.
+    wlevel_data['data_type'] = DataType.WaterLevel
+    wtemp_data['data_type'] = DataType.WaterTemp
+    tseries_dels = pd.concat((
+        wlevel_data[['datetime', 'obs_id', 'data_type']],
+        wtemp_data[['datetime', 'obs_id', 'data_type']]
+        ))
+    dbaccessor.delete_timeseries_data(tseries_dels)
+
+    wlevel_data = dbaccessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, DataType.WaterLevel)
+    assert len(wlevel_data) == 0
+
+    wtemp_data = dbaccessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, DataType.WaterTemp)
+    assert len(wtemp_data) == 0
+
+
+def test_add_get_del_construction_logs(dbaccessor0, tmp_path):
+    """
+    Test that adding, getting and deleting construction logs in the database
+    is working as expected.
+    """
+    attachment_type = 1
+    assert dbaccessor0.get_stored_attachments_info().empty
+
+    # Add a new observation well to the database.
+    sampling_feature_uuid = dbaccessor0._create_index('observation_wells_data')
+    dbaccessor0.add_observation_wells_data(
+        sampling_feature_uuid, attribute_values={})
+
+    for fext in ['.png', '.jpg', '.jpeg', '.tif', '.pdf']:
+        # Create a dummy construction log file.
+        # Note: we cannot use pyplot directly or we encounter
+        # issues with pytest.
+        figure = Figure()
+        canvas = FigureCanvasAgg(figure)
+        ax = figure.add_axes([0.1, 0.1, 0.8, 0.8], frameon=True)
+        ax.plot([1, 2, 3, 4])
+
+        filename = osp.join(tmp_path, 'test_construction_log') + fext
+        figure.savefig(filename)
+
+        # Attach the construction log file.
+        dbaccessor0.set_attachment(
+            sampling_feature_uuid, attachment_type, filename)
+        assert len(dbaccessor0.get_stored_attachments_info()) == 1
+
+        # Retrieve the construction log file from the database.
+        data, name = dbaccessor0.get_attachment(
+            sampling_feature_uuid, attachment_type)
+        assert name == osp.basename(filename)
+        with open(filename, 'rb') as f:
+            assert f.read() == data
+
+    # Remove the construction log file from the database.
+    dbaccessor0.del_attachment(sampling_feature_uuid, attachment_type)
+    assert dbaccessor0.get_stored_attachments_info().empty
+
+
+# =============================================================================
+# ---- Inter-dependent Tests
+# =============================================================================
 def test_add_observation_well(dbaccessor):
     """
     Test that adding an observation well to the database is working
@@ -360,7 +479,7 @@ def test_add_timeseries(dbaccessor):
          ['2018-09-29 07:00:00', 1.3, 5]],
         columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
     new_tseries_data['datetime'] = pd.to_datetime(
-        new_tseries_data['datetime'], format="%Y-%m-%d %H:%M:%S")
+        new_tseries_data['datetime'], format=DATE_FORMAT)
     dbaccessor.add_timeseries_data(
         new_tseries_data, obs_well_uuid, sonde_install_uuid)
 
@@ -532,4 +651,4 @@ def test_delete_timeseries(dbaccessor):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw', '-s'])
+    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])

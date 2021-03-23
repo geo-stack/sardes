@@ -9,7 +9,6 @@
 
 # ---- Standard imports
 import sys
-import datetime
 import os.path as osp
 
 # ---- Third party imports
@@ -124,24 +123,39 @@ class DataImportWizard(SardesPaneWidget):
 
         file_groupbox = QGroupBox(_('File Info'))
         file_layout = QFormLayout(file_groupbox)
-        file_layout.addRow(_('Input File') + ' :', self.filename_label)
-        file_layout.addRow(_('Project ID') + ' :', self.projectid_label)
-        file_layout.addRow(_('Location') + ' :', self.site_name_label)
-        file_layout.addRow(_('Serial Number') + ' :', self.serial_number_label)
+        file_layout.addRow(_('Input File:'), self.filename_label)
+        file_layout.addRow(_('Project ID:'), self.projectid_label)
+        file_layout.addRow(_('Location:'), self.site_name_label)
+        file_layout.addRow(_('Serial Number:'), self.serial_number_label)
 
         # Setup sonde installation info groupbox.
         self.sonde_label = QLabel()
+        obs_well_fieldname = QLabel(_('Well:'))
+        obs_well_fieldname.setAlignment(Qt.AlignTop)
         self.obs_well_label = QLabel()
+        self.obs_well_label.setWordWrap(True)
+        municipality_fieldname = QLabel(_('Municipality:'))
+        municipality_fieldname.setAlignment(Qt.AlignTop)
+        self.municipality_label = QLabel()
+        self.municipality_label.setWordWrap(True)
         self.install_depth = QLabel()
         self.install_period = QLabel()
 
         sonde_info_widget = QFrame()
-        sonde_form = QFormLayout(sonde_info_widget)
+        sonde_form = QGridLayout(sonde_info_widget)
         sonde_form.setContentsMargins(0, 0, 0, 0)
-        sonde_form.addRow(_('Sonde') + ' :', self.sonde_label)
-        sonde_form.addRow(_('Well') + ' :', self.obs_well_label)
-        sonde_form.addRow(_('Depth') + ' :', self.install_depth)
-        sonde_form.addRow(_('Period') + ' :', self.install_period)
+        sonde_form.addWidget(QLabel(_('Sonde:')), 0, 0)
+        sonde_form.addWidget(self.sonde_label, 0, 1)
+        sonde_form.addWidget(obs_well_fieldname, 1, 0)
+        sonde_form.addWidget(self.obs_well_label, 1, 1)
+        sonde_form.addWidget(municipality_fieldname, 2, 0)
+        sonde_form.addWidget(self.municipality_label, 2, 1)
+        sonde_form.addWidget(QLabel(_('Depth:')), 3, 0)
+        sonde_form.addWidget(self.install_depth, 3, 1)
+        sonde_form.addWidget(QLabel(_('Period:')), 4, 0)
+        sonde_form.addWidget(self.install_period, 4, 1)
+        sonde_form.setRowStretch(sonde_form.rowCount(), 1)
+        sonde_form.setColumnStretch(1, 1)
 
         self.sonde_msg_label = QLabel()
         self.sonde_msg_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
@@ -164,15 +178,15 @@ class DataImportWizard(SardesPaneWidget):
 
         previous_widget = QFrame()
         previous_layout = QGridLayout(previous_widget)
-        previous_layout.addWidget(QLabel(_('Previous Date') + ' :'), 0, 0)
+        previous_layout.addWidget(QLabel(_('Previous Date:')), 0, 0)
         previous_layout.addWidget(self.previous_date_label, 0, 1)
-        previous_layout.addWidget(QLabel(_('Delta Date') + ' :'), 1, 0)
+        previous_layout.addWidget(QLabel(_('Delta Date:')), 1, 0)
         previous_layout.addWidget(self.delta_date_label, 1, 1)
         previous_layout.addWidget(
-            QLabel(_('Previous Water Level') + ' :'), 2, 0)
+            QLabel(_('Previous Water Level:')), 2, 0)
         previous_layout.addWidget(self.previous_level_label, 2, 1)
         previous_layout.addWidget(
-            QLabel(_('Delta Water Level') + ' :'), 3, 0)
+            QLabel(_('Delta Water Level:')), 3, 0)
         previous_layout.addWidget(self.delta_level_label, 3, 1)
 
         previous_layout.setRowStretch(4, 1)
@@ -545,6 +559,7 @@ class DataImportWizard(SardesPaneWidget):
         if self._file_reader is None:
             self.sonde_label.clear()
             self.obs_well_label.clear()
+            self.municipality_label.clear()
             self.install_depth.clear()
             self.install_period.clear()
             self.sonde_stacked_widget.setCurrentIndex(0)
@@ -561,14 +576,17 @@ class DataImportWizard(SardesPaneWidget):
                 sonde_install_data['sonde_brand_model'],
                 self._sonde_serial_no
                 ))
-            self.obs_well_label.setText('{} ({})'.format(
+            self.obs_well_label.setText('{} - {}'.format(
                 sonde_install_data['well_name'],
-                sonde_install_data['well_municipality']
+                sonde_install_data['well_common_name'],
                 ))
+            self.municipality_label.setText(
+                sonde_install_data['well_municipality']
+                )
             self.install_depth.setText('{} m'.format(
                 str(sonde_install_data['install_depth'])
                 ))
-            self.install_period.setText('{} to {}'.format(
+            self.install_period.setText(_('{} to {}').format(
                 sonde_install_data['start_date'].strftime("%Y-%m-%d %H:%M"),
                 _('today') if pd.isnull(sonde_install_data['end_date']) else
                 sonde_install_data['end_date'].strftime("%Y-%m-%d %H:%M")
@@ -577,6 +595,7 @@ class DataImportWizard(SardesPaneWidget):
         else:
             self.sonde_label.setText(NOT_FOUND_MSG_COLORED)
             self.obs_well_label.setText(NOT_FOUND_MSG_COLORED)
+            self.municipality_label.setText(NOT_FOUND_MSG_COLORED)
             self.install_depth.setText(NOT_FOUND_MSG_COLORED)
             self.install_period.setText(NOT_FOUND_MSG_COLORED)
             self.sonde_stacked_widget.setCurrentIndex(0)
@@ -676,9 +695,9 @@ class DataImportWizard(SardesPaneWidget):
         to_add = new_dataf[['datetime']].copy()
         to_add['sonde_id'] = self._sonde_serial_no
 
-        # See https://stackoverflow.com/questions/50645297
-        self._is_duplicated = to_add.stack().isin(
-            in_db.stack().values).unstack().all(axis=1).values
+        # See https://stackoverflow.com/a/50645338/4481445
+        self._is_duplicated = to_add.apply(tuple, 1).isin(
+            in_db.apply(tuple, 1))
 
         self._update_duplicated_satus()
 
@@ -910,12 +929,13 @@ class DataImportWizard(SardesPaneWidget):
 
 if __name__ == '__main__':
     from sardes.database.database_manager import DatabaseConnectionManager
-    from sardes.database.accessors import DatabaseAccessorDemo
+    from sardes.database.accessors import DatabaseAccessorSardesLite
 
     app = QApplication(sys.argv)
 
+    database = "D:/Desktop/rsesq_prod_21072020_v1.db"
     dbconnmanager = DatabaseConnectionManager()
-    dbconnmanager.connect_to_db(DatabaseAccessorDemo())
+    dbconnmanager.connect_to_db(DatabaseAccessorSardesLite(database))
 
     dataimportwizard = DataImportWizard()
     dataimportwizard.set_database_connection_manager(dbconnmanager)

@@ -54,6 +54,9 @@ def format_reading_data(data, repere_data):
     """
     Format readings data for publication.
     """
+    if data.empty:
+        return data
+
     # Convert water level in altitude (above see level).
     if not repere_data.empty:
         for i in range(len(repere_data)):

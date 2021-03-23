@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 """
-Tests for the DatabaseConnectionWidget.
+Tests for the Tables plugin.
 """
 
 # ---- Standard imports
@@ -20,53 +20,55 @@ os.environ['SARDES_PYTEST'] = 'True'
 # ---- Third party imports
 import pytest
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QMainWindow
 
 # ---- Local imports
-from sardes.database.database_manager import DatabaseConnectionManager
-from sardes.database.accessors import DatabaseAccessorDemo
 from sardes.plugins.tables import SARDES_PLUGIN_CLASS
-from sardes.database.accessors.accessor_demo import SONDE_MODELS_LIB
-from sardes.widgets.tableviews import (MSEC_MIN_PROGRESS_DISPLAY, QMessageBox)
+from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
+from sardes.database.accessors import DatabaseAccessorSardesLite
+from sardes.app.mainwindow import MainWindowBase
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def dbconnmanager(qtbot):
-    dbconnmanager = DatabaseConnectionManager()
-    return dbconnmanager
+def dbaccessor(tmp_path, database_filler):
+    dbaccessor = DatabaseAccessorSardesLite(
+        osp.join(tmp_path, 'sqlite_database_test.db'))
+    dbaccessor.init_database()
+    database_filler(dbaccessor)
+
+    return dbaccessor
 
 
 @pytest.fixture
-def mainwindow(qtbot, mocker, dbconnmanager):
-    class MainWindowMock(QMainWindow):
+def mainwindow(qtbot, mocker, dbaccessor):
+    class MainWindowMock(MainWindowBase):
         def __init__(self):
-            super().__init__()
-            self.panes_menu = Mock()
-            self.db_connection_manager = dbconnmanager
-
             self.view_timeseries_data = Mock()
-            self.plot_timeseries_data = Mock()
+            super().__init__()
 
-            self.register_table = Mock()
-            self.unregister_table = Mock()
-
+        def setup_internal_plugins(self):
             self.plugin = SARDES_PLUGIN_CLASS(self)
             self.plugin.register_plugin()
+            self.internal_plugins.append(self.plugin)
 
     mainwindow = MainWindowMock()
     mainwindow.show()
     qtbot.waitForWindowShown(mainwindow)
-    qtbot.addWidget(mainwindow)
 
+    dbconnmanager = mainwindow.db_connection_manager
     with qtbot.waitSignal(dbconnmanager.sig_database_connected, timeout=3000):
-        dbconnmanager.connect_to_db(DatabaseAccessorDemo())
+        dbconnmanager.connect_to_db(dbaccessor)
     assert dbconnmanager.is_connected()
     qtbot.wait(1000)
 
-    return mainwindow
+    yield mainwindow
+
+    # We need to wait for the mainwindow to close properly to avoid
+    # runtime errors on the c++ side.
+    with qtbot.waitSignal(mainwindow.sig_about_to_close):
+        mainwindow.close()
 
 
 # =============================================================================
@@ -125,10 +127,11 @@ def test_disconnect_from_database(mainwindow, qtbot):
 # =============================================================================
 # ---- Tests Table Sondes Inventory
 # =============================================================================
-def test_edit_sonde_model(mainwindow, qtbot):
+def test_edit_sonde_model(mainwindow, qtbot, dbaccessor):
     """
     Test editing sonde brand in the sondes inventory table.
     """
+    sonde_models_lib = dbaccessor.get_sonde_models_lib()
     tabwidget = mainwindow.plugin.tabwidget
     tablewidget = mainwindow.plugin._tables['table_sondes_inventory']
     tableview = tablewidget.tableview
@@ -141,7 +144,7 @@ def test_edit_sonde_model(mainwindow, qtbot):
     # Select the first cell of the table.
     model_index = tableview.model().index(0, 0)
     assert model_index.data() == 'Solinst Barologger M1.5'
-    assert model.get_value_at(model_index) == 3
+    assert model.get_value_at(model_index) == 5
 
     qtbot.mouseClick(
         tableview.viewport(),
@@ -154,22 +157,22 @@ def test_edit_sonde_model(mainwindow, qtbot):
 
     # Assert the editor of the item delegate is showing the right data.
     editor = tableview.itemDelegate(model_index).editor
-    assert editor.currentData() == 3
+    assert editor.currentData() == 5
     assert editor.currentText() == 'Solinst Barologger M1.5'
-    assert editor.count() == len(SONDE_MODELS_LIB)
+    assert editor.count() == len(sonde_models_lib)
 
     # Select a new value and accept the edit.
     editor.setCurrentIndex(editor.findData(8))
     qtbot.keyPress(editor, Qt.Key_Enter)
     assert tableview.state() != tableview.EditingState
-    assert model_index.data() == 'Telog 2 Druck'
+    assert model_index.data() == 'Solinst LTC F30/M10'
     assert model.get_value_at(model_index) == 8
     assert tabwidget.tabText(1) == tablewidget.get_table_title() + '*'
 
     # Undo the last edit.
     tableview._undo_last_data_edit()
     assert model_index.data() == 'Solinst Barologger M1.5'
-    assert model.get_value_at(model_index) == 3
+    assert model.get_value_at(model_index) == 5
     assert tabwidget.tabText(1) == tablewidget.get_table_title()
 
 
@@ -210,4 +213,4 @@ def test_save_data_edits(mainwindow, qtbot):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw'])
+    pytest.main(['-x', __file__, '-v', '-rw'])

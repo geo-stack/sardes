@@ -46,8 +46,9 @@ class Databases(SardesPlugin):
         """Setup Sardes internal database connection dialogs."""
         self.internal_database_dialogs = []
 
-        from sardes.database.dialog_demo import DatabaseConnectDialogDemo
-        database_dialog = DatabaseConnectDialogDemo()
+        from sardes.database.dialog_sardes_lite import (
+            DatabaseConnectDialogSardesLite)
+        database_dialog = DatabaseConnectDialogSardesLite()
         database_dialog.set_database_kargs(
             get_dbconfig(database_dialog.dbtype_name))
         self.db_connection_widget.add_database_dialog(database_dialog)
@@ -55,14 +56,6 @@ class Databases(SardesPlugin):
 
         from sardes.database.dialog_rsesq import DatabaseConnectDialogRSESQ
         database_dialog = DatabaseConnectDialogRSESQ()
-        database_dialog.set_database_kargs(
-            get_dbconfig(database_dialog.dbtype_name))
-        self.db_connection_widget.add_database_dialog(database_dialog)
-        self.internal_database_dialogs.append(database_dialog)
-
-        from sardes.database.dialog_sardes_lite import (
-            DatabaseConnectDialogSardesLite)
-        database_dialog = DatabaseConnectDialogSardesLite()
         database_dialog.set_database_kargs(
             get_dbconfig(database_dialog.dbtype_name))
         self.db_connection_widget.add_database_dialog(database_dialog)

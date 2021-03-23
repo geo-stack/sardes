@@ -8,12 +8,11 @@
 # -----------------------------------------------------------------------------
 
 """
-Tests for the ObservationWellTableView.
+Tests for the TimeSeriesPlotViewer.
 """
 
 # ---- Standard imports
 import os.path as osp
-import sys
 
 # ---- Third party imports
 from matplotlib.backends.backend_qt5 import QtWidgets
@@ -25,21 +24,20 @@ from qtpy.QtWidgets import QApplication
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
 from sardes.api.timeseries import DataType
 from sardes.database.database_manager import DatabaseConnectionManager
+from sardes.database.accessors import DatabaseAccessorSardesLite
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def dbaccessor():
-    # We need to do this to make sure the demo database is reinitialized
-    # after each test.
-    try:
-        del sys.modules['sardes.database.accessors.accessor_demo']
-    except KeyError:
-        pass
-    from sardes.database.accessors.accessor_demo import DatabaseAccessorDemo
-    return DatabaseAccessorDemo()
+def dbaccessor(tmp_path, database_filler):
+    dbaccessor = DatabaseAccessorSardesLite(
+        osp.join(tmp_path, 'sqlite_database_test.db'))
+    dbaccessor.init_database()
+    database_filler(dbaccessor)
+
+    return dbaccessor
 
 
 @pytest.fixture
@@ -53,11 +51,18 @@ def dbconnmanager(qtbot, dbaccessor):
 
 
 @pytest.fixture
-def tseriesviewer(qtbot, dbconnmanager):
+def obs_well_uuid(obswells_data):
+    return obswells_data.index[0]
+
+
+@pytest.fixture
+def tseriesviewer(qtbot, dbconnmanager, obs_well_uuid):
     viewer = TimeSeriesPlotViewer()
 
     tseries_data = dbconnmanager.get_timeseries_for_obs_well(
-        1, [DataType.WaterLevel, DataType.WaterTemp], main_thread=True)
+        obs_well_uuid,
+        data_types=[DataType.WaterLevel, DataType.WaterTemp],
+        main_thread=True)
     viewer.set_data(tseries_data)
 
     qtbot.addWidget(viewer)
@@ -136,7 +141,7 @@ def test_tseriesviewer_axes_visibility(tseriesviewer, qtbot):
     assert tseriesviewer.figure.base_axes.get_legend().get_visible() is True
 
 
-def test_manual_measurements(tseriesviewer, qtbot, dbaccessor):
+def test_manual_measurements(tseriesviewer, qtbot, dbaccessor, obs_well_uuid):
     """
     Test that setting manual measurements for a give datatype is working
     as expected.
@@ -147,14 +152,15 @@ def test_manual_measurements(tseriesviewer, qtbot, dbaccessor):
 
     # Fetch the manual measurements for a given well from the database.
     measurements = dbaccessor.get_manual_measurements()
-    measurements = measurements[measurements['sampling_feature_uuid'] == 1]
-    assert len(measurements) == 1
+    measurements = measurements[
+        measurements['sampling_feature_uuid'] == obs_well_uuid]
+    assert len(measurements) == 3
 
     # Set the manual measurement in the plot viewer.
     tseriesviewer.set_manual_measurements(
         DataType.WaterLevel, measurements[['datetime', 'value']])
     assert axe._mpl_artist_handles['manual_measurements'] is not None
-    assert len(axe._mpl_artist_handles['manual_measurements'].get_xdata()) == 1
+    assert len(axe._mpl_artist_handles['manual_measurements'].get_xdata()) == 3
 
     # Assert that the legend was updated as expected.
     assert len(tseriesviewer.figure.base_axes.get_legend().legendHandles) == 3

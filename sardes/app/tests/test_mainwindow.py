@@ -13,6 +13,7 @@ Tests for the mainwindow.
 
 # ---- Standard imports
 import os
+import os.path as osp
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
@@ -23,18 +24,37 @@ from qtpy.QtCore import QPoint, QSize, Qt
 from sardes.config.gui import INIT_MAINWINDOW_SIZE
 from sardes.config.main import CONF
 from sardes.app.mainwindow import MainWindow, QMessageBox
+from sardes.database.accessors import DatabaseAccessorSardesLite
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
+def database(tmp_path, database_filler):
+    database = osp.join(tmp_path, 'sqlite_database_test.db')
+    dbaccessor = DatabaseAccessorSardesLite(database)
+    dbaccessor.init_database()
+    database_filler(dbaccessor)
+    dbaccessor.close_connection()
+    return database
+
+
+@pytest.fixture
 def mainwindow(qtbot, mocker):
     """A fixture for Sardes main window."""
     mainwindow = MainWindow()
-    qtbot.addWidget(mainwindow)
     mainwindow.show()
-    return mainwindow
+    qtbot.waitForWindowShown(mainwindow)
+
+    # We need to wait for the mainwindow to be initialized correctly.
+    qtbot.wait(150)
+    yield mainwindow
+
+    # We need to wait for the mainwindow to close properly to avoid
+    # runtime errors on the c++ side.
+    with qtbot.waitSignal(mainwindow.sig_about_to_close):
+        mainwindow.close()
 
 
 # =============================================================================
@@ -55,7 +75,6 @@ def test_mainwindow_settings(qtbot, mocker):
     CONF.set('main', 'window/geometry', None)
 
     mainwindow1 = MainWindow()
-    qtbot.addWidget(mainwindow1)
     mainwindow1.show()
     qtbot.waitForWindowShown(mainwindow1)
 
@@ -79,14 +98,14 @@ def test_mainwindow_settings(qtbot, mocker):
 
     # Close the main window.
     assert CONF.get('main', 'window/geometry', None) is None
-    mainwindow1.close()
+    with qtbot.waitSignal(mainwindow1.sig_about_to_close):
+        mainwindow1.close()
     assert CONF.get('main', 'window/geometry', None) is not None
 
     # Create a new instance of the main window and assert that the size,
     # position and maximized state were restored from the previous
     # mainwindow that was closed.
     mainwindow2 = MainWindow()
-    qtbot.addWidget(mainwindow2)
     mainwindow2.show()
     qtbot.waitForWindowShown(mainwindow2)
     assert mainwindow2.isMaximized()
@@ -98,12 +117,20 @@ def test_mainwindow_settings(qtbot, mocker):
     assert mainwindow2.size() == QSize(*expected_normal_window_size)
     assert mainwindow2.pos() == QPoint(*expected_normal_window_pos)
 
+    # Close the second mainwindow.
+    with qtbot.waitSignal(mainwindow2.sig_about_to_close):
+        mainwindow2.close()
 
-def test_mainwindow_lang_change(mainwindow, qtbot, mocker):
+
+def test_mainwindow_lang_change(qtbot, mocker):
     """
     Test that the window size and position are store and restore correctly
     in and from our configs.
     """
+    mainwindow = MainWindow()
+    mainwindow.show()
+    qtbot.waitForWindowShown(mainwindow)
+
     # Check that English is the default selected language.
     lang_actions = mainwindow.lang_menu.actions()
     checked_actions = [act for act in lang_actions if act.isChecked()]
@@ -117,13 +144,12 @@ def test_mainwindow_lang_change(mainwindow, qtbot, mocker):
     fr_action.toggle()
 
     # Close and delete the window.
-    mainwindow.close()
-    qtbot.wait(5)
+    with qtbot.waitSignal(mainwindow.sig_about_to_close):
+        mainwindow.close()
 
     # Create a new instance of the main window and assert that the
     # language was changed for Français.
     mainwindow_restart = MainWindow()
-    qtbot.addWidget(mainwindow_restart)
     mainwindow_restart.show()
     qtbot.waitForWindowShown(mainwindow_restart)
 
@@ -131,6 +157,10 @@ def test_mainwindow_lang_change(mainwindow, qtbot, mocker):
     checked_actions = [act for act in lang_actions if act.isChecked()]
     assert len(checked_actions) == 1
     assert checked_actions[0].text() == 'Français'
+
+    # Close the second mainwindow.
+    with qtbot.waitSignal(mainwindow_restart.sig_about_to_close):
+        mainwindow_restart.close()
 
 
 def test_reset_window_layout(mainwindow, qtbot, mocker):
@@ -159,10 +189,18 @@ def test_reset_window_layout(mainwindow, qtbot, mocker):
 # =============================================================================
 # ---- Tests show readings
 # =============================================================================
-def test_view_readings(mainwindow, qtbot):
+def test_view_readings(mainwindow, qtbot, database, readings_data,
+                       obswells_data):
     """
     Assert that timeseries data tables are created and shown as expected.
     """
+    # Set the path to the demo database in the Sardes SQlite database dialog.
+    dbconn_widget = mainwindow.databases_plugin.db_connection_widget
+    assert dbconn_widget.dbtype_combobox.currentText() == 'Sardes SQLite'
+
+    dbialog = dbconn_widget.get_current_database_dialog()
+    dbialog.dbname_widget.set_path(database)
+
     dbmanager = mainwindow.db_connection_manager
     with qtbot.waitSignal(dbmanager.sig_database_connected, timeout=1500):
         mainwindow.databases_plugin.connect_to_database()
@@ -178,7 +216,7 @@ def test_view_readings(mainwindow, qtbot):
     qtbot.waitUntil(
         lambda: table_obs_well.get_current_obs_well_data() is not None)
     current_obs_well = table_obs_well.get_current_obs_well_data().name
-    assert current_obs_well == 0
+    assert current_obs_well == obswells_data.index[0]
 
     # Click on the button to show the readings data for the selected well.
     readings_plugin = mainwindow.readings_plugin
@@ -186,8 +224,8 @@ def test_view_readings(mainwindow, qtbot):
     qtbot.mouseClick(table_obs_well.show_data_btn, Qt.LeftButton)
     qtbot.waitUntil(lambda: len(readings_plugin._tseries_data_tables) == 1)
 
-    table = readings_plugin._tseries_data_tables[0]
-    qtbot.waitUntil(lambda: table.tableview.row_count() == 1826)
+    table = readings_plugin._tseries_data_tables[obswells_data.index[0]]
+    qtbot.waitUntil(lambda: table.tableview.row_count() == len(readings_data))
     assert table.isVisible()
 
     # Close the timeseries table.
@@ -196,4 +234,4 @@ def test_view_readings(mainwindow, qtbot):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', os.path.basename(__file__), '-v', '-rw'])
+    pytest.main(['-x', __file__, '-v', '-rw'])

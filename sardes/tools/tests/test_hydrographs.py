@@ -27,7 +27,7 @@ from qtpy.QtWidgets import QToolBar
 # ---- Local imports
 from sardes import __rootdir__
 from sardes.api.timeseries import DataType
-from sardes.plugins.readings.tools.hydrographs import (
+from sardes.tools.hydrographs import (
     HydrographTool, HydrographCanvas, QFileDialog)
 from sardes.utils.tests.test_data_operations import format_reading_data
 
@@ -114,7 +114,7 @@ def test_create_hydrograph(tmp_path, source_data, repere_data, obs_well_data,
     is_alt_geodesic = last_repere_data['is_alt_geodesic']
 
     # Test that it is working when no corporate logo is available.
-    mocker.patch('sardes.config.ospath.get_company_logo_filename',
+    mocker.patch('sardes.config.ospath.get_documents_logo_filename',
                  return_value=None)
     HydrographCanvas(
         format_reading_data(source_data, repere_data),
@@ -125,7 +125,7 @@ def test_create_hydrograph(tmp_path, source_data, repere_data, obs_well_data,
     # Test that it is working when a corporate logo is available.
     company_logo_filename = osp.join(
         __rootdir__, 'ressources', 'icons', 'sardes.png')
-    mocker.patch('sardes.config.ospath.get_company_logo_filename',
+    mocker.patch('sardes.config.ospath.get_documents_logo_filename',
                  return_value=company_logo_filename)
     HydrographCanvas(
         format_reading_data(source_data, repere_data),

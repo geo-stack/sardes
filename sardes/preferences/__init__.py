@@ -4,8 +4,8 @@
 # https://github.com/cgq-qgc/sardes
 #
 # This file is part of SARDES.
-# Licensed under the terms of the MIT License.
+# Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
-from sardes.database.accessors.accessor_rsesq import DatabaseAccessorRSESQ
-from sardes.database.accessors.accessor_sardes_lite import DatabaseAccessorSardesLite
+from sardes.preferences.configdialog import ConfDialog, ConfPage
+from sardes.preferences.documents import DocumentsSettingsConfPage
