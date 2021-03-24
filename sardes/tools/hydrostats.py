@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Oct 25 20:24:09 2017
-@author: jsgosselin
-"""
+# -----------------------------------------------------------------------------
+# Copyright © SARDES Project Contributors
+# https://github.com/cgq-qgc/sardes
+#
+# This file is part of SARDES.
+# Licensed under the terms of the GNU General Public License.
+# -----------------------------------------------------------------------------
 
 # ---- Standard library imports
 import os
