@@ -448,7 +448,6 @@ class SatisticalHydrographFigure(Figure):
         yrange = ymax - ymin
         yoffset = 0.1 / self.get_figwidth() * yrange
         ax.axis([-0.75, 11.75, ymin - yoffset, ymax + yoffset])
-        ax.invert_yaxis()
 
         for i, (m, n) in enumerate(zip(MONTHS[mth_idx], nyear[mth_idx])):
             self.monthlabels[i].set_text(m)
