@@ -10,15 +10,17 @@
 """Qt utilities"""
 
 # ---- Standard imports
+import sys
 from datetime import datetime
 from math import pi
 from time import strptime
+import platform
 
 # ---- Third party imports
 from qtpy.QtGui import QKeySequence
 from qtpy.QtCore import QByteArray, QDateTime, QPoint, QSize, Qt
 from qtpy.QtWidgets import (QAction, QDateEdit, QSizePolicy, QToolBar,
-                            QToolButton, QWidget)
+                            QToolButton, QWidget, QApplication, QStyleFactory)
 
 # ---- Local imports
 from sardes.config.gui import (get_iconsize, get_toolbar_item_spacing)
@@ -34,6 +36,18 @@ def center_widget_to_another(widget, other_widget):
     c2 = other_widget.mapToGlobal(QPoint(w2 / 2, h2 / 2))
     q1.moveCenter(c2)
     widget.move(q1.topLeft())
+
+
+def create_application():
+    """Create a QApplication instance if it doesn't already exist"""
+    qapp = QApplication.instance()
+    if qapp is None:
+        qapp = QApplication(sys.argv)
+
+        if platform.system() == 'Windows':
+            qapp.setStyle(QStyleFactory.create('WindowsVista'))
+
+    return qapp
 
 
 def create_action(parent, text=None, shortcut=None, icon=None, tip=None,
