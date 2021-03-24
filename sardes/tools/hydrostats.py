@@ -34,8 +34,9 @@ from sardes.utils.qthelpers import (
 
 
 RGB = ["#ccebc5", "#a8ddb5", "#7bccc4", "#4eb3d3", "#2b8cbe"]
-MONTHS = np.array(['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun',
-                   'Jui', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'])
+MONTHS = np.array([
+    _('Jan'), _('Fév'), _('Mar'), _('Avr'), _('Mai'), _('Jun'),
+    _('Jui'), _('Aoû'), _('Sep'), _('Oct'), _('Nov'), _('Déc')])
 
 
 class SatisticalHydrographTool(SardesTool):
@@ -113,25 +114,11 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
     def __init__(self):
         figure = SatisticalHydrographFigure(figsize=(8, 6), facecolor='white')
         super().__init__(figure)
-        self._setup_axes()
-        wlevels = None
-        self._cur_year = 2016
-        self._last_month = 12
-        self._pool = 'all'
+        self.wlevels = None
 
         # Setup a matplotlib navigation toolbar, but hide it.
         toolbar = NavigationToolbar2QT(self, self)
         toolbar.hide()
-
-    def _setup_axes(self):
-        # Create the main axe.
-        ax = self.figure.add_axes([0, 0, 1, 1], zorder=1)
-        ax.set_facecolor('1')
-        ax.grid(axis='y', color='0.65', linestyle='-', linewidth=0.5,
-                dashes=[10, 3])
-        ax.set_axisbelow(True)
-        ax.tick_params(axis='x', which='both', length=3)
-        ax.tick_params(axis='y', which='both', length=0)
 
     def copy_to_clipboard(self):
         buf = io.BytesIO()
@@ -150,6 +137,23 @@ class SatisticalHydrographFigure(Figure):
         self.set_tight_layout(True)
         self.xlabelpad = 10
         self.ylabelpad = 10
+        self.monthlabels = []
+        self.ncountlabels = []
+        self.leghandles = []
+        self.leglabels = []
+
+        self.setup_axes()
+        self.setup_legend()
+
+    def setup_axes(self):
+        # Create the main axe.
+        ax = self.add_axes([0, 0, 1, 1], zorder=1)
+        ax.set_facecolor('1')
+        ax.grid(axis='y', color='0.65', linestyle='-', linewidth=0.5,
+                dashes=[10, 3])
+        ax.set_axisbelow(True)
+        ax.tick_params(axis='x', which='both', length=3)
+        ax.tick_params(axis='y', which='both', length=0)
 
     def tight_layout(self, *args, **kargs):
         """
@@ -166,11 +170,7 @@ class SatisticalHydrographFigure(Figure):
             return
 
         figborderpad = 15
-
         figbbox = self.bbox
-        fheight = self.get_figheight()
-        fwidth = self.get_figwidth()
-
         ax = self.axes[0]
         axbbox = ax.bbox
 
@@ -197,25 +197,23 @@ class SatisticalHydrographFigure(Figure):
         right_margin = (xaxis_width + figborderpad) / figbbox.width
 
         # Calculate bottom margin height.
-        xaxis_height = axbbox.y0 - bbox_xaxis_bottom.y0
+        xlabel_y0 = min(
+            [bbox_xaxis_bottom.y0] +
+            [lab.get_window_extent(renderer).y0 for lab in self.ncountlabels])
+        xaxis_height = axbbox.y0 - xlabel_y0
         xlabel_height = bbox_xaxis_label.height + self.xlabelpad
-        print(xlabel_height)
         bottom_margin = (
             xaxis_height + xlabel_height + figborderpad
             ) / figbbox.height
-        
-        # # Calculate top margin height.
-        # top_margin = self.setp['top_margin']
-        # if top_margin is None:
-        #     cursorinfotext_height = (
-        #         self.cursor.infotextheight + self.cursor.infotextpad if
-        #         self.cursor else 0
-        #         )
-        #     top_margin = (
-        #         figborderpad + cursorinfotext_height
-        #         ) / figbbox.height
 
-        top_margin = 0.5 / fheight
+        # Calculate top margin height.
+        leg_y1 = max(
+            [axbbox.y1] +
+            [hdl.get_window_extent(renderer).y1 for hdl in self.leghandles])
+        legend_height = leg_y1 - axbbox.y1
+        top_margin = (
+            figborderpad + legend_height
+            ) / figbbox.height
 
         ax.set_position([
             left_margin, bottom_margin,
@@ -231,35 +229,36 @@ class SatisticalHydrographFigure(Figure):
         super().set_size_inches(*args, **kargs)
         self.tight_layout()
 
-
     def plot_statistical_hydrograph(self, wlevels):
         # Organize month order and define first and last datetime value
         # for the current data.
+        self.monthlabels = []
+        self.ncountlabels = []
         ax = self.axes[0]
         ax.clear()
         if wlevels is None or wlevels.empty:
             return
 
-        self._cur_year = np.max(wlevels.index.year)
-        if self._last_month == 12:
-            year_lbl = '{} {:d}'.format(_("Year"), self._cur_year)
+        curyear = np.max(wlevels.index.year)
+        lastmonth = 12
+        if lastmonth == 12:
+            year_lbl = '{} {:d}'.format(_("Year"), curyear)
             mth_idx = np.arange(12)
-            dtstart = dt.datetime(self._cur_year, 1, 1)
-            dtend = dt.datetime(self._cur_year, 12, 31)
+            dtstart = dt.datetime(curyear, 1, 1)
+            dtend = dt.datetime(curyear, 12, 31)
         else:
-            year_lbl = "Years %d-%d" % (self._cur_year - 1, self._cur_year)
+            year_lbl = "Years %d-%d" % (curyear - 1, curyear)
             mth_idx = np.arange(self._last_month, 12)
             mth_idx = np.hstack((mth_idx, np.arange(12 - len(mth_idx))))
-            dtstart = dt.datetime(self._cur_year - 1, mth_idx[0] + 1, 1)
+            dtstart = dt.datetime(curyear - 1, mth_idx[0] + 1, 1)
             dtend = dt.datetime(
-                self._cur_year,
+                curyear,
                 mth_idx[-1] + 1,
-                monthrange(self._cur_year, mth_idx[-1] + 1)[-1])
+                monthrange(curyear, mth_idx[-1] + 1)[-1])
 
         # Generate the percentiles.
         q = [100, 90, 75, 50, 25, 10, 0]
-        percentiles, nyear = compute_monthly_statistics(
-            wlevels, q, self._pool)
+        percentiles, nyear = compute_monthly_statistics(wlevels, q, pool='all')
 
         # Plot the percentiles.
         xpos = np.arange(12)
@@ -301,14 +300,17 @@ class SatisticalHydrographFigure(Figure):
         for m, n, x in zip(MONTHS[mth_idx], nyear[mth_idx], xlabelspos):
             offset = transforms.ScaledTranslation(
                 0, -5/72, self.dpi_scale_trans)
-            ax.text(x, y, m, ha='center', va='top', fontsize=12,
-                    transform=ax.transData+offset)
+            self.monthlabels.append(ax.text(
+                x, y, m, ha='center', va='top', fontsize=12,
+                transform=ax.transData+offset
+                ))
             offset = transforms.ScaledTranslation(
                 0, -18/72, self.dpi_scale_trans)
-            ax.text(x, y, '(%d)' % n, ha='center', va='top', fontsize=9,
-                    transform=ax.transData+offset)
+            self.ncountlabels.append(ax.text(
+                x, y, '(%d)' % n, ha='center', va='top', fontsize=9,
+                transform=ax.transData+offset))
 
-        self.setup_legend()
+        self.canvas.draw()
 
     def setup_legend(self):
         """
@@ -318,8 +320,14 @@ class SatisticalHydrographFigure(Figure):
         legend handle.
         """
         ax = self.axes[0]
-        ax2 = self.add_axes([0, 0, 1, 1], facecolor=None)
-        ax2.axis('off')
+        try:
+            ax2 = self.axes[1]
+            ax2.clear()
+        except IndexError:
+            ax2 = self.add_axes([0, 0, 1, 1], facecolor=None)
+            ax2.axis('off')
+        self.leghandles = []
+        self.leglabels = []
 
         labels = ['<10', '10-24', '25-75', '76-90', '>90',
                   _('Median'), _('Measures')]
@@ -345,26 +353,33 @@ class SatisticalHydrographFigure(Figure):
                 (handlelength * i + labelspacing * i, 0),
                 handlelength, handleheight,
                 fc=RGB[i], ec='black', lw=0.5, transform=trans_patch)
+            self.leghandles.append(patch)
             ax2.add_patch(patch)
             ax2.text(handlelength * (i + 1/2) + labelspacing * i, 0, labels[i],
                      ha='center', va='bottom', fontsize=fontsize,
                      transform=trans_text)
         i += 1
-        ax2.plot([handlelength * (i + 1/2) + labelspacing * i],
-                 [handleheight / 2],
-                 marker='^', color='black', ms=10, ls='',
-                 transform=trans_patch)
+        self.leghandles.append(ax2.plot(
+            [handlelength * (i + 1/2) + labelspacing * i],
+            [handleheight / 2],
+            marker='^', color='black', ms=10, ls='',
+            transform=trans_patch
+            )[0])
         ax2.text(handlelength * (i + 1/2) + labelspacing * i, 0, labels[i],
                  ha='center', va='bottom', fontsize=fontsize,
                  transform=trans_text)
         i += 1
-        ax2.plot([handlelength * (i + 1/2) + labelspacing * i],
-                 [handleheight / 2],
-                 marker='.', color='red', ms=10, ls='', mew=2,
-                 transform=trans_patch)
+        self.leghandles.append(ax2.plot(
+            [handlelength * (i + 1/2) + labelspacing * i],
+            [handleheight / 2],
+            marker='.', color='red', ms=10, ls='', mew=2,
+            transform=trans_patch
+            )[0])
         ax2.text(handlelength * (i + 1/2) + labelspacing * i, 0, labels[i],
                  ha='center', va='bottom', fontsize=fontsize,
                  transform=trans_text)
+
+        self.canvas.draw()
 
 
 def compute_monthly_statistics(tseries, q, pool='all'):
