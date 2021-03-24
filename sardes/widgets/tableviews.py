@@ -2251,6 +2251,12 @@ class SardesTableWidget(SardesPaneWidget):
             self.get_lower_toolbar().addSeparator()
 
     # ---- Tools
+    def tools(self):
+        """
+        Return the list of SardesTool currently installed in this table. 
+        """
+        return self._tools.values()
+
     def install_tool(self, tool, before=None, after=None):
         """
         Install the provided tool in the toolbar of this tablewidget.
