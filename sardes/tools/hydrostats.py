@@ -8,7 +8,6 @@
 # -----------------------------------------------------------------------------
 
 # ---- Standard library imports
-import os
 from calendar import monthrange
 import datetime as dt
 import io
@@ -33,7 +32,7 @@ from sardes.api.timeseries import DataType
 from sardes.config.locale import _
 from sardes.api.tools import SardesTool
 from sardes.utils.qthelpers import (
-    create_action, create_toolbutton, create_mainwindow_toolbar)
+    create_toolbutton, create_mainwindow_toolbar)
 
 
 RGB = ["#ccebc5", "#a8ddb5", "#7bccc4", "#4eb3d3", "#2b8cbe"]
@@ -347,8 +346,8 @@ class SatisticalHydrographFigure(Figure):
             dtend = dt.datetime(curyear, 12, 31)
         else:
             year_lbl = "Years %d-%d" % (curyear - 1, curyear)
-            mth_idx = np.arange(lastmonth, 12)
-            mth_idx = np.hstack((mth_idx, np.arange(12 - len(mth_idx))))
+            mth_idx = np.hstack(
+                (np.arange(lastmonth, 12), np.arange(0, lastmonth)))
             dtstart = dt.datetime(curyear - 1, mth_idx[0] + 1, 1)
             dtend = dt.datetime(
                 curyear,
@@ -373,7 +372,9 @@ class SatisticalHydrographFigure(Figure):
         # Plot the current water level data series.
         cur_wlevels = wlevels[
             (wlevels.index >= dtstart) & (wlevels.index <= dtend)]
-        cur_rel_time = cur_wlevels.index.dayofyear.values / 365 * 12 - 0.5
+        cur_rel_time = cur_wlevels.index.values.astype(float)
+        cur_rel_time = cur_rel_time - np.min(cur_rel_time)
+        cur_rel_time = cur_rel_time / np.max(cur_rel_time) * 12 - 0.5
         ax.plot(cur_rel_time, cur_wlevels.values, '.', color='red', ms=3.5)
 
         # Set xaxis label.
