@@ -14,7 +14,6 @@ import datetime as dt
 import io
 
 # ---- Third party imports
-import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.transforms as transforms
 from matplotlib.transforms import ScaledTranslation
@@ -25,7 +24,8 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from matplotlib.figure import Figure
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage
-from qtpy.QtWidgets import QMainWindow, QApplication
+from qtpy.QtWidgets import (
+    QApplication, QComboBox, QGridLayout, QLabel, QMainWindow, QWidget)
 
 # ---- Local imports
 from sardes.config.gui import get_iconsize
@@ -56,12 +56,7 @@ class SatisticalHydrographTool(SardesTool):
     def __update__(self):
         if self.toolwidget() is not None:
             data = self.parent.get_formatted_data()
-            try:
-                data = (data[[DataType.WaterLevel, 'datetime']]
-                        .set_index('datetime', drop=True))
-            except KeyError:
-                pass
-            self.toolwidget().canvas.set_data(data)
+            self.toolwidget().set_data(data)
             self.toolwidget().setWindowTitle(self.__title__())
 
     def __create_toolwidget__(self):
@@ -86,7 +81,47 @@ class SatisticalHydrographWidget(QMainWindow):
         self.setCentralWidget(self.canvas)
         self.setup_toolbar()
 
+    def year(self):
+        """
+        Return the year for which the statistical hydrograph
+        needs to be plotted.
+        """
+        return (
+            None if not self.year_cbox.count() else
+            int(self.year_cbox.currentText()))
+
+    def month(self):
+        """
+        Return the integer value of the month for which the
+        statistical hydrograph needs to be plotted.
+        """
+        return self.month_cbox.currentIndex() + 1
+
+    def set_data(self, wlevels):
+        """Set the data of the figure and update the gui."""
+        try:
+            wlevels = (
+                wlevels[[DataType.WaterLevel, 'datetime']]
+                .set_index('datetime', drop=True))
+        except KeyError:
+            pass
+
+        self.year_cbox.blockSignals(True)
+        curyear = self.year_cbox.currentText()
+        self.year_cbox.clear()
+        if not wlevels.empty:
+            years = np.unique(wlevels.index.year).astype('str').tolist()
+            self.year_cbox.addItems(years)
+            if curyear in years:
+                self.year_cbox.setCurrentIndex(years.index(curyear))
+            else:
+                self.year_cbox.setCurrentIndex(len(years) - 1)
+        self.year_cbox.blockSignals(False)
+
+        self.canvas.set_data(wlevels, self.year(), self.month())
+
     def setup_toolbar(self):
+        """Setup the toolbar of this widget."""
         toolbar = create_mainwindow_toolbar("stat hydrograph toolbar")
         self.addToolBar(toolbar)
 
@@ -108,6 +143,48 @@ class SatisticalHydrographWidget(QMainWindow):
             iconsize=get_iconsize())
         toolbar.addWidget(self.copy_to_clipboard_btn)
 
+        toolbar.addSeparator()
+
+        # Setup the year widget.
+        year_labl = QLabel(_('Year:'))
+        self.year_cbox = QComboBox()
+        self.year_cbox.currentIndexChanged.connect(self._handle_year_changed)
+
+        year_widget = QWidget()
+        year_layout = QGridLayout(year_widget)
+        year_layout.setContentsMargins(5, 0, 0, 0)
+        year_layout.addWidget(year_labl, 0, 0)
+        year_layout.addWidget(self.year_cbox, 0, 1)
+        toolbar.addWidget(year_widget)
+
+        # Setup the month widget.
+        month_labl = QLabel(_('Month:'))
+        self.month_cbox = QComboBox()
+        self.month_cbox.addItems(MONTHS.tolist())
+        self.month_cbox.setCurrentIndex(11)
+        self.month_cbox.currentIndexChanged.connect(self._handle_month_changed)
+
+        month_widget = QWidget()
+        month_layout = QGridLayout(month_widget)
+        month_layout.setContentsMargins(5, 0, 0, 0)
+        month_layout.addWidget(month_labl, 0, 0)
+        month_layout.addWidget(self.month_cbox, 0, 1)
+        toolbar.addWidget(month_widget)
+
+    def _handle_year_changed(self):
+        """
+        Handle when the user changed the year for which the
+        statistical hydrograph needs to be plotted.
+        """
+        self.canvas.set_year(self.year())
+
+    def _handle_month_changed(self):
+        """
+        Handle when the user changed the month for which the
+        statistical hydrograph needs to be plotted.
+        """
+        self.canvas.set_month(self.month())
+
 
 class SatisticalHydrographCanvas(FigureCanvasQTAgg):
     """
@@ -118,20 +195,41 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
         figure = SatisticalHydrographFigure(figsize=(8, 6), facecolor='white')
         super().__init__(figure)
         self.wlevels = None
+        self.year = None
+        self.month = 1
 
         # Setup a matplotlib navigation toolbar, but hide it.
         toolbar = NavigationToolbar2QT(self, self)
         toolbar.hide()
 
     def copy_to_clipboard(self):
+        """Put a copy of the figure on the clipboard."""
         buf = io.BytesIO()
         self.figure.savefig(buf)
         QApplication.clipboard().setImage(QImage.fromData(buf.getvalue()))
         buf.close()
 
-    def set_data(self, wlevels):
+    def set_data(self, wlevels, year, month):
+        """Set the data of the statistical hydrograph."""
+        self.year = year
+        self.month = month
         self.wlevels = wlevels
-        self.figure.plot_statistical_hydrograph(wlevels)
+        self._update_figure()
+
+    def set_year(self, year):
+        """Set the year for which the statistical hydrograph is plotted."""
+        self.year = year
+        self._update_figure()
+
+    def set_month(self, month):
+        """Set the month for which the statistical hydrograph is plotted."""
+        self.month = month
+        self._update_figure()
+
+    def _update_figure(self):
+        """Update the statistical hydrograph."""
+        self.figure.plot_statistical_hydrograph(
+            self.wlevels, self.year, self.month)
 
 
 class SatisticalHydrographFigure(Figure):
@@ -232,18 +330,16 @@ class SatisticalHydrographFigure(Figure):
         super().set_size_inches(*args, **kargs)
         self.tight_layout()
 
-    def plot_statistical_hydrograph(self, wlevels):
+    def plot_statistical_hydrograph(self, wlevels, curyear, lastmonth):
         # Organize month order and define first and last datetime value
         # for the current data.
         self.monthlabels = []
         self.ncountlabels = []
         ax = self.axes[0]
         ax.clear()
-        if wlevels is None or wlevels.empty:
+        if wlevels is None or wlevels.empty or curyear is None:
             return
 
-        curyear = np.max(wlevels.index.year)
-        lastmonth = 12
         if lastmonth == 12:
             year_lbl = '{} {:d}'.format(_("Year"), curyear)
             mth_idx = np.arange(12)
@@ -251,7 +347,7 @@ class SatisticalHydrographFigure(Figure):
             dtend = dt.datetime(curyear, 12, 31)
         else:
             year_lbl = "Years %d-%d" % (curyear - 1, curyear)
-            mth_idx = np.arange(self._last_month, 12)
+            mth_idx = np.arange(lastmonth, 12)
             mth_idx = np.hstack((mth_idx, np.arange(12 - len(mth_idx))))
             dtstart = dt.datetime(curyear - 1, mth_idx[0] + 1, 1)
             dtend = dt.datetime(
@@ -288,11 +384,13 @@ class SatisticalHydrographFigure(Figure):
                       fontsize=16, labelpad=10)
 
         # Axe limits and ticks.
-        ymax = max(np.max(percentiles), np.max(cur_wlevels.values))
-        ymin = min(np.min(percentiles), np.min(cur_wlevels.values))
+        yvals = (percentiles.flatten().tolist() +
+                 cur_wlevels.values.flatten().tolist())
+        ymax = max(yvals)
+        ymin = min(yvals)
         yrange = ymax - ymin
         yoffset = 0.1 / self.get_figwidth() * yrange
-        ax.axis([-0.75, 11.75, ymin-yoffset, ymax+yoffset])
+        ax.axis([-0.75, 11.75, ymin - yoffset, ymax + yoffset])
         ax.invert_yaxis()
 
         ax.set_xticks(np.arange(-0.5, 11.51))
@@ -411,3 +509,32 @@ def compute_monthly_statistics(tseries, q, pool='all'):
 
     percentiles = [np.percentile(v, q) for v in mly_values]
     return np.array(percentiles), np.array(nyear)
+
+
+if __name__ == "__main__":
+    import sys
+    from sardes.utils.qthelpers import create_application
+    from sardes.database.accessors import DatabaseAccessorSardesLite
+    from sardes.utils.data_operations import format_reading_data
+
+    app = create_application()
+
+    database = "D:/Desktop/rsesq_prod_02-04-2021_rename.db"
+    accessor = DatabaseAccessorSardesLite(database)
+
+    sampling_feature_uuid = (
+        accessor._get_sampling_feature_uuid_from_name('01070001'))
+    readings_data = accessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, [DataType.WaterLevel])
+
+    repere_data = accessor.get_repere_data()
+    repere_data = (
+        repere_data
+        [repere_data['sampling_feature_uuid'] == sampling_feature_uuid]
+        .copy())
+
+    widget = SatisticalHydrographWidget()
+    widget.set_data(format_reading_data(readings_data, repere_data))
+    widget.show()
+
+    sys.exit(app.exec_())
