@@ -241,12 +241,15 @@ class SatisticalHydrographFigure(Figure):
         self.ncountlabels = []
         self.leghandles = []
         self.leglabels = []
+        self.percentile_bars = []
 
         self.setup_axes()
+        self.setup_artists()
         self.setup_legend()
 
     def setup_axes(self):
-        # Create the main axe.
+        """Setup the main axes and the axes to hold the legend."""
+        # Setup the axes to hold the data.
         ax = self.add_axes([0, 0, 1, 1], zorder=1)
         ax.set_facecolor('1')
         ax.grid(axis='y', color='0.65', linestyle='-', linewidth=0.5,
@@ -254,6 +257,41 @@ class SatisticalHydrographFigure(Figure):
         ax.set_axisbelow(True)
         ax.tick_params(axis='x', which='both', length=3)
         ax.tick_params(axis='y', which='both', length=0)
+
+        ax.set_xticks(np.arange(-0.5, 11.51))
+        ax.set_xticklabels([])
+
+        # Setup the axes to hold the legend.
+        ax2 = self.add_axes([0, 0, 1, 1], facecolor=None)
+        ax2.axis('off')
+
+    def setup_artists(self):
+        """Setup the matplotlib artists that are used to plot the data."""
+        ax = self.axes[0]
+
+        # Setup the artist to plot the current water level values.
+        self.cur_wlvl_plot = ax.plot(
+            [], [], '.', color='red', ms=3.5)[0]
+
+        # Setup the artist to plot the historical median water level values.
+        self.med_wlvl_plot = ax.plot([], [], '^k')[0]
+
+        self.monthlabels = []
+        self.ncountlabels = []
+        blended_trans = transforms.blended_transform_factory(
+            ax.transData, ax.transAxes)
+        for x in range(12):
+            scaled_trans = transforms.ScaledTranslation(
+                0, -5/72, self.dpi_scale_trans)
+            self.monthlabels.append(ax.text(
+                x, 0, '', ha='center', va='top', fontsize=12,
+                transform=blended_trans + scaled_trans
+                ))
+            scaled_trans = transforms.ScaledTranslation(
+                0, -18/72, self.dpi_scale_trans)
+            self.ncountlabels.append(ax.text(
+                x, 0, '', ha='center', va='top', fontsize=9,
+                transform=blended_trans + scaled_trans))
 
     def tight_layout(self, *args, **kargs):
         """
@@ -332,10 +370,7 @@ class SatisticalHydrographFigure(Figure):
     def plot_statistical_hydrograph(self, wlevels, curyear, lastmonth):
         # Organize month order and define first and last datetime value
         # for the current data.
-        self.monthlabels = []
-        self.ncountlabels = []
         ax = self.axes[0]
-        ax.clear()
         if wlevels is None or wlevels.empty or curyear is None:
             return
 
@@ -359,15 +394,20 @@ class SatisticalHydrographFigure(Figure):
         percentiles, nyear = compute_monthly_statistics(wlevels, q, pool='all')
 
         # Plot the percentiles.
+        for bar in self.percentile_bars:
+            bar.remove()
+        self.percentile_bars = []
+
         xpos = np.arange(12)
         idx = [0, 1, 2, 4, 5, 6]
-        for i in range(len(idx)-1):
-            ax.bar(
+        for i in range(len(idx) - 1):
+            self.percentile_bars.append(ax.bar(
                 xpos,
                 percentiles[mth_idx, idx[i]] - percentiles[mth_idx, idx[i+1]],
                 width=0.9, bottom=percentiles[mth_idx, idx[i+1]],
-                color=RGB[i], edgecolor='black', linewidth=0.5)
-        ax.plot(xpos, percentiles[mth_idx, 3], '^k')
+                color=RGB[i], edgecolor='black', linewidth=0.5
+                ))
+        self.med_wlvl_plot.set_data(xpos, percentiles[mth_idx, 3])
 
         # Plot the current water level data series.
         cur_wlevels = wlevels[
@@ -375,12 +415,11 @@ class SatisticalHydrographFigure(Figure):
         cur_rel_time = cur_wlevels.index.values.astype(float)
         cur_rel_time = cur_rel_time - np.min(cur_rel_time)
         cur_rel_time = cur_rel_time / np.max(cur_rel_time) * 12 - 0.5
-        ax.plot(cur_rel_time, cur_wlevels.values, '.', color='red', ms=3.5)
 
-        # Set xaxis label.
+        self.cur_wlvl_plot.set_data(cur_rel_time, cur_wlevels.values)
+
+        # Set xaxis and yaxis label.
         ax.set_xlabel(year_lbl, fontsize=16, labelpad=30)
-
-        # Setup yaxis.
         ax.set_ylabel("Niveau d'eau en m sous la surface",
                       fontsize=16, labelpad=10)
 
@@ -394,23 +433,9 @@ class SatisticalHydrographFigure(Figure):
         ax.axis([-0.75, 11.75, ymin - yoffset, ymax + yoffset])
         ax.invert_yaxis()
 
-        ax.set_xticks(np.arange(-0.5, 11.51))
-        ax.set_xticklabels([])
-
-        xlabelspos = np.arange(12)
-        y = ymax+yoffset
-        for m, n, x in zip(MONTHS[mth_idx], nyear[mth_idx], xlabelspos):
-            offset = transforms.ScaledTranslation(
-                0, -5/72, self.dpi_scale_trans)
-            self.monthlabels.append(ax.text(
-                x, y, m, ha='center', va='top', fontsize=12,
-                transform=ax.transData+offset
-                ))
-            offset = transforms.ScaledTranslation(
-                0, -18/72, self.dpi_scale_trans)
-            self.ncountlabels.append(ax.text(
-                x, y, '(%d)' % n, ha='center', va='top', fontsize=9,
-                transform=ax.transData+offset))
+        for i, (m, n) in enumerate(zip(MONTHS[mth_idx], nyear[mth_idx])):
+            self.monthlabels[i].set_text(m)
+            self.ncountlabels[i].set_text('(%d)' % n)
 
         self.canvas.draw()
 
@@ -422,12 +447,8 @@ class SatisticalHydrographFigure(Figure):
         legend handle.
         """
         ax = self.axes[0]
-        try:
-            ax2 = self.axes[1]
-            ax2.clear()
-        except IndexError:
-            ax2 = self.add_axes([0, 0, 1, 1], facecolor=None)
-            ax2.axis('off')
+        ax2 = self.axes[1]
+        ax2.clear()
         self.leghandles = []
         self.leglabels = []
 
