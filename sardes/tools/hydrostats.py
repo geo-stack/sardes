@@ -412,10 +412,27 @@ class SatisticalHydrographFigure(Figure):
         # Plot the current water level data series.
         cur_wlevels = wlevels[
             (wlevels.index >= dtstart) & (wlevels.index <= dtend)]
-        cur_rel_time = cur_wlevels.index.values.astype(float)
-        cur_rel_time = cur_rel_time - np.min(cur_rel_time)
-        cur_rel_time = cur_rel_time / np.max(cur_rel_time) * 12 - 0.5
 
+        # datetime.timestamp() returns a POSIX timestamp. However, naive
+        # datetime instances are assumed to represent local time.
+        # This is different from numpy.datetime64 that are always stored and
+        # considered as tz-naive dates.
+
+        # Therefore, we need to supply tzinfo=timezone.utc to our datetime
+        # instances before using their timestamp value in calculations
+        # involving numpy.datetime64 values.
+        # https://docs.python.org/3/library/datetime.html#datetime.datetime.timestamp
+        cur_time_min = dtstart.replace(tzinfo=dt.timezone.utc).timestamp()
+        cur_time_max = dtend.replace(tzinfo=dt.timezone.utc).timestamp()
+        if len(cur_wlevels):
+            # We normalize the time data to the range of the xaxis.
+            cur_rel_time = (
+                cur_wlevels.index.values.astype('datetime64[s]').astype(float))
+            cur_rel_time = (
+                (cur_rel_time - cur_time_min) / (cur_time_max - cur_time_min))
+            cur_rel_time = cur_rel_time * 12 - 0.5
+        else:
+            cur_rel_time = []
         self.cur_wlvl_plot.set_data(cur_rel_time, cur_wlevels.values)
 
         # Set xaxis and yaxis label.
