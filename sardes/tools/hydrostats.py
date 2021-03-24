@@ -380,7 +380,7 @@ class SatisticalHydrographFigure(Figure):
             dtstart = dt.datetime(curyear, 1, 1)
             dtend = dt.datetime(curyear, 12, 31)
         else:
-            year_lbl = "Years %d-%d" % (curyear - 1, curyear)
+            year_lbl = _("Years {:d}-{:d}").format(curyear - 1, curyear)
             mth_idx = np.hstack(
                 (np.arange(lastmonth, 12), np.arange(0, lastmonth)))
             dtstart = dt.datetime(curyear - 1, mth_idx[0] + 1, 1)
@@ -437,7 +437,7 @@ class SatisticalHydrographFigure(Figure):
 
         # Set xaxis and yaxis label.
         ax.set_xlabel(year_lbl, fontsize=16, labelpad=30)
-        ax.set_ylabel("Niveau d'eau en m sous la surface",
+        ax.set_ylabel(_("Water level altitude (m MSL)"),
                       fontsize=16, labelpad=10)
 
         # Axe limits and ticks.
