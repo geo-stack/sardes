@@ -151,9 +151,17 @@ class ReadingsTableWidget(SardesTableWidget):
         if self.plot_viewer is not None:
             self.update_plot_viewer_title()
 
+        # Update tools.
+        for tool in self.tools():
+            tool.update()
+
     def set_repere_data(self, repere_data):
         """Set the repere data of the model."""
         self.model().set_repere_data(repere_data)
+
+        # Update tools.
+        for tool in self.tools():
+            tool.update()
 
     def set_manual_measurements(self, measurements):
         """
@@ -163,6 +171,10 @@ class ReadingsTableWidget(SardesTableWidget):
         if self.plot_viewer is not None:
             self.plot_viewer.set_manual_measurements(
                 DataType.WaterLevel, self.model().manual_measurements())
+
+        # Update tools.
+        for tool in self.tools():
+            tool.update()
 
     def set_model_data(self, dataf):
         """
@@ -176,10 +188,14 @@ class ReadingsTableWidget(SardesTableWidget):
                 self.model().dataf, self.model()._obs_well_data)
 
             # We need to set the manual measurements again because the axes
-            # are completely cleansed from the figure whn the data are
+            # are completely cleansed from the figure when the data are
             # updated. See cgq-qgc/sardes#409.
             self.plot_viewer.set_manual_measurements(
                 DataType.WaterLevel, self.model().manual_measurements())
+
+        # Update tools.
+        for tool in self.tools():
+            tool.update()
 
     def get_formatted_data(self):
         """Return a dataframe contraining formatted readings data."""
