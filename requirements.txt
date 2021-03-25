@@ -9,7 +9,7 @@ psycopg2
 pyqt5 == 5.12.*
 qtawesome == 0.7.*
 qtpy
-sqlalchemy
+sqlalchemy == 1.3.*
 geoalchemy2
 sqlalchemy_utils
 pillow
