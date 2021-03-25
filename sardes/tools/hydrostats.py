@@ -37,8 +37,8 @@ from sardes.utils.qthelpers import (
 
 RGB = ["#ccebc5", "#a8ddb5", "#7bccc4", "#4eb3d3", "#2b8cbe"]
 MONTHS = np.array([
-    _('Jan'), _('Fév'), _('Mar'), _('Avr'), _('Mai'), _('Jun'),
-    _('Jui'), _('Aoû'), _('Sep'), _('Oct'), _('Nov'), _('Déc')])
+    _('Jan'), _('Feb'), _('Mar'), _('Apr'), _('May'), _('Jun'),
+    _('Jul'), _('Aug'), _('Sep'), _('Oct'), _('Nov'), _('Dec')])
 
 
 class SatisticalHydrographTool(SardesTool):
@@ -74,7 +74,7 @@ class SatisticalHydrographTool(SardesTool):
 
 class SatisticalHydrographWidget(QMainWindow):
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super().__init__()
         self.canvas = SatisticalHydrographCanvas()
         self.setContextMenuPolicy(Qt.NoContextMenu)
         self.setCentralWidget(self.canvas)
