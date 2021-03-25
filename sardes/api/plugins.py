@@ -100,7 +100,7 @@ class SardesDockWindow(QFrame):
     sig_docked_changed = Signal(bool)
     sig_docked = Signal()
     sig_undocked = Signal()
-    sig_visibility_changed = Signal(bool)
+    sig_view_toggled = Signal(bool)
 
     def __init__(self, widget, plugin, undocked_geometry, is_docked,
                  is_locked=True):
@@ -122,7 +122,7 @@ class SardesDockWindow(QFrame):
 
         self._toggle_view_action = create_action(
             self, text=plugin.get_plugin_title(),
-            toggled=self._handle_view_action_toggled)
+            toggled=self.toggle_view)
 
         layout = QGridLayout(self)
         layout.setContentsMargins(3, 3, 3, 3)
@@ -141,70 +141,19 @@ class SardesDockWindow(QFrame):
         Setup the dockwidget used to encased this dockwindow in the
         mainwindow.
         """
-        class _DockWidget(QDockWidget):
-            def __init__(self, toggle_view_action, *args, **kargs):
-                super().__init__(*args, **kargs)
-                self._toggle_view_action = toggle_view_action
-
-            def showEvent(self, event):
-                """
-                Override this QT event to synchronize the toggle view
-                action of the dockwindow contained by this dockwidget
-                when shown.
-                """
-                self._toggle_view_action.blockSignals(True)
-                self._toggle_view_action.setChecked(True)
-                self._toggle_view_action.blockSignals(False)
-
-            def closeEvent(self, event):
-                """
-                Override this QT event to synchronize the toggle view
-                action of the dockwindow contained by this dockwidget
-                when closed.
-                """
-                self._toggle_view_action.blockSignals(True)
-                self._toggle_view_action.setChecked(False)
-                self._toggle_view_action.blockSignals(False)
-                super().closeEvent(event)
-
-        self.dockwidget = _DockWidget(self._toggle_view_action)
+        self.dockwidget = QDockWidget()
         self.dockwidget.setAllowedAreas(Qt.LeftDockWidgetArea)
         self.dockwidget.setObjectName(self.plugin.__class__.__name__ + "_dw")
 
         self.dockwidget_titlebar = DockWidgetTitleBar(
             self.plugin, self.dockwidget)
         self.dockwidget_titlebar.close_btn.clicked.connect(
-            self.dockwidget.close)
+            lambda: self.toggle_view(False))
         self.dockwidget_titlebar.undock_btn.clicked.connect(self.undock)
 
         if self._is_docked is True:
             self.dockwidget.setWidget(self)
         self.set_locked(self._is_locked)
-
-    @Slot(bool)
-    def _handle_view_action_toggled(self, checked):
-        """
-        Handle when the action to control this dockwindow's visibility
-        is toggled on or off in the menu `View > Panes`.
-
-        Parameters
-        ----------
-        checked: bool
-            Is the entry in `View > Panes` checked or not?
-        """
-        if checked and self._is_docked:
-            self.dockwidget.show()
-            self.dockwidget.raise_()
-            self.show()
-        elif checked and not self._is_docked:
-            self.show()
-            self.raise_()
-        elif not checked and self._is_docked:
-            self.dockwidget.hide()
-            self.hide()
-        elif not checked and not self._is_docked:
-            self.hide()
-        self.sig_visibility_changed.emit(self.is_visible())
 
     # ---- Public API
     def undocked_geometry(self):
@@ -273,6 +222,34 @@ class SardesDockWindow(QFrame):
         if self._focused_widget is not None:
             self._focused_widget.setFocus()
         self.sig_docked.emit()
+
+    def toggle_view(self, toggle):
+        """
+        Toggle the visibility of this dockwindow on or off.
+
+        Parameters
+        ----------
+        toggle: bool
+            Whether this dockwindow is visible or not in the main application.
+        """
+
+        self._toggle_view_action.blockSignals(True)
+        self._toggle_view_action.setChecked(toggle)
+        self._toggle_view_action.blockSignals(False)
+
+        if toggle and self._is_docked:
+            self.dockwidget.show()
+            self.dockwidget.raise_()
+            self.show()
+        elif toggle and not self._is_docked:
+            self.show()
+            self.raise_()
+        elif not toggle and self._is_docked:
+            self.dockwidget.hide()
+            self.hide()
+        elif not toggle and not self._is_docked:
+            self.hide()
+        self.sig_view_toggled.emit(toggle)
 
     def set_locked(self, locked):
         """
@@ -451,6 +428,8 @@ class SardesPluginBase(QObject):
                 undocked_geometry=undocked_geometry,
                 is_docked=self.get_option('is_docked', True),
                 )
+            self.dockwindow.sig_view_toggled.connect(
+                self.on_pane_view_toggled)
             self.dockwindow.sig_docked.connect(self.on_docked)
             self.dockwindow.sig_undocked.connect(self.on_undocked)
             if self.dockwindow.is_docked():
@@ -568,5 +547,12 @@ class SardesPlugin(SardesPluginBase):
     def on_undocked(self):
         """
         A slot called when the dockwindow is detached in the mainwindow.
+        """
+        pass
+
+    @Slot(bool)
+    def on_pane_view_toggled(self, toggled):
+        """
+        A slot called when the dockwindow is hidden or shown.
         """
         pass
