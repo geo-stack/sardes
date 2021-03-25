@@ -100,7 +100,7 @@ class SardesDockWindow(QFrame):
     sig_docked_changed = Signal(bool)
     sig_docked = Signal()
     sig_undocked = Signal()
-    sig_visibility_changed = Signal(bool)
+    sig_view_toggled = Signal(bool)
 
     def __init__(self, widget, plugin, undocked_geometry, is_docked,
                  is_locked=True):
@@ -122,7 +122,7 @@ class SardesDockWindow(QFrame):
 
         self._toggle_view_action = create_action(
             self, text=plugin.get_plugin_title(),
-            toggled=self._handle_view_action_toggled)
+            toggled=self.toggle_view)
 
         layout = QGridLayout(self)
         layout.setContentsMargins(3, 3, 3, 3)
@@ -148,37 +148,12 @@ class SardesDockWindow(QFrame):
         self.dockwidget_titlebar = DockWidgetTitleBar(
             self.plugin, self.dockwidget)
         self.dockwidget_titlebar.close_btn.clicked.connect(
-            self.dockwidget.close)
+            lambda: self.toggle_view(False))
         self.dockwidget_titlebar.undock_btn.clicked.connect(self.undock)
 
         if self._is_docked is True:
             self.dockwidget.setWidget(self)
         self.set_locked(self._is_locked)
-
-    @Slot(bool)
-    def _handle_view_action_toggled(self, checked):
-        """
-        Handle when the action to control this dockwindow's visibility
-        is toggled on or off in the menu `View > Panes`.
-
-        Parameters
-        ----------
-        checked: bool
-            Is the entry in `View > Panes` checked or not?
-        """
-        if checked and self._is_docked:
-            self.dockwidget.show()
-            self.dockwidget.raise_()
-            self.show()
-        elif checked and not self._is_docked:
-            self.show()
-            self.raise_()
-        elif not checked and self._is_docked:
-            self.dockwidget.hide()
-            self.hide()
-        elif not checked and not self._is_docked:
-            self.hide()
-        self.sig_visibility_changed.emit(self.is_visible())
 
     # ---- Public API
     def undocked_geometry(self):
