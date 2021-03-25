@@ -35,7 +35,7 @@ class SardesToolBase(QAction):
         Parameters
         ----------
         parent : object
-            The parent object where this tool is installed.
+            The parent Qt object where this tool is installed.
         name : str
             The name that will be used to reference this tool in the code.
         text: str
@@ -51,14 +51,14 @@ class SardesToolBase(QAction):
             triggering this tool.
         """
         super().__init__(text, parent)
-        self.parent = parent
-        self.triggered.connect(self.__triggered__)
         self.setObjectName(name)
         self._text = text
-        self.setIcon(get_icon(icon) if isinstance(icon, str) else icon)
-        iconsize = iconsize or get_iconsize()
         self.setToolTip(format_tooltip(text, tip, shortcut))
 
+        self.setIcon(get_icon(icon) if isinstance(icon, str) else icon)
+        iconsize = iconsize or get_iconsize()
+
+        self.triggered.connect(self.__triggered__)
         if shortcut is not None:
             if isinstance(shortcut, (list, tuple)):
                 self.setShortcuts(shortcut)
@@ -69,6 +69,8 @@ class SardesToolBase(QAction):
         self._toolbutton = None
         self._toolwidget = None
         self._hidden_with_parent = False
+
+        self.parent = parent
         parent.installEventFilter(self)
 
     # ---- Public API
