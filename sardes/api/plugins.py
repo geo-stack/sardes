@@ -428,6 +428,8 @@ class SardesPluginBase(QObject):
                 undocked_geometry=undocked_geometry,
                 is_docked=self.get_option('is_docked', True),
                 )
+            self.dockwindow.sig_view_toggled.connect(
+                self.on_pane_view_toggled)
             self.dockwindow.sig_docked.connect(self.on_docked)
             self.dockwindow.sig_undocked.connect(self.on_undocked)
             if self.dockwindow.is_docked():
@@ -545,5 +547,12 @@ class SardesPlugin(SardesPluginBase):
     def on_undocked(self):
         """
         A slot called when the dockwindow is detached in the mainwindow.
+        """
+        pass
+
+    @Slot(bool)
+    def on_pane_view_toggled(self, toggled):
+        """
+        A slot called when the dockwindow is hidden or shown.
         """
         pass
