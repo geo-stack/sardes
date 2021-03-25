@@ -68,7 +68,6 @@ class SardesToolBase(QAction):
 
         self._toolbutton = None
         self._toolwidget = None
-        self._hidden_with_parent = False
 
         self.parent = parent
         parent.installEventFilter(self)
@@ -118,14 +117,6 @@ class SardesToolBase(QAction):
         """
         if event.type() == QEvent.Close:
             self.close()
-        elif event.type() == QEvent.Hide:
-            self._hidden_with_parent = (
-                self._toolwidget is not None and
-                self._toolwidget.isVisible())
-            self.hide()
-        elif event.type() == QEvent.Show:
-            if self._hidden_with_parent is True:
-                self.show()
         return super().eventFilter(widget, event)
 
     def _show_toolwidget(self):
