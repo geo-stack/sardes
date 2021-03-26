@@ -19,6 +19,7 @@ from unittest.mock import Mock
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
+import numpy as np
 from numpy import nan
 import pytest
 import pandas as pd
@@ -28,26 +29,14 @@ from qtpy.QtWidgets import QToolBar
 from sardes import __rootdir__
 from sardes.api.timeseries import DataType
 from sardes.tools.hydrostats import (
-    SatisticalHydrographTool, compute_monthly_percentiles)
+    SatisticalHydrographTool, compute_monthly_percentiles, MONTHS)
 from sardes.utils.tests.test_data_operations import format_reading_data
-from sardes.database.accessors import DatabaseAccessorSardesLite
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
-@pytest.fixture(scope='module')
-def dbaccessor(tmp_path_factory, database_filler):
-    tmp_path = tmp_path_factory.mktemp("database")
-    dbaccessor = DatabaseAccessorSardesLite(
-        osp.join(tmp_path, 'sqlite_database_test.db'))
-    dbaccessor.init_database()
-    database_filler(dbaccessor)
-
-    return dbaccessor
-
-
-@pytest.fixture(scope='module')
+@pytest.fixture
 def dataset():
     values = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15]
     data = []
@@ -65,9 +54,33 @@ def dataset():
         data,
         columns=['datetime', DataType.WaterLevel])
     dataset['datetime'] = pd.to_datetime(dataset['datetime'])
-    dataset = dataset.set_index('datetime', drop=True)
 
     return dataset
+
+
+@pytest.fixture
+def hydrostats_tool(dataset, repere_data, obswells_data):
+
+    class ParentToolbar(QToolBar):
+        def model(self):
+            sampling_feature_uuid = obswells_data.index[0]
+
+            model = Mock()
+            model._obs_well_data = obswells_data.loc[sampling_feature_uuid]
+            return model
+
+        def get_formatted_data(self):
+            return dataset
+
+    toolbar = ParentToolbar()
+    tool = SatisticalHydrographTool(toolbar)
+
+    toolbar.addAction(tool)
+    toolbar.show()
+    yield tool
+
+    # toolbar.close()
+    # assert not tool.toolwidget().isVisible()
 
 
 # =============================================================================
@@ -79,13 +92,15 @@ def test_compute_monthly_percentiles(dataset, pool):
     Test that computing montly percentiles is working as expected for the
     different modes that are availables.
     """
+    dataset = dataset.set_index('datetime', drop=True)
+
     expected_nyear = [6] * 11 + [5]
-    q = [100, 75, 50, 25, 0]
+    q = [100, 90, 75, 50, 25, 10, 0]
     expected_percentiles = {
-        'all': [15.0, 10.0, 5.5, 3.0, 1.0],
-        'min_max_median': [15.0, 15.0, 5.5, 1.0, 1.0],
-        'median': [5.5, 5.5, 5.5, 5.5, 5.5],
-        'mean': [6.6, 6.6, 6.6, 6.6, 6.6]
+        'all': [15.0, 12.3, 10.0, 5.5, 3.0, 1.9, 1.0],
+        'min_max_median': [15.0, 15.0, 15.0, 5.5, 1.0, 1.0, 1.0],
+        'median': [5.5, 5.5, 5.5, 5.5, 5.5, 5.5, 5.5],
+        'mean': [6.6, 6.6, 6.6, 6.6, 6.6, 6.6, 6.6]
         }[pool]
 
     percentiles, nyear = compute_monthly_percentiles(
@@ -94,6 +109,76 @@ def test_compute_monthly_percentiles(dataset, pool):
     assert percentiles.columns.tolist() == q
     for month in range(1, 13):
         assert percentiles.loc[month].values.tolist() == expected_percentiles
+
+
+def test_plot_statistical_hydrograph(qtbot, hydrostats_tool):
+    """Test that the statistical hydrograph is plotted as expected."""
+    assert hydrostats_tool._toolwidget is None
+
+    # Show the statistical hydrograph toolwidget.
+    hydrostats_tool.trigger()
+    qtbot.waitForWindowShown(hydrostats_tool._toolwidget)
+    assert hydrostats_tool._toolwidget.isVisible()
+
+    toolwidget = hydrostats_tool.toolwidget()
+    canvas = toolwidget.canvas
+    canvas.set_pool('all')
+
+    # Assert years and current year were set as expected.
+    year_cbox_texts = [
+        toolwidget.year_cbox.itemText(index) for
+        index in range(toolwidget.year_cbox.count())]
+    assert year_cbox_texts == ['2010', '2011', '2012', '2013', '2014', '2015']
+
+    assert toolwidget.year_cbox.currentText() == '2015'
+    assert canvas.year == 2015
+
+    # Assert months and current month were set as expected.
+    month_cbox_texts = [
+        toolwidget.month_cbox.itemText(index) for
+        index in range(toolwidget.month_cbox.count())]
+    assert month_cbox_texts == MONTHS.tolist()
+    assert toolwidget.month_cbox.currentText() == "Dec"
+    assert canvas.month == 12
+
+    # Assert that the figure was plotted as expected.
+    assert canvas.figure.axes[0].get_xlabel() == "Year 2015"
+    assert canvas.figure.monthlabels[-1].get_text() == "Dec"
+    assert canvas.figure.ncountlabels[-1].get_text() == "(5)"
+
+    expected_median = [5.5] * 12
+    assert canvas.figure.med_wlvl_plot.get_xdata().tolist() == list(range(12))
+    assert canvas.figure.med_wlvl_plot.get_ydata().tolist() == expected_median
+
+    expected_percentiles = {
+        (100, 90): (12.3, 15.0),
+        (90, 75): (10.0, 12.3),
+        (75, 25): (3.0, 10.0),
+        (25, 10): (1.9, 3.0),
+        (10, 0): (1.0, 1.9)}
+    assert len(canvas.figure.percentile_bars) == 5
+    for qpair in canvas.figure.percentile_qpairs:
+        container = canvas.figure.percentile_bars[qpair]
+        assert len(container.patches) == 12
+        for i, bar in enumerate(container.patches):
+            qbot, qtop = expected_percentiles[qpair]
+            assert bar.get_x() == i - bar.get_width() / 2
+            assert bar.get_y() == qbot
+            assert bar.get_height() == (qtop - qbot)
+
+    # Change the current year and month and assert that the figure was
+    # updated as expected.
+    toolwidget.year_cbox.setCurrentIndex(3)
+    assert toolwidget.year_cbox.currentText() == '2013'
+    assert canvas.year == 2013
+
+    toolwidget.month_cbox.setCurrentIndex(5)
+    assert toolwidget.month_cbox.currentText() == "Jun"
+    assert canvas.month == 6
+
+    assert canvas.figure.axes[0].get_xlabel() == "Years 2012-2013"
+    assert canvas.figure.monthlabels[-1].get_text() == "Jun"
+    assert canvas.figure.ncountlabels[-1].get_text() == "(6)"
 
 
 if __name__ == "__main__":
