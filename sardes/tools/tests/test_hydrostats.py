@@ -42,6 +42,8 @@ def dataset():
     data = []
     for year in range(2010, 2016):
         for month in range(1, 13):
+            if month == 5:
+                continue
             if year == 2015 and month == 12:
                 # We do not add data for the last month of the last year
                 # to test that it is working as expected when months
@@ -62,6 +64,8 @@ def dataset():
 def hydrostats_tool(dataset, repere_data, obswells_data):
 
     class ParentToolbar(QToolBar):
+        formatted_dataset = dataset
+
         def model(self):
             sampling_feature_uuid = obswells_data.index[0]
 
@@ -70,7 +74,7 @@ def hydrostats_tool(dataset, repere_data, obswells_data):
             return model
 
         def get_formatted_data(self):
-            return dataset
+            return self.formatted_dataset
 
     toolbar = ParentToolbar()
     tool = SatisticalHydrographTool(toolbar)
@@ -94,7 +98,7 @@ def test_compute_monthly_percentiles(dataset, pool):
     """
     dataset = dataset.set_index('datetime', drop=True)
 
-    expected_nyear = [6] * 11 + [5]
+    expected_nyear = [6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 6, 5]
     q = [100, 90, 75, 50, 25, 10, 0]
     expected_percentiles = {
         'all': [15.0, 12.3, 10.0, 5.5, 3.0, 1.9, 1.0],
@@ -108,7 +112,33 @@ def test_compute_monthly_percentiles(dataset, pool):
     assert nyear.tolist() == expected_nyear
     assert percentiles.columns.tolist() == q
     for month in range(1, 13):
-        assert percentiles.loc[month].values.tolist() == expected_percentiles
+        if month == 5:
+            assert np.isnan(percentiles.loc[month].values).all()
+        else:
+            assert (percentiles.loc[month].values.tolist() ==
+                    expected_percentiles)
+
+
+@pytest.mark.parametrize('pool', ['all', 'min_max_median', 'median', 'mean'])
+def test_compute_monthly_percentiles_if_empty(pool):
+    """Test that the function does not bug if we pass an empty dataframe."""
+    dataset = pd.DataFrame(
+        [],
+        columns=['datetime', DataType.WaterLevel])
+    dataset['datetime'] = pd.to_datetime(dataset['datetime'])
+    dataset = dataset.set_index('datetime', drop=True)
+
+    expected_nyear = [0] * 12
+    q = [100, 90, 75, 50, 25, 10, 0]
+    expected_percentiles = [np.nan] * 7
+
+    percentiles, nyear = compute_monthly_percentiles(
+        dataset, q, pool=pool)
+    assert nyear.tolist() == expected_nyear
+    assert percentiles.columns.tolist() == q
+    for month in range(1, 13):
+        assert (np.nan_to_num(percentiles.loc[month].values).tolist() ==
+                np.nan_to_num(expected_percentiles).tolist())
 
 
 def test_plot_statistical_hydrograph(qtbot, hydrostats_tool):
@@ -146,9 +176,10 @@ def test_plot_statistical_hydrograph(qtbot, hydrostats_tool):
     assert canvas.figure.monthlabels[-1].get_text() == "Dec"
     assert canvas.figure.ncountlabels[-1].get_text() == "(5)"
 
-    expected_median = [5.5] * 12
+    expected_median = [5.5] * 4 + [np.nan] + [5.5] * 7
     assert canvas.figure.med_wlvl_plot.get_xdata().tolist() == list(range(12))
-    assert canvas.figure.med_wlvl_plot.get_ydata().tolist() == expected_median
+    assert (np.nan_to_num(canvas.figure.med_wlvl_plot.get_ydata()).tolist() ==
+            np.nan_to_num(expected_median).tolist())
 
     expected_percentiles = {
         (100, 90): (12.3, 15.0),
@@ -163,8 +194,14 @@ def test_plot_statistical_hydrograph(qtbot, hydrostats_tool):
         for i, bar in enumerate(container.patches):
             qbot, qtop = expected_percentiles[qpair]
             assert bar.get_x() == i - bar.get_width() / 2
-            assert bar.get_y() == qbot
-            assert bar.get_height() == (qtop - qbot)
+            if i == 4:
+                # We purposely did not add any data for the month of May
+                # in our test dataset.
+                assert np.isnan(bar.get_y())
+                assert np.isnan(bar.get_height())
+            else:
+                assert bar.get_y() == qbot
+                assert bar.get_height() == (qtop - qbot)
 
     # Change the current year and month and assert that the figure was
     # updated as expected.
@@ -181,5 +218,25 @@ def test_plot_statistical_hydrograph(qtbot, hydrostats_tool):
     assert canvas.figure.ncountlabels[-1].get_text() == "(6)"
 
 
+def test_plot_statistical_hydrograph_if_empy(qtbot, hydrostats_tool):
+    """
+    Test that no bug occur when trying to plot the statistical.
+    hydrograph of an empty dataset.
+    """
+    assert hydrostats_tool._toolwidget is None
+
+    # Set an empty formatter dataset in the parent of the hydrostats_tool.
+    dataset = pd.DataFrame(
+        [],
+        columns=['datetime', DataType.WaterLevel])
+    dataset['datetime'] = pd.to_datetime(dataset['datetime'])
+    hydrostats_tool.parent.formatted_dataset = dataset
+
+    # Show the statistical hydrograph toolwidget.
+    hydrostats_tool.trigger()
+    qtbot.waitForWindowShown(hydrostats_tool._toolwidget)
+    assert hydrostats_tool._toolwidget.isVisible()
+
+
 if __name__ == "__main__":
-    pytest.main(['-x', __file__, '-v', '-rw', '-s'])
+    pytest.main(['-x', __file__, '-v', '-rw'])
