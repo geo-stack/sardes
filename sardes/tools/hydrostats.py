@@ -526,11 +526,32 @@ class SatisticalHydrographFigure(Figure):
 
 
 def compute_monthly_percentiles(tseries, q, pool='all'):
+    """
+    Parameters
+    ----------
+    tseries: array_like
+        Pandas time series.
+    q: array_like
+        Percentile or sequence of percentiles to compute, which must
+        be between 0 and 100 inclusive.
+    pool: str
+        The method used to compute the monthly percentiles.
+
+    Returns
+    -------
+    percentiles : DataFrame
+        A pandas dataframe containing the computed monthly percentiles, where
+        the indexes are the months and the columns the q values. The number
+        of year of data used to compute each monthly value is also provided
+        in the column named 'nyear'
+    """
     percentiles = []
     nyear = []
     mly_values = []
 
     if pool == 'all':
+        # When pool is 'all', we use all the data available to compute the
+        # monthly statistics.
         for m in range(1, 13):
             mly_stats = tseries.loc[tseries.index.month == m]
             mly_values.append(mly_stats.values)
@@ -538,11 +559,18 @@ def compute_monthly_percentiles(tseries, q, pool='all'):
     else:
         group = tseries.groupby([tseries.index.year, tseries.index.month])
         if pool == 'min_max_median':
+            # When pool is 'min_max_median', we compute the montly
+            # statistics from the minimum, maximum and median value of
+            # of each month of each year.
             mly_stats = pd.concat(
                 [group.min(), group.median(), group.max()], axis=1)
         elif pool == 'median':
+            # When pool is 'median', we compute the montly statistics from the
+            # median value of each month of each year.
             mly_stats = group.median()
         elif pool == 'mean':
+            # When pool is 'mean', we compute the montly statistics from the
+            # mean value of each month of each year.
             mly_stats = group.mean()
         for m in range(1, 13):
             mly_stats_m = mly_stats[mly_stats.index.get_level_values(1) == m]
