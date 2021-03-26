@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Standard library imports
+from datetime import datetime
 from calendar import monthrange
 import datetime as dt
 import io
@@ -391,8 +392,15 @@ class SatisticalHydrographFigure(Figure):
         # Organize month order and define first and last datetime value
         # for the current data.
         ax = self.axes[0]
-        if wlevels is None or wlevels.empty or curyear is None:
-            return
+        if wlevels is None:
+            wlevels = pd.DataFrame(
+                [],
+                columns=['datetime', DataType.WaterLevel])
+            wlevels['datetime'] = pd.to_datetime(wlevels['datetime'])
+            wlevels = wlevels.set_index('datetime', drop=True)
+        if curyear is None:
+            curyear = datetime.now().year
+        wlevels = wlevels.dropna()
 
         if lastmonth == 12:
             year_lbl = '{} {:d}'.format(_("Year"), curyear)
@@ -459,11 +467,12 @@ class SatisticalHydrographFigure(Figure):
                       fontsize=16, labelpad=10)
 
         # Axe limits and ticks.
-        yvals = (percentiles.values.flatten().tolist() +
-                 cur_wlevels.values.flatten().tolist())
-        ymax = max(yvals)
+        yvals = np.nan_to_num(
+            percentiles.values.flatten().tolist() +
+            cur_wlevels.values.flatten().tolist())
         ymin = min(yvals)
-        yrange = ymax - ymin
+        ymax = max(yvals)
+        yrange = max(ymax - ymin, 0.01)
         yoffset = 0.1 / self.get_figwidth() * yrange
         ax.axis([-0.75, 11.75, ymin - yoffset, ymax + yoffset])
 
@@ -559,45 +568,54 @@ def compute_monthly_percentiles(tseries, q, pool='all'):
         of year of data used to compute each monthly value is also provided
         in the column named 'nyear'
     """
-    percentiles = []
-    nyear = []
-    mly_values = []
+    nyear = np.array([0] * 12)
+    percentiles = pd.DataFrame(
+        data=np.nan,
+        index=np.arange(1, 13),
+        columns=q)
+    percentiles.index.name = 'month'
+    if tseries.empty:
+        return percentiles, nyear
 
+    # Pool the data for each month separately.
+    monthly_data_pools = [[]] * 12
     if pool == 'all':
         # When pool is 'all', we use all the data available to compute the
         # monthly statistics.
-        for m in range(1, 13):
-            mly_stats = tseries.loc[tseries.index.month == m]
-            mly_values.append(mly_stats.values)
-            nyear.append(len(np.unique(mly_stats.index.year)))
+        for i in range(12):
+            data = tseries.loc[tseries.index.month == i + 1]
+            if not data.empty:
+                monthly_data_pools[i] = data.values
+                nyear[i] = len(np.unique(data.index.year))
     else:
         group = tseries.groupby([tseries.index.year, tseries.index.month])
         if pool == 'min_max_median':
             # When pool is 'min_max_median', we compute the montly
             # statistics from the minimum, maximum and median value of
             # of each month of each year.
-            mly_stats = pd.concat(
+            monthly_stats = pd.concat(
                 [group.min(), group.median(), group.max()], axis=1)
         elif pool == 'median':
-            # When pool is 'median', we compute the montly statistics from the
-            # median value of each month of each year.
-            mly_stats = group.median()
+            # When pool is 'median', we compute the montly statistics
+            # from the median value of each month of each year.
+            monthly_stats = group.median()
         elif pool == 'mean':
-            # When pool is 'mean', we compute the montly statistics from the
-            # mean value of each month of each year.
-            mly_stats = group.mean()
-        for m in range(1, 13):
-            mly_stats_m = mly_stats[mly_stats.index.get_level_values(1) == m]
-            mly_values.append(mly_stats_m.values.flatten())
-            nyear.append(len(mly_stats_m))
+            # When pool is 'mean', we compute the montly statistics
+            # from the mean value of each month of each year.
+            monthly_stats = group.mean()
+        for i in range(12):
+            data = (monthly_stats
+                    [monthly_stats.index.get_level_values(1) == i + 1])
+            monthly_data_pools[i] = data.values.flatten()
+            nyear[i] = len(data)
 
-    percentiles = pd.DataFrame(
-        data=[np.percentile(v, q) for v in mly_values],
-        index=np.arange(1, 13),
-        columns=q).round(5)
-    percentiles.index.name = 'month'
+    for i in range(12):
+        month = i + 1
+        if len(monthly_data_pools[i]):
+            percentiles.loc[month] = np.percentile(monthly_data_pools[i], q)
+    percentiles = percentiles.round(5)
 
-    return percentiles, np.array(nyear)
+    return percentiles, nyear
 
 
 if __name__ == "__main__":
