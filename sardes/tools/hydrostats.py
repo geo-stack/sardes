@@ -390,8 +390,12 @@ class SatisticalHydrographFigure(Figure):
                 monthrange(curyear, mth_idx[-1] + 1)[-1])
 
         # Generate the percentiles.
-        q = [100, 90, 75, 50, 25, 10, 0]
-        percentiles, nyear = compute_monthly_statistics(wlevels, q, pool='all')
+        percentiles, nyear = compute_monthly_percentiles(
+            wlevels,
+            q=[100, 90, 75, 50, 25, 10, 0],
+            pool='min_max_median')
+        percentiles = percentiles.iloc[mth_idx]
+        nyear = nyear[mth_idx]
 
         # Plot the percentiles.
         for bar in self.percentile_bars:
@@ -399,15 +403,15 @@ class SatisticalHydrographFigure(Figure):
         self.percentile_bars = []
 
         xpos = np.arange(12)
-        idx = [0, 1, 2, 4, 5, 6]
-        for i in range(len(idx) - 1):
+        qpairs = [(100, 90), (90, 75), (75, 25), (25, 10), (10, 0)]
+        for i, (qtop, qbot) in enumerate(qpairs):
             self.percentile_bars.append(ax.bar(
                 xpos,
-                percentiles[mth_idx, idx[i]] - percentiles[mth_idx, idx[i+1]],
-                width=0.9, bottom=percentiles[mth_idx, idx[i+1]],
+                percentiles[qtop] - percentiles[qbot],
+                width=0.9, bottom=percentiles[qbot],
                 color=RGB[i], edgecolor='black', linewidth=0.5
                 ))
-        self.med_wlvl_plot.set_data(xpos, percentiles[mth_idx, 3])
+        self.med_wlvl_plot.set_data(xpos, percentiles[50])
 
         # Plot the current water level data series.
         cur_wlevels = wlevels[
@@ -441,7 +445,7 @@ class SatisticalHydrographFigure(Figure):
                       fontsize=16, labelpad=10)
 
         # Axe limits and ticks.
-        yvals = (percentiles.flatten().tolist() +
+        yvals = (percentiles.values.flatten().tolist() +
                  cur_wlevels.values.flatten().tolist())
         ymax = max(yvals)
         ymin = min(yvals)
@@ -449,7 +453,7 @@ class SatisticalHydrographFigure(Figure):
         yoffset = 0.1 / self.get_figwidth() * yrange
         ax.axis([-0.75, 11.75, ymin - yoffset, ymax + yoffset])
 
-        for i, (m, n) in enumerate(zip(MONTHS[mth_idx], nyear[mth_idx])):
+        for i, (m, n) in enumerate(zip(MONTHS[mth_idx], nyear)):
             self.monthlabels[i].set_text(m)
             self.ncountlabels[i].set_text('(%d)' % n)
 
@@ -521,7 +525,7 @@ class SatisticalHydrographFigure(Figure):
         self.canvas.draw()
 
 
-def compute_monthly_statistics(tseries, q, pool='all'):
+def compute_monthly_percentiles(tseries, q, pool='all'):
     percentiles = []
     nyear = []
     mly_values = []
@@ -545,8 +549,13 @@ def compute_monthly_statistics(tseries, q, pool='all'):
             mly_values.append(mly_stats_m.values.flatten())
             nyear.append(len(mly_stats_m))
 
-    percentiles = [np.percentile(v, q) for v in mly_values]
-    return np.array(percentiles), np.array(nyear)
+    percentiles = pd.DataFrame(
+        data=[np.percentile(v, q) for v in mly_values],
+        index=np.arange(1, 13),
+        columns=q)
+    percentiles.index.name = 'month'
+
+    return percentiles, np.array(nyear)
 
 
 if __name__ == "__main__":
