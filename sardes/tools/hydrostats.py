@@ -594,7 +594,7 @@ def compute_monthly_percentiles(tseries, q, pool='all'):
     percentiles = pd.DataFrame(
         data=[np.percentile(v, q) for v in mly_values],
         index=np.arange(1, 13),
-        columns=q)
+        columns=q).round(5)
     percentiles.index.name = 'month'
 
     return percentiles, np.array(nyear)
