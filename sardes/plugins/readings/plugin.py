@@ -327,6 +327,16 @@ class Readings(SardesPlugin):
         for table in self._tseries_data_tables.values():
             self.main.unregister_table(table.tableview)
 
+    def on_pane_view_toggled(self, toggled):
+        """
+        Implement SardesPlugin abstract method.
+        """
+        if toggled is False:
+            # Close tools for all tables.
+            for table in self._tseries_data_tables.values():
+                for tool in table.tools():
+                    tool.close()
+
     # ---- Private methods
     @Slot(object)
     def _handle_data_table_destroyed(self, obs_well_uuid):
