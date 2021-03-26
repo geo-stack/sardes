@@ -241,7 +241,9 @@ class SatisticalHydrographFigure(Figure):
         self.ncountlabels = []
         self.leghandles = []
         self.leglabels = []
-        self.percentile_bars = []
+        self.percentile_bars = {}
+        self.percentile_qpairs = [
+            (100, 90), (90, 75), (75, 25), (25, 10), (10, 0)]
 
         self.setup_axes()
         self.setup_artists()
@@ -274,8 +276,16 @@ class SatisticalHydrographFigure(Figure):
             [], [], '.', color='red', ms=3.5)[0]
 
         # Setup the artist to plot the historical median water level values.
-        self.med_wlvl_plot = ax.plot([], [], '^k')[0]
+        self.med_wlvl_plot = ax.plot(np.arange(12), [1] * 12, '^k')[0]
 
+        # Setup the artists to plot the percentile bars.
+        for i, pair in enumerate(self.percentile_qpairs):
+            self.percentile_bars[pair] = ax.bar(
+                np.arange(12), [1] * 12, width=0.9, bottom=[0] * 12,
+                color=RGB[i], edgecolor='black', linewidth=0.5
+                )
+
+        # Setup the artists that holds the xaxis tick labels.
         self.monthlabels = []
         self.ncountlabels = []
         blended_trans = transforms.blended_transform_factory(
@@ -292,6 +302,7 @@ class SatisticalHydrographFigure(Figure):
             self.ncountlabels.append(ax.text(
                 x, 0, '', ha='center', va='top', fontsize=9,
                 transform=blended_trans + scaled_trans))
+
 
     def tight_layout(self, *args, **kargs):
         """
@@ -397,21 +408,15 @@ class SatisticalHydrographFigure(Figure):
         percentiles = percentiles.iloc[mth_idx]
         nyear = nyear[mth_idx]
 
-        # Plot the percentiles.
-        for bar in self.percentile_bars:
-            bar.remove()
-        self.percentile_bars = []
-
-        xpos = np.arange(12)
-        qpairs = [(100, 90), (90, 75), (75, 25), (25, 10), (10, 0)]
-        for i, (qtop, qbot) in enumerate(qpairs):
-            self.percentile_bars.append(ax.bar(
-                xpos,
-                percentiles[qtop] - percentiles[qbot],
-                width=0.9, bottom=percentiles[qbot],
-                color=RGB[i], edgecolor='black', linewidth=0.5
-                ))
-        self.med_wlvl_plot.set_data(xpos, percentiles[50])
+        # Update the percentile bars and median plot.
+        for qpair in self.percentile_qpairs:
+            container = self.percentile_bars[qpair]
+            for i, bar in enumerate(container.patches):
+                ytop = percentiles.iloc[i][qpair[0]]
+                ybot = percentiles.iloc[i][qpair[1]]
+                bar.set_y(ybot)
+                bar.set_height(ytop - ybot)
+        self.med_wlvl_plot.set_ydata(percentiles[50])
 
         # Plot the current water level data series.
         cur_wlevels = wlevels[
