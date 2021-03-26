@@ -196,6 +196,7 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
         self.wlevels = None
         self.year = None
         self.month = 1
+        self.pool = 'min_max_median'
 
         # Setup a matplotlib navigation toolbar, but hide it.
         toolbar = NavigationToolbar2QT(self, self)
@@ -207,6 +208,14 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
         self.figure.savefig(buf)
         QApplication.clipboard().setImage(QImage.fromData(buf.getvalue()))
         buf.close()
+
+    def set_pool(self, pool):
+        """
+        Set the pooling mode to use when calculating monthly
+        percentile values.
+        """
+        self.pool = pool
+        self._update_figure()
 
     def set_data(self, wlevels, year, month):
         """Set the data of the statistical hydrograph."""
@@ -228,7 +237,7 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
     def _update_figure(self):
         """Update the statistical hydrograph."""
         self.figure.plot_statistical_hydrograph(
-            self.wlevels, self.year, self.month)
+            self.wlevels, self.year, self.month, self.pool)
 
 
 class SatisticalHydrographFigure(Figure):
@@ -302,7 +311,6 @@ class SatisticalHydrographFigure(Figure):
             self.ncountlabels.append(ax.text(
                 x, 0, '', ha='center', va='top', fontsize=9,
                 transform=blended_trans + scaled_trans))
-
 
     def tight_layout(self, *args, **kargs):
         """
@@ -378,7 +386,8 @@ class SatisticalHydrographFigure(Figure):
         super().set_size_inches(*args, **kargs)
         self.tight_layout()
 
-    def plot_statistical_hydrograph(self, wlevels, curyear, lastmonth):
+    def plot_statistical_hydrograph(self, wlevels, curyear, lastmonth,
+                                    pool='min_max_median'):
         # Organize month order and define first and last datetime value
         # for the current data.
         ax = self.axes[0]
@@ -404,10 +413,10 @@ class SatisticalHydrographFigure(Figure):
         percentiles, nyear = compute_monthly_percentiles(
             wlevels,
             q=[100, 90, 75, 50, 25, 10, 0],
-            pool='min_max_median')
+            pool=pool)
         percentiles = percentiles.iloc[mth_idx]
         nyear = nyear[mth_idx]
-
+        
         # Update the percentile bars and median plot.
         for qpair in self.percentile_qpairs:
             container = self.percentile_bars[qpair]
