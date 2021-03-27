@@ -577,7 +577,8 @@ def except_hook(cls, exception, traceback):
 if __name__ == '__main__':
     print('Starting SARDES...')
 
-    app = QApplication(sys.argv)
+    from sardes.utils.qthelpers import create_application
+    app = create_application()
     sys.excepthook = except_hook
 
     from sardes.widgets.splash import SplashScreen
@@ -586,9 +587,6 @@ if __name__ == '__main__':
 
     main = MainWindow(splash)
     splash.finish(main)
-
-    from PyQt5.QtWidgets import QStyleFactory
-    app.setStyle(QStyleFactory.create('WindowsVista'))
-
     main.show()
+
     sys.exit(app.exec_())

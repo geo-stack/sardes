@@ -58,17 +58,6 @@ def test_sardes_tool_visibility(mainwindow, qtbot):
     qtbot.waitForWindowShown(tool.toolwidget())
     assert tool.toolwidget().isVisible()
 
-    # Assert that the toolwidget is hidden with the mainwindow is hidden.
-    mainwindow.hide()
-    assert not mainwindow.isVisible()
-    assert not tool.toolwidget().isVisible()
-
-    # Assert that the toolwidget become visible when the mainwindow becomes
-    # visible again.
-    mainwindow.show()
-    assert mainwindow.isVisible()
-    assert tool.toolwidget().isVisible()
-
     # Assert that the toolwidget is closed when the mainwindow is closed.
     mainwindow.close()
     assert not mainwindow.isVisible()
@@ -76,4 +65,4 @@ def test_sardes_tool_visibility(mainwindow, qtbot):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', osp.basename(__file__), '-v', '-rw', '-s'])
+    pytest.main(['-x', __file__, '-v', '-rw'])

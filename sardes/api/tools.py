@@ -35,7 +35,7 @@ class SardesToolBase(QAction):
         Parameters
         ----------
         parent : object
-            The parent object where this tool is installed.
+            The parent Qt object where this tool is installed.
         name : str
             The name that will be used to reference this tool in the code.
         text: str
@@ -51,14 +51,14 @@ class SardesToolBase(QAction):
             triggering this tool.
         """
         super().__init__(text, parent)
-        self.parent = parent
-        self.triggered.connect(self.__triggered__)
         self.setObjectName(name)
         self._text = text
-        self.setIcon(get_icon(icon) if isinstance(icon, str) else icon)
-        iconsize = iconsize or get_iconsize()
         self.setToolTip(format_tooltip(text, tip, shortcut))
 
+        self.setIcon(get_icon(icon) if isinstance(icon, str) else icon)
+        iconsize = iconsize or get_iconsize()
+
+        self.triggered.connect(self.__triggered__)
         if shortcut is not None:
             if isinstance(shortcut, (list, tuple)):
                 self.setShortcuts(shortcut)
@@ -68,14 +68,22 @@ class SardesToolBase(QAction):
 
         self._toolbutton = None
         self._toolwidget = None
-        self._hidden_with_parent = False
+
+        self.parent = parent
         parent.installEventFilter(self)
 
     # ---- Public API
+    def update(self):
+        """Update the tool and its associated toolwidget if any."""
+        self.__update__()
+
     def toolwidget(self):
         """Return the main widget of this tool."""
         if self._toolwidget is None:
-            self._toolwidget = self.__init_toolwidget__()
+            # We only create the toolwidget when it is needed to reduce
+            # the startup time and footprint of the application.
+            self._toolwidget = self.__create_toolwidget__()
+            self.update()
         return self._toolwidget
 
     def toolbutton(self):
@@ -109,14 +117,6 @@ class SardesToolBase(QAction):
         """
         if event.type() == QEvent.Close:
             self.close()
-        elif event.type() == QEvent.Hide:
-            self._hidden_with_parent = (
-                self._toolwidget is not None and
-                self._toolwidget.isVisible())
-            self.hide()
-        elif event.type() == QEvent.Show:
-            if self._hidden_with_parent is True:
-                self.show()
         return super().eventFilter(widget, event)
 
     def _show_toolwidget(self):
@@ -141,7 +141,7 @@ class SardesTool(SardesToolBase):
     when triggered or to show a widget window to do more complex operations.
     """
 
-    def __init_toolwidget__(self):
+    def __create_toolwidget__(self):
         """
         Create and return the main widget that will be shown when this tool
         is triggered.
@@ -155,7 +155,7 @@ class SardesTool(SardesToolBase):
         """
         This is the function that is called when this tool is triggered.
 
-        By default, the widget returned by __init_toolwidget__ is shown. This
+        By default, the widget returned by __create_toolwidget__ is shown. This
         method can be reimplemented to perform other any other actions.
         """
         self.show()
@@ -169,6 +169,10 @@ class SardesTool(SardesToolBase):
         method.
         """
         return self._text
+
+    def __update__(self):
+        """Update the tool and its associated toolwidget if any."""
+        raise NotImplementedError
 
 
 class SardesToolExample(SardesTool):
@@ -187,11 +191,14 @@ class SardesToolExample(SardesTool):
             shortcut='Ctrl+E'
             )
 
-    def __init_toolwidget__(self):
+    def __create_toolwidget__(self):
         widget = QLabel('This is a Sardes tool example.')
         widget.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         widget.setFixedSize(300, 150)
         return widget
+
+    def __update__(self):
+        pass
 
 
 if __name__ == '__main__':

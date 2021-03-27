@@ -52,6 +52,10 @@ class HydrographTool(SardesTool):
             tip=_("Create a publication ready graph of the water level data.")
             )
 
+    # ---- SardesTool API
+    def update(self):
+        pass
+
     def __triggered__(self):
         self.select_save_file()
 

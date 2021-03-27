@@ -14,7 +14,6 @@ from sardes.config.locale import _
 # ---- Third party imports
 import pandas as pd
 from qtpy.QtCore import Qt, Slot
-from qtpy.QtWidgets import QApplication
 
 # ---- Local imports
 from sardes.config.icons import get_icon
@@ -29,7 +28,8 @@ from sardes.widgets.tableviews import (
     SardesTableWidget, NumEditDelegate, NotEditableDelegate,
     SardesStackedTableWidget)
 from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
-from sardes.tools import SaveReadingsToExcelTool, HydrographTool
+from sardes.tools import (
+    SaveReadingsToExcelTool, HydrographTool, SatisticalHydrographTool)
 
 
 """Readings plugin"""
@@ -151,9 +151,17 @@ class ReadingsTableWidget(SardesTableWidget):
         if self.plot_viewer is not None:
             self.update_plot_viewer_title()
 
+        # Update tools.
+        for tool in self.tools():
+            tool.update()
+
     def set_repere_data(self, repere_data):
         """Set the repere data of the model."""
         self.model().set_repere_data(repere_data)
+
+        # Update tools.
+        for tool in self.tools():
+            tool.update()
 
     def set_manual_measurements(self, measurements):
         """
@@ -163,6 +171,10 @@ class ReadingsTableWidget(SardesTableWidget):
         if self.plot_viewer is not None:
             self.plot_viewer.set_manual_measurements(
                 DataType.WaterLevel, self.model().manual_measurements())
+
+        # Update tools.
+        for tool in self.tools():
+            tool.update()
 
     def set_model_data(self, dataf):
         """
@@ -176,10 +188,14 @@ class ReadingsTableWidget(SardesTableWidget):
                 self.model().dataf, self.model()._obs_well_data)
 
             # We need to set the manual measurements again because the axes
-            # are completely cleansed from the figure whn the data are
+            # are completely cleansed from the figure when the data are
             # updated. See cgq-qgc/sardes#409.
             self.plot_viewer.set_manual_measurements(
                 DataType.WaterLevel, self.model().manual_measurements())
+
+        # Update tools.
+        for tool in self.tools():
+            tool.update()
 
     def get_formatted_data(self):
         """Return a dataframe contraining formatted readings data."""
@@ -311,6 +327,16 @@ class Readings(SardesPlugin):
         for table in self._tseries_data_tables.values():
             self.main.unregister_table(table.tableview)
 
+    def on_pane_view_toggled(self, toggled):
+        """
+        Implement SardesPlugin abstract method.
+        """
+        if toggled is False:
+            # Close tools for all tables.
+            for table in self._tseries_data_tables.values():
+                for tool in table.tools():
+                    tool.close()
+
     # ---- Private methods
     @Slot(object)
     def _handle_data_table_destroyed(self, obs_well_uuid):
@@ -373,8 +399,12 @@ class Readings(SardesPlugin):
         table_widget._actions['plot_data'] = table_widget.add_toolbar_widget(
             show_plot_btn)
 
+        # Add tools to the table.
+        table_widget.install_tool(SatisticalHydrographTool(table_widget))
+
         table_widget.install_tool(HydrographTool(table_widget),
                                   after='copy_to_clipboard')
+
         table_widget.install_tool(SaveReadingsToExcelTool(table_widget),
                                   after='copy_to_clipboard')
 

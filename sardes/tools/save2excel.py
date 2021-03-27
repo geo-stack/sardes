@@ -46,6 +46,9 @@ class SaveReadingsToExcelTool(SardesTool):
             )
 
     # ---- SardesTool API
+    def update(self):
+        pass
+
     def __triggered__(self):
         self.select_save_file(filename=None)
 

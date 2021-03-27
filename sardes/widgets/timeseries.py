@@ -807,9 +807,7 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
         return axe
 
     def copy_to_clipboard(self):
-        """
-        Copy this figure's canvas to the clipboard.
-        """
+        """Put a copy of the figure on the clipboard."""
         buf = io.BytesIO()
         self.figure.savefig(buf)
         QApplication.clipboard().setImage(QImage.fromData(buf.getvalue()))
