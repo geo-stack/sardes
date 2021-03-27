@@ -197,6 +197,9 @@ class SardesToolExample(SardesTool):
         widget.setFixedSize(300, 150)
         return widget
 
+    def __update__(self):
+        pass
+
 
 if __name__ == '__main__':
     import sys
