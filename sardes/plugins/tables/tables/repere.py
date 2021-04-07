@@ -36,7 +36,7 @@ class RepereTableModel(SardesTableModel):
         elif column == 'top_casing_alt':
             return NumEditDelegate(view, decimals=3, bottom=-99999, top=99999)
         elif column == 'casing_length':
-            return NumEditDelegate(view, decimals=3, bottom=0, top=99999)
+            return NumEditDelegate(view, decimals=3, bottom=-99999, top=99999)
         elif column in ['start_date']:
             return DateTimeDelegate(view, is_required=True,
                                     display_format="yyyy-MM-dd hh:mm")
