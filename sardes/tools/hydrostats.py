@@ -16,6 +16,7 @@ import os.path as osp
 
 # ---- Third party imports
 import matplotlib as mpl
+from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.transforms as transforms
 from matplotlib.transforms import ScaledTranslation
 import numpy as np
@@ -155,6 +156,17 @@ class SatisticalHydrographWidget(QMainWindow):
             iconsize=get_iconsize())
         toolbar.addWidget(self.copy_to_clipboard_btn)
 
+        self.save_multipdf_statistical_graphs_btn = create_toolbutton(
+            self, icon='file_multi_pages',
+            text=_("Multi Pages PDF"),
+            tip=_("Create a multi-page pdf file containing the statistical "
+                  "hydrographs (one per page) for each year where data "
+                  "are available."),
+            triggered=self._select_multipdf_statistical_graphs_filename,
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.save_multipdf_statistical_graphs_btn)
+
+        # Add navigation and animation tools
         toolbar.addSeparator()
 
         self.move_backward_btn = create_toolbutton(
