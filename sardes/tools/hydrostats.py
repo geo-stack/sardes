@@ -12,6 +12,7 @@ from datetime import datetime
 from calendar import monthrange
 import datetime as dt
 import io
+import os.path as osp
 
 # ---- Third party imports
 import matplotlib as mpl
@@ -25,12 +26,15 @@ from matplotlib.figure import Figure
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage
 from qtpy.QtWidgets import (
-    QApplication, QComboBox, QGridLayout, QLabel, QMainWindow, QWidget)
+    QApplication, QComboBox, QGridLayout, QLabel, QMainWindow, QWidget,
+    QFileDialog)
 
 # ---- Local imports
 from sardes.config.gui import get_iconsize
 from sardes.api.timeseries import DataType
 from sardes.config.locale import _
+from sardes.config.ospath import (
+    get_select_file_dialog_dir, set_select_file_dialog_dir)
 from sardes.api.tools import SardesTool
 from sardes.utils.qthelpers import (
     create_toolbutton, create_mainwindow_toolbar)
@@ -57,7 +61,8 @@ class SatisticalHydrographTool(SardesTool):
         if self.toolwidget() is not None:
             data = self.parent.get_formatted_data()
             self.toolwidget().set_data(data)
-
+            self.toolwidget().set_obswell_data(
+                self.parent.model()._obs_well_data)
 
     def __create_toolwidget__(self):
         toolwidget = SatisticalHydrographWidget()
@@ -80,6 +85,7 @@ class SatisticalHydrographWidget(QMainWindow):
         self.setContextMenuPolicy(Qt.NoContextMenu)
         self.setCentralWidget(self.canvas)
         self.setup_toolbar()
+        self.obs_well_id = None
 
     def year(self):
         """
@@ -96,6 +102,9 @@ class SatisticalHydrographWidget(QMainWindow):
         statistical hydrograph needs to be plotted.
         """
         return self.month_cbox.currentIndex() + 1
+    def set_obswell_data(self, obswell_data):
+        """Set the observation well data."""
+        self.obs_well_id = obswell_data['obs_well_id']
 
     def set_data(self, wlevels):
         """Set the data of the figure and update the gui."""
