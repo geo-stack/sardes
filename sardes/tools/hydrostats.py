@@ -192,9 +192,35 @@ class SatisticalHydrographWidget(QMainWindow):
         self.canvas.set_year(self.year(), update=False)
         self.canvas.set_month(self.month(), update=True)
 
+    def move_forward(self):
         """
-        Handle when the user changed the month for which the
-        statistical hydrograph needs to be plotted.
+        Move the x-axis of the statistical hydrograph one month forward.
+        """
+        if self.year_cbox.count() == 0:
+            return
+
+        year_cur_idx = self.year_cbox.currentIndex()
+        month_cur_idx = self.month_cbox.currentIndex()
+        if month_cur_idx == self.month_cbox.count() - 1:
+            if year_cur_idx == self.year_cbox.count() - 1:
+                return
+            else:
+                year_cur_idx += 1
+                month_cur_idx = 0
+        else:
+            month_cur_idx += 1
+
+        # We block the signals of the combo boxes to avoid unecessary
+        # updates of the figure canvas.
+        self.year_cbox.blockSignals(True)
+        self.month_cbox.blockSignals(True)
+        self.year_cbox.setCurrentIndex(year_cur_idx)
+        self.month_cbox.setCurrentIndex(month_cur_idx)
+        self.year_cbox.blockSignals(False)
+        self.month_cbox.blockSignals(False)
+
+        self._handle_current_yearmonth_changed()
+
         """
         self.canvas.set_month(self.month())
 
