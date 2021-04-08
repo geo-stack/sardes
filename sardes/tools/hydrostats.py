@@ -202,7 +202,28 @@ class SatisticalHydrographWidget(QMainWindow):
         month_layout.addWidget(self.month_cbox, 0, 1)
         toolbar.addWidget(month_widget)
 
-    def _handle_year_changed(self):
+    def _select_multipdf_statistical_graphs_filename(self):
+        """
+        Show a file dialog to allow the user to select a filename where to
+        save the multipage pdf containing the statistical hydrogaphs.
+        """
+        namefilters = 'Portable Document Format (*.pdf)'
+        filename = "statistical_graphs_{}_(2007-2010).pdf".format(
+            self.obs_well_id)
+        filename, filefilter = QFileDialog.getSaveFileName(
+            self,
+            _("Save Multi Statistical Graphs"),
+            filename,
+            namefilters)
+        if filename:
+            if not filename.endswith('.pdf'):
+                filename += '.pdf'
+            filename = osp.abspath(filename)
+            set_select_file_dialog_dir(osp.dirname(filename))
+
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            self.canvas.save_multipdf_statistical_graphs(filename)
+            QApplication.restoreOverrideCursor()
 
     def _handle_current_yearmonth_changed(self):
         """
