@@ -7,18 +7,15 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
-# ---- Standard imports
-import os
-
 # ---- Third party imports
-from qtpy.QtCore import QObject, Qt, Slot, QPoint, Signal, QEvent, QSize
+from qtpy.QtCore import Qt, QEvent, QSize
 from qtpy.QtWidgets import (QApplication, QToolButton, QLabel, QToolBar,
                             QMainWindow, QAction)
 
 # ---- Local imports
 from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
-from sardes.utils.qthelpers import create_toolbutton, format_tooltip
+from sardes.utils.qthelpers import format_tooltip
 
 
 class SardesToolBase(QAction):
