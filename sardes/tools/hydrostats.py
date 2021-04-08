@@ -316,6 +316,21 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
         QApplication.clipboard().setImage(QImage.fromData(buf.getvalue()))
         buf.close()
 
+    def save_multipdf_statistical_graphs(self, filename):
+        """
+        Create a multipage pdf file containing the statistical hydrographs
+        (one per page) for each year where data are available.
+        """
+        years = np.unique(self.wlevels.index.year).tolist()
+        with PdfPages(filename) as pdf:
+            for year in years:
+                self.figure.plot_statistical_hydrograph(
+                    self.wlevels, year, 12, self.pool)
+                pdf.savefig(self.figure)
+
+        # Restore figure initial state.
+        self._update_figure()
+
     def set_pool(self, pool):
         """
         Set the pooling mode to use when calculating monthly
