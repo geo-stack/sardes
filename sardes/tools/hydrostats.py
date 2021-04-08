@@ -101,7 +101,10 @@ class SatisticalHydrographWidget(QMainWindow):
         Return the integer value of the month for which the
         statistical hydrograph needs to be plotted.
         """
-        return self.month_cbox.currentIndex() + 1
+        return (
+            None if not self.month_cbox.count() else
+            self.month_cbox.currentIndex() + 1)
+
     def set_obswell_data(self, obswell_data):
         """Set the observation well data."""
         self.obs_well_id = obswell_data['obs_well_id']
