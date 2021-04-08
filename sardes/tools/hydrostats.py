@@ -777,8 +777,14 @@ if __name__ == "__main__":
         [repere_data['sampling_feature_uuid'] == sampling_feature_uuid]
         .copy())
 
+    obswell_data = accessor.get_observation_wells_data().loc[
+        sampling_feature_uuid]
+
+    formatted_data = format_reading_data(readings_data, repere_data)
+
     widget = SatisticalHydrographWidget()
-    widget.set_data(format_reading_data(readings_data, repere_data))
+    widget.set_data(formatted_data)
+    widget.set_obswell_data(obswell_data)
     widget.show()
 
     sys.exit(app.exec_())
