@@ -19,7 +19,7 @@ import uuid
 # ---- Third party imports
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_list_like
+from pandas.api.types import is_list_like, is_datetime64_ns_dtype
 from sqlalchemy import create_engine, extract, func, and_
 from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
                         UniqueConstraint, Index)
@@ -1173,7 +1173,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # Make sure datetime data is considered as datetime.
         # This is required to avoid problems when the manual measurements
         # table is empty. See cgq-qgc/sardes#427.
-        measurements['datetime'] = pd.to_datetime(measurements['datetime'])
+        if not is_datetime64_ns_dtype(measurements['datetime']):
+            measurements['datetime'] = pd.to_datetime(measurements['datetime'])
 
         return measurements
 
