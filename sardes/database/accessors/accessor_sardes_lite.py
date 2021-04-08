@@ -1311,8 +1311,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 continue
 
             # Format the data.
-            tseries_data['datetime'] = pd.to_datetime(
-                tseries_data['datetime'], format=DATE_FORMAT)
+            if not is_datetime64_ns_dtype(tseries_data['datetime']):
+                tseries_data['datetime'] = pd.to_datetime(
+                    tseries_data['datetime'], format=DATE_FORMAT)
             tseries_data.rename(columns={'value': data_type}, inplace=True)
 
             # Merge the data.
