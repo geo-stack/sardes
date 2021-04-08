@@ -57,7 +57,7 @@ class SatisticalHydrographTool(SardesTool):
         if self.toolwidget() is not None:
             data = self.parent.get_formatted_data()
             self.toolwidget().set_data(data)
-            self.toolwidget().setWindowTitle(self.__title__())
+
 
     def __create_toolwidget__(self):
         toolwidget = SatisticalHydrographWidget()
