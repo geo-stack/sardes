@@ -154,7 +154,24 @@ class SatisticalHydrographWidget(QMainWindow):
 
         toolbar.addSeparator()
 
-        # Setup the year widget.
+        self.move_backward_btn = create_toolbutton(
+            self, icon='file_previous',
+            text=_("Move Backward"),
+            tip=_("Move the x-axis of the statistical hydrograph "
+                  "one month backward."),
+            triggered=self.move_backward,
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.move_backward_btn)
+
+        self.move_forward_btn = create_toolbutton(
+            self, icon='file_next',
+            text=_("Move Forward"),
+            tip=_("Move the x-axis of the statistical hydrograph "
+                  "one month forward."),
+            triggered=self.move_forward,
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.move_forward_btn)
+
         year_labl = QLabel(_('Year:'))
         self.year_cbox = QComboBox()
         self.year_cbox.currentIndexChanged.connect(
