@@ -287,6 +287,8 @@ class SatisticalHydrographFigure(Figure):
         # Setup the axes to hold the legend.
         ax2 = self.add_axes([0, 0, 1, 1], facecolor=None)
         ax2.axis('off')
+        for spine in ax2.spines.values():
+            spine.set_visible(False)
 
     def setup_artists(self):
         """Setup the matplotlib artists that are used to plot the data."""
@@ -435,7 +437,7 @@ class SatisticalHydrographFigure(Figure):
             pool=pool)
         percentiles = percentiles.iloc[mth_idx]
         nyear = nyear[mth_idx]
-        
+
         # Update the percentile bars and median plot.
         for qpair in self.percentile_qpairs:
             container = self.percentile_bars[qpair]
