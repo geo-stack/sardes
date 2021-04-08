@@ -75,6 +75,8 @@ class SardesToolBase(QAction):
     # ---- Public API
     def update(self):
         """Update the tool and its associated toolwidget if any."""
+        if self._toolwidget is not None:
+            self._toolwidget.setWindowTitle(self.__title__())
         self.__update__()
 
     def toolwidget(self):
