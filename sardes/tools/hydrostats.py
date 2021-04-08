@@ -221,8 +221,34 @@ class SatisticalHydrographWidget(QMainWindow):
 
         self._handle_current_yearmonth_changed()
 
+    def move_backward(self):
         """
-        self.canvas.set_month(self.month())
+        Move the x-axis of the statistical hydrograph one month backward.
+        """
+        if self.year_cbox.count() == 0:
+            return
+
+        year_cur_idx = self.year_cbox.currentIndex()
+        month_cur_idx = self.month_cbox.currentIndex()
+        if month_cur_idx == 0:
+            if year_cur_idx == 0:
+                return
+            else:
+                month_cur_idx = self.month_cbox.count() - 1
+                year_cur_idx += -1
+        else:
+            month_cur_idx += -1
+
+        # We block the signals of the combo boxes to avoid unecessary
+        # updates of the figure canvas.
+        self.year_cbox.blockSignals(True)
+        self.month_cbox.blockSignals(True)
+        self.year_cbox.setCurrentIndex(year_cur_idx)
+        self.month_cbox.setCurrentIndex(month_cur_idx)
+        self.year_cbox.blockSignals(False)
+        self.month_cbox.blockSignals(False)
+
+        self._handle_current_yearmonth_changed()
 
 
 class SatisticalHydrographCanvas(FigureCanvasQTAgg):
