@@ -64,5 +64,20 @@ def test_sardes_tool_visibility(mainwindow, qtbot):
     assert not tool.toolwidget().isVisible()
 
 
+def test_toolwidget_window_title(mainwindow, qtbot):
+    """Test that the title of the toolwidget is updated correctly.."""
+    tool = mainwindow.tool
+    tool.trigger()
+    assert tool.toolwidget().isVisible()
+    assert tool.toolwidget().windowTitle() == 'Sardes Tool Example'
+
+    # Change the value of the SardesToolBase._text attribute, which is
+    # used by default to set the title of the toolwidget window, and make sur
+    # the title of the window is updated as expected.
+    tool._text = 'Sardes Tool Example MODIF'
+    tool.update()
+    assert tool.toolwidget().windowTitle() == 'Sardes Tool Example MODIF'
+
+
 if __name__ == "__main__":
     pytest.main(['-x', __file__, '-v', '-rw'])
