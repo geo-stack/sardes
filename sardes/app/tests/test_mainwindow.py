@@ -228,8 +228,7 @@ def test_view_readings(mainwindow, qtbot, database, readings_data,
     qtbot.waitUntil(lambda: len(readings_plugin._tseries_data_tables) == 1)
 
     table = readings_plugin._tseries_data_tables[obswells_data.index[0]]
-    qtbot.waitUntil(lambda: table.tableview.row_count() == len(readings_data),
-                    timeout=3000)
+    qtbot.waitUntil(lambda: table.tableview.row_count() == len(readings_data))
     assert table.isVisible()
 
     # Close the timeseries table.

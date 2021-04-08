@@ -84,8 +84,7 @@ def mainwindow(qtbot, mocker, dbconnmanager, dbaccessor, obswell_uuid,
 
     # Wait until the data are loaded in the table.
     table = mainwindow.plugin._tseries_data_tables[obswell_uuid]
-    qtbot.waitUntil(lambda: table.tableview.row_count() == len(readings_data),
-                    timeout=3000)
+    qtbot.waitUntil(lambda: table.tableview.row_count() == len(readings_data))
     assert table.isVisible()
     assert not table.model()._repere_data.empty
     assert (table.model().manual_measurements()['value'].values.tolist() ==
