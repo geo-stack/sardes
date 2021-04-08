@@ -234,15 +234,17 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
         self.wlevels = wlevels
         self._update_figure()
 
-    def set_year(self, year):
+    def set_year(self, year, update=True):
         """Set the year for which the statistical hydrograph is plotted."""
         self.year = year
-        self._update_figure()
+        if update:
+            self._update_figure()
 
-    def set_month(self, month):
+    def set_month(self, month, update=True):
         """Set the month for which the statistical hydrograph is plotted."""
         self.month = month
-        self._update_figure()
+        if update:
+            self._update_figure()
 
     def _update_figure(self):
         """Update the statistical hydrograph."""
