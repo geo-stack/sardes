@@ -157,7 +157,8 @@ class SatisticalHydrographWidget(QMainWindow):
         # Setup the year widget.
         year_labl = QLabel(_('Year:'))
         self.year_cbox = QComboBox()
-        self.year_cbox.currentIndexChanged.connect(self._handle_year_changed)
+        self.year_cbox.currentIndexChanged.connect(
+            self._handle_current_yearmonth_changed)
 
         year_widget = QWidget()
         year_layout = QGridLayout(year_widget)
@@ -171,7 +172,8 @@ class SatisticalHydrographWidget(QMainWindow):
         self.month_cbox = QComboBox()
         self.month_cbox.addItems(MONTHS.tolist())
         self.month_cbox.setCurrentIndex(11)
-        self.month_cbox.currentIndexChanged.connect(self._handle_month_changed)
+        self.month_cbox.currentIndexChanged.connect(
+            self._handle_current_yearmonth_changed)
 
         month_widget = QWidget()
         month_layout = QGridLayout(month_widget)
@@ -181,13 +183,15 @@ class SatisticalHydrographWidget(QMainWindow):
         toolbar.addWidget(month_widget)
 
     def _handle_year_changed(self):
+
+    def _handle_current_yearmonth_changed(self):
         """
-        Handle when the user changed the year for which the
+        Handle when the user changed the month or the year for which the
         statistical hydrograph needs to be plotted.
         """
-        self.canvas.set_year(self.year())
+        self.canvas.set_year(self.year(), update=False)
+        self.canvas.set_month(self.month(), update=True)
 
-    def _handle_month_changed(self):
         """
         Handle when the user changed the month for which the
         statistical hydrograph needs to be plotted.
