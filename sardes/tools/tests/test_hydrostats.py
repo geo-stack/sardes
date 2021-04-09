@@ -22,7 +22,9 @@ os.environ['SARDES_PYTEST'] = 'True'
 import numpy as np
 import pytest
 import pandas as pd
-from qtpy.QtWidgets import QToolBar
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QToolBar, QFileDialog
+
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
@@ -161,8 +163,11 @@ def test_plot_statistical_hydrograph_if_empy(qtbot, hydrostats_tool):
     toolwidget = hydrostats_tool.toolwidget()
     assert toolwidget.year() is None
     assert toolwidget.month() is None
+    assert toolwidget.canvas.year is None
+    assert toolwidget.canvas.month is None
     assert toolwidget.move_backward_btn.isEnabled() is False
     assert toolwidget.move_forward_btn.isEnabled() is False
+    assert toolwidget.save_multipdf_statistical_graphs_btn.isEnabled() is False
 
 
 def test_plot_statistical_hydrograph(qtbot, hydrostats_tool):
