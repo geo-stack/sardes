@@ -10,8 +10,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1.0\n"
-"POT-Creation-Date: 2021-03-09 00:13-0500\n"
-"PO-Revision-Date: 2021-03-09 00:22-0500\n"
+"POT-Creation-Date: 2021-04-09 14:38-0400\n"
+"PO-Revision-Date: 2021-04-09 15:06-0400\n"
 "Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs."
 "ca.com>\n"
 "Language-Team: Python\n"
@@ -132,7 +132,7 @@ msgstr ""
 "La disposition de l'interface sera réinitialisée à la configuration par "
 "défaut.<br><br> Voulez-vous continuer?"
 
-#: ..\sardes\app\mainwindow.py:585
+#: ..\sardes\app\mainwindow.py:586
 msgid "Initializing {}..."
 msgstr "Initialisation de {}..."
 
@@ -197,11 +197,11 @@ msgstr "Influencé"
 msgid "Last reading"
 msgstr "Dernière lecture"
 
-#: ..\sardes\database\database_manager.py:460 ..\sardes\tools\save2excel.py:68
+#: ..\sardes\database\database_manager.py:460 ..\sardes\tools\save2excel.py:71
 msgid "readings_{}.xlsx"
 msgstr "données_{}.xlsx"
 
-#: ..\sardes\database\database_manager.py:466 ..\sardes\tools\save2excel.py:96
+#: ..\sardes\database\database_manager.py:466 ..\sardes\tools\save2excel.py:99
 msgid "Piezometry"
 msgstr "Piézométrie"
 
@@ -218,7 +218,7 @@ msgstr "schéma_{}{}"
 msgid "Diagram"
 msgstr "Schéma"
 
-#: ..\sardes\database\database_manager.py:498 ..\sardes\tools\hydrographs.py:74
+#: ..\sardes\database\database_manager.py:498 ..\sardes\tools\hydrographs.py:78
 msgid "graph_{}.pdf"
 msgstr "graphique_{}.pdf"
 
@@ -400,7 +400,7 @@ msgid "Well:"
 msgstr "Puits :"
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:137
-#: ..\sardes\tools\save2excel.py:192
+#: ..\sardes\tools\save2excel.py:195
 msgid "Municipality:"
 msgstr "Municipalité :"
 
@@ -732,15 +732,15 @@ msgstr "Profondeur"
 msgid "Observation ID"
 msgstr "ID Observation"
 
-#: ..\sardes\plugins\readings\plugin.py:258
+#: ..\sardes\plugins\readings\plugin.py:274
 msgid "Readings"
 msgstr "Lectures"
 
-#: ..\sardes\plugins\readings\plugin.py:366
+#: ..\sardes\plugins\readings\plugin.py:392
 msgid "Plot data"
 msgstr "Tracer les données"
 
-#: ..\sardes\plugins\readings\plugin.py:367
+#: ..\sardes\plugins\readings\plugin.py:393
 msgid ""
 "Show the data of the timeseries acquired in the currently selected "
 "observation well in an interactive plot viewer."
@@ -749,7 +749,7 @@ msgstr ""
 "d'observation actuellement sélectionné dans un visualiseur de tracés "
 "interactif."
 
-#: ..\sardes\plugins\readings\plugin.py:382
+#: ..\sardes\plugins\readings\plugin.py:412
 msgid "Observation well {} ({})"
 msgstr "Puits d'observation {} ({})"
 
@@ -979,7 +979,7 @@ msgid "Date To"
 msgstr "Date à"
 
 #: ..\sardes\plugins\tables\tables\repere.py:90
-#: ..\sardes\tools\hydrographs.py:350 ..\sardes\tools\save2excel.py:257
+#: ..\sardes\tools\hydrographs.py:354 ..\sardes\tools\save2excel.py:260
 msgid "Geodesic"
 msgstr "Géodésique"
 
@@ -1085,15 +1085,15 @@ msgid "Create a publication ready graph of the water level data."
 msgstr ""
 "Créer un graphique prêt pour la publication des données de niveau d'eau."
 
-#: ..\sardes\tools\hydrographs.py:77
+#: ..\sardes\tools\hydrographs.py:81
 msgid "Save Hydrograph"
 msgstr "Enregistrer l'hydrogramme"
 
-#: ..\sardes\tools\hydrographs.py:113 ..\sardes\tools\save2excel.py:109
+#: ..\sardes\tools\hydrographs.py:117 ..\sardes\tools\save2excel.py:112
 msgid "File in Use"
 msgstr "Fichier en cours d'utilisation"
 
-#: ..\sardes\tools\hydrographs.py:114 ..\sardes\tools\save2excel.py:110
+#: ..\sardes\tools\hydrographs.py:118 ..\sardes\tools\save2excel.py:113
 msgid ""
 "The save file operation cannot be completed because the file is in use by "
 "another application or user."
@@ -1101,11 +1101,12 @@ msgstr ""
 "L'opération d'enregistrement du fichier ne peut pas être effectuée car le "
 "fichier est utilisé par une autre application ou un autre utilisateur."
 
-#: ..\sardes\tools\hydrographs.py:139 ..\sardes\tools\save2excel.py:135
+#: ..\sardes\tools\hydrographs.py:143 ..\sardes\tools\hydrostats.py:633
+#: ..\sardes\tools\save2excel.py:138
 msgid "Water level altitude (m MSL)"
 msgstr "Altitude du niveau d'eau (m NMM)"
 
-#: ..\sardes\tools\hydrographs.py:256
+#: ..\sardes\tools\hydrographs.py:260
 msgid ""
 "Municipality: {}\n"
 "Station: {}"
@@ -1113,17 +1114,148 @@ msgstr ""
 "Municipalité : {}\n"
 "Station : {}"
 
-#: ..\sardes\tools\hydrographs.py:301
+#: ..\sardes\tools\hydrographs.py:305
 msgid "Created on {}"
 msgstr "Créé le {}"
 
-#: ..\sardes\tools\hydrographs.py:350 ..\sardes\tools\save2excel.py:257
+#: ..\sardes\tools\hydrographs.py:354 ..\sardes\tools\save2excel.py:260
 msgid "Approximate"
 msgstr "Approximative"
 
-#: ..\sardes\tools\hydrographs.py:351
+#: ..\sardes\tools\hydrographs.py:355
 msgid "Ground altitude: {:0.1f} m MSL ({})"
 msgstr "Altitude du sol : {:0.1f} m NMM ({})"
+
+#: ..\sardes\tools\hydrostats.py:46
+msgid "Apr"
+msgstr "Avr"
+
+#: ..\sardes\tools\hydrostats.py:46
+msgid "Feb"
+msgstr "Fév"
+
+#: ..\sardes\tools\hydrostats.py:46
+msgid "Jan"
+msgstr "Jan"
+
+#: ..\sardes\tools\hydrostats.py:46
+msgid "Jun"
+msgstr "Jun"
+
+#: ..\sardes\tools\hydrostats.py:46
+msgid "Mar"
+msgstr "Mar"
+
+#: ..\sardes\tools\hydrostats.py:46
+msgid "May"
+msgstr "Mai"
+
+#: ..\sardes\tools\hydrostats.py:47
+msgid "Aug"
+msgstr "Aoû"
+
+#: ..\sardes\tools\hydrostats.py:47
+msgid "Dec"
+msgstr "Déc"
+
+#: ..\sardes\tools\hydrostats.py:47
+msgid "Jul"
+msgstr "Jui"
+
+#: ..\sardes\tools\hydrostats.py:47
+msgid "Nov"
+msgstr "Nov"
+
+#: ..\sardes\tools\hydrostats.py:47
+msgid "Oct"
+msgstr "Oct"
+
+#: ..\sardes\tools\hydrostats.py:47
+msgid "Sep"
+msgstr "Sep"
+
+#: ..\sardes\tools\hydrostats.py:55
+msgid "Statistical Hydrograph"
+msgstr "Hydrogramme statistique"
+
+#: ..\sardes\tools\hydrostats.py:57
+msgid "Show the statistical hydrograph for this record."
+msgstr "Montrer l'hydrogramme statistique des données de niveau d'eau."
+
+#: ..\sardes\tools\hydrostats.py:149 ..\sardes\widgets\tableviews.py:1907
+#: ..\sardes\widgets\timeseries.py:1024
+msgid "Save"
+msgstr "Enregistrer"
+
+#: ..\sardes\tools\hydrostats.py:150 ..\sardes\widgets\timeseries.py:1025
+msgid "Save the figure to a file"
+msgstr "Enregistrer la figure dans un fichier"
+
+#: ..\sardes\tools\hydrostats.py:158 ..\sardes\widgets\tableviews.py:1041
+#: ..\sardes\widgets\timeseries.py:1033
+msgid "Copy"
+msgstr "Copier"
+
+#: ..\sardes\tools\hydrostats.py:159 ..\sardes\widgets\timeseries.py:1034
+msgid "Put a copy of the figure on the Clipboard."
+msgstr "Mettez une copie de la figure dans le presse-papiers."
+
+#: ..\sardes\tools\hydrostats.py:167
+msgid "Multi Pages PDF"
+msgstr "PDF multi-pages"
+
+#: ..\sardes\tools\hydrostats.py:168
+msgid ""
+"Create a multi-page pdf file containing the statistical hydrographs (one per "
+"page) for each year where data are available."
+msgstr ""
+"Créer un fichier pdf de plusieurs pages contenant les hydrogrammes "
+"statistiques (un par page) pour chaque année où des données sont disponibles."
+
+#: ..\sardes\tools\hydrostats.py:180
+msgid "Move Backward"
+msgstr "Reculer"
+
+#: ..\sardes\tools\hydrostats.py:181
+msgid "Move the x-axis of the statistical hydrograph one month backward."
+msgstr ""
+"Déplacer l'axe des x de l'hydrogramme statistique d'un mois en arrière."
+
+#: ..\sardes\tools\hydrostats.py:189
+msgid "Move Forward"
+msgstr "Avancer"
+
+#: ..\sardes\tools\hydrostats.py:190
+msgid "Move the x-axis of the statistical hydrograph one month forward."
+msgstr "Déplacer l'axe des x de l'hydrogramme statistique d'un mois en avant."
+
+#: ..\sardes\tools\hydrostats.py:196
+msgid "Year:"
+msgstr "Année :"
+
+#: ..\sardes\tools\hydrostats.py:209
+msgid "Month:"
+msgstr "Mois :"
+
+#: ..\sardes\tools\hydrostats.py:255
+msgid "Save Multi Statistical Graphs"
+msgstr "Enregistrer les hydrogrammes statistiques"
+
+#: ..\sardes\tools\hydrostats.py:573
+msgid "Year"
+msgstr "Année"
+
+#: ..\sardes\tools\hydrostats.py:578
+msgid "Years {:d}-{:d}"
+msgstr "Années {:d}-{:d}"
+
+#: ..\sardes\tools\hydrostats.py:666
+msgid "Measures"
+msgstr "Mesures"
+
+#: ..\sardes\tools\hydrostats.py:666
+msgid "Median"
+msgstr "Médianes"
 
 #: ..\sardes\tools\save2excel.py:43
 msgid "Create XLSX Document"
@@ -1134,39 +1266,39 @@ msgid "Save daily readings data in an Excel document."
 msgstr ""
 "Enregistrer les données de lectures quotidiennes dans un document Excel."
 
-#: ..\sardes\tools\save2excel.py:71
+#: ..\sardes\tools\save2excel.py:74
 msgid "Save File"
 msgstr "Enregistrer le fichier"
 
-#: ..\sardes\tools\save2excel.py:132
+#: ..\sardes\tools\save2excel.py:135
 msgid "Date of reading"
 msgstr "Date du relevé"
 
-#: ..\sardes\tools\save2excel.py:138
+#: ..\sardes\tools\save2excel.py:141
 msgid "Water temperature (°C)"
 msgstr "Température de l'eau (°C)"
 
-#: ..\sardes\tools\save2excel.py:142
+#: ..\sardes\tools\save2excel.py:145
 msgid "Water electrical conductivity (µS/cm)"
 msgstr "Conductivité électrique de l'eau (µS/cm)"
 
-#: ..\sardes\tools\save2excel.py:203
+#: ..\sardes\tools\save2excel.py:206
 msgid "Station number:"
 msgstr "Numéro de la station :"
 
-#: ..\sardes\tools\save2excel.py:214
+#: ..\sardes\tools\save2excel.py:217
 msgid "Latitude (degrees):"
 msgstr "Latitude (degrés) :"
 
-#: ..\sardes\tools\save2excel.py:232
+#: ..\sardes\tools\save2excel.py:235
 msgid "Longitude (degrees):"
 msgstr "Longitude (degrés) :"
 
-#: ..\sardes\tools\save2excel.py:250
+#: ..\sardes\tools\save2excel.py:253
 msgid "Ground altitude (m MSL):"
 msgstr "Altitude du sol (m NMM) :"
 
-#: ..\sardes\tools\save2excel.py:259
+#: ..\sardes\tools\save2excel.py:262
 msgid "Not Available"
 msgstr "Non disponible"
 
@@ -1272,10 +1404,6 @@ msgstr ""
 msgid "{} out of {} row(s) selected"
 msgstr "{} ligne(s) sur  {} sélectionnée(s)"
 
-#: ..\sardes\widgets\tableviews.py:1041 ..\sardes\widgets\timeseries.py:1035
-msgid "Copy"
-msgstr "Copier"
-
 #: ..\sardes\widgets\tableviews.py:1043
 msgid ""
 "Put a copy of the selection on the Clipboard so you can paste it somewhere "
@@ -1352,7 +1480,7 @@ msgstr "Sélectionner tous les éléments du tableau."
 
 #: ..\sardes\widgets\tableviews.py:1140
 msgid "Clear Selection"
-msgstr "Effacer la Sélection"
+msgstr "Effacer la sélection"
 
 #: ..\sardes\widgets\tableviews.py:1142
 msgid "Clear the selection in the table."
@@ -1432,10 +1560,6 @@ msgstr ""
 "permanente dans la base de données.<br><br>Cette action <b>ne peut pas</b> "
 "être annulée.<br><br>"
 
-#: ..\sardes\widgets\tableviews.py:1907 ..\sardes\widgets\timeseries.py:1026
-msgid "Save"
-msgstr "Enregistrer"
-
 #: ..\sardes\widgets\tableviews.py:1964
 msgid "Edits error"
 msgstr "Erreur de modification"
@@ -1448,20 +1572,20 @@ msgstr "Enregistrement des modifications dans la base de données en cours..."
 msgid "Edits saved sucessfully in the database."
 msgstr "Modifications enregistrées avec succès dans la base de données."
 
-#: ..\sardes\widgets\tableviews.py:2331
+#: ..\sardes\widgets\tableviews.py:2337
 msgid "Column options"
 msgstr "Options des colonnes"
 
-#: ..\sardes\widgets\tableviews.py:2332
+#: ..\sardes\widgets\tableviews.py:2338
 msgid "Open a menu to select the columns to display in this table."
 msgstr ""
 "Ouvrir un menu pour sélectionner les colonnes à afficher dans ce tableau."
 
-#: ..\sardes\widgets\tableviews.py:2344
+#: ..\sardes\widgets\tableviews.py:2350
 msgid "Restore to defaults"
 msgstr "Restaurer les valeurs par défaut"
 
-#: ..\sardes\widgets\tableviews.py:2347
+#: ..\sardes\widgets\tableviews.py:2353
 msgid "Show all"
 msgstr "Montrer tout"
 
@@ -1469,50 +1593,42 @@ msgstr "Montrer tout"
 msgid "manual"
 msgstr "manuel"
 
-#: ..\sardes\widgets\timeseries.py:973
+#: ..\sardes\widgets\timeseries.py:971
 msgid "Use {} + scroll to zoom the graph"
 msgstr "Utiliser {} + la molette de souris pour zoomer sur le graphique"
 
-#: ..\sardes\widgets\timeseries.py:1027
-msgid "Save the figure to a file"
-msgstr "Enregistrer la figure dans un fichier"
-
-#: ..\sardes\widgets\timeseries.py:1036
-msgid "Put a copy of the figure on the Clipboard."
-msgstr "Mettez une copie de la figure dans le presse-papiers."
-
-#: ..\sardes\widgets\timeseries.py:1047
+#: ..\sardes\widgets\timeseries.py:1045
 msgid "Home"
 msgstr "Accueil"
 
-#: ..\sardes\widgets\timeseries.py:1048
+#: ..\sardes\widgets\timeseries.py:1046
 msgid "Reset original view"
 msgstr "Réinitialiser la vue d'origine"
 
-#: ..\sardes\widgets\timeseries.py:1056
+#: ..\sardes\widgets\timeseries.py:1054
 msgid "Pan"
 msgstr "Déplacer"
 
-#: ..\sardes\widgets\timeseries.py:1057
+#: ..\sardes\widgets\timeseries.py:1055
 msgid "Pan axes with left mouse, zoom with right"
 msgstr ""
 "Déplacer les axes avec le bouton gauche de la souris et zoomer avec le droit"
 
-#: ..\sardes\widgets\timeseries.py:1066
+#: ..\sardes\widgets\timeseries.py:1064
 msgid "Zoom"
 msgstr "Zoom"
 
-#: ..\sardes\widgets\timeseries.py:1067
+#: ..\sardes\widgets\timeseries.py:1065
 msgid "Zoom in to rectangle with left mouse, zoom out with right."
 msgstr ""
 "Effectuer un zoom avant sur le rectangle avec le bouton de gauche de la "
 "souris et un zoom arrière avec le bouton de droite."
 
-#: ..\sardes\widgets\timeseries.py:1081
+#: ..\sardes\widgets\timeseries.py:1079
 msgid "Zoom out"
 msgstr "Zoom arrière"
 
-#: ..\sardes\widgets\timeseries.py:1082
+#: ..\sardes\widgets\timeseries.py:1080
 msgid ""
 "Zoom the graph out. You can also use {}+scroll down to zoom the graph out."
 msgstr ""
@@ -1520,23 +1636,23 @@ msgstr ""
 "cette action en pressant {} et en défilant vers le bas avec la molette de la "
 "souris."
 
-#: ..\sardes\widgets\timeseries.py:1091
+#: ..\sardes\widgets\timeseries.py:1089
 msgid "Zoom in"
 msgstr "Zoom avant"
 
-#: ..\sardes\widgets\timeseries.py:1092
+#: ..\sardes\widgets\timeseries.py:1090
 msgid "Zoom the graph in. You can also use {}+scroll up to zoom the graph in."
 msgstr ""
 "Faire un zoom avant sur le graphique. Vous pouvez également effectuer cette "
 "action en pressant {} et en défilant vers le haut avec la molette de la "
 "souris."
 
-#: ..\sardes\widgets\timeseries.py:1110 ..\sardes\widgets\timeseries.py:1121
-#: ..\sardes\widgets\timeseries.py:1133
+#: ..\sardes\widgets\timeseries.py:1108 ..\sardes\widgets\timeseries.py:1119
+#: ..\sardes\widgets\timeseries.py:1131
 msgid "Select Data"
 msgstr "Sélectionner les données"
 
-#: ..\sardes\widgets\timeseries.py:1111
+#: ..\sardes\widgets\timeseries.py:1109
 msgid ""
 "Select data by clicking with the mouse and dragging the cursor over a "
 "rectangular region on the graph."
@@ -1544,7 +1660,7 @@ msgstr ""
 "Sélectionnez les données à l'intérieur d'une zone rectangulaire en cliquant "
 "avec la souris et en faisant glisser le curseur sur le graphique."
 
-#: ..\sardes\widgets\timeseries.py:1122
+#: ..\sardes\widgets\timeseries.py:1120
 msgid ""
 "Select data by clicking with the mouse and dragging the cursor horizontally "
 "over a given period on the graph."
@@ -1552,7 +1668,7 @@ msgstr ""
 "Sélectionnez les données à l'intérieur d'un intervalle horizontal en "
 "cliquant avec la souris et en faisant glisser le curseur sur le graphique."
 
-#: ..\sardes\widgets\timeseries.py:1134
+#: ..\sardes\widgets\timeseries.py:1132
 msgid ""
 "Select data by clicking with the mouse and dragging the cursor vertically "
 "over a given span of the data on the graph."
@@ -1560,43 +1676,43 @@ msgstr ""
 "Sélectionnez les données à l'intérieur d'un intervalle vertical en cliquant "
 "avec la souris et en faisant glisser le curseur sur le graphique."
 
-#: ..\sardes\widgets\timeseries.py:1145
+#: ..\sardes\widgets\timeseries.py:1143
 msgid "Clear Data Selection"
 msgstr "Effacer la sélection de données"
 
-#: ..\sardes\widgets\timeseries.py:1146
+#: ..\sardes\widgets\timeseries.py:1144
 msgid "Clear data selection for the currently selected time series."
 msgstr ""
 "Effacer la sélection de données pour la séries temporelle sélectionnée."
 
-#: ..\sardes\widgets\timeseries.py:1164
+#: ..\sardes\widgets\timeseries.py:1162
 msgid "Toggle graph element visibility"
 msgstr "Activer/désactiver la visibilité des éléments du graphique"
 
-#: ..\sardes\widgets\timeseries.py:1173
+#: ..\sardes\widgets\timeseries.py:1171
 msgid "Graph is empty"
 msgstr "Le graphique est vide"
 
-#: ..\sardes\widgets\timeseries.py:1177
+#: ..\sardes\widgets\timeseries.py:1175
 msgid "Graph Element"
 msgstr "Élément du graphique"
 
-#: ..\sardes\widgets\timeseries.py:1178
+#: ..\sardes\widgets\timeseries.py:1176
 msgid ""
 "Select a graph element so that you can format it and zoom and pan the data."
 msgstr ""
 "Sélectionnez un élément du graphique pour pouvoir formater les données et "
 "zoomer et déplacer les axes de l'élément correspondant."
 
-#: ..\sardes\widgets\timeseries.py:1189 ..\sardes\widgets\timeseries.py:1201
+#: ..\sardes\widgets\timeseries.py:1187 ..\sardes\widgets\timeseries.py:1199
 msgid "pt"
 msgstr "pt"
 
-#: ..\sardes\widgets\timeseries.py:1190
+#: ..\sardes\widgets\timeseries.py:1188
 msgid "Line Width"
 msgstr "Largeur de la ligne"
 
-#: ..\sardes\widgets\timeseries.py:1191
+#: ..\sardes\widgets\timeseries.py:1189
 msgid ""
 "Enter a value from 0 pt to 99 pt to change the line width of the plot of the "
 "currently selected time series."
@@ -1604,11 +1720,11 @@ msgstr ""
 "Entrez une valeur comprise entre 0 et 99 points pour modifier l'épaisseur de "
 "la ligne du tracé de la série chronologique actuellement sélectionnée."
 
-#: ..\sardes\widgets\timeseries.py:1202
+#: ..\sardes\widgets\timeseries.py:1200
 msgid "Marker Size"
 msgstr "Taille des marqueurs"
 
-#: ..\sardes\widgets\timeseries.py:1203
+#: ..\sardes\widgets\timeseries.py:1201
 msgid ""
 "Enter a value from 0 pt to 99 pt to change the marker size of the plot of "
 "the currently selected time series."
