@@ -58,12 +58,9 @@ class SatisticalHydrographTool(SardesTool):
             )
 
     # ---- SardesTool API
-    def __update__(self):
-        if self.toolwidget() is not None:
-            data = self.parent.get_formatted_data()
-            self.toolwidget().set_data(data)
-            self.toolwidget().set_obswell_data(
-                self.parent.model()._obs_well_data)
+    def __update_toolwidget__(self, toolwidget):
+        toolwidget.set_data(self.parent.get_formatted_data())
+        toolwidget.set_obswell_data(self.parent.model()._obs_well_data)
 
     def __create_toolwidget__(self):
         return SatisticalHydrographWidget()
@@ -81,11 +78,11 @@ class SatisticalHydrographTool(SardesTool):
 class SatisticalHydrographWidget(QMainWindow):
     def __init__(self, parent=None):
         super().__init__()
+        self.obs_well_id = None
         self.canvas = SatisticalHydrographCanvas()
         self.setContextMenuPolicy(Qt.NoContextMenu)
         self.setCentralWidget(self.canvas)
         self.setup_toolbar()
-        self.obs_well_id = None
 
     def year(self):
         """
