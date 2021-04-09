@@ -119,8 +119,11 @@ class SatisticalHydrographWidget(QMainWindow):
             pass
 
         self.year_cbox.blockSignals(True)
+        self.month_cbox.blockSignals(True)
         curyear = self.year_cbox.currentText()
+        curmonth_idx = self.month_cbox.currentIndex()
         self.year_cbox.clear()
+        self.month_cbox.clear()
         if not wlevels.empty:
             years = np.unique(wlevels.index.year).astype('str').tolist()
             self.year_cbox.addItems(years)
@@ -128,7 +131,13 @@ class SatisticalHydrographWidget(QMainWindow):
                 self.year_cbox.setCurrentIndex(years.index(curyear))
             else:
                 self.year_cbox.setCurrentIndex(len(years) - 1)
+            self.month_cbox.addItems(MONTHS.tolist())
+            if curmonth_idx == -1:
+                self.month_cbox.setCurrentIndex(11)
+            else:
+                self.month_cbox.setCurrentIndex(curmonth_idx)
         self.year_cbox.blockSignals(False)
+        self.month_cbox.blockSignals(False)
 
         self.canvas.set_data(wlevels, self.year(), self.month())
 
@@ -534,6 +543,7 @@ class SatisticalHydrographFigure(Figure):
                 columns=['datetime', DataType.WaterLevel])
             wlevels['datetime'] = pd.to_datetime(wlevels['datetime'])
             wlevels = wlevels.set_index('datetime', drop=True)
+        lastmonth = 12 if lastmonth is None else lastmonth
         if curyear is None:
             curyear = datetime.now().year
         wlevels = wlevels.dropna()
