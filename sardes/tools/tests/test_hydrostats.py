@@ -261,10 +261,33 @@ def test_plot_statistical_hydrograph_if_empy(qtbot, hydrostats_tool):
     dataset['datetime'] = pd.to_datetime(dataset['datetime'])
     hydrostats_tool.parent.formatted_dataset = dataset
 
+
+def test_move_forward(qtbot, hydrostats_tool):
+    """
+    Test that using the buttons to move the statistical hydrograph one
+    month forward is working as expected.
+    """
     # Show the statistical hydrograph toolwidget.
     hydrostats_tool.trigger()
     qtbot.waitForWindowShown(hydrostats_tool._toolwidget)
-    assert hydrostats_tool._toolwidget.isVisible()
+    assert hydrostats_tool.toolwidget().isVisible()
+
+    toolwidget = hydrostats_tool.toolwidget()
+    canvas = toolwidget.canvas
+
+    toolwidget.year_cbox.setCurrentIndex(4)
+    toolwidget.month_cbox.setCurrentIndex(11)
+    assert toolwidget.year() == canvas.year == 2014
+    assert toolwidget.month() == canvas.month == 12
+
+    # Move one month backward until we are at the start of the series.
+    assert toolwidget.move_forward_btn.isEnabled() is True
+    for month in range(1, 13):
+        qtbot.mouseClick(toolwidget.move_forward_btn, Qt.LeftButton)
+        assert toolwidget.year() == canvas.year == 2015
+        assert toolwidget.month() == canvas.month == month
+    assert toolwidget.move_forward_btn.isEnabled() is False
+
 
 def test_multipage_pdf_creation(qtbot, hydrostats_tool, mocker, tmp_path):
     """
