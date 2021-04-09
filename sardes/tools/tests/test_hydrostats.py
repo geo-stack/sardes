@@ -266,6 +266,27 @@ def test_plot_statistical_hydrograph_if_empy(qtbot, hydrostats_tool):
     qtbot.waitForWindowShown(hydrostats_tool._toolwidget)
     assert hydrostats_tool._toolwidget.isVisible()
 
+def test_multipage_pdf_creation(qtbot, hydrostats_tool, mocker, tmp_path):
+    """
+    Test that creating a multipage pdf file containing the statistical
+    hydrographs (one per page) for each year where data are available is
+    working as expected.
+    """
+    hydrostats_tool.trigger()
+    qtbot.waitForWindowShown(hydrostats_tool._toolwidget)
+    assert hydrostats_tool.toolwidget().isVisible()
+
+    selectedfilename = osp.join(tmp_path, 'test_multipage_hydrograph.pdf')
+    selectedfilter = 'Portable Document Format (*.pdf)'
+    mocker.patch.object(QFileDialog, 'getSaveFileName',
+                        return_value=(selectedfilename, selectedfilter))
+
+    assert osp.exists(selectedfilename) is False
+    qtbot.mouseClick(
+        hydrostats_tool.toolwidget().save_multipdf_statistical_graphs_btn,
+        Qt.LeftButton)
+    assert osp.exists(selectedfilename) is True
+
 
 if __name__ == "__main__":
     pytest.main(['-x', __file__, '-v', '-rw'])
