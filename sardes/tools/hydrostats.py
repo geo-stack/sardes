@@ -140,6 +140,7 @@ class SatisticalHydrographWidget(QMainWindow):
         self.month_cbox.blockSignals(False)
 
         self.canvas.set_data(wlevels, self.year(), self.month())
+        self._update_buttons_state()
 
     def setup_toolbar(self):
         """Setup the toolbar of this widget."""
@@ -222,6 +223,27 @@ class SatisticalHydrographWidget(QMainWindow):
         month_layout.addWidget(self.month_cbox, 0, 1)
         toolbar.addWidget(month_widget)
 
+        self._update_buttons_state()
+
+    def _update_buttons_state(self):
+        """Update the enable state of the buttons."""
+        year_index = self.year_cbox.currentIndex()
+        year_count = self.year_cbox.count()
+        month_index = self.month_cbox.currentIndex()
+        month_count = self.month_cbox.count()
+        if year_count and month_count:
+            self.save_multipdf_statistical_graphs_btn.setEnabled(True)
+            self.move_forward_btn.setEnabled(True)
+            self.move_backward_btn.setEnabled(True)
+            if month_index == month_count - 1 and year_index == year_count - 1:
+                self.move_forward_btn.setEnabled(False)
+            if month_index == 0 and year_index == 0:
+                self.move_backward_btn.setEnabled(False)
+        else:
+            self.save_multipdf_statistical_graphs_btn.setEnabled(False)
+            self.move_forward_btn.setEnabled(False)
+            self.move_backward_btn.setEnabled(False)
+
     def _select_multipdf_statistical_graphs_filename(self):
         """
         Show a file dialog to allow the user to select a filename where to
@@ -252,6 +274,7 @@ class SatisticalHydrographWidget(QMainWindow):
         """
         self.canvas.set_year(self.year(), update=False)
         self.canvas.set_month(self.month(), update=True)
+        self._update_buttons_state()
 
     def move_forward(self):
         """
