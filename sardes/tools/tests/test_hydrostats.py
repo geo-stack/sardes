@@ -190,7 +190,7 @@ def test_plot_statistical_hydrograph(qtbot, hydrostats_tool):
     assert year_cbox_texts == ['2010', '2011', '2012', '2013', '2014', '2015']
 
     assert toolwidget.year_cbox.currentText() == '2015'
-    assert canvas.year == 2015
+    assert toolwidget.year() == canvas.year == 2015
 
     # Assert months and current month were set as expected.
     month_cbox_texts = [
@@ -198,7 +198,7 @@ def test_plot_statistical_hydrograph(qtbot, hydrostats_tool):
         index in range(toolwidget.month_cbox.count())]
     assert month_cbox_texts == MONTHS.tolist()
     assert toolwidget.month_cbox.currentText() == "Dec"
-    assert canvas.month == 12
+    assert toolwidget.month() == canvas.month == 12
 
     # Assert that the figure was plotted as expected.
     assert canvas.figure.axes[0].get_xlabel() == "Year 2015"
@@ -247,19 +247,31 @@ def test_plot_statistical_hydrograph(qtbot, hydrostats_tool):
     assert canvas.figure.ncountlabels[-1].get_text() == "(6)"
 
 
-def test_plot_statistical_hydrograph_if_empy(qtbot, hydrostats_tool):
+def test_move_backward(qtbot, hydrostats_tool):
     """
-    Test that no bug occur when trying to plot the statistical.
-    hydrograph of an empty dataset.
+    Test that using the buttons to move the statistical hydrograph one
+    month backward is working as expected.
     """
-    assert hydrostats_tool._toolwidget is None
+    # Show the statistical hydrograph toolwidget.
+    hydrostats_tool.trigger()
+    qtbot.waitForWindowShown(hydrostats_tool._toolwidget)
+    assert hydrostats_tool.toolwidget().isVisible()
 
-    # Set an empty formatter dataset in the parent of the hydrostats_tool.
-    dataset = pd.DataFrame(
-        [],
-        columns=['datetime', DataType.WaterLevel])
-    dataset['datetime'] = pd.to_datetime(dataset['datetime'])
-    hydrostats_tool.parent.formatted_dataset = dataset
+    toolwidget = hydrostats_tool.toolwidget()
+    canvas = toolwidget.canvas
+
+    toolwidget.year_cbox.setCurrentIndex(1)
+    toolwidget.month_cbox.setCurrentIndex(0)
+    assert toolwidget.year() == canvas.year == 2011
+    assert toolwidget.month() == canvas.month == 1
+
+    # Move one month backward until we are at the start of the series.
+    assert toolwidget.move_backward_btn.isEnabled() is True
+    for month in reversed(range(1, 13)):
+        qtbot.mouseClick(toolwidget.move_backward_btn, Qt.LeftButton)
+        assert toolwidget.year() == canvas.year == 2010
+        assert toolwidget.month() == canvas.month == month
+    assert toolwidget.move_backward_btn.isEnabled() is False
 
 
 def test_move_forward(qtbot, hydrostats_tool):
