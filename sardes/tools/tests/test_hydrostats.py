@@ -145,8 +145,6 @@ def test_plot_statistical_hydrograph_if_empy(qtbot, hydrostats_tool):
     Test that no bug occur when trying to plot the statistical.
     hydrograph of an empty dataset.
     """
-    assert hydrostats_tool.toolwidget() is None
-
     # Set an empty formatter dataset in the parent of the hydrostats_tool.
     dataset = pd.DataFrame(
         [],
