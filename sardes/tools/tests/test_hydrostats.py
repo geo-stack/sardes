@@ -20,17 +20,14 @@ os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import numpy as np
-from numpy import nan
 import pytest
 import pandas as pd
 from qtpy.QtWidgets import QToolBar
 
 # ---- Local imports
-from sardes import __rootdir__
 from sardes.api.timeseries import DataType
 from sardes.tools.hydrostats import (
     SatisticalHydrographTool, compute_monthly_percentiles, MONTHS)
-from sardes.utils.tests.test_data_operations import format_reading_data
 
 
 # =============================================================================
