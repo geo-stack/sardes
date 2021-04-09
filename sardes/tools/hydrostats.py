@@ -250,12 +250,13 @@ class SatisticalHydrographWidget(QMainWindow):
         save the multipage pdf containing the statistical hydrogaphs.
         """
         namefilters = 'Portable Document Format (*.pdf)'
+        dirname = get_select_file_dialog_dir()
         filename = "statistical_graphs_{}_(2007-2010).pdf".format(
             self.obs_well_id)
         filename, filefilter = QFileDialog.getSaveFileName(
             self,
             _("Save Multi Statistical Graphs"),
-            filename,
+            osp.join(dirname, filename),
             namefilters)
         if filename:
             if not filename.endswith('.pdf'):
