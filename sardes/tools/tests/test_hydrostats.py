@@ -177,11 +177,12 @@ def test_plot_statistical_hydrograph(qtbot, hydrostats_tool):
     # Show the statistical hydrograph toolwidget.
     hydrostats_tool.trigger()
     qtbot.waitForWindowShown(hydrostats_tool._toolwidget)
-    assert hydrostats_tool._toolwidget.isVisible()
 
     toolwidget = hydrostats_tool.toolwidget()
     canvas = toolwidget.canvas
     canvas.set_pool('all')
+    assert toolwidget.isVisible()
+    assert toolwidget.save_multipdf_statistical_graphs_btn.isEnabled() is True
 
     # Assert years and current year were set as expected.
     year_cbox_texts = [
@@ -245,6 +246,32 @@ def test_plot_statistical_hydrograph(qtbot, hydrostats_tool):
     assert canvas.figure.axes[0].get_xlabel() == "Years 2012-2013"
     assert canvas.figure.monthlabels[-1].get_text() == "Jun"
     assert canvas.figure.ncountlabels[-1].get_text() == "(6)"
+
+
+def test_navigation_buttons_state(qtbot, hydrostats_tool):
+    """
+    Test that the state of the navigation buttons is set as expected.
+    """
+    hydrostats_tool.trigger()
+    qtbot.waitForWindowShown(hydrostats_tool._toolwidget)
+    assert hydrostats_tool.toolwidget().isVisible()
+
+    toolwidget = hydrostats_tool.toolwidget()
+
+    assert toolwidget.year_cbox.currentIndex() == 5
+    assert toolwidget.month_cbox.currentIndex() == 11
+    assert toolwidget.move_backward_btn.isEnabled() is True
+    assert toolwidget.move_forward_btn.isEnabled() is False
+
+    toolwidget.year_cbox.setCurrentIndex(3)
+    toolwidget.month_cbox.setCurrentIndex(5)
+    assert toolwidget.move_backward_btn.isEnabled() is True
+    assert toolwidget.move_forward_btn.isEnabled() is True
+
+    toolwidget.year_cbox.setCurrentIndex(0)
+    toolwidget.month_cbox.setCurrentIndex(0)
+    assert toolwidget.move_backward_btn.isEnabled() is False
+    assert toolwidget.move_forward_btn.isEnabled() is True
 
 
 def test_move_backward(qtbot, hydrostats_tool):
