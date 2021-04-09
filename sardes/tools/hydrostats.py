@@ -12,9 +12,11 @@ from datetime import datetime
 from calendar import monthrange
 import datetime as dt
 import io
+import os.path as osp
 
 # ---- Third party imports
 import matplotlib as mpl
+from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.transforms as transforms
 from matplotlib.transforms import ScaledTranslation
 import numpy as np
@@ -25,12 +27,15 @@ from matplotlib.figure import Figure
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage
 from qtpy.QtWidgets import (
-    QApplication, QComboBox, QGridLayout, QLabel, QMainWindow, QWidget)
+    QApplication, QComboBox, QGridLayout, QLabel, QMainWindow, QWidget,
+    QFileDialog)
 
 # ---- Local imports
 from sardes.config.gui import get_iconsize
 from sardes.api.timeseries import DataType
 from sardes.config.locale import _
+from sardes.config.ospath import (
+    get_select_file_dialog_dir, set_select_file_dialog_dir)
 from sardes.api.tools import SardesTool
 from sardes.utils.qthelpers import (
     create_toolbutton, create_mainwindow_toolbar)
@@ -57,11 +62,11 @@ class SatisticalHydrographTool(SardesTool):
         if self.toolwidget() is not None:
             data = self.parent.get_formatted_data()
             self.toolwidget().set_data(data)
-
+            self.toolwidget().set_obswell_data(
+                self.parent.model()._obs_well_data)
 
     def __create_toolwidget__(self):
-        toolwidget = SatisticalHydrographWidget()
-        return toolwidget
+        return SatisticalHydrographWidget()
 
     def __title__(self):
         obs_well_data = self.parent.model()._obs_well_data
@@ -80,6 +85,7 @@ class SatisticalHydrographWidget(QMainWindow):
         self.setContextMenuPolicy(Qt.NoContextMenu)
         self.setCentralWidget(self.canvas)
         self.setup_toolbar()
+        self.obs_well_id = None
 
     def year(self):
         """
@@ -95,7 +101,13 @@ class SatisticalHydrographWidget(QMainWindow):
         Return the integer value of the month for which the
         statistical hydrograph needs to be plotted.
         """
-        return self.month_cbox.currentIndex() + 1
+        return (
+            None if not self.month_cbox.count() else
+            self.month_cbox.currentIndex() + 1)
+
+    def set_obswell_data(self, obswell_data):
+        """Set the observation well data."""
+        self.obs_well_id = obswell_data['obs_well_id']
 
     def set_data(self, wlevels):
         """Set the data of the figure and update the gui."""
@@ -107,8 +119,11 @@ class SatisticalHydrographWidget(QMainWindow):
             pass
 
         self.year_cbox.blockSignals(True)
+        self.month_cbox.blockSignals(True)
         curyear = self.year_cbox.currentText()
+        curmonth_idx = self.month_cbox.currentIndex()
         self.year_cbox.clear()
+        self.month_cbox.clear()
         if not wlevels.empty:
             years = np.unique(wlevels.index.year).astype('str').tolist()
             self.year_cbox.addItems(years)
@@ -116,9 +131,16 @@ class SatisticalHydrographWidget(QMainWindow):
                 self.year_cbox.setCurrentIndex(years.index(curyear))
             else:
                 self.year_cbox.setCurrentIndex(len(years) - 1)
+            self.month_cbox.addItems(MONTHS.tolist())
+            if curmonth_idx == -1:
+                self.month_cbox.setCurrentIndex(11)
+            else:
+                self.month_cbox.setCurrentIndex(curmonth_idx)
         self.year_cbox.blockSignals(False)
+        self.month_cbox.blockSignals(False)
 
         self.canvas.set_data(wlevels, self.year(), self.month())
+        self._update_buttons_state()
 
     def setup_toolbar(self):
         """Setup the toolbar of this widget."""
@@ -143,12 +165,41 @@ class SatisticalHydrographWidget(QMainWindow):
             iconsize=get_iconsize())
         toolbar.addWidget(self.copy_to_clipboard_btn)
 
+        self.save_multipdf_statistical_graphs_btn = create_toolbutton(
+            self, icon='file_multi_pages',
+            text=_("Multi Pages PDF"),
+            tip=_("Create a multi-page pdf file containing the statistical "
+                  "hydrographs (one per page) for each year where data "
+                  "are available."),
+            triggered=self._select_multipdf_statistical_graphs_filename,
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.save_multipdf_statistical_graphs_btn)
+
+        # Add navigation and animation tools
         toolbar.addSeparator()
 
-        # Setup the year widget.
+        self.move_backward_btn = create_toolbutton(
+            self, icon='file_previous',
+            text=_("Move Backward"),
+            tip=_("Move the x-axis of the statistical hydrograph "
+                  "one month backward."),
+            triggered=self.move_backward,
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.move_backward_btn)
+
+        self.move_forward_btn = create_toolbutton(
+            self, icon='file_next',
+            text=_("Move Forward"),
+            tip=_("Move the x-axis of the statistical hydrograph "
+                  "one month forward."),
+            triggered=self.move_forward,
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.move_forward_btn)
+
         year_labl = QLabel(_('Year:'))
         self.year_cbox = QComboBox()
-        self.year_cbox.currentIndexChanged.connect(self._handle_year_changed)
+        self.year_cbox.currentIndexChanged.connect(
+            self._handle_current_yearmonth_changed)
 
         year_widget = QWidget()
         year_layout = QGridLayout(year_widget)
@@ -162,7 +213,8 @@ class SatisticalHydrographWidget(QMainWindow):
         self.month_cbox = QComboBox()
         self.month_cbox.addItems(MONTHS.tolist())
         self.month_cbox.setCurrentIndex(11)
-        self.month_cbox.currentIndexChanged.connect(self._handle_month_changed)
+        self.month_cbox.currentIndexChanged.connect(
+            self._handle_current_yearmonth_changed)
 
         month_widget = QWidget()
         month_layout = QGridLayout(month_widget)
@@ -171,19 +223,117 @@ class SatisticalHydrographWidget(QMainWindow):
         month_layout.addWidget(self.month_cbox, 0, 1)
         toolbar.addWidget(month_widget)
 
-    def _handle_year_changed(self):
-        """
-        Handle when the user changed the year for which the
-        statistical hydrograph needs to be plotted.
-        """
-        self.canvas.set_year(self.year())
+        self._update_buttons_state()
 
-    def _handle_month_changed(self):
+    def _update_buttons_state(self):
+        """Update the enable state of the buttons."""
+        year_index = self.year_cbox.currentIndex()
+        year_count = self.year_cbox.count()
+        month_index = self.month_cbox.currentIndex()
+        month_count = self.month_cbox.count()
+        if year_count and month_count:
+            self.save_multipdf_statistical_graphs_btn.setEnabled(True)
+            self.move_forward_btn.setEnabled(True)
+            self.move_backward_btn.setEnabled(True)
+            if month_index == month_count - 1 and year_index == year_count - 1:
+                self.move_forward_btn.setEnabled(False)
+            if month_index == 0 and year_index == 0:
+                self.move_backward_btn.setEnabled(False)
+        else:
+            self.save_multipdf_statistical_graphs_btn.setEnabled(False)
+            self.move_forward_btn.setEnabled(False)
+            self.move_backward_btn.setEnabled(False)
+
+    def _select_multipdf_statistical_graphs_filename(self):
         """
-        Handle when the user changed the month for which the
+        Show a file dialog to allow the user to select a filename where to
+        save the multipage pdf containing the statistical hydrogaphs.
+        """
+        namefilters = 'Portable Document Format (*.pdf)'
+        dirname = get_select_file_dialog_dir()
+        filename = "statistical_graphs_{}_(2007-2010).pdf".format(
+            self.obs_well_id)
+        filename, filefilter = QFileDialog.getSaveFileName(
+            self,
+            _("Save Multi Statistical Graphs"),
+            osp.join(dirname, filename),
+            namefilters)
+        if filename:
+            if not filename.endswith('.pdf'):
+                filename += '.pdf'
+            filename = osp.abspath(filename)
+            set_select_file_dialog_dir(osp.dirname(filename))
+
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            self.canvas.save_multipdf_statistical_graphs(filename)
+            QApplication.restoreOverrideCursor()
+
+    def _handle_current_yearmonth_changed(self):
+        """
+        Handle when the user changed the month or the year for which the
         statistical hydrograph needs to be plotted.
         """
-        self.canvas.set_month(self.month())
+        self.canvas.set_year(self.year(), update=False)
+        self.canvas.set_month(self.month(), update=True)
+        self._update_buttons_state()
+
+    def move_forward(self):
+        """
+        Move the x-axis of the statistical hydrograph one month forward.
+        """
+        if self.year_cbox.count() == 0:
+            return
+
+        year_cur_idx = self.year_cbox.currentIndex()
+        month_cur_idx = self.month_cbox.currentIndex()
+        if month_cur_idx == self.month_cbox.count() - 1:
+            if year_cur_idx == self.year_cbox.count() - 1:
+                return
+            else:
+                year_cur_idx += 1
+                month_cur_idx = 0
+        else:
+            month_cur_idx += 1
+
+        # We block the signals of the combo boxes to avoid unecessary
+        # updates of the figure canvas.
+        self.year_cbox.blockSignals(True)
+        self.month_cbox.blockSignals(True)
+        self.year_cbox.setCurrentIndex(year_cur_idx)
+        self.month_cbox.setCurrentIndex(month_cur_idx)
+        self.year_cbox.blockSignals(False)
+        self.month_cbox.blockSignals(False)
+
+        self._handle_current_yearmonth_changed()
+
+    def move_backward(self):
+        """
+        Move the x-axis of the statistical hydrograph one month backward.
+        """
+        if self.year_cbox.count() == 0:
+            return
+
+        year_cur_idx = self.year_cbox.currentIndex()
+        month_cur_idx = self.month_cbox.currentIndex()
+        if month_cur_idx == 0:
+            if year_cur_idx == 0:
+                return
+            else:
+                month_cur_idx = self.month_cbox.count() - 1
+                year_cur_idx += -1
+        else:
+            month_cur_idx += -1
+
+        # We block the signals of the combo boxes to avoid unecessary
+        # updates of the figure canvas.
+        self.year_cbox.blockSignals(True)
+        self.month_cbox.blockSignals(True)
+        self.year_cbox.setCurrentIndex(year_cur_idx)
+        self.month_cbox.setCurrentIndex(month_cur_idx)
+        self.year_cbox.blockSignals(False)
+        self.month_cbox.blockSignals(False)
+
+        self._handle_current_yearmonth_changed()
 
 
 class SatisticalHydrographCanvas(FigureCanvasQTAgg):
@@ -210,6 +360,21 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
         QApplication.clipboard().setImage(QImage.fromData(buf.getvalue()))
         buf.close()
 
+    def save_multipdf_statistical_graphs(self, filename):
+        """
+        Create a multipage pdf file containing the statistical hydrographs
+        (one per page) for each year where data are available.
+        """
+        years = np.unique(self.wlevels.index.year).tolist()
+        with PdfPages(filename) as pdf:
+            for year in years:
+                self.figure.plot_statistical_hydrograph(
+                    self.wlevels, year, 12, self.pool)
+                pdf.savefig(self.figure)
+
+        # Restore figure initial state.
+        self._update_figure()
+
     def set_pool(self, pool):
         """
         Set the pooling mode to use when calculating monthly
@@ -225,15 +390,17 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
         self.wlevels = wlevels
         self._update_figure()
 
-    def set_year(self, year):
+    def set_year(self, year, update=True):
         """Set the year for which the statistical hydrograph is plotted."""
         self.year = year
-        self._update_figure()
+        if update:
+            self._update_figure()
 
-    def set_month(self, month):
+    def set_month(self, month, update=True):
         """Set the month for which the statistical hydrograph is plotted."""
         self.month = month
-        self._update_figure()
+        if update:
+            self._update_figure()
 
     def _update_figure(self):
         """Update the statistical hydrograph."""
@@ -276,6 +443,8 @@ class SatisticalHydrographFigure(Figure):
         # Setup the axes to hold the legend.
         ax2 = self.add_axes([0, 0, 1, 1], facecolor=None)
         ax2.axis('off')
+        for spine in ax2.spines.values():
+            spine.set_visible(False)
 
     def setup_artists(self):
         """Setup the matplotlib artists that are used to plot the data."""
@@ -398,6 +567,7 @@ class SatisticalHydrographFigure(Figure):
                 columns=['datetime', DataType.WaterLevel])
             wlevels['datetime'] = pd.to_datetime(wlevels['datetime'])
             wlevels = wlevels.set_index('datetime', drop=True)
+        lastmonth = 12 if lastmonth is None else lastmonth
         if curyear is None:
             curyear = datetime.now().year
         wlevels = wlevels.dropna()
@@ -424,7 +594,7 @@ class SatisticalHydrographFigure(Figure):
             pool=pool)
         percentiles = percentiles.iloc[mth_idx]
         nyear = nyear[mth_idx]
-        
+
         # Update the percentile bars and median plot.
         for qpair in self.percentile_qpairs:
             container = self.percentile_bars[qpair]
@@ -640,8 +810,14 @@ if __name__ == "__main__":
         [repere_data['sampling_feature_uuid'] == sampling_feature_uuid]
         .copy())
 
+    obswell_data = accessor.get_observation_wells_data().loc[
+        sampling_feature_uuid]
+
+    formatted_data = format_reading_data(readings_data, repere_data)
+
     widget = SatisticalHydrographWidget()
-    widget.set_data(format_reading_data(readings_data, repere_data))
+    widget.set_data(formatted_data)
+    widget.set_obswell_data(obswell_data)
     widget.show()
 
     sys.exit(app.exec_())
