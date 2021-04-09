@@ -74,15 +74,10 @@ class SardesToolBase(QAction):
         """Update the tool and its associated toolwidget if any."""
         if self._toolwidget is not None:
             self._toolwidget.setWindowTitle(self.__title__())
-        self.__update__()
+            self.__update_toolwidget__(self._toolwidget)
 
     def toolwidget(self):
         """Return the main widget of this tool."""
-        if self._toolwidget is None:
-            # We only create the toolwidget when it is needed to reduce
-            # the startup time and footprint of the application.
-            self._toolwidget = self.__create_toolwidget__()
-            self.update()
         return self._toolwidget
 
     def toolbutton(self):
@@ -106,8 +101,12 @@ class SardesToolBase(QAction):
 
     def show(self):
         """Show this tool."""
-        if self.toolwidget() is not None:
-            self._show_toolwidget()
+        if self._toolwidget is None:
+            # We only create the toolwidget when it is needed to reduce
+            # the startup time and footprint of the application.
+            self._toolwidget = self.__create_toolwidget__()
+        self.update()
+        self._show_toolwidget()
 
     # ---- Private API
     def eventFilter(self, widget, event):
@@ -150,6 +149,20 @@ class SardesTool(SardesToolBase):
         """
         return None
 
+    def __update_toolwidget__(self, toolwidget):
+        """
+        Update the toolwidget.
+
+        All tools that need to update their toolwidget when an update is
+        called on this tool *must* reimplement this method.
+
+        Parameters
+        ----------
+        toolwidget : QWidget
+            The Qt widget that corresponds to this tool's toolwidget.
+        """
+        raise NotImplementedError
+
     def __triggered__(self):
         """
         This is the function that is called when this tool is triggered.
@@ -168,10 +181,6 @@ class SardesTool(SardesToolBase):
         method.
         """
         return self._text
-
-    def __update__(self):
-        """Update the tool and its associated toolwidget if any."""
-        raise NotImplementedError
 
 
 class SardesToolExample(SardesTool):
@@ -196,7 +205,7 @@ class SardesToolExample(SardesTool):
         widget.setFixedSize(300, 150)
         return widget
 
-    def __update__(self):
+    def __update_toolwidget__(self, toolwidget):
         pass
 
 
