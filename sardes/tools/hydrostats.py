@@ -66,8 +66,7 @@ class SatisticalHydrographTool(SardesTool):
                 self.parent.model()._obs_well_data)
 
     def __create_toolwidget__(self):
-        toolwidget = SatisticalHydrographWidget()
-        return toolwidget
+        return SatisticalHydrographWidget()
 
     def __title__(self):
         obs_well_data = self.parent.model()._obs_well_data
