@@ -80,8 +80,8 @@ def hydrostats_tool(dataset, repere_data, obswells_data):
     toolbar.show()
     yield tool
 
-    # toolbar.close()
-    # assert not tool.toolwidget().isVisible()
+    toolbar.close()
+    assert not tool.toolwidget().isVisible()
 
 
 # =============================================================================
