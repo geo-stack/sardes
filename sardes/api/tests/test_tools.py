@@ -11,9 +11,6 @@
 Tests for the tools.py module.
 """
 
-# ---- Standard imports
-import os.path as osp
-
 # ---- Third party imports
 import pytest
 from qtpy.QtCore import Qt
@@ -51,7 +48,7 @@ def test_sardes_tool_visibility(mainwindow, qtbot):
     """Test that the dropdown menu button is initialized correctly."""
     tool = mainwindow.tool
     assert tool.toolbutton().isVisible()
-    assert not tool.toolwidget().isVisible()
+    assert tool.toolwidget() is None
 
     # Show the tool.
     qtbot.mouseClick(tool.toolbutton(), Qt.LeftButton)

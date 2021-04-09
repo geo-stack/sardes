@@ -78,11 +78,6 @@ class SardesToolBase(QAction):
 
     def toolwidget(self):
         """Return the main widget of this tool."""
-        if self._toolwidget is None:
-            # We only create the toolwidget when it is needed to reduce
-            # the startup time and footprint of the application.
-            self._toolwidget = self.__create_toolwidget__()
-            self.update()
         return self._toolwidget
 
     def toolbutton(self):
@@ -106,8 +101,12 @@ class SardesToolBase(QAction):
 
     def show(self):
         """Show this tool."""
-        if self.toolwidget() is not None:
-            self._show_toolwidget()
+        if self._toolwidget is None:
+            # We only create the toolwidget when it is needed to reduce
+            # the startup time and footprint of the application.
+            self._toolwidget = self.__create_toolwidget__()
+        self.update()
+        self._show_toolwidget()
 
     # ---- Private API
     def eventFilter(self, widget, event):
