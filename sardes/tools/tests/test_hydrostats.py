@@ -141,6 +141,33 @@ def test_compute_monthly_percentiles_if_empty(pool):
                 np.nan_to_num(expected_percentiles).tolist())
 
 
+def test_plot_statistical_hydrograph_if_empy(qtbot, hydrostats_tool):
+    """
+    Test that no bug occur when trying to plot the statistical.
+    hydrograph of an empty dataset.
+    """
+    assert hydrostats_tool.toolwidget() is None
+
+    # Set an empty formatter dataset in the parent of the hydrostats_tool.
+    dataset = pd.DataFrame(
+        [],
+        columns=['datetime', DataType.WaterLevel])
+    dataset['datetime'] = pd.to_datetime(dataset['datetime'])
+    hydrostats_tool.parent.formatted_dataset = dataset
+
+    # Show the statistical hydrograph toolwidget.
+    hydrostats_tool.trigger()
+    qtbot.waitForWindowShown(hydrostats_tool._toolwidget)
+    assert hydrostats_tool.toolwidget().isVisible()
+
+    # Assert the state of gui and properties.
+    toolwidget = hydrostats_tool.toolwidget()
+    assert toolwidget.year() is None
+    assert toolwidget.month() is None
+    assert toolwidget.move_backward_btn.isEnabled() is False
+    assert toolwidget.move_forward_btn.isEnabled() is False
+
+
 def test_plot_statistical_hydrograph(qtbot, hydrostats_tool):
     """Test that the statistical hydrograph is plotted as expected."""
     assert hydrostats_tool._toolwidget is None
