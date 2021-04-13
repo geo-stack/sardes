@@ -320,3 +320,15 @@ def get_standard_icon(constant):
     style = QApplication.instance().style()
     return style.standardIcon(constant)
 
+
+def get_standard_iconsize(constant):
+    """
+    Return the standard size of various component of the gui.
+
+    https://srinikom.github.io/pyside-docs/PySide/QtGui/QStyle
+    """
+    style = QApplication.instance().style()
+    if constant == 'messagebox':
+        return style.pixelMetric(QStyle.PM_MessageBoxIconSize)
+    elif constant == 'small':
+        return style.pixelMetric(QStyle.PM_SmallIconSize)
