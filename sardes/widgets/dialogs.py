@@ -58,8 +58,7 @@ class ExceptDialog(QDialog):
 
         button_box = QDialogButtonBox()
         button_box.addButton(self.copy_btn, button_box.AcceptRole)
-        button_box.addButton(self.ok_btn, button_box.AcceptRole)
-        button_box.layout().insertSpacing(1, 100)
+        button_box.addButton(self.ok_btn, button_box.ActionRole)
 
         msg_labl = QLabel(_(
             """
