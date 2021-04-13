@@ -431,6 +431,15 @@ class MainWindowBase(QMainWindow):
         self._is_closing = False
         self.close()
 
+    def _handle_except(self, log_msg):
+        """
+        Handle raised exceptions that have not been handled properly
+        internally and need to be reported for bug fixing.
+        """
+        from sardes.widgets.dialogs import ExceptDialog
+        except_dialog = ExceptDialog(log_msg)
+        except_dialog.exec_()
+
 
 class MainWindow(MainWindowBase):
 
