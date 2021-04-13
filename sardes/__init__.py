@@ -32,6 +32,7 @@ __namever__ = __appname__ + " " + __version__
 __date__ = '09/04/2021'
 __project_url__ = "https://github.com/cgq-qgc/sardes"
 __releases_url__ = __project_url__ + "/releases"
+__issues_url__ = __project_url__ + "/issues"
 __releases_api__ = "https://api.github.com/repos/cgq-qgc/sardes/releases"
 
 
