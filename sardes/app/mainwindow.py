@@ -573,15 +573,24 @@ class MainWindow(MainWindowBase):
             self.databases_plugin.connect_to_database()
 
 
-def except_hook(cls, exception, traceback):
+class ExceptHook(QObject):
     """
-    Used to override the default sys except hook so that this application
-    doesn't automatically exit when an unhandled exception occurs.
+    A Qt object to caught exceptions and emit a formatted string of the error.
+    """
+    sig_except_caught = Signal(str)
 
-    See this StackOverflow answer for more details :
-    https://stackoverflow.com/a/33741755/4481445
-    """
-    sys.__excepthook__(cls, exception, traceback)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        sys.excepthook = self.excepthook
+
+    def excepthook(self, exc_type, exc_value, exc_traceback):
+        """Handle uncaught exceptions."""
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        if not issubclass(exc_type, SystemExit):
+            log_msg = ''.join(traceback.format_exception(
+                exc_type, exc_value, exc_traceback))
+            self.sig_except_caught.emit(log_msg)
+
 
 
 if __name__ == '__main__':
@@ -589,13 +598,13 @@ if __name__ == '__main__':
 
     from sardes.utils.qthelpers import create_application
     app = create_application()
-    sys.excepthook = except_hook
 
     from sardes.widgets.splash import SplashScreen
     splash = SplashScreen()
     splash.showMessage(_("Initializing {}...").format(__namever__))
 
     main = MainWindow(splash)
+    except_hook = UncaughtExceptHook()
     splash.finish(main)
     main.show()
 
