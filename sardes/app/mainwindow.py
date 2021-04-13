@@ -606,7 +606,7 @@ if __name__ == '__main__':
     splash = SplashScreen()
     splash.showMessage(_("Initializing {}...").format(__namever__))
 
-    except_hook = UncaughtExceptHook()
+    except_hook = ExceptHook()
 
     main = MainWindow(splash, except_hook)
     splash.finish(main)
