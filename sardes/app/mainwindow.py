@@ -414,13 +414,6 @@ class MainWindowBase(QMainWindow):
             self.sig_about_to_close.emit()
             event.accept()
 
-    def _handle_project_manager_closed(self, *args, **kargs):
-        """
-        Close Gwire after the project manager has been safely closed.
-        """
-        self._is_closing = False
-        self.close()
-
     def createPopupMenu(self):
         """
         Override Qt method to remove the options menu toolbar from the
@@ -429,6 +422,14 @@ class MainWindowBase(QMainWindow):
         filteredMenu = super().createPopupMenu()
         filteredMenu.removeAction(self.options_menu_toolbar.toggleViewAction())
         return filteredMenu
+
+    # ---- Handlers
+    def _handle_project_manager_closed(self, *args, **kargs):
+        """
+        Close Sardes after the database manager has been safely closed.
+        """
+        self._is_closing = False
+        self.close()
 
 
 class MainWindow(MainWindowBase):
