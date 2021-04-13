@@ -21,6 +21,7 @@ import os
 import os.path as osp
 import platform
 import sys
+import traceback
 import importlib
 
 # ---- Third party imports
@@ -55,8 +56,10 @@ GITHUB_ISSUES_URL = __project_url__ + "/issues"
 class MainWindowBase(QMainWindow):
     sig_about_to_close = Signal()
 
-    def __init__(self, splash=None):
+    def __init__(self, splash=None, except_hook=None):
         super().__init__()
+        if except_hook is not None:
+            except_hook.sig_except_caught.connect(self._handle_except)
         self.splash = splash
         self.setWindowIcon(get_icon('master'))
         self.setWindowTitle(__namever__)
@@ -603,8 +606,9 @@ if __name__ == '__main__':
     splash = SplashScreen()
     splash.showMessage(_("Initializing {}...").format(__namever__))
 
-    main = MainWindow(splash)
     except_hook = UncaughtExceptHook()
+
+    main = MainWindow(splash, except_hook)
     splash.finish(main)
     main.show()
 
