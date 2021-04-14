@@ -103,6 +103,14 @@ class ExceptDialog(QDialog):
         self.logmsg_textedit.setText(
             self._render_error_infotext(log_msg or ''))
     
+    def get_error_infotext(self):
+        """
+        Return the text containing the information relevant to the
+        encountered error that can be copy-pasted directly
+        in an issue on GitHub.
+        """
+        return self.logmsg_textedit.toPlainText()
+        
         """
         Render the issue to be pasted on Github.
         """
@@ -134,7 +142,7 @@ class ExceptDialog(QDialog):
         Copy the issue on the clipboard.
         """
         QApplication.clipboard().clear()
-        QApplication.clipboard().setText(self.logmsg_textedit.toPlainText())
+        QApplication.clipboard().setText(self.get_error_infotext())
 
 
 if __name__ == '__main__':
