@@ -16,18 +16,18 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QSplashScreen
 
-
 # ---- Local imports
 from sardes import __rootdir__
-from sardes.config.locale import _
 
 
 SPLASH_IMG = os.path.join(__rootdir__, 'ressources', 'sardes_splash.png')
 
 
 class SplashScreen(QSplashScreen):
-    def __init__(self):
+    def __init__(self, msg=None):
         super().__init__(QPixmap(SPLASH_IMG))
+        if msg is not None:
+            self.showMessage(msg)
         self.show()
         self.activateWindow()
         self.raise_()
