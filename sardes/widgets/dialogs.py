@@ -38,8 +38,8 @@ class ExceptDialog(QDialog):
 
         self.logmsg_textedit = QTextEdit()
         self.logmsg_textedit.setReadOnly(True)
-        self.set_log_message(log_msg)
         self.logmsg_textedit.setMinimumWidth(400)
+        self.set_log_message(log_msg)
 
         icon = get_standard_icon('SP_MessageBoxCritical')
         iconsize = get_standard_iconsize('messagebox')
@@ -94,8 +94,7 @@ class ExceptDialog(QDialog):
         main_layout.addLayout(left_side_layout, 0, 0)
         main_layout.addLayout(right_side_layout, 0, 1)
         main_layout.addWidget(button_box, 1, 0, 1, 2)
-
-    def render_issue(self, log_msg):
+    
     def set_log_message(self, log_msg):
         """
         Set the log message related to the encountered error.
@@ -111,8 +110,10 @@ class ExceptDialog(QDialog):
         """
         return self.logmsg_textedit.toPlainText()
         
+    def _render_error_infotext(self, log_msg):
         """
-        Render the issue to be pasted on Github.
+        Render the information relevant to the encountered error in a format
+        that can be copy-pasted directly in an issue on GitHub.
         """
         versions = get_versions()
         formatted_msg = (
