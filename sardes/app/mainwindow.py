@@ -603,11 +603,9 @@ if __name__ == '__main__':
     from sardes.utils.qthelpers import create_application
     app = create_application()
 
-
-    except_hook=ExceptHook()
-
     from sardes.widgets.splash import SplashScreen
     splash = SplashScreen(_("Initializing {}...").format(__namever__))
+    except_hook=ExceptHook()
     main = MainWindow(splash, except_hook)
     splash.finish(main)
     main.show()
