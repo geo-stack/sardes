@@ -29,7 +29,7 @@ class ExceptDialog(QDialog):
     execution.
     """
 
-    def __init__(self, log_msg):
+    def __init__(self, log_msg=None):
         super().__init__()
         self.setWindowTitle(_("{} Internal Error").format(__appname__))
         self.setWindowFlags(
@@ -38,7 +38,7 @@ class ExceptDialog(QDialog):
 
         self.logmsg_textedit = QTextEdit()
         self.logmsg_textedit.setReadOnly(True)
-        self.logmsg_textedit.setText(self.render_issue(log_msg))
+        self.set_log_message(log_msg)
         self.logmsg_textedit.setMinimumWidth(400)
 
         icon = get_standard_icon('SP_MessageBoxCritical')
@@ -96,6 +96,13 @@ class ExceptDialog(QDialog):
         main_layout.addWidget(button_box, 1, 0, 1, 2)
 
     def render_issue(self, log_msg):
+    def set_log_message(self, log_msg):
+        """
+        Set the log message related to the encountered error.
+        """
+        self.logmsg_textedit.setText(
+            self._render_error_infotext(log_msg or ''))
+    
         """
         Render the issue to be pasted on Github.
         """
@@ -111,7 +118,7 @@ class ExceptDialog(QDialog):
             "```python-traceback\n"
             "{log_msg}"
             "```"
-            ).format(namever=__namever__,
+            ).format(namever=versions['version'],
                      python_ver=versions['python'],
                      bitness=versions['bitness'],
                      qt_ver=versions['qt'],
