@@ -583,8 +583,8 @@ class ExceptHook(QObject):
     """
     sig_except_caught = Signal(str)
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self):
+        super().__init__()
         sys.excepthook = self.excepthook
 
     def excepthook(self, exc_type, exc_value, exc_traceback):
@@ -604,7 +604,7 @@ if __name__ == '__main__':
     app = create_application()
 
 
-    except_hook = ExceptHook()
+    except_hook=ExceptHook()
 
     from sardes.widgets.splash import SplashScreen
     splash = SplashScreen(_("Initializing {}...").format(__namever__))
