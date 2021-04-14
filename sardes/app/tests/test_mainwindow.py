@@ -18,13 +18,14 @@ os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import pytest
-from qtpy.QtCore import QPoint, QSize, Qt
+from qtpy.QtCore import QPoint, QSize, Qt, Signal, QObject
 
 # ---- Local imports
 from sardes.config.gui import INIT_MAINWINDOW_SIZE
 from sardes.config.main import CONF
 from sardes.app.mainwindow import MainWindow, QMessageBox
 from sardes.database.accessors import DatabaseAccessorSardesLite
+from sardes.widgets.dialogs import ExceptDialog
 
 
 # =============================================================================
@@ -69,7 +70,27 @@ def test_mainwindow_init(mainwindow):
     """Test that the main window is initialized correctly."""
     assert mainwindow
 
+def test_mainwindow_handle_except(qtbot, mocker):
+    """
+    Test that internal error are shown as expected in a dialog.
+    """
+    class ExceptHookMock(QObject):
+        sig_except_caught = Signal(str)
+    except_hook = ExceptHookMock()
 
+    mainwindow = MainWindow(except_hook=except_hook)
+    mainwindow.show()
+    qtbot.waitForWindowShown(mainwindow)
+
+    exceptdialog_exec_patcher = mocker.patch.object(ExceptDialog, 'exec_')
+    assert exceptdialog_exec_patcher.call_count == 0
+    except_hook.sig_except_caught.emit('some_formatted_except_traceback')
+    assert exceptdialog_exec_patcher.call_count == 1
+    
+    with qtbot.waitSignal(mainwindow.sig_about_to_close):
+        mainwindow.close()
+    
+    
 @pytest.mark.skipif(
     os.environ.get('AZURE', None) is not None, reason="It fails on Azure.")
 def test_mainwindow_settings(qtbot, mocker):
