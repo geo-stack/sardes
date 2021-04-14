@@ -15,6 +15,7 @@ import os.path as osp
 # ---- Third party imports
 from qtpy.QtCore import QSize
 from qtpy.QtGui import QIcon
+from qtpy.QtWidgets import QStyle, QApplication
 import qtawesome as qta
 
 # ---- Local imports
@@ -306,3 +307,28 @@ def get_icon(name):
 
 def get_iconsize(size):
     return QSize(*ICON_SIZES[size])
+
+
+def get_standard_icon(constant):
+    """
+    Return a QIcon of a standard pixmap.
+
+    See the link below for a list of valid constants:
+    https://srinikom.github.io/pyside-docs/PySide/QtGui/QStyle.html
+    """
+    constant = getattr(QStyle, constant)
+    style = QApplication.instance().style()
+    return style.standardIcon(constant)
+
+
+def get_standard_iconsize(constant):
+    """
+    Return the standard size of various component of the gui.
+
+    https://srinikom.github.io/pyside-docs/PySide/QtGui/QStyle
+    """
+    style = QApplication.instance().style()
+    if constant == 'messagebox':
+        return style.pixelMetric(QStyle.PM_MessageBoxIconSize)
+    elif constant == 'small':
+        return style.pixelMetric(QStyle.PM_SmallIconSize)
