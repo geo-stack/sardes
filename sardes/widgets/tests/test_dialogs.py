@@ -17,7 +17,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QApplication
 
 # ---- Local imports
-from sardes import get_versions
+from sardes import get_versions, __namever__
 from sardes.widgets.dialogs import ExceptDialog
 
 
@@ -46,7 +46,7 @@ def test_except_dialog(except_dialog, log_msg, qtbot):
         "```python-traceback\n"
         "{log_msg}"
         "```"
-        ).format(namever=versions['version'],
+        ).format(namever=__namever__,
                  python_ver=versions['python'],
                  bitness=versions['bitness'],
                  qt_ver=versions['qt'],

@@ -127,7 +127,7 @@ class ExceptDialog(QDialog):
             "```python-traceback\n"
             "{log_msg}"
             "```"
-            ).format(namever=versions['version'],
+            ).format(namever=__namever__,
                      python_ver=versions['python'],
                      bitness=versions['bitness'],
                      qt_ver=versions['qt'],
