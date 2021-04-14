@@ -72,7 +72,7 @@ def test_mainwindow_init(mainwindow):
 
 def test_mainwindow_handle_except(qtbot, mocker):
     """
-    Test that internal error are shown as expected in a dialog.
+    Test that internal errors are shown as expected in a dialog.
     """
     class ExceptHookMock(QObject):
         sig_except_caught = Signal(str)
