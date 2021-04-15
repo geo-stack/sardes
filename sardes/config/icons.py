@@ -130,7 +130,7 @@ FA_ICONS = {
         ('mdi.arrow-left-bold',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'file_settings': [
-        ('mdi.file-settings-variant-outline',),
+        ('mdi.file-cog-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'file_multi_pages': [
         ('mdi.buffer',),
@@ -206,7 +206,7 @@ FA_ICONS = {
         ('mdi.lock-open-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'preferences': [
-        ('mdi.settings',),
+        ('mdi.cog',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'publish_piezometric_network': [
         ('mdi.earth-box',),
