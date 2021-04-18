@@ -289,30 +289,30 @@ def test_save_data_edits(mainwindow, qtbot):
     # We need first to select the tab corresponding to the table manual
     # measurements and assert the value displayed in cell at index (1, 1).
     mainwindow.plugin.tabwidget.setCurrentWidget(table_man_meas)
-    qtbot.wait(1000)
-    model_index = table_man_meas.tableview.model().index(0, 0)
-    assert model_index.data() == '03037041'
+    qtbot.waitUntil(
+        lambda: table_man_meas.model().index(0, 0).data() == '03037041',
+        timeout=3000)
 
     # We now switch to table observation wells and do an edit to the table's
     # data programmatically.
     mainwindow.plugin.tabwidget.setCurrentWidget(table_obs_well)
-    qtbot.wait(1000)
-    model_index = table_obs_well.tableview.model().index(0, 0)
-    assert model_index.data() == '03037041'
+    qtbot.waitUntil(
+        lambda: table_obs_well.model().index(0, 0).data() == '03037041',
+        timeout=3000)
+
     table_obs_well.tableview.model().set_data_edit_at(
-        model_index, '03037041_modif')
-    assert model_index.data() == '03037041_modif'
+        table_obs_well.model().index(0, 0), '03037041_modif')
+    assert table_obs_well.model().index(0, 0).data() == '03037041_modif'
 
     # We now save the edits.
-    table_obs_well.tableview.model().save_data_edits()
-    qtbot.wait(100)
+    table_obs_well.model().save_data_edits()
 
     # We switch back to table manual measurements and assert that the changes
-    # made in table observation wells were reflected here as expected.
+    # made in table observation wells are reflected here as expected.
     mainwindow.plugin.tabwidget.setCurrentWidget(table_man_meas)
-    qtbot.wait(1000)
-    model_index = table_man_meas.tableview.model().index(0, 0)
-    assert model_index.data() == '03037041_modif'
+    qtbot.waitUntil(
+        lambda: table_man_meas.model().index(0, 0).data() == '03037041_modif',
+        timeout=3000)
 
 
 if __name__ == "__main__":
