@@ -3,7 +3,7 @@ appconfigs
 HydroSensorReader >= 1.7.4
 keyring == 19.2.*
 matplotlib == 3.1.*
-numpy == 1.16.*
+numpy == 1.19.*
 pandas == 1.1.*
 psycopg2
 pyqt5 == 5.12.*
