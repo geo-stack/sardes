@@ -32,6 +32,7 @@ from sqlalchemy_utils import UUIDType
 from sqlalchemy.orm.exc import NoResultFound
 
 # ---- Local imports
+from sardes.database.accessors.accessor_helpers import create_empty_readings
 from sardes.config.locale import _
 from sardes.api.database_accessor import DatabaseAccessor
 from sardes.database.utils import format_sqlobject_repr
@@ -1327,14 +1328,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     right_on=['datetime', 'obs_id'],
                     how='outer', sort=True)
         if readings_data is None:
-            # This means there is not reading saved for this monitoring
+            # This means there is no reading saved for this monitoring
             # station in the database.
-            return pd.DataFrame(
-                [],
-                columns=(['datetime', 'sonde_id'] +
-                         data_types +
-                         ['install_depth', 'obs_id'])
-                )
+            return create_empty_readings(data_types)
 
         # Add sonde serial number and installation depth to the dataframe.
         readings_data['sonde_id'] = None
