@@ -1285,8 +1285,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         else:
             data_types = [
                 DataType[data_type] if isinstance(data_type, str) else
-                DataType(data_type) for
-                data_type in data_types]
+                DataType(data_type) for data_type in data_types]
 
         readings_data = None
         added_data_types = []
