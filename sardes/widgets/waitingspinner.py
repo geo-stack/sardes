@@ -217,7 +217,7 @@ class WaitingSpinner(QWidget):
         self.update()
 
     def updateSize(self):
-        size = (self._innerRadius + self._lineLength) * 2
+        size = int((self._innerRadius + self._lineLength) * 2)
         self.setFixedSize(size, size)
 
     def updateTimer(self):
