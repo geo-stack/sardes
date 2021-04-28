@@ -27,6 +27,7 @@ from qtpy.QtWidgets import QToolBar
 # ---- Local imports
 from sardes import __rootdir__
 from sardes.api.timeseries import DataType
+from sardes.database.accessors.accessor_helpers import create_empty_readings
 from sardes.tools.hydrographs import (
     HydrographTool, HydrographCanvas, QFileDialog)
 from sardes.utils.tests.test_data_operations import format_reading_data
@@ -79,12 +80,15 @@ def obs_well_data():
 def hydrograph_tool(qtbot, source_data, repere_data, obs_well_data):
 
     class ParentToolbar(QToolBar):
+        def __init__(self):
+            super().__init__()
+            self._model = Mock()
+            self._model._obs_well_data = obs_well_data
+            self._model._repere_data = repere_data
+            self._model.dataf = source_data
+
         def model(self):
-            model = Mock()
-            model._obs_well_data = obs_well_data
-            model._repere_data = repere_data
-            model.dataf = source_data
-            return model
+            return self._model
 
         def get_formatted_data(self):
             return format_reading_data(
@@ -151,6 +155,25 @@ def test_save_hydrograph(tmp_path, hydrograph_tool, mocker):
 
         hydrograph_tool.trigger()
         assert osp.exists(selectedfilename + fext)
+
+
+def test_save_hydrograph_if_empty(tmp_path, hydrograph_tool, mocker):
+    """
+    Test that creating an saving and hydrogaph figure with the tool is working
+    as expected when there is no data saved for the station.
+    """
+    # Set an empty dataframe for the data of the tool's parent model.
+    hydrograph_tool.parent.model().dataf = (
+        create_empty_readings([DataType.WaterLevel, DataType.WaterTemp]))
+
+    # Create and save the hydrograph.
+    selectedfilename = osp.join(tmp_path, 'test_save_empty_hydrograph.pdf')
+    selectedfilter = 'Portable Document Format (*.pdf)'
+    mocker.patch.object(QFileDialog, 'getSaveFileName',
+                        return_value=(selectedfilename, selectedfilter))
+
+    hydrograph_tool.trigger()
+    assert osp.exists(selectedfilename)
 
 
 if __name__ == "__main__":
