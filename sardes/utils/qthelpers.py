@@ -132,7 +132,7 @@ def create_toolbutton(parent, text=None, shortcut=None, icon=None, tip=None,
         else:
             button.setShortcut(shortcut)
     if iconsize is not None:
-        button.setIconSize(QSize(iconsize, iconsize))
+        button.setIconSize(QSize(int(iconsize), int(iconsize)))
     return button
 
 
