@@ -329,10 +329,10 @@ class FileAttachmentManager(QObject):
         Return whether an attachment exists in the database for the
         currently selected station in the table.
         """
-        return (
+        return bool((
             self.tablewidget.model().libraries['stored_attachments_info'] ==
             [self.current_station_id(), self.attachment_type]
-            ).all(1).any()
+            ).all(1).any())
 
     # ---- Handlers
     def _handle_menu_aboutToShow(self):
