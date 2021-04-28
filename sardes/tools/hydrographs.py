@@ -332,8 +332,8 @@ class HydrographCanvas(FigureCanvasAgg):
         bbox_title = fig_title.get_window_extent(renderer)
         bbox_xaxis_bottom = ax.xaxis.get_ticklabel_extents(renderer)[0]
 
-        title_pad = 18 / 72 * fig.dpi
-        logo_pad = 36 / 72 * fig.dpi
+        title_pad = 18/72 * fig.dpi
+        logo_pad = 36/72 * fig.dpi
         top_margin = (
             margin_width / fheight +
             (bbox_title.height + title_pad) / fig.bbox.height
