@@ -103,10 +103,11 @@ class WaitingSpinner(QWidget):
                 sf = 1
 
             painter.setBrush(color)
-            rect = QRect(0, -self._lineWidth/2,
-                         self._lineLength * sf, self._lineWidth * sf)
+            rect = QRect(
+                0, int(-self._lineWidth/2),
+                int(self._lineLength * sf), int(self._lineWidth * sf))
             painter.drawRoundedRect(
-                    rect, self._roundness, self._roundness, Qt.RelativeSize)
+                rect, self._roundness, self._roundness, Qt.RelativeSize)
             painter.restore()
 
     def start(self):
@@ -220,8 +221,8 @@ class WaitingSpinner(QWidget):
         self.setFixedSize(size, size)
 
     def updateTimer(self):
-        self._timer.setInterval(
-                1000/(self._numberOfLines*self._revolutionsPerSecond))
+        self._timer.setInterval(int(
+                1000 / (self._numberOfLines*self._revolutionsPerSecond)))
 
     def updatePosition(self):
         if self.parentWidget() and self._centerOnParent:
