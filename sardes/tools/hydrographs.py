@@ -192,27 +192,40 @@ class HydrographCanvas(FigureCanvasAgg):
                     group[1][DataType.WaterLevel],
                     color=line_color)
 
-        # Setup the the axis range and ticks.
-        ymin = data[DataType.WaterLevel].min()
-        ymax = data[DataType.WaterLevel].max()
-        ymin = ymin - (ymax - ymin) * 0.025
-        ymax = ymax + (ymax - ymin) * 0.025
+        # Setup the the range and ticks of the xaxis.
+        if not data.empty:
+            ymin = data[DataType.WaterLevel].min()
+            ymax = data[DataType.WaterLevel].max()
+            ymin = ymin - (ymax - ymin) * 0.025
+            ymax = ymax + (ymax - ymin) * 0.025
 
-        yscales = [0.05, 0.1, 0.2, 0.25, 0.5, 0.75, 1, 2, 5, 10]
-        yscales_minor = {
-            0.05: 0.01, 0.1: 0.02, 0.2: 0.05, 0.25: 0.05,
-            0.5: 0.1, 0.75: 0.15, 1: 0.2, 2: 0.5, 5: 1, 10: 2}
-        for yscale in yscales:
-            if (ymax - ymin) / yscale <= 12:
-                break
-        ymin = yscale * floor(ymin / yscale)
-        ymax = yscale * ceil(ymax / yscale)
+            yscales = [0.05, 0.1, 0.2, 0.25, 0.5, 0.75, 1, 2, 5, 10]
+            yscales_minor = {
+                0.05: 0.01, 0.1: 0.02, 0.2: 0.05, 0.25: 0.05,
+                0.5: 0.1, 0.75: 0.15, 1: 0.2, 2: 0.5, 5: 1, 10: 2}
+            for yscale in yscales:
+                if (ymax - ymin) / yscale <= 12:
+                    break
+            yscale_minor = yscales_minor[yscale]
+            ymin = yscale * floor(ymin / yscale)
+            ymax = yscale * ceil(ymax / yscale)
+        else:
+            ymin = 0
+            ymax = 1
+            yscale = 0.1
+            yscale_minor = 0.02
         ax.yaxis.set_major_locator(MultipleLocator(yscale))
-        ax.yaxis.set_minor_locator(MultipleLocator(yscales_minor[yscale]))
+        ax.yaxis.set_minor_locator(MultipleLocator(yscale_minor))
 
-        year_min = data['datetime'].min().year
-        year_max = data['datetime'].max().year + 1
+        # Setup the the range and ticks of the yaxis.
+        if not data.empty:
+            year_min = data['datetime'].min().year
+            year_max = data['datetime'].max().year + 1
+        else:
+            year_min = datetime.datetime.now().year
+            year_max = year_min + 1
         year_span = year_max - year_min
+
         if year_span <= 15:
             ax.xaxis.set_major_locator(mdates.YearLocator())
             ax.xaxis.set_minor_locator(mdates.MonthLocator([4, 7, 10]))
