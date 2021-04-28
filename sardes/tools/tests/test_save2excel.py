@@ -25,6 +25,7 @@ import pandas as pd
 from qtpy.QtWidgets import QToolBar
 
 # ---- Local imports
+from sardes.database.accessors.accessor_helpers import create_empty_readings
 from sardes import __rootdir__
 from sardes.api.timeseries import DataType
 from sardes.tools.save2excel import (
@@ -81,12 +82,15 @@ def obs_well_data():
 def save_to_excel_tool(qtbot, source_data, repere_data, obs_well_data):
 
     class ParentToolbar(QToolBar):
+        def __init__(self):
+            super().__init__()
+            self._model = Mock()
+            self._model._obs_well_data = obs_well_data
+            self._model._repere_data = repere_data
+            self._model.dataf = source_data
+
         def model(self):
-            model = Mock()
-            model._obs_well_data = obs_well_data
-            model._repere_data = repere_data
-            model.dataf = source_data
-            return model
+            return self._model
 
         def get_formatted_data(self):
             return format_reading_data(
@@ -196,6 +200,37 @@ def test_save_readings_to_excel_tool(tmp_path, save_to_excel_tool, mocker):
 
     save_to_excel_tool.trigger()
     assert osp.exists(selectedfilename + '.xlsx')
+
+
+def test_readings_to_xlsx_if_empty(tmp_path, save_to_excel_tool, mocker):
+    """
+    Test that the tool to save daily readings data to Excel is working as
+    expected even when there is no data saved for the station.
+    """
+    # Set an empty dataframe for the data of the tool's parent model.
+    save_to_excel_tool.parent.model().dataf = (
+        create_empty_readings([DataType.WaterLevel]))
+
+    # Create and save the XLSX file.
+    selectedfilename = osp.join(tmp_path, 'test_save_empty_readings_to_excel')
+    selectedfilter = "Excel Workbook (*.xlsx)"
+    mocker.patch.object(QFileDialog, 'getSaveFileName',
+                        return_value=(selectedfilename, selectedfilter))
+
+    save_to_excel_tool.trigger()
+    assert osp.exists(selectedfilename + '.xlsx')
+
+    # Assert that the content is as expected.
+    exported_data = pd.read_excel(
+        selectedfilename + '.xlsx', dtype='str', header=None)
+    assert exported_data.shape == (7, 3)
+    assert exported_data.iat[0, 2] == 'municipality_test'
+    assert exported_data.iat[1, 2] == '0123456'
+    assert exported_data.iat[2, 2] == '45'
+    assert exported_data.iat[3, 2] == '-73.34679'
+    assert exported_data.iat[4, 2] == '100.00 (Geodesic)'
+    assert exported_data.iat[6, 0] == 'Date of reading'
+    assert exported_data.iat[6, 1] == 'Water level altitude (m MSL)'
 
 
 if __name__ == "__main__":

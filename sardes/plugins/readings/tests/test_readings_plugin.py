@@ -14,7 +14,6 @@ Tests for the Readings plugin.
 # ---- Standard imports
 import os
 import os.path as osp
-import sys
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
@@ -28,7 +27,6 @@ from sardes.plugins.readings import SARDES_PLUGIN_CLASS
 from sardes.widgets.tableviews import QMessageBox
 from sardes.database.accessors import DatabaseAccessorSardesLite
 from sardes.app.mainwindow import MainWindowBase
-
 
 
 # =============================================================================
@@ -148,7 +146,8 @@ def test_plot_viewer_update(mainwindow, qtbot, obswell_uuid):
 
     # Test that a change in the observation well data is reflected as
     # expected in the plot viewer.
-    with qtbot.waitSignal(dbconnmanager.sig_database_data_changed):
+    with qtbot.waitSignal(dbconnmanager.sig_database_data_changed,
+                          timeout=3000):
         dbconnmanager.set(
             'observation_wells_data', obswell_uuid,
             'obs_well_id', '12345', postpone_exec=True)
