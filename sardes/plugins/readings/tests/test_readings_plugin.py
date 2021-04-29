@@ -112,7 +112,7 @@ def test_plot_viewer(mainwindow, qtbot, obswell_uuid, readings_data):
 
     # Test that the plot viewer is created as expected.
     table.plot_readings()
-    assert table.plot_viewer.isVisible()
+    qtbot.waitForWindowShown(table.plot_viewer)
     assert (table.plot_viewer.windowTitle() ==
             "03037041 - St-Paul-d'Abbotsford (Saint-Paul-d'Abbotsford)")
 
@@ -141,13 +141,15 @@ def test_plot_viewer_update(mainwindow, qtbot, obswell_uuid):
     and metadata of the observation well are modified.
     """
     table = mainwindow.plugin._tseries_data_tables[obswell_uuid]
-    table.plot_readings()
     dbconnmanager = mainwindow.db_connection_manager
+
+    assert table.plot_viewer is None
+    table.plot_readings()
+    qtbot.waitForWindowShown(table.plot_viewer)
 
     # Test that a change in the observation well data is reflected as
     # expected in the plot viewer.
-    with qtbot.waitSignal(dbconnmanager.sig_database_data_changed,
-                          timeout=3000):
+    with qtbot.waitSignal(dbconnmanager.sig_database_data_changed):
         dbconnmanager.set(
             'observation_wells_data', obswell_uuid,
             'obs_well_id', '12345', postpone_exec=True)
