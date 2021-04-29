@@ -23,6 +23,21 @@ from sardes.config.icons import (
     get_icon, get_standard_icon, get_standard_iconsize)
 
 
+EXCEPT_DIALOG_MSG_CANVAS = (
+    "### {}\n<".format(_("Description")) +
+    _("Please  provide a step-by-step by description of what "
+      "led to the problem here.") +
+    ">\n\n### {}\n".format(_("System Info")) +
+    "{namever}\n" +
+    "Python {python_ver} {bitness}-bit\n" +
+    "Qt {qt_ver}\n" +
+    "{qt_api} {qt_api_ver}\n" +
+    "{os_name} {os_ver}" +
+    ">\n\n### {}\n".format(_("Traceback")) +
+    "```python-traceback\n{log_msg}```"
+    )
+
+
 class ExceptDialog(QDialog):
     """
     A dialog to report internal errors encountered by the application during
@@ -66,9 +81,10 @@ class ExceptDialog(QDialog):
             <p>We are sorry, but {1} encountered an internal error that might
             preventing it from running correctly. You might want to save
             your work and restart {1} if possible.</p>
-            <p>Please report this error on our <a href="{2}">issues tracker</a>
-            by copying the information below and by providing a detailed
-            step-by-step description of what led to the problem.</p>
+            <p>Please report this error by copying the information below
+            in our <a href="{2}">issues tracker</a> and by providing
+            a step-by-step description of what led to the problem.
+            </p>
             """).format(__namever__, __appname__, __issues_url__))
         msg_labl.setWordWrap(True)
         msg_labl.setOpenExternalLinks(True)
@@ -94,14 +110,14 @@ class ExceptDialog(QDialog):
         main_layout.addLayout(left_side_layout, 0, 0)
         main_layout.addLayout(right_side_layout, 0, 1)
         main_layout.addWidget(button_box, 1, 0, 1, 2)
-    
+
     def set_log_message(self, log_msg):
         """
         Set the log message related to the encountered error.
         """
         self.logmsg_textedit.setText(
             self._render_error_infotext(log_msg or ''))
-    
+
     def get_error_infotext(self):
         """
         Return the text containing the information relevant to the
@@ -109,33 +125,23 @@ class ExceptDialog(QDialog):
         in an issue on GitHub.
         """
         return self.logmsg_textedit.toPlainText()
-        
+
     def _render_error_infotext(self, log_msg):
         """
         Render the information relevant to the encountered error in a format
         that can be copy-pasted directly in an issue on GitHub.
         """
         versions = get_versions()
-        formatted_msg = (
-            "### System Info\n"
-            "{namever}\n"
-            "Python {python_ver} {bitness}-bit\n"
-            "Qt {qt_ver}\n"
-            "{qt_api} {qt_api_ver}\n"
-            "{os_name} {os_ver}\n\n"
-            "### Traceback\n"
-            "```python-traceback\n"
-            "{log_msg}"
-            "```"
-            ).format(namever=__namever__,
-                     python_ver=versions['python'],
-                     bitness=versions['bitness'],
-                     qt_ver=versions['qt'],
-                     qt_api=versions['qt_api'],
-                     qt_api_ver=versions['qt_api_ver'],
-                     os_name=versions['system'],
-                     os_ver=versions['release'],
-                     log_msg=log_msg)
+        formatted_msg = EXCEPT_DIALOG_MSG_CANVAS.format(
+            namever=__namever__,
+            python_ver=versions['python'],
+            bitness=versions['bitness'],
+            qt_ver=versions['qt'],
+            qt_api=versions['qt_api'],
+            qt_api_ver=versions['qt_api_ver'],
+            os_name=versions['system'],
+            os_ver=versions['release'],
+            log_msg=log_msg)
         return formatted_msg
 
     def copy(self):
