@@ -2253,7 +2253,7 @@ class SardesTableWidget(SardesPaneWidget):
     # ---- Tools
     def tools(self):
         """
-        Return the list of SardesTool currently installed in this table. 
+        Return the list of SardesTool currently installed in this table.
         """
         return self._tools.values()
 

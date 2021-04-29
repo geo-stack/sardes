@@ -1345,7 +1345,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 readings_data['obs_id'] == obs_id, 'install_depth'
                 ] = install_depth
 
-        # Reorder the columns so that the data are displayed nicely.
+        # Reorder the columns so that the data are displayed nicely and
+        # sort the data by datetime.
         readings_data = readings_data[
             ['datetime', 'sonde_id'] +
             added_data_types +
@@ -1431,7 +1432,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             )
 
         # We need to format pandas datetime64 to strings in order to save
-        # them in the database with sqlite3.
+        # them in the database with sqlite3 directly (without sqlalchemy).
         tseries_data['datetime'] = (
             tseries_data['datetime'].dt.strftime(DATE_FORMAT))
 

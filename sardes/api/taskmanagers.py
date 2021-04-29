@@ -101,8 +101,8 @@ class TaskManagerBase(QObject):
     @Slot(object, object)
     def _exec_task_callback(self, task_uuid4, returned_values):
         """
-        This is the (only) slot that is called after a task is completed
-        by the worker.
+        This is the (only) slot that should be called after a task is
+        completed by the worker.
         """
         # Run the callback associated with the specified task UUID if any.
         if self._task_callbacks[task_uuid4] is not None:
