@@ -94,23 +94,28 @@ class DatabaseConnectionWorker(WorkerBase):
         Get the data related to name from the database.
         """
         if name in self._cache:
-            print("Fetching '{}' from store... done".format(name))
+            print("Fetching '{}' from store.".format(name))
             return self._cache[name],
 
-        print("Fetching '{}' from the database...".format(name), end='')
+        print("Fetching '{}' from the database...".format(name))
         if self.is_connected():
             try:
                 data = self.db_accessor.get(name, *args, **kargs)
-                print("done")
+                print("Successfully fetched '{}' from the database."
+                      .format(name))
             except Exception as e:
-                print("failed because of the following error.")
+                print(("Failed to fetch '{}' from the database "
+                       "because of the following error."
+                       ).format(name))
                 print(e)
                 print('-' * 20)
                 data = DataFrame([])
             else:
                 self._cache[name] = data
         else:
-            print("failed because not connected to a database.")
+            print(("Failed to fetch '{}' from the database "
+                   "because Sardes is not connected to a database."
+                   ).format(name))
             data = DataFrame([])
         return data,
 
