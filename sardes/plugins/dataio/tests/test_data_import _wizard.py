@@ -20,6 +20,7 @@ import datetime
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
+from flaky import flaky
 import pandas as pd
 import numpy as np
 import pytest
@@ -388,6 +389,7 @@ def test_move_input_file_oserror(qtbot, mocker, data_import_wizard, testfiles,
     qtbot.wait(300)
 
 
+@flaky(max_runs=3)
 def test_duplicate_readings(qtbot, mocker, data_import_wizard, testfiles,
                             readings_data):
     """
