@@ -112,7 +112,7 @@ def test_plot_viewer(mainwindow, qtbot, obswell_uuid, readings_data):
 
     # Test that the plot viewer is created as expected.
     table.plot_readings()
-    assert table.plot_viewer.isVisible()
+    qtbot.waitForWindowShown(table.plot_viewer)
     assert (table.plot_viewer.windowTitle() ==
             "03037041 - St-Paul-d'Abbotsford (Saint-Paul-d'Abbotsford)")
 
