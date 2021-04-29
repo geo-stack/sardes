@@ -141,8 +141,11 @@ def test_plot_viewer_update(mainwindow, qtbot, obswell_uuid):
     and metadata of the observation well are modified.
     """
     table = mainwindow.plugin._tseries_data_tables[obswell_uuid]
-    table.plot_readings()
     dbconnmanager = mainwindow.db_connection_manager
+
+    assert table.plot_viewer is None
+    table.plot_readings()
+    qtbot.waitForWindowShown(table.plot_viewer)
 
     # Test that a change in the observation well data is reflected as
     # expected in the plot viewer.
