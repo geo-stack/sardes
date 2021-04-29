@@ -33,7 +33,7 @@ EXCEPT_DIALOG_MSG_CANVAS = (
     "Qt {qt_ver}\n" +
     "{qt_api} {qt_api_ver}\n" +
     "{os_name} {os_ver}" +
-    ">\n\n### {}\n".format(_("Traceback")) +
+    "\n\n### {}\n".format(_("Traceback")) +
     "```python-traceback\n{log_msg}```"
     )
 
