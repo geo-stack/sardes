@@ -94,14 +94,14 @@ class ExceptDialog(QDialog):
         main_layout.addLayout(left_side_layout, 0, 0)
         main_layout.addLayout(right_side_layout, 0, 1)
         main_layout.addWidget(button_box, 1, 0, 1, 2)
-    
+
     def set_log_message(self, log_msg):
         """
         Set the log message related to the encountered error.
         """
         self.logmsg_textedit.setText(
             self._render_error_infotext(log_msg or ''))
-    
+
     def get_error_infotext(self):
         """
         Return the text containing the information relevant to the
@@ -109,7 +109,7 @@ class ExceptDialog(QDialog):
         in an issue on GitHub.
         """
         return self.logmsg_textedit.toPlainText()
-        
+
     def _render_error_infotext(self, log_msg):
         """
         Render the information relevant to the encountered error in a format
