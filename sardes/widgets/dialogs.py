@@ -23,6 +23,21 @@ from sardes.config.icons import (
     get_icon, get_standard_icon, get_standard_iconsize)
 
 
+EXCEPT_DIALOG_MSG_CANVAS = (
+    "### {}\n<".format(_("Description")) +
+    _("Please  provide a step-by-step by description of what "
+      "led to the problem here.") +
+    ">\n\n### {}\n".format(_("System Info")) +
+    "{namever}\n" +
+    "Python {python_ver} {bitness}-bit\n" +
+    "Qt {qt_ver}\n" +
+    "{qt_api} {qt_api_ver}\n" +
+    "{os_name} {os_ver}" +
+    ">\n\n### {}\n".format(_("Traceback")) +
+    "```python-traceback\n{log_msg}```"
+    )
+
+
 class ExceptDialog(QDialog):
     """
     A dialog to report internal errors encountered by the application during
@@ -116,26 +131,16 @@ class ExceptDialog(QDialog):
         that can be copy-pasted directly in an issue on GitHub.
         """
         versions = get_versions()
-        formatted_msg = (
-            "### System Info\n"
-            "{namever}\n"
-            "Python {python_ver} {bitness}-bit\n"
-            "Qt {qt_ver}\n"
-            "{qt_api} {qt_api_ver}\n"
-            "{os_name} {os_ver}\n\n"
-            "### Traceback\n"
-            "```python-traceback\n"
-            "{log_msg}"
-            "```"
-            ).format(namever=__namever__,
-                     python_ver=versions['python'],
-                     bitness=versions['bitness'],
-                     qt_ver=versions['qt'],
-                     qt_api=versions['qt_api'],
-                     qt_api_ver=versions['qt_api_ver'],
-                     os_name=versions['system'],
-                     os_ver=versions['release'],
-                     log_msg=log_msg)
+        formatted_msg = EXCEPT_DIALOG_MSG_CANVAS.format(
+            namever=__namever__,
+            python_ver=versions['python'],
+            bitness=versions['bitness'],
+            qt_ver=versions['qt'],
+            qt_api=versions['qt_api'],
+            qt_api_ver=versions['qt_api_ver'],
+            os_name=versions['system'],
+            os_ver=versions['release'],
+            log_msg=log_msg)
         return formatted_msg
 
     def copy(self):
