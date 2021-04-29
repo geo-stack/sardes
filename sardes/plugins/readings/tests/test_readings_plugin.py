@@ -149,8 +149,7 @@ def test_plot_viewer_update(mainwindow, qtbot, obswell_uuid):
 
     # Test that a change in the observation well data is reflected as
     # expected in the plot viewer.
-    with qtbot.waitSignal(dbconnmanager.sig_database_data_changed,
-                          timeout=3000):
+    with qtbot.waitSignal(dbconnmanager.sig_database_data_changed):
         dbconnmanager.set(
             'observation_wells_data', obswell_uuid,
             'obs_well_id', '12345', postpone_exec=True)
