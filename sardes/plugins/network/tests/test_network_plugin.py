@@ -12,6 +12,7 @@ Tests for the Readings plugin.
 """
 
 # ---- Standard imports
+import re
 import os
 import os.path as osp
 import sys
@@ -115,6 +116,14 @@ def test_publish_to_kml_nofiles(mainwindow, qtbot, mocker, tmp_path):
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'quality')))
     assert len(files) == 0
 
+    # Check the content of the kml file.
+    with open(selectedfilename) as f:
+        content = f.read()
+
+    # Make sur the last reading date is added to each station bubble.
+    # See cgq-qgc/sardes#468.
+    assert len(re.findall("Last reading = 2020-12-31", content)) == 4
+
 
 def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path,
                         obswells_data):
@@ -156,6 +165,14 @@ def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path,
     assert len(files) == len(obswells_data)
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'quality')))
     assert len(files) == len(obswells_data)
+
+    # Check the content of the kml file.
+    with open(selectedfilename) as f:
+        content = f.read()
+
+    # Make sur the last reading date is added to each station bubble.
+    # See cgq-qgc/sardes#468.
+    assert len(re.findall("Last reading = 2020-12-31", content)) == 4
 
 
 if __name__ == "__main__":
