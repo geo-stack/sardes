@@ -145,6 +145,34 @@ class ReadingsTableWidget(SardesTableWidget):
         self._parent = parent
         self.plot_viewer = None
 
+    @property
+    def station_uuid(self):
+        """
+        Return the station uuid associated with this table.
+        """
+        return self.model()._obs_well_uuid
+
+    def update_data(self, dbmanager):
+        """
+        Update the data of this table's model by using the provided
+        database manager.
+        """
+        self.model().sig_data_about_to_be_updated.emit()
+        dbmanager.get(
+            'manual_measurements',
+            callback=self.set_manual_measurements,
+            postpone_exec=True)
+        dbmanager.get(
+            'repere_data',
+            callback=self.set_repere_data,
+            postpone_exec=True)
+        dbmanager.get_timeseries_for_obs_well(
+            self.station_uuid,
+            [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
+            callback=self.set_model_data,
+            postpone_exec=True)
+        dbmanager.run_tasks()
+
     def set_obs_well_data(self, obs_well_data):
         """Set the observation well data of the model and plot viewer."""
         self.model().set_obs_well_data(obs_well_data)
@@ -416,26 +444,15 @@ class Readings(SardesPlugin):
         horizontal_header = table_widget.tableview.horizontalHeader()
         horizontal_header.setDefaultSectionSize(125)
 
+        # Add the table to the tab widget.
         self._tseries_data_tables[obs_well_uuid] = table_widget
         self.tabwidget.add_table(
             table_widget, obs_well_data['obs_well_id'], switch_to_table=True)
         if self.dockwindow.is_docked():
             self.main.register_table(table_widget.tableview)
 
-        self.main.db_connection_manager.get(
-            'manual_measurements',
-            callback=table_widget.set_manual_measurements,
-            postpone_exec=True)
-        self.main.db_connection_manager.get(
-            'repere_data',
-            callback=table_widget.set_repere_data,
-            postpone_exec=True)
-        self.main.db_connection_manager.get_timeseries_for_obs_well(
-            obs_well_uuid,
-            [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
-            callback=table_widget.set_model_data,
-            postpone_exec=True)
-        self.main.db_connection_manager.run_tasks()
+        # Fetch and set the data in the table.
+        table_widget.update_data(self.main.db_connection_manager)
 
     # ---- Database Changes Handlers
     def _handle_database_data_changed(self, data_names):

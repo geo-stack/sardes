@@ -863,9 +863,6 @@ class SardesTableModel(SardesTableModelBase):
 
     """
 
-    def __init__(self, *args, **kargs):
-        super().__init__(*args, **kargs)
-
     def create_delegate_for_column(self, view, column):
         """
         Create the item delegate that the view need to use when editing the
