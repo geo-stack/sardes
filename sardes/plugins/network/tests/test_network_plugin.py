@@ -120,9 +120,14 @@ def test_publish_to_kml_nofiles(mainwindow, qtbot, mocker, tmp_path):
     with open(selectedfilename) as f:
         content = f.read()
 
-    # Make sur the last reading date is added to each station bubble.
-    # See cgq-qgc/sardes#468.
+    # There is 5 stations in the test database, but one has no data.
+    assert len(re.findall("Placemark id", content)) == 5
     assert len(re.findall("Last reading = 2020-12-31", content)) == 4
+
+    assert len(re.findall(">Data</a>", content)) == 0
+    assert len(re.findall(">Diagram</a>", content)) == 0
+    assert len(re.findall(">Graph</a>", content)) == 0
+    assert len(re.findall(">Water Quality</a>", content)) == 0
 
 
 def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path):
@@ -169,9 +174,15 @@ def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path):
     with open(selectedfilename) as f:
         content = f.read()
 
-    # Make sur the last reading date is added to each station bubble.
-    # See cgq-qgc/sardes#468.
+    # There is 5 stations in the test database, but one has no data,
+    # no diagram, no graph and no quality data.
+    assert len(re.findall("Placemark id", content)) == 5
     assert len(re.findall("Last reading = 2020-12-31", content)) == 4
+
+    assert len(re.findall(">Data</a>", content)) == 4
+    assert len(re.findall(">Diagram</a>", content)) == 4
+    assert len(re.findall(">Graph</a>", content)) == 4
+    assert len(re.findall(">Water Quality</a>", content)) == 4
 
 
 if __name__ == "__main__":
