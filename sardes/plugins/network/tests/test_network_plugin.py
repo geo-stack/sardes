@@ -12,6 +12,7 @@ Tests for the Readings plugin.
 """
 
 # ---- Standard imports
+import re
 import os
 import os.path as osp
 import sys
@@ -115,9 +116,21 @@ def test_publish_to_kml_nofiles(mainwindow, qtbot, mocker, tmp_path):
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'quality')))
     assert len(files) == 0
 
+    # Check the content of the kml file.
+    with open(selectedfilename) as f:
+        content = f.read()
 
-def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path,
-                        obswells_data):
+    # There is 5 stations in the test database, but one has no data.
+    assert len(re.findall("Placemark id", content)) == 5
+    assert len(re.findall("Last reading = 2020-12-31", content)) == 4
+
+    assert len(re.findall(">Data</a>", content)) == 0
+    assert len(re.findall(">Diagram</a>", content)) == 0
+    assert len(re.findall(">Graph</a>", content)) == 0
+    assert len(re.findall(">Water Quality</a>", content)) == 0
+
+
+def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path):
     """
     Test that publishing the piezometric network to KML is working as expected.
     """
@@ -149,13 +162,27 @@ def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path,
 
     files_dirname = osp.join(tmp_path, 'test_piezo_network_files')
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'data')))
-    assert len(files) == len(obswells_data)
+    assert len(files) == 4
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'diagrams')))
-    assert len(files) == len(obswells_data)
+    assert len(files) == 4
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'graphs')))
-    assert len(files) == len(obswells_data)
+    assert len(files) == 4
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'quality')))
-    assert len(files) == len(obswells_data)
+    assert len(files) == 4
+
+    # Check the content of the kml file.
+    with open(selectedfilename) as f:
+        content = f.read()
+
+    # There is 5 stations in the test database, but one has no data,
+    # no diagram, no graph and no quality data.
+    assert len(re.findall("Placemark id", content)) == 5
+    assert len(re.findall("Last reading = 2020-12-31", content)) == 4
+
+    assert len(re.findall(">Data</a>", content)) == 4
+    assert len(re.findall(">Diagram</a>", content)) == 4
+    assert len(re.findall(">Graph</a>", content)) == 4
+    assert len(re.findall(">Water Quality</a>", content)) == 4
 
 
 if __name__ == "__main__":

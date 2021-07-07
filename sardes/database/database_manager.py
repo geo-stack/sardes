@@ -363,7 +363,7 @@ class DatabaseConnectionWorker(WorkerBase):
         fol = simplekml.Folder()
         kml.document = fol
 
-        # Define the style for the plasemarks.
+        # Define the style for the placemarks.
         pnt_style = simplekml.Style()
         pnt_style.iconstyle.icon.href = (
             'http://maps.google.com/mapfiles/kml/paddle/blu-circle.png')
@@ -431,7 +431,7 @@ class DatabaseConnectionWorker(WorkerBase):
                     _('Influenced'),
                     station_data['is_influenced'])
 
-                if station_uuid in stations_data_overview:
+                if station_uuid in stations_data_overview.index:
                     last_reading = (stations_data_overview
                                     .loc[station_uuid]['last_date'])
                     pnt_desc += '<br/>{} = {}<br/>'.format(

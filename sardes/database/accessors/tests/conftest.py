@@ -42,7 +42,10 @@ def obswells_data():
          48.81151, -67.53562, True, None],
         ['03040002', 'PO-01', 'Calixa-Lavallée',
          'ROC', 'Confined', 1, 'No', 'No',
-         45.74581, -73.28024, True, None]
+         45.74581, -73.28024, True, None],
+        ['09000001', 'Site 1', 'Umiujaq',
+         'MT', 'Libre', 4, 'Yes', 'No',
+         56.56248, -76.47886, False, None]
         ]
     return pd.DataFrame(
         data=data,
@@ -206,6 +209,11 @@ def database_filler(
             # Add the observation well.
             dbaccessor.add_observation_wells_data(
                 obs_well_uuid, attribute_values=obs_well_data.to_dict())
+
+            if obs_well_data['obs_well_id'] == '09000001':
+                # We don't want to add any attachment or monitoring data
+                # to that well.
+                continue
 
             # Add a construction log.
             dbaccessor.set_attachment(obs_well_uuid, 1, constructlog)
