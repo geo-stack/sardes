@@ -125,8 +125,7 @@ def test_publish_to_kml_nofiles(mainwindow, qtbot, mocker, tmp_path):
     assert len(re.findall("Last reading = 2020-12-31", content)) == 4
 
 
-def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path,
-                        obswells_data):
+def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path):
     """
     Test that publishing the piezometric network to KML is working as expected.
     """
@@ -158,13 +157,13 @@ def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path,
 
     files_dirname = osp.join(tmp_path, 'test_piezo_network_files')
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'data')))
-    assert len(files) == len(obswells_data)
+    assert len(files) == 4
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'diagrams')))
-    assert len(files) == len(obswells_data)
+    assert len(files) == 4
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'graphs')))
-    assert len(files) == len(obswells_data)
+    assert len(files) == 4
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'quality')))
-    assert len(files) == len(obswells_data)
+    assert len(files) == 4
 
     # Check the content of the kml file.
     with open(selectedfilename) as f:
