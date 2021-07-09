@@ -900,6 +900,13 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # Set the index to the observation well ids.
         repere.set_index('repere_uuid', inplace=True, drop=True)
 
+        # Make sure datetime data is considered as datetime.
+        # See cgq-qgc/sardes#427.
+        for column in ['start_date', 'end_date']:
+            if not is_datetime64_ns_dtype(repere[column]):
+                print('Converting {} data to datetime.'.format(column))
+                repere[column] = pd.to_datetime(repere[column])
+
         return repere
 
     def set_repere_data(self, repere_uuid, attribute_name, attribute_value,
@@ -1175,6 +1182,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # This is required to avoid problems when the manual measurements
         # table is empty. See cgq-qgc/sardes#427.
         if not is_datetime64_ns_dtype(measurements['datetime']):
+            print('Converting manual measurements to datetime.')
             measurements['datetime'] = pd.to_datetime(measurements['datetime'])
 
         return measurements

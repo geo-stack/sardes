@@ -41,7 +41,8 @@ from sardes.database.accessors.accessor_sardes_lite import (
 @pytest.fixture()
 def dbaccessor0(tmp_path):
     """
-    A Database SQlite accessor that is reinitialized after each test.
+    A Database SQlite accessor connected to an empty database that is
+    reinitialized after each test.
     """
     dbaccessor = DatabaseAccessorSardesLite(
         osp.join(tmp_path, 'sqlite_database_test.db'))
@@ -265,6 +266,56 @@ def test_manual_measurements(dbaccessor0, obswells_data, manual_measurements):
     saved_manual_measurements = dbaccessor0.get_manual_measurements()
     assert (saved_manual_measurements.to_dict() ==
             manual_measurements.iloc[1:].to_dict())
+
+
+def test_repere_data(dbaccessor0, obswells_data, repere_data):
+    """
+    Test that adding, editing and retrieving repere data is working as
+    expected.
+    """
+    # Add the observation wells.
+    for obs_well_uuid, obs_well_data in obswells_data.iterrows():
+        dbaccessor0.add_observation_wells_data(
+            obs_well_uuid, attribute_values=obs_well_data.to_dict())
+
+    # Test the empty repere data dataframe is formatted as expected.
+    repere_data_bd = dbaccessor0.get_repere_data()
+    assert repere_data_bd.empty
+    assert is_datetime64_any_dtype(repere_data_bd['start_date'])
+    assert is_datetime64_any_dtype(repere_data_bd['end_date'])
+
+    # Add repere data.
+    for index, row in repere_data.iterrows():
+        dbaccessor0.add_repere_data(index, row.to_dict())
+
+    repere_data_bd = dbaccessor0.get_repere_data()
+    assert is_datetime64_any_dtype(repere_data_bd['start_date'])
+    assert is_datetime64_any_dtype(repere_data_bd['end_date'])
+
+    repere_data_bd = repere_data_bd.replace({np.nan: None})
+    assert repere_data_bd.to_dict() == repere_data.to_dict()
+
+    # Edit repere data.
+    repere_uuid = repere_data_bd.index[0]
+    old_values = repere_data_bd.loc[repere_uuid].to_dict()
+    edited_values = {
+        'sampling_feature_uuid': obswells_data.index[1],
+        'top_casing_alt': 94.6,
+        'casing_length': 1.45,
+        'start_date': datetime.datetime(2008, 1, 13, 11, 4, 23),
+        'end_date': datetime.datetime(2009, 1, 13, 11, 4, 23),
+        'is_alt_geodesic': not old_values['is_alt_geodesic'],
+        'repere_note': 'new repere note'
+        }
+    for attribute_name, attribute_value in edited_values.items():
+        assert attribute_value != old_values[attribute_name]
+        dbaccessor0.set_repere_data(
+            repere_uuid, attribute_name, attribute_value)
+
+    repere_data_bd = dbaccessor0.get_repere_data()
+    assert is_datetime64_any_dtype(repere_data_bd['start_date'])
+    assert is_datetime64_any_dtype(repere_data_bd['end_date'])
+    assert repere_data_bd.loc[repere_uuid].to_dict() == edited_values
 
 
 # =============================================================================
