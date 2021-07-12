@@ -310,6 +310,13 @@ class FileAttachmentManager(QObject):
         self.toolbutton.setMenu(menu)
         self.toolbutton.setPopupMode(self.toolbutton.InstantPopup)
 
+    # ---- toolbutton interface emulation
+    def setEnabled(self, enabled):
+        """
+        Set this file attachment manager state to the provided enabled value.
+        """
+        self.toolbutton.setEnabled(enabled)
+
     def set_dbmanager(self, dbmanager):
         """
         Set the database manager for this file attachment manager.
