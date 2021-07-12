@@ -916,6 +916,7 @@ class SardesTableView(QTableView):
     saved in the database.
     """
     sig_data_edited = Signal(object)
+    sig_current_changed = Signal(object)
     sig_show_event = Signal()
     sig_data_updated = Signal()
     sig_rowcount_changed = Signal(object, int, int)
@@ -992,6 +993,22 @@ class SardesTableView(QTableView):
     def showEvent(self, *args, **kargs):
         self.sig_show_event.emit()
         super().showEvent(*args, **kargs)
+
+    def contextMenuEvent(self, event):
+        """
+        Override Qt method to show a context menu that shows different actions
+        available for the cell.
+        """
+        menu = QMenu(self)
+        sections = list(self._actions.keys())
+        for section in sections:
+            if not len(self._actions[section]):
+                continue
+            for action in self._actions[section]:
+                menu.addAction(action)
+            if section != sections[-1]:
+                menu.addSeparator()
+        menu.popup(QCursor.pos())
 
     def _setup_table_model(self, table_model, multi_columns_sort):
         """
@@ -1266,7 +1283,7 @@ class SardesTableView(QTableView):
 
                 # Save the cursor position for that edit.
                 current_source_index = self.model().mapToSource(
-                    self.selectionModel().currentIndex())
+                    self.current_index())
                 self._data_edit_cursor_pos[data_edit.id] = (
                     current_source_index.row(), current_source_index.column())
         else:
@@ -1277,7 +1294,7 @@ class SardesTableView(QTableView):
         """
         Update the states of this tableview actions.
         """
-        current_index = self.selectionModel().currentIndex()
+        current_index = self.current_index()
         if current_index.isValid():
             is_required = self.is_data_required_at(current_index)
             is_null = self.model().is_null(current_index)
@@ -1296,6 +1313,8 @@ class SardesTableView(QTableView):
             self.undo_edits_action.setEnabled(is_data_edit_count)
         if 'cancel_edits' not in self._disabled_actions:
             self.cancel_edits_action.setEnabled(has_unsaved_data_edits)
+
+        self.sig_current_changed.emit(current_index)
 
     def _on_selected_rowcount_changed(self):
         """
@@ -1372,8 +1391,7 @@ class SardesTableView(QTableView):
             sorted according to the current column if any. 0 is used for
             ascending sorting, 1 for descending sorting, and -1 for no sorting.
         """
-        self.sort_by_column(
-            self.selectionModel().currentIndex().column(), sorting_order)
+        self.sort_by_column(self.current_index().column(), sorting_order)
 
     # ---- Data selection
     def get_current_row_data(self):
@@ -1381,7 +1399,7 @@ class SardesTableView(QTableView):
         Return the data relative to the row with the current item (the item
         with the focus).
         """
-        model_index = self.selectionModel().currentIndex()
+        model_index = self.current_index()
         if model_index.isValid():
             return self.source_model.dataf.loc[[
                 self.model().dataf_index_at(model_index)]]
@@ -1426,7 +1444,7 @@ class SardesTableView(QTableView):
         If append is True, the current selection is cleared before
         selecting new items.
         """
-        current_column = self.selectionModel().currentIndex().column()
+        current_column = self.current_index().column()
         if append is False:
             self.selectionModel().clear()
         if extend:
@@ -1517,7 +1535,7 @@ class SardesTableView(QTableView):
         Move the currently selected index to the top, bottom, far right or
         far left of this table.
         """
-        current_index = self.selectionModel().currentIndex()
+        current_index = self.current_index()
         if key == 'Up':
             row = 0
             column = current_index.column()
@@ -1540,7 +1558,7 @@ class SardesTableView(QTableView):
         Extend the selection adjacent to the current cell to the top, bottom,
         right or left border of this table.
         """
-        current_index = self.selectionModel().currentIndex()
+        current_index = self.current_index()
         current_visual_column = (
             self.horizontalHeader().visualIndex(current_index.column()))
         self.selectionModel().select(
@@ -1617,6 +1635,12 @@ class SardesTableView(QTableView):
             selection, QItemSelectionModel.Select)
 
     # ---- Utilities
+    def current_index(self):
+        """
+        Return the currently selected index in the table view.
+        """
+        return self.selectionModel().currentIndex()
+
     def copy_to_clipboard(self):
         """
         Put a copy of the selection on the Clipboard.
@@ -1810,27 +1834,11 @@ class SardesTableView(QTableView):
         """
         return self.itemDelegate(model_index).is_required
 
-    def contextMenuEvent(self, event):
-        """
-        Override Qt method to show a context menu that shows different actions
-        available for the cell.
-        """
-        menu = QMenu(self)
-        sections = list(self._actions.keys())
-        for section in sections:
-            if not len(self._actions[section]):
-                continue
-            for action in self._actions[section]:
-                menu.addAction(action)
-            if section != sections[-1]:
-                menu.addSeparator()
-        menu.popup(QCursor.pos())
-
     def _clear_current_item(self):
         """
         Set current item's data to None.
         """
-        current_index = self.selectionModel().currentIndex()
+        current_index = self.current_index()
         if current_index.isValid():
             self.itemDelegate(current_index).clear_model_data_at(current_index)
 
@@ -1838,7 +1846,7 @@ class SardesTableView(QTableView):
         """
         Turn on edit mode for this table current cell.
         """
-        current_index = self.selectionModel().currentIndex()
+        current_index = self.current_index()
         if current_index.isValid():
             if self.state() != self.EditingState:
                 self.edit(current_index)
@@ -1862,7 +1870,7 @@ class SardesTableView(QTableView):
             # addrow edit, which means that it will be removed by this undo
             # operation, we select the first item above it that is not
             # part of this edit.
-            cur_index = self.selectionModel().currentIndex()
+            cur_index = self.current_index()
             sorted_rows = np.delete(
                 np.arange(self.model().rowCount()),
                 self.model()._map_row_from_source[last_edit.row])
@@ -2050,6 +2058,8 @@ class SardesTableWidget(SardesPaneWidget):
         self.tableview.viewport().setStyleSheet(
             "background-color: rgb(%d, %d, %d);" %
             getattr(QStyleOption().palette, 'light')().color().getRgb()[:-1])
+        self.tableview.sig_current_changed.connect(
+            self.on_current_changed)
 
         self.progressbar = ProcessStatusBar(self, 96, 16, Qt.Vertical)
         self._end_process_timer = QTimer(self)
@@ -2106,6 +2116,16 @@ class SardesTableWidget(SardesPaneWidget):
         return message_box
 
     # ---- Public methods
+    def on_current_changed(self, current_index):
+        """
+        Called when the current index in the table view changed.
+
+        All sardes table widget that inherit this class should reimplement
+        this method to change the state of its UI when the current index
+        of the table view changes.
+        """
+        pass
+
     def clear_model_data(self):
         """
         Clear the data of this table widget's model.

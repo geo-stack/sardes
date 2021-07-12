@@ -138,7 +138,7 @@ def test_show_in_google_maps(mainwindow, qtbot, mocker):
     tableview = tablewidget.tableview
     tablemodel = tablewidget.model()
 
-    # Select the tab corresponding to the manual measurements.
+    # Select the tab corresponding to the observation wells table.
     mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
     qtbot.wait(300)
 
@@ -155,6 +155,41 @@ def test_show_in_google_maps(mainwindow, qtbot, mocker):
     patcher_qdesktopservices.assert_called_once_with(QUrl(
         'https://www.google.com/maps/search/?api=1&query=45.445178,-72.828773'
         ))
+
+
+def test_new_observation_well(mainwindow, qtbot, mocker, obswells_data):
+    """
+    Test that adding and selecting a new observation well is working as
+    expected.
+    """
+    tablewidget = mainwindow.plugin._tables['table_observation_wells']
+    tableview = tablewidget.tableview
+    tablemodel = tablewidget.model()
+    assert tableview.visible_row_count() == len(obswells_data)
+
+    # Select the tab corresponding to the observation wells table.
+    mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
+    qtbot.wait(300)
+
+    # We select the first well in the table and we assert that
+    # the UI state is as expected.
+    selection_model = tableview.selectionModel()
+    selection_model.setCurrentIndex(
+        tablemodel.index(0, 0), selection_model.SelectCurrent)
+
+    assert not tableview.model().is_new_row_at(tableview.current_index())
+    assert tablewidget.show_data_btn.isEnabled()
+    assert tablewidget.construction_logs_manager.isEnabled()
+    assert tablewidget.water_quality_reports.isEnabled()
+
+    # We add a new row and assert that the UI state is as expected.
+    tableview._add_new_row()
+    assert tableview.visible_row_count() == len(obswells_data) + 1
+
+    assert tableview.model().is_new_row_at(tableview.current_index())
+    assert not tablewidget.show_data_btn.isEnabled()
+    assert not tablewidget.construction_logs_manager.isEnabled()
+    assert not tablewidget.water_quality_reports.isEnabled()
 
 
 # =============================================================================
@@ -316,4 +351,4 @@ def test_save_data_edits(mainwindow, qtbot):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', __file__, '-v', '-rw'])
+    pytest.main(['-x', __file__, '-v', '-rw', '-k', 'test_new_observation_well'])

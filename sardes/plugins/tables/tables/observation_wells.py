@@ -133,6 +133,21 @@ class ObsWellsTableWidget(SardesTableWidget):
         self.water_quality_reports.set_dbmanager(
             plugin.main.db_connection_manager)
 
+    # ---- SardesTableWidget public API
+    def on_current_changed(self, current_index):
+        """
+        Implemement on_current_changed SardesTableWidget method.
+        """
+        if current_index.isValid():
+            is_new_row = self.model().is_new_row_at(current_index)
+            self.show_data_btn.setEnabled(not is_new_row)
+            self.construction_logs_manager.setEnabled(not is_new_row)
+            self.water_quality_reports.setEnabled(not is_new_row)
+        else:
+            self.show_data_btn.setEnabled(False)
+            self.construction_logs_manager.setEnabled(False)
+            self.water_quality_reports.setEnabled(False)
+
     # ---- Timeseries
     def get_current_obs_well_data(self):
         """
@@ -268,6 +283,7 @@ class FileAttachmentManager(QObject):
                  text, tooltip, attach_text, attach_tooltip, show_text,
                  show_tooltip, remove_text, remove_tooltip):
         super().__init__()
+        self._enabled = True
         self.dbmanager = None
 
         self.tablewidget = tablewidget
@@ -297,6 +313,20 @@ class FileAttachmentManager(QObject):
 
         self.toolbutton.setMenu(menu)
         self.toolbutton.setPopupMode(self.toolbutton.InstantPopup)
+
+    # ---- Qt widget interface emulation
+    def isEnabled(self):
+        """
+        Treturn whether this file attachment manager is enabled.
+        """
+        return self._enabled
+
+    def setEnabled(self, enabled):
+        """
+        Set this file attachment manager state to the provided enabled value.
+        """
+        self._enabled = bool(enabled)
+        self.toolbutton.setEnabled(self._enabled)
 
     def set_dbmanager(self, dbmanager):
         """
