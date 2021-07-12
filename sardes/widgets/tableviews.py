@@ -1283,7 +1283,7 @@ class SardesTableView(QTableView):
 
                 # Save the cursor position for that edit.
                 current_source_index = self.model().mapToSource(
-                    self.selectionModel().currentIndex())
+                    self.current_index())
                 self._data_edit_cursor_pos[data_edit.id] = (
                     current_source_index.row(), current_source_index.column())
         else:
@@ -1294,7 +1294,7 @@ class SardesTableView(QTableView):
         """
         Update the states of this tableview actions.
         """
-        current_index = self.selectionModel().currentIndex()
+        current_index = self.current_index()
         if current_index.isValid():
             is_required = self.is_data_required_at(current_index)
             is_null = self.model().is_null(current_index)
@@ -1391,8 +1391,7 @@ class SardesTableView(QTableView):
             sorted according to the current column if any. 0 is used for
             ascending sorting, 1 for descending sorting, and -1 for no sorting.
         """
-        self.sort_by_column(
-            self.selectionModel().currentIndex().column(), sorting_order)
+        self.sort_by_column(self.current_index().column(), sorting_order)
 
     # ---- Data selection
     def get_current_row_data(self):
@@ -1400,7 +1399,7 @@ class SardesTableView(QTableView):
         Return the data relative to the row with the current item (the item
         with the focus).
         """
-        model_index = self.selectionModel().currentIndex()
+        model_index = self.current_index()
         if model_index.isValid():
             return self.source_model.dataf.loc[[
                 self.model().dataf_index_at(model_index)]]
@@ -1445,7 +1444,7 @@ class SardesTableView(QTableView):
         If append is True, the current selection is cleared before
         selecting new items.
         """
-        current_column = self.selectionModel().currentIndex().column()
+        current_column = self.current_index().column()
         if append is False:
             self.selectionModel().clear()
         if extend:
@@ -1636,6 +1635,12 @@ class SardesTableView(QTableView):
             selection, QItemSelectionModel.Select)
 
     # ---- Utilities
+    def current_index(self):
+        """
+        Return the currently selected index in the table view.
+        """
+        return self.selectionModel().currentIndex()
+
     def copy_to_clipboard(self):
         """
         Put a copy of the selection on the Clipboard.
@@ -1833,7 +1838,7 @@ class SardesTableView(QTableView):
         """
         Set current item's data to None.
         """
-        current_index = self.selectionModel().currentIndex()
+        current_index = self.current_index()
         if current_index.isValid():
             self.itemDelegate(current_index).clear_model_data_at(current_index)
 
@@ -1841,7 +1846,7 @@ class SardesTableView(QTableView):
         """
         Turn on edit mode for this table current cell.
         """
-        current_index = self.selectionModel().currentIndex()
+        current_index = self.current_index()
         if current_index.isValid():
             if self.state() != self.EditingState:
                 self.edit(current_index)
@@ -1865,7 +1870,7 @@ class SardesTableView(QTableView):
             # addrow edit, which means that it will be removed by this undo
             # operation, we select the first item above it that is not
             # part of this edit.
-            cur_index = self.selectionModel().currentIndex()
+            cur_index = self.current_index()
             sorted_rows = np.delete(
                 np.arange(self.model().rowCount()),
                 self.model()._map_row_from_source[last_edit.row])
