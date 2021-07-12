@@ -1535,7 +1535,7 @@ class SardesTableView(QTableView):
         Move the currently selected index to the top, bottom, far right or
         far left of this table.
         """
-        current_index = self.selectionModel().currentIndex()
+        current_index = self.current_index()
         if key == 'Up':
             row = 0
             column = current_index.column()
@@ -1558,7 +1558,7 @@ class SardesTableView(QTableView):
         Extend the selection adjacent to the current cell to the top, bottom,
         right or left border of this table.
         """
-        current_index = self.selectionModel().currentIndex()
+        current_index = self.current_index()
         current_visual_column = (
             self.horizontalHeader().visualIndex(current_index.column()))
         self.selectionModel().select(
