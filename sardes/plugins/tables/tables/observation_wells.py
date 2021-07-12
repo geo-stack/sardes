@@ -133,6 +133,18 @@ class ObsWellsTableWidget(SardesTableWidget):
         self.water_quality_reports.set_dbmanager(
             plugin.main.db_connection_manager)
 
+    # ---- SardesTableWidget public API
+    def on_current_changed(self, current_index):
+        if current_index.isValid():
+            is_new_row = self.model().is_new_row_at(current_index)
+            self.show_data_btn.setEnabled(not is_new_row)
+            self.construction_logs_manager.setEnabled(not is_new_row)
+            self.water_quality_reports.setEnabled(not is_new_row)
+        else:
+            self.show_data_btn.setEnabled(False)
+            self.construction_logs_manager.setEnabled(False)
+            self.water_quality_reports.setEnabled(False)
+
     # ---- Timeseries
     def get_current_obs_well_data(self):
         """
