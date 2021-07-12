@@ -135,6 +135,9 @@ class ObsWellsTableWidget(SardesTableWidget):
 
     # ---- SardesTableWidget public API
     def on_current_changed(self, current_index):
+        """
+        Implemement on_current_changed SardesTableWidget method.
+        """
         if current_index.isValid():
             is_new_row = self.model().is_new_row_at(current_index)
             self.show_data_btn.setEnabled(not is_new_row)
