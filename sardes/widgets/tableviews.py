@@ -993,6 +993,22 @@ class SardesTableView(QTableView):
         self.sig_show_event.emit()
         super().showEvent(*args, **kargs)
 
+    def contextMenuEvent(self, event):
+        """
+        Override Qt method to show a context menu that shows different actions
+        available for the cell.
+        """
+        menu = QMenu(self)
+        sections = list(self._actions.keys())
+        for section in sections:
+            if not len(self._actions[section]):
+                continue
+            for action in self._actions[section]:
+                menu.addAction(action)
+            if section != sections[-1]:
+                menu.addSeparator()
+        menu.popup(QCursor.pos())
+
     def _setup_table_model(self, table_model, multi_columns_sort):
         """
         Setup the data model for this table view.
@@ -1809,22 +1825,6 @@ class SardesTableView(QTableView):
         specified model index.
         """
         return self.itemDelegate(model_index).is_required
-
-    def contextMenuEvent(self, event):
-        """
-        Override Qt method to show a context menu that shows different actions
-        available for the cell.
-        """
-        menu = QMenu(self)
-        sections = list(self._actions.keys())
-        for section in sections:
-            if not len(self._actions[section]):
-                continue
-            for action in self._actions[section]:
-                menu.addAction(action)
-            if section != sections[-1]:
-                menu.addSeparator()
-        menu.popup(QCursor.pos())
 
     def _clear_current_item(self):
         """
