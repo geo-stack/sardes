@@ -537,12 +537,19 @@ def test_add_new_empty_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     tableview = tablewidget.tableview
     selection_model = tablewidget.tableview.selectionModel()
     assert len(TABLE_DATAF) == 3
+    for i in range(3):
+        # Assert that the first three rows are not new.
+        assert not tableview.model().is_new_row_at(
+            tableview.model().index(i, 0))
 
     # Add 3 new rows.
-    nrow = len(TABLE_DATAF)
     for i in range(3):
         qtbot.keyPress(tableview, Qt.Key_Plus, modifier=Qt.ControlModifier)
-        nrow += 1
+
+        # Assert that each new row added is indeed considered as a new row.
+        assert tableview.model().is_new_row_at(
+            tableview.model().index(i + 3, 0))
+
     assert tableview.row_count() == 6
     assert len(TABLE_DATAF) == 3
     assert selection_model.currentIndex().isValid()
@@ -550,7 +557,6 @@ def test_add_new_empty_row(tablewidget, qtbot, mocker, TABLE_DATAF):
 
     # Undo the last row added.
     tableview.undo_edits_action.trigger()
-    nrow += -1
     assert tableview.row_count() == 5
     assert len(TABLE_DATAF) == 3
     assert selection_model.currentIndex().isValid()
