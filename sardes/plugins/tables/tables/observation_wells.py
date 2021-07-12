@@ -314,8 +314,8 @@ class FileAttachmentManager(QObject):
         self.toolbutton.setMenu(menu)
         self.toolbutton.setPopupMode(self.toolbutton.InstantPopup)
 
-    # ---- toolbutton interface emulation
-    def isEnabled(self, enabled):
+    # ---- Qt widget interface emulation
+    def isEnabled(self):
         """
         Treturn whether this file attachment manager is enabled.
         """
