@@ -595,9 +595,13 @@ def test_append_row(tablewidget, qtbot, mocker, TABLE_DATAF):
 
     for i in range(2):
         for j in range(6):
-            model_index = tablewidget.model().index(i+3, j)
+            model_index = tablewidget.model().index(i + 3, j)
             assert (tablewidget.model().get_value_at(model_index) ==
                     new_values[i][COLUMNS[j]])
+
+            # Assert that each new row that was appended to the table is
+            # considered as a new row in the model.
+            assert tableview.model().is_new_row_at(model_index)
 
     # Undo the last operation.
     tablewidget.tableview.undo_edits_action.trigger()
