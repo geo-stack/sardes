@@ -283,6 +283,7 @@ class FileAttachmentManager(QObject):
                  text, tooltip, attach_text, attach_tooltip, show_text,
                  show_tooltip, remove_text, remove_tooltip):
         super().__init__()
+        self._enabled = True
         self.dbmanager = None
 
         self.tablewidget = tablewidget
@@ -314,11 +315,18 @@ class FileAttachmentManager(QObject):
         self.toolbutton.setPopupMode(self.toolbutton.InstantPopup)
 
     # ---- toolbutton interface emulation
+    def isEnabled(self, enabled):
+        """
+        Treturn whether this file attachment manager is enabled.
+        """
+        return self._enabled
+
     def setEnabled(self, enabled):
         """
         Set this file attachment manager state to the provided enabled value.
         """
-        self.toolbutton.setEnabled(enabled)
+        self._enabled = bool(enabled)
+        self.toolbutton.setEnabled(self._enabled)
 
     def set_dbmanager(self, dbmanager):
         """
