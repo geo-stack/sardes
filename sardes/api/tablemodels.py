@@ -345,6 +345,12 @@ class SardesTableData(object):
         """
         return row in self._deleted_rows
 
+    def is_new_row_at(self, row):
+        """
+        Return whether the row at row is new.
+        """
+        return row in self._new_rows
+
     def is_value_edited_at(self, row, col):
         """
         Return whether edits were made at the specified model index
@@ -653,6 +659,12 @@ class SardesTableModelBase(QAbstractTableModel):
         Return whether the row at model index is deleted.
         """
         return self._datat.is_data_deleted_at(model_index.row())
+
+    def is_new_row_at(self, model_index):
+        """
+        Return whether the row at model index is new.
+        """
+        return self._datat.is_new_row_at(model_index.row())
 
     def is_data_edited_at(self, model_index):
         """
@@ -1101,6 +1113,10 @@ class SardesSortFilterModel(QSortFilterProxyModel):
 
     def is_data_deleted_at(self, proxy_index):
         return self.sourceModel().is_data_deleted_at(
+            self.mapToSource(proxy_index))
+
+    def is_new_row_at(self, proxy_index):
+        return self.sourceModel().is_new_row_at(
             self.mapToSource(proxy_index))
 
     def is_data_edited_at(self, proxy_index):

@@ -916,6 +916,7 @@ class SardesTableView(QTableView):
     saved in the database.
     """
     sig_data_edited = Signal(object)
+    sig_current_changed = Signal(object)
     sig_show_event = Signal()
     sig_data_updated = Signal()
     sig_rowcount_changed = Signal(object, int, int)
@@ -1312,6 +1313,8 @@ class SardesTableView(QTableView):
             self.undo_edits_action.setEnabled(is_data_edit_count)
         if 'cancel_edits' not in self._disabled_actions:
             self.cancel_edits_action.setEnabled(has_unsaved_data_edits)
+
+        self.sig_current_changed.emit(current_index)
 
     def _on_selected_rowcount_changed(self):
         """
@@ -2050,6 +2053,8 @@ class SardesTableWidget(SardesPaneWidget):
         self.tableview.viewport().setStyleSheet(
             "background-color: rgb(%d, %d, %d);" %
             getattr(QStyleOption().palette, 'light')().color().getRgb()[:-1])
+        self.tableview.sig_current_changed.connect(
+            self.on_current_changed)
 
         self.progressbar = ProcessStatusBar(self, 96, 16, Qt.Vertical)
         self._end_process_timer = QTimer(self)
@@ -2106,6 +2111,16 @@ class SardesTableWidget(SardesPaneWidget):
         return message_box
 
     # ---- Public methods
+    def on_current_changed(self, current_index):
+        """
+        Called when the current index in the table view changed.
+
+        All sardes table widget that inherit this class should reimplement
+        this method to change the state of its UI when the current index
+        of the table view changes.
+        """
+        pass
+
     def clear_model_data(self):
         """
         Clear the data of this table widget's model.
