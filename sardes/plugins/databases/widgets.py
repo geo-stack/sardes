@@ -102,6 +102,43 @@ class DatabaseConnectionWidget(QDialog):
         main_layout.setStretch(0, 1)
         main_layout.setSizeConstraint(main_layout.SetFixedSize)
 
+    # ---- Options
+    def auto_connect_to_database(self):
+        """
+        Return whether Sardes should try to connect automatically to the
+        last opened database on restart.
+        """
+        return self.auto_connect_to_database_checkbox.isChecked()
+
+    def set_auto_connect_to_database(self, value):
+        """
+        Set whether Sardes should try to connect automatically to the
+        last opened database on restart.
+        """
+        self.auto_connect_to_database_checkbox.setChecked(bool(value))
+
+    def get_current_dbtype_name(self):
+        """
+        Return the name of the current database type.
+        """
+        return self.get_current_database_dialog().dbtype_name
+
+    def set_current_dbtype_name(self, dbtype_name):
+        """
+        Set the name of the current database type.
+        """
+        self.set_current_database_dialog(dbtype_name)
+
+    def get_options(self):
+        """
+        Return a dictionary containing the options that need
+        to be saved in user configs.
+        """
+        return {
+            'auto_connect_to_database': self.auto_connect_to_database(),
+            'dbtype_last_selected': self.get_current_dbtype_name()
+            }
+
     # ---- Database dialogs
     def add_database_dialog(self, database_dialog):
         self.stacked_dialogs.addWidget(database_dialog)
