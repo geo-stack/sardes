@@ -12,8 +12,10 @@ Tests for the SardesTableWidget class.
 """
 
 # ---- Standard imports
+import os
 import os.path as osp
 import uuid
+os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import numpy as np
@@ -138,8 +140,8 @@ def tablewidget(qtbot, tablemodel):
     tablewidget.tableview.setMinimumWidth(width + 25)
 
     tablewidget.show()
-    qtbot.waitExposed(tablewidget)
     qtbot.addWidget(tablewidget)
+    qtbot.waitExposed(tablewidget)
 
     # Assert everything is working as expected when table is empty.
     assert tablewidget
