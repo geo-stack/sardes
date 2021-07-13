@@ -34,35 +34,34 @@ class Databases(SardesPlugin):
     def setup_plugin(self):
         """Setup this plugin."""
         # Setup the database connection widget.
+        database_dialogs = self.setup_database_dialogs()
+
         self.db_connection_widget = DatabaseConnectionWidget(
             self.main.db_connection_manager,
+            database_dialogs,
             self.get_option('auto_connect_to_database'),
+            self.get_option('dbtype_last_selected'),
             parent=self.main)
         self.db_connection_widget.hide()
 
-        self.setup_internal_database_dialogs()
-
-    def setup_internal_database_dialogs(self):
-        """Setup Sardes internal database connection dialogs."""
-        self.internal_database_dialogs = []
+    def setup_database_dialogs(self):
+        """Setup Sardes database connection dialogs."""
+        database_dialogs = []
 
         from sardes.database.dialog_sardes_lite import (
             DatabaseConnectDialogSardesLite)
         database_dialog = DatabaseConnectDialogSardesLite()
         database_dialog.set_database_kargs(
             get_dbconfig(database_dialog.dbtype_name))
-        self.db_connection_widget.add_database_dialog(database_dialog)
-        self.internal_database_dialogs.append(database_dialog)
+        database_dialogs.append(database_dialog)
 
         from sardes.database.dialog_rsesq import DatabaseConnectDialogRSESQ
         database_dialog = DatabaseConnectDialogRSESQ()
         database_dialog.set_database_kargs(
             get_dbconfig(database_dialog.dbtype_name))
-        self.db_connection_widget.add_database_dialog(database_dialog)
-        self.internal_database_dialogs.append(database_dialog)
+        database_dialogs.append(database_dialog)
 
-        self.db_connection_widget.set_current_database_dialog(
-            self.get_option('dbtype_last_selected'))
+        return database_dialogs
 
     def create_mainwindow_toolbars(self):
         database_toolbar = create_mainwindow_toolbar("Database toolbar")
