@@ -58,7 +58,7 @@ def mainwindow(qtbot, mocker, dbaccessor):
 
     mainwindow = MainWindow()
     mainwindow.show()
-    qtbot.waitForWindowShown(mainwindow)
+    qtbot.waitExposed(mainwindow)
 
     dbconnmanager = mainwindow.db_connection_manager
     with qtbot.waitSignal(dbconnmanager.sig_database_connected, timeout=3000):

@@ -98,7 +98,7 @@ def test_dbconnwidget_connect(dbconnwidget, qtbot, mocker):
     assert not dbconnwidget.isVisible()
 
     dbconnwidget.show()
-    qtbot.waitForWindowShown(dbconnwidget)
+    qtbot.waitExposed(dbconnwidget)
 
     # Close the database connection.
     with qtbot.waitSignal(dbconnmanager.sig_database_disconnected):

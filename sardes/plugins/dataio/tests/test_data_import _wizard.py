@@ -76,7 +76,7 @@ def data_import_wizard(qtbot, dbconnmanager, testfiles, mocker):
     data_import_wizard.set_database_connection_manager(dbconnmanager)
 
     data_import_wizard.show()
-    qtbot.waitForWindowShown(data_import_wizard)
+    qtbot.waitExposed(data_import_wizard)
 
     assert len(data_import_wizard._queued_filenames) == 0
     assert not data_import_wizard.duplicates_msgbox.isVisible()

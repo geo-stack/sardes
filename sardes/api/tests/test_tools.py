@@ -36,7 +36,7 @@ def mainwindow(qtbot):
 
     qtbot.addWidget(mainwindow)
     mainwindow.show()
-    qtbot.waitForWindowShown(mainwindow)
+    qtbot.waitExposed(mainwindow)
 
     return mainwindow
 
@@ -52,7 +52,7 @@ def test_sardes_tool_visibility(mainwindow, qtbot):
 
     # Show the tool.
     qtbot.mouseClick(tool.toolbutton(), Qt.LeftButton)
-    qtbot.waitForWindowShown(tool.toolwidget())
+    qtbot.waitExposed(tool.toolwidget())
     assert tool.toolwidget().isVisible()
 
     # Assert that the toolwidget is closed when the mainwindow is closed.

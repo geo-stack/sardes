@@ -68,7 +68,7 @@ def mainwindow(qtbot, mocker, dbconnmanager, dbaccessor, obswell_uuid,
     mainwindow = MainWindowMock()
     mainwindow.resize(1200, 750)
     mainwindow.show()
-    qtbot.waitForWindowShown(mainwindow)
+    qtbot.waitExposed(mainwindow)
 
     dbconnmanager = mainwindow.db_connection_manager
     with qtbot.waitSignal(dbconnmanager.sig_database_connected, timeout=3000):
@@ -112,7 +112,7 @@ def test_plot_viewer(mainwindow, qtbot, obswell_uuid, readings_data):
 
     # Test that the plot viewer is created as expected.
     table.plot_readings()
-    qtbot.waitForWindowShown(table.plot_viewer)
+    qtbot.waitExposed(table.plot_viewer)
     assert (table.plot_viewer.windowTitle() ==
             "03037041 - St-Paul-d'Abbotsford (Saint-Paul-d'Abbotsford)")
 
@@ -145,7 +145,7 @@ def test_plot_viewer_update(mainwindow, qtbot, obswell_uuid):
 
     assert table.plot_viewer is None
     table.plot_readings()
-    qtbot.waitForWindowShown(table.plot_viewer)
+    qtbot.waitExposed(table.plot_viewer)
 
     # Test that a change in the observation well data is reflected as
     # expected in the plot viewer.

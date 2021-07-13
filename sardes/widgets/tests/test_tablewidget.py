@@ -138,7 +138,7 @@ def tablewidget(qtbot, tablemodel):
     tablewidget.tableview.setMinimumWidth(width + 25)
 
     tablewidget.show()
-    qtbot.waitForWindowShown(tablewidget)
+    qtbot.waitExposed(tablewidget)
     qtbot.addWidget(tablewidget)
 
     # Assert everything is working as expected when table is empty.

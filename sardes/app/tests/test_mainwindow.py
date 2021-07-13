@@ -46,7 +46,7 @@ def mainwindow(qtbot, mocker):
     """A fixture for Sardes main window."""
     mainwindow = MainWindow()
     mainwindow.show()
-    qtbot.waitForWindowShown(mainwindow)
+    qtbot.waitExposed(mainwindow)
 
     # We need to wait for the mainwindow to be initialized correctly.
     qtbot.wait(150)
@@ -80,7 +80,7 @@ def test_mainwindow_handle_except(qtbot, mocker):
 
     mainwindow = MainWindow(except_hook=except_hook)
     mainwindow.show()
-    qtbot.waitForWindowShown(mainwindow)
+    qtbot.waitExposed(mainwindow)
 
     exceptdialog_exec_patcher = mocker.patch.object(ExceptDialog, 'exec_')
     assert exceptdialog_exec_patcher.call_count == 0
@@ -102,7 +102,7 @@ def test_mainwindow_settings(qtbot, mocker):
 
     mainwindow1 = MainWindow()
     mainwindow1.show()
-    qtbot.waitForWindowShown(mainwindow1)
+    qtbot.waitExposed(mainwindow1)
 
     # Assert the default values.
     assert mainwindow1.size() == QSize(*INIT_MAINWINDOW_SIZE)
@@ -133,7 +133,7 @@ def test_mainwindow_settings(qtbot, mocker):
     # mainwindow that was closed.
     mainwindow2 = MainWindow()
     mainwindow2.show()
-    qtbot.waitForWindowShown(mainwindow2)
+    qtbot.waitExposed(mainwindow2)
     assert mainwindow2.isMaximized()
 
     # Show window normal size and assert it is the same size and position
@@ -155,7 +155,7 @@ def test_mainwindow_lang_change(qtbot, mocker):
     """
     mainwindow = MainWindow()
     mainwindow.show()
-    qtbot.waitForWindowShown(mainwindow)
+    qtbot.waitExposed(mainwindow)
 
     # Check that English is the default selected language.
     lang_actions = mainwindow.lang_menu.actions()
@@ -177,7 +177,7 @@ def test_mainwindow_lang_change(qtbot, mocker):
     # language was changed for Français.
     mainwindow_restart = MainWindow()
     mainwindow_restart.show()
-    qtbot.waitForWindowShown(mainwindow_restart)
+    qtbot.waitExposed(mainwindow_restart)
 
     lang_actions = mainwindow_restart.lang_menu.actions()
     checked_actions = [act for act in lang_actions if act.isChecked()]
