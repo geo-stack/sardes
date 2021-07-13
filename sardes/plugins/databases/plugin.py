@@ -68,7 +68,8 @@ class Databases(SardesPlugin):
 
         # Setup the database connection button.
         self.database_connect_button = create_toolbutton(
-            self.main, triggered=self.db_connection_widget.show,
+            self.main,
+            triggered=self.db_connection_widget.show,
             text=_("Connect to database"),
             tip=_("Open a dialog window to manage the "
                   "connection to the database."),
@@ -111,27 +112,24 @@ class Databases(SardesPlugin):
         """
         self.db_connection_widget.connect()
 
+    def save_database_connection_options(self):
+        """
+        Save database connection options to the user configs.
+        """
+        # Save the database connection general options.
+        for option, value in self.db_connection_widget.get_options().items():
+            self.set_option(option, value)
+
+        # Save to the options for each database dialog.
+        database_dialogs_options = (
+            self.db_connection_widget.get_database_dialogs_options())
+        for dbtype_name, database_kargs in database_dialogs_options.items():
+            set_dbconfig(dbtype_name, database_kargs)
+
     def close_plugin(self):
         """
         Extend Sardes plugin method to save user inputs in the
         configuration file.
         """
         super().close_plugin()
-
-        # Save to the configs the values displayed in each database
-        # connection dialog.
-        for dialog in self.internal_database_dialogs:
-            set_dbconfig(dialog.dbtype_name, dialog.get_database_kargs())
-
-        # Save to the config the name of the currently selected database
-        # connection dialog.
-        value = (self.db_connection_widget
-                 .get_current_database_dialog()
-                 .dbtype_name)
-        self.set_option('dbtype_last_selected', value)
-
-        # Save the auto connect to database option,
-        value = (self.db_connection_widget
-                 .auto_connect_to_database_checkbox
-                 .isChecked())
-        self.set_option('auto_connect_to_database', value)
+        self.save_database_connection_options()
