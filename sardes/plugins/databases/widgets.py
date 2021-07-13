@@ -172,7 +172,6 @@ class DatabaseConnectionWidget(QDialog):
         else:
             return None
 
-    @property
     def database_dialogs(self):
         return [self.stacked_dialogs.widget(i) for
                 i in range(self.stacked_dialogs.count())]
