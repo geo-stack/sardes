@@ -170,7 +170,17 @@ class DatabaseConnectionWidget(QDialog):
         return [self.stacked_dialogs.widget(i) for
                 i in range(self.stacked_dialogs.count())]
 
-    # ---- Database public actors
+    def get_database_dialogs_options(self):
+        """
+        Return a dict containing the options of each database dialog registered
+        to this database connection widget.
+        """
+        return {
+            dialog.dbtype_name: dialog.get_database_kargs() for
+            dialog in self.database_dialogs()
+            }
+
+    # ---- Database public methods
     def disconnect(self):
         """
         Close the connection with the database.
