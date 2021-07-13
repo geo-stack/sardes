@@ -29,7 +29,8 @@ class DatabaseConnectionWidget(QDialog):
     A dialog window to manage the connection to the database.
     """
 
-    def __init__(self, db_connection_manager, auto_connect_to_database=False,
+    def __init__(self, db_connection_manager, database_dialogs,
+                 auto_connect_to_database=False, dbtype_last_selected=None,
                  parent=None):
         super(DatabaseConnectionWidget, self).__init__(parent)
         self.setWindowTitle(_('Database connection manager'))
@@ -37,8 +38,16 @@ class DatabaseConnectionWidget(QDialog):
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setModal(True)
 
-        self._setup(auto_connect_to_database)
+        self._setup()
         self._register_database_connection_manager(db_connection_manager)
+
+        # Setup the provided database dialogs.
+        for dialog in database_dialogs:
+            self.add_database_dialog(dialog)
+
+        # Setup widget options.
+        self.set_auto_connect_to_database(auto_connect_to_database)
+        self.set_current_dbtype_name(dbtype_last_selected)
 
     def _register_database_connection_manager(self, db_connection_manager):
         """
@@ -52,9 +61,9 @@ class DatabaseConnectionWidget(QDialog):
         db_connection_manager.sig_database_is_connecting.connect(
             self._handle_database_is_connecting)
 
-    def _setup(self, auto_connect_to_database):
+    def _setup(self):
         """
-        Setup the dialog with the provided settings.
+        Setup the dialog.
         """
         # Setup database type selection combobox.
         self.dbtype_combobox = QComboBox()
@@ -83,8 +92,6 @@ class DatabaseConnectionWidget(QDialog):
         # Setup the auto connect to database checkbox.
         self.auto_connect_to_database_checkbox = QCheckBox(
             _('Connect automatically to database when starting Sardes'))
-        self.auto_connect_to_database_checkbox.setChecked(
-            auto_connect_to_database)
 
         button_box = QDialogButtonBox()
         button_box.addButton(self.connect_button, button_box.ApplyRole)
