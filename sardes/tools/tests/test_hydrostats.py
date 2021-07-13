@@ -154,7 +154,7 @@ def test_plot_statistical_hydrograph_if_empy(qtbot, hydrostats_tool):
 
     # Show the statistical hydrograph toolwidget.
     hydrostats_tool.trigger()
-    qtbot.waitForWindowShown(hydrostats_tool._toolwidget)
+    qtbot.waitExposed(hydrostats_tool._toolwidget)
     assert hydrostats_tool.toolwidget().isVisible()
 
     # Assert the state of gui and properties.
@@ -174,7 +174,7 @@ def test_plot_statistical_hydrograph(qtbot, hydrostats_tool):
 
     # Show the statistical hydrograph toolwidget.
     hydrostats_tool.trigger()
-    qtbot.waitForWindowShown(hydrostats_tool._toolwidget)
+    qtbot.waitExposed(hydrostats_tool._toolwidget)
 
     toolwidget = hydrostats_tool.toolwidget()
     canvas = toolwidget.canvas
@@ -251,7 +251,7 @@ def test_navigation_buttons_state(qtbot, hydrostats_tool):
     Test that the state of the navigation buttons is set as expected.
     """
     hydrostats_tool.trigger()
-    qtbot.waitForWindowShown(hydrostats_tool._toolwidget)
+    qtbot.waitExposed(hydrostats_tool._toolwidget)
     assert hydrostats_tool.toolwidget().isVisible()
 
     toolwidget = hydrostats_tool.toolwidget()
@@ -279,7 +279,7 @@ def test_move_backward(qtbot, hydrostats_tool):
     """
     # Show the statistical hydrograph toolwidget.
     hydrostats_tool.trigger()
-    qtbot.waitForWindowShown(hydrostats_tool._toolwidget)
+    qtbot.waitExposed(hydrostats_tool._toolwidget)
     assert hydrostats_tool.toolwidget().isVisible()
 
     toolwidget = hydrostats_tool.toolwidget()
@@ -306,7 +306,7 @@ def test_move_forward(qtbot, hydrostats_tool):
     """
     # Show the statistical hydrograph toolwidget.
     hydrostats_tool.trigger()
-    qtbot.waitForWindowShown(hydrostats_tool._toolwidget)
+    qtbot.waitExposed(hydrostats_tool._toolwidget)
     assert hydrostats_tool.toolwidget().isVisible()
 
     toolwidget = hydrostats_tool.toolwidget()
@@ -333,7 +333,7 @@ def test_multipage_pdf_creation(qtbot, hydrostats_tool, mocker, tmp_path):
     working as expected.
     """
     hydrostats_tool.trigger()
-    qtbot.waitForWindowShown(hydrostats_tool._toolwidget)
+    qtbot.waitExposed(hydrostats_tool._toolwidget)
     assert hydrostats_tool.toolwidget().isVisible()
 
     selectedfilename = osp.join(tmp_path, 'test_multipage_hydrograph.pdf')
