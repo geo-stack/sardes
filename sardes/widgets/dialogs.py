@@ -25,7 +25,7 @@ from sardes.config.icons import (
 
 EXCEPT_DIALOG_MSG_CANVAS = (
     "### {}\n<".format(_("Description")) +
-    _("Please  provide a step-by-step by description of what "
+    _("Please provide a step-by-step description of what "
       "led to the problem here.") +
     ">\n\n### {}\n".format(_("System Info")) +
     "{namever}\n" +
