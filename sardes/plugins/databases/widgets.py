@@ -29,7 +29,8 @@ class DatabaseConnectionWidget(QDialog):
     A dialog window to manage the connection to the database.
     """
 
-    def __init__(self, db_connection_manager, auto_connect_to_database=False,
+    def __init__(self, db_connection_manager, database_dialogs=None,
+                 auto_connect_to_database=False, dbtype_last_selected=None,
                  parent=None):
         super(DatabaseConnectionWidget, self).__init__(parent)
         self.setWindowTitle(_('Database connection manager'))
@@ -37,8 +38,16 @@ class DatabaseConnectionWidget(QDialog):
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setModal(True)
 
-        self._setup(auto_connect_to_database)
+        self._setup()
         self._register_database_connection_manager(db_connection_manager)
+
+        # Setup the provided database dialogs.
+        for dialog in database_dialogs or []:
+            self.add_database_dialog(dialog)
+
+        # Setup widget options.
+        self.set_auto_connect_to_database(auto_connect_to_database)
+        self.set_current_dbtype_name(dbtype_last_selected)
 
     def _register_database_connection_manager(self, db_connection_manager):
         """
@@ -52,9 +61,9 @@ class DatabaseConnectionWidget(QDialog):
         db_connection_manager.sig_database_is_connecting.connect(
             self._handle_database_is_connecting)
 
-    def _setup(self, auto_connect_to_database):
+    def _setup(self):
         """
-        Setup the dialog with the provided settings.
+        Setup the dialog.
         """
         # Setup database type selection combobox.
         self.dbtype_combobox = QComboBox()
@@ -83,8 +92,6 @@ class DatabaseConnectionWidget(QDialog):
         # Setup the auto connect to database checkbox.
         self.auto_connect_to_database_checkbox = QCheckBox(
             _('Connect automatically to database when starting Sardes'))
-        self.auto_connect_to_database_checkbox.setChecked(
-            auto_connect_to_database)
 
         button_box = QDialogButtonBox()
         button_box.addButton(self.connect_button, button_box.ApplyRole)
@@ -101,6 +108,43 @@ class DatabaseConnectionWidget(QDialog):
         main_layout.addWidget(button_box)
         main_layout.setStretch(0, 1)
         main_layout.setSizeConstraint(main_layout.SetFixedSize)
+
+    # ---- Options
+    def auto_connect_to_database(self):
+        """
+        Return whether Sardes should try to connect automatically to the
+        last opened database on restart.
+        """
+        return self.auto_connect_to_database_checkbox.isChecked()
+
+    def set_auto_connect_to_database(self, value):
+        """
+        Set whether Sardes should try to connect automatically to the
+        last opened database on restart.
+        """
+        self.auto_connect_to_database_checkbox.setChecked(bool(value))
+
+    def get_current_dbtype_name(self):
+        """
+        Return the name of the current database type.
+        """
+        return self.get_current_database_dialog().dbtype_name
+
+    def set_current_dbtype_name(self, dbtype_name):
+        """
+        Set the name of the current database type.
+        """
+        self.set_current_database_dialog(dbtype_name)
+
+    def get_options(self):
+        """
+        Return a dictionary containing the options that need
+        to be saved in user configs.
+        """
+        return {
+            'auto_connect_to_database': self.auto_connect_to_database(),
+            'dbtype_last_selected': self.get_current_dbtype_name()
+            }
 
     # ---- Database dialogs
     def add_database_dialog(self, database_dialog):
@@ -128,12 +172,21 @@ class DatabaseConnectionWidget(QDialog):
         else:
             return None
 
-    @property
     def database_dialogs(self):
         return [self.stacked_dialogs.widget(i) for
                 i in range(self.stacked_dialogs.count())]
 
-    # ---- Database public actors
+    def get_database_dialogs_options(self):
+        """
+        Return a dict containing the options of each database dialog registered
+        to this database connection widget.
+        """
+        return {
+            dialog.dbtype_name: dialog.get_database_kargs() for
+            dialog in self.database_dialogs()
+            }
+
+    # ---- Database public methods
     def disconnect(self):
         """
         Close the connection with the database.

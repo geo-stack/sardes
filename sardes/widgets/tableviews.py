@@ -1332,28 +1332,19 @@ class SardesTableView(QTableView):
         """
         return self._sections_hidable
 
-    @property
     def confirm_before_saving_edits(self):
         """
         Return wheter we should ask confirmation to the user before saving
         the data edits to the database.
         """
-        if self.model().db_connection_manager is not None:
-            return (self.model().db_connection_manager
-                    ._confirm_before_saving_edits)
-        else:
-            return self._confirm_before_saving_edits
+        return self.model().confirm_before_saving_edits()
 
-    @confirm_before_saving_edits.setter
-    def confirm_before_saving_edits(self, x):
+    def set_confirm_before_saving_edits(self, x):
         """
         Set wheter we should ask confirmation to the user before saving
         the data edits to the database.
         """
-        self._confirm_before_saving_edits = bool(x)
-        if self.model().db_connection_manager is not None:
-            (self.model().db_connection_manager
-             ._confirm_before_saving_edits) = bool(x)
+        self.model().set_confirm_before_saving_edits(x)
 
     # ---- Sorting
     def clear_sort(self):
@@ -1903,7 +1894,7 @@ class SardesTableView(QTableView):
         Save the data edits to the database. If 'force' is 'False', a message
         is first shown before proceeding.
         """
-        if force is False and self.confirm_before_saving_edits:
+        if force is False and self.confirm_before_saving_edits():
             msgbox = QMessageBox(
                 QMessageBox.Warning,
                 _('Save changes'),
@@ -1922,8 +1913,8 @@ class SardesTableView(QTableView):
             reply = msgbox.exec_()
             if reply == QMessageBox.Cancel:
                 return
-            else:
-                self.confirm_before_saving_edits = not chkbox.isChecked()
+            if chkbox.isChecked() is True:
+                self.set_confirm_before_saving_edits(False)
 
         self.selectionModel().clearSelection()
         self.model().save_data_edits()

@@ -834,25 +834,23 @@ class SardesTableModelBase(QAbstractTableModel):
         else:
             self._raise_db_connmanager_attr_error()
 
-    @property
     def confirm_before_saving_edits(self):
         """
         Return wheter we should ask confirmation to the user before saving
         the data edits to the database.
         """
         if self.db_connection_manager is not None:
-            return self.db_connection_manager._confirm_before_saving_edits
+            return self.db_connection_manager.confirm_before_saving_edits()
         else:
             self._raise_db_connmanager_attr_error()
 
-    @confirm_before_saving_edits.setter
-    def confirm_before_saving_edits(self, x):
+    def set_confirm_before_saving_edits(self, x):
         """
         Set wheter we should ask confirmation to the user before saving
         the data edits to the database.
         """
         if self.db_connection_manager is not None:
-            self.db_connection_manager._confirm_before_saving_edits = bool(x)
+            self.db_connection_manager.set_confirm_before_saving_edits(x)
         else:
             self._raise_db_connmanager_attr_error()
 

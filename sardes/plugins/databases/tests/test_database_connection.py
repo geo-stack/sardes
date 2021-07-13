@@ -12,8 +12,10 @@ Tests for the DatabaseConnectionWidget.
 """
 
 # ---- Standard imports
+import os
 import os.path as osp
 from unittest.mock import Mock
+os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 from sqlalchemy.exc import OperationalError
