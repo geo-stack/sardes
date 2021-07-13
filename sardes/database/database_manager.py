@@ -702,6 +702,7 @@ class DatabaseConnectionManager(TaskManagerBase):
         self._is_connecting = False
         self._data_changed = set()
         self._tseries_data_changed = set()
+        self._confirm_before_saving_edits = True
 
         self.set_worker(DatabaseConnectionWorker())
         self.sig_run_tasks_finished.connect(self._handle_run_tasks_finished)
@@ -712,7 +713,6 @@ class DatabaseConnectionManager(TaskManagerBase):
         self.models_manager = SardesModelsManager(self)
         self.models_manager.sig_models_data_changed.connect(
             self.sig_models_data_changed.emit)
-        self._confirm_before_saving_edits = True
 
     def is_connected(self):
         """Return whether a connection to a database is currently active."""
@@ -723,6 +723,20 @@ class DatabaseConnectionManager(TaskManagerBase):
         Return whether a connection to a database is currently being created.
         """
         return self._is_connecting
+
+    def confirm_before_saving_edits(self):
+        """
+        Return wheter we should ask confirmation to the user before saving
+        data edits to the database.
+        """
+        return self._confirm_before_saving_edits
+
+    def set_confirm_before_saving_edits(self, x):
+        """
+        Set wheter we should ask confirmation to the user before saving
+        data edits to the database.
+        """
+        self._confirm_before_saving_edits = bool(x)
 
     # ---- Public methods
     def add(self, *args, callback=None, postpone_exec=False):
