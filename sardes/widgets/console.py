@@ -41,3 +41,22 @@ class StandardStreamEmitter(QObject):
         self.sig_new_text.emit(str(text))
 
 
+class StandardStreamConsole(QTextEdit):
+    """
+    A Qt text edit to hold and show the standard input and output of the
+    Python interpreter.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.setReadOnly(True)
+
+    def write(self, text):
+        self.moveCursor(QTextCursor.End)
+        self.insertPlainText(text)
+
+    def __del__(self):
+        # Restore sys.stdout
+        sys.stdout = sys.__stdout__
+
+
