@@ -58,9 +58,16 @@ class MainWindowBase(QMainWindow):
 
     def __init__(self, splash=None, except_hook=None):
         super().__init__()
+        self.splash = splash
+
+        # Setup Sardes console.
+        from sardes.widgets.console import SardesConsole
+        self.sardes_console = SardesConsole()
+
+        # Setup Except hook.
         if except_hook is not None:
             except_hook.sig_except_caught.connect(self._handle_except)
-        self.splash = splash
+
         self.setWindowIcon(get_icon('master'))
         self.setWindowTitle(__namever__)
         self.setCentralWidget(None)
@@ -222,6 +229,10 @@ class MainWindowBase(QMainWindow):
 
     def setup_options_menu(self):
         """Create and return the options menu of this application."""
+        class Separator(object):
+            # Used for adding a separator to the menu.
+            pass
+
         options_menu = QMenu(self)
 
         # Create the languages menu.
@@ -265,6 +276,13 @@ class MainWindowBase(QMainWindow):
             triggered=self.reset_window_layout)
 
         # Create help related actions and menus.
+        console_action = None
+        if self.sardes_console is not None:
+            console_action = create_action(
+                self, _('Show Sardes console...'), icon='console',
+                shortcut='Ctrl+Shift+J', context=Qt.ApplicationShortcut,
+                triggered=self.sardes_console.show
+                )
         report_action = create_action(
             self, _('Report an issue...'), icon='bug',
             shortcut='Ctrl+Shift+R', context=Qt.ApplicationShortcut,
@@ -283,13 +301,14 @@ class MainWindowBase(QMainWindow):
 
         # Add the actions and menus to the options menu.
         options_menu_items = [
-            self.lang_menu, preferences_action, None, self.panes_menu,
-            self.toolbars_menu, self.lock_dockwidgets_and_toolbars_action,
-            self.reset_window_layout_action, None, report_action, about_action,
-            exit_action
+            self.lang_menu, preferences_action, Separator(),
+            self.panes_menu, self.toolbars_menu,
+            self.lock_dockwidgets_and_toolbars_action,
+            self.reset_window_layout_action, Separator(),
+            console_action, report_action, about_action, exit_action
             ]
         for item in options_menu_items:
-            if item is None:
+            if isinstance(item, Separator):
                 options_menu.addSeparator()
             elif isinstance(item, QMenu):
                 options_menu.addMenu(item)
@@ -399,6 +418,10 @@ class MainWindowBase(QMainWindow):
 
             self._save_window_geometry()
             self._save_window_state()
+
+            # Close Sardes console.
+            if self.sardes_console is not None:
+                self.sardes_console.close()
 
             # Close all internal and thirdparty plugins.
             for plugin in self.internal_plugins + self.thirdparty_plugins:
