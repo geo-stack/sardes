@@ -613,8 +613,10 @@ if __name__ == '__main__':
     from sardes.widgets.splash import SplashScreen
     splash = SplashScreen(_("Initializing {}...").format(__namever__))
 
+    print("Initializing MainWindow...")
     main = MainWindow(splash, sardes_console)
     splash.finish(main)
     main.show()
+    print("Successfully initialized MainWindow.")
 
     sys.exit(app.exec_())
