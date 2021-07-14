@@ -70,6 +70,7 @@ class ExceptDialog(QDialog):
         info_icon.setScaledContents(False)
         info_icon.setPixmap(icon.pixmap(iconsize))
 
+        # Setup dialog buttons.
         self.ok_btn = QPushButton(_('OK'))
         self.ok_btn.setDefault(True)
         self.ok_btn.clicked.connect(self.close)
@@ -82,13 +83,14 @@ class ExceptDialog(QDialog):
         button_box.addButton(self.copy_btn, button_box.AcceptRole)
         button_box.addButton(self.ok_btn, button_box.ActionRole)
 
-        if self.detailed_log is not None:
+        if self.detailed_log is not None and len(self.detailed_log):
             # Setup the dialog button box.
             self.showlog_btn = QPushButton(_('Detailed Log'))
             self.showlog_btn.setDefault(False)
             self.showlog_btn.clicked.connect(self.show_detailed_log)
             button_box.addButton(self.showlog_btn, button_box.ResetRole)
 
+        # Setup dialog main message.
         message = _(
             """
             <b>{0} has encountered an internal problem.</b>
@@ -100,7 +102,7 @@ class ExceptDialog(QDialog):
             a step-by-step description of what led to the problem.</p>
             """
             ).format(__namever__, __appname__, __issues_url__)
-        if self.detailed_log is not None:
+        if self.detailed_log is not None and len(self.detailed_log):
             message += _(
                 """
                 <p>If possible, please also attach to your report the detailed
