@@ -273,7 +273,9 @@ class MainWindowBase(QMainWindow):
             )
         about_action = create_action(
             self, _('About Sardes...'), icon='information',
-            shortcut='Ctrl+Shift+I', context=Qt.ApplicationShortcut
+            shortcut='Ctrl+Shift+I',
+            triggered=self.raise_exception,
+            context=Qt.ApplicationShortcut
             )
         exit_action = create_action(
             self, _('Exit'), icon='exit', triggered=self.close,
