@@ -56,17 +56,10 @@ GITHUB_ISSUES_URL = __project_url__ + "/issues"
 class MainWindowBase(QMainWindow):
     sig_about_to_close = Signal()
 
-    def __init__(self, splash=None, except_hook=None):
+    def __init__(self, splash=None, console=None):
         super().__init__()
         self.splash = splash
-
-        # Setup Sardes console.
-        from sardes.widgets.console import SardesConsole
-        self.sardes_console = SardesConsole()
-
-        # Setup Except hook.
-        if except_hook is not None:
-            except_hook.sig_except_caught.connect(self._handle_except)
+        self.console = console
 
         self.setWindowIcon(get_icon('master'))
         self.setWindowTitle(__namever__)
@@ -277,11 +270,11 @@ class MainWindowBase(QMainWindow):
 
         # Create help related actions and menus.
         console_action = None
-        if self.sardes_console is not None:
+        if self.console is not None:
             console_action = create_action(
                 self, _('Show Sardes console...'), icon='console',
                 shortcut='Ctrl+Shift+J', context=Qt.ApplicationShortcut,
-                triggered=self.sardes_console.show
+                triggered=self.console.show
                 )
         report_action = create_action(
             self, _('Report an issue...'), icon='bug',
@@ -419,8 +412,8 @@ class MainWindowBase(QMainWindow):
             self._save_window_state()
 
             # Close Sardes console.
-            if self.sardes_console is not None:
-                self.sardes_console.close()
+            if self.console is not None:
+                self.console.close()
 
             # Close all internal and thirdparty plugins.
             for plugin in self.internal_plugins + self.thirdparty_plugins:
@@ -457,16 +450,6 @@ class MainWindowBase(QMainWindow):
         """
         self._is_closing = False
         self.close()
-
-    def _handle_except(self, log_msg):
-        """
-        Handle raised exceptions that have not been handled properly
-        internally and need to be reported for bug fixing.
-        """
-        from sardes.widgets.dialogs import ExceptDialog
-        QApplication.restoreOverrideCursor()
-        except_dialog = ExceptDialog(log_msg, self.sardes_console.textlog())
-        except_dialog.exec_()
 
 
 class MainWindow(MainWindowBase):
@@ -622,11 +605,15 @@ class ExceptHook(QObject):
 
 if __name__ == '__main__':
     from sardes.utils.qthelpers import create_application
-    from sardes.widgets.splash import SplashScreen
     app = create_application()
+
+    from sardes.widgets.console import SardesConsole
+    sardes_console = SardesConsole()
+
+    from sardes.widgets.splash import SplashScreen
     splash = SplashScreen(_("Initializing {}...").format(__namever__))
-    except_hook = ExceptHook()
-    main = MainWindow(splash, except_hook)
+
+    main = MainWindow(splash, sardes_console)
     splash.finish(main)
     main.show()
 

@@ -11,6 +11,7 @@
 import sys
 import os.path as osp
 import datetime
+import traceback
 
 # ---- Third party imports
 from qtpy.QtCore import Qt, QObject, Signal
@@ -24,6 +25,25 @@ from sardes.config.locale import _
 from sardes.config.icons import get_icon
 from sardes.config.ospath import (
     get_select_file_dialog_dir, set_select_file_dialog_dir)
+
+
+class ExceptHook(QObject):
+    """
+    A Qt object to caught exceptions and emit a formatted string of the error.
+    """
+    sig_except_caught = Signal(str)
+
+    def __init__(self):
+        super().__init__()
+        sys.excepthook = self.excepthook
+
+    def excepthook(self, exc_type, exc_value, exc_traceback):
+        """Handle uncaught exceptions."""
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        if not issubclass(exc_type, SystemExit):
+            log_msg = ''.join(traceback.format_exception(
+                exc_type, exc_value, exc_traceback))
+            self.sig_except_caught.emit(log_msg)
 
 
 class StandardStreamEmitter(QObject):
@@ -70,12 +90,18 @@ class SardesConsole(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowFlags(
-            self.windowFlags() & ~Qt.WindowContextHelpButtonHint |
+            self.windowFlags() &
+            ~Qt.WindowContextHelpButtonHint |
             Qt.WindowMinMaxButtonsHint)
         self.setWindowIcon(get_icon('console'))
         self.setWindowTitle(_("Sardes Console"))
         self.setMinimumSize(700, 500)
 
+        # Setup the Except hook.
+        self.except_hook = ExceptHook()
+        self.except_hook .sig_except_caught.connect(self._handle_except)
+
+        # Setup the standard stream emitter.
         self.std_emitter = StandardStreamEmitter()
         sys.stdout = self.std_emitter
         sys.stderr = self.std_emitter
@@ -167,12 +193,18 @@ class SardesConsole(QDialog):
         self.activateWindow()
         self.raise_()
 
+    def _handle_except(self, log_msg):
+        """
+        Handle raised exceptions that have not been handled properly
+        internally and need to be reported for bug fixing.
+        """
+        from sardes.widgets.dialogs import ExceptDialog
+        QApplication.restoreOverrideCursor()
+        except_dialog = ExceptDialog(log_msg, self.textlog())
+        except_dialog.exec_()
+
 
 if __name__ == '__main__':
-    def excepthook(self, exc_type, exc_value, exc_traceback):
-        sys.__excepthook__(exc_type, exc_value, exc_traceback)
-    sys.excepthook = excepthook
-
     from sardes.utils.qthelpers import create_application
     app = create_application()
     console = SardesConsole()
