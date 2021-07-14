@@ -57,7 +57,6 @@ class ExceptDialog(QDialog):
         self.setWindowIcon(get_icon('master'))
 
         self.detailed_log = detailed_log
-        print(self.detailed_log)
         self.log_datetime = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 
         self.logmsg_textedit = QTextEdit()
@@ -90,7 +89,7 @@ class ExceptDialog(QDialog):
             self.showlog_btn.clicked.connect(self.show_detailed_log)
             button_box.addButton(self.showlog_btn, button_box.ResetRole)
 
-        msg_labl = QLabel(_(
+        message = _(
             """
             <b>{0} has encountered an internal problem.</b>
             <p>We are sorry, but {1} encountered an internal error that might
@@ -99,9 +98,17 @@ class ExceptDialog(QDialog):
             <p>Please report this error by copying the information below
             in our <a href="{2}">issues tracker</a> and by providing
             a step-by-step description of what led to the problem.</p>
-            <p>If possible, please also attach to your report the detailed log
-            file accessible by clicking on the <i>Detailed Log</i> button.</p>
-            """).format(__namever__, __appname__, __issues_url__))
+            """
+            ).format(__namever__, __appname__, __issues_url__)
+        if self.detailed_log is not None:
+            message += _(
+                """
+                <p>If possible, please also attach to your report the detailed
+                log file accessible by clicking on the <i>Detailed Log</i>
+                button.</p>
+                """
+                )
+        msg_labl = QLabel(message)
         msg_labl.setWordWrap(True)
         msg_labl.setOpenExternalLinks(True)
 
