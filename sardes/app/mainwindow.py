@@ -25,9 +25,8 @@ import traceback
 import importlib
 
 # ---- Third party imports
-from qtpy.QtCore import Qt, QUrl, Slot, QEvent, Signal
-from qtpy.QtGui import QDesktopServices
 from qtpy.QtCore import Qt, QUrl, Slot, QEvent, Signal, QObject
+from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
                             QMessageBox, QToolButton)
 
