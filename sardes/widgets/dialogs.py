@@ -98,8 +98,9 @@ class ExceptDialog(QDialog):
             your work and restart {1} if possible.</p>
             <p>Please report this error by copying the information below
             in our <a href="{2}">issues tracker</a> and by providing
-            a step-by-step description of what led to the problem.
-            </p>
+            a step-by-step description of what led to the problem.</p>
+            <p>If possible, please also attach to your report the detailed log
+            file accessible by clicking on the <i>Detailed Log</i> button.</p>
             """).format(__namever__, __appname__, __issues_url__))
         msg_labl.setWordWrap(True)
         msg_labl.setOpenExternalLinks(True)
