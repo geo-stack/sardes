@@ -8,7 +8,11 @@
 # -----------------------------------------------------------------------------
 
 # ---- Standard library imports
+import os
+import os.path as osp
 import sys
+import datetime
+import tempfile
 
 # ---- Third party imports
 from qtpy.QtCore import Qt
@@ -18,9 +22,10 @@ from qtpy.QtWidgets import (
 
 # ---- Local imports
 from sardes import __namever__, __appname__, __issues_url__, get_versions
-from sardes.config.locale import _
 from sardes.config.icons import (
     get_icon, get_standard_icon, get_standard_iconsize)
+from sardes.config.locale import _
+from sardes.config.main import TEMP_DIR
 
 
 EXCEPT_DIALOG_MSG_CANVAS = (
@@ -44,12 +49,16 @@ class ExceptDialog(QDialog):
     execution.
     """
 
-    def __init__(self, log_msg=None):
+    def __init__(self, log_msg=None, detailed_log=None):
         super().__init__()
         self.setWindowTitle(_("{} Internal Error").format(__appname__))
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setWindowIcon(get_icon('master'))
+
+        self.detailed_log = detailed_log
+        print(self.detailed_log)
+        self.log_datetime = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 
         self.logmsg_textedit = QTextEdit()
         self.logmsg_textedit.setReadOnly(True)
@@ -62,7 +71,6 @@ class ExceptDialog(QDialog):
         info_icon.setScaledContents(False)
         info_icon.setPixmap(icon.pixmap(iconsize))
 
-        # Setup the dialog button box.
         self.ok_btn = QPushButton(_('OK'))
         self.ok_btn.setDefault(True)
         self.ok_btn.clicked.connect(self.close)
@@ -74,6 +82,13 @@ class ExceptDialog(QDialog):
         button_box = QDialogButtonBox()
         button_box.addButton(self.copy_btn, button_box.AcceptRole)
         button_box.addButton(self.ok_btn, button_box.ActionRole)
+
+        if self.detailed_log is not None:
+            # Setup the dialog button box.
+            self.showlog_btn = QPushButton(_('Detailed Log'))
+            self.showlog_btn.setDefault(False)
+            self.showlog_btn.clicked.connect(self.show_detailed_log)
+            button_box.addButton(self.showlog_btn, button_box.ResetRole)
 
         msg_labl = QLabel(_(
             """
@@ -143,6 +158,19 @@ class ExceptDialog(QDialog):
             os_ver=versions['release'],
             log_msg=log_msg)
         return formatted_msg
+
+    def show_detailed_log(self):
+        """
+        Open the detailed log file in an external application that is
+        chosen by the OS.
+        """
+        name = 'SardesLog_{}.txt'.format(self.log_datetime)
+        temp_path = tempfile.mkdtemp(dir=TEMP_DIR)
+        temp_filename = osp.join(temp_path, name)
+        print(temp_filename)
+        with open(temp_filename, 'w') as txtfile:
+            txtfile.write(self.detailed_log)
+        os.startfile(temp_filename)
 
     def copy(self):
         """

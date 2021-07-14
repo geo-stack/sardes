@@ -466,7 +466,7 @@ class MainWindowBase(QMainWindow):
         """
         from sardes.widgets.dialogs import ExceptDialog
         QApplication.restoreOverrideCursor()
-        except_dialog = ExceptDialog(log_msg)
+        except_dialog = ExceptDialog(log_msg, self.sardes_console.textlog())
         except_dialog.exec_()
 
 
