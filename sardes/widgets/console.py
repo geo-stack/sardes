@@ -37,7 +37,8 @@ class StandardStreamEmitter(QObject):
     sig_new_text = Signal(str)
 
     def write(self, text):
-        sys.__stdout__.write(text)
+        if sys.__stdout__ is not None:
+            sys.__stdout__.write(text)
         self.sig_new_text.emit(str(text))
 
 
