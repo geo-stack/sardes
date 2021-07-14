@@ -207,6 +207,7 @@ class SardesConsole(QDialog):
 if __name__ == '__main__':
     from sardes.utils.qthelpers import create_application
     app = create_application()
+
     console = SardesConsole()
     console.show()
     print('Hello World!')
