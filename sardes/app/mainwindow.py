@@ -621,16 +621,12 @@ class ExceptHook(QObject):
             self.sig_except_caught.emit(log_msg)
 
 
-
 if __name__ == '__main__':
-    print('Starting SARDES...')
-
     from sardes.utils.qthelpers import create_application
-    app = create_application()
-
     from sardes.widgets.splash import SplashScreen
+    app = create_application()
     splash = SplashScreen(_("Initializing {}...").format(__namever__))
-    except_hook=ExceptHook()
+    except_hook = ExceptHook()
     main = MainWindow(splash, except_hook)
     splash.finish(main)
     main.show()
