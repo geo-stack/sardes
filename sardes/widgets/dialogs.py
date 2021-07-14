@@ -112,13 +112,7 @@ class ExceptDialog(QDialog):
         msg_labl.setWordWrap(True)
         msg_labl.setOpenExternalLinks(True)
 
-        sarde_error_dialog = QDialog()
-        sarde_error_dialog.setWindowTitle(_("{} Error").format(__appname__))
-        sarde_error_dialog.setWindowFlags(
-            sarde_error_dialog.windowFlags() &
-            ~Qt.WindowContextHelpButtonHint)
-        sarde_error_dialog.setWindowIcon(get_icon('master'))
-
+        # Setup layout.
         left_side_layout = QGridLayout()
         left_side_layout.setContentsMargins(0, 0, 10, 0)
         left_side_layout.addWidget(info_icon)
@@ -175,7 +169,6 @@ class ExceptDialog(QDialog):
         name = 'SardesLog_{}.txt'.format(self.log_datetime)
         temp_path = tempfile.mkdtemp(dir=TEMP_DIR)
         temp_filename = osp.join(temp_path, name)
-        print(temp_filename)
         with open(temp_filename, 'w') as txtfile:
             txtfile.write(self.detailed_log)
         os.startfile(temp_filename)
