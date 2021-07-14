@@ -443,6 +443,7 @@ class MainWindowBase(QMainWindow):
         internally and need to be reported for bug fixing.
         """
         from sardes.widgets.dialogs import ExceptDialog
+        QApplication.restoreOverrideCursor()
         except_dialog = ExceptDialog(log_msg)
         except_dialog.exec_()
 
