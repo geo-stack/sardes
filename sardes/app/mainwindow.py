@@ -519,62 +519,62 @@ class MainWindow(MainWindowBase):
         # Tables plugin.
         from sardes.plugins.tables import SARDES_PLUGIN_CLASS
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
-        print("Loading the {} plugin...".format(plugin_title))
+        print("Loading plugin '{}'...".format(plugin_title))
         self.set_splash(_("Loading the {} plugin...").format(plugin_title))
         self.tables_plugin = SARDES_PLUGIN_CLASS(self)
         self.tables_plugin.register_plugin()
         self.internal_plugins.append(self.tables_plugin)
-        print("Plugin {} loaded successfully".format(plugin_title))
+        print("Plugin '{}' loaded successfully".format(plugin_title))
 
         # Librairies plugin.
         from sardes.plugins.librairies import SARDES_PLUGIN_CLASS
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
-        print("Loading the {} plugin...".format(plugin_title))
+        print("Loading plugin '{}'...".format(plugin_title))
         self.set_splash(_("Loading the {} plugin...").format(plugin_title))
         self.librairies_plugin = SARDES_PLUGIN_CLASS(self)
         self.librairies_plugin.register_plugin()
         self.internal_plugins.append(self.librairies_plugin)
-        print("Plugin {} loaded successfully".format(plugin_title))
+        print("Plugin '{}' loaded successfully".format(plugin_title))
 
         # Database plugin.
         from sardes.plugins.databases import SARDES_PLUGIN_CLASS
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
-        print("Loading the {} plugin...".format(plugin_title))
+        print("Loading plugin '{}'...".format(plugin_title))
         self.set_splash(_("Loading the {} plugin...").format(plugin_title))
         self.databases_plugin = SARDES_PLUGIN_CLASS(self)
         self.databases_plugin.register_plugin()
         self.internal_plugins.append(self.databases_plugin)
-        print("Plugin {} loaded successfully".format(plugin_title))
+        print("Plugin '{}' loaded successfully".format(plugin_title))
 
         # Import Data Wizard.
         from sardes.plugins.dataio import SARDES_PLUGIN_CLASS
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
-        print("Loading the {} plugin...".format(plugin_title))
+        print("Loading plugin '{}'...".format(plugin_title))
         self.set_splash(_("Loading the {} plugin...").format(plugin_title))
         self.data_import_plugin = SARDES_PLUGIN_CLASS(self)
         self.data_import_plugin.register_plugin()
         self.internal_plugins.append(self.data_import_plugin)
-        print("Plugin {} loaded successfully".format(plugin_title))
+        print("Plugin '{}' loaded successfully".format(plugin_title))
 
         # Time Data plugin.
         from sardes.plugins.readings import SARDES_PLUGIN_CLASS
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
-        print("Loading the {} plugin...".format(plugin_title))
+        print("Loading plugin '{}'...".format(plugin_title))
         self.set_splash(_("Loading the {} plugin...").format(plugin_title))
         self.readings_plugin = SARDES_PLUGIN_CLASS(self)
         self.readings_plugin.register_plugin()
         self.internal_plugins.append(self.readings_plugin)
-        print("Plugin {} loaded successfully".format(plugin_title))
+        print("Plugin '{}' loaded successfully".format(plugin_title))
 
         # Piezometric Network plugin.
         from sardes.plugins.network import SARDES_PLUGIN_CLASS
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
-        print("Loading the {} plugin...".format(plugin_title))
+        print("Loading plugin '{}'...".format(plugin_title))
         self.set_splash(_("Loading the {} plugin...").format(plugin_title))
         self.network_plugin = SARDES_PLUGIN_CLASS(self)
         self.network_plugin.register_plugin()
         self.internal_plugins.append(self.network_plugin)
-        print("Plugin {} loaded successfully".format(plugin_title))
+        print("Plugin '{}' loaded successfully".format(plugin_title))
 
     def show(self):
         """
