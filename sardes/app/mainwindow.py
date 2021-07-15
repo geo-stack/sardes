@@ -275,9 +275,9 @@ class MainWindowBase(QMainWindow):
             triggered=self.reset_window_layout)
 
         # Create help related actions and menus.
-        console_action = None
+        self.console_action = None
         if self.console is not None:
-            console_action = create_action(
+            self.console_action = create_action(
                 self, _('Show Sardes console...'), icon='console',
                 shortcut='Ctrl+Shift+J', context=Qt.ApplicationShortcut,
                 triggered=self.console.show
@@ -303,7 +303,7 @@ class MainWindowBase(QMainWindow):
             self.panes_menu, self.toolbars_menu,
             self.lock_dockwidgets_and_toolbars_action,
             self.reset_window_layout_action, Separator(),
-            console_action, report_action, about_action, exit_action
+            self.console_action, report_action, about_action, exit_action
             ]
         for item in options_menu_items:
             if isinstance(item, Separator):
