@@ -103,7 +103,7 @@ class SardesConsole(QDialog):
                 'SardesLog_{}.txt'.format(now)
                 )
         filename, filefilter = QFileDialog.getSaveFileName(
-            self, _("Save File"), filename, _("Text File (*.txt)")
+            self, _("Save File"), filename, '{} (*.txt)'.format(_("Text File"))
             )
         if filename:
             filename = osp.abspath(filename)
