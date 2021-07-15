@@ -147,16 +147,6 @@ class SardesConsole(QDialog):
         self.activateWindow()
         self.raise_()
 
-    def _handle_except(self, log_msg):
-        """
-        Handle raised exceptions that have not been handled properly
-        internally and need to be reported for bug fixing.
-        """
-        from sardes.widgets.dialogs import ExceptDialog
-        QApplication.restoreOverrideCursor()
-        except_dialog = ExceptDialog(log_msg, self.plain_text())
-        except_dialog.exec_()
-
 
 if __name__ == '__main__':
     from sardes.utils.qthelpers import create_application
