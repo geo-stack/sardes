@@ -10,8 +10,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1.0\n"
-"POT-Creation-Date: 2021-04-09 14:38-0400\n"
-"PO-Revision-Date: 2021-04-09 15:06-0400\n"
+"POT-Creation-Date: 2021-07-15 17:27-0400\n"
+"PO-Revision-Date: 2021-07-15 17:46-0400\n"
 "Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs."
 "ca.com>\n"
 "Language-Team: Python\n"
@@ -20,7 +20,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.4.2\n"
+"X-Generator: Poedit 3.0\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
@@ -49,82 +49,86 @@ msgstr "Conductivité électrique de l'eau"
 msgid "Conductivity"
 msgstr "Conductivité"
 
-#: ..\sardes\app\mainwindow.py:82
+#: ..\sardes\app\mainwindow.py:91
 msgid "Setting up the database connection manager..."
 msgstr ""
 "Configuration du gestionnaire de connexions à la base de données en cours..."
 
-#: ..\sardes\app\mainwindow.py:140 ..\sardes\app\mainwindow.py:496
-#: ..\sardes\app\mainwindow.py:506 ..\sardes\app\mainwindow.py:516
-#: ..\sardes\app\mainwindow.py:526 ..\sardes\app\mainwindow.py:536
-#: ..\sardes\app\mainwindow.py:546
+#: ..\sardes\app\mainwindow.py:149 ..\sardes\app\mainwindow.py:527
+#: ..\sardes\app\mainwindow.py:537 ..\sardes\app\mainwindow.py:547
+#: ..\sardes\app\mainwindow.py:557 ..\sardes\app\mainwindow.py:567
+#: ..\sardes\app\mainwindow.py:577
 msgid "Loading the {} plugin..."
 msgstr "Chargement du plugin {} en cours..."
 
-#: ..\sardes\app\mainwindow.py:186
+#: ..\sardes\app\mainwindow.py:195
 msgid "Unlock panes and toolbars"
 msgstr "Déverrouiller les volets et les barres d'outils"
 
-#: ..\sardes\app\mainwindow.py:187 ..\sardes\app\mainwindow.py:253
+#: ..\sardes\app\mainwindow.py:196 ..\sardes\app\mainwindow.py:266
 msgid "Lock panes and toolbars"
 msgstr "Verrouiller les volets et les barres d'outils"
 
-#: ..\sardes\app\mainwindow.py:208
+#: ..\sardes\app\mainwindow.py:217
 msgid "Tools and options"
 msgstr "Outils et options"
 
-#: ..\sardes\app\mainwindow.py:209
+#: ..\sardes\app\mainwindow.py:218
 msgid "Open the tools and options menu."
 msgstr "Ouvrir le menu des outils et des options."
 
-#: ..\sardes\app\mainwindow.py:225
+#: ..\sardes\app\mainwindow.py:238
 msgid "Languages"
 msgstr "Langues"
 
-#: ..\sardes\app\mainwindow.py:240
+#: ..\sardes\app\mainwindow.py:253
 msgid "Preferences..."
 msgstr "Préférences..."
 
-#: ..\sardes\app\mainwindow.py:246
+#: ..\sardes\app\mainwindow.py:259
 msgid "Panes"
 msgstr "Volets"
 
-#: ..\sardes\app\mainwindow.py:249
+#: ..\sardes\app\mainwindow.py:262
 msgid "Toolbars"
 msgstr "Barres d'outils"
 
-#: ..\sardes\app\mainwindow.py:261
+#: ..\sardes\app\mainwindow.py:274
 msgid "Reset window layout"
 msgstr "Réinitialiser la disposition de l'interface"
 
-#: ..\sardes\app\mainwindow.py:266
+#: ..\sardes\app\mainwindow.py:281
+msgid "Sardes Console..."
+msgstr "Console Sardes..."
+
+#: ..\sardes\app\mainwindow.py:286
 msgid "Report an issue..."
 msgstr "Signaler un problème..."
 
-#: ..\sardes\app\mainwindow.py:271
+#: ..\sardes\app\mainwindow.py:291
 msgid "About Sardes..."
 msgstr "À propos de Sardes..."
 
-#: ..\sardes\app\mainwindow.py:275
+#: ..\sardes\app\mainwindow.py:297
 msgid "Exit"
 msgstr "Quitter"
 
-#: ..\sardes\app\mainwindow.py:306
+#: ..\sardes\app\mainwindow.py:332
 msgid "Language change"
 msgstr "Changement de langue"
 
-#: ..\sardes\app\mainwindow.py:307
+#: ..\sardes\app\mainwindow.py:333
 msgid ""
 "The language has been set to <i>{}</i>. Restart Sardes to apply this change."
 msgstr ""
 "La langue a été définie sur <i>{}</i>. Redémarrez Sardes pour appliquer "
 "cette modification."
 
-#: ..\sardes\app\mainwindow.py:317
+#: ..\sardes\app\mainwindow.py:343
 msgid "Reset Window Layout"
 msgstr "Réinitialiser la disposition de l'interface"
 
-#: ..\sardes\app\mainwindow.py:318
+#: ..\sardes\app\mainwindow.py:344
 msgid ""
 "Window layout will be reset to default settings.<br><br>Do you want to "
 "continue?"
@@ -132,19 +136,19 @@ msgstr ""
 "La disposition de l'interface sera réinitialisée à la configuration par "
 "défaut.<br><br> Voulez-vous continuer?"
 
-#: ..\sardes\app\mainwindow.py:586
+#: ..\sardes\app\mainwindow.py:624
 msgid "Initializing {}..."
 msgstr "Initialisation de {}..."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:500
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:501
 msgid "'{}' does not exist."
 msgstr "'{}' n'existe pas."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:506
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:507
 msgid "'{}' is not a valid database file."
 msgstr "'{}' n'est pas un fichier de base de données valide."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:527
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:528
 msgid ""
 "'{}' does not appear to be a Sardes SQLite database. The application id set "
 "in the database is {}, but should be {}."
@@ -153,7 +157,7 @@ msgstr ""
 "l'application qui est défini dans la base de données est {} alors qu'il "
 "devrait être {}."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:535
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:536
 msgid ""
 "The version of this database is {} and is outdated. Please update your "
 "database to version {} and try again."
@@ -161,7 +165,7 @@ msgstr ""
 "La version de cette base de données est {} et est obsolète. Veuillez mettre "
 "à jour votre base de données à la version {} et réessayer."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite.py:541
+#: ..\sardes\database\accessors\accessor_sardes_lite.py:542
 msgid ""
 "Your Sardes application is outdated and does not support databases whose "
 "version is higher than {}. Please update Sardes and try again."
@@ -170,67 +174,67 @@ msgstr ""
 "de données dont la version est supérieure à {}. Veuillez mettre à jour "
 "Sardes et réessayer."
 
-#: ..\sardes\database\database_manager.py:414
+#: ..\sardes\database\database_manager.py:419
 msgid "Station"
 msgstr "Station"
 
-#: ..\sardes\database\database_manager.py:417
+#: ..\sardes\database\database_manager.py:422
 #: ..\sardes\plugins\tables\tables\observation_wells.py:114
 msgid "Longitude"
 msgstr "Longitude"
 
-#: ..\sardes\database\database_manager.py:420
+#: ..\sardes\database\database_manager.py:425
 #: ..\sardes\plugins\tables\tables\observation_wells.py:113
 msgid "Latitude"
 msgstr "Latitude"
 
-#: ..\sardes\database\database_manager.py:423
+#: ..\sardes\database\database_manager.py:428
 msgid "Water-table"
 msgstr "Nappe"
 
-#: ..\sardes\database\database_manager.py:426
+#: ..\sardes\database\database_manager.py:431
 #: ..\sardes\plugins\tables\tables\observation_wells.py:112
 msgid "Influenced"
 msgstr "Influencé"
 
-#: ..\sardes\database\database_manager.py:433
+#: ..\sardes\database\database_manager.py:438
 msgid "Last reading"
 msgstr "Dernière lecture"
 
-#: ..\sardes\database\database_manager.py:460 ..\sardes\tools\save2excel.py:71
+#: ..\sardes\database\database_manager.py:465 ..\sardes\tools\save2excel.py:71
 msgid "readings_{}.xlsx"
 msgstr "données_{}.xlsx"
 
-#: ..\sardes\database\database_manager.py:466 ..\sardes\tools\save2excel.py:99
+#: ..\sardes\database\database_manager.py:471 ..\sardes\tools\save2excel.py:99
 msgid "Piezometry"
 msgstr "Piézométrie"
 
-#: ..\sardes\database\database_manager.py:481
+#: ..\sardes\database\database_manager.py:486
 #: ..\sardes\plugins\network\widgets.py:74
 msgid "Data"
 msgstr "Données"
 
-#: ..\sardes\database\database_manager.py:484
+#: ..\sardes\database\database_manager.py:489
 msgid "diagram_{}{}"
 msgstr "schéma_{}{}"
 
-#: ..\sardes\database\database_manager.py:496
+#: ..\sardes\database\database_manager.py:501
 msgid "Diagram"
 msgstr "Schéma"
 
-#: ..\sardes\database\database_manager.py:498 ..\sardes\tools\hydrographs.py:78
+#: ..\sardes\database\database_manager.py:503 ..\sardes\tools\hydrographs.py:78
 msgid "graph_{}.pdf"
 msgstr "graphique_{}.pdf"
 
-#: ..\sardes\database\database_manager.py:516
+#: ..\sardes\database\database_manager.py:521
 msgid "Graph"
 msgstr "Graphique"
 
-#: ..\sardes\database\database_manager.py:519
+#: ..\sardes\database\database_manager.py:524
 msgid "water_quality_{}{}"
 msgstr "qualité_eau_{}{}"
 
-#: ..\sardes\database\database_manager.py:532
+#: ..\sardes\database\database_manager.py:537
 #: ..\sardes\plugins\network\widgets.py:92
 msgid "Water Quality"
 msgstr "Qualité de l'eau"
@@ -318,42 +322,42 @@ msgstr "Déconnecter la base de données"
 msgid "Close the connection with the database."
 msgstr "Fermer la connexion avec la base de données."
 
-#: ..\sardes\plugins\databases\widgets.py:35
+#: ..\sardes\plugins\databases\widgets.py:36
 msgid "Database connection manager"
 msgstr "Gestionnaire de connexion à la base de données"
 
-#: ..\sardes\plugins\databases\widgets.py:63
+#: ..\sardes\plugins\databases\widgets.py:72
 msgid "Select database type :"
 msgstr "Sélectionner le type de base de données:"
 
-#: ..\sardes\plugins\databases\widgets.py:77
-#: ..\sardes\plugins\databases\widgets.py:162
+#: ..\sardes\plugins\databases\widgets.py:86
+#: ..\sardes\plugins\databases\widgets.py:215
 msgid "Connect"
 msgstr "Connecter"
 
-#: ..\sardes\plugins\databases\widgets.py:79
-#: ..\sardes\plugins\network\widgets.py:141
+#: ..\sardes\plugins\databases\widgets.py:88
+#: ..\sardes\plugins\network\widgets.py:141 ..\sardes\widgets\console.py:68
 msgid "Close"
 msgstr "Fermer"
 
-#: ..\sardes\plugins\databases\widgets.py:85
+#: ..\sardes\plugins\databases\widgets.py:94
 msgid "Connect automatically to database when starting Sardes"
 msgstr ""
 "Se connecter automatiquement à la base de données lors du démarrage de Sardes"
 
-#: ..\sardes\plugins\databases\widgets.py:162
+#: ..\sardes\plugins\databases\widgets.py:215
 msgid "Disconnect"
 msgstr "Déconnecter"
 
-#: ..\sardes\plugins\databases\widgets.py:189
+#: ..\sardes\plugins\databases\widgets.py:242
 msgid "The connection to the database failed."
 msgstr "La connexion à la base de données a échoué."
 
-#: ..\sardes\plugins\databases\widgets.py:195
+#: ..\sardes\plugins\databases\widgets.py:248
 msgid "Connected to the database."
 msgstr "Connecté à la base de données."
 
-#: ..\sardes\plugins\databases\widgets.py:216
+#: ..\sardes\plugins\databases\widgets.py:269
 msgid "Connecting to database..."
 msgstr "Connexion à la base de données en cours..."
 
@@ -477,7 +481,7 @@ msgstr ""
 "Chargez les données de lectures temporelles du prochain fichier sélectionné."
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:288
-#: ..\sardes\plugins\tables\tables\observation_wells.py:152
+#: ..\sardes\plugins\tables\tables\observation_wells.py:167
 msgid "View data"
 msgstr "Afficher les données"
 
@@ -587,7 +591,7 @@ msgstr ""
 "données.<br><br>Voulez-vous vraiment continuer?<br><br>"
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:807
-#: ..\sardes\widgets\tableviews.py:1911
+#: ..\sardes\widgets\tableviews.py:1910
 msgid "Do not show this message again during this session."
 msgstr "Ne plus afficher ce message au cours de cette session."
 
@@ -662,7 +666,7 @@ msgid "Publish Piezometric Network Data"
 msgstr "Publier les données du réseau piézométrique"
 
 #: ..\sardes\plugins\network\widgets.py:80
-#: ..\sardes\plugins\tables\tables\observation_wells.py:178
+#: ..\sardes\plugins\tables\tables\observation_wells.py:193
 msgid "Construction Logs"
 msgstr "Schémas de construction"
 
@@ -732,15 +736,15 @@ msgstr "Profondeur"
 msgid "Observation ID"
 msgstr "ID Observation"
 
-#: ..\sardes\plugins\readings\plugin.py:274
+#: ..\sardes\plugins\readings\plugin.py:302
 msgid "Readings"
 msgstr "Lectures"
 
-#: ..\sardes\plugins\readings\plugin.py:392
+#: ..\sardes\plugins\readings\plugin.py:420
 msgid "Plot data"
 msgstr "Tracer les données"
 
-#: ..\sardes\plugins\readings\plugin.py:393
+#: ..\sardes\plugins\readings\plugin.py:421
 msgid ""
 "Show the data of the timeseries acquired in the currently selected "
 "observation well in an interactive plot viewer."
@@ -749,7 +753,7 @@ msgstr ""
 "d'observation actuellement sélectionné dans un visualiseur de tracés "
 "interactif."
 
-#: ..\sardes\plugins\readings\plugin.py:412
+#: ..\sardes\plugins\readings\plugin.py:440
 msgid "Observation well {} ({})"
 msgstr "Puits d'observation {} ({})"
 
@@ -786,7 +790,7 @@ msgstr "Notes"
 #: ..\sardes\plugins\tables\tables\repere.py:74
 #: ..\sardes\plugins\tables\tables\sondes_inventory.py:61
 #: ..\sardes\widgets\tableviews.py:512 ..\sardes\widgets\tableviews.py:519
-#: ..\sardes\widgets\tests\test_tablewidget.py:107
+#: ..\sardes\widgets\tests\test_tablewidget.py:109
 msgid "Yes"
 msgstr "Oui"
 
@@ -794,7 +798,7 @@ msgstr "Oui"
 #: ..\sardes\plugins\tables\tables\repere.py:74
 #: ..\sardes\plugins\tables\tables\sondes_inventory.py:61
 #: ..\sardes\widgets\tableviews.py:513 ..\sardes\widgets\tableviews.py:520
-#: ..\sardes\widgets\tests\test_tablewidget.py:107
+#: ..\sardes\widgets\tests\test_tablewidget.py:109
 msgid "No"
 msgstr "Non"
 
@@ -842,7 +846,7 @@ msgstr "Niveau moyen (m)"
 msgid "Active"
 msgstr "Active"
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:153
+#: ..\sardes\plugins\tables\tables\observation_wells.py:168
 msgid ""
 "Open a table showing all readings saved in the database for the currently "
 "selected observation well."
@@ -850,24 +854,24 @@ msgstr ""
 "Ouvrir un tableau affichant toutes les lectures enregistrées dans la base de "
 "données pour le puits d'observation actuellement sélectionné."
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:163
+#: ..\sardes\plugins\tables\tables\observation_wells.py:178
 msgid "Show in Google Maps"
 msgstr "Afficher dans Google Maps"
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:164
+#: ..\sardes\plugins\tables\tables\observation_wells.py:179
 msgid "Show the currently selected observation well in Google Maps."
 msgstr ""
 "Afficher le puits d'observation actuellement sélectionnée dans Google Maps."
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:174
+#: ..\sardes\plugins\tables\tables\observation_wells.py:189
 msgid "Construction Log"
 msgstr "Schéma de construction"
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:176
+#: ..\sardes\plugins\tables\tables\observation_wells.py:191
 msgid "Select a Construction Log for Station {}"
 msgstr "Sélectionner un schéma de construction pour la station {}"
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:179
+#: ..\sardes\plugins\tables\tables\observation_wells.py:194
 msgid ""
 "Open the menu to add a construction log to the currently selected station or "
 "to view or delete an existing construction log."
@@ -875,43 +879,43 @@ msgstr ""
 "Ouvrir le menu pour joindre un schéma de construction à la station "
 "actuellement sélectionnée ou pour afficher ou supprimer un schéma existant."
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:183
+#: ..\sardes\plugins\tables\tables\observation_wells.py:198
 msgid "Attach Construction Log..."
 msgstr "Joindre un schéma de construction..."
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:184
+#: ..\sardes\plugins\tables\tables\observation_wells.py:199
 msgid "Attach a construction log to the currently selected station."
 msgstr ""
 "Joindre un schéma de construction à la station actuellement sélectionnée."
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:187
+#: ..\sardes\plugins\tables\tables\observation_wells.py:202
 msgid "Show Construction Log..."
 msgstr "Montrer le schéma de construction..."
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:188
+#: ..\sardes\plugins\tables\tables\observation_wells.py:203
 msgid "Show the construction log attached to the currently selected station."
 msgstr ""
 "Afficher le schéma de construction de la station actuellement sélectionnée."
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:191
+#: ..\sardes\plugins\tables\tables\observation_wells.py:206
 msgid "Remove Construction Log"
 msgstr "Supprimer le schéma de construction"
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:192
+#: ..\sardes\plugins\tables\tables\observation_wells.py:207
 msgid "Remove the construction log attached to the currently selected station."
 msgstr ""
 "Supprimer le schéma de construction de la station actuellement sélectionnée."
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:201
-#: ..\sardes\plugins\tables\tables\observation_wells.py:205
+#: ..\sardes\plugins\tables\tables\observation_wells.py:216
+#: ..\sardes\plugins\tables\tables\observation_wells.py:220
 msgid "Water Quality Report"
 msgstr "Rapport de qualité de l'eau"
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:203
+#: ..\sardes\plugins\tables\tables\observation_wells.py:218
 msgid "Select a water quality report for Station {}"
 msgstr "Sélectionner un rapport de qualité de l'eau pour la station {}"
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:206
+#: ..\sardes\plugins\tables\tables\observation_wells.py:221
 msgid ""
 "Open the menu to add a water quality report to the currently selected "
 "station or to view or delete an existing report."
@@ -919,32 +923,32 @@ msgstr ""
 "Ouvrir le menu pour joindre un rapport de qualité de l'eau à la station "
 "actuellement sélectionnée ou pour afficher ou supprimer un rapport existant."
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:210
+#: ..\sardes\plugins\tables\tables\observation_wells.py:225
 msgid "Attach Water Quality Report..."
 msgstr "Joindre un rapport de qualité de l'eau..."
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:211
+#: ..\sardes\plugins\tables\tables\observation_wells.py:226
 msgid "Attach a water quality report to the currently selected station."
 msgstr ""
 "Joindre un rapport de qualité de l'eau à la station actuellement "
 "sélectionnée."
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:214
+#: ..\sardes\plugins\tables\tables\observation_wells.py:229
 msgid "Show Water Quality Report..."
 msgstr "Montrer le rapport de qualité de l'eau..."
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:215
+#: ..\sardes\plugins\tables\tables\observation_wells.py:230
 msgid ""
 "Show the water quality report attached to the currently selected station."
 msgstr ""
 "Afficher le rapport de qualité de l'eau de la station actuellement "
 "sélectionnée."
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:218
+#: ..\sardes\plugins\tables\tables\observation_wells.py:233
 msgid "Remove Water Quality Report"
 msgstr "Supprimer le rapport de qualité de l'eau"
 
-#: ..\sardes\plugins\tables\tables\observation_wells.py:219
+#: ..\sardes\plugins\tables\tables\observation_wells.py:234
 msgid ""
 "Remove the water quality report attached to the currently selected station."
 msgstr ""
@@ -979,7 +983,7 @@ msgid "Date To"
 msgstr "Date à"
 
 #: ..\sardes\plugins\tables\tables\repere.py:90
-#: ..\sardes\tools\hydrographs.py:354 ..\sardes\tools\save2excel.py:260
+#: ..\sardes\tools\hydrographs.py:367 ..\sardes\tools\save2excel.py:260
 msgid "Geodesic"
 msgstr "Géodésique"
 
@@ -1031,7 +1035,7 @@ msgstr "Hors réseau"
 msgid "Preferences"
 msgstr "Préférences"
 
-#: ..\sardes\preferences\configdialog.py:84
+#: ..\sardes\preferences\configdialog.py:84 ..\sardes\widgets\dialogs.py:74
 msgid "OK"
 msgstr "OK"
 
@@ -1040,7 +1044,7 @@ msgid "Apply"
 msgstr "Appliquer"
 
 #: ..\sardes\preferences\configdialog.py:90
-#: ..\sardes\widgets\tableviews.py:1908
+#: ..\sardes\widgets\tableviews.py:1907
 msgid "Cancel"
 msgstr "Annuler"
 
@@ -1090,10 +1094,12 @@ msgid "Save Hydrograph"
 msgstr "Enregistrer l'hydrogramme"
 
 #: ..\sardes\tools\hydrographs.py:117 ..\sardes\tools\save2excel.py:112
+#: ..\sardes\utils\qthelpers.py:282 ..\sardes\widgets\console.py:124
 msgid "File in Use"
 msgstr "Fichier en cours d'utilisation"
 
 #: ..\sardes\tools\hydrographs.py:118 ..\sardes\tools\save2excel.py:113
+#: ..\sardes\utils\qthelpers.py:283 ..\sardes\widgets\console.py:125
 msgid ""
 "The save file operation cannot be completed because the file is in use by "
 "another application or user."
@@ -1106,7 +1112,7 @@ msgstr ""
 msgid "Water level altitude (m MSL)"
 msgstr "Altitude du niveau d'eau (m NMM)"
 
-#: ..\sardes\tools\hydrographs.py:260
+#: ..\sardes\tools\hydrographs.py:273
 msgid ""
 "Municipality: {}\n"
 "Station: {}"
@@ -1114,17 +1120,17 @@ msgstr ""
 "Municipalité : {}\n"
 "Station : {}"
 
-#: ..\sardes\tools\hydrographs.py:305
+#: ..\sardes\tools\hydrographs.py:318
 msgid "Created on {}"
 msgstr "Créé le {}"
 
-#: ..\sardes\tools\hydrographs.py:354 ..\sardes\tools\save2excel.py:260
+#: ..\sardes\tools\hydrographs.py:367 ..\sardes\tools\save2excel.py:260
 msgid "Approximate"
 msgstr "Approximative"
 
-#: ..\sardes\tools\hydrographs.py:355
-msgid "Ground altitude: {:0.1f} m MSL ({})"
-msgstr "Altitude du sol : {:0.1f} m NMM ({})"
+#: ..\sardes\tools\hydrographs.py:368
+msgid "Ground altitude: {:0.2f} m MSL ({})"
+msgstr "Altitude du sol : {:0.2f} m NMM ({})"
 
 #: ..\sardes\tools\hydrostats.py:46
 msgid "Apr"
@@ -1182,7 +1188,7 @@ msgstr "Hydrogramme statistique"
 msgid "Show the statistical hydrograph for this record."
 msgstr "Montrer l'hydrogramme statistique des données de niveau d'eau."
 
-#: ..\sardes\tools\hydrostats.py:149 ..\sardes\widgets\tableviews.py:1907
+#: ..\sardes\tools\hydrostats.py:149 ..\sardes\widgets\tableviews.py:1906
 #: ..\sardes\widgets\timeseries.py:1024
 msgid "Save"
 msgstr "Enregistrer"
@@ -1191,7 +1197,8 @@ msgstr "Enregistrer"
 msgid "Save the figure to a file"
 msgstr "Enregistrer la figure dans un fichier"
 
-#: ..\sardes\tools\hydrostats.py:158 ..\sardes\widgets\tableviews.py:1041
+#: ..\sardes\tools\hydrostats.py:158 ..\sardes\widgets\console.py:72
+#: ..\sardes\widgets\dialogs.py:78 ..\sardes\widgets\tableviews.py:1058
 #: ..\sardes\widgets\timeseries.py:1033
 msgid "Copy"
 msgstr "Copier"
@@ -1266,7 +1273,8 @@ msgid "Save daily readings data in an Excel document."
 msgstr ""
 "Enregistrer les données de lectures quotidiennes dans un document Excel."
 
-#: ..\sardes\tools\save2excel.py:74
+#: ..\sardes\tools\save2excel.py:74 ..\sardes\utils\qthelpers.py:260
+#: ..\sardes\widgets\console.py:106
 msgid "Save File"
 msgstr "Enregistrer le fichier"
 
@@ -1301,6 +1309,71 @@ msgstr "Altitude du sol (m NMM) :"
 #: ..\sardes\tools\save2excel.py:262
 msgid "Not Available"
 msgstr "Non disponible"
+
+#: ..\sardes\widgets\console.py:58
+msgid "Sardes Console"
+msgstr "Console Sardes"
+
+#: ..\sardes\widgets\console.py:64
+msgid "Save As"
+msgstr "Enregistrer sous"
+
+#: ..\sardes\widgets\console.py:106
+msgid "Text File"
+msgstr "Fichier texte"
+
+#: ..\sardes\widgets\dialogs.py:32
+msgid "Description"
+msgstr "Description"
+
+#: ..\sardes\widgets\dialogs.py:33
+msgid ""
+"Please provide a step-by-step description of what led to the problem here."
+msgstr ""
+"S'il vous plaît fournir une description étape par étape de ce qui a conduit "
+"au problème ici."
+
+#: ..\sardes\widgets\dialogs.py:35
+msgid "System Info"
+msgstr "Informations système"
+
+#: ..\sardes\widgets\dialogs.py:41
+msgid "Traceback"
+msgstr "Trace d'appels"
+
+#: ..\sardes\widgets\dialogs.py:54
+msgid "{} Internal Error"
+msgstr "Erreur Interne de {}"
+
+#: ..\sardes\widgets\dialogs.py:88
+msgid "Detailed Log"
+msgstr "Journal détaillé"
+
+#: ..\sardes\widgets\dialogs.py:94
+msgid ""
+"<b>{0} has encountered an internal problem.</b><p>We are sorry, but {1} "
+"encountered an internal error that might preventing it from running "
+"correctly. You might want to save your work and restart {1} if possible.</"
+"p><p>Please report this error by copying the information below in our <a "
+"href=\"{2}\">issues tracker</a> and by providing a step-by-step description "
+"of what led to the problem.</p>"
+msgstr ""
+"<b>{0} a rencontré une erreur interne.</b><p>Nous sommes désolés, mais {1} a "
+"rencontré une erreur interne qui pourrait empêcher l'application de "
+"fonctionner correctement. Si possible, veuillez sauvegarder votre travail et "
+"redémarrer {1}.</p><p>S'il vous plaît signaler cette erreur en copiant les "
+"informations ci-dessous dans notre <a href=\"{2}\">outil de suivi de "
+"problèmes</a> et en fournissant une description étape par étape de ce qui a "
+"conduit à cette erreur.</p>"
+
+#: ..\sardes\widgets\dialogs.py:104
+msgid ""
+"<p>If possible, please also attach to your report the detailed log file "
+"accessible by clicking on the <i>Detailed Log</i> button.</p>"
+msgstr ""
+"<p>Si possible, veuillez également joindre à votre rapport d'erreur le "
+"journal des événements qui est accessible en cliquant sur le bouton "
+"<i>Journal détaillé</i>.</p>"
 
 #: ..\sardes\widgets\logoselector.py:66
 msgid "Change Logo..."
@@ -1404,93 +1477,93 @@ msgstr ""
 msgid "{} out of {} row(s) selected"
 msgstr "{} ligne(s) sur  {} sélectionnée(s)"
 
-#: ..\sardes\widgets\tableviews.py:1043
+#: ..\sardes\widgets\tableviews.py:1060
 msgid ""
 "Put a copy of the selection on the Clipboard so you can paste it somewhere "
 "else."
 msgstr "Mettre une copie de la sélection dans le presse-papiers."
 
-#: ..\sardes\widgets\tableviews.py:1056
+#: ..\sardes\widgets\tableviews.py:1073
 msgid "Edit"
 msgstr "Éditer"
 
-#: ..\sardes\widgets\tableviews.py:1058
+#: ..\sardes\widgets\tableviews.py:1075
 msgid "Edit the data of the currently focused cell."
 msgstr "Modifier les données de la cellule avec le curseur."
 
-#: ..\sardes\widgets\tableviews.py:1066
+#: ..\sardes\widgets\tableviews.py:1083
 msgid "New Item"
 msgstr "Nouvel élément"
 
-#: ..\sardes\widgets\tableviews.py:1068
+#: ..\sardes\widgets\tableviews.py:1085
 msgid "Create a new item."
 msgstr "Créer un nouvel élément."
 
-#: ..\sardes\widgets\tableviews.py:1076
+#: ..\sardes\widgets\tableviews.py:1093
 msgid "Delete Item"
 msgstr "Supprimer l'élément"
 
-#: ..\sardes\widgets\tableviews.py:1078
+#: ..\sardes\widgets\tableviews.py:1095
 msgid "Delete selected items from the table."
 msgstr "Supprimer l'élément sélectionné du tableau."
 
-#: ..\sardes\widgets\tableviews.py:1086
+#: ..\sardes\widgets\tableviews.py:1103
 msgid "Clear"
 msgstr "Effacer"
 
-#: ..\sardes\widgets\tableviews.py:1088
+#: ..\sardes\widgets\tableviews.py:1105
 msgid "Set the currently focused item to NULL."
 msgstr "Définir une valeur nulle pour la cellule avec le curseur."
 
-#: ..\sardes\widgets\tableviews.py:1096
+#: ..\sardes\widgets\tableviews.py:1113
 msgid "Save edits"
 msgstr "Enregistrer les modifications"
 
-#: ..\sardes\widgets\tableviews.py:1098
+#: ..\sardes\widgets\tableviews.py:1115
 msgid "Save all edits made to the table in the database."
 msgstr ""
 "Enregistrer dans la base de données toutes les modifications apportées à la "
 "table."
 
-#: ..\sardes\widgets\tableviews.py:1107
+#: ..\sardes\widgets\tableviews.py:1124
 msgid "Cancel edits"
 msgstr "Annuler les modifications"
 
-#: ..\sardes\widgets\tableviews.py:1109
+#: ..\sardes\widgets\tableviews.py:1126
 msgid "Cancel all edits made to the table since last save."
 msgstr ""
 "Annuler toutes les modifications apportées à la table depuis le dernier "
 "enregistrement."
 
-#: ..\sardes\widgets\tableviews.py:1118
+#: ..\sardes\widgets\tableviews.py:1135
 msgid "Undo"
 msgstr "Annuler"
 
-#: ..\sardes\widgets\tableviews.py:1120
+#: ..\sardes\widgets\tableviews.py:1137
 msgid "Undo last edit made to the table."
 msgstr "Annuler la dernière modification apportée à la table."
 
-#: ..\sardes\widgets\tableviews.py:1132
+#: ..\sardes\widgets\tableviews.py:1149
 msgid "Select All"
 msgstr "Sélectionner tout"
 
-#: ..\sardes\widgets\tableviews.py:1134
+#: ..\sardes\widgets\tableviews.py:1151
 msgid "Select all items in the table."
 msgstr "Sélectionner tous les éléments du tableau."
 
-#: ..\sardes\widgets\tableviews.py:1140
+#: ..\sardes\widgets\tableviews.py:1157
 msgid "Clear Selection"
 msgstr "Effacer la sélection"
 
-#: ..\sardes\widgets\tableviews.py:1142
+#: ..\sardes\widgets\tableviews.py:1159
 msgid "Clear the selection in the table."
 msgstr "Effacer toutes les sélections dans la table."
 
-#: ..\sardes\widgets\tableviews.py:1148
+#: ..\sardes\widgets\tableviews.py:1165
 msgid "Select Row"
 msgstr "Sélectionner une ligne"
 
-#: ..\sardes\widgets\tableviews.py:1150
+#: ..\sardes\widgets\tableviews.py:1167
 msgid ""
 "Select the entire row of the current selection. If the current selection "
 "spans multiple rows, all rows that intersect the selection will be selected."
@@ -1499,11 +1572,11 @@ msgstr ""
 "sélection courante s'étend sur plusieurs lignes, toutes les lignes recoupant "
 "la sélection seront sélectionnées."
 
-#: ..\sardes\widgets\tableviews.py:1159
+#: ..\sardes\widgets\tableviews.py:1176
 msgid "Select Column"
 msgstr "Sélectionner une colonne"
 
-#: ..\sardes\widgets\tableviews.py:1161
+#: ..\sardes\widgets\tableviews.py:1178
 msgid ""
 "Select the entire column of the current selection. If the current selection "
 "spans multiple columns, all columns that intersect the selection will be "
@@ -1513,45 +1586,45 @@ msgstr ""
 "sélection courante s'étend sur plusieurs colonnes, toutes les colonnes "
 "recoupant la sélection seront sélectionnées."
 
-#: ..\sardes\widgets\tableviews.py:1176
+#: ..\sardes\widgets\tableviews.py:1193
 msgid "Sort Ascending"
 msgstr "Trier par ordre croissant"
 
-#: ..\sardes\widgets\tableviews.py:1178
+#: ..\sardes\widgets\tableviews.py:1195
 msgid ""
 "Reorder rows by sorting the data of the current column in ascending order."
 msgstr ""
 "Réorganiser les lignes en triant les données de la colonne actuelle par "
 "ordre croissant."
 
-#: ..\sardes\widgets\tableviews.py:1186
+#: ..\sardes\widgets\tableviews.py:1203
 msgid "Sort Descending"
 msgstr "Trier par ordre décroissant"
 
-#: ..\sardes\widgets\tableviews.py:1188
+#: ..\sardes\widgets\tableviews.py:1205
 msgid ""
 "Reorder rows by sorting the data of the current column in descending order."
 msgstr ""
 "Réorganiser les lignes en triant les données de la colonne actuelle par "
 "ordre décroissant."
 
-#: ..\sardes\widgets\tableviews.py:1196
+#: ..\sardes\widgets\tableviews.py:1213
 msgid "Clear Sort"
 msgstr "Effacer les tris"
 
-#: ..\sardes\widgets\tableviews.py:1198
+#: ..\sardes\widgets\tableviews.py:1215
 msgid "Clear all sorts applied to the columns of the table."
 msgstr "Effacer tous les tris appliqués aux colonnes de la table."
 
-#: ..\sardes\widgets\tableviews.py:1643
+#: ..\sardes\widgets\tableviews.py:1658
 msgid "This function cannot be used with multiple selections."
 msgstr "Cette fonction ne fonctionne pas sur plusieurs sélections."
 
-#: ..\sardes\widgets\tableviews.py:1901
+#: ..\sardes\widgets\tableviews.py:1900
 msgid "Save changes"
 msgstr "Enregistrer les modifications"
 
-#: ..\sardes\widgets\tableviews.py:1902
+#: ..\sardes\widgets\tableviews.py:1901
 msgid ""
 "This will permanently save the changes made in this table in the database."
 "<br><br>This action <b>cannot</b> be undone.<br><br>"
@@ -1560,32 +1633,32 @@ msgstr ""
 "permanente dans la base de données.<br><br>Cette action <b>ne peut pas</b> "
 "être annulée.<br><br>"
 
-#: ..\sardes\widgets\tableviews.py:1964
+#: ..\sardes\widgets\tableviews.py:1963
 msgid "Edits error"
 msgstr "Erreur de modification"
 
-#: ..\sardes\widgets\tableviews.py:2065
+#: ..\sardes\widgets\tableviews.py:2066
 msgid "Saving edits in the database..."
 msgstr "Enregistrement des modifications dans la base de données en cours..."
 
-#: ..\sardes\widgets\tableviews.py:2068
+#: ..\sardes\widgets\tableviews.py:2069
 msgid "Edits saved sucessfully in the database."
 msgstr "Modifications enregistrées avec succès dans la base de données."
 
-#: ..\sardes\widgets\tableviews.py:2337
+#: ..\sardes\widgets\tableviews.py:2348
 msgid "Column options"
 msgstr "Options des colonnes"
 
-#: ..\sardes\widgets\tableviews.py:2338
+#: ..\sardes\widgets\tableviews.py:2349
 msgid "Open a menu to select the columns to display in this table."
 msgstr ""
 "Ouvrir un menu pour sélectionner les colonnes à afficher dans ce tableau."
 
-#: ..\sardes\widgets\tableviews.py:2350
+#: ..\sardes\widgets\tableviews.py:2361
 msgid "Restore to defaults"
 msgstr "Restaurer les valeurs par défaut"
 
-#: ..\sardes\widgets\tableviews.py:2353
+#: ..\sardes\widgets\tableviews.py:2364
 msgid "Show all"
 msgstr "Montrer tout"
 
