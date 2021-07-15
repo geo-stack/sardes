@@ -41,10 +41,6 @@ class StandardStreamConsole(QTextEdit):
         self.moveCursor(QTextCursor.End)
         self.insertPlainText(text)
 
-    def __del__(self):
-        # Restore sys.stdout
-        sys.stdout = sys.__stdout__
-
 
 class SardesConsole(QDialog):
     """
@@ -168,6 +164,5 @@ if __name__ == '__main__':
 
     console = SardesConsole()
     console.show()
-    print('Hello World!')
 
     sys.exit(app.exec_())

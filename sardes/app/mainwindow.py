@@ -524,7 +524,7 @@ class MainWindow(MainWindowBase):
         self.tables_plugin = SARDES_PLUGIN_CLASS(self)
         self.tables_plugin.register_plugin()
         self.internal_plugins.append(self.tables_plugin)
-        print("done")
+        print("Plugin {} loaded successfully".format(plugin_title))
 
         # Librairies plugin.
         from sardes.plugins.librairies import SARDES_PLUGIN_CLASS
