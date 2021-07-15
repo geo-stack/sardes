@@ -8,7 +8,11 @@
 # -----------------------------------------------------------------------------
 
 # ---- Standard library imports
+import os
+import os.path as osp
 import sys
+import datetime
+import tempfile
 
 # ---- Third party imports
 from qtpy.QtCore import Qt
@@ -18,9 +22,10 @@ from qtpy.QtWidgets import (
 
 # ---- Local imports
 from sardes import __namever__, __appname__, __issues_url__, get_versions
-from sardes.config.locale import _
 from sardes.config.icons import (
     get_icon, get_standard_icon, get_standard_iconsize)
+from sardes.config.locale import _
+from sardes.config.main import TEMP_DIR
 
 
 EXCEPT_DIALOG_MSG_CANVAS = (
@@ -44,12 +49,15 @@ class ExceptDialog(QDialog):
     execution.
     """
 
-    def __init__(self, log_msg=None):
+    def __init__(self, log_msg=None, detailed_log=None):
         super().__init__()
         self.setWindowTitle(_("{} Internal Error").format(__appname__))
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setWindowIcon(get_icon('master'))
+
+        self.detailed_log = detailed_log
+        self.log_datetime = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 
         self.logmsg_textedit = QTextEdit()
         self.logmsg_textedit.setReadOnly(True)
@@ -62,7 +70,7 @@ class ExceptDialog(QDialog):
         info_icon.setScaledContents(False)
         info_icon.setPixmap(icon.pixmap(iconsize))
 
-        # Setup the dialog button box.
+        # Setup dialog buttons.
         self.ok_btn = QPushButton(_('OK'))
         self.ok_btn.setDefault(True)
         self.ok_btn.clicked.connect(self.close)
@@ -75,7 +83,15 @@ class ExceptDialog(QDialog):
         button_box.addButton(self.copy_btn, button_box.AcceptRole)
         button_box.addButton(self.ok_btn, button_box.ActionRole)
 
-        msg_labl = QLabel(_(
+        if self.detailed_log is not None and len(self.detailed_log):
+            # Setup the dialog button box.
+            self.showlog_btn = QPushButton(_('Detailed Log'))
+            self.showlog_btn.setDefault(False)
+            self.showlog_btn.clicked.connect(self.show_detailed_log)
+            button_box.addButton(self.showlog_btn, button_box.ResetRole)
+
+        # Setup dialog main message.
+        message = _(
             """
             <b>{0} has encountered an internal problem.</b>
             <p>We are sorry, but {1} encountered an internal error that might
@@ -83,19 +99,22 @@ class ExceptDialog(QDialog):
             your work and restart {1} if possible.</p>
             <p>Please report this error by copying the information below
             in our <a href="{2}">issues tracker</a> and by providing
-            a step-by-step description of what led to the problem.
-            </p>
-            """).format(__namever__, __appname__, __issues_url__))
+            a step-by-step description of what led to the problem.</p>
+            """
+            ).format(__namever__, __appname__, __issues_url__)
+        if self.detailed_log is not None and len(self.detailed_log):
+            message += _(
+                """
+                <p>If possible, please also attach to your report the detailed
+                log file accessible by clicking on the <i>Detailed Log</i>
+                button.</p>
+                """
+                )
+        msg_labl = QLabel(message)
         msg_labl.setWordWrap(True)
         msg_labl.setOpenExternalLinks(True)
 
-        sarde_error_dialog = QDialog()
-        sarde_error_dialog.setWindowTitle(_("{} Error").format(__appname__))
-        sarde_error_dialog.setWindowFlags(
-            sarde_error_dialog.windowFlags() &
-            ~Qt.WindowContextHelpButtonHint)
-        sarde_error_dialog.setWindowIcon(get_icon('master'))
-
+        # Setup layout.
         left_side_layout = QGridLayout()
         left_side_layout.setContentsMargins(0, 0, 10, 0)
         left_side_layout.addWidget(info_icon)
@@ -143,6 +162,18 @@ class ExceptDialog(QDialog):
             os_ver=versions['release'],
             log_msg=log_msg)
         return formatted_msg
+
+    def show_detailed_log(self):
+        """
+        Open the detailed log file in an external application that is
+        chosen by the OS.
+        """
+        name = 'SardesLog_{}.txt'.format(self.log_datetime)
+        temp_path = tempfile.mkdtemp(dir=TEMP_DIR)
+        temp_filename = osp.join(temp_path, name)
+        with open(temp_filename, 'w') as txtfile:
+            txtfile.write(self.detailed_log)
+        os.startfile(temp_filename)
 
     def copy(self):
         """

@@ -25,9 +25,8 @@ import traceback
 import importlib
 
 # ---- Third party imports
-from qtpy.QtCore import Qt, QUrl, Slot, QEvent, Signal
-from qtpy.QtGui import QDesktopServices
 from qtpy.QtCore import Qt, QUrl, Slot, QEvent, Signal, QObject
+from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import (QApplication, QActionGroup, QMainWindow, QMenu,
                             QMessageBox, QToolButton)
 
@@ -57,11 +56,17 @@ GITHUB_ISSUES_URL = __project_url__ + "/issues"
 class MainWindowBase(QMainWindow):
     sig_about_to_close = Signal()
 
-    def __init__(self, splash=None, except_hook=None):
+    def __init__(self, splash=None, sys_capture_manager=None):
         super().__init__()
-        if except_hook is not None:
-            except_hook.sig_except_caught.connect(self._handle_except)
         self.splash = splash
+        self.sys_capture_manager = sys_capture_manager
+        self.console = None
+        if self.sys_capture_manager is not None:
+            # Setup the internal Sardes console.
+            from sardes.widgets.console import SardesConsole
+            self.console = SardesConsole()
+            self.sys_capture_manager.register_stdstream_console(self.console)
+
         self.setWindowIcon(get_icon('master'))
         self.setWindowTitle(__namever__)
         self.setCentralWidget(None)
@@ -223,6 +228,10 @@ class MainWindowBase(QMainWindow):
 
     def setup_options_menu(self):
         """Create and return the options menu of this application."""
+        class Separator(object):
+            # Used for adding a separator to the menu.
+            pass
+
         options_menu = QMenu(self)
 
         # Create the languages menu.
@@ -266,6 +275,13 @@ class MainWindowBase(QMainWindow):
             triggered=self.reset_window_layout)
 
         # Create help related actions and menus.
+        self.console_action = None
+        if self.console is not None:
+            self.console_action = create_action(
+                self, _('Show Sardes console...'), icon='console',
+                shortcut='Ctrl+Shift+J', context=Qt.ApplicationShortcut,
+                triggered=self.console.show
+                )
         report_action = create_action(
             self, _('Report an issue...'), icon='bug',
             shortcut='Ctrl+Shift+R', context=Qt.ApplicationShortcut,
@@ -273,7 +289,8 @@ class MainWindowBase(QMainWindow):
             )
         about_action = create_action(
             self, _('About Sardes...'), icon='information',
-            shortcut='Ctrl+Shift+I', context=Qt.ApplicationShortcut
+            shortcut='Ctrl+Shift+I',
+            context=Qt.ApplicationShortcut
             )
         exit_action = create_action(
             self, _('Exit'), icon='exit', triggered=self.close,
@@ -282,13 +299,14 @@ class MainWindowBase(QMainWindow):
 
         # Add the actions and menus to the options menu.
         options_menu_items = [
-            self.lang_menu, preferences_action, None, self.panes_menu,
-            self.toolbars_menu, self.lock_dockwidgets_and_toolbars_action,
-            self.reset_window_layout_action, None, report_action, about_action,
-            exit_action
+            self.lang_menu, preferences_action, Separator(),
+            self.panes_menu, self.toolbars_menu,
+            self.lock_dockwidgets_and_toolbars_action,
+            self.reset_window_layout_action, Separator(),
+            self.console_action, report_action, about_action, exit_action
             ]
         for item in options_menu_items:
-            if item is None:
+            if isinstance(item, Separator):
                 options_menu.addSeparator()
             elif isinstance(item, QMenu):
                 options_menu.addMenu(item)
@@ -399,6 +417,10 @@ class MainWindowBase(QMainWindow):
             self._save_window_geometry()
             self._save_window_state()
 
+            # Close Sardes console.
+            if self.console is not None:
+                self.console.close()
+
             # Close all internal and thirdparty plugins.
             for plugin in self.internal_plugins + self.thirdparty_plugins:
                 plugin.close_plugin()
@@ -434,15 +456,6 @@ class MainWindowBase(QMainWindow):
         """
         self._is_closing = False
         self.close()
-
-    def _handle_except(self, log_msg):
-        """
-        Handle raised exceptions that have not been handled properly
-        internally and need to be reported for bug fixing.
-        """
-        from sardes.widgets.dialogs import ExceptDialog
-        except_dialog = ExceptDialog(log_msg)
-        except_dialog.exec_()
 
 
 class MainWindow(MainWindowBase):
@@ -506,62 +519,62 @@ class MainWindow(MainWindowBase):
         # Tables plugin.
         from sardes.plugins.tables import SARDES_PLUGIN_CLASS
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
-        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        print("Loading plugin '{}'...".format(plugin_title))
         self.set_splash(_("Loading the {} plugin...").format(plugin_title))
         self.tables_plugin = SARDES_PLUGIN_CLASS(self)
         self.tables_plugin.register_plugin()
         self.internal_plugins.append(self.tables_plugin)
-        print("done")
+        print("Plugin '{}' loaded successfully".format(plugin_title))
 
         # Librairies plugin.
         from sardes.plugins.librairies import SARDES_PLUGIN_CLASS
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
-        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        print("Loading plugin '{}'...".format(plugin_title))
         self.set_splash(_("Loading the {} plugin...").format(plugin_title))
         self.librairies_plugin = SARDES_PLUGIN_CLASS(self)
         self.librairies_plugin.register_plugin()
         self.internal_plugins.append(self.librairies_plugin)
-        print("done")
+        print("Plugin '{}' loaded successfully".format(plugin_title))
 
         # Database plugin.
         from sardes.plugins.databases import SARDES_PLUGIN_CLASS
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
-        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        print("Loading plugin '{}'...".format(plugin_title))
         self.set_splash(_("Loading the {} plugin...").format(plugin_title))
         self.databases_plugin = SARDES_PLUGIN_CLASS(self)
         self.databases_plugin.register_plugin()
         self.internal_plugins.append(self.databases_plugin)
-        print("done")
+        print("Plugin '{}' loaded successfully".format(plugin_title))
 
         # Import Data Wizard.
         from sardes.plugins.dataio import SARDES_PLUGIN_CLASS
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
-        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        print("Loading plugin '{}'...".format(plugin_title))
         self.set_splash(_("Loading the {} plugin...").format(plugin_title))
         self.data_import_plugin = SARDES_PLUGIN_CLASS(self)
         self.data_import_plugin.register_plugin()
         self.internal_plugins.append(self.data_import_plugin)
-        print("done")
+        print("Plugin '{}' loaded successfully".format(plugin_title))
 
         # Time Data plugin.
         from sardes.plugins.readings import SARDES_PLUGIN_CLASS
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
-        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        print("Loading plugin '{}'...".format(plugin_title))
         self.set_splash(_("Loading the {} plugin...").format(plugin_title))
         self.readings_plugin = SARDES_PLUGIN_CLASS(self)
         self.readings_plugin.register_plugin()
         self.internal_plugins.append(self.readings_plugin)
-        print("done")
+        print("Plugin '{}' loaded successfully".format(plugin_title))
 
         # Piezometric Network plugin.
         from sardes.plugins.network import SARDES_PLUGIN_CLASS
         plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
-        print("Loading the {} plugin...".format(plugin_title), end=' ')
+        print("Loading plugin '{}'...".format(plugin_title))
         self.set_splash(_("Loading the {} plugin...").format(plugin_title))
         self.network_plugin = SARDES_PLUGIN_CLASS(self)
         self.network_plugin.register_plugin()
         self.internal_plugins.append(self.network_plugin)
-        print("done")
+        print("Plugin '{}' loaded successfully".format(plugin_title))
 
     def show(self):
         """
@@ -596,18 +609,20 @@ class ExceptHook(QObject):
             self.sig_except_caught.emit(log_msg)
 
 
-
 if __name__ == '__main__':
-    print('Starting SARDES...')
-
     from sardes.utils.qthelpers import create_application
     app = create_application()
 
+    from sardes.app.capture import SysCaptureManager
+    sys_capture_manager = SysCaptureManager(start_capture=True)
+
     from sardes.widgets.splash import SplashScreen
     splash = SplashScreen(_("Initializing {}...").format(__namever__))
-    except_hook=ExceptHook()
-    main = MainWindow(splash, except_hook)
+
+    print("Initializing MainWindow...")
+    main = MainWindow(splash, sys_capture_manager)
     splash.finish(main)
     main.show()
+    print("Successfully initialized MainWindow.")
 
     sys.exit(app.exec_())

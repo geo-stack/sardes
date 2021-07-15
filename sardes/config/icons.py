@@ -46,6 +46,9 @@ FA_ICONS = {
     'cancel_selection_changes': [
         ('mdi.close-box-outline',),
         {'color': RED, 'scale_factor': 1.2}],
+    'console': [
+        ('mdi.console',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'checklist': [
         ('mdi.format-list-checkbox',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],

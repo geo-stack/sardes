@@ -153,7 +153,7 @@ def tablewidget(qtbot, tablemodel):
     # the table view that we use for testing is not connected to a
     # database connection manager.
     tablewidget.update_model_data()
-    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
+    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 150)
 
     return tablewidget
 

@@ -18,14 +18,14 @@ os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import pytest
-from qtpy.QtCore import QPoint, QSize, Qt, Signal, QObject
+from qtpy.QtCore import QPoint, QSize, Qt
 
 # ---- Local imports
 from sardes.config.gui import INIT_MAINWINDOW_SIZE
 from sardes.config.main import CONF
 from sardes.app.mainwindow import MainWindow, QMessageBox
+from sardes.app.capture import SysCaptureManager
 from sardes.database.accessors import DatabaseAccessorSardesLite
-from sardes.widgets.dialogs import ExceptDialog
 
 
 # =============================================================================
@@ -70,27 +70,40 @@ def test_mainwindow_init(mainwindow):
     """Test that the main window is initialized correctly."""
     assert mainwindow
 
-def test_mainwindow_handle_except(qtbot, mocker):
-    """
-    Test that internal errors are shown as expected in a dialog.
-    """
-    class ExceptHookMock(QObject):
-        sig_except_caught = Signal(str)
-    except_hook = ExceptHookMock()
 
-    mainwindow = MainWindow(except_hook=except_hook)
+def test_sardes_console(qtbot, mocker):
+    """
+    Test that sardes console is initialized properly in the mainwindow.
+    """
+    sys_capture_manager = SysCaptureManager()
+
+    mainwindow = MainWindow(sys_capture_manager=sys_capture_manager)
     mainwindow.show()
     qtbot.waitExposed(mainwindow)
 
-    exceptdialog_exec_patcher = mocker.patch.object(ExceptDialog, 'exec_')
-    assert exceptdialog_exec_patcher.call_count == 0
-    except_hook.sig_except_caught.emit('some_formatted_except_traceback')
-    assert exceptdialog_exec_patcher.call_count == 1
-    
+    # Assert that the console to show stantart Python interpreter output was
+    # installed as expected in the MainWindow.
+    assert mainwindow.console is not None
+    assert not mainwindow.console.isVisible()
+    mainwindow.console_action.trigger()
+    assert mainwindow.console.isVisible()
+
+    # Assert that the console is printing Python interpreter output
+    # as expected.
+    assert mainwindow.console.plain_text() == ''
+    sys_capture_manager.stdout_emitter.sig_new_text.emit(
+        'stdout_test_message\n')
+    sys_capture_manager.stderr_emitter.sig_new_text.emit(
+        'stderr_test_message')
+    assert mainwindow.console.plain_text() == (
+        'stdout_test_message\nstderr_test_message')
+
+    # Assert that the sardes console is closed with the main window.
     with qtbot.waitSignal(mainwindow.sig_about_to_close):
         mainwindow.close()
-    
-    
+    assert not mainwindow.console.isVisible()
+
+
 @pytest.mark.skipif(
     os.environ.get('AZURE', None) is not None, reason="It fails on Azure.")
 def test_mainwindow_settings(qtbot, mocker):
