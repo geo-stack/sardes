@@ -278,7 +278,7 @@ class MainWindowBase(QMainWindow):
         self.console_action = None
         if self.console is not None:
             self.console_action = create_action(
-                self, _('Show Sardes console...'), icon='console',
+                self, _('Sardes Console...'), icon='console',
                 shortcut='Ctrl+Shift+J', context=Qt.ApplicationShortcut,
                 triggered=self.console.show
                 )
