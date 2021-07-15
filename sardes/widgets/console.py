@@ -27,41 +27,6 @@ from sardes.config.ospath import (
     get_select_file_dialog_dir, set_select_file_dialog_dir)
 
 
-class ExceptHook(QObject):
-    """
-    A Qt object to caught exceptions and emit a formatted string of the error.
-    """
-    sig_except_caught = Signal(str)
-
-    def __init__(self):
-        super().__init__()
-        sys.excepthook = self.excepthook
-
-    def excepthook(self, exc_type, exc_value, exc_traceback):
-        """Handle uncaught exceptions."""
-        sys.__excepthook__(exc_type, exc_value, exc_traceback)
-        if not issubclass(exc_type, SystemExit):
-            log_msg = ''.join(traceback.format_exception(
-                exc_type, exc_value, exc_traceback))
-            self.sig_except_caught.emit(log_msg)
-
-
-class StandardStreamEmitter(QObject):
-    """
-    A Qt object to intercept and emit the input and output of the
-    Python interpreter.
-
-    https://docs.python.org/3/library/sys.html#sys.stdout
-    https://docs.python.org/3/library/sys.html#sys.stderr
-    """
-    sig_new_text = Signal(str)
-
-    def write(self, text):
-        if sys.__stdout__ is not None:
-            sys.__stdout__.write(text)
-        self.sig_new_text.emit(str(text))
-
-
 class StandardStreamConsole(QTextEdit):
     """
     A Qt text edit to hold and show the standard input and output of the
@@ -97,17 +62,7 @@ class SardesConsole(QDialog):
         self.setWindowTitle(_("Sardes Console"))
         self.setMinimumSize(700, 500)
 
-        # Setup the Except hook.
-        self.except_hook = ExceptHook()
-        self.except_hook .sig_except_caught.connect(self._handle_except)
-
-        # Setup the standard stream emitter.
-        self.std_emitter = StandardStreamEmitter()
-        sys.stdout = self.std_emitter
-        sys.stderr = self.std_emitter
-
         self.std_console = StandardStreamConsole()
-        self.std_emitter.sig_new_text.connect(self.std_console.write)
 
         # Setup the dialog button box.
         self.saveas_btn = QPushButton(_('Save As'))
@@ -132,7 +87,10 @@ class SardesConsole(QDialog):
         layout.addWidget(self.std_console, 0, 0)
         layout.addWidget(button_box, 1, 0)
 
-    def textlog(self):
+    def write(self, text):
+        self.std_console.write(text)
+
+    def plain_text(self):
         """
         Return the content of the console as plain text.
         """
@@ -161,7 +119,7 @@ class SardesConsole(QDialog):
             QApplication.processEvents()
             try:
                 with open(filename, 'w') as txtfile:
-                    txtfile.write(self.textlog())
+                    txtfile.write(self.plain_text())
             except PermissionError:
                 QApplication.restoreOverrideCursor()
                 QApplication.processEvents()
@@ -181,7 +139,7 @@ class SardesConsole(QDialog):
         Copy the content of the console on the clipboard.
         """
         QApplication.clipboard().clear()
-        QApplication.clipboard().setText(self.textlog())
+        QApplication.clipboard().setText(self.plain_text())
 
     def show(self):
         """
@@ -200,7 +158,7 @@ class SardesConsole(QDialog):
         """
         from sardes.widgets.dialogs import ExceptDialog
         QApplication.restoreOverrideCursor()
-        except_dialog = ExceptDialog(log_msg, self.textlog())
+        except_dialog = ExceptDialog(log_msg, self.plain_text())
         except_dialog.exec_()
 
 
