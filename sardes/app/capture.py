@@ -43,35 +43,55 @@ class StandardStreamEmitter(QObject):
     sig_new_text = Signal(str)
 
     def write(self, text):
-        if sys.__stdout__ is not None:
+        try:
             sys.__stdout__.write(text)
+        except Exception:
+            pass
         self.sig_new_text.emit(str(text))
 
 
-class InternalSystemManager(QObject):
+class SysCaptureManager(QObject):
     """
-    A manager to manage Python's standard input and output streams, logging
-    and internal errors reporting.
+    A manager to capture and manage Python's standard input and output
+    streams, logging and internal errors reporting.
     """
 
-    def __init__(self):
+    def __init__(self, start_capture=False):
         super().__init__()
         self._stdstream_stack = ''
         self._stdstream_consoles = []
+        self._is_capturing = False
 
         # Setup the Except hook.
         self.except_hook = ExceptHook()
         self.except_hook.sig_except_caught.connect(self._handle_except)
-        sys.excepthook = self.except_hook.excepthook
 
         # Setup the standard stream emitter.
         self.stdout_emitter = StandardStreamEmitter()
         self.stdout_emitter.sig_new_text.connect(self.__handle_stdout)
-        sys.stdout = self.stdout_emitter
 
         self.stderr_emitter = StandardStreamEmitter()
         self.stderr_emitter.sig_new_text.connect(self.handle_stderr)
+
+        if start_capture:
+            self.start_capture()
+
+    def start_capture(self):
+        self._is_capturing = True
+        self.__orig_except_hook = sys.excepthook
+        self.__orig_stdout = sys.stdout
+        self.__orig_stderr = sys.stderr
+
+        sys.excepthook = self.except_hook.excepthook
+        sys.stdout = self.stdout_emitter
         sys.stderr = self.stderr_emitter
+
+    def stop_capture(self):
+        if self._is_capturing:
+            self._is_capturing = False
+            sys.excepthook = self.__orig_except_hook
+            sys.stdout = self.__orig_stdout
+            sys.stderr = self.__orig_stderr
 
     def register_stdstream_console(self, console):
         self._stdstream_consoles.append(console)
@@ -96,9 +116,3 @@ class InternalSystemManager(QObject):
         QApplication.restoreOverrideCursor()
         except_dialog = ExceptDialog(log_msg, self._stdstream_stack)
         except_dialog.exec_()
-
-    def __del__(self):
-        """Restore sys standard excepthook and stream."""
-        sys.excepthook = sys.__excepthook__
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
