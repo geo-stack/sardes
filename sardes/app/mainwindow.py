@@ -56,15 +56,16 @@ GITHUB_ISSUES_URL = __project_url__ + "/issues"
 class MainWindowBase(QMainWindow):
     sig_about_to_close = Signal()
 
-    def __init__(self, splash=None, sys_manager=None):
+    def __init__(self, splash=None, sys_capture_manager=None):
         super().__init__()
         self.splash = splash
-        self.sys_manager = sys_manager
-        if sys_manager is not None:
+        self.sys_capture_manager = sys_capture_manager
+        self.console = None
+        if self.sys_capture_manager is not None:
             # Setup the internal Sardes console.
             from sardes.widgets.console import SardesConsole
             self.console = SardesConsole()
-            self.sys_manager.register_stdstream_console(self.console)
+            self.sys_capture_manager.register_stdstream_console(self.console)
 
         self.setWindowIcon(get_icon('master'))
         self.setWindowTitle(__namever__)
@@ -612,14 +613,14 @@ if __name__ == '__main__':
     from sardes.utils.qthelpers import create_application
     app = create_application()
 
-    from sardes.app.system import InternalSystemManager
-    sys_manager = InternalSystemManager()
+    from sardes.app.capture import SysCaptureManager
+    sys_capture_manager = SysCaptureManager(start_capture=True)
 
     from sardes.widgets.splash import SplashScreen
     splash = SplashScreen(_("Initializing {}...").format(__namever__))
 
     print("Initializing MainWindow...")
-    main = MainWindow(splash, sys_manager)
+    main = MainWindow(splash, sys_capture_manager)
     splash.finish(main)
     main.show()
     print("Successfully initialized MainWindow.")
