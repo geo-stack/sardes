@@ -55,9 +55,13 @@ class SysCaptureManager(QObject):
     A manager to capture and manage Python's standard input and output
     streams, logging and internal errors reporting.
 
-    Note that the system capture manager should NOT be started when testing
-    under pytest because this will cause various errors due to the way
-    pytest is already capturing standard system outputs.
+    Important Note:
+        the system capture manager should NOT be started when testing
+        under pytest because this will cause problems with the way
+        pytest is already capturing standard system messages and
+        raised exceptions.
+
+        See pytest/src/_pytest/capture.py
     """
 
     def __init__(self, start_capture=False):
@@ -84,6 +88,14 @@ class SysCaptureManager(QObject):
         """
         Start capturing Python interpreter standard messages and unhandled
         raised exceptions.
+
+        Important Note:
+            the system capture manager should NOT be started when testing
+            under pytest because this will cause problems with the way
+            pytest is already capturing standard system messages and
+            raised exceptions.
+
+            See pytest/src/_pytest/capture.py
         """
         self._is_capturing = True
         self.__orig_except_hook = sys.excepthook
