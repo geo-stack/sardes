@@ -54,6 +54,10 @@ class SysCaptureManager(QObject):
     """
     A manager to capture and manage Python's standard input and output
     streams, logging and internal errors reporting.
+
+    Note that the system capture manager should NOT be started when testing
+    under pytest because this will cause various errors due to the way
+    pytest is already capturing standard system outputs.
     """
 
     def __init__(self, start_capture=False):
@@ -77,6 +81,10 @@ class SysCaptureManager(QObject):
             self.start_capture()
 
     def start_capture(self):
+        """
+        Start capturing Python interpreter standard messages and unhandled
+        raised exceptions.
+        """
         self._is_capturing = True
         self.__orig_except_hook = sys.excepthook
         self.__orig_stdout = sys.stdout
@@ -87,6 +95,10 @@ class SysCaptureManager(QObject):
         sys.stderr = self.stderr_emitter
 
     def stop_capture(self):
+        """
+        Stop capturing Python interpreter standard messages and unhandled
+        raised exceptions.
+        """
         if self._is_capturing:
             self._is_capturing = False
             sys.excepthook = self.__orig_except_hook
@@ -94,15 +106,24 @@ class SysCaptureManager(QObject):
             sys.stderr = self.__orig_stderr
 
     def register_stdstream_console(self, console):
+        """
+        Register the specified console to this system capture manager.
+        """
         self._stdstream_consoles.append(console)
         console.write(self._stdstream_stack)
 
     def handle_stderr(self, text):
+        """
+        Handle Python interpreter standard errors.
+        """
         self._stdstream_stack += text
         for console in self._stdstream_consoles:
             console.write(text)
 
     def __handle_stdout(self, text):
+        """
+        Handle Python interpreter standard output.
+        """
         self._stdstream_stack += text
         for console in self._stdstream_consoles:
             console.write(text)
