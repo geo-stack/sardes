@@ -92,23 +92,19 @@ class ExceptDialog(QDialog):
 
         # Setup dialog main message.
         message = _(
-            """
-            <b>{0} has encountered an internal problem.</b>
-            <p>We are sorry, but {1} encountered an internal error that might
-            preventing it from running correctly. You might want to save
-            your work and restart {1} if possible.</p>
-            <p>Please report this error by copying the information below
-            in our <a href="{2}">issues tracker</a> and by providing
-            a step-by-step description of what led to the problem.</p>
-            """
+            '<b>{0} has encountered an internal problem.</b>'
+            '<p>We are sorry, but {1} encountered an internal error that '
+            'might preventing it from running correctly. You might want to '
+            'save your work and restart {1} if possible.</p>'
+            '<p>Please report this error by copying the information below '
+            'in our <a href="{2}">issues tracker</a> and by providing '
+            'a step-by-step description of what led to the problem.</p>'
             ).format(__namever__, __appname__, __issues_url__)
         if self.detailed_log is not None and len(self.detailed_log):
             message += _(
-                """
-                <p>If possible, please also attach to your report the detailed
-                log file accessible by clicking on the <i>Detailed Log</i>
-                button.</p>
-                """
+                '<p>If possible, please also attach to your report the '
+                'detailed log file accessible by clicking on the '
+                '<i>Detailed Log</i> button.</p>'
                 )
         msg_labl = QLabel(message)
         msg_labl.setWordWrap(True)
