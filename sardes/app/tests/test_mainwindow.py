@@ -18,7 +18,7 @@ os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import pytest
-from qtpy.QtCore import QPoint, QSize, Qt, Signal, QObject
+from qtpy.QtCore import QPoint, QSize, Qt
 
 # ---- Local imports
 from sardes.config.gui import INIT_MAINWINDOW_SIZE
@@ -26,7 +26,6 @@ from sardes.config.main import CONF
 from sardes.app.mainwindow import MainWindow, QMessageBox
 from sardes.app.capture import SysCaptureManager
 from sardes.database.accessors import DatabaseAccessorSardesLite
-from sardes.widgets.dialogs import ExceptDialog
 
 
 # =============================================================================
