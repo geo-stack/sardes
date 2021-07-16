@@ -48,6 +48,10 @@ MONTHS = np.array([
 
 
 class SatisticalHydrographTool(SardesTool):
+    """
+    A tool to produce statistical hydrograph from piezometric timeseries.
+    """
+
     def __init__(self, parent):
         super().__init__(
             parent,
@@ -107,7 +111,15 @@ class SatisticalHydrographWidget(QMainWindow):
         self.obs_well_id = obswell_data['obs_well_id']
 
     def set_data(self, wlevels):
-        """Set the data of the figure and update the gui."""
+        """
+        Set the data of the figure and update the gui.
+
+        Parameters
+        ----------
+        wlevels : Series
+            A pandas timeseries containing formatted water level data in
+            meters above mean sea level.
+        """
         try:
             wlevels = (
                 wlevels[[DataType.WaterLevel, 'datetime']]
