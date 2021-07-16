@@ -430,6 +430,18 @@ class SatisticalHydrographFigure(Figure):
         self.percentile_bars = {}
         self.percentile_qpairs = [
             (100, 90), (90, 75), (75, 25), (25, 10), (10, 0)]
+        self.percentile_labels = {
+            (100, 90): '>90',
+            (90, 75): '76-90',
+            (75, 25): '25-75',
+            (25, 10): '10-24',
+            (10, 0): '<10'}
+        self.percentile_rbg = {
+            (100, 90): "#ccebc5",
+            (90, 75): "#a8ddb5",
+            (75, 25): "#7bccc4",
+            (25, 10): "#4eb3d3",
+            (10, 0): "#2b8cbe"}
 
         self.setup_axes()
         self.setup_artists()
