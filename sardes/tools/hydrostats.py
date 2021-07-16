@@ -40,14 +40,16 @@ from sardes.api.tools import SardesTool
 from sardes.utils.qthelpers import (
     create_toolbutton, create_mainwindow_toolbar)
 
-
-RGB = ["#ccebc5", "#a8ddb5", "#7bccc4", "#4eb3d3", "#2b8cbe"]
 MONTHS = np.array([
     _('Jan'), _('Feb'), _('Mar'), _('Apr'), _('May'), _('Jun'),
     _('Jul'), _('Aug'), _('Sep'), _('Oct'), _('Nov'), _('Dec')])
 
 
 class SatisticalHydrographTool(SardesTool):
+    """
+    A tool to produce statistical hydrograph from piezometric timeseries.
+    """
+
     def __init__(self, parent):
         super().__init__(
             parent,
@@ -107,7 +109,15 @@ class SatisticalHydrographWidget(QMainWindow):
         self.obs_well_id = obswell_data['obs_well_id']
 
     def set_data(self, wlevels):
-        """Set the data of the figure and update the gui."""
+        """
+        Set the data of the figure and update the gui.
+
+        Parameters
+        ----------
+        wlevels : Series
+            A pandas timeseries containing formatted water level data in
+            meters above mean sea level.
+        """
         try:
             wlevels = (
                 wlevels[[DataType.WaterLevel, 'datetime']]
@@ -418,6 +428,18 @@ class SatisticalHydrographFigure(Figure):
         self.percentile_bars = {}
         self.percentile_qpairs = [
             (100, 90), (90, 75), (75, 25), (25, 10), (10, 0)]
+        self.percentile_labels = {
+            (100, 90): '>90',
+            (90, 75): '76-90',
+            (75, 25): '25-75',
+            (25, 10): '10-24',
+            (10, 0): '<10'}
+        self.percentile_rbg = {
+            (100, 90): "#ccebc5",
+            (90, 75): "#a8ddb5",
+            (75, 25): "#7bccc4",
+            (25, 10): "#4eb3d3",
+            (10, 0): "#2b8cbe"}
 
         self.setup_axes()
         self.setup_artists()
@@ -458,7 +480,8 @@ class SatisticalHydrographFigure(Figure):
         for i, pair in enumerate(self.percentile_qpairs):
             self.percentile_bars[pair] = ax.bar(
                 np.arange(12), [1] * 12, width=0.9, bottom=[0] * 12,
-                color=RGB[i], edgecolor='black', linewidth=0.5
+                color=self.percentile_rbg[pair], edgecolor='black',
+                linewidth=0.5
                 )
 
         # Setup the artists that holds the xaxis tick labels.
@@ -585,10 +608,12 @@ class SatisticalHydrographFigure(Figure):
                 monthrange(curyear, mth_idx[-1] + 1)[-1])
 
         # Generate the percentiles.
+        q = list(set(
+            [50] +
+            [item for sublist in self.percentile_qpairs for item in sublist]
+            ))
         percentiles, nyear = compute_monthly_percentiles(
-            wlevels,
-            q=[100, 90, 75, 50, 25, 10, 0],
-            pool=pool)
+            wlevels, q, pool=pool)
         percentiles = percentiles.iloc[mth_idx]
         nyear = nyear[mth_idx]
 
@@ -662,8 +687,6 @@ class SatisticalHydrographFigure(Figure):
         self.leghandles = []
         self.leglabels = []
 
-        labels = ['<10', '10-24', '25-75', '76-90', '>90',
-                  _('Median'), _('Measures')]
         handlelength = 0.4
         handleheight = 0.15
         labelspacing = 0.3
@@ -681,34 +704,41 @@ class SatisticalHydrographFigure(Figure):
             ScaledTranslation(0, 1, ax.transAxes) +
             ScaledTranslation(0, (borderaxespad + fontsize + handletextpad)/72,
                               self.dpi_scale_trans))
-        for i in range(5):
+
+        # Create the legend handles for the percentile ranges.
+        for i, qpair in enumerate(reversed(self.percentile_qpairs)):
             patch = mpl.patches.Rectangle(
                 (handlelength * i + labelspacing * i, 0),
                 handlelength, handleheight,
-                fc=RGB[i], ec='black', lw=0.5, transform=trans_patch)
+                fc=self.percentile_rbg[qpair], ec='black', lw=0.5,
+                transform=trans_patch)
             self.leghandles.append(patch)
             ax2.add_patch(patch)
-            ax2.text(handlelength * (i + 1/2) + labelspacing * i, 0, labels[i],
+            ax2.text(handlelength * (i + 1/2) + labelspacing * i, 0,
+                     self.percentile_labels[qpair],
                      ha='center', va='bottom', fontsize=fontsize,
                      transform=trans_text)
+
         i += 1
+        # Create the legend handle for the median.
         self.leghandles.append(ax2.plot(
             [handlelength * (i + 1/2) + labelspacing * i],
             [handleheight / 2],
             marker='^', color='black', ms=10, ls='',
             transform=trans_patch
             )[0])
-        ax2.text(handlelength * (i + 1/2) + labelspacing * i, 0, labels[i],
+        ax2.text(handlelength * (i + 1/2) + labelspacing * i, 0, _('Median'),
                  ha='center', va='bottom', fontsize=fontsize,
                  transform=trans_text)
         i += 1
+        # Create the legend handle for the measurements.
         self.leghandles.append(ax2.plot(
             [handlelength * (i + 1/2) + labelspacing * i],
             [handleheight / 2],
             marker='.', color='red', ms=10, ls='', mew=2,
             transform=trans_patch
             )[0])
-        ax2.text(handlelength * (i + 1/2) + labelspacing * i, 0, labels[i],
+        ax2.text(handlelength * (i + 1/2) + labelspacing * i, 0, _('Measures'),
                  ha='center', va='bottom', fontsize=fontsize,
                  transform=trans_text)
 
@@ -793,7 +823,7 @@ if __name__ == "__main__":
 
     app = create_application()
 
-    database = "D:/Desktop/rsesq_prod_02-04-2021_rename.db"
+    database = "D:/Desktop/rsesq_prod_06-07-2021.db"
     accessor = DatabaseAccessorSardesLite(database)
 
     sampling_feature_uuid = (
@@ -811,6 +841,14 @@ if __name__ == "__main__":
         sampling_feature_uuid]
 
     formatted_data = format_reading_data(readings_data, repere_data)
+
+    wlevels = (formatted_data[[DataType.WaterLevel, 'datetime']]
+               .set_index('datetime', drop=True))
+    percentiles, nyear = compute_monthly_percentiles(
+        wlevels,
+        q=[100, 90, 75, 50, 25, 10, 0],
+        pool='min_max_median')
+    print(percentiles)
 
     widget = SatisticalHydrographWidget()
     widget.set_data(formatted_data)
