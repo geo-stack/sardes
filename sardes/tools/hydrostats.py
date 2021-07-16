@@ -608,10 +608,12 @@ class SatisticalHydrographFigure(Figure):
                 monthrange(curyear, mth_idx[-1] + 1)[-1])
 
         # Generate the percentiles.
+        q = list(set(
+            [50] +
+            [item for sublist in self.percentile_qpairs for item in sublist]
+            ))
         percentiles, nyear = compute_monthly_percentiles(
-            wlevels,
-            q=[100, 90, 75, 50, 25, 10, 0],
-            pool=pool)
+            wlevels, q, pool=pool)
         percentiles = percentiles.iloc[mth_idx]
         nyear = nyear[mth_idx]
 
