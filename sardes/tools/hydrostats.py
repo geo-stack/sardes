@@ -40,8 +40,6 @@ from sardes.api.tools import SardesTool
 from sardes.utils.qthelpers import (
     create_toolbutton, create_mainwindow_toolbar)
 
-
-RGB = ["#ccebc5", "#a8ddb5", "#7bccc4", "#4eb3d3", "#2b8cbe"]
 MONTHS = np.array([
     _('Jan'), _('Feb'), _('Mar'), _('Apr'), _('May'), _('Jun'),
     _('Jul'), _('Aug'), _('Sep'), _('Oct'), _('Nov'), _('Dec')])
@@ -482,7 +480,8 @@ class SatisticalHydrographFigure(Figure):
         for i, pair in enumerate(self.percentile_qpairs):
             self.percentile_bars[pair] = ax.bar(
                 np.arange(12), [1] * 12, width=0.9, bottom=[0] * 12,
-                color=RGB[i], edgecolor='black', linewidth=0.5
+                color=self.percentile_rbg[pair], edgecolor='black',
+                linewidth=0.5
                 )
 
         # Setup the artists that holds the xaxis tick labels.
@@ -686,8 +685,6 @@ class SatisticalHydrographFigure(Figure):
         self.leghandles = []
         self.leglabels = []
 
-        labels = ['<10', '10-24', '25-75', '76-90', '>90',
-                  _('Median'), _('Measures')]
         handlelength = 0.4
         handleheight = 0.15
         labelspacing = 0.3
@@ -705,34 +702,41 @@ class SatisticalHydrographFigure(Figure):
             ScaledTranslation(0, 1, ax.transAxes) +
             ScaledTranslation(0, (borderaxespad + fontsize + handletextpad)/72,
                               self.dpi_scale_trans))
-        for i in range(5):
+
+        # Create the legend handles for the percentile ranges.
+        for i, qpair in enumerate(reversed(self.percentile_qpairs)):
             patch = mpl.patches.Rectangle(
                 (handlelength * i + labelspacing * i, 0),
                 handlelength, handleheight,
-                fc=RGB[i], ec='black', lw=0.5, transform=trans_patch)
+                fc=self.percentile_rbg[qpair], ec='black', lw=0.5,
+                transform=trans_patch)
             self.leghandles.append(patch)
             ax2.add_patch(patch)
-            ax2.text(handlelength * (i + 1/2) + labelspacing * i, 0, labels[i],
+            ax2.text(handlelength * (i + 1/2) + labelspacing * i, 0,
+                     self.percentile_labels[qpair],
                      ha='center', va='bottom', fontsize=fontsize,
                      transform=trans_text)
+
         i += 1
+        # Create the legend handle for the median.
         self.leghandles.append(ax2.plot(
             [handlelength * (i + 1/2) + labelspacing * i],
             [handleheight / 2],
             marker='^', color='black', ms=10, ls='',
             transform=trans_patch
             )[0])
-        ax2.text(handlelength * (i + 1/2) + labelspacing * i, 0, labels[i],
+        ax2.text(handlelength * (i + 1/2) + labelspacing * i, 0, _('Median'),
                  ha='center', va='bottom', fontsize=fontsize,
                  transform=trans_text)
         i += 1
+        # Create the legend handle for the measurements.
         self.leghandles.append(ax2.plot(
             [handlelength * (i + 1/2) + labelspacing * i],
             [handleheight / 2],
             marker='.', color='red', ms=10, ls='', mew=2,
             transform=trans_patch
             )[0])
-        ax2.text(handlelength * (i + 1/2) + labelspacing * i, 0, labels[i],
+        ax2.text(handlelength * (i + 1/2) + labelspacing * i, 0, _('Measures'),
                  ha='center', va='bottom', fontsize=fontsize,
                  transform=trans_text)
 
