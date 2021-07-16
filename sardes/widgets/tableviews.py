@@ -1849,12 +1849,14 @@ class SardesTableView(QTableView):
         Cancel all the edits that were made to the table data of this view
         since last save.
         """
+        self.closePersistentEditor(self.current_index())
         self.model().cancel_data_edits()
 
     def _undo_last_data_edit(self):
         """
         Undo the last data edits that was added to the table.
         """
+        self.closePersistentEditor(self.current_index())
         last_edit = self.model().data_edits()[-1]
         if last_edit.type() == SardesTableModelBase.RowAdded:
             # We keep the selected item. If the selected item is part of the
