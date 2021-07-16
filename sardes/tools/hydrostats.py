@@ -823,7 +823,7 @@ if __name__ == "__main__":
 
     app = create_application()
 
-    database = "D:/Desktop/rsesq_prod_02-04-2021_rename.db"
+    database = "D:/Desktop/rsesq_prod_06-07-2021.db"
     accessor = DatabaseAccessorSardesLite(database)
 
     sampling_feature_uuid = (
@@ -841,6 +841,14 @@ if __name__ == "__main__":
         sampling_feature_uuid]
 
     formatted_data = format_reading_data(readings_data, repere_data)
+
+    wlevels = (formatted_data[[DataType.WaterLevel, 'datetime']]
+               .set_index('datetime', drop=True))
+    percentiles, nyear = compute_monthly_percentiles(
+        wlevels,
+        q=[100, 90, 75, 50, 25, 10, 0],
+        pool='min_max_median')
+    print(percentiles)
 
     widget = SatisticalHydrographWidget()
     widget.set_data(formatted_data)
