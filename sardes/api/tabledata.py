@@ -69,13 +69,12 @@ class ValueChanged(SardesDataEdit):
     A class that represents a change of a value at a given model index.
     """
 
-    def __init__(self, index, column, edited_value, previous_value, row, col,
-                 parent):
+    def __init__(self, index, column, edited_value, row, col, parent):
         super() .__init__(index, column, parent)
-        self.previous_value = previous_value
         self.edited_value = edited_value
         self.row = row
         self.col = col
+        self.previous_value = self.parent.data.iat[row, col]
 
         # We update the list of original data of the parent SardesTableData.
         # We store this in an independent list for performance reasons when
@@ -259,10 +258,9 @@ class SardesTableData(object):
         Store the new value at the given index and column and add the edit
         to the stack.
         """
-        previous_value = self.data.iat[row, col]
         self._data_edits_stack.append(ValueChanged(
             self.data.index[row], self.data.columns[col],
-            edited_value, previous_value,
+            edited_value,
             row, col,
             parent=self
             ))
