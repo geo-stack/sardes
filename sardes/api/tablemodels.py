@@ -84,6 +84,23 @@ class ValueChanged(SardesDataEdit):
         self.row = row
         self.col = col
 
+        # We update the list of original data of the parent SardesTableData.
+        # We store this in an independent list for performance reasons when
+        # displaying the data in the GUI in a tableview.
+        if (row, col) in self.parent._original_data.index:
+            original_value = self.parent._original_data.loc[
+                (row, col), 'value']
+            self.parent._original_data.drop((row, col), inplace=True)
+        else:
+            original_value = self.parent.data.iat[row, col]
+
+        if not are_values_equal(original_value, edited_value):
+            self.parent._original_data.loc[
+                (row, col), 'value'] = original_value
+
+        # We apply the new value to the data.
+        self.data.iat[row, col] = edited_value
+
     def type(self):
         """
         Return an integer that indicates the type of data edit this
@@ -247,21 +264,6 @@ class SardesTableData(object):
             row, col,
             parent=self
             ))
-
-        # We update the list of original data. We store this in an independent
-        # list for performance reasons when displaying the data in a GUI.
-        if (row, col) in self._original_data.index:
-            original_value = self._original_data.loc[(row, col), 'value']
-            self._original_data.drop((row, col), inplace=True)
-        else:
-            original_value = self.data.iat[row, col]
-
-        if not are_values_equal(original_value, edited_value):
-            self._original_data.loc[(row, col), 'value'] = original_value
-
-        # We apply the new value to the data.
-        self.data.iat[row, col] = edited_value
-
         return self._data_edits_stack[-1]
 
     def get(self, row, col=None):
