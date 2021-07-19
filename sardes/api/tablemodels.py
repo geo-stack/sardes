@@ -94,12 +94,17 @@ class ValueChanged(SardesDataEdit):
         else:
             original_value = self.parent.data.iat[row, col]
 
+        # We only track edited values that differ from their corresponding
+        # original values that are currently stored in the dataset.
+        #
+        # This allow to take into account the situation where an edited
+        # value is edited back to its original value.
         if not are_values_equal(original_value, edited_value):
             self.parent._original_data.loc[
                 (row, col), 'value'] = original_value
 
         # We apply the new value to the data.
-        self.data.iat[row, col] = edited_value
+        self.parent.data.iat[row, col] = edited_value
 
     def type(self):
         """
