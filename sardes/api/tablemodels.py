@@ -175,6 +175,8 @@ class RowAdded(SardesDataEdit):
         self.values = values
         self.row = pd.Index(
             [i + len(self.parent.data) for i in range(len(index))])
+
+        # We update the table's variable that is used to track new rows.
         self.parent._new_rows = self.parent._new_rows.append(self.row)
 
         # We then add the new row to the data.
@@ -220,7 +222,7 @@ class SardesTableData(object):
 
         # A pandas multiindex dataframe that contains the original data at
         # the rows and columns where the data was edited. This is tracked
-        # independently of the data edits stack for performance purposes
+        # independently from the data edits stack for performance purposes
         # when displaying the data in a GUI.
         self._original_data = pd.DataFrame(
             [], columns=['row', 'column', 'value'])
