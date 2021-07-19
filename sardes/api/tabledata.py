@@ -258,6 +258,9 @@ class SardesTableData(object):
         """Return the len of the data."""
         return len(self.data)
 
+    def __str__(self):
+        return self.data.__str__()
+
     def set(self, row, col, edited_value):
         """
         Store the new value at the given index and column and add the edit
