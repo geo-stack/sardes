@@ -351,6 +351,20 @@ class SardesTableData(object):
 
         return self.data.loc[added_row_indexes]
 
+    def edited_values(self):
+        """
+        Return a list of tuples each containing the indexe of a row and a
+        dictionary with the value of the attributes that were edited on
+        that row.
+        """
+        edited_values = []
+        for row, row_data in self._original_data.groupby(level=0):
+            index = self.data.index[row]
+            columns = self.data.columns[row_data.index.get_level_values(1)]
+            row_edited_values = self.data.iloc[row][columns].to_dict()
+            edited_values.append((index, row_edited_values))
+        return edited_values
+
     # ---- Edits
     def edits(self):
         """
