@@ -323,6 +323,20 @@ class SardesTableData(object):
                 self.data.index[unique_rows], unique_rows, parent=self))
             return self._data_edits_stack[-1]
 
+    def deleted_rows(self):
+        """
+        Return a pandas Index array containing the indexes of the rows that
+        were deleted in the dataframe.
+        """
+        deleted_rows = self.data.index[self._deleted_rows]
+
+        # We remove rows that were added to the dataset since these were not
+        # even added to the database yet.
+        deleted_rows = deleted_rows.drop(
+            self.data.index[self._new_rows], errors='ignore')
+
+        return deleted_rows
+
     # ---- Edits
     def edits(self):
         """
