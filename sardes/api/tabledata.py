@@ -76,24 +76,24 @@ class ValueChanged(SardesDataEdit):
         self.col = col
         self.previous_value = self.parent.data.iat[row, col]
 
-        # We update the list of original data of the parent SardesTableData.
-        # We store this in an independent list for performance reasons when
-        # displaying the data in the GUI in a tableview.
-        if (row, col) in self.parent._original_data.index:
-            original_value = self.parent._original_data.loc[
-                (row, col), 'value']
-            self.parent._original_data.drop((row, col), inplace=True)
-        else:
-            original_value = self.parent.data.iat[row, col]
+        if self.row not in self.parent._new_rows:
+            # Update the list of original values that have been edited.
+            # We store the original values in an independent list for
+            # performance reasons when displaying the data in a tableview.
+            if (row, col) in self.parent._original_data.index:
+                original_value = self.parent._original_data.loc[
+                    (row, col), 'value']
+                self.parent._original_data.drop((row, col), inplace=True)
+            else:
+                original_value = self.parent.data.iat[row, col]
 
-        # We only track edited values that differ from their corresponding
-        # original values that are currently stored in the dataset.
-        #
-        # This allow to take into account the situation where an edited
-        # value is edited back to its original value.
-        if not are_values_equal(original_value, edited_value):
-            self.parent._original_data.loc[
-                (row, col), 'value'] = original_value
+            # We only track edited values that differ from their corresponding
+            # original value (the value that is saved in the database).
+            # This allow to take into account the situation where an edited
+            # value is edited back to its original value.
+            if not are_values_equal(original_value, edited_value):
+                self.parent._original_data.loc[
+                    (row, col), 'value'] = original_value
 
         # We apply the new value to the data.
         self.parent.data.iat[row, col] = edited_value
@@ -106,19 +106,24 @@ class ValueChanged(SardesDataEdit):
         return SardesTableData.ValueChanged
 
     def _undo(self):
-        """Undo this value changed edit."""
-        # Update the original data.
-        if (self.row, self.col) in self.parent._original_data.index:
-            original_value = self.parent._original_data.loc[
-                (self.row, self.col), 'value']
-            self.parent._original_data.drop((self.row, self.col), inplace=True)
-        else:
-            original_value = self.parent.data.iat[self.row, self.col]
+        """
+        Undo this value changed edit.
+        """
+        if self.row not in self.parent._new_rows:
+            # Update the list of original values that have been edited.
+            if (self.row, self.col) in self.parent._original_data.index:
+                original_value = self.parent._original_data.loc[
+                    (self.row, self.col), 'value']
+                self.parent._original_data.drop(
+                    (self.row, self.col), inplace=True)
+            else:
+                original_value = self.parent.data.iat[self.row, self.col]
 
-        values_equal = are_values_equal(self.previous_value, original_value)
-        if not values_equal:
-            self.parent._original_data.loc[
-                (self.row, self.col), 'value'] = original_value
+            values_equal = are_values_equal(
+                self.previous_value, original_value)
+            if not values_equal:
+                self.parent._original_data.loc[
+                    (self.row, self.col), 'value'] = original_value
 
         # We apply the previous value to the data.
         self.parent.data.iat[self.row, self.col] = self.previous_value
@@ -376,3 +381,25 @@ class SardesTableData(object):
         if len(self._data_edits_stack):
             last_edit = self._data_edits_stack.pop(-1)
             last_edit.undo()
+
+
+if __name__ == '__main__':
+    NCOL = 5
+    COLUMNS = ['col{}'.format(i) for i in range(NCOL)]
+    VALUES = [['str1', True, 1.111, 3, None],
+              ['str2', False, 2.222, 1, None],
+              ['str3', True, 3.333, 29, None]]
+
+    dataset = pd.DataFrame(VALUES, columns=COLUMNS)
+    dataset['col1'] = dataset['col1'].astype(pd.Int64Dtype())
+
+    tabledata = SardesTableData(dataset)
+
+    tabledata.set(1, 0, 'edited_str2')
+
+    print(tabledata)
+    print()
+    print(tabledata._original_data)
+    print()
+    # print(tabledata.edited_data())
+    # print()
