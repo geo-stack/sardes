@@ -77,7 +77,7 @@ class ValueChanged(SardesDataEdit):
     """
 
     def __init__(self, index, column, edited_value, previous_value, row, col,
-                 parent=None):
+                 parent):
         super() .__init__(index, column, parent)
         self.previous_value = previous_value
         self.edited_value = edited_value
