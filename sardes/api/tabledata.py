@@ -337,6 +337,20 @@ class SardesTableData(object):
 
         return deleted_rows
 
+    def added_rows(self):
+        """
+        Return a pandas DataFrame containing the rows that were
+        added to the dataframe.
+        """
+        added_row_indexes = self.data.index[self._new_rows]
+
+        # We remove new rows that were subsequently deleted from the
+        # dataframe since there is no need to even add these to the database.
+        added_row_indexes = added_row_indexes.drop(
+            self.data.index[self._deleted_rows], errors='ignore')
+
+        return self.data.loc[added_row_indexes]
+
     # ---- Edits
     def edits(self):
         """
