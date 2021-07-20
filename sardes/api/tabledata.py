@@ -442,10 +442,7 @@ if __name__ == '__main__':
     tabledata = SardesTableData(dataset)
 
     tabledata.set(1, 0, 'edited_str2')
+    tabledata.set(1, 2, 1.124)
 
-    print(tabledata)
-    print()
-    print(tabledata._original_data)
-    print()
-    # print(tabledata.edited_data())
-    # print()
+    print(tabledata, end='\n\n')
+    print(tabledata.edited_values())
