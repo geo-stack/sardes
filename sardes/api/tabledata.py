@@ -244,7 +244,7 @@ class SardesTableData(object):
         self._deleted_rows = pd.Index([])
 
         # A pandas multiindex dataframe that contains the original data at
-        # the rows and columns where the data was edited. This is tracked
+        # the rows and columns where data was edited. This is tracked
         # independently from the data edits stack for performance purposes
         # when displaying the data in a GUI.
         self._original_data = pd.DataFrame(
@@ -319,6 +319,7 @@ class SardesTableData(object):
         unique_rows = pd.Index(rows)
         unique_rows = unique_rows[~unique_rows.isin(self._deleted_rows)]
         if not unique_rows.empty:
+            # We only delete rows that are not already deleted.
             self._data_edits_stack.append(RowDeleted(
                 self.data.index[unique_rows], unique_rows, parent=self))
             return self._data_edits_stack[-1]
