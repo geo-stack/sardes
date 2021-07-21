@@ -360,6 +360,8 @@ class SardesTableData(object):
         """
         edited_values = []
         for row, row_data in self._original_data.groupby(level=0):
+            if row in self._new_rows or row in self._deleted_rows:
+                continue
             index = self.data.index[row]
             columns = self.data.columns[row_data.index.get_level_values(1)]
             row_edited_values = self.data.iloc[row][columns].to_dict()
