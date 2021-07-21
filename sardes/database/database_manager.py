@@ -744,7 +744,7 @@ class DatabaseConnectionManager(TaskManagerBase):
         Add a new item to the data related to name in the database.
         """
         self._data_changed.add(args[0])
-        self._add_task('add', callback, *args)
+        self.add_task('add', callback, *args)
         if not postpone_exec:
             self.run_tasks()
 
@@ -752,7 +752,7 @@ class DatabaseConnectionManager(TaskManagerBase):
         """
         Get the data related to name from the database.
         """
-        self._add_task('get', callback, *args)
+        self.add_task('get', callback, *args)
         if not postpone_exec:
             self.run_tasks()
 
@@ -761,7 +761,7 @@ class DatabaseConnectionManager(TaskManagerBase):
         Delete an item related to name from the database.
         """
         self._data_changed.add(args[0])
-        self._add_task('delete', callback, *args)
+        self.add_task('delete', callback, *args)
         if not postpone_exec:
             self.run_tasks()
 
@@ -777,7 +777,7 @@ class DatabaseConnectionManager(TaskManagerBase):
         Set the data related to name in the database.
         """
         self._data_changed.add(args[0])
-        self._add_task('set', callback, *args)
+        self.add_task('set', callback, *args)
         if not postpone_exec:
             self.run_tasks()
 
@@ -789,18 +789,18 @@ class DatabaseConnectionManager(TaskManagerBase):
         if db_accessor is not None:
             self._is_connecting = True
             self.sig_database_is_connecting.emit()
-            self._add_task(
+            self.add_task(
                 'connect_to_db', self._handle_connect_to_db, db_accessor)
             self.run_tasks()
 
     def disconnect_from_db(self):
         """Close the connection with the database"""
-        self._add_task('disconnect_from_db', self._handle_disconnect_from_db)
+        self.add_task('disconnect_from_db', self._handle_disconnect_from_db)
         self.run_tasks()
 
     def close(self, callback=None):
         """Close the database connection manager."""
-        self._add_task('disconnect_from_db', callback)
+        self.add_task('disconnect_from_db', callback)
         self.run_tasks()
 
     # ---- Utilities
@@ -810,8 +810,8 @@ class DatabaseConnectionManager(TaskManagerBase):
         Fetch and return from the database the installation infos related to
         the given sonde serial number and datetime.
         """
-        self._add_task('get_sonde_installation_info', callback,
-                       sonde_serial_no, date_time)
+        self.add_task('get_sonde_installation_info', callback,
+                      sonde_serial_no, date_time)
         self.run_tasks()
 
     # ---- Timeseries
@@ -826,8 +826,8 @@ class DatabaseConnectionManager(TaskManagerBase):
         the specified monitoring station.
         """
         if main_thread is False:
-            self._add_task('get_timeseries_for_obs_well', callback,
-                           obs_well_id, data_types)
+            self.add_task('get_timeseries_for_obs_well', callback,
+                          obs_well_id, data_types)
             if not postpone_exec:
                 self.run_tasks()
         else:
@@ -859,7 +859,7 @@ class DatabaseConnectionManager(TaskManagerBase):
         """
         self._data_changed.add('observation_wells_data_overview')
         self._tseries_data_changed.add(obs_well_id)
-        self._add_task('save_timeseries_data_edits', callback, tseries_edits)
+        self.add_task('save_timeseries_data_edits', callback, tseries_edits)
         if not postpone_exec:
             self.run_tasks()
 
@@ -883,8 +883,8 @@ class DatabaseConnectionManager(TaskManagerBase):
         """
         self._data_changed.add('observation_wells_data_overview')
         self._tseries_data_changed.add(obs_well_id)
-        self._add_task('add_timeseries_data', callback, tseries_data,
-                       obs_well_id, sonde_installation_uuid)
+        self.add_task('add_timeseries_data', callback, tseries_data,
+                      obs_well_id, sonde_installation_uuid)
         if not postpone_exec:
             self.run_tasks()
 
@@ -906,7 +906,7 @@ class DatabaseConnectionManager(TaskManagerBase):
         """
         self._data_changed.add('observation_wells_data_overview')
         self._tseries_data_changed.add(obs_well_id)
-        self._add_task('delete_timeseries_data', callback, tseries_dels)
+        self.add_task('delete_timeseries_data', callback, tseries_dels)
         if not postpone_exec:
             self.run_tasks()
 
@@ -917,8 +917,8 @@ class DatabaseConnectionManager(TaskManagerBase):
         Return the data and filename of the attachment of the given type that
         is attached to the specified sampling_feature_uuid.
         """
-        self._add_task('get_attachment', callback,
-                       sampling_feature_uuid, attachment_type)
+        self.add_task('get_attachment', callback,
+                      sampling_feature_uuid, attachment_type)
         if not postpone_exec:
             self.run_tasks()
 
@@ -929,8 +929,8 @@ class DatabaseConnectionManager(TaskManagerBase):
         sampling_feature_uuid in the database.
         """
         self._data_changed.add('stored_attachments_info')
-        self._add_task('set_attachment', callback,
-                       sampling_feature_uuid, attachment_type, filename)
+        self.add_task('set_attachment', callback,
+                      sampling_feature_uuid, attachment_type, filename)
         if not postpone_exec:
             self.run_tasks()
 
@@ -941,7 +941,7 @@ class DatabaseConnectionManager(TaskManagerBase):
         is currently attached to the specified sampling_feature_uuid.
         """
         self._data_changed.add('stored_attachments_info')
-        self._add_task(
+        self.add_task(
             'del_attachment', callback,
             sampling_feature_uuid, attachment_type)
         if not postpone_exec:
@@ -1015,8 +1015,8 @@ class DatabaseConnectionManager(TaskManagerBase):
         """
         Publish the piezometric network data to the specified kml filename.
         """
-        self._add_task('publish_to_kml', callback, filename,
-                       iri_data, iri_logs, iri_graphs, iri_quality)
+        self.add_task('publish_to_kml', callback, filename,
+                      iri_data, iri_logs, iri_graphs, iri_quality)
         if not postpone_exec:
             self.run_tasks()
 
