@@ -360,7 +360,11 @@ class SardesTableData(object):
         """
         edited_values = []
         for row, row_data in self._original_data.groupby(level=0):
-            if row in self._new_rows or row in self._deleted_rows:
+            if row in self._deleted_rows:
+                # Edits made to deleted rows are not tracked as net
+                # edited values. Since these rows are going to be deleted
+                # from the database anyway, there is not point in handling
+                # these edits when commiting to the database.
                 continue
             index = self.data.index[row]
             columns = self.data.columns[row_data.index.get_level_values(1)]
