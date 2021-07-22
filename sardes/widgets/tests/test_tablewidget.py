@@ -18,6 +18,7 @@ import uuid
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
+from flaky import flaky
 import numpy as np
 import pytest
 import pandas as pd
@@ -180,6 +181,7 @@ def get_selected_data(tablewidget):
 # =============================================================================
 # ---- Tests
 # =============================================================================
+@flaky(max_runs=3)
 def test_tablewidget_init(tablewidget, TABLE_DATAF):
     """Test that SardesTableWidget is initialized correctly."""
     tableview = tablewidget.tableview
