@@ -443,12 +443,15 @@ if __name__ == '__main__':
               ['str3', True, 3.333, 29, None]]
 
     dataset = pd.DataFrame(VALUES, columns=COLUMNS)
-    dataset['col1'] = dataset['col1'].astype(pd.Int64Dtype())
+    dataset['col1'] = dataset['col1'].astype("Int64")
+    dataset['col3'] = dataset['col3'].astype("Int64")
 
     tabledata = SardesTableData(dataset)
 
     tabledata.set(1, 0, 'edited_str2')
     tabledata.set(1, 2, 1.124)
+    tabledata.set(1, 2, 1.124)
+    tabledata.set(1, 3, None)
 
     print(tabledata, end='\n\n')
     print(tabledata.edited_values())
