@@ -19,8 +19,6 @@ import uuid
 # ---- Third party imports
 import numpy as np
 import pandas as pd
-from pandas._libs.tslibs.nattype import NaTType
-from pandas._libs.missing import NAType
 from pandas.api.types import is_list_like, is_datetime64_ns_dtype
 from sqlalchemy import create_engine, extract, func, and_
 from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
@@ -80,8 +78,7 @@ def adapt_pandas_nat(pandas_nat):
 
 sqlite3.register_adapter(np.int64, addapt_numpy_int64)
 sqlite3.register_adapter(np.float64, addapt_numpy_float64)
-sqlite3.register_adapter(NAType, adapt_pandas_nan)
-sqlite3.register_adapter(NaTType, adapt_pandas_nat)
+sqlite3.register_adapter(type(pd.NA), adapt_pandas_nan)
 
 
 # =============================================================================
@@ -1034,6 +1031,11 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         sonde = self._get_sonde(sonde_uuid)
         for attr_name, attr_value in attribute_values.items():
+            # Make sure pandas NaT are replaced by None for datetime fields
+            # to avoid errors in sqlalchemy.
+            if attr_name in ['date_reception', 'date_withdrawal']:
+                attr_value = None if pd.isnull(attr_value) else attr_value
+
             setattr(sonde, attr_name, attr_value)
         if auto_commit:
             self._session.commit()
@@ -1205,6 +1207,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 observation = self._get_observation(measurement.observation_id)
                 observation.sampling_feature_uuid = attr_value
             elif attr_name == 'datetime':
+                # We need to make sure pandas NaT are replaced by None
+                # to avoid errors in sqlalchemy.
+                attr_value = None if pd.isnull(attr_value) else attr_value
+
                 observation = self._get_observation(measurement.observation_id)
                 observation.obs_datetime = attr_value
             elif attr_name == 'value':
