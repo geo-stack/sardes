@@ -379,9 +379,8 @@ def test_edit_observation_well(dbaccessor):
         'is_station_active': False,
         'obs_well_notes': 'well_123A2456_notes_edited'
         }
-    for attribute_name, attribute_value in edited_attribute_values.items():
-        dbaccessor.set_observation_wells_data(
-            sampling_feature_uuid, attribute_name, attribute_value)
+    dbaccessor.set_observation_wells_data(
+        sampling_feature_uuid, edited_attribute_values)
 
     obs_wells = dbaccessor.get_observation_wells_data()
     for attribute_name, attribute_value in edited_attribute_values.items():
