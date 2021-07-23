@@ -225,9 +225,9 @@ def test_manual_measurements(dbaccessor0, obswells_data, manual_measurements):
     Regression test for cgq-qgc/sardes#424
     """
     # Add the observation wells.
-    for obs_well_uuid, obs_well_data in obswells_data.iterrows():
+    for obswell_id, obswell_data in obswells_data.iterrows():
         dbaccessor0.add_observation_wells_data(
-            obs_well_uuid, attribute_values=obs_well_data.to_dict())
+            obswell_id, obswell_data.to_dict())
 
     # Test the empty manual measurement dataframe is formatted as expected.
     # This covers the issue reported at cgq-qgc/sardes#427.
@@ -251,10 +251,9 @@ def test_manual_measurements(dbaccessor0, obswells_data, manual_measurements):
         'datetime': datetime.datetime(2008, 1, 13, 11, 4, 23),
         'value': 7.45,
         'notes': 'test_edit_manual_measurements'}
-    for attribute_name, attribute_value in edited_values.items():
-        assert attribute_value != old_values[attribute_name]
-        dbaccessor0.set_manual_measurements(
-            gen_num_value_uuid, attribute_name, attribute_value)
+    for attr_name, attr_value in edited_values.items():
+        assert attr_value != old_values[attr_name]
+    dbaccessor0.set_manual_measurements(gen_num_value_uuid, edited_values)
 
     saved_manual_measurements = dbaccessor0.get_manual_measurements()
     assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
