@@ -1194,23 +1194,23 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return measurements
 
-    def set_manual_measurements(self, gen_num_value_uuid, attribute_name,
-                                attribute_value):
+    def set_manual_measurements(self, gen_num_value_uuid, attribute_values):
         """
         Save in the database the new attribute value for the manual
         measurement corresponding to the specified id.
         """
         measurement = self._get_generic_num_value(gen_num_value_uuid)
-        if attribute_name == 'sampling_feature_uuid':
-            observation = self._get_observation(measurement.observation_id)
-            observation.sampling_feature_uuid = attribute_value
-        elif attribute_name == 'datetime':
-            observation = self._get_observation(measurement.observation_id)
-            observation.obs_datetime = attribute_value
-        elif attribute_name == 'value':
-            measurement.gen_num_value = float(attribute_value)
-        elif attribute_name == 'notes':
-            measurement.gen_num_value_notes = attribute_value
+        for attr_name, attr_value in attribute_values.items():
+            if attr_name == 'sampling_feature_uuid':
+                observation = self._get_observation(measurement.observation_id)
+                observation.sampling_feature_uuid = attr_value
+            elif attr_name == 'datetime':
+                observation = self._get_observation(measurement.observation_id)
+                observation.obs_datetime = attr_value
+            elif attr_name == 'value':
+                measurement.gen_num_value = float(attr_value)
+            elif attr_name == 'notes':
+                measurement.gen_num_value_notes = attr_value
         self._session.commit()
 
     def delete_manual_measurements(self, gen_num_value_uuids):
