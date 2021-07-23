@@ -8,11 +8,10 @@
 # -----------------------------------------------------------------------------
 
 """
-Tests for the Tables plugin.
+Tests for the Observation Wells table.
 """
 
 # ---- Standard imports
-import datetime
 import os
 import os.path as osp
 from unittest.mock import Mock
@@ -25,46 +24,14 @@ from qtpy.QtCore import Qt, QUrl
 from qtpy.QtGui import QDesktopServices
 
 # ---- Local imports
-from sardes.plugins.tables import SARDES_PLUGIN_CLASS
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
-from sardes.database.accessors import DatabaseAccessorSardesLite
-from sardes.app.mainwindow import MainWindowBase
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def dbaccessor(tmp_path, database_filler):
-    dbaccessor = DatabaseAccessorSardesLite(
-        osp.join(tmp_path, 'sqlite_database_test.db'))
-    dbaccessor.init_database()
-    database_filler(dbaccessor)
-
-    return dbaccessor
-
-
-@pytest.fixture
-def tablewidget(qtbot, mocker, dbaccessor, obswells_data):
-    class MainWindowMock(MainWindowBase):
-        def __init__(self):
-            self.view_timeseries_data = Mock()
-            super().__init__()
-
-        def setup_internal_plugins(self):
-            self.plugin = SARDES_PLUGIN_CLASS(self)
-            self.plugin.register_plugin()
-            self.internal_plugins.append(self.plugin)
-
-    mainwindow = MainWindowMock()
-    mainwindow.show()
-    qtbot.waitExposed(mainwindow)
-
-    dbconnmanager = mainwindow.db_connection_manager
-    with qtbot.waitSignal(dbconnmanager.sig_database_connected, timeout=3000):
-        dbconnmanager.connect_to_db(dbaccessor)
-    assert dbconnmanager.is_connected()
-
+def tablewidget(mainwindow, qtbot, dbaccessor, obswells_data):
     # Select the tab corresponding to the observation wells table.
     tablewidget = mainwindow.plugin._tables['table_observation_wells']
     mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
