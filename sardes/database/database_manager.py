@@ -614,31 +614,37 @@ class SardesModelsManager(QObject):
         table_model = self._table_models[table_id]
         table_model.sig_data_about_to_be_saved.emit()
         table_model_data_name = self._models_req_data[table_id][0]
-        for edit in table_model._datat.edits():
-            callback = (table_model.sig_data_saved.emit
-                        if edit == table_model._datat.edits()[-1] else None)
-            if edit.type() == table_model.ValueChanged:
-                self.db_manager.set(
-                    table_model_data_name,
-                    edit.index, edit.column, edit.edited_value,
-                    callback=callback,
-                    postpone_exec=True)
-            elif edit.type() == table_model.RowAdded:
-                for index, values in zip(edit.index, edit.values):
-                    self.db_manager.add(
-                        table_model_data_name,
-                        index, values,
-                        callback=callback,
-                        postpone_exec=True)
-            elif edit.type() == table_model.RowDeleted:
-                self.db_manager.delete(
-                    table_model_data_name,
-                    edit.index,
-                    callback=callback,
-                    postpone_exec=True)
-            else:
-                raise TypeError('Edit type not recognized.')
-        self.db_manager.run_tasks()
+
+        # We delete rows from the database.
+        deleted_rows = table_model._datat.deleted_rows()
+        for index in deleted_rows:
+            self.db_manager.delete(
+                table_model_data_name,
+                index,
+                callback=None,
+                postpone_exec=True)
+
+        # We add new rows to the database.
+        added_rows = table_model._datat.added_rows()
+        for index, attr_values in added_rows.iterrows():
+            self.db_manager.add(
+                table_model_data_name,
+                index,
+                attr_values.dropna().to_dict(),
+                callback=None,
+                postpone_exec=True)
+
+        # We commit edits to existing rows.
+        edited_values = table_model._datat.edited_values()
+        for index, attr_values in edited_values:
+            self.db_manager.set(
+                table_model_data_name,
+                index,
+                attr_values,
+                callback=None,
+                postpone_exec=True)
+
+        self.db_manager.run_tasks(callback=table_model.sig_data_saved.emit)
 
     # ---- Private API
     def _set_model_data_or_lib(self, dataf, name, table_id):
