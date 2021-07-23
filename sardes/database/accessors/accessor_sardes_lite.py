@@ -19,6 +19,7 @@ import uuid
 # ---- Third party imports
 import numpy as np
 import pandas as pd
+from pandas._libs.missing import NAType
 from pandas.api.types import is_list_like, is_datetime64_ns_dtype
 from sqlalchemy import create_engine, extract, func, and_
 from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
@@ -64,8 +65,15 @@ def addapt_numpy_int64(numpy_int64):
     return int(numpy_int64)
 
 
+# We need to create an adapter to handle nan type in pandas integer arrays.
+# https://pandas.pydata.org/pandas-docs/stable/user_guide/integer_na.html
+def adapt_pandas_nan(pandas_nan):
+    return None
+
+
 sqlite3.register_adapter(np.int64, addapt_numpy_int64)
 sqlite3.register_adapter(np.float64, addapt_numpy_float64)
+sqlite3.register_adapter(NAType, adapt_pandas_nan)
 
 
 # =============================================================================
