@@ -151,16 +151,11 @@ def test_plot_viewer_update(mainwindow, qtbot, obswell_uuid):
     # expected in the plot viewer.
     with qtbot.waitSignal(dbconnmanager.sig_database_data_changed):
         dbconnmanager.set(
-            'observation_wells_data', obswell_uuid,
-            'obs_well_id', '12345', postpone_exec=True)
-        dbconnmanager.set(
-            'observation_wells_data', obswell_uuid,
-            'common_name', 'well_common_name', postpone_exec=True)
-        dbconnmanager.set(
-            'observation_wells_data', obswell_uuid,
-            'municipality', 'well_municipality', postpone_exec=True)
-        dbconnmanager.run_tasks()
-
+            'observation_wells_data',
+            obswell_uuid,
+            {'obs_well_id': '12345',
+             'common_name': 'well_common_name',
+             'municipality': 'well_municipality'})
     expected_win_title = "12345 - well_common_name (well_municipality)"
     qtbot.waitUntil(
         lambda: table.plot_viewer.windowTitle() == expected_win_title)
