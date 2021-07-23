@@ -682,11 +682,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             if auto_commit:
                 self._session.commit()
 
-    def add_observation_wells_data(self, sampling_feature_uuid,
-                                   attribute_values):
+    def add_observation_wells_data(self, obswell_id, attribute_values):
         """
-        Add a new observation well to the database using the provided ID
-        and attribute values.
+        Add a new observation well to the database using the provided
+        obswell_id and attribute values.
         """
         # We need first to create a new location in table rsesq.localisation.
         new_location = Location()
@@ -695,20 +694,19 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # We then add the new observation well.
         new_obs_well = SamplingFeature(
-            sampling_feature_uuid=sampling_feature_uuid,
+            sampling_feature_uuid=obswell_id,
             sampling_feature_type_id=1,
             loc_id=new_location.loc_id)
         self._session.add(new_obs_well)
 
         # We then create a new metadata object for the new observation well.
         new_obs_well._metadata = SamplingFeatureMetadata(
-            sampling_feature_uuid=sampling_feature_uuid)
-        self._session.commit()
+            sampling_feature_uuid=obswell_id)
 
         # We then set the attribute values provided in argument for this
         # new observation well if any.
         self.set_observation_wells_data(
-            sampling_feature_uuid, attribute_values)
+            obswell_id, attribute_values, auto_commit=False)
         self._session.commit()
 
     def get_observation_wells_data(self):
