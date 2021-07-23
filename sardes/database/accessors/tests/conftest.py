@@ -33,7 +33,7 @@ def obswells_data():
     data = [
         ['03037041', "St-Paul-d'Abbotsford", "Saint-Paul-d'Abbotsford",
          'MT', 'Confined', 3, 'No', 'No',
-         45.445178, -72.828773, True, None],
+         45.445178, -72.828773, True, 'Note for well 03037041'],
         ['02200001', "Réserve de Duchénier", "Saint-Narcisse-de-Rimouski",
          'ROC', 'Unconfined', 2, 'Yes', 'No',
          48.20282, -68.52795, True, None],
