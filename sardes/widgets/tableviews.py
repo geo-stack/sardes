@@ -1637,8 +1637,10 @@ class SardesTableView(QTableView):
         Set the current index in the table view to that corresponding to the
         provided logical row and column.
         """
+        index = self.model().index(row, col)
         sm = self.selectionModel()
-        sm.setCurrentIndex(self.model().index(0, 0), sm.SelectCurrent)
+        sm.setCurrentIndex(index, sm.SelectCurrent)
+        return index
 
     def copy_to_clipboard(self):
         """
