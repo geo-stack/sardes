@@ -83,9 +83,11 @@ def repere_data(obswells_data):
 @pytest.fixture
 def manual_measurements(obswells_data):
     data = [
-        [obswells_data.index[0], datetime(2010, 8, 10, 16, 10, 34), 5.23, ''],
+        [obswells_data.index[0], datetime(2010, 8, 10, 16, 10, 34), 5.23,
+         'Note for first measurement'],
         [obswells_data.index[0], datetime(2010, 11, 10, 12, 55, 22), 4.36, ''],
-        [obswells_data.index[0], datetime(2011, 8, 2, 18, 50, 17), 4.91, ''],
+        [obswells_data.index[0], datetime(2011, 8, 2, 18, 50, 17), 4.91,
+         'Note for third measurement'],
         [obswells_data.index[1], datetime(2009, 8, 2, 18, 34, 38), 28.34, ''],
         [obswells_data.index[2], datetime(2015, 8, 2, 18, 37, 23), 14.87, ''],
         [obswells_data.index[2], datetime(2016, 2, 4, 13, 26, 3), 2.03, '']]
