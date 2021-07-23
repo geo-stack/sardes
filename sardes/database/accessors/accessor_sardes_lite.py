@@ -19,6 +19,7 @@ import uuid
 # ---- Third party imports
 import numpy as np
 import pandas as pd
+from pandas._libs.tslibs.nattype import NaTType
 from pandas._libs.missing import NAType
 from pandas.api.types import is_list_like, is_datetime64_ns_dtype
 from sqlalchemy import create_engine, extract, func, and_
@@ -71,9 +72,16 @@ def adapt_pandas_nan(pandas_nan):
     return None
 
 
+# Make sure pandas NaT are replaced by None for datetime fields
+# to avoid errors in sqlalchemy.
+def adapt_pandas_nat(pandas_nat):
+    return None
+
+
 sqlite3.register_adapter(np.int64, addapt_numpy_int64)
 sqlite3.register_adapter(np.float64, addapt_numpy_float64)
 sqlite3.register_adapter(NAType, adapt_pandas_nan)
+sqlite3.register_adapter(NaTType, adapt_pandas_nat)
 
 
 # =============================================================================
