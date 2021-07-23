@@ -739,25 +739,26 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return obs_wells
 
-    def set_observation_wells_data(self, sampling_feature_uuid, attribute_name,
-                                   attribute_value, auto_commit=True):
+    def set_observation_wells_data(self, sampling_feature_uuid,
+                                   attribute_values, auto_commit=True):
         """
         Save in the database the new attribute value for the observation well
         corresponding to the specified sampling feature UUID.
         """
         obs_well = self._get_sampling_feature(sampling_feature_uuid)
-        if attribute_name in ['obs_well_id']:
-            setattr(obs_well, 'sampling_feature_name', attribute_value)
-        elif attribute_name in ['obs_well_notes']:
-            setattr(obs_well, 'sampling_feature_notes', attribute_value)
-        elif attribute_name in [
-                'common_name', 'aquifer_type', 'confinement', 'aquifer_code',
-                'in_recharge_zone', 'is_influenced', 'is_station_active',
-                'obs_well_notes']:
-            setattr(obs_well._metadata, attribute_name, attribute_value)
-        elif attribute_name in ['latitude', 'longitude', 'municipality']:
-            location = self._get_location(obs_well.loc_id)
-            setattr(location, attribute_name, attribute_value)
+        for attr_name, attr_value in attribute_values.items():
+            if attr_name == 'obs_well_id':
+                setattr(obs_well, 'sampling_feature_name', attr_value)
+            elif attr_name == 'obs_well_notes':
+                setattr(obs_well, 'sampling_feature_notes', attr_value)
+            elif attr_name in ['common_name', 'aquifer_type', 'confinement',
+                               'aquifer_code', 'in_recharge_zone',
+                               'is_influenced', 'is_station_active',
+                               'obs_well_notes']:
+                setattr(obs_well._metadata, attr_name, attr_value)
+            elif attr_name in ['latitude', 'longitude', 'municipality']:
+                location = self._get_location(obs_well.loc_id)
+                setattr(location, attr_name, attr_value)
 
         # Commit changes to the BD.
         if auto_commit:
