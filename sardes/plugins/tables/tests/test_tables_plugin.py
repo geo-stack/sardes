@@ -20,8 +20,7 @@ os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import pytest
-from qtpy.QtCore import Qt, QUrl
-from qtpy.QtGui import QDesktopServices
+from qtpy.QtCore import Qt
 
 # ---- Local imports
 from sardes.plugins.tables import SARDES_PLUGIN_CLASS
@@ -285,4 +284,4 @@ def test_save_data_edits(mainwindow, qtbot):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', __file__, '-v', '-rw', '-k', 'test_new_observation_well'])
+    pytest.main(['-x', __file__, '-v', '-rw'])
