@@ -694,12 +694,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # We then set the attribute values provided in argument for this
         # new observation well if any.
-        for attribute_name, attribute_value in attribute_values.items():
-            self.set_observation_wells_data(
-                sampling_feature_uuid,
-                attribute_name,
-                attribute_value,
-                auto_commit=False)
+        self.set_observation_wells_data(
+            sampling_feature_uuid, attribute_values)
         self._session.commit()
 
     def get_observation_wells_data(self):
