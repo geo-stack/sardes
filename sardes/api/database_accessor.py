@@ -204,10 +204,10 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
-    def set_observation_wells_data(self, sampling_feature_id, attribute_name,
-                                   value):
+    def set_observation_wells_data(self, sampling_feature_id,
+                                   attribute_values):
         """
-        Save in the database the new attribute value for the observation well
+        Save in the database new attribute values for the observation well
         corresponding to the specified sampling feature ID.
 
         Parameters
@@ -215,14 +215,9 @@ class DatabaseAccessor(DatabaseAccessorBase):
         sampling_feature_id: int, :class:`uuid.UUID`
             A unique identifier used to reference the observation well
             in the database.
-        attribute_name: str
-            Name of the attribute of the observation well for which the
-            value need to be updated in the database.
-            See :func:`get_observation_wells_data` for the list of attributes
-            that are defined for the observation well feature.
-        value: object
-            Value that need to be updated for the corresponding attribute and
-            observation well.
+        attribute_values: dict
+            A dictionary containing the attribute values that need to be
+            changed the the specified observation well.
         """
         raise NotImplementedError
 
