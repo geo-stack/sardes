@@ -63,7 +63,6 @@ def tablewidget(qtbot, mocker, dbaccessor, obswells_data):
     with qtbot.waitSignal(dbconnmanager.sig_database_connected, timeout=3000):
         dbconnmanager.connect_to_db(dbaccessor)
     assert dbconnmanager.is_connected()
-    qtbot.wait(1000)
 
     # Select the tab corresponding to the observation wells table.
     tablewidget = mainwindow.plugin._tables['table_observation_wells']
@@ -71,6 +70,7 @@ def tablewidget(qtbot, mocker, dbaccessor, obswells_data):
     qtbot.waitUntil(
         lambda: tablewidget.tableview.visible_row_count() == len(obswells_data)
         )
+    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
 
     yield tablewidget
 
@@ -103,10 +103,10 @@ def test_show_in_google_maps(tablewidget, qtbot, mocker):
         ))
 
 
-def test_add_observation_well(tablewidget, qtbot, mocker, obswells_data):
+def test_select_observation_well(tablewidget, qtbot, mocker, obswells_data):
     """
-    Test that adding and selecting a new observation well is working as
-    expected.
+    Test that the UI state is as expected when selecting a new observation
+    well.
     """
     tableview = tablewidget.tableview
 
@@ -114,19 +114,39 @@ def test_add_observation_well(tablewidget, qtbot, mocker, obswells_data):
     # the UI state is as expected.
     tableview.set_current_index(0, 0)
 
-    assert not tableview.model().is_new_row_at(tableview.current_index())
+    assert not tablewidget.model().is_new_row_at(tableview.current_index())
     assert tablewidget.show_data_btn.isEnabled()
     assert tablewidget.construction_logs_manager.isEnabled()
     assert tablewidget.water_quality_reports.isEnabled()
 
+
+def test_add_observation_well(tablewidget, qtbot, mocker, obswells_data,
+                              dbaccessor):
+    """
+    Test that adding and selecting a new observation well is working as
+    expected.
+    """
+    tableview = tablewidget.tableview
+
     # We add a new row and assert that the UI state is as expected.
-    tableview._add_new_row()
+    assert tableview.visible_row_count() == len(obswells_data)
+    tableview.new_row_action.trigger()
     assert tableview.visible_row_count() == len(obswells_data) + 1
 
     assert tableview.model().is_new_row_at(tableview.current_index())
     assert not tablewidget.show_data_btn.isEnabled()
     assert not tablewidget.construction_logs_manager.isEnabled()
     assert not tablewidget.water_quality_reports.isEnabled()
+
+    # Save the changes to the database.
+    db_obswell_data = dbaccessor.get_observation_wells_data()
+    assert len(db_obswell_data) == len(obswells_data)
+
+    with qtbot.waitSignal(tableview.model().sig_data_updated):
+        tableview._save_data_edits(force=True)
+
+    db_obswell_data = dbaccessor.get_observation_wells_data()
+    assert len(db_obswell_data) == len(obswells_data) + 1
 
 
 if __name__ == "__main__":
