@@ -89,10 +89,12 @@ def test_edit_manual_measurements(tablewidget, qtbot, manual_measurements,
         'sampling_feature_uuid': obswells_data.index[3],
         'datetime': datetime(2010, 8, 10, 18, 5),
         'value': 5.2,
-        'notes': 'edited_manual_measurement_notes'
+        'notes': 'edited_measurement_notes'
         }
 
     # Edit each editable field of the first row of the table.
+    assert tableview.get_data_for_row(0) == [
+        '03037041', '2010-08-10 16:10', '5.23', 'Note for first measurement']
     for col in range(tableview.visible_column_count()):
 
         current_index = tableview.set_current_index(0, col)
@@ -110,6 +112,8 @@ def test_edit_manual_measurements(tablewidget, qtbot, manual_measurements,
         item_delegate.commit_data()
         assert tableview.model().is_data_edited_at(current_index)
         assert tableview.model().get_value_at(current_index) == edit_value
+    assert tableview.get_data_for_row(0) == [
+        '03040002', '2010-08-10 18:05', '5.2', 'edited_measurement_notes']
 
     # Save the changes to the database.
     with qtbot.waitSignal(tableview.model().sig_data_updated):
@@ -129,6 +133,8 @@ def test_clear_manual_measurements(tablewidget, qtbot, dbaccessor):
         'sampling_feature_uuid', 'datetime', 'value', 'notes']
 
     # Clear each non required field of the first row of the table.
+    assert tableview.get_data_for_row(0) == [
+        '03037041', '2010-08-10 16:10', '5.23', 'Note for first measurement']
     for col in range(tableview.visible_column_count()):
         current_index = tableview.set_current_index(0, col)
         column = tableview.visible_columns()[col]
@@ -142,6 +148,7 @@ def test_clear_manual_measurements(tablewidget, qtbot, dbaccessor):
             tableview.clear_item_action.trigger()
             assert tableview.model().is_data_edited_at(current_index)
             assert tableview.model().is_null(current_index)
+    assert tableview.get_data_for_row(0) == ['', '', '', '']
 
     # Save the changes to the database.
     with qtbot.waitSignal(tableview.model().sig_data_updated):
