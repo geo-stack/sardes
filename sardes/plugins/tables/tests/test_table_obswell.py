@@ -19,6 +19,7 @@ from unittest.mock import Mock
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
+import pandas as pd
 import pytest
 from qtpy.QtCore import Qt, QUrl
 from qtpy.QtGui import QDesktopServices
@@ -103,10 +104,9 @@ def test_show_in_google_maps(tablewidget, qtbot, mocker):
         ))
 
 
-def test_select_observation_well(tablewidget, qtbot, mocker, obswells_data):
+def test_select_observation_well(tablewidget, qtbot, mocker):
     """
-    Test that the UI state is as expected when selecting a new observation
-    well.
+    Test that selecting an observation well is working as expected.
     """
     tableview = tablewidget.tableview
 
@@ -120,11 +120,9 @@ def test_select_observation_well(tablewidget, qtbot, mocker, obswells_data):
     assert tablewidget.water_quality_reports.isEnabled()
 
 
-def test_add_observation_well(tablewidget, qtbot, mocker, obswells_data,
-                              dbaccessor):
+def test_add_observation_well(tablewidget, qtbot, obswells_data, dbaccessor):
     """
-    Test that adding and selecting a new observation well is working as
-    expected.
+    Test that adding a new observation well is working as expected.
     """
     tableview = tablewidget.tableview
 
@@ -147,6 +145,90 @@ def test_add_observation_well(tablewidget, qtbot, mocker, obswells_data,
 
     db_obswell_data = dbaccessor.get_observation_wells_data()
     assert len(db_obswell_data) == len(obswells_data) + 1
+
+
+def test_edit_observation_well(tablewidget, qtbot, dbaccessor):
+    """
+    Test that editing observation well data is working as expected.
+    """
+    tableview = tablewidget.tableview
+
+    edited_values = {
+        'obs_well_id': 'edited_obs_well_id',
+        'municipality': 'edited_municipality',
+        'common_name': 'edited_common_name',
+        'latitude': 42.424242,
+        'longitude': -65.656565,
+        'aquifer_type': 'edited_aquifer_type',
+        'confinement': 'edited_confinement',
+        'aquifer_code': 999,
+        'in_recharge_zone': 'edited_in_recharge_zone',
+        'is_influenced': 'edited_is_influenced',
+        'is_station_active': False,
+        'obs_well_notes': 'edited_obs_well_notes'
+        }
+
+    # Edit each editable field of the first row of the table.
+    for col in range(tableview.visible_column_count()):
+
+        current_index = tableview.set_current_index(0, col)
+        if not tableview.is_data_editable_at(current_index):
+            continue
+
+        orig_value = tableview.model().get_value_at(current_index)
+        edit_value = edited_values[tableview.visible_columns()[col]]
+        assert orig_value != edit_value
+
+        assert not tableview.model().is_data_edited_at(current_index)
+        tableview.edit(current_index)
+        item_delegate = tableview.itemDelegate(tableview.current_index())
+        item_delegate.set_editor_data(edit_value)
+        item_delegate.commit_data()
+        assert tableview.model().is_data_edited_at(current_index)
+        assert tableview.model().get_value_at(current_index) == edit_value
+
+    # Save the changes to the database.
+    with qtbot.waitSignal(tableview.model().sig_data_updated):
+        tableview._save_data_edits(force=True)
+
+    saved_values = dbaccessor.get_observation_wells_data().iloc[0].to_dict()
+    for key in edited_values.keys():
+        assert saved_values[key] == edited_values[key]
+
+
+def test_clear_observation_well(tablewidget, qtbot, dbaccessor):
+    """
+    Test that clearing observation well data is working as expected.
+    """
+    tableview = tablewidget.tableview
+    clearable_attrs = [
+        'municipality', 'common_name', 'latitude', 'longitude',
+        'aquifer_type', 'confinement', 'aquifer_code', 'in_recharge_zone',
+        'is_influenced', 'obs_well_notes'
+        ]
+
+    # Clear each non required field of the first row of the table.
+    for col in range(tableview.visible_column_count()):
+        current_index = tableview.set_current_index(0, col)
+        column = tableview.visible_columns()[col]
+        if tableview.is_data_required_at(current_index):
+            assert column not in clearable_attrs
+        else:
+            assert column in clearable_attrs
+
+            assert not tableview.model().is_data_edited_at(current_index)
+            assert not tableview.model().is_null(current_index)
+            tableview.clear_item_action.trigger()
+            assert tableview.model().is_data_edited_at(current_index)
+            assert tableview.model().is_null(current_index)
+
+    # Save the changes to the database.
+    with qtbot.waitSignal(tableview.model().sig_data_updated):
+        tableview._save_data_edits(force=True)
+
+    saved_values = dbaccessor.get_observation_wells_data().iloc[0].to_dict()
+    for attr in clearable_attrs:
+        assert pd.isnull(saved_values[attr])
 
 
 if __name__ == "__main__":
