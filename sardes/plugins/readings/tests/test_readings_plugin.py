@@ -166,7 +166,7 @@ def test_plot_viewer_update(mainwindow, qtbot, obswell_uuid):
         dbconnmanager.set(
             'manual_measurements',
             table.model().manual_measurements().index[0],
-            'value', 1.5678)
+            {'value': 1.5678})
 
     ax_wlvl = table.plot_viewer.canvas.figure.tseries_axes_list[0]
     artist = ax_wlvl._mpl_artist_handles['manual_measurements']
