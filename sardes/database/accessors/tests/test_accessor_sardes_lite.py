@@ -436,9 +436,7 @@ def test_edit_sonde_feature(dbaccessor):
         'off_network': True,
         'sonde_notes': 'Edited fake sonde note.'
         }
-    for attribute_name, attribute_value in edited_attribute_values.items():
-        dbaccessor.set_sondes_data(
-            sonde_feature_uuid, attribute_name, attribute_value)
+    dbaccessor.set_sondes_data(sonde_feature_uuid, edited_attribute_values)
 
     sonde_data = dbaccessor.get_sondes_data()
     for attribute_name, attribute_value in edited_attribute_values.items():
