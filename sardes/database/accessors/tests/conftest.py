@@ -143,24 +143,25 @@ def sondes_data():
 @pytest.fixture
 def sondes_installation(obswells_data, sondes_data):
     data = [
-        [datetime(2006, 8, 24, 18), pd.NaT, 9.02,
-         obswells_data.index[0], sondes_data.index[0]],
-        [datetime(2009, 7, 24, 19), pd.NaT, 7.19,
-         obswells_data.index[1], sondes_data.index[1]],
+        [datetime(2006, 8, 24, 18), datetime(2020, 12, 31, 7, 14), 9.02,
+         obswells_data.index[0], sondes_data.index[0],
+         'Note for first sonde installation.'],
+        [datetime(2009, 7, 24, 19), datetime(2020, 12, 31), 7.19,
+         obswells_data.index[1], sondes_data.index[1], None],
         [datetime(2007, 11, 14, 19), pd.NaT, 10.1,
-         obswells_data.index[2], sondes_data.index[2]],
+         obswells_data.index[2], sondes_data.index[2], None],
         [datetime(2007, 11, 14, 19), pd.NaT, 2.0,
-         obswells_data.index[2], sondes_data.index[3]],
+         obswells_data.index[2], sondes_data.index[3], None],
         [datetime(2012, 5, 5, 19), pd.NaT, 9.24,
-         obswells_data.index[3], sondes_data.index[4]],
+         obswells_data.index[3], sondes_data.index[4], None],
         [datetime(2012, 5, 5, 19), pd.NaT, 1.0,
-         obswells_data.index[3], sondes_data.index[5]]
+         obswells_data.index[3], sondes_data.index[5], None]
         ]
     return pd.DataFrame(
         data,
         index=[uuid.uuid4() for row in data],
         columns=['start_date', 'end_date', 'install_depth',
-                 'sampling_feature_uuid', 'sonde_uuid']
+                 'sampling_feature_uuid', 'sonde_uuid', 'install_note']
         )
 
 
