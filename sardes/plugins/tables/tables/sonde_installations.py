@@ -32,14 +32,15 @@ class SondeInstallationsTableModel(SardesTableModel):
         if column in ['sampling_feature_uuid']:
             return ObsWellIdEditDelegate(view, is_required=True)
         elif column == 'install_depth':
-            return NumEditDelegate(view, decimals=3, bottom=-99999, top=99999)
+            return NumEditDelegate(
+                view, is_required=True, decimals=3, bottom=-99999, top=99999)
         elif column in ['start_date']:
             return DateTimeDelegate(view, is_required=True,
                                     display_format="yyyy-MM-dd hh:mm")
         elif column in ['end_date']:
             return DateTimeDelegate(view, display_format="yyyy-MM-dd hh:mm")
         elif column in ['sonde_uuid']:
-            return SondesSelectionDelegate(view)
+            return SondesSelectionDelegate(view, is_required=True)
         elif column in ['install_note']:
             return TextEditDelegate(view)
         else:

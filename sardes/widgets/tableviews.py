@@ -470,8 +470,9 @@ class NumEditDelegate(SardesItemDelegate):
     """
 
     def __init__(self, model_view, decimals=0, bottom=None, top=None,
-                 unique_constraint=False):
-        super() .__init__(model_view, unique_constraint=unique_constraint)
+                 unique_constraint=False, is_required=False):
+        super() .__init__(model_view, unique_constraint=unique_constraint,
+                          is_required=is_required)
         self._bottom = bottom
         self._top = top
         self._decimals = decimals
