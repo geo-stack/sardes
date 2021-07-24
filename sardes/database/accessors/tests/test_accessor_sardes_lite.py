@@ -487,9 +487,8 @@ def test_edit_sonde_installations(dbaccessor):
         'end_date': datetime.date(2016, 4, 1),
         'install_depth': 11.25
         }
-    for attribute_name, attribute_value in edited_attribute_values.items():
-        dbaccessor.set_sonde_installations(
-            sonde_install_uuid, attribute_name, attribute_value)
+    dbaccessor.set_sonde_installations(
+        sonde_install_uuid, edited_attribute_values)
 
     sonde_install = dbaccessor.get_sonde_installations()
     for attribute_name, attribute_value in edited_attribute_values.items():
