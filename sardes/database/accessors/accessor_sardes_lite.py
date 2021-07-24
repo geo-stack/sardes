@@ -1071,14 +1071,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             process_id=new_process.process_id
             )
         self._session.add(sonde_installation)
-        self._session.commit()
 
         # We then set the attribute valuesfor this new sonde installation.
-        for attribute_name, attribute_value in attribute_values.items():
-            self.set_sonde_installations(
-                new_install_uuid, attribute_name,
-                attribute_value, auto_commit=True)
-        self._session.commit()
+        self.set_sonde_installations(
+            new_install_uuid, attribute_values, auto_commit=True)
 
     def get_sonde_installations(self):
         """
@@ -1103,24 +1099,24 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return data
 
-    def set_sonde_installations(self, install_uuid, attribute_name,
-                                attribute_value, auto_commit=True):
+    def set_sonde_installations(self, install_uuid, attribute_values,
+                                auto_commit=True):
         """
-        Save in the database the new attribute value for the sonde
-        installation corresponding to the specified id.
+        Save in the database the new attribute values for the sonde
+        installation corresponding to the specified installation_id.
         """
-        # Make sure pandas NaT are replaced by None for datetime fields
-        # to avoid errors in sqlalchemy.
-        if attribute_name in ['start_date', 'end_date']:
-            if pd.isnull(attribute_value):
-                attribute_value = None
-
         sonde_installation = self._get_sonde_installation(install_uuid)
-        if attribute_name == 'sampling_feature_uuid':
-            process = self._get_process(sonde_installation.process_id)
-            setattr(process, 'sampling_feature_uuid', attribute_value)
-        else:
-            setattr(sonde_installation, attribute_name, attribute_value)
+        for attr_name, attr_value in attribute_values.items():
+            # Make sure pandas NaT are replaced by None for datetime fields
+            # to avoid errors in sqlalchemy.
+            if attr_name in ['start_date', 'end_date']:
+                attr_value = None if pd.isnull(attr_value) else attr_value
+
+            if attr_name == 'sampling_feature_uuid':
+                process = self._get_process(sonde_installation.process_id)
+                setattr(process, 'sampling_feature_uuid', attr_value)
+            else:
+                setattr(sonde_installation, attr_name, attr_value)
 
         # Commit changes to the BD.
         if auto_commit:
