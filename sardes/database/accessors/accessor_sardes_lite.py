@@ -885,16 +885,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .filter(Repere.repere_uuid == repere_id)
             .one())
 
-    def add_repere_data(self, repere_uuid, attribute_values):
+    def add_repere_data(self, repere_id, attribute_values):
         """
         Add a new observation well repere data to the database using the
         provided repere ID and attribute values.
         """
         # We create a new repere item.
-        repere = Repere(repere_uuid=repere_uuid,
-                        **attribute_values)
+        repere = Repere(repere_uuid=repere_id)
         self._session.add(repere)
-        self._session.commit()
+        self.set_repere_data(repere_id, attribute_values)
 
     def get_repere_data(self):
         """
@@ -917,14 +916,18 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return repere
 
-    def set_repere_data(self, repere_uuid, attribute_name, attribute_value,
-                        auto_commit=True):
+    def set_repere_data(self, repere_id, attribute_values, auto_commit=True):
         """
-        Save in the database the new attribute value for the observation well
-        repere data corresponding to the specified ID.
+        Save in the database the new attribute values for the repere data
+        corresponding to the specified repere_id.
         """
-        repere = self._get_repere_data(repere_uuid)
-        setattr(repere, attribute_name, attribute_value)
+        repere = self._get_repere_data(repere_id)
+        for attr_name, attr_value in attribute_values.items():
+            if attr_name in ['start_date', 'end_date']:
+                # We need to make sure pandas NaT are replaced by None
+                # to avoid errors in sqlalchemy.
+                attr_value = None if pd.isnull(attr_value) else attr_value
+            setattr(repere, attr_name, attr_value)
         if auto_commit:
             self._session.commit()
 
