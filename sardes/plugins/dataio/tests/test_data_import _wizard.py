@@ -217,7 +217,7 @@ def test_update_when_db_changed(qtbot, mocker, testfiles, data_import_wizard):
     dbconnmanager = data_import_wizard.db_connection_manager
     with qtbot.waitSignal(dbconnmanager.sig_database_data_changed):
         dbconnmanager.set(
-            'sonde_installations', installation_id, 'install_depth', 10.24)
+            'sonde_installations', installation_id, {'install_depth': 10.24})
     qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
 
     assert data_import_wizard.install_depth.text() == '10.24 m'
