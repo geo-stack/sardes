@@ -86,10 +86,13 @@ def test_edit_sondes_data(tablewidget, qtbot, dbaccessor):
         'out_of_order': True,
         'lost': True,
         'off_network': True,
-        'sonde_notes': 'edited_donde_notes'
+        'sonde_notes': 'Edited sonde note.'
         }
 
     # Edit each editable field of the first row of the table.
+    assert tableview.get_data_for_row(0) == [
+        'Solinst Barologger M1.5', '1016042', '2006-03-30', '2020-12-31',
+        'No', 'No', 'No', 'No', 'Note sonde 1016042.']
     for col in range(tableview.visible_column_count()):
 
         current_index = tableview.set_current_index(0, col)
@@ -107,6 +110,10 @@ def test_edit_sondes_data(tablewidget, qtbot, dbaccessor):
         item_delegate.commit_data()
         assert tableview.model().is_data_edited_at(current_index)
         assert tableview.model().get_value_at(current_index) == edit_value
+    assert tableview.get_data_for_row(0) == [
+        'Solinst LT M10 Gold', 'edited_sonde_serial_no',
+        '2010-03-03', '2010-03-30',
+        'Yes', 'Yes', 'Yes', 'Yes', 'Edited sonde note.']
 
     # Save the changes to the database.
     with qtbot.waitSignal(tableview.model().sig_data_updated):
@@ -126,6 +133,9 @@ def test_clear_sondes_data(tablewidget, qtbot, dbaccessor):
         'sonde_serial_no', 'date_reception', 'date_withdrawal', 'sonde_notes']
 
     # Clear each non required field of the first row of the table.
+    assert tableview.get_data_for_row(0) == [
+        'Solinst Barologger M1.5', '1016042', '2006-03-30', '2020-12-31',
+        'No', 'No', 'No', 'No', 'Note sonde 1016042.']
     for col in range(tableview.visible_column_count()):
         current_index = tableview.set_current_index(0, col)
         column = tableview.visible_columns()[col]
@@ -139,6 +149,8 @@ def test_clear_sondes_data(tablewidget, qtbot, dbaccessor):
             tableview.clear_item_action.trigger()
             assert tableview.model().is_data_edited_at(current_index)
             assert tableview.model().is_null(current_index)
+    assert tableview.get_data_for_row(0) == [
+        'Solinst Barologger M1.5', '', '', '', 'No', 'No', 'No', 'No', '']
 
     # Save the changes to the database.
     with qtbot.waitSignal(tableview.model().sig_data_updated):
