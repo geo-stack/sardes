@@ -29,6 +29,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 
 # ---- Local imports
+from sardes.utils.data_operations import are_values_equal
 from sardes.api.timeseries import DataType
 from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
 from sardes.database.accessors.accessor_sardes_lite import (
@@ -275,7 +276,7 @@ def test_repere_data(dbaccessor0, obswells_data, repere_data):
     # Add the observation wells.
     for obs_well_uuid, obs_well_data in obswells_data.iterrows():
         dbaccessor0.add_observation_wells_data(
-            obs_well_uuid, attribute_values=obs_well_data.to_dict())
+            obs_well_uuid, obs_well_data.to_dict())
 
     # Test the empty repere data dataframe is formatted as expected.
     repere_data_bd = dbaccessor0.get_repere_data()
@@ -291,8 +292,14 @@ def test_repere_data(dbaccessor0, obswells_data, repere_data):
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
     assert is_datetime64_any_dtype(repere_data_bd['end_date'])
 
-    repere_data_bd = repere_data_bd.replace({np.nan: None})
-    assert repere_data_bd.to_dict() == repere_data.to_dict()
+    # for attr_name in repere_dat.keys():
+    repere_data_bd = repere_data_bd.replace({np.nan: None, pd.NaT: None})
+    for index in repere_data.index:
+        for column in repere_data.columns:
+            assert are_values_equal(
+                repere_data_bd.loc[index, column],
+                repere_data.loc[index, column]
+                ), (index, column)
 
     # Edit repere data.
     repere_uuid = repere_data_bd.index[0]
@@ -308,8 +315,8 @@ def test_repere_data(dbaccessor0, obswells_data, repere_data):
         }
     for attribute_name, attribute_value in edited_values.items():
         assert attribute_value != old_values[attribute_name]
-        dbaccessor0.set_repere_data(
-            repere_uuid, attribute_name, attribute_value)
+    dbaccessor0.set_repere_data(
+        repere_uuid, edited_values)
 
     repere_data_bd = dbaccessor0.get_repere_data()
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
