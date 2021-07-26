@@ -290,30 +290,27 @@ class DatabaseAccessor(DatabaseAccessorBase):
         Parameters
         ----------
         repere_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the observation well
-            repere data in the database.
+            A unique identifier used to reference the repere data in
+            the database.
         attribute_values: dict
             A dictionary containing the attribute values for the new
-            observation well repere data.
+            repere data.
         """
         raise NotImplementedError
 
-    def set_repere_data(self, repere_id, attribute_name, attribute_value):
+    def set_repere_data(self, repere_id, attribute_values):
         """
-        Save in the database the new attribute value for the observation well
-        repere data corresponding to the specified ID.
+        Save in the database the new attribute values for the repere data
+        corresponding to the specified repere_id.
 
         Parameters
         ----------
-        repere_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the observation well
-            repere data in the database.
-        attribute_name: str
-            Name of the attribute of the observation well repere data for
-            which the value need to be updated in the database.
-        value: object
-            Value that need to be updated for the corresponding attribute and
-            repere data.
+        repere_id: object
+            A unique identifier used to reference the repere data for wich
+            attribute values need to be changed in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values that need to be
+            changed in the database for the corresponding repere_id.
         """
         raise NotImplementedError
 
