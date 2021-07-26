@@ -59,25 +59,29 @@ def obswells_data():
 
 @pytest.fixture
 def repere_data(obswells_data):
-    data = []
-    i = 0
-    for obs_well_uuid, obs_well_data in obswells_data.iterrows():
-        i += 1
-        data.append([
-            obs_well_uuid,
-            randrange(99999) / 100,
-            randrange(20, 200) / 100,
-            datetime(randrange(2000, 2006), randrange(12) + 1,
-                     randrange(28) + 1, randrange(23) + 1),
-            None,
-            bool(randrange(2)),
-            'Note #{}'.format(i)
-            ])
+    data = [
+        [obswells_data.index[0], 9.3, 1.3,
+         datetime(2009, 7, 14, 9), datetime(2020, 8, 3, 19, 14),
+         True, 'Repere note #1'],
+        [obswells_data.index[1], 64.49, 1.49,
+         datetime(2005, 11, 9, 13), None,
+         True, 'Repere note #2'],
+        [obswells_data.index[2], 41.251, 0.94,
+         datetime(2009, 7, 14, 19), None,
+         False, 'Repere note #3'],
+        [obswells_data.index[3], 400.35, 0.35,
+         datetime(2009, 11, 14, 13), None,
+         False, 'Repere note #4'],
+        [obswells_data.index[4], 26.6, -0.6,
+         datetime(2008, 11, 20, 1, 25), None,
+         True, 'Repere note #5']
+        ]
     return pd.DataFrame(
         data,
         index=[uuid.uuid4() for row in data],
         columns=['sampling_feature_uuid', 'top_casing_alt', 'casing_length',
-                 'start_date', 'end_date', 'is_alt_geodesic', 'repere_note'])
+                 'start_date', 'end_date', 'is_alt_geodesic', 'repere_note']
+        )
 
 
 @pytest.fixture
