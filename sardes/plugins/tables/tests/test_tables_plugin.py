@@ -84,6 +84,7 @@ def test_tables_plugin_init(mainwindow, qtbot):
     assert mainwindow.plugin
     assert mainwindow.plugin.table_count() == 5
     assert len(models_manager._table_models) == 5
+    assert tabwidget.currentIndex() == 0
 
     # Table Observation Wells.
     for current_index in range(mainwindow.plugin.table_count()):

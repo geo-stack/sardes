@@ -142,6 +142,11 @@ class Tables(SardesPlugin):
         self.tabwidget.setCurrentIndex(
             self.get_option('last_focused_tab', 0))
 
+        # Connect signals and update current table.
+        for table in self._tables.values():
+            table.tableview.sig_show_event.connect(self._update_current_table)
+        self._update_current_table
+
     def _create_and_register_table(self, TableClass, data_name, lib_names,
                                    disabled_actions=None):
         table = TableClass(disabled_actions=disabled_actions)
@@ -162,9 +167,6 @@ class Tables(SardesPlugin):
         columns_sort_order = CONF.get(
             table.get_table_id(), 'horiz_header/columns_sort_order', [])
         table.set_columns_sorting_state(sort_by_columns, columns_sort_order)
-
-        # Connect signals.
-        table.tableview.sig_show_event.connect(self._update_current_table)
 
     def _update_current_table(self, *args, **kargs):
         """Update the current table data and state."""
