@@ -18,12 +18,14 @@ from unittest.mock import Mock
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
+import numpy as np
 import pandas as pd
 import pytest
 from qtpy.QtCore import Qt, QUrl
 from qtpy.QtGui import QDesktopServices
 
 # ---- Local imports
+from sardes.api.timeseries import DataType
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 
 
@@ -114,7 +116,7 @@ def test_add_observation_well(tablewidget, qtbot, obswells_data, dbaccessor):
     assert len(db_obswell_data) == len(obswells_data) + 1
 
 
-def test_edit_observation_well(tablewidget, qtbot, dbaccessor):
+def test_edit_observation_well(tablewidget, qtbot, obswells_data, dbaccessor):
     """
     Test that editing observation well data is working as expected.
     """
@@ -135,7 +137,15 @@ def test_edit_observation_well(tablewidget, qtbot, dbaccessor):
         'obs_well_notes': 'edited_obs_well_notes'
         }
 
+    wlvl = dbaccessor.get_timeseries_for_obs_well(
+        obswells_data.index[0], [DataType.WaterLevel])[DataType.WaterLevel]
+
     # Edit each editable field of the first row of the table.
+    assert tableview.get_data_for_row(0) == [
+        '03037041', "St-Paul-d'Abbotsford", "Saint-Paul-d'Abbotsford",
+        'MT', '3', 'Confined', 'No', 'No', '45.445178', '-72.828773',
+        '2015-01-01', '2020-12-31', str(np.round(np.mean(wlvl), 3)),
+        'Yes', 'Note for well 03037041']
     for col in range(tableview.visible_column_count()):
 
         current_index = tableview.set_current_index(0, col)
@@ -153,6 +163,12 @@ def test_edit_observation_well(tablewidget, qtbot, dbaccessor):
         item_delegate.commit_data()
         assert tableview.model().is_data_edited_at(current_index)
         assert tableview.model().get_value_at(current_index) == edit_value
+    assert tableview.get_data_for_row(0) == [
+        'edited_obs_well_id', 'edited_common_name', 'edited_municipality',
+        'edited_aquifer_type', '999', 'edited_confinement',
+        'edited_in_recharge_zone', 'edited_is_influenced',
+        '42.424242', '-65.656565', '2015-01-01', '2020-12-31',
+        str(np.round(np.mean(wlvl), 3)), 'No', 'edited_obs_well_notes']
 
     # Save the changes to the database.
     with qtbot.waitSignal(tableview.model().sig_data_updated):
@@ -163,7 +179,7 @@ def test_edit_observation_well(tablewidget, qtbot, dbaccessor):
         assert saved_values[key] == edited_values[key]
 
 
-def test_clear_observation_well(tablewidget, qtbot, dbaccessor):
+def test_clear_observation_well(tablewidget, qtbot, dbaccessor, obswells_data):
     """
     Test that clearing observation well data is working as expected.
     """
@@ -174,7 +190,15 @@ def test_clear_observation_well(tablewidget, qtbot, dbaccessor):
         'is_influenced', 'obs_well_notes'
         ]
 
+    wlvl = dbaccessor.get_timeseries_for_obs_well(
+        obswells_data.index[0], [DataType.WaterLevel])[DataType.WaterLevel]
+
     # Clear each non required field of the first row of the table.
+    assert tableview.get_data_for_row(0) == [
+        '03037041', "St-Paul-d'Abbotsford", "Saint-Paul-d'Abbotsford",
+        'MT', '3', 'Confined', 'No', 'No', '45.445178', '-72.828773',
+        '2015-01-01', '2020-12-31', str(np.round(np.mean(wlvl), 3)),
+        'Yes', 'Note for well 03037041']
     for col in range(tableview.visible_column_count()):
         current_index = tableview.set_current_index(0, col)
         column = tableview.visible_columns()[col]
@@ -188,6 +212,9 @@ def test_clear_observation_well(tablewidget, qtbot, dbaccessor):
             tableview.clear_item_action.trigger()
             assert tableview.model().is_data_edited_at(current_index)
             assert tableview.model().is_null(current_index)
+    assert tableview.get_data_for_row(0) == [
+        '03037041', '', '', '', '', '', '', '', '', '',
+        '2015-01-01', '2020-12-31', str(np.round(np.mean(wlvl), 3)), 'Yes', '']
 
     # Save the changes to the database.
     with qtbot.waitSignal(tableview.model().sig_data_updated):
