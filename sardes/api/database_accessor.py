@@ -381,6 +381,39 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
+    def set_sonde_models_lib(self, sonde_model_id, attribute_values,
+                             auto_commit=True):
+        """
+        Save in the database the new attribute values for the sonde model
+        corresponding to the specified sonde_model_id.
+
+        Parameters
+        ----------
+        sonde_model_id: object
+            A unique identifier used to reference the sonde model for wich
+            attribute values need to be changed in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values that need to be
+            changed in the database for the corresponding sonde_model_id.
+        """
+        raise NotImplementedError
+
+    def add_sonde_models_lib(self, sonde_model_id, attribute_values):
+        """
+        Add a new sonde model to the database using the provided
+        sonde_model_id and attribute_values.
+
+        Parameters
+        ----------
+        sonde_model_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the sonde model in the
+            database.
+        attribute_values: dict
+            A dictionary containing the attribute values for the new
+            sonde model.
+        """
+        raise NotImplementedError
+
     # ---- Sondes Inventory
     def add_sondes_data(self, sonde_id, attribute_values):
         """
