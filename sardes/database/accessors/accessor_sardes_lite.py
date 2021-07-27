@@ -64,8 +64,21 @@ def addapt_numpy_int64(numpy_int64):
     return int(numpy_int64)
 
 
+# We need to create an adapter to handle nan type in pandas integer arrays.
+# https://pandas.pydata.org/pandas-docs/stable/user_guide/integer_na.html
+def adapt_pandas_nan(pandas_nan):
+    return None
+
+
+# Make sure pandas NaT are replaced by None for datetime fields
+# to avoid errors in sqlalchemy.
+def adapt_pandas_nat(pandas_nat):
+    return None
+
+
 sqlite3.register_adapter(np.int64, addapt_numpy_int64)
 sqlite3.register_adapter(np.float64, addapt_numpy_float64)
+sqlite3.register_adapter(type(pd.NA), adapt_pandas_nan)
 
 
 # =============================================================================
@@ -669,11 +682,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             if auto_commit:
                 self._session.commit()
 
-    def add_observation_wells_data(self, sampling_feature_uuid,
-                                   attribute_values):
+    def add_observation_wells_data(self, obswell_id, attribute_values):
         """
-        Add a new observation well to the database using the provided ID
-        and attribute values.
+        Add a new observation well to the database using the provided
+        obswell_id and attribute values.
         """
         # We need first to create a new location in table rsesq.localisation.
         new_location = Location()
@@ -682,24 +694,19 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # We then add the new observation well.
         new_obs_well = SamplingFeature(
-            sampling_feature_uuid=sampling_feature_uuid,
+            sampling_feature_uuid=obswell_id,
             sampling_feature_type_id=1,
             loc_id=new_location.loc_id)
         self._session.add(new_obs_well)
 
         # We then create a new metadata object for the new observation well.
         new_obs_well._metadata = SamplingFeatureMetadata(
-            sampling_feature_uuid=sampling_feature_uuid)
-        self._session.commit()
+            sampling_feature_uuid=obswell_id)
 
         # We then set the attribute values provided in argument for this
         # new observation well if any.
-        for attribute_name, attribute_value in attribute_values.items():
-            self.set_observation_wells_data(
-                sampling_feature_uuid,
-                attribute_name,
-                attribute_value,
-                auto_commit=False)
+        self.set_observation_wells_data(
+            obswell_id, attribute_values, auto_commit=False)
         self._session.commit()
 
     def get_observation_wells_data(self):
@@ -739,25 +746,26 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return obs_wells
 
-    def set_observation_wells_data(self, sampling_feature_uuid, attribute_name,
-                                   attribute_value, auto_commit=True):
+    def set_observation_wells_data(self, sampling_feature_uuid,
+                                   attribute_values, auto_commit=True):
         """
         Save in the database the new attribute value for the observation well
         corresponding to the specified sampling feature UUID.
         """
         obs_well = self._get_sampling_feature(sampling_feature_uuid)
-        if attribute_name in ['obs_well_id']:
-            setattr(obs_well, 'sampling_feature_name', attribute_value)
-        elif attribute_name in ['obs_well_notes']:
-            setattr(obs_well, 'sampling_feature_notes', attribute_value)
-        elif attribute_name in [
-                'common_name', 'aquifer_type', 'confinement', 'aquifer_code',
-                'in_recharge_zone', 'is_influenced', 'is_station_active',
-                'obs_well_notes']:
-            setattr(obs_well._metadata, attribute_name, attribute_value)
-        elif attribute_name in ['latitude', 'longitude', 'municipality']:
-            location = self._get_location(obs_well.loc_id)
-            setattr(location, attribute_name, attribute_value)
+        for attr_name, attr_value in attribute_values.items():
+            if attr_name == 'obs_well_id':
+                setattr(obs_well, 'sampling_feature_name', attr_value)
+            elif attr_name == 'obs_well_notes':
+                setattr(obs_well, 'sampling_feature_notes', attr_value)
+            elif attr_name in ['common_name', 'aquifer_type', 'confinement',
+                               'aquifer_code', 'in_recharge_zone',
+                               'is_influenced', 'is_station_active',
+                               'obs_well_notes']:
+                setattr(obs_well._metadata, attr_name, attr_value)
+            elif attr_name in ['latitude', 'longitude', 'municipality']:
+                location = self._get_location(obs_well.loc_id)
+                setattr(location, attr_name, attr_value)
 
         # Commit changes to the BD.
         if auto_commit:
@@ -877,16 +885,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .filter(Repere.repere_uuid == repere_id)
             .one())
 
-    def add_repere_data(self, repere_uuid, attribute_values):
+    def add_repere_data(self, repere_id, attribute_values):
         """
         Add a new observation well repere data to the database using the
         provided repere ID and attribute values.
         """
         # We create a new repere item.
-        repere = Repere(repere_uuid=repere_uuid,
-                        **attribute_values)
+        repere = Repere(repere_uuid=repere_id)
         self._session.add(repere)
-        self._session.commit()
+        self.set_repere_data(repere_id, attribute_values)
 
     def get_repere_data(self):
         """
@@ -909,14 +916,18 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return repere
 
-    def set_repere_data(self, repere_uuid, attribute_name, attribute_value,
-                        auto_commit=True):
+    def set_repere_data(self, repere_id, attribute_values, auto_commit=True):
         """
-        Save in the database the new attribute value for the observation well
-        repere data corresponding to the specified ID.
+        Save in the database the new attribute values for the repere data
+        corresponding to the specified repere_id.
         """
-        repere = self._get_repere_data(repere_uuid)
-        setattr(repere, attribute_name, attribute_value)
+        repere = self._get_repere_data(repere_id)
+        for attr_name, attr_value in attribute_values.items():
+            if attr_name in ['start_date', 'end_date']:
+                # We need to make sure pandas NaT are replaced by None
+                # to avoid errors in sqlalchemy.
+                attr_value = None if pd.isnull(attr_value) else attr_value
+            setattr(repere, attr_name, attr_value)
         if auto_commit:
             self._session.commit()
 
@@ -942,23 +953,24 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return sonde_models
 
-    def set_sonde_models_lib(self, sonde_model_id, attribute_name,
-                             attribute_value, auto_commit=True):
+    def set_sonde_models_lib(self, sonde_model_id, attribute_values,
+                             auto_commit=True):
         """
         Save in the database the new attribute value for the sonde model
-        corresponding to the specified id.
+        corresponding to the specified sonde_model_id.
         """
         sonde = (self._session.query(SondeModel)
                  .filter(SondeModel.sonde_model_id == sonde_model_id)
                  .one())
-        setattr(sonde, attribute_name, attribute_value)
+        for attr_name, attr_value in attribute_values.items():
+            setattr(sonde, attr_name, attr_value)
         if auto_commit:
             self._session.commit()
 
     def add_sonde_models_lib(self, sonde_model_id, attribute_values):
         """
-        Add a new sonde model to the database using the provided id
-        and attribute values.
+        Add a new sonde model to the database using the provided
+        sonde_model_id and attribute_values.
         """
         self._session.add(SondeModel(
             sonde_model_id=sonde_model_id,
@@ -1014,20 +1026,19 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return sondes
 
-    def set_sondes_data(self, sonde_uuid, attribute_name, attribute_value,
-                        auto_commit=True):
+    def set_sondes_data(self, sonde_uuid, attribute_values, auto_commit=True):
         """
         Save in the database the new attribute value for the sonde
-        corresponding to the specified sonde UUID.
+        corresponding to the specified sonde_id.
         """
-        # Make sure pandas NaT are replaced by None for datetime fields
-        # to avoid errors in sqlalchemy.
-        if attribute_name in ['date_reception', 'date_withdrawal']:
-            if pd.isnull(attribute_value):
-                attribute_value = None
-
         sonde = self._get_sonde(sonde_uuid)
-        setattr(sonde, attribute_name, attribute_value)
+        for attr_name, attr_value in attribute_values.items():
+            # Make sure pandas NaT are replaced by None for datetime fields
+            # to avoid errors in sqlalchemy.
+            if attr_name in ['date_reception', 'date_withdrawal']:
+                attr_value = None if pd.isnull(attr_value) else attr_value
+
+            setattr(sonde, attr_name, attr_value)
         if auto_commit:
             self._session.commit()
 
@@ -1064,14 +1075,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             process_id=new_process.process_id
             )
         self._session.add(sonde_installation)
-        self._session.commit()
 
         # We then set the attribute valuesfor this new sonde installation.
-        for attribute_name, attribute_value in attribute_values.items():
-            self.set_sonde_installations(
-                new_install_uuid, attribute_name,
-                attribute_value, auto_commit=True)
-        self._session.commit()
+        self.set_sonde_installations(
+            new_install_uuid, attribute_values, auto_commit=True)
 
     def get_sonde_installations(self):
         """
@@ -1096,24 +1103,24 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return data
 
-    def set_sonde_installations(self, install_uuid, attribute_name,
-                                attribute_value, auto_commit=True):
+    def set_sonde_installations(self, install_uuid, attribute_values,
+                                auto_commit=True):
         """
-        Save in the database the new attribute value for the sonde
-        installation corresponding to the specified id.
+        Save in the database the new attribute values for the sonde
+        installation corresponding to the specified installation_id.
         """
-        # Make sure pandas NaT are replaced by None for datetime fields
-        # to avoid errors in sqlalchemy.
-        if attribute_name in ['start_date', 'end_date']:
-            if pd.isnull(attribute_value):
-                attribute_value = None
-
         sonde_installation = self._get_sonde_installation(install_uuid)
-        if attribute_name == 'sampling_feature_uuid':
-            process = self._get_process(sonde_installation.process_id)
-            setattr(process, 'sampling_feature_uuid', attribute_value)
-        else:
-            setattr(sonde_installation, attribute_name, attribute_value)
+        for attr_name, attr_value in attribute_values.items():
+            # Make sure pandas NaT are replaced by None for datetime fields
+            # to avoid errors in sqlalchemy.
+            if attr_name in ['start_date', 'end_date']:
+                attr_value = None if pd.isnull(attr_value) else attr_value
+
+            if attr_name == 'sampling_feature_uuid':
+                process = self._get_process(sonde_installation.process_id)
+                setattr(process, 'sampling_feature_uuid', attr_value)
+            else:
+                setattr(sonde_installation, attr_name, attr_value)
 
         # Commit changes to the BD.
         if auto_commit:
@@ -1187,23 +1194,27 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return measurements
 
-    def set_manual_measurements(self, gen_num_value_uuid, attribute_name,
-                                attribute_value):
+    def set_manual_measurements(self, gen_num_value_uuid, attribute_values):
         """
         Save in the database the new attribute value for the manual
         measurement corresponding to the specified id.
         """
         measurement = self._get_generic_num_value(gen_num_value_uuid)
-        if attribute_name == 'sampling_feature_uuid':
-            observation = self._get_observation(measurement.observation_id)
-            observation.sampling_feature_uuid = attribute_value
-        elif attribute_name == 'datetime':
-            observation = self._get_observation(measurement.observation_id)
-            observation.obs_datetime = attribute_value
-        elif attribute_name == 'value':
-            measurement.gen_num_value = float(attribute_value)
-        elif attribute_name == 'notes':
-            measurement.gen_num_value_notes = attribute_value
+        for attr_name, attr_value in attribute_values.items():
+            if attr_name == 'sampling_feature_uuid':
+                observation = self._get_observation(measurement.observation_id)
+                observation.sampling_feature_uuid = attr_value
+            elif attr_name == 'datetime':
+                # We need to make sure pandas NaT are replaced by None
+                # to avoid errors in sqlalchemy.
+                attr_value = None if pd.isnull(attr_value) else attr_value
+
+                observation = self._get_observation(measurement.observation_id)
+                observation.obs_datetime = attr_value
+            elif attr_name == 'value':
+                measurement.gen_num_value = float(attr_value)
+            elif attr_name == 'notes':
+                measurement.gen_num_value_notes = attr_value
         self._session.commit()
 
     def delete_manual_measurements(self, gen_num_value_uuids):

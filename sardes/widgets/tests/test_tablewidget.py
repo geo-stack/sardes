@@ -18,6 +18,7 @@ import uuid
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
+from flaky import flaky
 import numpy as np
 import pytest
 import pandas as pd
@@ -79,8 +80,9 @@ def tablemodel(qtbot, TABLE_DATAF):
         def get_test_table_dataf_name(self, *args, **kargs):
             return TABLE_DATAF.copy()
 
-        def set_test_table_dataf_name(self, index, column, edited_value):
-            TABLE_DATAF.loc[index, column] = edited_value
+        def set_test_table_dataf_name(self, index, attribute_values):
+            for column, edited_value in attribute_values.items():
+                TABLE_DATAF.loc[index, column] = edited_value
 
         def delete_test_table_dataf_name(self, index):
             TABLE_DATAF.drop(index, axis='index', inplace=True)
@@ -180,6 +182,7 @@ def get_selected_data(tablewidget):
 # =============================================================================
 # ---- Tests
 # =============================================================================
+@flaky(max_runs=3)
 def test_tablewidget_init(tablewidget, TABLE_DATAF):
     """Test that SardesTableWidget is initialized correctly."""
     tableview = tablewidget.tableview

@@ -217,7 +217,7 @@ def test_update_when_db_changed(qtbot, mocker, testfiles, data_import_wizard):
     dbconnmanager = data_import_wizard.db_connection_manager
     with qtbot.waitSignal(dbconnmanager.sig_database_data_changed):
         dbconnmanager.set(
-            'sonde_installations', installation_id, 'install_depth', 10.24)
+            'sonde_installations', installation_id, {'install_depth': 10.24})
     qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
 
     assert data_import_wizard.install_depth.text() == '10.24 m'
@@ -225,12 +225,12 @@ def test_update_when_db_changed(qtbot, mocker, testfiles, data_import_wizard):
     assert table_model.get_value_at(table_model.index(0, 1)) == 3.062441
 
     # Change the name and municipality of the well.
-    obs_well_uuid = data_import_wizard._obs_well_uuid
     with qtbot.waitSignal(dbconnmanager.sig_database_data_changed):
-        dbconnmanager.set('observation_wells_data', obs_well_uuid,
-                          'obs_well_id', '12340002', postpone_exec=True)
-        dbconnmanager.set('observation_wells_data', obs_well_uuid,
-                          'municipality', 'New Municipality Name')
+        dbconnmanager.set(
+            'observation_wells_data',
+            data_import_wizard._obs_well_uuid,
+            {'obs_well_id': '12340002',
+             'municipality': 'New Municipality Name'})
     qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
     assert data_import_wizard.obs_well_label.text() == '12340002 - PO-01'
     assert (data_import_wizard.municipality_label.text() ==

@@ -470,8 +470,9 @@ class NumEditDelegate(SardesItemDelegate):
     """
 
     def __init__(self, model_view, decimals=0, bottom=None, top=None,
-                 unique_constraint=False):
-        super() .__init__(model_view, unique_constraint=unique_constraint)
+                 unique_constraint=False, is_required=False):
+        super() .__init__(model_view, unique_constraint=unique_constraint,
+                          is_required=is_required)
         self._bottom = bottom
         self._top = top
         self._decimals = decimals
@@ -1631,6 +1632,25 @@ class SardesTableView(QTableView):
         Return the currently selected index in the table view.
         """
         return self.selectionModel().currentIndex()
+
+    def set_current_index(self, row, col, command='SelectCurrent'):
+        """
+        Set the current index in the table view to that corresponding to the
+        provided logical row and column.
+        """
+        index = self.model().index(row, col)
+        sm = self.selectionModel()
+        sm.setCurrentIndex(index, getattr(sm, command))
+        return index
+
+    def select(self, row, col, command='Select'):
+        """
+        Do the selection operation at the specified row and col.
+        """
+        index = self.model().index(row, col)
+        sm = self.selectionModel()
+        sm.select(index, getattr(sm, command))
+        return index
 
     def copy_to_clipboard(self):
         """

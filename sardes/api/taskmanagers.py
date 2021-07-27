@@ -37,8 +37,11 @@ class WorkerBase(QObject):
     def run_tasks(self):
         """Execute the tasks that were added to the stack."""
         for task_uuid4, (task, args, kargs) in self._tasks.items():
-            method_to_exec = getattr(self, '_' + task)
-            returned_values = method_to_exec(*args, **kargs)
+            if task is not None:
+                method_to_exec = getattr(self, '_' + task)
+                returned_values = method_to_exec(*args, **kargs)
+            else:
+                returned_values = args
             self.sig_task_completed.emit(task_uuid4, returned_values)
         self._tasks = OrderedDict()
         self.thread().quit()
@@ -73,10 +76,21 @@ class TaskManagerBase(QObject):
         #
         # Running tasks are tasks that are being executed by the worker.
 
-    def run_tasks(self):
+    def run_tasks(self, callback=None, returned_values=None):
         """
         Execute all the tasks that were added to the stack.
+
+        Parameters
+        ----------
+        callback : function
+            A callback that will be called with the provided returned_values
+            after the current queued tasks have been all executed.
+        returned_values : list
+            A list of values that will be passed to the callback function when
+            it is called.
         """
+        if callback is not None:
+            self.add_task(None, callback, returned_values)
         self._run_tasks()
 
     def add_task(self, task, callback, *args, **kargs):

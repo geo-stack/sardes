@@ -29,6 +29,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 
 # ---- Local imports
+from sardes.utils.data_operations import are_values_equal
 from sardes.api.timeseries import DataType
 from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
 from sardes.database.accessors.accessor_sardes_lite import (
@@ -225,9 +226,9 @@ def test_manual_measurements(dbaccessor0, obswells_data, manual_measurements):
     Regression test for cgq-qgc/sardes#424
     """
     # Add the observation wells.
-    for obs_well_uuid, obs_well_data in obswells_data.iterrows():
+    for obswell_id, obswell_data in obswells_data.iterrows():
         dbaccessor0.add_observation_wells_data(
-            obs_well_uuid, attribute_values=obs_well_data.to_dict())
+            obswell_id, obswell_data.to_dict())
 
     # Test the empty manual measurement dataframe is formatted as expected.
     # This covers the issue reported at cgq-qgc/sardes#427.
@@ -251,10 +252,9 @@ def test_manual_measurements(dbaccessor0, obswells_data, manual_measurements):
         'datetime': datetime.datetime(2008, 1, 13, 11, 4, 23),
         'value': 7.45,
         'notes': 'test_edit_manual_measurements'}
-    for attribute_name, attribute_value in edited_values.items():
-        assert attribute_value != old_values[attribute_name]
-        dbaccessor0.set_manual_measurements(
-            gen_num_value_uuid, attribute_name, attribute_value)
+    for attr_name, attr_value in edited_values.items():
+        assert attr_value != old_values[attr_name]
+    dbaccessor0.set_manual_measurements(gen_num_value_uuid, edited_values)
 
     saved_manual_measurements = dbaccessor0.get_manual_measurements()
     assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
@@ -276,7 +276,7 @@ def test_repere_data(dbaccessor0, obswells_data, repere_data):
     # Add the observation wells.
     for obs_well_uuid, obs_well_data in obswells_data.iterrows():
         dbaccessor0.add_observation_wells_data(
-            obs_well_uuid, attribute_values=obs_well_data.to_dict())
+            obs_well_uuid, obs_well_data.to_dict())
 
     # Test the empty repere data dataframe is formatted as expected.
     repere_data_bd = dbaccessor0.get_repere_data()
@@ -292,8 +292,14 @@ def test_repere_data(dbaccessor0, obswells_data, repere_data):
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
     assert is_datetime64_any_dtype(repere_data_bd['end_date'])
 
-    repere_data_bd = repere_data_bd.replace({np.nan: None})
-    assert repere_data_bd.to_dict() == repere_data.to_dict()
+    # for attr_name in repere_dat.keys():
+    repere_data_bd = repere_data_bd.replace({np.nan: None, pd.NaT: None})
+    for index in repere_data.index:
+        for column in repere_data.columns:
+            assert are_values_equal(
+                repere_data_bd.loc[index, column],
+                repere_data.loc[index, column]
+                ), (index, column)
 
     # Edit repere data.
     repere_uuid = repere_data_bd.index[0]
@@ -309,8 +315,8 @@ def test_repere_data(dbaccessor0, obswells_data, repere_data):
         }
     for attribute_name, attribute_value in edited_values.items():
         assert attribute_value != old_values[attribute_name]
-        dbaccessor0.set_repere_data(
-            repere_uuid, attribute_name, attribute_value)
+    dbaccessor0.set_repere_data(
+        repere_uuid, edited_values)
 
     repere_data_bd = dbaccessor0.get_repere_data()
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
@@ -379,9 +385,8 @@ def test_edit_observation_well(dbaccessor):
         'is_station_active': False,
         'obs_well_notes': 'well_123A2456_notes_edited'
         }
-    for attribute_name, attribute_value in edited_attribute_values.items():
-        dbaccessor.set_observation_wells_data(
-            sampling_feature_uuid, attribute_name, attribute_value)
+    dbaccessor.set_observation_wells_data(
+        sampling_feature_uuid, edited_attribute_values)
 
     obs_wells = dbaccessor.get_observation_wells_data()
     for attribute_name, attribute_value in edited_attribute_values.items():
@@ -438,9 +443,7 @@ def test_edit_sonde_feature(dbaccessor):
         'off_network': True,
         'sonde_notes': 'Edited fake sonde note.'
         }
-    for attribute_name, attribute_value in edited_attribute_values.items():
-        dbaccessor.set_sondes_data(
-            sonde_feature_uuid, attribute_name, attribute_value)
+    dbaccessor.set_sondes_data(sonde_feature_uuid, edited_attribute_values)
 
     sonde_data = dbaccessor.get_sondes_data()
     for attribute_name, attribute_value in edited_attribute_values.items():
@@ -491,9 +494,8 @@ def test_edit_sonde_installations(dbaccessor):
         'end_date': datetime.date(2016, 4, 1),
         'install_depth': 11.25
         }
-    for attribute_name, attribute_value in edited_attribute_values.items():
-        dbaccessor.set_sonde_installations(
-            sonde_install_uuid, attribute_name, attribute_value)
+    dbaccessor.set_sonde_installations(
+        sonde_install_uuid, edited_attribute_values)
 
     sonde_install = dbaccessor.get_sonde_installations()
     for attribute_name, attribute_value in edited_attribute_values.items():

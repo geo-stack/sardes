@@ -57,7 +57,7 @@ class DatabaseAccessorBase(ABC):
 
     def delete(self, name, primary_key):
         """
-        Delte the item related to name in the database using the given
+        Delete the item related to name in the database using the given
         primary_key.
         """
         getattr(self, 'delete_' + name)(primary_key)
@@ -204,10 +204,10 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
-    def set_observation_wells_data(self, sampling_feature_id, attribute_name,
-                                   value):
+    def set_observation_wells_data(self, sampling_feature_id,
+                                   attribute_values):
         """
-        Save in the database the new attribute value for the observation well
+        Save in the database new attribute values for the observation well
         corresponding to the specified sampling feature ID.
 
         Parameters
@@ -215,14 +215,9 @@ class DatabaseAccessor(DatabaseAccessorBase):
         sampling_feature_id: int, :class:`uuid.UUID`
             A unique identifier used to reference the observation well
             in the database.
-        attribute_name: str
-            Name of the attribute of the observation well for which the
-            value need to be updated in the database.
-            See :func:`get_observation_wells_data` for the list of attributes
-            that are defined for the observation well feature.
-        value: object
-            Value that need to be updated for the corresponding attribute and
-            observation well.
+        attribute_values: dict
+            A dictionary containing the attribute values that need to be
+            changed in the database for the corresponding sampling_feature_id.
         """
         raise NotImplementedError
 
@@ -295,30 +290,27 @@ class DatabaseAccessor(DatabaseAccessorBase):
         Parameters
         ----------
         repere_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the observation well
-            repere data in the database.
+            A unique identifier used to reference the repere data in
+            the database.
         attribute_values: dict
             A dictionary containing the attribute values for the new
-            observation well repere data.
+            repere data.
         """
         raise NotImplementedError
 
-    def set_repere_data(self, repere_id, attribute_name, attribute_value):
+    def set_repere_data(self, repere_id, attribute_values):
         """
-        Save in the database the new attribute value for the observation well
-        repere data corresponding to the specified ID.
+        Save in the database the new attribute values for the repere data
+        corresponding to the specified repere_id.
 
         Parameters
         ----------
-        repere_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the observation well
-            repere data in the database.
-        attribute_name: str
-            Name of the attribute of the observation well repere data for
-            which the value need to be updated in the database.
-        value: object
-            Value that need to be updated for the corresponding attribute and
-            repere data.
+        repere_id: object
+            A unique identifier used to reference the repere data for wich
+            attribute values need to be changed in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values that need to be
+            changed in the database for the corresponding repere_id.
         """
         raise NotImplementedError
 
@@ -386,6 +378,39 @@ class DatabaseAccessor(DatabaseAccessorBase):
                 A sonde manufacturer.
             - sonde_model: str
                 A sonde model.
+        """
+        raise NotImplementedError
+
+    def set_sonde_models_lib(self, sonde_model_id, attribute_values,
+                             auto_commit=True):
+        """
+        Save in the database the new attribute values for the sonde model
+        corresponding to the specified sonde_model_id.
+
+        Parameters
+        ----------
+        sonde_model_id: object
+            A unique identifier used to reference the sonde model for wich
+            attribute values need to be changed in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values that need to be
+            changed in the database for the corresponding sonde_model_id.
+        """
+        raise NotImplementedError
+
+    def add_sonde_models_lib(self, sonde_model_id, attribute_values):
+        """
+        Add a new sonde model to the database using the provided
+        sonde_model_id and attribute_values.
+
+        Parameters
+        ----------
+        sonde_model_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the sonde model in the
+            database.
+        attribute_values: dict
+            A dictionary containing the attribute values for the new
+            sonde model.
         """
         raise NotImplementedError
 
@@ -457,31 +482,26 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
-    def set_sondes_data(self, sonde_id, attribute_name, value):
+    def set_sondes_data(self, sonde_id, attribute_values):
         """
         Save in the database the new attribute value for the sonde
-        corresponding to the specified sonde UID.
+        corresponding to the specified sonde_id.
 
         Parameters
         ----------
         sonde_id: int, :class:`uuid.UUID`
             A unique identifier used to reference the sonde in the database.
-        attribute_name: str
-            Name of the attribute of the sonde for which the
-            value need to be updated in the database.
-            See :func:`get_sondes_data` for the list of attributes
-            that are defined for the sonde feature.
-        value: object
-            Value that need to be updated for the corresponding attribute and
-            sonde.
+        attribute_values: dict
+            A dictionary containing the attribute values that need to be
+            changed in the database for the corresponding sonde_id.
         """
         raise NotImplementedError
 
     # ---- Sonde installations
     def add_sonde_installations(self, installation_id, attribute_values):
         """
-        Add a new sonde installation to the database using the provided ID
-        and attribute values.
+        Add a new sonde installation to the database using the provided
+        installation_id and attribute values.
 
         Parameters
         ----------
@@ -494,22 +514,19 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
-    def set_sonde_installations(self, installation_id, attribute_name, value):
+    def set_sonde_installations(self, installation_id, attribute_values):
         """
-        Save in the database the new attribute value for the sonde
-        installation corresponding to the specified id.
+        Save in the database the new attribute values for the sonde
+        installation corresponding to the specified installation_id.
 
         Parameters
         ----------
-        installation_id: int, :class:`uuid.UUID`
+        installation_id: object
             A unique identifier used to reference the sonde installation
-            in the database.
-        attribute_name: str
-            Name of the attribute of the sonde installation for which the
-            value need to be updated in the database.
-        value: object
-            Value that need to be updated for the corresponding attribute and
-            sonde installation id.
+            for wich attribute values need to be changed in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values that need to be
+            changed in the database for the corresponding installation_id.
         """
         raise NotImplementedError
 
@@ -699,22 +716,19 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
-    def set_manual_measurements(self, measurement_id, attribute_name, value):
+    def set_manual_measurements(self, measurement_id, attribute_values):
         """
-        Save in the database the new attribute value for the manual
-        measurement  corresponding to the specified id.
+        Save in the database the new attribute values for the
+        measurement corresponding to the specified measurement_id.
 
         Parameters
         ----------
         measurement_id: int, :class:`uuid.UUID`
             A unique identifier used to reference the manual measurement
             in the database.
-        attribute_name: str
-            Name of the attribute of the manual measurement for which the
-            value need to be updated in the database.
-        value: object
-            Value that need to be updated for the corresponding attribute and
-            manual measurement id.
+        attribute_values: dict
+            A dictionary containing the attribute values that need to be
+            changed in the database for the corresponding measurement_id.
         """
         raise NotImplementedError
 
