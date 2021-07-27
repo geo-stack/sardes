@@ -23,6 +23,7 @@ import pytest
 from qtpy.QtCore import Qt
 
 # ---- Local imports
+from sardes.config.main import CONF
 from sardes.plugins.tables import SARDES_PLUGIN_CLASS
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 from sardes.database.accessors import DatabaseAccessorSardesLite
@@ -34,6 +35,7 @@ from sardes.app.mainwindow import MainWindowBase
 # =============================================================================
 @pytest.fixture
 def dbaccessor(tmp_path, database_filler):
+    CONF.reset_to_defaults()
     dbaccessor = DatabaseAccessorSardesLite(
         osp.join(tmp_path, 'sqlite_database_test.db'))
     dbaccessor.init_database()
