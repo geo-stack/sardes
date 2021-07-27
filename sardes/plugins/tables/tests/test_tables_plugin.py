@@ -35,7 +35,6 @@ from sardes.app.mainwindow import MainWindowBase
 # =============================================================================
 @pytest.fixture
 def dbaccessor(tmp_path, database_filler):
-    CONF.reset_to_defaults()
     dbaccessor = DatabaseAccessorSardesLite(
         osp.join(tmp_path, 'sqlite_database_test.db'))
     dbaccessor.init_database()
@@ -55,6 +54,8 @@ def mainwindow(qtbot, mocker, dbaccessor):
             self.plugin = SARDES_PLUGIN_CLASS(self)
             self.plugin.register_plugin()
             self.internal_plugins.append(self.plugin)
+
+    CONF.reset_to_defaults()
 
     mainwindow = MainWindowMock()
     mainwindow.show()
