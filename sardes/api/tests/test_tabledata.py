@@ -43,8 +43,8 @@ def tabledata(dataset):
     assert tabledata.data.values.tolist() == VALUES
 
     assert tabledata.deleted_rows().empty
-    assert tabledata.added_rows().empty
-    assert tabledata.edited_values() == []
+    assert tabledata.added_rows() == {}
+    assert tabledata.edited_values() == {}
 
     assert tabledata.edits() == []
     assert tabledata.edit_count() == 0
@@ -58,8 +58,8 @@ def tabledata(dataset):
     assert tabledata.data.values.tolist() == VALUES
 
     assert tabledata.deleted_rows().empty
-    assert tabledata.added_rows().empty
-    assert tabledata.edited_values() == []
+    assert tabledata.added_rows() == {}
+    assert tabledata.edited_values() == {}
 
     assert tabledata.edits() == []
     assert tabledata.edit_count() == 0
@@ -91,10 +91,10 @@ def test_edit_data(tabledata):
     assert len(tabledata.deleted_rows()) == 0
     assert len(tabledata.added_rows()) == 0
 
-    assert tabledata.edited_values() == [
-        (0, {'col0': 'edited_str1', 'col1': False, 'col4': 'edited_none1'}),
-        (1, {'col0': 'edited_str2', 'col4': 'edited_none2'})
-        ]
+    assert tabledata.edited_values() == {
+        0: {'col0': 'edited_str1', 'col1': False, 'col4': 'edited_none1'},
+        1: {'col0': 'edited_str2', 'col4': 'edited_none2'}
+        }
     assert len(tabledata._original_data) == 5
 
 
@@ -111,14 +111,14 @@ def test_edit_back_to_original(tabledata):
 
     assert tabledata.edit_count() == 1
     assert tabledata.has_unsaved_edits() is True
-    assert tabledata.edited_values() == [(0, {'col0': 'edited_str1'})]
+    assert tabledata.edited_values() == {0: {'col0': 'edited_str1'}}
     assert len(tabledata._original_data) == 1
 
     tabledata.set(0, 0, 'str1')
 
     assert tabledata.edit_count() == 2
     assert tabledata.has_unsaved_edits() is False
-    assert tabledata.edited_values() == []
+    assert tabledata.edited_values() == {}
     assert tabledata._original_data.empty
 
 
@@ -140,12 +140,12 @@ def test_add_row(tabledata):
     assert tabledata.has_unsaved_edits() is True
 
     # Note that new rows are not considered as edited values.
-    assert tabledata.edited_values() == []
+    assert tabledata.edited_values() == {}
     assert tabledata._original_data.empty
 
     assert tabledata._new_rows == pd.Index([3])
-    assert tabledata.added_rows().values.tolist() == [expected_values[-1]]
-    assert tabledata.added_rows().index == pd.Index(['new_row_index'])
+    assert tabledata.added_rows() == {'new_row_index': new_row}
+    assert list(tabledata.added_rows().keys()) == ['new_row_index']
     assert tabledata.data.values.tolist() == expected_values
 
 
@@ -164,7 +164,7 @@ def test_delete_row(tabledata):
     assert tabledata.has_unsaved_edits() is True
 
     # Note that deleted rows are not considered as edited values.
-    assert tabledata.edited_values() == []
+    assert tabledata.edited_values() == {}
     assert len(tabledata._original_data) == 0
 
     assert tabledata._deleted_rows == pd.Index([1])
@@ -191,14 +191,14 @@ def test_delete_new_row(tabledata):
     assert tabledata.edit_count() == 2
     assert tabledata.has_unsaved_edits() is True
 
-    assert tabledata.edited_values() == []
+    assert tabledata.edited_values() == {}
     assert len(tabledata._original_data) == 0
 
     assert tabledata._deleted_rows == pd.Index([3])
     assert tabledata.deleted_rows().empty
 
     assert tabledata._new_rows == pd.Index([3])
-    assert tabledata.added_rows().empty
+    assert tabledata.added_rows() == {}
 
 
 def test_delete_edited_row(tabledata):
@@ -217,7 +217,7 @@ def test_delete_edited_row(tabledata):
     assert tabledata.edit_count() == 2
     assert tabledata.has_unsaved_edits() is True
 
-    assert tabledata.edited_values() == []
+    assert tabledata.edited_values() == {}
     assert len(tabledata._original_data) == 1
 
     assert tabledata._deleted_rows == pd.Index([1])
@@ -243,12 +243,17 @@ def test_edit_new_row(tabledata):
 
     # Edits made to new rows are not tracked as edited values. These are
     # commited to the database as part of the operation to add the new rows.
-    assert tabledata.edited_values() == []
+    assert tabledata.edited_values() == {}
     assert tabledata._original_data.empty
 
     assert tabledata._new_rows == pd.Index([3])
-    assert tabledata.added_rows().values.tolist() == [expected_values[3]]
-    assert tabledata.added_rows().index == pd.Index([3])
+    assert tabledata.added_rows() == {
+        3: {'col0': 'edited_str4',
+            'col1': True,
+            'col2': 4.444,
+            'col3': 0,
+            'col4': 'note_4'}}
+    assert list(tabledata.added_rows().keys()) == [3]
     assert tabledata.data.values.tolist() == expected_values
 
 
@@ -272,7 +277,7 @@ def test_edit_deleted_row(tabledata):
     # Edits made to deleted rows are not tracked as net edited values, since
     # these rows are going to be deleted from the database anyway, there is
     # not point in handling these edits.
-    assert tabledata.edited_values() == []
+    assert tabledata.edited_values() == {}
     assert len(tabledata._original_data) == 1
 
     assert tabledata._deleted_rows == pd.Index([1])

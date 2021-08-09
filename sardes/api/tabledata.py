@@ -340,8 +340,9 @@ class SardesTableData(object):
 
     def added_rows(self):
         """
-        Return a pandas DataFrame containing the rows that were
-        added to the dataframe.
+        Return a dictionary where keys correspond to the indexes of the rows
+        that were added to the table and values are dictionaries containing
+        the attribute values of the added rows.
         """
         added_row_indexes = self.data.index[self._new_rows]
 
@@ -350,15 +351,19 @@ class SardesTableData(object):
         added_row_indexes = added_row_indexes.drop(
             self.data.index[self._deleted_rows], errors='ignore')
 
-        return self.data.loc[added_row_indexes]
+        added_rows = {
+            index: values.dropna().to_dict() for
+            index, values in self.data.loc[added_row_indexes].iterrows()
+            }
+        return added_rows
 
     def edited_values(self):
         """
-        Return a list of tuples each containing the indexe of a row and a
-        dictionary with the value of the attributes that were edited on
-        that row.
+        Return a dictionary where keys correspond to the indexes of the rows
+        that were edited in the data and values are dictionaries containing
+        the values of the edited attributes on each corresponding row.
         """
-        edited_values = []
+        edited_values = {}
         for row, row_data in self._original_data.groupby(level=0):
             if row in self._deleted_rows:
                 # Edits made to deleted rows are not tracked as net
@@ -369,7 +374,7 @@ class SardesTableData(object):
             index = self.data.index[row]
             columns = self.data.columns[row_data.index.get_level_values(1)]
             row_edited_values = self.data.iloc[row][columns].to_dict()
-            edited_values.append((index, row_edited_values))
+            edited_values[index] = row_edited_values
         return edited_values
 
     # ---- Edits
