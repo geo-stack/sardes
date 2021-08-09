@@ -626,11 +626,11 @@ class SardesModelsManager(QObject):
 
         # We add new rows to the database.
         added_rows = table_model._datat.added_rows()
-        for index, attr_values in added_rows.iterrows():
+        for new_row_index, new_row_values in added_rows.items():
             self.db_manager.add(
                 table_model_data_name,
-                index,
-                attr_values.dropna().to_dict(),
+                new_row_index,
+                new_row_values,
                 callback=None,
                 postpone_exec=True)
 
