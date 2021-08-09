@@ -636,7 +636,7 @@ class SardesModelsManager(QObject):
 
         # We commit edits to existing rows.
         edited_values = table_model._datat.edited_values()
-        for index, attr_values in edited_values:
+        for index, attr_values in edited_values.items():
             self.db_manager.set(
                 table_model_data_name,
                 index,
