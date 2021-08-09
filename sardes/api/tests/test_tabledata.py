@@ -43,7 +43,7 @@ def tabledata(dataset):
     assert tabledata.data.values.tolist() == VALUES
 
     assert tabledata.deleted_rows().empty
-    assert tabledata.added_rows().empty
+    assert tabledata.added_rows() == {}
     assert tabledata.edited_values() == {}
 
     assert tabledata.edits() == []
@@ -58,7 +58,7 @@ def tabledata(dataset):
     assert tabledata.data.values.tolist() == VALUES
 
     assert tabledata.deleted_rows().empty
-    assert tabledata.added_rows().empty
+    assert tabledata.added_rows() == {}
     assert tabledata.edited_values() == {}
 
     assert tabledata.edits() == []
@@ -144,8 +144,8 @@ def test_add_row(tabledata):
     assert tabledata._original_data.empty
 
     assert tabledata._new_rows == pd.Index([3])
-    assert tabledata.added_rows().values.tolist() == [expected_values[-1]]
-    assert tabledata.added_rows().index == pd.Index(['new_row_index'])
+    assert tabledata.added_rows() == {'new_row_index': new_row}
+    assert list(tabledata.added_rows().keys()) == ['new_row_index']
     assert tabledata.data.values.tolist() == expected_values
 
 
@@ -198,7 +198,7 @@ def test_delete_new_row(tabledata):
     assert tabledata.deleted_rows().empty
 
     assert tabledata._new_rows == pd.Index([3])
-    assert tabledata.added_rows().empty
+    assert tabledata.added_rows() == {}
 
 
 def test_delete_edited_row(tabledata):
@@ -247,8 +247,13 @@ def test_edit_new_row(tabledata):
     assert tabledata._original_data.empty
 
     assert tabledata._new_rows == pd.Index([3])
-    assert tabledata.added_rows().values.tolist() == [expected_values[3]]
-    assert tabledata.added_rows().index == pd.Index([3])
+    assert tabledata.added_rows() == {
+        3: {'col0': 'edited_str4',
+            'col1': True,
+            'col2': 4.444,
+            'col3': 0,
+            'col4': 'note_4'}}
+    assert list(tabledata.added_rows().keys()) == [3]
     assert tabledata.data.values.tolist() == expected_values
 
 
