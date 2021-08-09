@@ -340,8 +340,9 @@ class SardesTableData(object):
 
     def added_rows(self):
         """
-        Return a pandas DataFrame containing the rows that were
-        added to the dataframe.
+        Return a dictionary where keys correspond to the indexes of the rows
+        that were added to the table and values are dictionaries containing
+        the attribute values of the added rows.
         """
         added_row_indexes = self.data.index[self._new_rows]
 
@@ -350,7 +351,11 @@ class SardesTableData(object):
         added_row_indexes = added_row_indexes.drop(
             self.data.index[self._deleted_rows], errors='ignore')
 
-        return self.data.loc[added_row_indexes]
+        added_rows = {
+            index: values.dropna().to_dict() for
+            index, values in self.data.loc[added_row_indexes].iterrows()
+            }
+        return added_rows
 
     def edited_values(self):
         """
