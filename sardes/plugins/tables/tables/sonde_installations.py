@@ -7,21 +7,17 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
-# ---- Third party imports
-from qtpy.QtWidgets import QComboBox
-
 # ---- Local imports
-from sardes.api.tablemodels import SardesTableModel
+from sardes.api.tablemodels import StandardSardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
-    SardesItemDelegate, SardesTableWidget, StringEditDelegate,
-    BoolEditDelegate, NotEditableDelegate, TextEditDelegate, DateTimeDelegate,
+    SardesTableWidget, NotEditableDelegate, TextEditDelegate, DateTimeDelegate,
     NumEditDelegate)
 from sardes.plugins.tables.tables.delegates import (
     ObsWellIdEditDelegate, SondesSelectionDelegate)
 
 
-class SondeInstallationsTableModel(SardesTableModel):
+class SondeInstallationsTableModel(StandardSardesTableModel):
     """
     A table model to display the list of sondes currently installed or
     that were installed at some point in the observation wells for the

@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Local imports
-from sardes.api.tablemodels import SardesTableModel
+from sardes.api.tablemodels import StandardSardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableWidget, StringEditDelegate, BoolEditDelegate,
@@ -16,7 +16,7 @@ from sardes.widgets.tableviews import (
 from sardes.plugins.tables.tables.delegates import SondeModelEditDelegate
 
 
-class SondesInventoryTableModel(SardesTableModel):
+class SondesInventoryTableModel(StandardSardesTableModel):
     """
     A table model to display the list of level and baro loggers that are
     used in the monitoring network.

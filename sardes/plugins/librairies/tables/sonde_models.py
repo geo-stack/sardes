@@ -9,12 +9,12 @@
 
 
 # ---- Local imports
-from sardes.api.tablemodels import SardesTableModel
+from sardes.api.tablemodels import StandardSardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import SardesTableWidget, TextEditDelegate
 
 
-class SondeModelsTableModel(SardesTableModel):
+class SondeModelsTableModel(StandardSardesTableModel):
     """
     A table model to display a list of sonde brand models that
     are available to use in the SondesInventory table.
