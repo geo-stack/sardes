@@ -351,7 +351,7 @@ class SardesTableModelBase(QAbstractTableModel):
         self.dataChanged.emit(model_index, model_index)
         self.sig_data_edited.emit(data_edit)
 
-    def _create_new_row_index(self):
+    def create_new_row_index(self):
         """
         Return a new index that can be used to add a new item this
         model's data table.
@@ -373,7 +373,7 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         self.beginInsertRows(
             QModelIndex(), len(self._datat), len(self._datat))
-        index = pd.Index([self._create_new_row_index()])
+        index = pd.Index([self.create_new_row_index()])
         data_edit = self._datat.add_row(index)
         self._update_visual_data()
         self.endInsertRows()
@@ -402,7 +402,7 @@ class SardesTableModelBase(QAbstractTableModel):
             len(self._datat),
             len(self._datat) + len(values) - 1)
         index = pd.Index(
-            [self._create_new_row_index() for i in range(len(values))])
+            [self.create_new_row_index() for i in range(len(values))])
         data_edit = self._datat.add_row(index, values)
         self._update_visual_data()
         self.endInsertRows()
