@@ -26,7 +26,7 @@ from qtpy.QtCore import Qt
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.plugins.databases.widgets import DatabaseConnectionWidget
 from sardes.widgets.statusbar import ProcessStatusBar
-from sardes.database.dialog_rsesq import (
+from sardes.database.dialogs import (
     DatabaseConnectDialogRSESQ as DatabaseConnectDialog)
 
 
