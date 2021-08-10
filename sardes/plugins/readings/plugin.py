@@ -18,7 +18,6 @@ from qtpy.QtCore import Qt, Slot
 # ---- Local imports
 from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
-from sardes.config.main import CONF
 from sardes.api.tablemodels import SardesTableModel
 from sardes.api.timeseries import DataType
 from sardes.utils.qthelpers import create_toolbutton
