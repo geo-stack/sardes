@@ -50,7 +50,7 @@ class ReadingsTableModel(SardesTableModel):
         else:
             return NotEditableDelegate(view)
 
-    # ---- Database connection
+    # ---- Data
     def set_obs_well_data(self, obs_well_data):
         self._obs_well_data = obs_well_data.loc[self._obs_well_uuid]
         self._table_title = str(self._obs_well_data['obs_well_id'])
@@ -91,6 +91,7 @@ class ReadingsTableModel(SardesTableModel):
         dataf_columns_mapper.append(('obs_id', _('Observation ID')))
         super().set_model_data(dataf, dataf_columns_mapper)
 
+    # ---- SardesTableModel API
     def save_data_edits(self):
         """
         Save all data edits to the database.
