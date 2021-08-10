@@ -818,7 +818,8 @@ class DatabaseConnectionManager(TaskManagerBase):
         """
         self.add_task('get_sonde_installation_info', callback,
                       sonde_serial_no, date_time)
-        self.run_tasks()
+        if not postpone_exec:
+            self.run_tasks()
 
     # ---- Timeseries
     def get_timeseries_for_obs_well(
