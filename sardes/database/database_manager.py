@@ -547,7 +547,7 @@ class DatabaseConnectionWorker(WorkerBase):
         return True,
 
 
-class SardesModelsManager(QObject):
+class SardesTableModelsManager(QObject):
     """
     A manager to handle data updating and saving of Sardes table models.
     """
@@ -716,7 +716,7 @@ class DatabaseConnectionManager(TaskManagerBase):
             self.sig_publish_progress.emit)
 
         # Setup the table models manager.
-        self.models_manager = SardesModelsManager(self)
+        self.models_manager = SardesTableModelsManager(self)
         self.models_manager.sig_models_data_changed.connect(
             self.sig_models_data_changed.emit)
 
