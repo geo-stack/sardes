@@ -609,7 +609,7 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         self._sort_by_columns = []
         self._columns_sort_order = []
         self._filter_by_columns = None
-        self._proxy_dataf_index = []
+        self._proxy_dataf_index = pd.Index([])
         self._map_row_to_source = np.array([])
         self._map_row_from_source = np.array([])
         self._multi_columns_sort = multi_columns_sort
@@ -731,7 +731,7 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         Return the model index in the source model that corresponds to the
         proxy_index in the proxy model.
         """
-        if not proxy_index.isValid() or not len(self._proxy_dataf_index):
+        if not proxy_index.isValid() or self._proxy_dataf_index.empty:
             return QModelIndex()
 
         try:
@@ -747,7 +747,7 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         Return the model index in the proxy model that corresponds to the
         source_index from the source model.
         """
-        if not source_index.isValid() or not len(self._proxy_dataf_index):
+        if not source_index.isValid() or self._proxy_dataf_index.empty:
             return QModelIndex()
 
         proxy_index_row = self.mapRowFromSource(source_index.row())
