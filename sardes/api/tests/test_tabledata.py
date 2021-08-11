@@ -168,17 +168,17 @@ def test_delete_row(tabledata):
         ['str3', True, 3.333, 29, None],
         ]
     tabledata.delete_row(pd.Index([1]))
+    assert tabledata.data.values.tolist() == expected_values
 
     assert tabledata.edit_count() == 1
     assert tabledata.has_unsaved_edits() is True
 
     # Note that deleted rows are not considered as edited values.
-    assert tabledata.edited_values() == {}
-    assert len(tabledata._original_data) == 0
+    assert tabledata.edited_values().empty
+    assert tabledata._original_data.empty
 
     assert tabledata._deleted_rows == pd.Index([1])
     assert tabledata.deleted_rows() == pd.Index([1])
-    assert tabledata.data.values.tolist() == expected_values
 
 
 def test_delete_new_row(tabledata):
