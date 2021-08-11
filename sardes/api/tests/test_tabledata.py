@@ -113,14 +113,18 @@ def test_edit_back_to_original(tabledata):
 
     assert tabledata.edit_count() == 1
     assert tabledata.has_unsaved_edits() is True
-    assert tabledata.edited_values() == {0: {'col0': 'edited_str1'}}
     assert len(tabledata._original_data) == 1
+
+    expected_values = {0: {'col0': 'edited_str1'}}
+    for index, values in tabledata.edited_values().groupby(level=0):
+        values.index = values.index.droplevel(0)
+        assert values['edited_value'].to_dict() == expected_values[index]
 
     tabledata.set(0, 0, 'str1')
 
     assert tabledata.edit_count() == 2
     assert tabledata.has_unsaved_edits() is False
-    assert tabledata.edited_values() == {}
+    assert tabledata.edited_values().empty
     assert tabledata._original_data.empty
 
 
