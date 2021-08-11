@@ -43,8 +43,8 @@ def tabledata(dataset):
     assert tabledata.data.values.tolist() == VALUES
 
     assert tabledata.deleted_rows().empty
-    assert tabledata.added_rows() == {}
-    assert tabledata.edited_values() == {}
+    assert tabledata.added_rows().empty
+    assert tabledata.edited_values().empty
 
     assert tabledata.edits() == []
     assert tabledata.edit_count() == 0
@@ -58,8 +58,8 @@ def tabledata(dataset):
     assert tabledata.data.values.tolist() == VALUES
 
     assert tabledata.deleted_rows().empty
-    assert tabledata.added_rows() == {}
-    assert tabledata.edited_values() == {}
+    assert tabledata.added_rows().empty
+    assert tabledata.edited_values().empty
 
     assert tabledata.edits() == []
     assert tabledata.edit_count() == 0
@@ -90,12 +90,14 @@ def test_edit_data(tabledata):
     assert tabledata.data.values.tolist() == expected_values
     assert len(tabledata.deleted_rows()) == 0
     assert len(tabledata.added_rows()) == 0
-
-    assert tabledata.edited_values() == {
-        0: {'col0': 'edited_str1', 'col1': False, 'col4': 'edited_none1'},
-        1: {'col0': 'edited_str2', 'col4': 'edited_none2'}
-        }
     assert len(tabledata._original_data) == 5
+
+    expected_values = {
+        0: {'col0': 'edited_str1', 'col1': False, 'col4': 'edited_none1'},
+        1: {'col0': 'edited_str2', 'col4': 'edited_none2'}}
+    for index, values in tabledata.edited_values().groupby(level=0):
+        values.index = values.index.droplevel(0)
+        assert values['edited_value'].to_dict() == expected_values[index]
 
 
 def test_edit_back_to_original(tabledata):
