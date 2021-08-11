@@ -246,24 +246,24 @@ def test_edit_new_row(tabledata):
         ['edited_str4', True, 4.444, 0, 'note_4']]
     tabledata.add_row(pd.Index([3]), [new_row])
     tabledata.set(3, 0, 'edited_str4')
+    assert tabledata.data.values.tolist() == expected_values
 
     assert tabledata.edit_count() == 2
     assert tabledata.has_unsaved_edits() is True
 
     # Edits made to new rows are not tracked as edited values. These are
     # commited to the database as part of the operation to add the new rows.
-    assert tabledata.edited_values() == {}
+    assert tabledata.edited_values().empty
     assert tabledata._original_data.empty
 
     assert tabledata._new_rows == pd.Index([3])
-    assert tabledata.added_rows() == {
+    assert tabledata.added_rows().to_dict('index') == {
         3: {'col0': 'edited_str4',
             'col1': True,
             'col2': 4.444,
             'col3': 0,
             'col4': 'note_4'}}
-    assert list(tabledata.added_rows().keys()) == [3]
-    assert tabledata.data.values.tolist() == expected_values
+    assert tabledata.added_rows().index == [3]
 
 
 def test_edit_deleted_row(tabledata):
