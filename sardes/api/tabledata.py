@@ -354,22 +354,31 @@ class SardesTableData(object):
 
     def edited_values(self):
         """
-        Return a dictionary where keys correspond to the indexes of the rows
-        that were edited in the data and values are dictionaries containing
-        the values of the edited attributes on each corresponding row.
+        Return a multiindex dataframe containing the edited values at
+        the corresponding indexes and columns of the dataframe.
         """
-        edited_values = {}
-        for row, row_data in self._original_data.groupby(level=0):
-            if row in self._deleted_rows:
-                # Edits made to deleted rows are not tracked as net
-                # edited values. Since these rows are going to be deleted
-                # from the database anyway, there is not point in handling
-                # these edits when commiting to the database.
-                continue
-            index = self.data.index[row]
-            columns = self.data.columns[row_data.index.get_level_values(1)]
-            row_edited_values = self.data.iloc[row][columns].to_dict()
-            edited_values[index] = row_edited_values
+        # We remove deleted rows from the original data indexes.
+        orig_data_indexes = self._original_data.index.drop(
+            self._deleted_rows, level=0, errors='ignore')
+
+        # We define a new multiindex dataframe to hold the edited values.
+        edited_values = pd.DataFrame(
+            data=[],
+            index=pd.MultiIndex.from_arrays([
+                self.data.index[orig_data_indexes.get_level_values(0)],
+                self.data.columns[orig_data_indexes.get_level_values(1)]
+                ]),
+            columns=['edited_value'],
+            dtype='object'
+            )
+
+        # We fetch the edited values from the data column by column.
+        for col, data in edited_values.groupby(level=1):
+            edited_values.loc[data.index, 'edited_value'] = self.data.loc[
+                data.index.get_level_values(0), col].array
+            # Note that we need to use .array instead of .values to avoid
+            # any unwanted dtype conversion from pandas to numpy when using
+            # .values to access the data (ex. pd.datetime).
         return edited_values
 
     # ---- Edits
@@ -451,7 +460,21 @@ if __name__ == '__main__':
     tabledata.set(1, 0, 'edited_str2')
     tabledata.set(1, 2, 1.124)
     tabledata.set(1, 2, 1.124)
-    tabledata.set(1, 3, None)
+    tabledata.set(1, 3, 4)
+    tabledata.set(2, 3, None)
+    tabledata.set(0, 4, datetime(2005, 5, 12))
 
     print(tabledata, end='\n\n')
-    print(tabledata.edited_values())
+    print(tabledata.edited_values(), end='\n\n')
+
+    # print(tabledata.data.iloc[0, 4])
+    # print(tabledata.edited_values().loc[('row0', 'col4')])
+
+    print(tabledata.edited_values().dtypes)
+    print(tabledata.data.dtypes)
+    print()
+
+    edited_values = tabledata.edited_values()
+    for index, values in edited_values.groupby(level=0):
+        values.index = values.index.droplevel(0)
+        # print(values['edited_value'].to_dict())
