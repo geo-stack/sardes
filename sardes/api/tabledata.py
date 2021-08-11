@@ -375,7 +375,7 @@ class SardesTableData(object):
         # We fetch the edited values from the data column by column.
         for col, data in edited_values.groupby(level=1):
             edited_values.loc[data.index, 'edited_value'] = self.data.loc[
-                data.index.get_level_values(0), col].array
+                data.index.get_level_values(0), col].astype('object').array
             # Note that we need to use .array instead of .values to avoid
             # any unwanted dtype conversion from pandas to numpy when using
             # .values to access the data (ex. pd.datetime).
