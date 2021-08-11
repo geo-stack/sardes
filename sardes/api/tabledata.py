@@ -449,9 +449,9 @@ if __name__ == '__main__':
 
     NCOL = 5
     COLUMNS = ['col{}'.format(i) for i in range(NCOL)]
-    VALUES = [['str1', True, 1.111, 3, None],
-              ['str2', False, 2.222, 1, None],
-              ['str3', True, 3.333, 29, None]]
+    VALUES = [['str1', True, 1.111, 3, datetime(2001, 5, 12)],
+              ['str2', False, 2.222, 1, datetime(2002, 5, 12)],
+              ['str3', True, 3.333, 29, datetime(2003, 5, 12)]]
 
     dataset = pd.DataFrame(
         VALUES, columns=COLUMNS, index=['row0', 'row1', 'row2'])
@@ -465,9 +465,13 @@ if __name__ == '__main__':
     tabledata.set(1, 2, 1.124)
     tabledata.set(1, 2, 1.124)
     tabledata.set(1, 3, 4)
-    tabledata.set(2, 3, None)
     tabledata.set(0, 4, datetime(2005, 5, 12))
+    tabledata.set(2, 3, None)
+    tabledata.set(1, 4, None)
 
     new_row = {'col0': 'str4', 'col1': True, 'col2': 4.444,
                'col3': 0, 'col4': datetime(2008, 8, 8)}
     tabledata.add_row(pd.Index(['new_row_index']), [new_row])
+
+    edited_values = tabledata.edited_values()
+    print(edited_values)
