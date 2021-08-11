@@ -445,15 +445,19 @@ class SardesTableData(object):
 
 
 if __name__ == '__main__':
+    from datetime import datetime
+
     NCOL = 5
     COLUMNS = ['col{}'.format(i) for i in range(NCOL)]
     VALUES = [['str1', True, 1.111, 3, None],
               ['str2', False, 2.222, 1, None],
               ['str3', True, 3.333, 29, None]]
 
-    dataset = pd.DataFrame(VALUES, columns=COLUMNS)
+    dataset = pd.DataFrame(
+        VALUES, columns=COLUMNS, index=['row0', 'row1', 'row2'])
     dataset['col1'] = dataset['col1'].astype("Int64")
     dataset['col3'] = dataset['col3'].astype("Int64")
+    dataset['col4'] = pd.to_datetime(dataset['col4'])
 
     tabledata = SardesTableData(dataset)
 
@@ -464,17 +468,6 @@ if __name__ == '__main__':
     tabledata.set(2, 3, None)
     tabledata.set(0, 4, datetime(2005, 5, 12))
 
-    print(tabledata, end='\n\n')
-    print(tabledata.edited_values(), end='\n\n')
-
-    # print(tabledata.data.iloc[0, 4])
-    # print(tabledata.edited_values().loc[('row0', 'col4')])
-
-    print(tabledata.edited_values().dtypes)
-    print(tabledata.data.dtypes)
-    print()
-
-    edited_values = tabledata.edited_values()
-    for index, values in edited_values.groupby(level=0):
-        values.index = values.index.droplevel(0)
-        # print(values['edited_value'].to_dict())
+    new_row = {'col0': 'str4', 'col1': True, 'col2': 4.444,
+               'col3': 0, 'col4': datetime(2008, 8, 8)}
+    tabledata.add_row(pd.Index(['new_row_index']), [new_row])
