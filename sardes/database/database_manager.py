@@ -607,7 +607,7 @@ class SardesTableModelsManager(QObject):
             self._queued_model_updates[table_id] = []
             self.db_manager.run_tasks()
 
-    def save_model_edits(self, table_id):
+    def save_table_edits(self, table_id):
         """
         Save all data edits to the database.
         """
@@ -1013,7 +1013,7 @@ class DatabaseConnectionManager(TaskManagerBase):
         """
         Save all edits made to the table related to table_id to the database.
         """
-        self.models_manager.save_model_edits(table_id)
+        self.models_manager.save_table_edits(table_id)
 
     # ---- Publish Network Data
     def publish_to_kml(self, filename, iri_data=None, iri_logs=None,
