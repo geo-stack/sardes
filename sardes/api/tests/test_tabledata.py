@@ -226,7 +226,7 @@ def test_delete_edited_row(tabledata):
     assert tabledata.edit_count() == 2
     assert tabledata.has_unsaved_edits() is True
 
-    assert tabledata.edited_values() == {}
+    assert tabledata.edited_values().empty
     assert len(tabledata._original_data) == 1
 
     assert tabledata._deleted_rows == pd.Index([1])
