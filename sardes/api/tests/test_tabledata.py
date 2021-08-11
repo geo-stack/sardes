@@ -277,7 +277,6 @@ def test_edit_deleted_row(tabledata):
         ]
     tabledata.delete_row(pd.Index([1]))
     tabledata.set(1, 0, 'edited_str2')
-
     assert tabledata.data.values.tolist() == expected_values
 
     assert tabledata.edit_count() == 2
@@ -286,7 +285,7 @@ def test_edit_deleted_row(tabledata):
     # Edits made to deleted rows are not tracked as net edited values, since
     # these rows are going to be deleted from the database anyway, there is
     # not point in handling these edits.
-    assert tabledata.edited_values() == {}
+    assert tabledata.edited_values().empty
     assert len(tabledata._original_data) == 1
 
     assert tabledata._deleted_rows == pd.Index([1])
