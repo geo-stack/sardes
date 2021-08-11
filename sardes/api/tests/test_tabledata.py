@@ -134,25 +134,28 @@ def test_add_row(tabledata):
     """
     new_row = {'col0': 'str4', 'col1': True, 'col2': 4.444,
                'col3': 0, 'col4': 'note_4'}
+    tabledata.add_row(pd.Index(['new_row_index']), [new_row])
+
+    # We add new rows to the database.
     expected_values = [
         ['str1', True, 1.111, 3, None],
         ['str2', False, 2.222, 1, None],
         ['str3', True, 3.333, 29, None],
         ['str4', True, 4.444, 0, 'note_4']
         ]
-    tabledata.add_row(pd.Index(['new_row_index']), [new_row])
+    assert tabledata.data.values.tolist() == expected_values
 
     assert tabledata.edit_count() == 1
     assert tabledata.has_unsaved_edits() is True
 
     # Note that new rows are not considered as edited values.
-    assert tabledata.edited_values() == {}
+    assert tabledata.edited_values().empty
     assert tabledata._original_data.empty
-
     assert tabledata._new_rows == pd.Index([3])
-    assert tabledata.added_rows() == {'new_row_index': new_row}
-    assert list(tabledata.added_rows().keys()) == ['new_row_index']
-    assert tabledata.data.values.tolist() == expected_values
+
+    expected_added_rows = {'new_row_index': new_row}
+    assert tabledata.added_rows().index == list(expected_added_rows.keys())
+    assert tabledata.added_rows().to_dict('index') == expected_added_rows
 
 
 def test_delete_row(tabledata):
