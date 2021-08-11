@@ -142,6 +142,23 @@ class DatabaseConnectionWorker(WorkerBase):
             del self._cache[name]
         self.db_accessor.set(name, *args, **kargs)
 
+    def _save_table_edits(self, name, deleted_rows, added_rows, edited_values):
+        """
+        Save the changes made to table 'name' to the database.
+        """
+        # We delete rows from the database.
+        for index in deleted_rows:
+            self._delete(name, index)
+
+        # We add new rows to the database.
+        for index, values in added_rows.iterrows():
+            self._add(name, index, values.dropna().to_dict())
+
+        # We commit edits to existing rows.
+        for index, values in edited_values.groupby(level=0):
+            values.index = values.index.droplevel(0)
+            self._set(name, index, values['edited_value'].to_dict())
+
     # ---- Timeseries
     def _get_timeseries_for_obs_well(self, sampling_feature_uuid,
                                      data_types=None):
@@ -613,36 +630,17 @@ class SardesTableModelsManager(QObject):
         """
         table_model = self._table_models[table_id]
         table_model.sig_data_about_to_be_saved.emit()
-        table_model_data_name = self._models_req_data[table_id][0]
+        table_name = self._models_req_data[table_id][0]
 
-        # We delete rows from the database.
         deleted_rows = table_model._datat.deleted_rows()
-        for index in deleted_rows:
-            self.db_manager.delete(
-                table_model_data_name,
-                index,
-                callback=None,
-                postpone_exec=True)
-
-        # We add new rows to the database.
         added_rows = table_model._datat.added_rows()
-        for new_row_index, new_row_values in added_rows.items():
-            self.db_manager.add(
-                table_model_data_name,
-                new_row_index,
-                new_row_values,
-                callback=None,
-                postpone_exec=True)
-
-        # We commit edits to existing rows.
         edited_values = table_model._datat.edited_values()
-        for index, attr_values in edited_values.items():
-            self.db_manager.set(
-                table_model_data_name,
-                index,
-                attr_values,
-                callback=None,
-                postpone_exec=True)
+
+        self.db_manager._data_changed.add(table_name)
+        self.db_manager.add_task(
+            'save_table_edits', None,
+            table_name, deleted_rows, added_rows, edited_values,
+            )
 
         self.db_manager.run_tasks(callback=table_model.sig_data_saved.emit)
 
