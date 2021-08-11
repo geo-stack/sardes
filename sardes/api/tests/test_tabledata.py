@@ -200,14 +200,14 @@ def test_delete_new_row(tabledata):
     assert tabledata.edit_count() == 2
     assert tabledata.has_unsaved_edits() is True
 
-    assert tabledata.edited_values() == {}
-    assert len(tabledata._original_data) == 0
+    assert tabledata.edited_values().empty
+    assert tabledata._original_data.empty
 
     assert tabledata._deleted_rows == pd.Index([3])
     assert tabledata.deleted_rows().empty
 
     assert tabledata._new_rows == pd.Index([3])
-    assert tabledata.added_rows() == {}
+    assert tabledata.added_rows().empty
 
 
 def test_delete_edited_row(tabledata):
