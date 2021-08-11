@@ -12,9 +12,8 @@ Tests for the Manual Measurements table.
 """
 
 # ---- Standard imports
-from datetime import datetime, date
+from datetime import datetime
 import os
-import os.path as osp
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
