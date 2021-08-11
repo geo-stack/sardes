@@ -563,7 +563,7 @@ class StandardSardesTableModel(SardesTableModel):
         Save all data edits to the database.
         """
         if self.db_connection_manager is not None:
-            self.db_connection_manager.save_model_edits(self._table_id)
+            self.db_connection_manager.save_table_edits(self._table_id)
         else:
             self._raise_db_connmanager_attr_error()
 

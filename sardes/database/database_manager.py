@@ -1009,9 +1009,9 @@ class DatabaseConnectionManager(TaskManagerBase):
         """
         self.models_manager.update_model(table_id)
 
-    def save_model_edits(self, table_id):
+    def save_table_edits(self, table_id):
         """
-        Save all data edits to the database.
+        Save all edits made to the table related to table_id to the database.
         """
         self.models_manager.save_model_edits(table_id)
 
