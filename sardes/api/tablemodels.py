@@ -83,10 +83,6 @@ class SardesTableModelBase(QAbstractTableModel):
         # Setup the data.
         self.set_model_data(pd.DataFrame([]))
 
-        # The manager that handle fetching data and pushing data edits to
-        # the database.
-        self.db_connection_manager = None
-
     # ---- Columns
     @property
     def columns(self):
@@ -351,17 +347,11 @@ class SardesTableModelBase(QAbstractTableModel):
         self.dataChanged.emit(model_index, model_index)
         self.sig_data_edited.emit(data_edit)
 
-    def _create_new_row_index(self):
+    def create_new_row_index(self):
         """
         Return a new index that can be used to add a new item this
         model's data table.
         """
-        if self.db_connection_manager is not None:
-            try:
-                return self.db_connection_manager.create_new_model_index(
-                    self._table_id)
-            except NotImplementedError:
-                pass
         if str(self._datat.data.index.dtype) == 'object':
             return uuid.uuid4()
         elif str(self._datat.data.index.dtype) == 'int64':
@@ -373,7 +363,7 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         self.beginInsertRows(
             QModelIndex(), len(self._datat), len(self._datat))
-        index = pd.Index([self._create_new_row_index()])
+        index = pd.Index([self.create_new_row_index()])
         data_edit = self._datat.add_row(index)
         self._update_visual_data()
         self.endInsertRows()
@@ -402,7 +392,7 @@ class SardesTableModelBase(QAbstractTableModel):
             len(self._datat),
             len(self._datat) + len(values) - 1)
         index = pd.Index(
-            [self._create_new_row_index() for i in range(len(values))])
+            [self.create_new_row_index() for i in range(len(values))])
         data_edit = self._datat.add_row(index, values)
         self._update_visual_data()
         self.endInsertRows()
@@ -460,7 +450,95 @@ class SardesTableModelBase(QAbstractTableModel):
                 )
         self.sig_data_edited.emit(last_edit)
 
-    # ---- Database connection
+
+class SardesTableModel(SardesTableModelBase):
+    """
+    An abstract table model to be used in a table view to display the data
+    that are saved in the database.
+
+    All table *must* inherit this class and reimplement its interface.
+    """
+
+    def create_delegate_for_column(self, view, column):
+        """
+        Create the item delegate that the view need to use when editing the
+        data of this model for the specified column. By default, all columns
+        are not editable. You need to expands this method to specify a
+        different delegate to a column.
+        """
+        raise NotImplementedError
+
+    def logical_to_visual_data(self, visual_dataf):
+        """
+        Transform logical data to visual data.
+
+        Do any transformations to the source data so that they are displayed
+        as you want in the table. Note that these transformations are
+        applied to the visual dataframe, so that the source data are
+        preserved in the process.
+
+        For example, if you would like to display boolean values in a given
+        column of the table as 'Yes' or 'No' strings, you would need to do:
+
+        visual_dataf[column].replace(
+            to_replace={True: 'Yes', False: 'No'}, inplace=True)
+        """
+        return visual_dataf
+
+    def check_data_edits(self):
+        """
+        Check that there is no issues with the data edits of this model.
+        """
+        raise NotImplementedError
+
+    def save_data_edits(self):
+        """
+        Save all data edits to the database.
+        """
+        raise NotImplementedError
+
+    def confirm_before_saving_edits(self):
+        """
+        Return wheter we should ask confirmation to the user before saving
+        the data edits to the database.
+        """
+        raise NotImplementedError
+
+    def set_confirm_before_saving_edits(self, x):
+        """
+        Set wheter we should ask confirmation to the user before saving
+        the data edits to the database.
+        """
+        raise NotImplementedError
+
+
+class StandardSardesTableModel(SardesTableModel):
+    """
+    A standard implementation of a Sardes table model that can communicate
+    with a database connection manager.
+    """
+
+    def __init__(self, *args, **kargs):
+        super().__init__(*args, **kargs)
+        # The manager that handle fetching data and pushing data edits to
+        # the database.
+        self.db_connection_manager = None
+
+    def create_new_row_index(self):
+        """
+        Extend SardesTableModel method to use the database connection
+        manager to generate the new row index.
+        """
+        if self.db_connection_manager is not None:
+            try:
+                return self.db_connection_manager.create_new_model_index(
+                    self._table_id)
+            except NotImplementedError:
+                return super().create_new_row_index()
+        else:
+            self._raise_db_connmanager_attr_error()
+
+    # ---- SardesTableModel API
     def set_database_connection_manager(self, db_connection_manager):
         """Setup the database connection manager for this table model."""
         self.db_connection_manager = db_connection_manager
@@ -474,12 +552,18 @@ class SardesTableModelBase(QAbstractTableModel):
         else:
             self._raise_db_connmanager_attr_error()
 
+    def check_data_edits(self):
+        """
+        Check that there is no issues with the data edits of this model.
+        """
+        raise NotImplementedError
+
     def save_data_edits(self):
         """
         Save all data edits to the database.
         """
         if self.db_connection_manager is not None:
-            self.db_connection_manager.save_model_edits(self._table_id)
+            self.db_connection_manager.save_table_edits(self._table_id)
         else:
             self._raise_db_connmanager_attr_error()
 
@@ -513,42 +597,6 @@ class SardesTableModelBase(QAbstractTableModel):
             "model {} is not set.".format(self._table_id))
 
 
-class SardesTableModel(SardesTableModelBase):
-    """
-    An abstract table model to be used in a table view to display the data
-    that are saved in the database.
-
-    All table *must* inherit this class and reimplement its interface.
-
-    """
-
-    def create_delegate_for_column(self, view, column):
-        """
-        Create the item delegate that the view need to use when editing the
-        data of this model for the specified column. By default, all columns
-        are not editable. You need to expands this method to specify a
-        different delegate to a column.
-        """
-        raise NotImplementedError
-
-    def logical_to_visual_data(self, visual_dataf):
-        """
-        Transform logical data to visual data.
-
-        Do any transformations to the source data so that they are displayed
-        as you want in the table. Note that these transformations are
-        applied to the visual dataframe, so that the source data are
-        preserved in the process.
-
-        For example, if you would like to display boolean values in a given
-        column of the table as 'Yes' or 'No' strings, you would need to do:
-
-        visual_dataf[column].replace(
-            to_replace={True: 'Yes', False: 'No'}, inplace=True)
-        """
-        return visual_dataf
-
-
 class SardesSortFilterModel(QSortFilterProxyModel):
     """
     A proxy model to sort and filter Sardes data.
@@ -561,7 +609,7 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         self._sort_by_columns = []
         self._columns_sort_order = []
         self._filter_by_columns = None
-        self._proxy_dataf_index = []
+        self._proxy_dataf_index = pd.Index([])
         self._map_row_to_source = np.array([])
         self._map_row_from_source = np.array([])
         self._multi_columns_sort = multi_columns_sort
@@ -683,7 +731,7 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         Return the model index in the source model that corresponds to the
         proxy_index in the proxy model.
         """
-        if not proxy_index.isValid() or not len(self._proxy_dataf_index):
+        if not proxy_index.isValid() or self._proxy_dataf_index.empty:
             return QModelIndex()
 
         try:
@@ -699,7 +747,7 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         Return the model index in the proxy model that corresponds to the
         source_index from the source model.
         """
-        if not source_index.isValid() or not len(self._proxy_dataf_index):
+        if not source_index.isValid() or self._proxy_dataf_index.empty:
             return QModelIndex()
 
         proxy_index_row = self.mapRowFromSource(source_index.row())

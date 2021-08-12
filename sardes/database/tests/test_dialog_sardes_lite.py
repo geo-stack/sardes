@@ -21,7 +21,7 @@ import pytest
 from qtpy.QtCore import Qt
 
 # ---- Local imports
-from sardes.database.dialog_sardes_lite import (
+from sardes.database.dialogs.dialog_sardes_lite import (
     DatabaseConnectDialogSardesLite, QMessageBox, QFileDialog)
 
 

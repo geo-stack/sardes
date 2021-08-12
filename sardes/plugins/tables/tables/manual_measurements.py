@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Local imports
-from sardes.api.tablemodels import SardesTableModel
+from sardes.api.tablemodels import StandardSardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableWidget, TextEditDelegate, NotEditableDelegate, DateTimeDelegate,
@@ -16,7 +16,7 @@ from sardes.widgets.tableviews import (
 from sardes.plugins.tables.tables.delegates import ObsWellIdEditDelegate
 
 
-class ManualMeasurementsTableModel(SardesTableModel):
+class ManualMeasurementsTableModel(StandardSardesTableModel):
     """
     A table model to display the list of manual groundwater level measurements
     made in the observation wells of the monitoring network.

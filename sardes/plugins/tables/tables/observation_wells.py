@@ -20,7 +20,7 @@ from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import QMenu, QFileDialog
 
 # ---- Local imports
-from sardes.api.tablemodels import SardesTableModel
+from sardes.api.tablemodels import StandardSardesTableModel
 from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
 from sardes.config.main import TEMP_DIR
@@ -32,7 +32,7 @@ from sardes.widgets.tableviews import (
     NumEditDelegate, NotEditableDelegate, TextEditDelegate)
 
 
-class ObsWellsTableModel(SardesTableModel):
+class ObsWellsTableModel(StandardSardesTableModel):
     """
     A table model to display the list of observation wells that are saved
     in the database.

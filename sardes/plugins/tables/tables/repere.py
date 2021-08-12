@@ -11,7 +11,7 @@
 import pandas as pd
 
 # ---- Local imports
-from sardes.api.tablemodels import SardesTableModel
+from sardes.api.tablemodels import StandardSardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableWidget, BoolEditDelegate, NotEditableDelegate, TextEditDelegate,
@@ -19,7 +19,7 @@ from sardes.widgets.tableviews import (
 from sardes.plugins.tables.tables.delegates import ObsWellIdEditDelegate
 
 
-class RepereTableModel(SardesTableModel):
+class RepereTableModel(StandardSardesTableModel):
     """
     A table model to display the repere data related to the observation
     wells of the monitoring network.

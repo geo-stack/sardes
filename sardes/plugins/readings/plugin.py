@@ -18,8 +18,7 @@ from qtpy.QtCore import Qt, Slot
 # ---- Local imports
 from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
-from sardes.config.main import CONF
-from sardes.api.tablemodels import SardesTableModel
+from sardes.api.tablemodels import StandardSardesTableModel
 from sardes.api.timeseries import DataType
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.utils.data_operations import format_reading_data
@@ -35,7 +34,7 @@ from sardes.tools import (
 """Readings plugin"""
 
 
-class ReadingsTableModel(SardesTableModel):
+class ReadingsTableModel(StandardSardesTableModel):
     def __init__(self, obs_well_data, *args, **kargs):
         super().__init__(*args, **kargs)
         self._obs_well_data = obs_well_data
@@ -51,7 +50,7 @@ class ReadingsTableModel(SardesTableModel):
         else:
             return NotEditableDelegate(view)
 
-    # ---- Database connection
+    # ---- Data
     def set_obs_well_data(self, obs_well_data):
         self._obs_well_data = obs_well_data.loc[self._obs_well_uuid]
         self._table_title = str(self._obs_well_data['obs_well_id'])
@@ -92,6 +91,7 @@ class ReadingsTableModel(SardesTableModel):
         dataf_columns_mapper.append(('obs_id', _('Observation ID')))
         super().set_model_data(dataf, dataf_columns_mapper)
 
+    # ---- SardesTableModel API
     def save_data_edits(self):
         """
         Save all data edits to the database.
@@ -101,7 +101,7 @@ class ReadingsTableModel(SardesTableModel):
         tseries_edits = init_tseries_edits()
         tseries_dels = init_tseries_dels()
         for edit in self._datat.edits():
-            if edit.type() == SardesTableModel.ValueChanged:
+            if edit.type() == self.ValueChanged:
                 if self._datat.is_data_deleted_at(edit.row):
                     continue
                 row_data = self._datat.get(edit.row)
@@ -109,7 +109,7 @@ class ReadingsTableModel(SardesTableModel):
                 obs_id = row_data['obs_id']
                 indexes = (date_time, obs_id, edit.column)
                 tseries_edits.loc[indexes, 'value'] = edit.edited_value
-            elif edit.type() == SardesTableModel.RowDeleted:
+            elif edit.type() == self.RowDeleted:
                 delrows_data = self._datat.get(edit.row)
                 data_types = [dtype for dtype in DataType if
                               dtype in delrows_data.keys()]

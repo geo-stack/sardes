@@ -27,7 +27,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QApplication
 
 # ---- Local imports
-from sardes.api.tablemodels import SardesTableModel
+from sardes.api.tablemodels import StandardSardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableWidget, NotEditableDelegate, StringEditDelegate,
@@ -92,7 +92,7 @@ def tablemodel(qtbot, TABLE_DATAF):
                 TABLE_DATAF.loc[index, column] = (
                     attribute_values.get(column, None))
 
-    class SardesTableModelMock(SardesTableModel):
+    class SardesTableModelMock(StandardSardesTableModel):
         def create_delegate_for_column(self, view, column):
             if column == 'col0':
                 return StringEditDelegate(view, unique_constraint=True,

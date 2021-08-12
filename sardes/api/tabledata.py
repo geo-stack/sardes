@@ -340,9 +340,8 @@ class SardesTableData(object):
 
     def added_rows(self):
         """
-        Return a dictionary where keys correspond to the indexes of the rows
-        that were added to the table and values are dictionaries containing
-        the attribute values of the added rows.
+        Return a pandas dataframe containing the the new rows that were
+        added to the data of this table.
         """
         added_row_indexes = self.data.index[self._new_rows]
 
@@ -351,30 +350,35 @@ class SardesTableData(object):
         added_row_indexes = added_row_indexes.drop(
             self.data.index[self._deleted_rows], errors='ignore')
 
-        added_rows = {
-            index: values.dropna().to_dict() for
-            index, values in self.data.loc[added_row_indexes].iterrows()
-            }
-        return added_rows
+        return self.data.loc[added_row_indexes]
 
     def edited_values(self):
         """
-        Return a dictionary where keys correspond to the indexes of the rows
-        that were edited in the data and values are dictionaries containing
-        the values of the edited attributes on each corresponding row.
+        Return a multiindex dataframe containing the edited values at
+        the corresponding indexes and columns of the dataframe.
         """
-        edited_values = {}
-        for row, row_data in self._original_data.groupby(level=0):
-            if row in self._deleted_rows:
-                # Edits made to deleted rows are not tracked as net
-                # edited values. Since these rows are going to be deleted
-                # from the database anyway, there is not point in handling
-                # these edits when commiting to the database.
-                continue
-            index = self.data.index[row]
-            columns = self.data.columns[row_data.index.get_level_values(1)]
-            row_edited_values = self.data.iloc[row][columns].to_dict()
-            edited_values[index] = row_edited_values
+        # We remove deleted rows from the original data indexes.
+        orig_data_indexes = self._original_data.index.drop(
+            self._deleted_rows, level=0, errors='ignore')
+
+        # We define a new multiindex dataframe to hold the edited values.
+        edited_values = pd.DataFrame(
+            data=[],
+            index=pd.MultiIndex.from_arrays([
+                self.data.index[orig_data_indexes.get_level_values(0)],
+                self.data.columns[orig_data_indexes.get_level_values(1)]
+                ]),
+            columns=['edited_value'],
+            dtype='object'
+            )
+
+        # We fetch the edited values from the data column by column.
+        for col, data in edited_values.groupby(level=1):
+            edited_values.loc[data.index, 'edited_value'] = self.data.loc[
+                data.index.get_level_values(0), col].astype('object').array
+            # Note that we need to use .array instead of .values to avoid
+            # any unwanted dtype conversion from pandas to numpy when using
+            # .values to access the data (ex. pd.datetime).
         return edited_values
 
     # ---- Edits
@@ -441,22 +445,33 @@ class SardesTableData(object):
 
 
 if __name__ == '__main__':
+    from datetime import datetime
+
     NCOL = 5
     COLUMNS = ['col{}'.format(i) for i in range(NCOL)]
-    VALUES = [['str1', True, 1.111, 3, None],
-              ['str2', False, 2.222, 1, None],
-              ['str3', True, 3.333, 29, None]]
+    VALUES = [['str1', True, 1.111, 3, datetime(2001, 5, 12)],
+              ['str2', False, 2.222, 1, datetime(2002, 5, 12)],
+              ['str3', True, 3.333, 29, datetime(2003, 5, 12)]]
 
-    dataset = pd.DataFrame(VALUES, columns=COLUMNS)
+    dataset = pd.DataFrame(
+        VALUES, columns=COLUMNS, index=['row0', 'row1', 'row2'])
     dataset['col1'] = dataset['col1'].astype("Int64")
     dataset['col3'] = dataset['col3'].astype("Int64")
+    dataset['col4'] = pd.to_datetime(dataset['col4'])
 
     tabledata = SardesTableData(dataset)
 
     tabledata.set(1, 0, 'edited_str2')
     tabledata.set(1, 2, 1.124)
     tabledata.set(1, 2, 1.124)
-    tabledata.set(1, 3, None)
+    tabledata.set(1, 3, 4)
+    tabledata.set(0, 4, datetime(2005, 5, 12))
+    tabledata.set(2, 3, None)
+    tabledata.set(1, 4, None)
 
-    print(tabledata, end='\n\n')
-    print(tabledata.edited_values())
+    new_row = {'col0': 'str4', 'col1': True, 'col2': 4.444,
+               'col3': 0, 'col4': datetime(2008, 8, 8)}
+    tabledata.add_row(pd.Index(['new_row_index']), [new_row])
+
+    edited_values = tabledata.edited_values()
+    print(edited_values)
