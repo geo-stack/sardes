@@ -28,9 +28,9 @@ class ObsWellIdEditDelegate(SardesItemDelegate):
         # Populate the combobox with the existing observation wells.
         obs_well_data = (self.model().libraries['observation_wells_data']
                          .sort_values('obs_well_id', axis=0, ascending=True))
-        for index in obs_well_data.index:
-            editor.addItem(obs_well_data.loc[index, 'obs_well_id'],
-                           userData=index)
+        for index, values in obs_well_data.iterrows():
+            editor.addItem(values['obs_well_id'], userData=index)
+
         return editor
 
     def format_data(self, data):
@@ -71,9 +71,8 @@ class SondeModelEditDelegate(SardesItemDelegate):
         sonde_models_lib = self.model().libraries['sonde_models_lib']
         sonde_models_lib = sonde_models_lib.sort_values(
             'sonde_brand_model', axis=0, ascending=True)
-        for index in sonde_models_lib.index:
-            editor.addItem(sonde_models_lib.loc[index, 'sonde_brand_model'],
-                           userData=index)
+        for index, values in sonde_models_lib.iterrows():
+            editor.addItem(values['sonde_brand_model'], userData=index)
         return editor
 
 
@@ -99,8 +98,7 @@ class SondesSelectionDelegate(SardesItemDelegate):
                 .apply(lambda x: ' - '.join(x), axis=1))
             sondes_data = sondes_data.sort_values(
                 'sonde_brand_model_serial', axis=0, ascending=True)
-            for index in sondes_data.index:
+            for index, values in sondes_data.iterrows():
                 editor.addItem(
-                    sondes_data.loc[index, 'sonde_brand_model_serial'],
-                    userData=index)
+                    sondes_data['sonde_brand_model_serial'], userData=index)
         return editor
