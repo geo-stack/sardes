@@ -87,10 +87,10 @@ class MainWindowBase(QMainWindow):
 
         # Setup the database connection manager.
         from sardes.database.database_manager import DatabaseConnectionManager
-        print("Setting up the database connection manager...", end=' ')
+        print("Setting up the database connection manager...")
         self.set_splash(_("Setting up the database connection manager..."))
         self.db_connection_manager = DatabaseConnectionManager()
-        print("done")
+        print("Database connection manager set up succesfully.")
 
         self.setup()
 
