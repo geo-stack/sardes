@@ -53,7 +53,7 @@ class ObsWellIdEditDelegate(SardesItemDelegate):
             if sum(isnull1 != isnull2):
                 warning_message = _(
                     "Some {} data did not match any well in the database"
-                    ).format(self.model()._data_columns_mapper[data.name])
+                    ).format(self.model().get_column_header_at[data.name])
             else:
                 warning_message = None
         return formatted_data, warning_message

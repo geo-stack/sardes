@@ -105,7 +105,7 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         return list(self._data_columns_mapper.values())
 
-    def get_horizontal_header_label_at(self, column_or_index):
+    def get_column_header_at(self, column_or_index):
         """
         Return the text of the label to display in the horizontal
         header for the key or logical index associated
@@ -120,12 +120,12 @@ class SardesTableModelBase(QAbstractTableModel):
         """Qt method override."""
         if role == Qt.DisplayRole:
             if orientation == Qt.Horizontal:
-                return self.get_horizontal_header_label_at(section)
+                return self.get_column_header_at(section)
             elif orientation == Qt.Vertical:
                 return section + 1
         elif role == Qt.ToolTipRole:
             if orientation == Qt.Horizontal:
-                return self.get_horizontal_header_label_at(section)
+                return self.get_column_header_at(section)
         return QVariant()
 
     # ---- Table data
