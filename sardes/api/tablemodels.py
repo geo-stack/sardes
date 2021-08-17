@@ -97,8 +97,7 @@ class SardesTableModelBase(QAbstractTableModel):
         return len(self.columns)
 
     # ---- Horizontal Headers
-    @property
-    def horizontal_header_labels(self):
+    def column_headers(self):
         """
         Return the list of labels that need to be displayed for each column
         of the table's horizontal header.

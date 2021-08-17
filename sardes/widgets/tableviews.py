@@ -1038,7 +1038,7 @@ class SardesTableView(QTableView):
 
     def _setup_column_visibility_actions(self):
         self._toggle_column_visibility_actions = []
-        for i, label in enumerate(self.model().horizontal_header_labels):
+        for i, label in enumerate(self.model().column_headers()):
             action = create_action(
                 self, label,
                 toggled=(lambda toggle,
