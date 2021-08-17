@@ -107,13 +107,12 @@ class SardesTableModelBase(QAbstractTableModel):
     def get_column_header_at(self, column_or_index):
         """
         Return the text of the label to display in the horizontal
-        header for the key or logical index associated
-        with the column.
+        header for the key or logical index associated with the column.
         """
-        return self._data_columns_mapper[
-            column_or_index if isinstance(column_or_index, str) else
-            self.columns[column_or_index]
-            ]
+        if isinstance(column_or_index, str):
+            return self._data_columns_mapper[column_or_index]
+        else:
+            return self.column_headers()[column_or_index]
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """Qt method override."""
