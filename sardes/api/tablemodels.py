@@ -84,8 +84,8 @@ class SardesTableModelBase(QAbstractTableModel):
         self._table_id = table_id
         if columns is not None:
             self.__columns__ = columns
-        self._data_columns_mapper = OrderedDict(
-            [(column.name, column.header) for column in self.__columns__])
+        self._columns_loc = OrderedDict(
+            [(column.name, column) for column in self.__columns__])
 
         # The sardes table data object that is used to store the table data
         # and handle edits.
@@ -103,25 +103,35 @@ class SardesTableModelBase(QAbstractTableModel):
         self.set_model_data(pd.DataFrame([]))
 
     # ---- Columns
-    @property
     def columns(self):
         """
-        Return the list of keys used to reference the columns in this
-        model's data.
+        Return the list of columns that are defined for this table model.
         """
-        return list(self._data_columns_mapper.keys())
+        return self.__columns__
+
+    def column_names_headers_map(self):
+        """
+        Return a dictionary mapping columns name with their header.
+        """
+        return {column.name: column.header for column in self.__columns__}
 
     def columnCount(self, parent=QModelIndex()):
         """Return the number of columns in this model's data."""
-        return len(self.columns)
+        return len(self.__columns__)
 
-    # ---- Horizontal Headers
+    def column_names(self):
+        """
+        Return the list of names used to reference the columns in this
+        model's data.
+        """
+        return [column.name for column in self.__columns__]
+
     def column_headers(self):
         """
         Return the list of labels that need to be displayed for each column
         of the table's horizontal header.
         """
-        return list(self._data_columns_mapper.values())
+        return [column.header for column in self.__columns__]
 
     def get_column_header_at(self, column_or_index):
         """
@@ -129,9 +139,9 @@ class SardesTableModelBase(QAbstractTableModel):
         header for the key or logical index associated with the column.
         """
         if isinstance(column_or_index, str):
-            return self._data_columns_mapper[column_or_index]
+            return self._columns_loc[column_or_index].header
         else:
-            return self.column_headers()[column_or_index]
+            return self.__columns__[column_or_index].header
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """Qt method override."""
@@ -178,16 +188,16 @@ class SardesTableModelBase(QAbstractTableModel):
 
         if columns is not None:
             self.__columns__ = columns
-        self._data_columns_mapper = OrderedDict(
-            [(column.name, column.header) for column in self.__columns__])
+        self._columns_loc = OrderedDict(
+            [(column.name, column) for column in self.__columns__])
 
         # Add missing columns to the dataframe and reorder columns to
         # mirror the column logical indexes of the table model so that we
         # can access them with pandas iloc.
-        for column in self.columns:
-            if column not in dataf.columns:
-                dataf[column] = None
-        dataf = dataf[self.columns]
+        for column_name in self.column_names():
+            if column_name not in dataf.columns:
+                dataf[column_name] = None
+        dataf = dataf[self.column_names()]
 
         self._datat = SardesTableData(dataf)
         self.endResetModel()
@@ -281,7 +291,7 @@ class SardesTableModelBase(QAbstractTableModel):
         Return the dataframe column corresponding to the specified visual
         model index.
         """
-        return self.columns[model_index.column()]
+        return self.column_names()[model_index.column()]
 
     def _update_visual_data(self):
         """
@@ -676,7 +686,8 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         else:
             # Sort the data by columns.
             self._proxy_dataf_index = visual_dataf.sort_values(
-                by=[self.columns[index] for index in self._sort_by_columns],
+                by=[self.column_names()[index] for index in
+                    self._sort_by_columns],
                 ascending=[not bool(v) for v in self._columns_sort_order],
                 axis=0,
                 inplace=False).index
