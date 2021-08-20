@@ -1816,7 +1816,7 @@ class SardesTableView(QTableView):
         default values.
         """
         self.show_all_available_columns()
-        for logical_index, column in enumerate(self.source_model.columns):
+        for logical_index in range(self.source_model.columnCount()):
             self.horizontalHeader().moveSection(
                 self.horizontalHeader().visualIndex(logical_index),
                 logical_index)
