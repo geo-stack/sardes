@@ -515,7 +515,7 @@ class DataImportWizard(SardesPaneWidget):
 
                 # We hide or show the corresponding column in the table.
                 horiz_header.setSectionHidden(
-                    self.table_model.columns.index(data_type),
+                    self.table_model.column_names().index(data_type),
                     data_type not in dataf.columns)
 
             self.table_model.set_model_data(dataf)
