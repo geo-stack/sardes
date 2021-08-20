@@ -59,7 +59,7 @@ class SardesTableModelBase(QAbstractTableModel):
     RowRemoved = SardesTableData.RowRemoved
     RowDeleted = SardesTableData.RowDeleted
 
-    __columns__ = []
+    __tablecolumns__ = []
 
     def __init__(self, table_title='', table_id='', columns=None):
         """
@@ -83,9 +83,9 @@ class SardesTableModelBase(QAbstractTableModel):
         self._table_title = table_title
         self._table_id = table_id
         if columns is not None:
-            self.__columns__ = columns
-        self._columns_loc = OrderedDict(
-            [(column.name, column) for column in self.__columns__])
+            self.__tablecolumns__ = columns
+        self._tablecolumns_loc = OrderedDict(
+            [(column.name, column) for column in self.__tablecolumns__])
 
         # The sardes table data object that is used to store the table data
         # and handle edits.
@@ -107,31 +107,31 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         Return the list of columns that are defined for this table model.
         """
-        return self.__columns__
+        return self.__tablecolumns__
 
     def column_names_headers_map(self):
         """
         Return a dictionary mapping columns name with their header.
         """
-        return {column.name: column.header for column in self.__columns__}
+        return {column.name: column.header for column in self.__tablecolumns__}
 
     def columnCount(self, parent=QModelIndex()):
         """Return the number of columns in this model's data."""
-        return len(self.__columns__)
+        return len(self.__tablecolumns__)
 
     def column_names(self):
         """
         Return the list of names used to reference the columns in this
         model's data.
         """
-        return [column.name for column in self.__columns__]
+        return [column.name for column in self.__tablecolumns__]
 
     def column_headers(self):
         """
         Return the list of labels that need to be displayed for each column
         of the table's horizontal header.
         """
-        return [column.header for column in self.__columns__]
+        return [column.header for column in self.__tablecolumns__]
 
     def get_column_header_at(self, column_or_index):
         """
@@ -139,9 +139,9 @@ class SardesTableModelBase(QAbstractTableModel):
         header for the key or logical index associated with the column.
         """
         if isinstance(column_or_index, str):
-            return self._columns_loc[column_or_index].header
+            return self._tablecolumns_loc[column_or_index].header
         else:
-            return self.__columns__[column_or_index].header
+            return self.__tablecolumns__[column_or_index].header
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """Qt method override."""
@@ -187,9 +187,9 @@ class SardesTableModelBase(QAbstractTableModel):
         self.beginResetModel()
 
         if columns is not None:
-            self.__columns__ = columns
-        self._columns_loc = OrderedDict(
-            [(column.name, column) for column in self.__columns__])
+            self.__tablecolumns__ = columns
+        self._tablecolumns_loc = OrderedDict(
+            [(column.name, column) for column in self.__tablecolumns__])
 
         # Add missing columns to the dataframe and reorder columns to
         # mirror the column logical indexes of the table model so that we
