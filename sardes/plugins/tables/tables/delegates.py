@@ -100,5 +100,5 @@ class SondesSelectionDelegate(SardesItemDelegate):
                 'sonde_brand_model_serial', axis=0, ascending=True)
             for index, values in sondes_data.iterrows():
                 editor.addItem(
-                    sondes_data['sonde_brand_model_serial'], userData=index)
+                    values['sonde_brand_model_serial'], userData=index)
         return editor
