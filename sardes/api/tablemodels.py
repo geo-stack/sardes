@@ -59,9 +59,11 @@ class SardesTableModelBase(QAbstractTableModel):
     RowRemoved = SardesTableData.RowRemoved
     RowDeleted = SardesTableData.RowDeleted
 
+    __tablename__ = ''
+    __tabletitle__ = ''
     __tablecolumns__ = []
 
-    def __init__(self, table_title='', table_id='', columns=None):
+    def __init__(self, table_title=None, table_id=None, columns=None):
         """
         Parameters
         ----------
@@ -80,8 +82,10 @@ class SardesTableModelBase(QAbstractTableModel):
         self.BackgroundColorDeleted = QColor('#FF9999')
         self.BackgroundColorEdited = QColor('#CCFF99')
 
-        self._table_title = table_title
-        self._table_id = table_id
+        if table_title is not None:
+            self.__tabletitle__ = table_title
+        if table_id is not None:
+            self.__tablename__ = table_id
         if columns is not None:
             self.__tablecolumns__ = columns
         self._tablecolumns_loc = OrderedDict(
@@ -101,6 +105,18 @@ class SardesTableModelBase(QAbstractTableModel):
 
         # Setup the data.
         self.set_model_data(pd.DataFrame([]))
+
+    def name(self):
+        """Return the name of the table."""
+        return self.__tablename__
+
+    def title(self):
+        """Return the title of the table."""
+        return self.__tabletitle__
+
+    def set_title(self, title):
+        """Set the title of the table."""
+        self.__tabletitle__ = title
 
     # ---- Columns
     def columns(self):
@@ -562,7 +578,7 @@ class StandardSardesTableModel(SardesTableModel):
         if self.db_connection_manager is not None:
             try:
                 return self.db_connection_manager.create_new_model_index(
-                    self._table_id)
+                    self.name())
             except NotImplementedError:
                 return super().create_new_row_index()
         else:
@@ -578,7 +594,7 @@ class StandardSardesTableModel(SardesTableModel):
         Update this model's data and library.
         """
         if self.db_connection_manager is not None:
-            self.db_connection_manager.update_model(self._table_id)
+            self.db_connection_manager.update_model(self.name())
         else:
             self._raise_db_connmanager_attr_error()
 
@@ -593,7 +609,7 @@ class StandardSardesTableModel(SardesTableModel):
         Save all data edits to the database.
         """
         if self.db_connection_manager is not None:
-            self.db_connection_manager.save_table_edits(self._table_id)
+            self.db_connection_manager.save_table_edits(self.name())
         else:
             self._raise_db_connmanager_attr_error()
 
@@ -624,7 +640,7 @@ class StandardSardesTableModel(SardesTableModel):
         """
         raise AttributeError(
             "The database connections manager for the table "
-            "model {} is not set.".format(self._table_id))
+            "model {} is not set.".format(self.name()))
 
 
 class SardesSortFilterModel(QSortFilterProxyModel):

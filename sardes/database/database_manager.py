@@ -598,7 +598,7 @@ class SardesTableModelsManager(QObject):
         Register a new sardes table model to the manager.
         """
         lib_names = lib_names or []
-        table_id = table_model._table_id
+        table_id = table_model.name()
         self._table_models[table_id] = table_model
         self._models_req_data[table_id] = [data_name] + lib_names
         self._queued_model_updates[table_id] = [data_name] + lib_names

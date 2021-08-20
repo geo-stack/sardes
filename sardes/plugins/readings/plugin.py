@@ -53,7 +53,7 @@ class ReadingsTableModel(StandardSardesTableModel):
     # ---- Data
     def set_obs_well_data(self, obs_well_data):
         self._obs_well_data = obs_well_data.loc[self._obs_well_uuid]
-        self._table_title = str(self._obs_well_data['obs_well_id'])
+        self.set_title(str(self._obs_well_data['obs_well_id']))
 
     def manual_measurements(self):
         return self._manual_measurements
