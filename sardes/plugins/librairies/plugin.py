@@ -121,7 +121,7 @@ class Librairies(SardesPlugin):
         table.register_to_plugin(self)
 
         self._tables[table.table_name()] = table
-        self.tabwidget.add_table(table, table.get_table_title())
+        self.tabwidget.add_table(table, table.table_title())
 
         # Restore the state of the tables' horizontal header from the configs.
         table.restore_table_horiz_header_state(

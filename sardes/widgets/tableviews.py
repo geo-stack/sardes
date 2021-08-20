@@ -2154,8 +2154,8 @@ class SardesTableWidget(SardesPaneWidget):
         """
         return self.model().db_connection_manager
 
-    def get_table_title(self):
-        """Return the title of this widget's table."""
+    def table_title(self):
+        """Return the title of the table of this table widget."""
         return self.tableview.source_model.title()
 
     def table_name(self):
@@ -2517,7 +2517,7 @@ class SardesStackedTableWidget(SardesPaneWidget):
         """
         for index in range(self.count()):
             table = self.tabwidget.widget(index)
-            tab_text = table.get_table_title()
+            tab_text = table.table_title()
             if table.tableview.model().has_unsaved_data_edits():
                 tab_text += '*'
             self.tabwidget.setTabText(index, tab_text)
