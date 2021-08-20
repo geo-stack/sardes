@@ -598,7 +598,7 @@ class ImportFromClipboardTool(SardesTool):
         warning_messages = []
         for column in new_data.columns:
             delegate = self.parent.tableview.itemDelegateForColumn(
-                self.parent.model().columns.index(column))
+                self.parent.model().column_names().index(column))
             new_data[column], warning_message = delegate.format_data(
                 new_data[column])
             if warning_message is not None:
@@ -1767,7 +1767,8 @@ class SardesTableView(QTableView):
         for i in range(self.column_count()):
             logical_index = self.horizontalHeader().logicalIndex(i)
             if not self.horizontalHeader().isSectionHidden(logical_index):
-                visible_columns.append(self.model().columns[logical_index])
+                visible_columns.append(
+                    self.model().column_names()[logical_index])
         return visible_columns
 
     def column_count(self):
