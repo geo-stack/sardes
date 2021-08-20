@@ -23,6 +23,8 @@ class SondeInstallationsTableModel(StandardSardesTableModel):
     that were installed at some point in the observation wells for the
     entire monitoring network.
     """
+    __tablename__ = 'table_sonde_installations'
+    __tabletitle__ = _('Sonde Installations')
     __tablecolumns__ = [
         SardesTableColumn('sampling_feature_uuid', _('Well ID'), 'str',
                           notnull=True),
@@ -93,7 +95,5 @@ class SondeInstallationsTableModel(StandardSardesTableModel):
 
 class SondeInstallationsTableWidget(SardesTableWidget):
     def __init__(self, *args, **kargs):
-        table_model = SondeInstallationsTableModel(
-            table_title=_('Sonde Installations'),
-            table_id='table_sonde_installations')
+        table_model = SondeInstallationsTableModel()
         super().__init__(table_model, *args, **kargs)

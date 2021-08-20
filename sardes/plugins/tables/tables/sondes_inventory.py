@@ -21,6 +21,8 @@ class SondesInventoryTableModel(StandardSardesTableModel):
     A table model to display the list of level and baro loggers that are
     used in the monitoring network.
     """
+    __tablename__ = 'table_sondes_inventory'
+    __tabletitle__ = _('Sondes Inventory')
     __tablecolumns__ = [
         SardesTableColumn('sonde_model_id', _('Model'), 'str',
                           notnull=True, unique=True,
@@ -87,7 +89,5 @@ class SondesInventoryTableModel(StandardSardesTableModel):
 
 class SondesInventoryTableWidget(SardesTableWidget):
     def __init__(self, *args, **kargs):
-        table_model = SondesInventoryTableModel(
-            table_title=_('Sondes Inventory'),
-            table_id='table_sondes_inventory')
+        table_model = SondesInventoryTableModel()
         super().__init__(table_model, *args, **kargs)

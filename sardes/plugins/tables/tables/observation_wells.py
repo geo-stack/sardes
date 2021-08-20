@@ -37,6 +37,8 @@ class ObsWellsTableModel(StandardSardesTableModel):
     A table model to display the list of observation wells that are saved
     in the database.
     """
+    __tablename__ = 'table_observation_wells'
+    __tabletitle__ = _('Observation Wells')
     __tablecolumns__ = [
         SardesTableColumn(
             'obs_well_id', _('Well ID'), 'str', notnull=True, unique=True),
@@ -129,9 +131,7 @@ class ObsWellsTableWidget(SardesTableWidget):
     sig_view_data = Signal(object, bool)
 
     def __init__(self, *args, **kargs):
-        table_model = ObsWellsTableModel(
-            table_title=_('Observation Wells'),
-            table_id='table_observation_wells')
+        table_model = ObsWellsTableModel()
         super().__init__(table_model, *args, **kargs)
 
         self.add_toolbar_separator()

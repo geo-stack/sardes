@@ -19,6 +19,8 @@ class SondeModelsTableModel(StandardSardesTableModel):
     A table model to display a list of sonde brand models that
     are available to use in the SondesInventory table.
     """
+    __tablename__ = 'sonde_brand_models'
+    __tabletitle__ = _('Sonde Models')
     __tablecolumns__ = [
         SardesTableColumn(
             'sonde_brand', _('Brand'), 'str', notnull=True),
@@ -33,7 +35,5 @@ class SondeModelsTableModel(StandardSardesTableModel):
 
 class SondeModelsTableWidget(SardesTableWidget):
     def __init__(self, *args, **kargs):
-        table_model = SondeModelsTableModel(
-            table_title=_('Sonde Models'),
-            table_id='sonde_brand_models')
+        table_model = SondeModelsTableModel()
         super().__init__(table_model, *args, **kargs)

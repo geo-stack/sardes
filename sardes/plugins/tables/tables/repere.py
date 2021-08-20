@@ -24,6 +24,8 @@ class RepereTableModel(StandardSardesTableModel):
     A table model to display the repere data related to the observation
     wells of the monitoring network.
     """
+    __tablename__ = 'table_repere'
+    __tabletitle__ = _('Repere')
     __tablecolumns__ = [
         SardesTableColumn(
             'sampling_feature_uuid', _('Well ID'), 'str', notnull=True),
@@ -94,7 +96,5 @@ class RepereTableModel(StandardSardesTableModel):
 
 class RepereTableWidget(SardesTableWidget):
     def __init__(self, *args, **kargs):
-        table_model = RepereTableModel(
-            table_title=_('Repere'),
-            table_id='table_repere')
+        table_model = RepereTableModel()
         super().__init__(table_model, *args, **kargs)
