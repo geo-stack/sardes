@@ -9,6 +9,7 @@
 
 # ---- Standard imports
 from collections import OrderedDict
+from dataclasses import dataclass
 import uuid
 
 # ---- Third party imports
@@ -26,6 +27,19 @@ from sardes.api.tabledata import SardesTableData
 # =============================================================================
 # ---- Sardes Table Models
 # =============================================================================
+@dataclass
+class SardesTableColumn():
+    """A class for reprensenting a column in a Sardes table."""
+    name: str
+    header: str
+    dtype: str
+    notnull: bool = False
+    unique: bool = False
+    unique_subset: list = None
+    editable: bool = True
+    desc: str = None
+
+
 class SardesTableModelBase(QAbstractTableModel):
     """
     Basic functionality for Sardes table models.
