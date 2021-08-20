@@ -567,9 +567,10 @@ class ImportFromClipboardTool(SardesTool):
                 func='warning')
             return
 
-        data_columns_mapper = self.parent.model()._data_columns_mapper
+        column_names_headers_map = (
+            self.parent.model().column_names_headers_map())
         table_visible_labels = [
-            data_columns_mapper[column].lower().replace(' ', '')
+            column_names_headers_map[column].lower().replace(' ', '')
             for column in table_visible_columns]
 
         new_data_columns = []
@@ -1031,9 +1032,9 @@ class SardesTableView(QTableView):
         """
         Setup the item delegates for each column of this table view.
         """
-        for i, column in enumerate(self.model().columns):
+        for i, column in enumerate(self.model().columns()):
             item_delegate = self.model().create_delegate_for_column(
-                self, column)
+                self, column.name)
             self.setItemDelegateForColumn(i, item_delegate)
 
     def _setup_column_visibility_actions(self):
@@ -1268,7 +1269,7 @@ class SardesTableView(QTableView):
             else:
                 if data_edit.type() == SardesTableModelBase.RowAdded:
                     if self.visible_column_count():
-                        column = self.model().columns.index(
+                        column = self.model().column_names().index(
                             self.visible_columns()[0])
                     else:
                         column = 0
@@ -1681,7 +1682,7 @@ class SardesTableView(QTableView):
             selected_data = self.model().visual_dataf.iloc[
                 self.model().mapRowToSource(selected_rows), selected_columns]
             selected_data.rename(
-                self.model()._data_columns_mapper,
+                self.model().column_names_headers_map(),
                 axis='columns',
                 inplace=True)
             selected_data.to_clipboard(excel=True, index=False, na_rep='')
