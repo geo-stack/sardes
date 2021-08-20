@@ -62,6 +62,8 @@ class SardesTableModelBase(QAbstractTableModel):
     __tablename__ = ''
     __tabletitle__ = ''
     __tablecolumns__ = []
+    __tablecolumns_loc__ = OrderedDict(
+        [(column.name, column) for column in __tablecolumns__])
 
     def __init__(self, table_title=None, table_id=None, columns=None):
         """
@@ -87,9 +89,7 @@ class SardesTableModelBase(QAbstractTableModel):
         if table_id is not None:
             self.__tablename__ = table_id
         if columns is not None:
-            self.__tablecolumns__ = columns
-        self._tablecolumns_loc = OrderedDict(
-            [(column.name, column) for column in self.__tablecolumns__])
+            self.set_columns(columns)
 
         # The sardes table data object that is used to store the table data
         # and handle edits.
@@ -124,6 +124,14 @@ class SardesTableModelBase(QAbstractTableModel):
         Return the list of columns that are defined for this table model.
         """
         return self.__tablecolumns__
+
+    def set_columns(self, columns):
+        """
+        Define the column of this table.
+        """
+        self.__tablecolumns__ = columns
+        self.__tablecolumns_loc__ = OrderedDict(
+            [(column.name, column) for column in self.__tablecolumns__])
 
     def column_at(self, name):
         """Return the sardes table column corresponding to the given name."""
@@ -204,9 +212,7 @@ class SardesTableModelBase(QAbstractTableModel):
         self.beginResetModel()
 
         if columns is not None:
-            self.__tablecolumns__ = columns
-        self._tablecolumns_loc = OrderedDict(
-            [(column.name, column) for column in self.__tablecolumns__])
+            self.set_columns(columns)
 
         # Add missing columns to the dataframe and reorder columns to
         # mirror the column logical indexes of the table model so that we
