@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Local imports
-from sardes.api.tablemodels import StandardSardesTableModel
+from sardes.api.tablemodels import StandardSardesTableModel, SardesTableColumn
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableWidget, StringEditDelegate, BoolEditDelegate,
@@ -21,6 +21,27 @@ class SondesInventoryTableModel(StandardSardesTableModel):
     A table model to display the list of level and baro loggers that are
     used in the monitoring network.
     """
+    __columns__ = [
+        SardesTableColumn('sonde_model_id', _('Model'), 'str',
+                          notnull=True, unique=True,
+                          unique_subset=['sonde_serial_no']),
+        SardesTableColumn('sonde_serial_no', _('Serial Number'), 'str',
+                          notnull=True, unique=True,
+                          unique_subset=['sonde_model_id']),
+        SardesTableColumn('date_reception', _('Date Reception'),
+                          'datetime64[ns]'),
+        SardesTableColumn('date_withdrawal', _('Date Withdrawal'),
+                          'datetime64[ns]'),
+        SardesTableColumn('in_repair', _('In Repair'), 'boolean',
+                          notnull=True),
+        SardesTableColumn('out_of_order', _('Out of order'), 'boolean',
+                          notnull=True),
+        SardesTableColumn('lost', _('Lost'), 'boolean',
+                          notnull=True),
+        SardesTableColumn('off_network', _('Off Network'), 'boolean',
+                          notnull=True),
+        SardesTableColumn('sonde_notes', _('Notes'), 'boolean')
+        ]
 
     def create_delegate_for_column(self, view, column):
         """
@@ -68,16 +89,5 @@ class SondesInventoryTableWidget(SardesTableWidget):
     def __init__(self, *args, **kargs):
         table_model = SondesInventoryTableModel(
             table_title=_('Sondes Inventory'),
-            table_id='table_sondes_inventory',
-            data_columns_mapper=[
-                ('sonde_model_id', _('Model')),
-                ('sonde_serial_no', _('Serial Number')),
-                ('date_reception', _('Date Reception')),
-                ('date_withdrawal', _('Date Withdrawal')),
-                ('in_repair', _('In Repair')),
-                ('out_of_order', _('Out of order')),
-                ('lost', _('Lost')),
-                ('off_network', _('Off Network')),
-                ('sonde_notes', _('Notes'))]
-            )
+            table_id='table_sondes_inventory')
         super().__init__(table_model, *args, **kargs)

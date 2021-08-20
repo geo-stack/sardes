@@ -27,7 +27,7 @@ from qtpy.QtWidgets import (
 from sardes.config.gui import get_iconsize, RED, YELLOWLIGHT
 from sardes.config.locale import _
 from sardes.api.panes import SardesPaneWidget
-from sardes.api.tablemodels import SardesTableModel
+from sardes.api.tablemodels import SardesTableModel, SardesTableColumn
 from sardes.api.timeseries import DataType
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import NotEditableDelegate, SardesTableWidget
@@ -44,12 +44,12 @@ class ImportDataTableModel(SardesTableModel):
     is_duplicated = None
     highlight_duplicates = False
 
-    def __init__(self):
-        super().__init__(
-            table_title='Logger Data', table_id='logger_data',
-            data_columns_mapper=([('datetime', _('Datetime'))] +
-                                 [(dtype, dtype.label) for dtype in DataType])
-            )
+    __columns__ = (
+        [SardesTableColumn(
+            'datetime', _('Datetime'), 'datetime64[ns]')] +
+        [SardesTableColumn(
+            dtype, dtype.label, 'float64') for dtype in DataType]
+        )
 
     def create_delegate_for_column(self, view, column):
         return NotEditableDelegate(self)

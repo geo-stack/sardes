@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Local imports
-from sardes.api.tablemodels import StandardSardesTableModel
+from sardes.api.tablemodels import StandardSardesTableModel, SardesTableColumn
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableWidget, NotEditableDelegate, TextEditDelegate, DateTimeDelegate,
@@ -23,6 +23,18 @@ class SondeInstallationsTableModel(StandardSardesTableModel):
     that were installed at some point in the observation wells for the
     entire monitoring network.
     """
+    __columns__ = [
+        SardesTableColumn('sampling_feature_uuid', _('Well ID'), 'str',
+                          notnull=True),
+        SardesTableColumn('sonde_uuid', _('Brand Model Serial'), 'str',
+                          notnull=True),
+        SardesTableColumn('start_date', _('Date From'), 'datetime64[ns]',
+                          notnull=True),
+        SardesTableColumn('end_date', _('Date To'), 'datetime64[ns]'),
+        SardesTableColumn('install_depth', _('Depth (m)'), 'float64',
+                          notnull=True),
+        SardesTableColumn('install_note', _('Notes'), 'str')
+        ]
 
     def create_delegate_for_column(self, view, column):
         if column in ['sampling_feature_uuid']:
@@ -83,13 +95,5 @@ class SondeInstallationsTableWidget(SardesTableWidget):
     def __init__(self, *args, **kargs):
         table_model = SondeInstallationsTableModel(
             table_title=_('Sonde Installations'),
-            table_id='table_sonde_installations',
-            data_columns_mapper=[
-                ('sampling_feature_uuid', _('Well')),
-                ('sonde_uuid', _('Brand Model Serial')),
-                ('start_date', _('Date From')),
-                ('end_date', _('Date To')),
-                ('install_depth', _('Depth (m)')),
-                ('install_note', _('Notes'))]
-            )
+            table_id='table_sonde_installations')
         super().__init__(table_model, *args, **kargs)

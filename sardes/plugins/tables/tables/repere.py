@@ -11,7 +11,7 @@
 import pandas as pd
 
 # ---- Local imports
-from sardes.api.tablemodels import StandardSardesTableModel
+from sardes.api.tablemodels import StandardSardesTableModel, SardesTableColumn
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableWidget, BoolEditDelegate, NotEditableDelegate, TextEditDelegate,
@@ -24,6 +24,23 @@ class RepereTableModel(StandardSardesTableModel):
     A table model to display the repere data related to the observation
     wells of the monitoring network.
     """
+    __columns__ = [
+        SardesTableColumn(
+            'sampling_feature_uuid', _('Well ID'), 'str', notnull=True),
+        SardesTableColumn(
+            'top_casing_alt', _('Top Casing Alt. (m)'), 'float64',
+            notnull=True),
+        SardesTableColumn(
+            'casing_length', _('Length Casing (m)'), 'float64', notnull=True),
+        SardesTableColumn(
+            'start_date', _('Date From'), 'datetime64[ns]', notnull=True),
+        SardesTableColumn(
+            'end_date', _('Date To'), 'datetime64[ns]'),
+        SardesTableColumn(
+            'is_alt_geodesic', _('Geodesic'), 'boolean', notnull=True),
+        SardesTableColumn(
+            'repere_note', _('Notes'), 'str')
+        ]
 
     def create_delegate_for_column(self, view, column):
         """
@@ -79,15 +96,5 @@ class RepereTableWidget(SardesTableWidget):
     def __init__(self, *args, **kargs):
         table_model = RepereTableModel(
             table_title=_('Repere'),
-            table_id='table_repere',
-            data_columns_mapper=[
-                ('sampling_feature_uuid', _('Well')),
-                ('top_casing_alt', _('Top Casing Alt. (m)')),
-                ('casing_length', _('Length Casing (m)')),
-                ('start_date', _('Date From')),
-                ('end_date', _('Date To')),
-                ('is_alt_geodesic', _('Geodesic')),
-                ('repere_note', _('Notes')),
-                ]
-            )
+            table_id='table_repere')
         super().__init__(table_model, *args, **kargs)

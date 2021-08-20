@@ -20,7 +20,7 @@ from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import QMenu, QFileDialog
 
 # ---- Local imports
-from sardes.api.tablemodels import StandardSardesTableModel
+from sardes.api.tablemodels import StandardSardesTableModel, SardesTableColumn
 from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
 from sardes.config.main import TEMP_DIR
@@ -37,6 +37,37 @@ class ObsWellsTableModel(StandardSardesTableModel):
     A table model to display the list of observation wells that are saved
     in the database.
     """
+    __columns__ = [
+        SardesTableColumn(
+            'obs_well_id', _('Well ID'), 'str', notnull=True, unique=True),
+        SardesTableColumn(
+            'common_name', _('Common Name'), 'str'),
+        SardesTableColumn(
+            'municipality', _('Municipality'), 'str'),
+        SardesTableColumn(
+            'aquifer_type', _('Aquifer'), 'str'),
+        SardesTableColumn(
+            'aquifer_code', _('Aquifer Code'), 'Int64'),
+        SardesTableColumn(
+            'confinement', _('Confinement'), 'str'),
+        SardesTableColumn(
+            'in_recharge_zone', _('Recharge Zone'), 'str'),
+        SardesTableColumn(
+            'is_influenced', _('Influenced'), 'str'),
+        SardesTableColumn(
+            'latitude', _('Latitude'), 'float64'),
+        SardesTableColumn(
+            'longitude', _('Longitude'), 'float64'),
+        SardesTableColumn(
+            'first_date', _('First Date'), 'datetime64[ns]'),
+        SardesTableColumn(
+            'last_date', _('Last Date'), 'datetime64[ns]'),
+        SardesTableColumn(
+            'mean_water_level', _('Mean level (m)'), 'float64'),
+        SardesTableColumn(
+            'is_station_active', _('Active'), 'boolean', notnull=True),
+        SardesTableColumn(
+            'obs_well_notes', _('Notes'), dtype='str')]
 
     def set_model_data(self, dataf, dataf_columns_mapper=None):
         """
@@ -100,24 +131,7 @@ class ObsWellsTableWidget(SardesTableWidget):
     def __init__(self, *args, **kargs):
         table_model = ObsWellsTableModel(
             table_title=_('Observation Wells'),
-            table_id='table_observation_wells',
-            data_columns_mapper=[
-                ('obs_well_id', _('Well ID')),
-                ('common_name', _('Common Name')),
-                ('municipality', _('Municipality')),
-                ('aquifer_type', _('Aquifer')),
-                ('aquifer_code', _('Aquifer Code')),
-                ('confinement', _('Confinement')),
-                ('in_recharge_zone', _('Recharge Zone')),
-                ('is_influenced', _('Influenced')),
-                ('latitude', _('Latitude')),
-                ('longitude', _('Longitude')),
-                ('first_date', _('First Date')),
-                ('last_date', _('Last Date')),
-                ('mean_water_level', _('Mean level (m)')),
-                ('is_station_active', _('Active')),
-                ('obs_well_notes', _('Notes'))]
-            )
+            table_id='table_observation_wells')
         super().__init__(table_model, *args, **kargs)
 
         self.add_toolbar_separator()
