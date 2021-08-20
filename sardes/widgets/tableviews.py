@@ -203,8 +203,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         the edited value does not violate that and return an error message
         if it does.
         """
-        field_name = self.model().get_column_header_at(
-            self.model_index.column())
+        field_name = self.model().columns()[self.model_index.column()].header
         edited_value = self.get_editor_data()
         if (self.unique_constraint and self.model().is_value_in_column(
                 self.model_index, edited_value)):
@@ -400,7 +399,7 @@ class DateTimeDelegate(SardesItemDelegate):
             warning_message = _(
                 "Some {} data did not match the prescribed "
                 "<i>yyyy-mm-dd hh:mm:ss</i> format"
-                ).format(self.model().get_column_header_at[data.name])
+                ).format(self.model().column_header_at(data.name))
         return formatted_data, warning_message
 
 
@@ -456,7 +455,7 @@ class IntEditDelegate(SardesItemDelegate):
             formatted_data = pd.to_numeric(data, errors='coerce')
             warning_message = _(
                 "Some {} data could not be converted to integer value"
-                ).format(self.model().get_column_header_at[data.name])
+                ).format(self.model().column_header_at(data.name))
         # We need to round the data before casting them as Int64DType to
         # avoid "TypeError: cannot safely cast non-equivalent float64 to int64"
         # when the data contains float numbers.
@@ -498,7 +497,7 @@ class NumEditDelegate(SardesItemDelegate):
             formatted_data = pd.to_numeric(data, errors='coerce').astype(float)
             warning_message = _(
                 "Some {} data could not be converted to numerical value"
-                ).format(self.model().get_column_header_at[data.name])
+                ).format(self.model().column_header_at(data.name))
         return formatted_data, warning_message
 
 
@@ -524,7 +523,7 @@ class BoolEditDelegate(SardesItemDelegate):
         if sum(isnull1 != isnull2):
             warning_message = _(
                 "Some {} data could notbe converted to boolean value."
-                ).format(self.model().get_column_header_at[data.name])
+                ).format(self.model().column_header_at(data.name))
         else:
             warning_message = None
         return formatted_data, warning_message
@@ -1115,7 +1114,7 @@ class SardesTableView(QTableView):
                 self, _("Save edits"),
                 icon='commit_changes',
                 tip=_('Save all edits made to the table in the database.'),
-                triggered=lambda: self._save_data_edits(force=False),
+                triggered=self._check_data_edits,
                 shortcut=['Ctrl+Enter', 'Ctrl+Return'],
                 context=Qt.WidgetShortcut,
                 name='sav_edits')

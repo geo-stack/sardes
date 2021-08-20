@@ -109,6 +109,10 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         return self.__tablecolumns__
 
+    def column_at(self, name):
+        """Return the sardes table column corresponding to the given name."""
+        return self._tablecolumns_loc[name]
+
     def column_names_headers_map(self):
         """
         Return a dictionary mapping columns name with their header.
@@ -133,10 +137,10 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         return [column.header for column in self.__tablecolumns__]
 
-    def get_column_header_at(self, column_or_index):
+    def column_header_at(self, name):
         """
-        Return the text of the label to display in the horizontal
-        header for the key or logical index associated with the column.
+        Return the header of the sardes table column corresponding
+        to the provided name.
         """
         if isinstance(column_or_index, str):
             return self._tablecolumns_loc[column_or_index].header
