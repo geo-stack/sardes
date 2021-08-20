@@ -96,7 +96,7 @@ def test_tables_plugin_init(mainwindow, qtbot):
         assert tabwidget.currentWidget() == plugin.current_table()
         for index in range(mainwindow.plugin.table_count()):
             table = tabwidget.widget(index)
-            table_id = table.get_table_id()
+            table_id = table.table_name()
             if index <= current_index:
                 assert table.tableview.row_count() > 0
                 assert len(models_manager._queued_model_updates[table_id]) == 0

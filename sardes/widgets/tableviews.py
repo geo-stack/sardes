@@ -2158,8 +2158,8 @@ class SardesTableWidget(SardesPaneWidget):
         """Return the title of this widget's table."""
         return self.tableview.source_model.title()
 
-    def get_table_id(self):
-        """Return the ID of this widget's table."""
+    def table_name(self):
+        """Return the name of the table of the table widget."""
         return self.tableview.source_model.name()
 
     def model(self):

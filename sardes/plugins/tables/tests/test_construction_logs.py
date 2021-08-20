@@ -90,7 +90,7 @@ def test_construction_log_tool(mainwindow, constructlog, qtbot, mocker):
 
     table = mainwindow.plugin.current_table()
     constructlogs_manager = table.construction_logs_manager
-    assert table.get_table_id() == 'table_observation_wells'
+    assert table.table_name() == 'table_observation_wells'
     assert len(table.model().libraries['stored_attachments_info']) == 0
 
     # Select the second cell of the table.
