@@ -62,8 +62,6 @@ class SardesTableModelBase(QAbstractTableModel):
     __tablename__ = ''
     __tabletitle__ = ''
     __tablecolumns__ = []
-    __tablecolumns_loc__ = OrderedDict(
-        [(column.name, column) for column in __tablecolumns__])
 
     def __init__(self, table_title=None, table_id=None, columns=None):
         """
@@ -84,6 +82,8 @@ class SardesTableModelBase(QAbstractTableModel):
         self.BackgroundColorDeleted = QColor('#FF9999')
         self.BackgroundColorEdited = QColor('#CCFF99')
 
+        self.__tablecolumns_loc__ = OrderedDict(
+            [(column.name, column) for column in self.__tablecolumns__])
         if table_title is not None:
             self.__tabletitle__ = table_title
         if table_id is not None:
@@ -135,7 +135,7 @@ class SardesTableModelBase(QAbstractTableModel):
 
     def column_at(self, name):
         """Return the sardes table column corresponding to the given name."""
-        return self._tablecolumns_loc[name]
+        return self.__tablecolumns_loc__[name]
 
     def column_names_headers_map(self):
         """
@@ -166,7 +166,7 @@ class SardesTableModelBase(QAbstractTableModel):
         Return the header of the sardes table column corresponding
         to the provided name.
         """
-        return self._tablecolumns_loc[name].header
+        return self.__tablecolumns_loc__[name].header
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """Qt method override."""
