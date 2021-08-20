@@ -21,7 +21,7 @@ class ManualMeasurementsTableModel(StandardSardesTableModel):
     A table model to display the list of manual groundwater level measurements
     made in the observation wells of the monitoring network.
     """
-    __columns__ = [
+    __tablecolumns__ = [
         SardesTableColumn(
             'sampling_feature_uuid', _('Well ID'), 'str',
             notnull=True, unique=True),
@@ -72,7 +72,8 @@ class ManualMeasurementsTableWidget(SardesTableWidget):
     def __init__(self, *args, **kargs):
         table_model = ManualMeasurementsTableModel(
             table_title=_('Manual Measurements'),
-            table_id='table_manual_measurements')
+            table_id='table_manual_measurements'
+            )
         super().__init__(table_model, *args, **kargs)
 
         # Add the tool to import data from the clipboard.

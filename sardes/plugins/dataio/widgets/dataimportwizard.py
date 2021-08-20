@@ -44,7 +44,7 @@ class ImportDataTableModel(SardesTableModel):
     is_duplicated = None
     highlight_duplicates = False
 
-    __columns__ = (
+    __tablecolumns__ = (
         [SardesTableColumn(
             'datetime', _('Datetime'), 'datetime64[ns]')] +
         [SardesTableColumn(

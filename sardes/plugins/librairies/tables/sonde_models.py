@@ -19,7 +19,7 @@ class SondeModelsTableModel(StandardSardesTableModel):
     A table model to display a list of sonde brand models that
     are available to use in the SondesInventory table.
     """
-    __columns__ = [
+    __tablecolumns__ = [
         SardesTableColumn(
             'sonde_brand', _('Brand'), 'str', notnull=True),
         SardesTableColumn(

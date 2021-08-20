@@ -23,7 +23,7 @@ class SondeInstallationsTableModel(StandardSardesTableModel):
     that were installed at some point in the observation wells for the
     entire monitoring network.
     """
-    __columns__ = [
+    __tablecolumns__ = [
         SardesTableColumn('sampling_feature_uuid', _('Well ID'), 'str',
                           notnull=True),
         SardesTableColumn('sonde_uuid', _('Brand Model Serial'), 'str',

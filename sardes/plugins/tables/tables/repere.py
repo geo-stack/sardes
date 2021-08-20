@@ -24,7 +24,7 @@ class RepereTableModel(StandardSardesTableModel):
     A table model to display the repere data related to the observation
     wells of the monitoring network.
     """
-    __columns__ = [
+    __tablecolumns__ = [
         SardesTableColumn(
             'sampling_feature_uuid', _('Well ID'), 'str', notnull=True),
         SardesTableColumn(

@@ -37,7 +37,7 @@ class ObsWellsTableModel(StandardSardesTableModel):
     A table model to display the list of observation wells that are saved
     in the database.
     """
-    __columns__ = [
+    __tablecolumns__ = [
         SardesTableColumn(
             'obs_well_id', _('Well ID'), 'str', notnull=True, unique=True),
         SardesTableColumn(
