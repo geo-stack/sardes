@@ -59,7 +59,9 @@ class SardesTableModelBase(QAbstractTableModel):
     RowRemoved = SardesTableData.RowRemoved
     RowDeleted = SardesTableData.RowDeleted
 
-    def __init__(self, table_title='', table_id='', data_columns_mapper=None):
+    __columns__ = []
+
+    def __init__(self, table_title='', table_id='', columns=None):
         """
         Parameters
         ----------
@@ -80,7 +82,10 @@ class SardesTableModelBase(QAbstractTableModel):
 
         self._table_title = table_title
         self._table_id = table_id
-        self._data_columns_mapper = OrderedDict(data_columns_mapper or [])
+        if columns is not None:
+            self.__columns__ = columns
+        self._data_columns_mapper = OrderedDict(
+            [(column.name, column.header) for column in self.__columns__])
 
         # The sardes table data object that is used to store the table data
         # and handle edits.
@@ -156,7 +161,7 @@ class SardesTableModelBase(QAbstractTableModel):
         for lib_name in self.libraries.keys():
             self.set_model_library(pd.DataFrame([]), lib_name)
 
-    def set_model_data(self, dataf, dataf_columns_mapper=None):
+    def set_model_data(self, dataf, columns=None):
         """
         Set the content of this table model to the data contained in dataf.
 
@@ -167,12 +172,14 @@ class SardesTableModelBase(QAbstractTableModel):
             table model.
 
             Note that the column labels of the dataframe must match the
-            values that are mapped in _data_columns_mapper.
+            columns that are defined in columns.
         """
         self.beginResetModel()
 
-        if dataf_columns_mapper is not None:
-            self._data_columns_mapper = OrderedDict(dataf_columns_mapper)
+        if columns is not None:
+            self.__columns__ = columns
+        self._data_columns_mapper = OrderedDict(
+            [(column.name, column.header) for column in self.__columns__])
 
         # Add missing columns to the dataframe and reorder columns to
         # mirror the column logical indexes of the table model so that we
@@ -191,7 +198,7 @@ class SardesTableModelBase(QAbstractTableModel):
             )
         self.modelReset.emit()
 
-        if dataf_columns_mapper is not None:
+        if columns is not None:
             self.sig_columns_mapper_changed.emit()
 
     def set_model_library(self, dataf, name):
