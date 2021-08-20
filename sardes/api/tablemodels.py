@@ -142,10 +142,7 @@ class SardesTableModelBase(QAbstractTableModel):
         Return the header of the sardes table column corresponding
         to the provided name.
         """
-        if isinstance(column_or_index, str):
-            return self._tablecolumns_loc[column_or_index].header
-        else:
-            return self.__tablecolumns__[column_or_index].header
+        return self._tablecolumns_loc[name].header
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """Qt method override."""
