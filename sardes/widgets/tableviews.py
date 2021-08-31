@@ -10,21 +10,17 @@
 
 # ---- Standard imports
 import sys
-from datetime import datetime
-from math import floor, ceil
 
 # ---- Third party imports
 import numpy as np
 import pandas as pd
 from qtpy.QtCore import (QEvent, Qt, Signal, Slot, QItemSelection, QSize,
                          QItemSelectionModel, QRect, QTimer, QModelIndex)
-from qtpy.QtGui import QCursor, QPen, QPalette
+from qtpy.QtGui import QCursor
 from qtpy.QtWidgets import (
-    QApplication, QCheckBox, QComboBox, QDateEdit, QDateTimeEdit,
-    QDoubleSpinBox, QHeaderView, QLabel, QLineEdit, QMenu, QMessageBox,
-    QSpinBox, QStyledItemDelegate, QTableView, QTextEdit, QListView, QStyle,
-    QStyleOption, QWidget, QGridLayout, QStyleOptionHeader, QVBoxLayout,
-    QTabWidget)
+    QApplication, QCheckBox,
+    QHeaderView, QLabel, QMenu, QMessageBox, QTableView, QStyle, QStyleOption,
+    QWidget, QGridLayout, QStyleOptionHeader, QVBoxLayout, QTabWidget)
 
 # ---- Local imports
 from sardes import __appname__
@@ -34,220 +30,15 @@ from sardes.api.tools import SardesTool
 from sardes.config.icons import get_icon
 from sardes.config.locale import _
 from sardes.config.gui import get_iconsize
-from sardes.utils.data_operations import intervals_extract, are_values_equal
+from sardes.utils.data_operations import intervals_extract
 from sardes.utils.qthelpers import (
     create_action, create_toolbutton, create_toolbar_stretcher,
-    qbytearray_to_hexstate, hexstate_to_qbytearray, qdatetime_from_datetime,
-    get_datetime_from_editor)
+    qbytearray_to_hexstate, hexstate_to_qbytearray)
 from sardes.widgets.statusbar import ProcessStatusBar
 
 # Define the minimum amount of time that the tables wait spinner are shown.
 # Otherwise, for very short process, it only flashes in the screen.
 MSEC_MIN_PROGRESS_DISPLAY = 500
-
-
-# =============================================================================
-class NotEditableDelegate(SardesItemDelegate):
-    """
-    A delegate used to indicate that the items in the associated
-    column are not editable.
-    """
-
-    def __init__(self, model_view):
-        super().__init__(model_view, is_required=True)
-        self.is_editable = False
-
-    def createEditor(self, *args, **kargs):
-        return None
-
-    def setEditorData(self, *args, **kargs):
-        pass
-
-    def setModelData(self, *args, **kargs):
-        pass
-
-    def clear_model_data_at(self, *args, **kargs):
-        pass
-
-    # ---- SardesItemDelegate API
-    def get_editor_data(self, *args, **kargs):
-        pass
-
-    def set_editor_data(self, *args, **kargs):
-        pass
-
-    def format_data(self, data):
-        data.values[:] = None
-        return data, None
-
-
-class DateEditDelegate(SardesItemDelegate):
-    """
-    A delegate to edit a date.
-    """
-
-    def create_editor(self, parent):
-        editor = QDateEdit(parent)
-        editor.setCalendarPopup(True)
-        editor.setDisplayFormat("yyyy-MM-dd")
-        return editor
-
-
-class DateTimeDelegate(SardesItemDelegate):
-    """
-    A delegate to edit a datetime.
-    """
-
-    def __init__(self, model_view, display_format=None, is_required=False):
-        super() .__init__(model_view, is_required=is_required)
-        self.display_format = ("yyyy-MM-dd hh:mm:ss" if display_format is None
-                               else display_format)
-
-    # ---- SardesItemDelegate API
-    def create_editor(self, parent):
-        editor = QDateTimeEdit(parent)
-        editor.setCalendarPopup(True)
-        editor.setDisplayFormat(self.display_format)
-        return editor
-
-    def format_data(self, data):
-        fmt = "%Y-%m-%d %H:%M:%S"
-        try:
-            formatted_data = pd.to_datetime(data, format=fmt)
-            warning_message = None
-        except ValueError:
-            formatted_data = pd.to_datetime(data, format=fmt, errors='coerce')
-            warning_message = _(
-                "Some {} data did not match the prescribed "
-                "<i>yyyy-mm-dd hh:mm:ss</i> format"
-                ).format(self.model().column_header_at(data.name))
-        return formatted_data, warning_message
-
-
-class TextEditDelegate(SardesItemDelegate):
-    """
-    A delegate to edit very long strings that can span over multiple lines.
-    """
-
-    def create_editor(self, parent):
-        return QTextEdit(parent)
-
-
-class StringEditDelegate(SardesItemDelegate):
-    """
-    A delegate to edit a 250 characters strings.
-    """
-    MAX_LENGTH = 250
-
-    def create_editor(self, parent):
-        editor = QLineEdit(parent)
-        editor.setMaxLength(self.MAX_LENGTH)
-        return editor
-
-    def validate_edits(self):
-        return self.validate_unique_constaint()
-
-
-class IntEditDelegate(SardesItemDelegate):
-    """
-    A delegate to edit an integer value in a spin box.
-    """
-
-    def __init__(self, model_view, bottom=None, top=None,
-                 unique_constraint=False):
-        super() .__init__(model_view, unique_constraint=unique_constraint)
-        self._bottom = bottom
-        self._top = top
-
-    # ---- SardesItemDelegate API
-    def create_editor(self, parent):
-        editor = QSpinBox(parent)
-        if self._bottom is not None:
-            editor.setMinimum(int(self._bottom))
-        if self._top is not None:
-            editor.setMaximum(int(self._top))
-        return editor
-
-    def format_data(self, data):
-        try:
-            formatted_data = pd.to_numeric(data)
-            warning_message = None
-        except ValueError:
-            formatted_data = pd.to_numeric(data, errors='coerce')
-            warning_message = _(
-                "Some {} data could not be converted to integer value"
-                ).format(self.model().column_header_at(data.name))
-        # We need to round the data before casting them as Int64DType to
-        # avoid "TypeError: cannot safely cast non-equivalent float64 to int64"
-        # when the data contains float numbers.
-        formatted_data = formatted_data.round().astype(pd.Int64Dtype())
-        return formatted_data, warning_message
-
-
-class NumEditDelegate(SardesItemDelegate):
-    """
-    A delegate to edit a float or a float value in a spin box.
-    """
-
-    def __init__(self, model_view, decimals=0, bottom=None, top=None,
-                 unique_constraint=False, is_required=False):
-        super() .__init__(model_view, unique_constraint=unique_constraint,
-                          is_required=is_required)
-        self._bottom = bottom
-        self._top = top
-        self._decimals = decimals
-
-    # ---- SardesItemDelegate API
-    def create_editor(self, parent):
-        if self._decimals == 0:
-            editor = QSpinBox(parent)
-        else:
-            editor = QDoubleSpinBox(parent)
-            editor.setDecimals(self._decimals)
-        if self._bottom is not None:
-            editor.setMinimum(self._bottom)
-        if self._top is not None:
-            editor.setMaximum(self._top)
-        return editor
-
-    def format_data(self, data):
-        try:
-            formatted_data = pd.to_numeric(data).astype(float)
-            warning_message = None
-        except ValueError:
-            formatted_data = pd.to_numeric(data, errors='coerce').astype(float)
-            warning_message = _(
-                "Some {} data could not be converted to numerical value"
-                ).format(self.model().column_header_at(data.name))
-        return formatted_data, warning_message
-
-
-class BoolEditDelegate(SardesItemDelegate):
-    """
-    A delegate to edit a boolean value with a combobox.
-    """
-
-    # ---- SardesItemDelegate API
-    def create_editor(self, parent):
-        editor = QComboBox(parent)
-        editor.addItem(_('Yes'), userData=True)
-        editor.addItem(_('No'), userData=False)
-        return editor
-
-    def format_data(self, data):
-        isnull1 = data.isnull()
-        bool_map_dict = {
-            _('Yes').lower(): True, 'yes': True, 'true': True, '1': True,
-            _('No').lower(): False, 'no': False, 'false': False, '0': False}
-        formatted_data = data.str.lower().str.strip().map(bool_map_dict.get)
-        isnull2 = formatted_data.isnull()
-        if sum(isnull1 != isnull2):
-            warning_message = _(
-                "Some {} data could notbe converted to boolean value."
-                ).format(self.model().column_header_at(data.name))
-        else:
-            warning_message = None
-        return formatted_data, warning_message
 
 
 # =============================================================================
