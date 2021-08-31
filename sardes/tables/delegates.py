@@ -8,13 +8,19 @@
 # -----------------------------------------------------------------------------
 
 # ---- Third party imports
-from qtpy.QtWidgets import QComboBox
+import pandas as pd
+from qtpy.QtWidgets import (
+    QComboBox, QDateEdit, QDateTimeEdit, QTextEdit, QSpinBox, QLineEdit,
+    QDoubleSpinBox)
 
 # ---- Local imports
 from sardes.config.locale import _
-from sardes.widgets.tableviews import SardesItemDelegate
+from sardes.api.tabledelegates import SardesItemDelegate
 
 
+# =============================================================================
+# ---- Complex Delegates
+# =============================================================================
 class ObsWellIdEditDelegate(SardesItemDelegate):
     """
     A delegate to select an observation well from the list of existing well
