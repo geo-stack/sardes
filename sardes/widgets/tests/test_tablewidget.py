@@ -1345,7 +1345,7 @@ def test_import_from_clipboard(tablewidget, qtbot, mocker, TABLE_DATAF):
     assert tableview.row_count() == 6
     assert selection_model.currentIndex() == tableview.model().index(5, 3)
 
-    # Assert that the data shown in t'he table and saved in the model
+    # Assert that the data shown in the table and saved in the model
     # are as expected.
     expected_data = [
         ['1',  'str2', 'No', '2.222', 'not editable'],
