@@ -131,8 +131,8 @@ def test_read_data(qtbot, mocker, testfiles, data_import_wizard):
     assert data_import_wizard.working_directory == osp.dirname(testfiles[-1])
     assert tableview.row_count() == 365
     assert tableview.visible_column_count() == 3
-    assert DataType.WaterLevel in tableview.model().columns
-    assert DataType.WaterTemp in tableview.model().columns
+    assert DataType.WaterLevel in tableview.model().column_names()
+    assert DataType.WaterTemp in tableview.model().column_names()
 
     # Assert file infos.
     assert (data_import_wizard.filename_label.text() ==
@@ -474,7 +474,7 @@ def test_read_conductivity_data(qtbot, mocker, data_import_wizard, testfiles):
     tableview = data_import_wizard.table_widget.tableview
     assert tableview.row_count() == 10
     assert tableview.visible_column_count() == 4
-    assert DataType.WaterEC in tableview.model().columns
+    assert DataType.WaterEC in tableview.model().column_names()
 
 
 def test_duplicates_with_multiple_sondes(

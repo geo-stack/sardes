@@ -18,7 +18,7 @@ from qtpy.QtCore import Qt, Slot
 # ---- Local imports
 from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
-from sardes.api.tablemodels import StandardSardesTableModel
+from sardes.api.tablemodels import StandardSardesTableModel, SardesTableColumn
 from sardes.api.timeseries import DataType
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.utils.data_operations import format_reading_data
@@ -53,7 +53,7 @@ class ReadingsTableModel(StandardSardesTableModel):
     # ---- Data
     def set_obs_well_data(self, obs_well_data):
         self._obs_well_data = obs_well_data.loc[self._obs_well_uuid]
-        self._table_title = str(self._obs_well_data['obs_well_id'])
+        self.set_title(str(self._obs_well_data['obs_well_id']))
 
     def manual_measurements(self):
         return self._manual_measurements
@@ -83,13 +83,23 @@ class ReadingsTableModel(StandardSardesTableModel):
         Format the data contained in the list of timeseries group and
         set the content of this table model data.
         """
-        dataf_columns_mapper = [('datetime', _('Datetime')),
-                                ('sonde_id', _('Sonde Serial Number'))]
-        dataf_columns_mapper.extend([(dtype, dtype.label) for dtype in
-                                     DataType if dtype in dataf.columns])
-        dataf_columns_mapper.append(('install_depth', _('Depth')))
-        dataf_columns_mapper.append(('obs_id', _('Observation ID')))
-        super().set_model_data(dataf, dataf_columns_mapper)
+        columns = [
+            SardesTableColumn(
+                'datetime', _('Datetime'), 'datetime64[ns]'),
+            SardesTableColumn(
+                'sonde_id', _('Sonde Serial Number'), 'str')
+            ]
+        columns.extend([
+            SardesTableColumn(dtype, dtype.label, 'float64') for dtype in
+            DataType if dtype in dataf.columns
+            ])
+        columns.extend([
+            SardesTableColumn(
+                'install_depth', _('Depth'), 'float64'),
+            SardesTableColumn(
+                'obs_id', _('Observation ID'), 'str')
+            ])
+        super().set_model_data(dataf, columns)
 
     # ---- SardesTableModel API
     def save_data_edits(self):

@@ -9,7 +9,7 @@
 
 
 # ---- Local imports
-from sardes.api.tablemodels import StandardSardesTableModel
+from sardes.api.tablemodels import StandardSardesTableModel, SardesTableColumn
 from sardes.config.locale import _
 from sardes.widgets.tableviews import SardesTableWidget, TextEditDelegate
 
@@ -19,6 +19,14 @@ class SondeModelsTableModel(StandardSardesTableModel):
     A table model to display a list of sonde brand models that
     are available to use in the SondesInventory table.
     """
+    __tablename__ = 'sonde_brand_models'
+    __tabletitle__ = _('Sonde Models')
+    __tablecolumns__ = [
+        SardesTableColumn(
+            'sonde_brand', _('Brand'), 'str', notnull=True),
+        SardesTableColumn(
+            'sonde_model', _('Model'), 'str', notnull=True)
+        ]
 
     # ---- SardesTableModel Public API
     def create_delegate_for_column(self, view, column):
@@ -27,11 +35,5 @@ class SondeModelsTableModel(StandardSardesTableModel):
 
 class SondeModelsTableWidget(SardesTableWidget):
     def __init__(self, *args, **kargs):
-        table_model = SondeModelsTableModel(
-            table_title=_('Sonde Models'),
-            table_id='sonde_brand_models',
-            data_columns_mapper=[
-                ('sonde_brand', _('Brand')),
-                ('sonde_model', _('Model'))]
-            )
+        table_model = SondeModelsTableModel()
         super().__init__(table_model, *args, **kargs)

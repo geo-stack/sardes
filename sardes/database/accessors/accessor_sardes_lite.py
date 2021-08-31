@@ -616,7 +616,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         if sampling_feature_uuid is None:
             # We delete and update the content of the whole table.
-            print("Updating sampling feature data overview...", end=' ')
+            print("Updating sampling feature data overview...")
             self._session.query(SamplingFeatureDataOverview).delete()
 
             sampling_feature_uuids = [
@@ -626,7 +626,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 self._refresh_sampling_feature_data_overview(
                     sampling_feature_uuid, auto_commit=False)
             self._session.commit()
-            print("done")
+            print("Successfuly updated sampling feature data overview.")
         else:
             # We update the data overview only for the specified
             # sampling feature.

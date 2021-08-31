@@ -203,8 +203,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         the edited value does not violate that and return an error message
         if it does.
         """
-        field_name = self.model().get_horizontal_header_label_at(
-            self.model_index.column())
+        field_name = self.model().columns()[self.model_index.column()].header
         edited_value = self.get_editor_data()
         if (self.unique_constraint and self.model().is_value_in_column(
                 self.model_index, edited_value)):
@@ -400,7 +399,7 @@ class DateTimeDelegate(SardesItemDelegate):
             warning_message = _(
                 "Some {} data did not match the prescribed "
                 "<i>yyyy-mm-dd hh:mm:ss</i> format"
-                ).format(self.model()._data_columns_mapper[data.name])
+                ).format(self.model().column_header_at(data.name))
         return formatted_data, warning_message
 
 
@@ -456,7 +455,7 @@ class IntEditDelegate(SardesItemDelegate):
             formatted_data = pd.to_numeric(data, errors='coerce')
             warning_message = _(
                 "Some {} data could not be converted to integer value"
-                ).format(self.model()._data_columns_mapper[data.name])
+                ).format(self.model().column_header_at(data.name))
         # We need to round the data before casting them as Int64DType to
         # avoid "TypeError: cannot safely cast non-equivalent float64 to int64"
         # when the data contains float numbers.
@@ -498,7 +497,7 @@ class NumEditDelegate(SardesItemDelegate):
             formatted_data = pd.to_numeric(data, errors='coerce').astype(float)
             warning_message = _(
                 "Some {} data could not be converted to numerical value"
-                ).format(self.model()._data_columns_mapper[data.name])
+                ).format(self.model().column_header_at(data.name))
         return formatted_data, warning_message
 
 
@@ -524,7 +523,7 @@ class BoolEditDelegate(SardesItemDelegate):
         if sum(isnull1 != isnull2):
             warning_message = _(
                 "Some {} data could notbe converted to boolean value."
-                ).format(self.model()._data_columns_mapper[data.name])
+                ).format(self.model().column_header_at(data.name))
         else:
             warning_message = None
         return formatted_data, warning_message
@@ -567,9 +566,10 @@ class ImportFromClipboardTool(SardesTool):
                 func='warning')
             return
 
-        data_columns_mapper = self.parent.model()._data_columns_mapper
+        column_names_headers_map = (
+            self.parent.model().column_names_headers_map())
         table_visible_labels = [
-            data_columns_mapper[column].lower().replace(' ', '')
+            column_names_headers_map[column].lower().replace(' ', '')
             for column in table_visible_columns]
 
         new_data_columns = []
@@ -598,7 +598,7 @@ class ImportFromClipboardTool(SardesTool):
         warning_messages = []
         for column in new_data.columns:
             delegate = self.parent.tableview.itemDelegateForColumn(
-                self.parent.model().columns.index(column))
+                self.parent.model().column_names().index(column))
             new_data[column], warning_message = delegate.format_data(
                 new_data[column])
             if warning_message is not None:
@@ -1031,14 +1031,14 @@ class SardesTableView(QTableView):
         """
         Setup the item delegates for each column of this table view.
         """
-        for i, column in enumerate(self.model().columns):
+        for i, column in enumerate(self.model().columns()):
             item_delegate = self.model().create_delegate_for_column(
-                self, column)
+                self, column.name)
             self.setItemDelegateForColumn(i, item_delegate)
 
     def _setup_column_visibility_actions(self):
         self._toggle_column_visibility_actions = []
-        for i, label in enumerate(self.model().horizontal_header_labels):
+        for i, label in enumerate(self.model().column_headers()):
             action = create_action(
                 self, label,
                 toggled=(lambda toggle,
@@ -1114,7 +1114,7 @@ class SardesTableView(QTableView):
                 self, _("Save edits"),
                 icon='commit_changes',
                 tip=_('Save all edits made to the table in the database.'),
-                triggered=lambda: self._save_data_edits(force=False),
+                triggered=self._save_data_edits,
                 shortcut=['Ctrl+Enter', 'Ctrl+Return'],
                 context=Qt.WidgetShortcut,
                 name='sav_edits')
@@ -1268,7 +1268,7 @@ class SardesTableView(QTableView):
             else:
                 if data_edit.type() == SardesTableModelBase.RowAdded:
                     if self.visible_column_count():
-                        column = self.model().columns.index(
+                        column = self.model().column_names().index(
                             self.visible_columns()[0])
                     else:
                         column = 0
@@ -1681,7 +1681,7 @@ class SardesTableView(QTableView):
             selected_data = self.model().visual_dataf.iloc[
                 self.model().mapRowToSource(selected_rows), selected_columns]
             selected_data.rename(
-                self.model()._data_columns_mapper,
+                self.model().column_names_headers_map(),
                 axis='columns',
                 inplace=True)
             selected_data.to_clipboard(excel=True, index=False, na_rep='')
@@ -1767,7 +1767,8 @@ class SardesTableView(QTableView):
         for i in range(self.column_count()):
             logical_index = self.horizontalHeader().logicalIndex(i)
             if not self.horizontalHeader().isSectionHidden(logical_index):
-                visible_columns.append(self.model().columns[logical_index])
+                visible_columns.append(
+                    self.model().column_names()[logical_index])
         return visible_columns
 
     def column_count(self):
@@ -1815,7 +1816,7 @@ class SardesTableView(QTableView):
         default values.
         """
         self.show_all_available_columns()
-        for logical_index, column in enumerate(self.source_model.columns):
+        for logical_index in range(self.source_model.columnCount()):
             self.horizontalHeader().moveSection(
                 self.horizontalHeader().visualIndex(logical_index),
                 logical_index)
@@ -2153,13 +2154,13 @@ class SardesTableWidget(SardesPaneWidget):
         """
         return self.model().db_connection_manager
 
-    def get_table_title(self):
-        """Return the title of this widget's table."""
-        return self.tableview.source_model._table_title
+    def table_title(self):
+        """Return the title of the table of this table widget."""
+        return self.tableview.source_model.title()
 
-    def get_table_id(self):
-        """Return the ID of this widget's table."""
-        return self.tableview.source_model._table_id
+    def table_name(self):
+        """Return the name of the table of the table widget."""
+        return self.tableview.source_model.name()
 
     def model(self):
         """
@@ -2516,7 +2517,7 @@ class SardesStackedTableWidget(SardesPaneWidget):
         """
         for index in range(self.count()):
             table = self.tabwidget.widget(index)
-            tab_text = table.get_table_title()
+            tab_text = table.table_title()
             if table.tableview.model().has_unsaved_data_edits():
                 tab_text += '*'
             self.tabwidget.setTabText(index, tab_text)

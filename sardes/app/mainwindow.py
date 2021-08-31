@@ -87,10 +87,10 @@ class MainWindowBase(QMainWindow):
 
         # Setup the database connection manager.
         from sardes.database.database_manager import DatabaseConnectionManager
-        print("Setting up the database connection manager...", end=' ')
+        print("Setting up the database connection manager...")
         self.set_splash(_("Setting up the database connection manager..."))
         self.db_connection_manager = DatabaseConnectionManager()
-        print("done")
+        print("Database connection manager set up succesfully.")
 
         self.setup()
 
@@ -426,9 +426,9 @@ class MainWindowBase(QMainWindow):
                 plugin.close_plugin()
 
             # Clean temp files.
-            print('Cleaning temp files...', end=' ')
+            print('Cleaning temp files...')
             delete_folder_recursively(TEMP_DIR)
-            print('done')
+            print('Sucessfully cleaned temp files.')
 
             # Close the database connection manager.
             self.db_connection_manager.close(

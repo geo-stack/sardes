@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Local imports
-from sardes.api.tablemodels import StandardSardesTableModel
+from sardes.api.tablemodels import StandardSardesTableModel, SardesTableColumn
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableWidget, TextEditDelegate, NotEditableDelegate, DateTimeDelegate,
@@ -21,6 +21,19 @@ class ManualMeasurementsTableModel(StandardSardesTableModel):
     A table model to display the list of manual groundwater level measurements
     made in the observation wells of the monitoring network.
     """
+    __tablename__ = 'table_manual_measurements'
+    __tabletitle__ = _('Manual Measurements')
+    __tablecolumns__ = [
+        SardesTableColumn(
+            'sampling_feature_uuid', _('Well ID'), 'str',
+            notnull=True, unique=True),
+        SardesTableColumn(
+            'datetime', _('Date/Time'), 'datetime64[ns]', notnull=True,
+            unique=True, unique_subset=['sampling_feature_uuid']),
+        SardesTableColumn(
+            'value', _('Water Level'), 'float64', notnull=True),
+        SardesTableColumn('notes', _('Notes'), 'str')
+        ]
 
     def create_delegate_for_column(self, view, column):
         """
@@ -59,15 +72,7 @@ class ManualMeasurementsTableModel(StandardSardesTableModel):
 
 class ManualMeasurementsTableWidget(SardesTableWidget):
     def __init__(self, *args, **kargs):
-        table_model = ManualMeasurementsTableModel(
-            table_title=_('Manual Measurements'),
-            table_id='table_manual_measurements',
-            data_columns_mapper=[
-                ('sampling_feature_uuid', _('Well ID')),
-                ('datetime', _('Date/Time')),
-                ('value', _('Water Level')),
-                ('notes', _('Notes'))]
-            )
+        table_model = ManualMeasurementsTableModel()
         super().__init__(table_model, *args, **kargs)
 
         # Add the tool to import data from the clipboard.

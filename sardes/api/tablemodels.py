@@ -9,6 +9,7 @@
 
 # ---- Standard imports
 from collections import OrderedDict
+from dataclasses import dataclass
 import uuid
 
 # ---- Third party imports
@@ -26,6 +27,19 @@ from sardes.api.tabledata import SardesTableData
 # =============================================================================
 # ---- Sardes Table Models
 # =============================================================================
+@dataclass
+class SardesTableColumn():
+    """A class for reprensenting a column in a Sardes table."""
+    name: str
+    header: str
+    dtype: str
+    notnull: bool = False
+    unique: bool = False
+    unique_subset: list = None
+    editable: bool = True
+    desc: str = None
+
+
 class SardesTableModelBase(QAbstractTableModel):
     """
     Basic functionality for Sardes table models.
@@ -45,7 +59,11 @@ class SardesTableModelBase(QAbstractTableModel):
     RowRemoved = SardesTableData.RowRemoved
     RowDeleted = SardesTableData.RowDeleted
 
-    def __init__(self, table_title='', table_id='', data_columns_mapper=None):
+    __tablename__ = ''
+    __tabletitle__ = ''
+    __tablecolumns__ = []
+
+    def __init__(self, table_title=None, table_id=None, columns=None):
         """
         Parameters
         ----------
@@ -64,9 +82,14 @@ class SardesTableModelBase(QAbstractTableModel):
         self.BackgroundColorDeleted = QColor('#FF9999')
         self.BackgroundColorEdited = QColor('#CCFF99')
 
-        self._table_title = table_title
-        self._table_id = table_id
-        self._data_columns_mapper = OrderedDict(data_columns_mapper or [])
+        self.__tablecolumns_loc__ = OrderedDict(
+            [(column.name, column) for column in self.__tablecolumns__])
+        if table_title is not None:
+            self.__tabletitle__ = table_title
+        if table_id is not None:
+            self.__tablename__ = table_id
+        if columns is not None:
+            self.set_columns(columns)
 
         # The sardes table data object that is used to store the table data
         # and handle edits.
@@ -83,49 +106,78 @@ class SardesTableModelBase(QAbstractTableModel):
         # Setup the data.
         self.set_model_data(pd.DataFrame([]))
 
+    def name(self):
+        """Return the name of the table."""
+        return self.__tablename__
+
+    def title(self):
+        """Return the title of the table."""
+        return self.__tabletitle__
+
+    def set_title(self, title):
+        """Set the title of the table."""
+        self.__tabletitle__ = title
+
     # ---- Columns
-    @property
     def columns(self):
         """
-        Return the list of keys used to reference the columns in this
-        model's data.
+        Return the list of columns that are defined for this table model.
         """
-        return list(self._data_columns_mapper.keys())
+        return self.__tablecolumns__
+
+    def set_columns(self, columns):
+        """
+        Define the column of this table.
+        """
+        self.__tablecolumns__ = columns
+        self.__tablecolumns_loc__ = OrderedDict(
+            [(column.name, column) for column in self.__tablecolumns__])
+
+    def column_at(self, name):
+        """Return the sardes table column corresponding to the given name."""
+        return self.__tablecolumns_loc__[name]
+
+    def column_names_headers_map(self):
+        """
+        Return a dictionary mapping columns name with their header.
+        """
+        return {column.name: column.header for column in self.__tablecolumns__}
 
     def columnCount(self, parent=QModelIndex()):
         """Return the number of columns in this model's data."""
-        return len(self.columns)
+        return len(self.__tablecolumns__)
 
-    # ---- Horizontal Headers
-    @property
-    def horizontal_header_labels(self):
+    def column_names(self):
+        """
+        Return the list of names used to reference the columns in this
+        model's data.
+        """
+        return [column.name for column in self.__tablecolumns__]
+
+    def column_headers(self):
         """
         Return the list of labels that need to be displayed for each column
         of the table's horizontal header.
         """
-        return list(self._data_columns_mapper.values())
+        return [column.header for column in self.__tablecolumns__]
 
-    def get_horizontal_header_label_at(self, column_or_index):
+    def column_header_at(self, name):
         """
-        Return the text of the label to display in the horizontal
-        header for the key or logical index associated
-        with the column.
+        Return the header of the sardes table column corresponding
+        to the provided name.
         """
-        return self._data_columns_mapper[
-            column_or_index if isinstance(column_or_index, str) else
-            self.columns[column_or_index]
-            ]
+        return self.__tablecolumns_loc__[name].header
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """Qt method override."""
         if role == Qt.DisplayRole:
             if orientation == Qt.Horizontal:
-                return self.get_horizontal_header_label_at(section)
+                return self.__tablecolumns__[section].header
             elif orientation == Qt.Vertical:
                 return section + 1
         elif role == Qt.ToolTipRole:
             if orientation == Qt.Horizontal:
-                return self.get_horizontal_header_label_at(section)
+                return self.__tablecolumns__[section].header
         return QVariant()
 
     # ---- Table data
@@ -144,7 +196,7 @@ class SardesTableModelBase(QAbstractTableModel):
         for lib_name in self.libraries.keys():
             self.set_model_library(pd.DataFrame([]), lib_name)
 
-    def set_model_data(self, dataf, dataf_columns_mapper=None):
+    def set_model_data(self, dataf, columns=None):
         """
         Set the content of this table model to the data contained in dataf.
 
@@ -155,20 +207,20 @@ class SardesTableModelBase(QAbstractTableModel):
             table model.
 
             Note that the column labels of the dataframe must match the
-            values that are mapped in _data_columns_mapper.
+            columns that are defined in columns.
         """
         self.beginResetModel()
 
-        if dataf_columns_mapper is not None:
-            self._data_columns_mapper = OrderedDict(dataf_columns_mapper)
+        if columns is not None:
+            self.set_columns(columns)
 
         # Add missing columns to the dataframe and reorder columns to
         # mirror the column logical indexes of the table model so that we
         # can access them with pandas iloc.
-        for column in self.columns:
-            if column not in dataf.columns:
-                dataf[column] = None
-        dataf = dataf[self.columns]
+        for column_name in self.column_names():
+            if column_name not in dataf.columns:
+                dataf[column_name] = None
+        dataf = dataf[self.column_names()]
 
         self._datat = SardesTableData(dataf)
         self.endResetModel()
@@ -179,7 +231,7 @@ class SardesTableModelBase(QAbstractTableModel):
             )
         self.modelReset.emit()
 
-        if dataf_columns_mapper is not None:
+        if columns is not None:
             self.sig_columns_mapper_changed.emit()
 
     def set_model_library(self, dataf, name):
@@ -262,7 +314,7 @@ class SardesTableModelBase(QAbstractTableModel):
         Return the dataframe column corresponding to the specified visual
         model index.
         """
-        return self.columns[model_index.column()]
+        return self.column_names()[model_index.column()]
 
     def _update_visual_data(self):
         """
@@ -532,7 +584,7 @@ class StandardSardesTableModel(SardesTableModel):
         if self.db_connection_manager is not None:
             try:
                 return self.db_connection_manager.create_new_model_index(
-                    self._table_id)
+                    self.name())
             except NotImplementedError:
                 return super().create_new_row_index()
         else:
@@ -548,7 +600,7 @@ class StandardSardesTableModel(SardesTableModel):
         Update this model's data and library.
         """
         if self.db_connection_manager is not None:
-            self.db_connection_manager.update_model(self._table_id)
+            self.db_connection_manager.update_model(self.name())
         else:
             self._raise_db_connmanager_attr_error()
 
@@ -563,7 +615,7 @@ class StandardSardesTableModel(SardesTableModel):
         Save all data edits to the database.
         """
         if self.db_connection_manager is not None:
-            self.db_connection_manager.save_table_edits(self._table_id)
+            self.db_connection_manager.save_table_edits(self.name())
         else:
             self._raise_db_connmanager_attr_error()
 
@@ -594,7 +646,7 @@ class StandardSardesTableModel(SardesTableModel):
         """
         raise AttributeError(
             "The database connections manager for the table "
-            "model {} is not set.".format(self._table_id))
+            "model {} is not set.".format(self.name()))
 
 
 class SardesSortFilterModel(QSortFilterProxyModel):
@@ -657,7 +709,8 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         else:
             # Sort the data by columns.
             self._proxy_dataf_index = visual_dataf.sort_values(
-                by=[self.columns[index] for index in self._sort_by_columns],
+                by=[self.column_names()[index] for index in
+                    self._sort_by_columns],
                 ascending=[not bool(v) for v in self._columns_sort_order],
                 axis=0,
                 inplace=False).index

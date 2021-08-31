@@ -49,7 +49,7 @@ class DatabaseConnectionWorker(WorkerBase):
         """
         Clear the cache for the tables and libraries data.
         """
-        print("Clearing the database worker cache... done.")
+        print("Cleared the database worker cache.")
         self._cache = {}
 
     # ---- Worker connection state
@@ -177,7 +177,7 @@ class DatabaseConnectionWorker(WorkerBase):
         obs_well_data = obs_well_data.loc[sampling_feature_uuid]
 
         print("Fetching readings data for observation well {}..."
-              .format(obs_well_data['obs_well_id']), end='')
+              .format(obs_well_data['obs_well_id']))
         try:
             readings = self.db_accessor.get_timeseries_for_obs_well(
                 sampling_feature_uuid, data_types)
@@ -191,7 +191,8 @@ class DatabaseConnectionWorker(WorkerBase):
                          DataType(1), DataType(2), 'install_depth',
                          'obs_id'])
         else:
-            print(' done')
+            print("Successfully fetched readings data for observation well {}."
+                  .format(obs_well_data['obs_well_id']))
 
         # Add metadata to the dataframe.
         readings._metadata = ['sampling_feature_data']
@@ -597,7 +598,7 @@ class SardesTableModelsManager(QObject):
         Register a new sardes table model to the manager.
         """
         lib_names = lib_names or []
-        table_id = table_model._table_id
+        table_id = table_model.name()
         self._table_models[table_id] = table_model
         self._models_req_data[table_id] = [data_name] + lib_names
         self._queued_model_updates[table_id] = [data_name] + lib_names

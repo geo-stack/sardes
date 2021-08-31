@@ -96,7 +96,7 @@ def test_tables_plugin_init(mainwindow, qtbot):
         assert tabwidget.currentWidget() == plugin.current_table()
         for index in range(mainwindow.plugin.table_count()):
             table = tabwidget.widget(index)
-            table_id = table.get_table_id()
+            table_id = table.table_name()
             if index <= current_index:
                 assert table.tableview.row_count() > 0
                 assert len(models_manager._queued_model_updates[table_id]) == 0
@@ -104,7 +104,7 @@ def test_tables_plugin_init(mainwindow, qtbot):
                 assert table.tableview.row_count() == 0
                 assert (len(models_manager._queued_model_updates[table_id]) ==
                         len(models_manager._models_req_data[table_id]))
-            assert tabwidget.tabText(index) == table.get_table_title()
+            assert tabwidget.tabText(index) == table.table_title()
 
 
 def test_disconnect_from_database(mainwindow, qtbot):
@@ -172,13 +172,13 @@ def test_edit_sonde_model(mainwindow, qtbot, dbaccessor):
     assert tableview.state() != tableview.EditingState
     assert model_index.data() == 'Solinst LTC F30/M10'
     assert model.get_value_at(model_index) == 8
-    assert tabwidget.tabText(1) == tablewidget.get_table_title() + '*'
+    assert tabwidget.tabText(1) == tablewidget.table_title() + '*'
 
     # Undo the last edit.
     tableview._undo_last_data_edit()
     assert model_index.data() == 'Solinst Barologger M1.5'
     assert model.get_value_at(model_index) == 5
-    assert tabwidget.tabText(1) == tablewidget.get_table_title()
+    assert tabwidget.tabText(1) == tablewidget.table_title()
 
 
 def test_save_data_edits(mainwindow, qtbot):

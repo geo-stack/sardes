@@ -155,17 +155,17 @@ class Tables(SardesPlugin):
             table.model(), data_name, lib_names)
         table.register_to_plugin(self)
 
-        self._tables[table.get_table_id()] = table
-        self.tabwidget.add_table(table, table.get_table_title())
+        self._tables[table.table_name()] = table
+        self.tabwidget.add_table(table, table.table_title())
 
         # Restore the state of the tables' horizontal header from the configs.
         table.restore_table_horiz_header_state(
-            CONF.get(table.get_table_id(), 'horiz_header/state', None))
+            CONF.get(table.table_name(), 'horiz_header/state', None))
 
         sort_by_columns = CONF.get(
-            table.get_table_id(), 'horiz_header/sort_by_columns', [])
+            table.table_name(), 'horiz_header/sort_by_columns', [])
         columns_sort_order = CONF.get(
-            table.get_table_id(), 'horiz_header/columns_sort_order', [])
+            table.table_name(), 'horiz_header/columns_sort_order', [])
         table.set_columns_sorting_state(sort_by_columns, columns_sort_order)
 
     def _update_current_table(self, *args, **kargs):

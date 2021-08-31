@@ -27,7 +27,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QApplication
 
 # ---- Local imports
-from sardes.api.tablemodels import StandardSardesTableModel
+from sardes.api.tablemodels import StandardSardesTableModel, SardesTableColumn
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableWidget, NotEditableDelegate, StringEditDelegate,
@@ -47,6 +47,7 @@ HEADERS = ['Column #{}'.format(i) for i in range(NCOL)]
 VALUES = [['str1', True, 1.111, 3, 'not editable', None],
           ['str2', False, 2.222, 1, 'not editable', None],
           ['str3', True, 3.333, 29, 'not editable', None]]
+DTYPES = ['str', 'boolean', 'float64', 'Int64', 'str', 'str']
 INDEXES = [uuid.uuid4() for i in range(len(VALUES))]
 
 
@@ -93,6 +94,12 @@ def tablemodel(qtbot, TABLE_DATAF):
                     attribute_values.get(column, None))
 
     class SardesTableModelMock(StandardSardesTableModel):
+        __tabletitle__ = 'Sardes Test Table'
+        __tablename__ = 'sardes_test_table'
+        __tablecolumns__ = [
+            SardesTableColumn(col, header, dtype)
+            for col, header, dtype in zip(COLUMNS, HEADERS, DTYPES)]
+
         def create_delegate_for_column(self, view, column):
             if column == 'col0':
                 return StringEditDelegate(view, unique_constraint=True,
@@ -112,12 +119,7 @@ def tablemodel(qtbot, TABLE_DATAF):
             return visual_dataf
 
     # Setup table and database connection manager.
-    tablemodel = SardesTableModelMock(
-        table_title='Sardes Test Table',
-        table_id='sardes_test_table',
-        data_columns_mapper=[
-            (col, header) for col, header in zip(COLUMNS, HEADERS)]
-        )
+    tablemodel = SardesTableModelMock()
 
     db_connection_manager = DatabaseConnectionManager()
     db_connection_manager.register_model(tablemodel, 'test_table_dataf_name')
@@ -1306,6 +1308,10 @@ def test_import_from_clipboard(tablewidget, qtbot, mocker, TABLE_DATAF):
     tableview = tablewidget.tableview
     selection_model = tablewidget.tableview.selectionModel()
     horiz_header = tableview.horizontalHeader()
+    
+    print(tableview.model().columns())
+    print(tableview.model().column_at(('col2')))
+    return
 
     # We need to add the tool to import data from the clipboard explicitely.
     tablewidget.install_tool(
