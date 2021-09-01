@@ -302,37 +302,3 @@ class SardesItemDelegate(SardesItemDelegateBase):
             formatting the data.
         """
         return data, None
-
-
-class NotEditableDelegate(SardesItemDelegate):
-    """
-    A delegate used to indicate that the items in the associated
-    column are not editable.
-    """
-
-    def __init__(self, model_view):
-        super().__init__(model_view, is_required=True)
-        self.is_editable = False
-
-    def createEditor(self, *args, **kargs):
-        return None
-
-    def setEditorData(self, *args, **kargs):
-        pass
-
-    def setModelData(self, *args, **kargs):
-        pass
-
-    def clear_model_data_at(self, *args, **kargs):
-        pass
-
-    # ---- SardesItemDelegate API
-    def get_editor_data(self, *args, **kargs):
-        pass
-
-    def set_editor_data(self, *args, **kargs):
-        pass
-
-    def format_data(self, data):
-        data.values[:] = None
-        return data, None
