@@ -27,8 +27,9 @@ from sardes.config.main import TEMP_DIR
 from sardes.config.ospath import (
     get_select_file_dialog_dir, set_select_file_dialog_dir)
 from sardes.utils.qthelpers import create_toolbutton, create_action
-from sardes.widgets.tableviews import (
-    SardesTableWidget, StringEditDelegate, BoolEditDelegate,
+from sardes.widgets.tableviews import SardesTableWidget
+from sardes.tables.delegates import (
+    StringEditDelegate, BoolEditDelegate,
     NumEditDelegate, NotEditableDelegate, TextEditDelegate)
 
 
@@ -41,35 +42,56 @@ class ObsWellsTableModel(StandardSardesTableModel):
     __tabletitle__ = _('Observation Wells')
     __tablecolumns__ = [
         SardesTableColumn(
-            'obs_well_id', _('Well ID'), 'str', notnull=True, unique=True),
+            'obs_well_id', _('Well ID'), 'str', notnull=True, unique=True,
+            delegate=StringEditDelegate),
         SardesTableColumn(
-            'common_name', _('Common Name'), 'str'),
+            'common_name', _('Common Name'), 'str',
+            delegate=StringEditDelegate),
         SardesTableColumn(
-            'municipality', _('Municipality'), 'str'),
+            'municipality', _('Municipality'), 'str',
+            delegate=StringEditDelegate),
         SardesTableColumn(
-            'aquifer_type', _('Aquifer'), 'str'),
+            'aquifer_type', _('Aquifer'), 'str',
+            delegate=StringEditDelegate),
         SardesTableColumn(
-            'aquifer_code', _('Aquifer Code'), 'Int64'),
+            'aquifer_code', _('Aquifer Code'), 'Int64',
+            delegate=NumEditDelegate,
+            delegate_options={'decimals': 0, 'bottom': 0, 'top': 999}),
         SardesTableColumn(
-            'confinement', _('Confinement'), 'str'),
+            'confinement', _('Confinement'), 'str',
+            delegate=StringEditDelegate),
         SardesTableColumn(
-            'in_recharge_zone', _('Recharge Zone'), 'str'),
+            'in_recharge_zone', _('Recharge Zone'), 'str',
+            delegate=StringEditDelegate),
         SardesTableColumn(
-            'is_influenced', _('Influenced'), 'str'),
+            'is_influenced', _('Influenced'), 'str',
+            delegate=StringEditDelegate),
         SardesTableColumn(
-            'latitude', _('Latitude'), 'float64'),
+            'latitude', _('Latitude'), 'float64',
+            delegate=NumEditDelegate,
+            delegate_options={'decimals': 16, 'minimum': -180, 'maximum': 180},
+            ),
         SardesTableColumn(
-            'longitude', _('Longitude'), 'float64'),
+            'longitude', _('Longitude'), 'float64',
+            delegate=NumEditDelegate,
+            delegate_options={'decimals': 16, 'minimum': -180, 'maximum': 180},
+            ),
         SardesTableColumn(
-            'first_date', _('First Date'), 'datetime64[ns]'),
+            'first_date', _('First Date'), 'datetime64[ns]',
+            delegate=NotEditableDelegate),
         SardesTableColumn(
-            'last_date', _('Last Date'), 'datetime64[ns]'),
+            'last_date', _('Last Date'), 'datetime64[ns]',
+            delegate=NotEditableDelegate),
         SardesTableColumn(
-            'mean_water_level', _('Mean level (m)'), 'float64'),
+            'mean_water_level', _('Mean level (m)'), 'float64',
+            delegate=NotEditableDelegate),
         SardesTableColumn(
-            'is_station_active', _('Active'), 'boolean', notnull=True),
+            'is_station_active', _('Active'), 'boolean', notnull=True,
+            delegate=BoolEditDelegate),
         SardesTableColumn(
-            'obs_well_notes', _('Notes'), dtype='str')]
+            'obs_well_notes', _('Notes'), dtype='str',
+            delegate=TextEditDelegate)
+        ]
 
     def set_model_data(self, dataf, dataf_columns_mapper=None):
         """
@@ -83,29 +105,6 @@ class ObsWellsTableModel(StandardSardesTableModel):
             dataf['aquifer_code'] = None
         dataf['aquifer_code'] = dataf['aquifer_code'].astype(pd.Int64Dtype())
         return super().set_model_data(dataf, dataf_columns_mapper)
-
-    def create_delegate_for_column(self, view, column):
-        """
-        Create the item delegate that the view need to use when editing the
-        data of this model for the specified column. If None is returned,
-        the items of the column will not be editable.
-        """
-        if column in ['is_station_active']:
-            return BoolEditDelegate(view, is_required=True)
-        elif column in ['obs_well_id']:
-            return StringEditDelegate(view, unique_constraint=True,
-                                      is_required=True)
-        elif column in ['municipality', 'is_influenced', 'common_name',
-                        'in_recharge_zone', 'confinement', 'aquifer_type']:
-            return StringEditDelegate(view)
-        elif column in ['aquifer_code']:
-            return NumEditDelegate(view, decimals=0, bottom=0, top=999)
-        elif column in ['obs_well_notes']:
-            return TextEditDelegate(view)
-        elif column in ['latitude', 'longitude']:
-            return NumEditDelegate(view, 16, -180, 180)
-        else:
-            return NotEditableDelegate(view)
 
     # ---- Visual Data
     def logical_to_visual_data(self, visual_dataf):
