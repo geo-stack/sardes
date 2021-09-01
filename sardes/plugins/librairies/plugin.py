@@ -12,7 +12,7 @@ from sardes.config.main import CONF
 from sardes.api.plugins import SardesPlugin
 from sardes.config.locale import _
 from sardes.widgets.tableviews import SardesStackedTableWidget
-from sardes.plugins.librairies.tables import SondeModelsTableWidget
+from sardes.tables import SondeModelsTableWidget
 
 
 """Tables plugin"""
