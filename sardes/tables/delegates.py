@@ -27,7 +27,7 @@ class NotEditableDelegate(SardesItemDelegate):
     column are not editable.
     """
 
-    def __init__(self, model_view):
+    def __init__(self, model_view, is_required=True):
         super().__init__(model_view, is_required=True)
         self.is_editable = False
 
@@ -127,9 +127,8 @@ class IntEditDelegate(SardesItemDelegate):
     A delegate to edit an integer value in a spin box.
     """
 
-    def __init__(self, model_view, minimum=None, maximum=None,
-                 unique_constraint=False):
-        super() .__init__(model_view, unique_constraint=unique_constraint)
+    def __init__(self, model_view, minimum=None, maximum=None, **kargs):
+        super() .__init__(model_view, **kargs)
         self._minimum = minimum
         self._maximum = maximum
 
@@ -164,9 +163,8 @@ class NumEditDelegate(SardesItemDelegate):
     """
 
     def __init__(self, model_view, decimals=0, minimum=None, maximum=None,
-                 unique_constraint=False, is_required=False):
-        super() .__init__(model_view, unique_constraint=unique_constraint,
-                          is_required=is_required)
+                 **kargs):
+        super() .__init__(model_view, **kargs)
         self._minimum = minimum
         self._maximum = maximum
         self._decimals = decimals
