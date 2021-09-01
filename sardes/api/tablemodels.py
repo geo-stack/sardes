@@ -182,6 +182,20 @@ class SardesTableModelBase(QAbstractTableModel):
                 return self.__tablecolumns__[section].header
         return QVariant()
 
+    def create_delegate_for_column(self, table_view, column_name):
+        """
+        Create the item delegate that the view need to use when displaying and
+        editing the data of this model for the specified column.
+        """
+        column = self.column_at(column_name)
+        if column.delegate is None:
+            return None
+        else:
+            return column.delegate(
+                table_view,
+                is_required=column.notnull,
+                **column.delegate_options)
+
     # ---- Table data
     @property
     def dataf(self):
@@ -512,15 +526,6 @@ class SardesTableModel(SardesTableModelBase):
 
     All table *must* inherit this class and reimplement its interface.
     """
-
-    def create_delegate_for_column(self, view, column):
-        """
-        Create the item delegate that the view need to use when editing the
-        data of this model for the specified column. By default, all columns
-        are not editable. You need to expands this method to specify a
-        different delegate to a column.
-        """
-        raise NotImplementedError
 
     def logical_to_visual_data(self, visual_dataf):
         """
