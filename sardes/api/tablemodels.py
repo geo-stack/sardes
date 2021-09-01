@@ -22,6 +22,7 @@ from qtpy.QtWidgets import QStyleOption
 
 # ---- Local imports
 from sardes.api.tabledata import SardesTableData
+from sardes.api.tabledelegates import NotEditableDelegate
 
 
 # =============================================================================
