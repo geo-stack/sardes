@@ -27,12 +27,15 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QApplication
 
 # ---- Local imports
-from sardes.api.tablemodels import StandardSardesTableModel, SardesTableColumn
+from sardes.api.tablemodels import SardesTableColumn
+from sardes.tables.models import StandardSardesTableModel
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
-    SardesTableWidget, NotEditableDelegate, StringEditDelegate,
-    IntEditDelegate, NumEditDelegate, BoolEditDelegate,
-    MSEC_MIN_PROGRESS_DISPLAY, QMessageBox, QCheckBox, ImportFromClipboardTool)
+    SardesTableWidget, MSEC_MIN_PROGRESS_DISPLAY, QMessageBox, QCheckBox,
+    ImportFromClipboardTool)
+from sardes.tables.delegates import (
+    NotEditableDelegate, StringEditDelegate,
+    IntEditDelegate, NumEditDelegate, BoolEditDelegate)
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.api.database_accessor import DatabaseAccessor
 from sardes.utils.data_operations import are_values_equal
@@ -97,21 +100,26 @@ def tablemodel(qtbot, TABLE_DATAF):
         __tabletitle__ = 'Sardes Test Table'
         __tablename__ = 'sardes_test_table'
         __tablecolumns__ = [
-            SardesTableColumn(col, header, dtype)
-            for col, header, dtype in zip(COLUMNS, HEADERS, DTYPES)]
-
-        def create_delegate_for_column(self, view, column):
-            if column == 'col0':
-                return StringEditDelegate(view, unique_constraint=True,
-                                          is_required=True)
-            elif column == 'col1':
-                return BoolEditDelegate(view)
-            elif column == 'col2':
-                return NumEditDelegate(view, decimals=3)
-            elif column == 'col3':
-                return IntEditDelegate(view)
-            else:
-                return NotEditableDelegate(view)
+            SardesTableColumn(
+                'col0', 'Column #0', 'str', notnull=True,
+                delegate=StringEditDelegate),
+            SardesTableColumn(
+                'col1', 'Column #1', 'boolean',
+                delegate=BoolEditDelegate),
+            SardesTableColumn(
+                'col2', 'Column #2', 'float64',
+                delegate=NumEditDelegate,
+                delegate_options={'decimals': 3}),
+            SardesTableColumn(
+                'col3', 'Column #3', 'Int64',
+                delegate=IntEditDelegate),
+            SardesTableColumn(
+                'col4', 'Column #4', 'str',
+                delegate=NotEditableDelegate),
+            SardesTableColumn(
+                'col5', 'Column #5', 'str',
+                delegate=NotEditableDelegate),
+            ]
 
         def logical_to_visual_data(self, visual_dataf):
             visual_dataf['col1'].replace(
