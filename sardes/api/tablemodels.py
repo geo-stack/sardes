@@ -9,7 +9,7 @@
 
 # ---- Standard imports
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import uuid
 
 # ---- Third party imports
@@ -22,7 +22,6 @@ from qtpy.QtWidgets import QStyleOption
 
 # ---- Local imports
 from sardes.api.tabledata import SardesTableData
-from sardes.api.tabledelegates import NotEditableDelegate
 
 
 # =============================================================================
@@ -39,6 +38,8 @@ class SardesTableColumn():
     unique_subset: list = None
     editable: bool = True
     desc: str = None
+    delegate: object = None
+    delegate_options: dict = field(default_factory=dict)
 
 
 class SardesTableModelBase(QAbstractTableModel):
