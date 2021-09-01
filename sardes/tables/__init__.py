@@ -12,3 +12,4 @@ from .table_sondes_inventory import SondesInventoryTableWidget
 from .table_manual_measurements import ManualMeasurementsTableWidget
 from .table_sonde_installations import SondeInstallationsTableWidget
 from .table_repere import RepereTableWidget
+from .table_sonde_models import SondeModelsTableWidget
