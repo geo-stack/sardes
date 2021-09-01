@@ -8,8 +8,9 @@
 # -----------------------------------------------------------------------------
 
 # ---- Local imports
-from sardes.api.tablemodels import StandardSardesTableModel, SardesTableColumn
+from sardes.api.tablemodels import SardesTableColumn
 from sardes.config.locale import _
+from sardes.tables.models import StandardSardesTableModel
 from sardes.tables.delegates import (
     ObsWellIdEditDelegate, TextEditDelegate, DateTimeDelegate, NumEditDelegate)
 from sardes.widgets.tableviews import (

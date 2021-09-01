@@ -20,7 +20,7 @@ from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import QMenu, QFileDialog
 
 # ---- Local imports
-from sardes.api.tablemodels import StandardSardesTableModel, SardesTableColumn
+from sardes.api.tablemodels import SardesTableColumn
 from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
 from sardes.config.main import TEMP_DIR
@@ -28,6 +28,7 @@ from sardes.config.ospath import (
     get_select_file_dialog_dir, set_select_file_dialog_dir)
 from sardes.utils.qthelpers import create_toolbutton, create_action
 from sardes.widgets.tableviews import SardesTableWidget
+from sardes.tables.models import StandardSardesTableModel
 from sardes.tables.delegates import (
     StringEditDelegate, BoolEditDelegate,
     NumEditDelegate, NotEditableDelegate, TextEditDelegate)
