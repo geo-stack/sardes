@@ -149,6 +149,7 @@ class Tables(SardesPlugin):
 
     def _create_and_register_table(self, TableClass, data_name, lib_names,
                                    disabled_actions=None):
+        print('Setting up table {}...'.format(TableClass.__name__))
         table = TableClass(disabled_actions=disabled_actions)
 
         self.main.db_connection_manager.register_model(
