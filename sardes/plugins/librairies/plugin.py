@@ -114,6 +114,7 @@ class Librairies(SardesPlugin):
         self.tabwidget.setCurrentIndex(self.get_option('last_focused_tab', 0))
 
     def _create_and_register_table(self, TableClass, data_name, lib_names):
+        print('Setting up table {}...'.format(TableClass.__name__))
         table = TableClass(disabled_actions=['delete_row'])
 
         self.main.db_connection_manager.register_model(

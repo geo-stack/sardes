@@ -12,9 +12,9 @@ from sardes.config.main import CONF
 from sardes.api.plugins import SardesPlugin
 from sardes.config.locale import _
 from sardes.widgets.tableviews import SardesStackedTableWidget
-from sardes.plugins.tables.tables import (
+from sardes.tables import (
     ObsWellsTableWidget, RepereTableWidget, SondesInventoryTableWidget,
-    ManualMeasurementsTableWidget, SondeInstallationsTableWidget)
+    SondeInstallationsTableWidget, ManualMeasurementsTableWidget)
 
 
 """Tables plugin"""
