@@ -57,7 +57,8 @@ class ObsWellsTableModel(StandardSardesTableModel):
         SardesTableColumn(
             'aquifer_code', _('Aquifer Code'), 'Int64',
             delegate=NumEditDelegate,
-            delegate_options={'decimals': 0, 'bottom': 0, 'top': 999}),
+            delegate_options={
+                'decimals': 0, 'minimum': 0, 'maximum': 999}),
         SardesTableColumn(
             'confinement', _('Confinement'), 'str',
             delegate=StringEditDelegate),

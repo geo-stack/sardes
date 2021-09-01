@@ -28,23 +28,20 @@ class ManualMeasurementsTableModel(StandardSardesTableModel):
         SardesTableColumn(
             'sampling_feature_uuid', _('Well ID'), 'str',
             notnull=True, unique=True,
-            delegate=ObsWellIdEditDelegate
-            ),
+            delegate=ObsWellIdEditDelegate),
         SardesTableColumn(
             'datetime', _('Date/Time'), 'datetime64[ns]', notnull=True,
             unique=True, unique_subset=['sampling_feature_uuid'],
             delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}
-            ),
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
         SardesTableColumn(
             'value', _('Water Level'), 'float64', notnull=True,
             delegate=NumEditDelegate,
-            delegate_options={'decimals': 3, 'bottom': -99999, 'top': 99999}
-            ),
+            delegate_options={
+                'decimals': 3, 'minimum': -99999, 'maximum': 99999}),
         SardesTableColumn(
             'notes', _('Notes'), 'str',
-            delegate=TextEditDelegate
-            )
+            delegate=TextEditDelegate)
         ]
 
     # ---- Visual Data
