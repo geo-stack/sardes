@@ -127,19 +127,19 @@ class IntEditDelegate(SardesItemDelegate):
     A delegate to edit an integer value in a spin box.
     """
 
-    def __init__(self, model_view, bottom=None, top=None,
+    def __init__(self, model_view, minimum=None, maximum=None,
                  unique_constraint=False):
         super() .__init__(model_view, unique_constraint=unique_constraint)
-        self._bottom = bottom
-        self._top = top
+        self._minimum = minimum
+        self._maximum = maximum
 
     # ---- SardesItemDelegate API
     def create_editor(self, parent):
         editor = QSpinBox(parent)
-        if self._bottom is not None:
-            editor.setMinimum(int(self._bottom))
-        if self._top is not None:
-            editor.setMaximum(int(self._top))
+        if self._minimum is not None:
+            editor.setMinimum(int(self._minimum))
+        if self._maximum is not None:
+            editor.setMaximum(int(self._maximum))
         return editor
 
     def format_data(self, data):
@@ -163,12 +163,12 @@ class NumEditDelegate(SardesItemDelegate):
     A delegate to edit a float or a float value in a spin box.
     """
 
-    def __init__(self, model_view, decimals=0, bottom=None, top=None,
+    def __init__(self, model_view, decimals=0, minimum=None, maximum=None,
                  unique_constraint=False, is_required=False):
         super() .__init__(model_view, unique_constraint=unique_constraint,
                           is_required=is_required)
-        self._bottom = bottom
-        self._top = top
+        self._minimum = minimum
+        self._maximum = maximum
         self._decimals = decimals
 
     # ---- SardesItemDelegate API
@@ -178,10 +178,10 @@ class NumEditDelegate(SardesItemDelegate):
         else:
             editor = QDoubleSpinBox(parent)
             editor.setDecimals(self._decimals)
-        if self._bottom is not None:
-            editor.setMinimum(self._bottom)
-        if self._top is not None:
-            editor.setMaximum(self._top)
+        if self._minimum is not None:
+            editor.setMinimum(self._minimum)
+        if self._maximum is not None:
+            editor.setMaximum(self._maximum)
         return editor
 
     def format_data(self, data):
