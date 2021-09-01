@@ -11,12 +11,13 @@
 import pandas as pd
 
 # ---- Local imports
-from sardes.api.tablemodels import StandardSardesTableModel, SardesTableColumn
+from sardes.api.tablemodels import SardesTableColumn
 from sardes.config.locale import _
-from sardes.widgets.tableviews import (
-    SardesTableWidget, BoolEditDelegate, NotEditableDelegate, TextEditDelegate,
-    DateTimeDelegate, NumEditDelegate)
-from sardes.plugins.tables.tables.delegates import ObsWellIdEditDelegate
+from sardes.widgets.tableviews import SardesTableWidget
+from sardes.tables.models import StandardSardesTableModel
+from sardes.tables.delegates import (
+    ObsWellIdEditDelegate, BoolEditDelegate, NotEditableDelegate,
+    TextEditDelegate, DateTimeDelegate, NumEditDelegate)
 
 
 class RepereTableModel(StandardSardesTableModel):
@@ -28,44 +29,34 @@ class RepereTableModel(StandardSardesTableModel):
     __tabletitle__ = _('Repere')
     __tablecolumns__ = [
         SardesTableColumn(
-            'sampling_feature_uuid', _('Well ID'), 'str', notnull=True),
+            'sampling_feature_uuid', _('Well ID'), 'str', notnull=True,
+            delegate=ObsWellIdEditDelegate),
         SardesTableColumn(
             'top_casing_alt', _('Top Casing Alt. (m)'), 'float64',
-            notnull=True),
+            notnull=True,
+            delegate=NumEditDelegate,
+            delegate_options={
+                'decimals': 3, 'minimum': -99999, 'maximum': 99999}),
         SardesTableColumn(
-            'casing_length', _('Length Casing (m)'), 'float64', notnull=True),
+            'casing_length', _('Length Casing (m)'), 'float64', notnull=True,
+            delegate=NumEditDelegate,
+            delegate_options={
+                'decimals': 3, 'minimum': -99999, 'maximum': 99999}),
         SardesTableColumn(
-            'start_date', _('Date From'), 'datetime64[ns]', notnull=True),
+            'start_date', _('Date From'), 'datetime64[ns]', notnull=True,
+            delegate=DateTimeDelegate,
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
         SardesTableColumn(
-            'end_date', _('Date To'), 'datetime64[ns]'),
+            'end_date', _('Date To'), 'datetime64[ns]',
+            delegate=DateTimeDelegate,
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
         SardesTableColumn(
-            'is_alt_geodesic', _('Geodesic'), 'boolean', notnull=True),
+            'is_alt_geodesic', _('Geodesic'), 'boolean', notnull=True,
+            delegate=BoolEditDelegate),
         SardesTableColumn(
-            'repere_note', _('Notes'), 'str')
+            'repere_note', _('Notes'), 'str',
+            delegate=TextEditDelegate)
         ]
-
-    def create_delegate_for_column(self, view, column):
-        """
-        Create the item delegate that the view need to use when editing the
-        data of this model for the specified column. If None is returned,
-        the items of the column will not be editable.
-        """
-        if column in ['sampling_feature_uuid']:
-            return ObsWellIdEditDelegate(view, is_required=True)
-        elif column in ['top_casing_alt', 'casing_length']:
-            return NumEditDelegate(view, decimals=3, bottom=-99999, top=99999,
-                                   is_required=True)
-        elif column in ['start_date']:
-            return DateTimeDelegate(view, is_required=True,
-                                    display_format="yyyy-MM-dd hh:mm")
-        elif column in ['end_date']:
-            return DateTimeDelegate(view, display_format="yyyy-MM-dd hh:mm")
-        elif column in ['is_alt_geodesic']:
-            return BoolEditDelegate(view, is_required=True)
-        elif column in ['repere_note']:
-            return TextEditDelegate(view, is_required=False)
-        else:
-            return NotEditableDelegate(view)
 
     # ---- Visual Data
     def logical_to_visual_data(self, visual_dataf):
