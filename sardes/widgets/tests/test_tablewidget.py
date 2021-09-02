@@ -1088,6 +1088,7 @@ def test_horiz_header_double_mouse_click(tablewidget, qtbot):
     assert horiz_header.sort_indicator_sections() == [3]
 
 
+@flaky(max_runs=3)
 def test_column_sorting(tablewidget, qtbot):
     """
     Test that sorting by column work as expected.
