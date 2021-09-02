@@ -71,7 +71,7 @@ def test_add_repere_data(tablewidget, qtbot, repere_data, dbaccessor):
     assert len(saved_values) == len(repere_data) + 1
 
 
-def test_edit_sondes_data(tablewidget, qtbot, dbaccessor, obswells_data):
+def test_edit_repere_data(tablewidget, qtbot, dbaccessor, obswells_data):
     """
     Test that editing repere data is working as expected.
     """
@@ -121,7 +121,7 @@ def test_edit_sondes_data(tablewidget, qtbot, dbaccessor, obswells_data):
         assert saved_values[key] == edited_values[key]
 
 
-def test_clear_sondes_data(tablewidget, qtbot, dbaccessor):
+def test_clear_repere_data(tablewidget, qtbot, dbaccessor):
     """
     Test that clearing sonde data is working as expected.
     """
