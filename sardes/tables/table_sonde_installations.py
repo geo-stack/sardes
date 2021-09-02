@@ -8,13 +8,13 @@
 # -----------------------------------------------------------------------------
 
 # ---- Local imports
-from sardes.api.tablemodels import StandardSardesTableModel, SardesTableColumn
+from sardes.api.tablemodels import SardesTableColumn
 from sardes.config.locale import _
-from sardes.widgets.tableviews import (
-    SardesTableWidget, NotEditableDelegate, TextEditDelegate, DateTimeDelegate,
-    NumEditDelegate)
-from sardes.plugins.tables.tables.delegates import (
-    ObsWellIdEditDelegate, SondesSelectionDelegate)
+from sardes.widgets.tableviews import SardesTableWidget
+from sardes.tables.models import StandardSardesTableModel
+from sardes.tables.delegates import (
+    ObsWellIdEditDelegate, SondesSelectionDelegate, NotEditableDelegate,
+    TextEditDelegate, DateTimeDelegate, NumEditDelegate)
 
 
 class SondeInstallationsTableModel(StandardSardesTableModel):
@@ -26,35 +26,29 @@ class SondeInstallationsTableModel(StandardSardesTableModel):
     __tablename__ = 'table_sonde_installations'
     __tabletitle__ = _('Sonde Installations')
     __tablecolumns__ = [
-        SardesTableColumn('sampling_feature_uuid', _('Well ID'), 'str',
-                          notnull=True),
-        SardesTableColumn('sonde_uuid', _('Brand Model Serial'), 'str',
-                          notnull=True),
-        SardesTableColumn('start_date', _('Date From'), 'datetime64[ns]',
-                          notnull=True),
-        SardesTableColumn('end_date', _('Date To'), 'datetime64[ns]'),
-        SardesTableColumn('install_depth', _('Depth (m)'), 'float64',
-                          notnull=True),
-        SardesTableColumn('install_note', _('Notes'), 'str')
+        SardesTableColumn(
+            'sampling_feature_uuid', _('Well ID'), 'str', notnull=True,
+            delegate=ObsWellIdEditDelegate),
+        SardesTableColumn(
+            'sonde_uuid', _('Brand Model Serial'), 'str', notnull=True,
+            delegate=SondesSelectionDelegate),
+        SardesTableColumn(
+            'start_date', _('Date From'), 'datetime64[ns]', notnull=True,
+            delegate=DateTimeDelegate,
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
+        SardesTableColumn(
+            'end_date', _('Date To'), 'datetime64[ns]',
+            delegate=DateTimeDelegate,
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
+        SardesTableColumn(
+            'install_depth', _('Depth (m)'), 'float64', notnull=True,
+            delegate=NumEditDelegate,
+            delegate_options={
+                'decimals': 3, 'minimum': -99999, 'maximum': 99999}),
+        SardesTableColumn(
+            'install_note', _('Notes'), 'str',
+            delegate=TextEditDelegate)
         ]
-
-    def create_delegate_for_column(self, view, column):
-        if column in ['sampling_feature_uuid']:
-            return ObsWellIdEditDelegate(view, is_required=True)
-        elif column == 'install_depth':
-            return NumEditDelegate(
-                view, is_required=True, decimals=3, bottom=-99999, top=99999)
-        elif column in ['start_date']:
-            return DateTimeDelegate(view, is_required=True,
-                                    display_format="yyyy-MM-dd hh:mm")
-        elif column in ['end_date']:
-            return DateTimeDelegate(view, display_format="yyyy-MM-dd hh:mm")
-        elif column in ['sonde_uuid']:
-            return SondesSelectionDelegate(view, is_required=True)
-        elif column in ['install_note']:
-            return TextEditDelegate(view)
-        else:
-            return NotEditableDelegate(view)
 
     # ---- Visual Data
     def logical_to_visual_data(self, visual_dataf):

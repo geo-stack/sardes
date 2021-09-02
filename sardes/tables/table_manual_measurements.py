@@ -8,12 +8,13 @@
 # -----------------------------------------------------------------------------
 
 # ---- Local imports
-from sardes.api.tablemodels import StandardSardesTableModel, SardesTableColumn
+from sardes.api.tablemodels import SardesTableColumn
 from sardes.config.locale import _
+from sardes.tables.models import StandardSardesTableModel
+from sardes.tables.delegates import (
+    ObsWellIdEditDelegate, TextEditDelegate, DateTimeDelegate, NumEditDelegate)
 from sardes.widgets.tableviews import (
-    SardesTableWidget, TextEditDelegate, NotEditableDelegate, DateTimeDelegate,
-    NumEditDelegate, ImportFromClipboardTool)
-from sardes.plugins.tables.tables.delegates import ObsWellIdEditDelegate
+    SardesTableWidget, ImportFromClipboardTool)
 
 
 class ManualMeasurementsTableModel(StandardSardesTableModel):
@@ -26,31 +27,22 @@ class ManualMeasurementsTableModel(StandardSardesTableModel):
     __tablecolumns__ = [
         SardesTableColumn(
             'sampling_feature_uuid', _('Well ID'), 'str',
-            notnull=True, unique=True),
+            notnull=True, unique=True,
+            delegate=ObsWellIdEditDelegate),
         SardesTableColumn(
             'datetime', _('Date/Time'), 'datetime64[ns]', notnull=True,
-            unique=True, unique_subset=['sampling_feature_uuid']),
+            unique=True, unique_subset=['sampling_feature_uuid'],
+            delegate=DateTimeDelegate,
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
         SardesTableColumn(
-            'value', _('Water Level'), 'float64', notnull=True),
-        SardesTableColumn('notes', _('Notes'), 'str')
+            'value', _('Water Level'), 'float64', notnull=True,
+            delegate=NumEditDelegate,
+            delegate_options={
+                'decimals': 3, 'minimum': -99999, 'maximum': 99999}),
+        SardesTableColumn(
+            'notes', _('Notes'), 'str',
+            delegate=TextEditDelegate)
         ]
-
-    def create_delegate_for_column(self, view, column):
-        """
-        Create the item delegate that the view need to use when editing the
-        data of this model for the specified column. If None is returned,
-        the items of the column will not be editable.
-        """
-        if column == 'sampling_feature_uuid':
-            return ObsWellIdEditDelegate(view)
-        elif column == 'datetime':
-            return DateTimeDelegate(view, display_format="yyyy-MM-dd hh:mm")
-        elif column == 'value':
-            return NumEditDelegate(view, decimals=3, bottom=-99999, top=99999)
-        elif column == 'notes':
-            return TextEditDelegate(view)
-        else:
-            return NotEditableDelegate(view)
 
     # ---- Visual Data
     def logical_to_visual_data(self, visual_dataf):

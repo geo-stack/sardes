@@ -129,8 +129,7 @@ def test_clear_sondes_data(tablewidget, qtbot, dbaccessor):
     Test that clearing sonde data is working as expected.
     """
     tableview = tablewidget.tableview
-    clearable_attrs = [
-        'sonde_serial_no', 'date_reception', 'date_withdrawal', 'sonde_notes']
+    clearable_attrs = ['date_reception', 'date_withdrawal', 'sonde_notes']
 
     # Clear each non required field of the first row of the table.
     assert tableview.get_data_for_row(0) == [
@@ -150,7 +149,8 @@ def test_clear_sondes_data(tablewidget, qtbot, dbaccessor):
             assert tableview.model().is_data_edited_at(current_index)
             assert tableview.model().is_null(current_index)
     assert tableview.get_data_for_row(0) == [
-        'Solinst Barologger M1.5', '', '', '', 'No', 'No', 'No', 'No', '']
+        'Solinst Barologger M1.5', '1016042', '', '',
+        'No', 'No', 'No', 'No', '']
 
     # Save the changes to the database.
     with qtbot.waitSignal(tableview.model().sig_data_updated):

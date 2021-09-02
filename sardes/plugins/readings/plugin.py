@@ -16,16 +16,17 @@ import pandas as pd
 from qtpy.QtCore import Qt, Slot
 
 # ---- Local imports
+from sardes.api.tablemodels import SardesTableColumn
+from sardes.api.timeseries import DataType
 from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
-from sardes.api.tablemodels import StandardSardesTableModel, SardesTableColumn
-from sardes.api.timeseries import DataType
+from sardes.tables.delegates import NumEditDelegate, NotEditableDelegate
+from sardes.tables.models import StandardSardesTableModel
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.utils.data_operations import format_reading_data
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
 from sardes.widgets.tableviews import (
-    SardesTableWidget, NumEditDelegate, NotEditableDelegate,
-    SardesStackedTableWidget)
+    SardesTableWidget, SardesStackedTableWidget)
 from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
 from sardes.tools import (
     SaveReadingsToExcelTool, HydrographTool, SatisticalHydrographTool)
@@ -42,13 +43,6 @@ class ReadingsTableModel(StandardSardesTableModel):
         self._repere_data = pd.Series([], dtype=object)
         self._manual_measurements = pd.DataFrame(
             [], columns=['datetime', 'value'])
-
-    def create_delegate_for_column(self, view, column):
-        if isinstance(column, DataType):
-            return NumEditDelegate(
-                view, decimals=6, bottom=-99999, top=99999)
-        else:
-            return NotEditableDelegate(view)
 
     # ---- Data
     def set_obs_well_data(self, obs_well_data):
@@ -85,19 +79,28 @@ class ReadingsTableModel(StandardSardesTableModel):
         """
         columns = [
             SardesTableColumn(
-                'datetime', _('Datetime'), 'datetime64[ns]'),
+                'datetime', _('Datetime'), 'datetime64[ns]',
+                delegate=NotEditableDelegate),
             SardesTableColumn(
-                'sonde_id', _('Sonde Serial Number'), 'str')
+                'sonde_id', _('Sonde Serial Number'), 'str',
+                delegate=NotEditableDelegate)
             ]
-        columns.extend([
-            SardesTableColumn(dtype, dtype.label, 'float64') for dtype in
-            DataType if dtype in dataf.columns
-            ])
+        for dtype in DataType:
+            if dtype in dataf.columns:
+                columns.append(SardesTableColumn(
+                    dtype, dtype.label, 'float64',
+                    delegate=NumEditDelegate,
+                    delegate_options={'decimals': 6,
+                                      'minimum': -99999,
+                                      'maximum': 99999}
+                    ))
         columns.extend([
             SardesTableColumn(
-                'install_depth', _('Depth'), 'float64'),
+                'install_depth', _('Depth'), 'float64',
+                delegate=NotEditableDelegate),
             SardesTableColumn(
-                'obs_id', _('Observation ID'), 'str')
+                'obs_id', _('Observation ID'), 'str',
+                delegate=NotEditableDelegate)
             ])
         super().set_model_data(dataf, columns)
 

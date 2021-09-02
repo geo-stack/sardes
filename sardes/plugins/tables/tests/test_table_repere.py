@@ -8,12 +8,13 @@
 # -----------------------------------------------------------------------------
 
 """
-Tests for the Manual Measurements table.
+Tests for the Repere table.
 """
 
 # ---- Standard imports
-from datetime import datetime
+from datetime import datetime, date
 import os
+import os.path as osp
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
@@ -28,17 +29,13 @@ from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def tablewidget(mainwindow, qtbot, dbaccessor, manual_measurements):
+def tablewidget(mainwindow, qtbot, dbaccessor, repere_data):
     # Select the tab corresponding to the observation wells table.
-    tablewidget = mainwindow.plugin._tables['table_manual_measurements']
+    tablewidget = mainwindow.plugin._tables['table_repere']
     mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
-    tableview = tablewidget.tableview
     qtbot.waitUntil(
-        lambda: tableview.visible_row_count() == len(manual_measurements))
+        lambda: tablewidget.tableview.visible_row_count() == len(repere_data))
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
-
-    assert tableview.row_count() == len(manual_measurements)
-    assert tableview.column_count() == len(manual_measurements.columns)
 
     yield tablewidget
 
@@ -51,49 +48,49 @@ def tablewidget(mainwindow, qtbot, dbaccessor, manual_measurements):
 # =============================================================================
 # ---- Tests
 # =============================================================================
-def test_add_manual_measurements(tablewidget, qtbot, manual_measurements,
-                                 dbaccessor):
+def test_add_repere_data(tablewidget, qtbot, repere_data, dbaccessor):
     """
-    Test that adding new manual measurements is working as expected.
+    Test that adding a new repere is working as expected.
     """
     tableview = tablewidget.tableview
 
     # We add a new row and assert that the UI state is as expected.
-    new_row = len(manual_measurements)
-    assert tableview.visible_row_count() == len(manual_measurements)
+    assert tableview.visible_row_count() == len(repere_data)
     tableview.new_row_action.trigger()
-    assert tableview.visible_row_count() == len(manual_measurements) + 1
+    assert tableview.visible_row_count() == len(repere_data) + 1
     assert tableview.model().is_new_row_at(tableview.current_index())
-    assert tableview.get_data_for_row(new_row) == ['', '', '', '']
 
     # Save the changes to the database.
-    saved_values = dbaccessor.get_manual_measurements()
-    assert len(saved_values) == len(manual_measurements)
+    saved_values = dbaccessor.get_repere_data()
+    assert len(saved_values) == len(repere_data)
 
     with qtbot.waitSignal(tableview.model().sig_data_updated):
         tableview._save_data_edits(force=True)
 
-    saved_values = dbaccessor.get_manual_measurements()
-    assert len(saved_values) == len(manual_measurements) + 1
+    saved_values = dbaccessor.get_repere_data()
+    assert len(saved_values) == len(repere_data) + 1
 
 
-def test_edit_manual_measurements(tablewidget, qtbot, manual_measurements,
-                                  obswells_data, dbaccessor):
+def test_edit_repere_data(tablewidget, qtbot, dbaccessor, obswells_data):
     """
-    Test that editing manual measurements is working as expected.
+    Test that editing repere data is working as expected.
     """
     tableview = tablewidget.tableview
 
     edited_values = {
-        'sampling_feature_uuid': obswells_data.index[3],
-        'datetime': datetime(2010, 8, 10, 18, 5),
-        'value': 5.2,
-        'notes': 'edited_measurement_notes'
+        'sampling_feature_uuid': obswells_data.index[1],
+        'top_casing_alt': 10.1,
+        'casing_length': 0.7,
+        'start_date': datetime(2009, 7, 14),
+        'end_date': datetime(2020, 8, 3, 7, 14),
+        'is_alt_geodesic': False,
+        'repere_note': 'Edited repere note.',
         }
 
     # Edit each editable field of the first row of the table.
     assert tableview.get_data_for_row(0) == [
-        '03037041', '2010-08-10 16:10', '5.23', 'Note for first measurement']
+        '03037041', '9.3', '1.3', '2009-07-14 09:00', '2020-08-03 19:14',
+        'Yes', 'Repere note #1']
     for col in range(tableview.visible_column_count()):
 
         current_index = tableview.set_current_index(0, col)
@@ -112,28 +109,29 @@ def test_edit_manual_measurements(tablewidget, qtbot, manual_measurements,
         assert tableview.model().is_data_edited_at(current_index)
         assert tableview.model().get_value_at(current_index) == edit_value
     assert tableview.get_data_for_row(0) == [
-        '03040002', '2010-08-10 18:05', '5.2', 'edited_measurement_notes']
+        '02200001', '10.1', '0.7', '2009-07-14 00:00', '2020-08-03 07:14',
+        'No', 'Edited repere note.']
 
     # Save the changes to the database.
     with qtbot.waitSignal(tableview.model().sig_data_updated):
         tableview._save_data_edits(force=True)
 
-    saved_values = dbaccessor.get_manual_measurements().iloc[0].to_dict()
+    saved_values = dbaccessor.get_repere_data().iloc[0].to_dict()
     for key in edited_values.keys():
         assert saved_values[key] == edited_values[key]
 
 
-def test_clear_manual_measurements(tablewidget, qtbot, dbaccessor):
+def test_clear_repere_data(tablewidget, qtbot, dbaccessor):
     """
     Test that clearing sonde data is working as expected.
     """
     tableview = tablewidget.tableview
-    clearable_attrs = [
-        'sampling_feature_uuid', 'datetime', 'value', 'notes']
+    clearable_attrs = ['end_date', 'repere_note']
 
     # Clear each non required field of the first row of the table.
     assert tableview.get_data_for_row(0) == [
-        '03037041', '2010-08-10 16:10', '5.23', 'Note for first measurement']
+        '03037041', '9.3', '1.3', '2009-07-14 09:00', '2020-08-03 19:14',
+        'Yes', 'Repere note #1']
     for col in range(tableview.visible_column_count()):
         current_index = tableview.set_current_index(0, col)
         column = tableview.visible_columns()[col]
@@ -147,43 +145,16 @@ def test_clear_manual_measurements(tablewidget, qtbot, dbaccessor):
             tableview.clear_item_action.trigger()
             assert tableview.model().is_data_edited_at(current_index)
             assert tableview.model().is_null(current_index)
-    assert tableview.get_data_for_row(0) == ['', '', '', '']
+    assert tableview.get_data_for_row(0) == [
+        '03037041', '9.3', '1.3', '2009-07-14 09:00', '', 'Yes', '']
 
     # Save the changes to the database.
     with qtbot.waitSignal(tableview.model().sig_data_updated):
         tableview._save_data_edits(force=True)
 
-    saved_values = dbaccessor.get_manual_measurements().iloc[0].to_dict()
+    saved_values = dbaccessor.get_repere_data().iloc[0].to_dict()
     for attr in clearable_attrs:
         assert pd.isnull(saved_values[attr])
-
-
-def test_delete_manual_measurements(tablewidget, qtbot, manual_measurements,
-                                    obswells_data, dbaccessor):
-    """
-    Test that deleting manual measurements is working as expected.
-    """
-    tableview = tablewidget.tableview
-
-    # Select and delete the first two rows of the table.
-    tableview.set_current_index(0, 0)
-    tableview.select(1, 0)
-    assert tableview.get_rows_intersecting_selection() == [0, 1]
-
-    tableview.delete_row_action.trigger()
-    assert tableview.model().data_edit_count() == 1
-
-    # Save the changes to the database.
-    saved_values = dbaccessor.get_manual_measurements()
-    assert len(saved_values) == len(manual_measurements)
-    assert saved_values.iloc[0]['value'] == 5.23
-
-    with qtbot.waitSignal(tableview.model().sig_data_updated):
-        tableview._save_data_edits(force=True)
-
-    saved_values = dbaccessor.get_manual_measurements()
-    assert len(saved_values) == len(manual_measurements) - 2
-    assert saved_values.iloc[0]['value'] == 4.91
 
 
 if __name__ == "__main__":

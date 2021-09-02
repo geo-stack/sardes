@@ -9,9 +9,11 @@
 
 
 # ---- Local imports
-from sardes.api.tablemodels import StandardSardesTableModel, SardesTableColumn
+from sardes.api.tablemodels import SardesTableColumn
 from sardes.config.locale import _
-from sardes.widgets.tableviews import SardesTableWidget, TextEditDelegate
+from sardes.tables.models import StandardSardesTableModel
+from sardes.tables.delegates import TextEditDelegate
+from sardes.widgets.tableviews import SardesTableWidget
 
 
 class SondeModelsTableModel(StandardSardesTableModel):
