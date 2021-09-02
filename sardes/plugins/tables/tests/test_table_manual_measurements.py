@@ -128,8 +128,7 @@ def test_clear_manual_measurements(tablewidget, qtbot, dbaccessor):
     Test that clearing sonde data is working as expected.
     """
     tableview = tablewidget.tableview
-    clearable_attrs = [
-        'sampling_feature_uuid', 'datetime', 'value', 'notes']
+    clearable_attrs = ['notes']
 
     # Clear each non required field of the first row of the table.
     assert tableview.get_data_for_row(0) == [
@@ -147,7 +146,8 @@ def test_clear_manual_measurements(tablewidget, qtbot, dbaccessor):
             tableview.clear_item_action.trigger()
             assert tableview.model().is_data_edited_at(current_index)
             assert tableview.model().is_null(current_index)
-    assert tableview.get_data_for_row(0) == ['', '', '', '']
+    assert tableview.get_data_for_row(0) == [
+        '03037041', '2010-08-10 16:10', '5.23', '']
 
     # Save the changes to the database.
     with qtbot.waitSignal(tableview.model().sig_data_updated):
