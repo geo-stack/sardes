@@ -193,20 +193,6 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         else:
             return None
 
-    def clear_model_data_at(self, model_index):
-        """
-        Set the data of the model index associated with this delegate to
-        a null value.
-
-        Note that we need to pass the model index as an argument, else
-        it won't be possible to clear the data if the editor have not been
-        created at least once.
-        """
-        if not self.is_required and model_index.isValid():
-            source_model_index = self.model().mapToSource(model_index)
-            model_index.model().set_data_edit_at(model_index, None)
-            model_index = self.model().mapFromSource(source_model_index)
-
 
 class SardesItemDelegate(SardesItemDelegateBase):
     """
