@@ -542,7 +542,6 @@ def test_clearing_non_required_cell(tablewidget, qtbot):
     qtbot.keyPress(tableview, Qt.Key_Delete)
     assert model_index.data() == ''
     assert tableview.model().get_value_at(model_index) is None
-    assert not tableview.clear_item_action.isEnabled()
 
 
 def test_add_new_empty_row(tablewidget, qtbot, mocker, TABLE_DATAF):

@@ -415,6 +415,16 @@ class SardesTableModelBase(QAbstractTableModel):
         self.dataChanged.emit(model_index, model_index)
         self.sig_data_edited.emit(data_edit)
 
+    def clear_model_data_at(self, model_index):
+        """
+        Set the data at the given provided model index to a null value.
+        """
+        if (model_index.isValid() and
+                not self.is_null(model_index) and
+                not self.columns()[model_index.column()].notnull and
+                self.columns()[model_index.column()].editable):
+            self.set_data_edit_at(model_index, None)
+
     def create_new_row_index(self):
         """
         Return a new index that can be used to add a new item this
@@ -796,6 +806,10 @@ class SardesSortFilterModel(QSortFilterProxyModel):
     def set_data_edit_at(self, proxy_indexes, edited_value):
         return self.sourceModel().set_data_edit_at(
             self.mapToSource(proxy_indexes), edited_value)
+
+    def clear_model_data_at(self, proxy_index):
+        return self.sourceModel().clear_model_data_at(
+            self.mapToSource(proxy_index))
 
     def is_null(self, proxy_indexes):
         """

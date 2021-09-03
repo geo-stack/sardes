@@ -810,11 +810,10 @@ class SardesTableView(QTableView):
         current_index = self.current_index()
         if current_index.isValid():
             is_required = self.is_data_required_at(current_index)
-            is_null = self.model().is_null(current_index)
             is_editable = self.is_data_editable_at(current_index)
             if 'clear_item' not in self._disabled_actions:
                 self.clear_item_action.setEnabled(
-                    not is_required and not is_null and is_editable)
+                    not is_required and is_editable)
             if 'edit_item' not in self._disabled_actions:
                 self.edit_item_action.setEnabled(is_editable)
 
@@ -1362,9 +1361,7 @@ class SardesTableView(QTableView):
         """
         Set current item's data to None.
         """
-        current_index = self.current_index()
-        if current_index.isValid():
-            self.itemDelegate(current_index).clear_model_data_at(current_index)
+        self.model().clear_model_data_at(self.current_index())
 
     def _edit_current_item(self):
         """

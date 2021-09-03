@@ -40,9 +40,6 @@ class NotEditableDelegate(SardesItemDelegate):
     def setModelData(self, *args, **kargs):
         pass
 
-    def clear_model_data_at(self, *args, **kargs):
-        pass
-
     # ---- SardesItemDelegate API
     def get_editor_data(self, *args, **kargs):
         pass
