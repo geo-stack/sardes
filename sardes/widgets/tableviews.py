@@ -1362,9 +1362,7 @@ class SardesTableView(QTableView):
         """
         Set current item's data to None.
         """
-        current_index = self.current_index()
-        if current_index.isValid():
-            self.itemDelegate(current_index).clear_model_data_at(current_index)
+        self.model().clear_model_data_at(self.current_index())
 
     def _edit_current_item(self):
         """
