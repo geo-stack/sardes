@@ -24,9 +24,6 @@ from qtpy.QtWidgets import QStyleOption
 from sardes.api.tabledata import SardesTableData
 
 
-# =============================================================================
-# ---- Sardes Table Models
-# =============================================================================
 @dataclass
 class SardesTableColumn():
     """A class for reprensenting a column in a Sardes table."""
@@ -42,6 +39,9 @@ class SardesTableColumn():
     delegate_options: dict = field(default_factory=dict)
 
 
+# =============================================================================
+# ---- Sardes Table Models
+# =============================================================================
 class SardesTableModelBase(QAbstractTableModel):
     """
     Basic functionality for Sardes table models.
