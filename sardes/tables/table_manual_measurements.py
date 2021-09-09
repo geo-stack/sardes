@@ -27,7 +27,7 @@ class ManualMeasurementsTableModel(StandardSardesTableModel):
     __tablecolumns__ = [
         SardesTableColumn(
             'sampling_feature_uuid', _('Well ID'), 'str',
-            notnull=True, unique=True,
+            notnull=True, unique=True, unique_subset=['datetime'],
             delegate=ObsWellIdEditDelegate),
         SardesTableColumn(
             'datetime', _('Date/Time'), 'datetime64[ns]', notnull=True,
