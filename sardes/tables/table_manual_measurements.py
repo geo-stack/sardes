@@ -33,7 +33,7 @@ class ManualMeasurementsTableModel(StandardSardesTableModel):
             'datetime', _('Date/Time'), 'datetime64[ns]', notnull=True,
             unique=True, unique_subset=['sampling_feature_uuid'],
             delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm:ss"}),
         SardesTableColumn(
             'value', _('Water Level'), 'float64', notnull=True,
             delegate=NumEditDelegate,
@@ -57,8 +57,7 @@ class ManualMeasurementsTableModel(StandardSardesTableModel):
                 )
         except KeyError:
             pass
-        visual_dataf['datetime'] = (visual_dataf['datetime']
-                                    .dt.strftime('%Y-%m-%d %H:%M'))
+
         return visual_dataf
 
 
