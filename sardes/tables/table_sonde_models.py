@@ -25,9 +25,11 @@ class SondeModelsTableModel(StandardSardesTableModel):
     __tabletitle__ = _('Sonde Models')
     __tablecolumns__ = [
         SardesTableColumn(
-            'sonde_brand', _('Brand'), 'str', notnull=True),
+            'sonde_brand', _('Brand'), 'str', notnull=True,
+            unique=True, unique_subset=['sonde_model']),
         SardesTableColumn(
-            'sonde_model', _('Model'), 'str', notnull=True)
+            'sonde_model', _('Model'), 'str', notnull=True,
+            unique=True, unique_subset=['sonde_brand'])
         ]
 
     # ---- SardesTableModel Public API
