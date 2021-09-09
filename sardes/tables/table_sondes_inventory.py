@@ -31,7 +31,7 @@ class SondesInventoryTableModel(StandardSardesTableModel):
             delegate=SondeModelEditDelegate),
         SardesTableColumn(
             'sonde_serial_no', _('Serial Number'), 'str',
-            notnull=True, unique=True, unique_subset=['sonde_model_id'],
+            unique=True, unique_subset=['sonde_model_id'],
             delegate=StringEditDelegate),
         SardesTableColumn(
             'date_reception', _('Date Reception'), 'datetime64[ns]',
