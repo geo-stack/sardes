@@ -32,7 +32,7 @@ class SardesTableColumn():
     dtype: str
     notnull: bool = False
     unique: bool = False
-    unique_subset: list = None
+    unique_subset: list = field(default_factory=list)
     editable: bool = True
     desc: str = None
     delegate: object = None
