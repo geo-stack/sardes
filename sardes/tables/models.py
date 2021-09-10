@@ -33,7 +33,7 @@ class StandardSardesTableModel(SardesTableModel):
         Update this model's data and library.
         """
         if self.db_connection_manager is not None:
-            self.db_connection_manager.update_model(self.name())
+            self.db_connection_manager.update_table(self.name())
         else:
             self._raise_db_connmanager_attr_error()
     def _raise_db_connmanager_attr_error(self):

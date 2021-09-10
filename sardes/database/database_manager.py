@@ -874,11 +874,11 @@ class DatabaseConnectionManager(TaskManagerBase):
         self.models_manager.register_model(
             table_model, data_name, lib_names)
 
-    def update_model(self, table_id):
+    def update_table(self, table_name):
         """
-        Update the given sardes data model and libraries.
+        Update the given sardes table.
         """
-        self.models_manager.update_model(table_id)
+        self.models_manager.update_table(table_name)
 
     def save_table_edits(self, table_id):
         """

@@ -25,10 +25,10 @@ class SardesTableModelsManager(QObject):
         self._running_model_updates = {}
         # _queued_model_updates contains the lists of data and library names
         # that need to be updated for each table registered to this manager
-        # when the update_model is called.
+        # when the update_table is called.
         #
         # _running_model_updates contains the lists of data and library names
-        # that are currently being updated after the update_model was
+        # that are currently being updated after the update_table was
         # called.
 
         # Setup the database manager.
@@ -52,7 +52,7 @@ class SardesTableModelsManager(QObject):
         self._queued_model_updates[table_id] = [data_name] + lib_names
         self._running_model_updates[table_id] = []
 
-    def update_model(self, table_name):
+    def update_table(self, table_name):
         """
         Update the given sardes table.
         """
