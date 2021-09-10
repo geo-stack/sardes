@@ -130,7 +130,7 @@ def tablemodel(qtbot, TABLE_DATAF):
     tablemodel = SardesTableModelMock()
 
     db_connection_manager = DatabaseConnectionManager()
-    db_connection_manager.register_model(tablemodel, 'test_table_dataf_name')
+    db_connection_manager.register_table(tablemodel, 'test_table_dataf_name')
     db_connection_manager.connect_to_db(DatabaseAccessorTest())
 
     # We need to connect manually the database manager data changed signal

@@ -866,17 +866,17 @@ class DatabaseConnectionManager(TaskManagerBase):
         name = self.models_manager._models_req_data[table_id][0]
         return self.create_index(name)
 
-    def register_model(self, table_model, data_name, lib_names=None):
+    def register_table(self, table_model, data_name, lib_names=None):
         """
         Register a new sardes table model to the manager.
         """
         table_model.set_database_connection_manager(self)
-        self.models_manager.register_model(
+        self.models_manager.register_table(
             table_model, data_name, lib_names)
 
     def update_table(self, table_name):
         """
-        Update the given sardes table.
+        Update the given sardes table model.
         """
         self.models_manager.update_table(table_name)
 
