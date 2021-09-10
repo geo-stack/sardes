@@ -21,7 +21,6 @@ from qtpy.QtWidgets import (
     QSpinBox, QStyledItemDelegate, QTextEdit, QListView, QStyle)
 
 # ---- Local imports
-from sardes.config.locale import _
 from sardes.utils.data_operations import are_values_equal
 from sardes.utils.qthelpers import (
     qdatetime_from_datetime, get_datetime_from_editor)
@@ -126,17 +125,7 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         editor_value = self.get_editor_data()
         model_value = self.get_model_data()
         if not are_values_equal(editor_value, model_value):
-            # We need to validate the edits before submitting the edits to
-            # the model or else, unique check will always return an error.
-            error_message = self.validate_edits()
-
-            # We store the edits even if the validation fails, so that
-            # when we return to this delegate to edits, the last value
-            # entered by the user is preserved.
             self.model().set_data_edit_at(self.model_index, editor_value)
-            if error_message is not None:
-                self.model_view.raise_edits_error(
-                    self.model_index, error_message)
 
     # ---- Public methods
     def model(self):
@@ -174,24 +163,6 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         corresponding to this item delegate.
         """
         return self.model().get_value_at(self.model_index)
-
-    def validate_unique_constaint(self):
-        """
-        If a unique constraint is set for this item delegate, check that
-        the edited value does not violate that and return an error message
-        if it does.
-        """
-        field_name = self.model().columns()[self.model_index.column()].header
-        edited_value = self.get_editor_data()
-        if (self.unique_constraint and self.model().is_value_in_column(
-                self.model_index, edited_value)):
-            return _(
-                "<b>Duplicate key value violates unique constraint.</b>"
-                "<br><br>"
-                "The {} <i>{}</i> already exists. Please use another value."
-                ).format(field_name, edited_value, field_name)
-        else:
-            return None
 
 
 class SardesItemDelegate(SardesItemDelegateBase):
@@ -255,10 +226,6 @@ class SardesItemDelegate(SardesItemDelegateBase):
             self.editor.setDateTime(qdatetime_from_datetime(value))
         else:
             raise NotImplementedError
-
-    def validate_edits(self):
-        """Validate the value of this item delegate's editor."""
-        return None
 
     def format_data(self, data):
         """
