@@ -52,25 +52,25 @@ class SardesTableModelsManager(QObject):
         self._queued_model_updates[table_id] = [data_name] + lib_names
         self._running_model_updates[table_id] = []
 
-    def update_model(self, table_id):
+    def update_model(self, table_name):
         """
-        Update the given sardes data model and libraries.
+        Update the given sardes table.
         """
-        if table_id not in self._table_models:
+        if table_name not in self._table_models:
             raise Warning("Warning: Table model '{}' is not registered."
-                          .format(table_id))
+                          .format(table_name))
             return
 
-        if len(self._queued_model_updates[table_id]):
-            self._table_models[table_id].sig_data_about_to_be_updated.emit()
-            for name in self._queued_model_updates[table_id]:
-                self._running_model_updates[table_id].append(name)
+        if len(self._queued_model_updates[table_name]):
+            self._table_models[table_name].sig_data_about_to_be_updated.emit()
+            for name in self._queued_model_updates[table_name]:
+                self._running_model_updates[table_name].append(name)
                 self.db_manager.get(
                     name,
                     callback=lambda dataf, name=name:
-                        self._set_model_data_or_lib(dataf, name, table_id),
+                        self._set_model_data_or_lib(dataf, name, table_name),
                     postpone_exec=True)
-            self._queued_model_updates[table_id] = []
+            self._queued_model_updates[table_name] = []
             self.db_manager.run_tasks()
 
     def save_table_edits(self, table_id):
