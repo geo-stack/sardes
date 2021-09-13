@@ -58,6 +58,9 @@ class RepereTableModel(StandardSardesTableModel):
             delegate=TextEditDelegate)
         ]
 
+    __tabledata__ = 'repere_data'
+    __tablelibs__ = ['observation_wells_data']
+
     # ---- Visual Data
     def logical_to_visual_data(self, visual_dataf):
         """

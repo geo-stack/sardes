@@ -111,31 +111,17 @@ class Tables(SardesPlugin):
     # ---- Private methods
     def _setup_tables(self):
         self._create_and_register_table(
-            ObsWellsTableWidget,
-            data_name='observation_wells_data',
-            lib_names=['observation_wells_data_overview',
-                       'stored_attachments_info'],
-            disabled_actions=['delete_row'])
+            ObsWellsTableWidget)
         self._create_and_register_table(
             SondesInventoryTableWidget,
-            data_name='sondes_data',
-            lib_names=['sonde_models_lib'],
             disabled_actions=['delete_row'])
         self._create_and_register_table(
-            ManualMeasurementsTableWidget,
-            data_name='manual_measurements',
-            lib_names=['observation_wells_data'])
+            ManualMeasurementsTableWidget)
         self._create_and_register_table(
             SondeInstallationsTableWidget,
-            data_name='sonde_installations',
-            lib_names=['observation_wells_data',
-                       'sondes_data',
-                       'sonde_models_lib'],
             disabled_actions=['delete_row'])
         self._create_and_register_table(
             RepereTableWidget,
-            data_name='repere_data',
-            lib_names=['observation_wells_data'],
             disabled_actions=['delete_row'])
 
         # Setup the current active tab from the value saved in the configs.
@@ -147,13 +133,11 @@ class Tables(SardesPlugin):
             table.tableview.sig_show_event.connect(self._update_current_table)
         self._update_current_table
 
-    def _create_and_register_table(self, TableClass, data_name, lib_names,
-                                   disabled_actions=None):
+    def _create_and_register_table(self, TableClass, disabled_actions=None):
         print('Setting up table {}...'.format(TableClass.__name__))
         table = TableClass(disabled_actions=disabled_actions)
 
-        self.main.db_connection_manager.register_table(
-            table.model(), data_name, lib_names)
+        self.main.db_connection_manager.register_table_model(table.model())
         table.register_to_plugin(self)
 
         self._tables[table.table_name()] = table

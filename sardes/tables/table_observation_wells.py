@@ -95,6 +95,10 @@ class ObsWellsTableModel(StandardSardesTableModel):
             delegate=TextEditDelegate)
         ]
 
+    __tabledata__ = 'observation_wells_data',
+    __tablelibs__ = ['observation_wells_data_overview',
+                     'stored_attachments_info']
+
     def set_model_data(self, dataf, dataf_columns_mapper=None):
         """
         Extend SardesTableModelBase base class method to make sure we use

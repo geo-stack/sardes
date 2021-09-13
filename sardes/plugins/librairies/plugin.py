@@ -107,18 +107,16 @@ class Librairies(SardesPlugin):
 
     # ---- Private methods
     def _setup_tables(self):
-        self._create_and_register_table(
-            SondeModelsTableWidget, 'sonde_models_lib', [])
+        self._create_and_register_table(SondeModelsTableWidget)
 
         # Setup the current active tab from the value saved in the configs.
         self.tabwidget.setCurrentIndex(self.get_option('last_focused_tab', 0))
 
-    def _create_and_register_table(self, TableClass, data_name, lib_names):
+    def _create_and_register_table(self, TableClass):
         print('Setting up table {}...'.format(TableClass.__name__))
         table = TableClass(disabled_actions=['delete_row'])
 
-        self.main.db_connection_manager.register_table(
-            table.model(), data_name, lib_names)
+        self.main.db_connection_manager.register_table_model(table.model())
         table.register_to_plugin(self)
 
         self._tables[table.table_name()] = table

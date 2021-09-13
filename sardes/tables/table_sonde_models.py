@@ -32,6 +32,9 @@ class SondeModelsTableModel(StandardSardesTableModel):
             unique=True, unique_subset=['sonde_brand'])
         ]
 
+    __tabledata__ = 'sonde_models_lib'
+    __tablelibs__ = []
+
     # ---- SardesTableModel Public API
     def create_delegate_for_column(self, view, column):
         return TextEditDelegate(view, is_required=True)

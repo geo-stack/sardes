@@ -56,6 +56,9 @@ class SondesInventoryTableModel(StandardSardesTableModel):
             delegate=TextEditDelegate)
         ]
 
+    __tabledata__ = 'sondes_data'
+    __tablelibs__ = ['sonde_models_lib']
+
     # ---- Visual Data
     def logical_to_visual_data(self, visual_dataf):
         """
