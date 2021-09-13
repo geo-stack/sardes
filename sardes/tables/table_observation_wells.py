@@ -95,7 +95,7 @@ class ObsWellsTableModel(StandardSardesTableModel):
             delegate=TextEditDelegate)
         ]
 
-    __tabledata__ = 'observation_wells_data',
+    __tabledata__ = 'observation_wells_data'
     __tablelibs__ = ['observation_wells_data_overview',
                      'stored_attachments_info']
 
