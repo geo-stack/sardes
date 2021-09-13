@@ -79,26 +79,6 @@ class SardesTableModelsManager(QObject):
             self._queued_model_updates[table_name] = []
             self.db_manager.run_tasks()
 
-    def save_table_edits(self, table_id):
-        """
-        Save all data edits to the database.
-        """
-        table_model = self._table_models[table_id]
-        table_model.sig_data_about_to_be_saved.emit()
-        table_name = self._models_req_data[table_id][0]
-
-        deleted_rows = table_model._datat.deleted_rows()
-        added_rows = table_model._datat.added_rows()
-        edited_values = table_model._datat.edited_values()
-
-        self.db_manager._data_changed.add(table_name)
-        self.db_manager.add_task(
-            'save_table_edits', None,
-            table_name, deleted_rows, added_rows, edited_values,
-            )
-
-        self.db_manager.run_tasks(callback=table_model.sig_data_saved.emit)
-
     # ---- Private API
     def check_table_edits(self, table_name, callback):
         """
