@@ -41,7 +41,7 @@ class SardesTableModelsManager(QObject):
             self.db_manager.sig_models_data_changed.emit)
 
     # ---- Public API
-    def register_table(self, table_model, data_name, lib_names=None):
+    def register_table_model(self, table_model, data_name, lib_names=None):
         """
         Register a new sardes table model to the manager.
         """

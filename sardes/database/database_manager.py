@@ -863,28 +863,28 @@ class DatabaseConnectionManager(TaskManagerBase):
         Return a new index that can be used subsequently to add new item
         to a Sardes model.
         """
-        name = self.models_manager._models_req_data[table_id][0]
+        name = self.table_models_manager._models_req_data[table_id][0]
         return self.create_index(name)
 
-    def register_table(self, table_model, data_name, lib_names=None):
+    def register_table_model(self, table_model, data_name, lib_names=None):
         """
         Register a new sardes table model to the manager.
         """
         table_model.set_database_connection_manager(self)
-        self.models_manager.register_table(
+        self.table_models_manager.register_table_model(
             table_model, data_name, lib_names)
 
     def update_table(self, table_name):
         """
         Update the given sardes table model.
         """
-        self.models_manager.update_table(table_name)
+        self.table_models_manager.update_table(table_name)
 
     def save_table_edits(self, table_id):
         """
         Save all edits made to the table related to table_id to the database.
         """
-        self.models_manager.save_table_edits(table_id)
+        self.table_models_manager.save_table_edits(table_id)
 
     # ---- Publish Network Data
     def publish_to_kml(self, filename, iri_data=None, iri_logs=None,
