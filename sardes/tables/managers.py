@@ -11,7 +11,7 @@
 from qtpy.QtCore import QObject, Signal
 
 # ---- Local imports
-from sardes.tables.models import ForeignTableEditError
+from sardes.tables.errors import ForeignTableEditError
 
 
 class SardesTableModelsManager(QObject):
