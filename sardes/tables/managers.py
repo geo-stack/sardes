@@ -53,9 +53,9 @@ class SardesTableModelsManager(QObject):
         self._queued_model_updates[table_name] = [data_name] + lib_names
         self._running_model_updates[table_name] = []
 
-    def update_table(self, table_name):
+    def update_table_model(self, table_name):
         """
-        Update the given sardes table.
+        Update the given sardes table model.
         """
         if table_name not in self._table_models:
             raise Warning("Warning: Table model '{}' is not registered."
