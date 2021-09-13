@@ -61,36 +61,31 @@ class SardesTableModelBase(QAbstractTableModel):
     RowRemoved = SardesTableData.RowRemoved
     RowDeleted = SardesTableData.RowDeleted
 
-    __tablename__ = ''
-    __tabletitle__ = ''
-    __tablecolumns__ = []
+    # =========================================================================
+    # ---- API: Mandatory attributes
+    # =========================================================================
 
-    def __init__(self, table_title=None, table_name=None, columns=None):
-        """
-        Parameters
-        ----------
-        table_title : str
-            The label that will be used to reference this table in the GUI.
-        table_id : str
-            A unique ID that will be used to reference this table in the code
-            and in the user configurations.
-        columns : list of SardesTableColumn
-            A list of sardes table columns representing the type of data this
-            table need to display.
-        """
+    # Name of the table that will be used to refer to it in the code
+    # and in the user configurations. This name must be unique and will
+    # only be loaded once.
+    __tablename__: str = None
+
+    # The label that will be used to reference this table in the GUI.
+    __tabletitle__: str = None
+
+    # A list of sardes table columns representing the type of data this
+    # table need to display.
+    __tablecolumns__: list = None
+
+    def __init__(self):
         super().__init__()
+
         self.BackgroundColorBase = QStyleOption().palette.base().color()
         self.BackgroundColorDeleted = QColor('#FF9999')
         self.BackgroundColorEdited = QColor('#CCFF99')
 
         self.__tablecolumns_loc__ = OrderedDict(
             [(column.name, column) for column in self.__tablecolumns__])
-        if table_title is not None:
-            self.__tabletitle__ = table_title
-        if table_name is not None:
-            self.__tablename__ = table_name
-        if columns is not None:
-            self.set_columns(columns)
 
         # The sardes table data object that is used to store the table data
         # and handle edits.
