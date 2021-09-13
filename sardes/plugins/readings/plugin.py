@@ -36,8 +36,12 @@ from sardes.tools import (
 
 
 class ReadingsTableModel(StandardSardesTableModel):
-    def __init__(self, obs_well_data, *args, **kargs):
-        super().__init__(*args, **kargs)
+
+    def __init__(self, obs_well_data, obs_well_id, obs_well_uuid):
+        self.__tablecolumns__ = []
+        self.__tabletitle__ = obs_well_id
+        self.__tablename__ = obs_well_uuid
+        super().__init__()
         self._obs_well_data = obs_well_data
         self._obs_well_uuid = obs_well_data.name
         self._repere_data = pd.Series([], dtype=object)
@@ -416,7 +420,7 @@ class Readings(SardesPlugin):
 
         # Setup a new table model and widget.
         table_model = ReadingsTableModel(
-            obs_well_data, table_title=obs_well_id, table_id=obs_well_uuid)
+            obs_well_data, obs_well_id, obs_well_uuid)
         table_model.set_database_connection_manager(
             self.main.db_connection_manager)
 
