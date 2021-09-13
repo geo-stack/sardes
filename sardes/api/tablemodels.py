@@ -74,10 +74,9 @@ class SardesTableModelBase(QAbstractTableModel):
         table_id : str
             A unique ID that will be used to reference this table in the code
             and in the user configurations.
-        data_columns_mapper : list of tuple
-            A list of tuple that maps the keys of the columns dataframe
-            with their corresponding human readable label to use in the GUI.
-            The default is [].
+        columns : list of SardesTableColumn
+            A list of sardes table columns representing the type of data this
+            table need to display.
         """
         super().__init__()
         self.BackgroundColorBase = QStyleOption().palette.base().color()
