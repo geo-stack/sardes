@@ -118,20 +118,21 @@ class SardesTableModelsManager(QObject):
                 parent_index, foreign_column, foreign_table_model
                 ))
 
-    def _set_model_data_or_lib(self, dataf, name, table_id):
+    def _set_model_data_or_lib(self, dataf, data_name, table_name):
         """
         Set the data or library of the given table model.
         """
-        if name == self._models_req_data[table_id][0]:
+        table_model = self._table_models[table_name]
+        if data_name == table_model.__tabledata__:
             # Update the table model data.
-            self._table_models[table_id].set_model_data(dataf)
-        elif name in self._models_req_data[table_id][1:]:
+            table_model.set_model_data(dataf)
+        elif data_name in table_model.__tablelibs__:
             # Update the table model library.
-            self._table_models[table_id].set_model_library(dataf, name)
+            table_model.set_model_library(dataf, data_name)
 
-        self._running_model_updates[table_id].remove(name)
-        if not len(self._running_model_updates[table_id]):
-            self._table_models[table_id].sig_data_updated.emit()
+        self._running_model_updates[table_name].remove(data_name)
+        if not len(self._running_model_updates[table_name]):
+            table_model.sig_data_updated.emit()
 
     def _handle_db_data_changed(self):
         """
