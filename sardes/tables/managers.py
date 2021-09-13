@@ -23,7 +23,6 @@ class SardesTableModelsManager(QObject):
     def __init__(self, db_manager):
         super().__init__()
         self._table_models = {}
-        self._models_req_data = {}
         self._queued_model_updates = {}
         self._running_model_updates = {}
         # _queued_model_updates contains the lists of data and library names
@@ -49,13 +48,10 @@ class SardesTableModelsManager(QObject):
         Register a new sardes table model to the manager.
         """
         table_model.set_table_models_manager(self)
-
-        data_name = table_model.__tabledata__
-        lib_names = table_model.__tablelibs__
         table_name = table_model.name()
         self._table_models[table_name] = table_model
-        self._models_req_data[table_name] = [data_name] + lib_names
-        self._queued_model_updates[table_name] = [data_name] + lib_names
+        self._queued_model_updates[table_name] = (
+            [table_model.__tabledata__] + table_model.__tablelibs__)
         self._running_model_updates[table_name] = []
 
     def update_table_model(self, table_name):
@@ -134,20 +130,20 @@ class SardesTableModelsManager(QObject):
         if not len(self._running_model_updates[table_name]):
             table_model.sig_data_updated.emit()
 
-    def _handle_db_data_changed(self):
+    def _handle_db_data_changed(self, data_changed):
         """
         Handle when changes are made to the database.
 
         Note that changes made to the database outside of Sardes are not
         taken into account here.
         """
-        data_changed = list(self.db_manager._data_changed)
-        for table_id, table in self._table_models.items():
-            req_data_names = self._models_req_data[table_id]
-            self._queued_model_updates[table_id].extend(
-                [name for name in data_changed if name in req_data_names])
-            self._queued_model_updates[table_id] = list(set(
-                self._queued_model_updates[table_id]))
+        for table_name, table_model in self._table_models.items():
+            data_libs_names = (
+                [table_model.__tabledata__] + table_model.__tablelibs__)
+            self._queued_model_updates[table_name].extend(
+                [name for name in data_changed if name in data_libs_names])
+            self._queued_model_updates[table_name] = list(set(
+                self._queued_model_updates[table_name]))
         self.sig_models_data_changed.emit()
 
     def _handle_db_connection_changed(self, is_connected):
@@ -155,11 +151,11 @@ class SardesTableModelsManager(QObject):
         Handle when the connection to the database changes.
         """
         if is_connected:
-            for table_id, table in self._table_models.items():
-                self._queued_model_updates[table_id] = (
-                    self._models_req_data[table_id].copy())
+            for table_name, table_model in self._table_models.items():
+                self._queued_model_updates[table_name] = (
+                    [table_model.__tabledata__] + table_model.__tablelibs__)
         else:
-            for table_id, table in self._table_models.items():
-                self._queued_model_updates[table_id] = []
-                table.clear_data()
+            for table_name, table_model in self._table_models.items():
+                self._queued_model_updates[table_name] = []
+                table_model.clear_data()
         self.sig_models_data_changed.emit()
