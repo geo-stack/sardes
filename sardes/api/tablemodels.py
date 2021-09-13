@@ -65,7 +65,7 @@ class SardesTableModelBase(QAbstractTableModel):
     __tabletitle__ = ''
     __tablecolumns__ = []
 
-    def __init__(self, table_title=None, table_id=None, columns=None):
+    def __init__(self, table_title=None, table_name=None, columns=None):
         """
         Parameters
         ----------
@@ -88,8 +88,8 @@ class SardesTableModelBase(QAbstractTableModel):
             [(column.name, column) for column in self.__tablecolumns__])
         if table_title is not None:
             self.__tabletitle__ = table_title
-        if table_id is not None:
-            self.__tablename__ = table_id
+        if table_name is not None:
+            self.__tablename__ = table_name
         if columns is not None:
             self.set_columns(columns)
 
