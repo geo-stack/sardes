@@ -10,6 +10,9 @@
 # ---- Third party imports
 from qtpy.QtCore import QObject, Signal
 
+# ---- Local imports
+from sardes.tables.models import ForeignTableEditError
+
 
 class SardesTableModelsManager(QObject):
     """
@@ -45,6 +48,8 @@ class SardesTableModelsManager(QObject):
         """
         Register a new sardes table model to the manager.
         """
+        table_model.set_table_models_manager(self)
+
         data_name = table_model.__tabledata__
         lib_names = table_model.__tablelibs__
         table_name = table_model.name()
@@ -94,26 +99,45 @@ class SardesTableModelsManager(QObject):
 
         self.db_manager.run_tasks(callback=table_model.sig_data_saved.emit)
 
-    def check_table_edits(self, table_id, callback):
-        """
-        Check that there is no issues with the data edits made on the
-        table model related to table_id.
-        """
-        table_model = self._table_models[table_id]
-        table_name = self._models_req_data[table_id][0]
-        table_columns = table_model.columns()
-
-        deleted_rows = table_model._datat.deleted_rows()
-        added_rows = table_model._datat.added_rows()
-        edited_values = table_model._datat.edited_values()
-
-        self.db_manager.add_task(
-            'check_table_edits', callback,
-            table_name, table_columns, deleted_rows, added_rows, edited_values
-            )
-        self.db_manager.run_tasks()
-
     # ---- Private API
+    def check_table_edits(self, table_name, callback):
+        """
+        Save the changes made to table 'name' to the database.
+        """
+        table_model = self._table_models[table_name]
+        deleted_rows = table_model._datat.deleted_rows()
+        if deleted_rows.empty:
+            callback(error=None)
+            return
+
+        if table_name == 'table_observation_wells':
+            foreign_contraints_data = [
+                (deleted_rows, 'sampling_feature_uuid', 'manual_measurements')]
+            self.db_manager.add_task(
+                'check_foreign_constraints',
+                callback=lambda results:
+                    self._handle_table_edits_check_results(results, callback),
+                constraints_data=foreign_contraints_data)
+            self.db_manager.run_tasks()
+        elif table_name == '':
+            pass
+        else:
+            callback(error=None)
+
+    def _handle_table_edits_check_results(self, results, callback):
+        if results is None:
+            callback(error=None)
+        else:
+            parent_index, foreign_column, foreign_name = results
+            for table_name, table_model in self._table_models.items():
+                if table_model.__tabledata__ == foreign_name:
+                    foreign_table_model = table_model
+                    foreign_column = table_model.column_at(foreign_column)
+                    break
+            callback(ForeignTableEditError(
+                parent_index, foreign_column, foreign_table_model
+                ))
+
     def _set_model_data_or_lib(self, dataf, name, table_id):
         """
         Set the data or library of the given table model.
