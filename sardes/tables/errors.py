@@ -37,7 +37,7 @@ class NotNullTableEditError(SardesTableEditError):
         row = tableview.model()._proxy_dataf_index.get_loc(self.index) + 1
         column = tableview.model().column_at(self.column.name)
         return _(
-            '<p>The value in column <b>{}</b> and <b>line {}</b> '
+            '<p>The value in column <b>{}</b> and <b>row {}</b> '
             'cannot be Null.</p>'
             ).format(column.header, row)
 
@@ -60,12 +60,12 @@ class UniqueTableEditError(SardesTableEditError):
         if not len(column_subset):
             return _(
                 "<p>The value in column <b>{column}</b> and "
-                "<b>line {row}</b> violates unique constraint.</p>"
+                "<b>row {row}</b> violates unique constraint.</p>"
                 "<p>Please use a value that does not already exist.</p>"
                 ).format(row=row, column=self.column.header)
         elif len(column_subset) == 1:
             return _(
-                "<p>On <b>line {}</b>, the combination of values in "
+                "<p>On <b>row {}</b>, the combination of values in "
                 "columns <b>{}</b> and <b>{}</b> violates unique "
                 "constraint.</p>"
                 "<p>Please use a combination of values that does not "
@@ -78,7 +78,7 @@ class UniqueTableEditError(SardesTableEditError):
             colstr += _(", and")
             colstr += " <b>{}</b>".format(column_subset[-1].header)
             return _(
-                "<p>On <b>line {}</b>, the combination of values in"
+                "<p>On <b>row {}</b>, the combination of values in"
                 "columns {} violates unique constraint.</p>"
                 "<p>Please use a combination of values that does not "
                 "already exist.</p>"
@@ -100,13 +100,14 @@ class ForeignTableEditError(SardesTableEditError):
         row = (tableview.model()._proxy_dataf_index
                .get_loc(self.parent_index) + 1)
         return _(
-            "<p>Deleting item on <b>line {row}</b> violates foreign key "
-            "constraint on table <b>{table}</b>.</p>"
-            "<p>You need first to delete all items still referencing this "
-            "<b>{column}</b> in table <b>{table}</b>.</p>"
+            "<p>Deleting the item on <b>row {row}</b> violates foreign key "
+            "constraint on column <b>{foreign_column}</b> of table "
+            "<b>{foreign_table}</b>.</p>"
+            "<p>Please first delete all rows still referencing this "
+            "item in table <b>{foreign_table}</b>.</p>"
             ).format(row=row,
-                     column=self.foreign_column.header,
-                     table=self.foreign_table_model.title())
+                     foreign_column=self.foreign_column.header,
+                     foreign_table=self.foreign_table_model.title())
 
 
 class ForeignReadingsConstraintError(SardesTableEditError):
@@ -124,8 +125,9 @@ class ForeignReadingsConstraintError(SardesTableEditError):
         station_name = tableview.model()._datat.data.loc[
             self.parent_index]['obs_well_id']
         return _(
-            "<p>Deleting station {station_name} on <b>line {row}</b> violates "
-            "foreign key constraint with the <b>Readings</b> table.</p>"
-            "<p>Please delete all Readings data related to "
-            "station {station_name} first."
+            "<p>Station <b>{station_name}</b> on <b>row {row}</b> "
+            "cannot be deleted because there is still readings data "
+            "related to that station in the database.</p>"
+            "<p>Please first delete all readings data related to "
+            "station <b>{station_name}</b>."
             ).format(row=row, station_name=station_name)
