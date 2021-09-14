@@ -52,8 +52,8 @@ class SondeInstallationsTableModel(StandardSardesTableModel):
 
     __dataname__ = 'sonde_installations'
     __libnames__ = ['observation_wells_data',
-                     'sondes_data',
-                     'sonde_models_lib']
+                    'sondes_data',
+                    'sonde_models_lib']
 
     # ---- Visual Data
     def logical_to_visual_data(self, visual_dataf):
