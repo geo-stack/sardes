@@ -54,7 +54,7 @@ class UniqueTableEditError(SardesTableEditError):
 
     def format_error_msg(self, tableview):
         row = tableview.model()._proxy_dataf_index.get_loc(self.index) + 1
-        column_subset = [tableview.model().model().column_at(col) for
+        column_subset = [tableview.model().column_at(col) for
                          col in self.column.unique_subset]
 
         if not len(column_subset):
