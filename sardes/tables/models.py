@@ -32,9 +32,6 @@ class StandardSardesTableModel(SardesTableModel):
     # manager the data that are used as libraries in this table.
     __libnames__: list = None
 
-    # A list of tuples containting the information about foreign constraints.
-    __foreignconstraints__: list = None
-
     def __init__(self, *args, **kargs):
         super().__init__(*args, **kargs)
         # The manager that handle fetching data and pushing data edits to
@@ -159,8 +156,7 @@ class StandardSardesTableModel(SardesTableModel):
         Check that edits do not violate any FOREIGN constraint.
         """
         deleted_rows = self._datat.deleted_rows()
-        foreign_contraints = self.__foreignconstraints__ or []
-        if deleted_rows.empty or not len(foreign_contraints):
+        if deleted_rows.empty:
             callback(error=None)
             return
 
@@ -170,7 +166,7 @@ class StandardSardesTableModel(SardesTableModel):
                 self._handle_check_foreign_constraints_results(
                     results, callback),
             parent_indexes=deleted_rows,
-            foreign_constraints=foreign_contraints)
+            data_name=self.__dataname__)
         self.db_connection_manager.run_tasks()
 
     def _handle_check_foreign_constraints_results(self, results, callback):

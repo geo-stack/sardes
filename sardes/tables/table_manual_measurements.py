@@ -46,7 +46,6 @@ class ManualMeasurementsTableModel(StandardSardesTableModel):
 
     __dataname__ = 'manual_measurements'
     __libnames__ = ['observation_wells_data']
-    __foreignconstraints__ = []
 
     # ---- Visual Data
     def logical_to_visual_data(self, visual_dataf):

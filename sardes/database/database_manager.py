@@ -31,6 +31,20 @@ from sardes.tools.hydrographs import HydrographCanvas
 from sardes.tools.save2excel import _save_reading_data_to_xlsx
 from sardes.utils.data_operations import format_reading_data
 
+DATA_FOREIGN_CONSTRAINTS = {
+    'observation_wells_data': [
+        ('sampling_feature_uuid', 'manual_measurements'),
+        ('sampling_feature_uuid', 'sonde_installations'),
+        ('sampling_feature_uuid', 'repere_data')],
+    'sonde_models_lib': [
+        ('sonde_model_id', 'sondes_data')],
+    'sondes_data': [
+        ('sonde_uuid', 'sonde_installations')],
+    'manual_measurements': [],
+    'repere_data': [],
+    'sonde_installations': []
+    }
+
 
 class DatabaseConnectionWorker(WorkerBase):
     """
@@ -160,11 +174,13 @@ class DatabaseConnectionWorker(WorkerBase):
             values.index = values.index.droplevel(0)
             self._set(name, index, values['edited_value'].to_dict())
 
-    def _check_foreign_constraints(self, parent_indexes, foreign_constraints):
+    def _check_foreign_constraints(self, parent_indexes, data_name):
         """
         Return the first foreign constraint violation found by checking
-        the parent indexes against the provided foreign constaints.
+        the parent indexes of the data related to data_name against the
+        foreign constraints specified in FOREIGN_CONSTRAINTS.
         """
+        foreign_constraints = DATA_FOREIGN_CONSTRAINTS.get(data_name, [])
         for foreign_column, foreign_name in foreign_constraints:
             foreign_data = self._get(foreign_name)[0]
             isin_indexes = parent_indexes[
