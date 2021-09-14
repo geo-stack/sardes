@@ -34,6 +34,9 @@ class SondeModelsTableModel(StandardSardesTableModel):
 
     __dataname__ = 'sonde_models_lib'
     __libnames__ = []
+    __foreignconstraints__ = [
+        ('sonde_model_id', 'sondes_data')
+        ]
 
     # ---- SardesTableModel Public API
     def create_delegate_for_column(self, view, column):
