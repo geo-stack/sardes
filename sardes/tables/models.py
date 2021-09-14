@@ -21,12 +21,12 @@ class StandardSardesTableModel(SardesTableModel):
     # ---- API: Mandatory attributes
     # =========================================================================
 
-    # The name that is used to reference in the code and database the data
-    # shown in this table.
+    # The name that is used to reference in the database connection manager
+    # the data shown in this table.
     __tabledata__: str = None
 
-    # The list of names that is used to reference in the code and database
-    # the data that are used as libraries in this table.
+    # The list of names that is used to reference in the database connection
+    # manager the data that are used as libraries in this table.
     __tablelibs__: list = None
 
     def __init__(self, *args, **kargs):
