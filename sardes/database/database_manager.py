@@ -26,7 +26,6 @@ from sardes.api.taskmanagers import WorkerBase, TaskManagerBase
 from sardes.config.locale import _
 from sardes.config.ospath import get_documents_logo_filename
 from sardes.config.main import CONF
-from sardes.tables.managers import SardesTableModelsManager
 from sardes.tools.hydrographs import HydrographCanvas
 from sardes.tools.save2excel import _save_reading_data_to_xlsx
 from sardes.utils.data_operations import format_reading_data
@@ -588,9 +587,6 @@ class DatabaseConnectionManager(TaskManagerBase):
         self.worker().sig_publish_progress.connect(
             self.sig_publish_progress.emit)
 
-        # Setup the table models manager.
-        self.models_manager = SardesTableModelsManager(self)
-
     def is_connected(self):
         """Return whether a connection to a database is currently active."""
         return self.worker().is_connected()
@@ -856,13 +852,6 @@ class DatabaseConnectionManager(TaskManagerBase):
             self.sig_tseries_data_changed.emit(
                 list(self._tseries_data_changed))
             self._tseries_data_changed = set()
-
-    # ---- Tables
-    def register_table_model(self, table_model, data_name, lib_names=None):
-        """
-        Register a new sardes table model to the manager.
-        """
-        table_model.set_database_connection_manager(self)
 
     # ---- Publish Network Data
     def publish_to_kml(self, filename, iri_data=None, iri_logs=None,

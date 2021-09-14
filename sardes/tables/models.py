@@ -39,17 +39,17 @@ class StandardSardesTableModel(SardesTableModel):
     def __init__(self, *args, **kargs):
         super().__init__(*args, **kargs)
         # The manager that handle fetching data and pushing data edits to
-        # the database.
-        self.db_connection_manager = None
-
-    def set_database_connection_manager(self, db_connection_manager):
-        """Setup the database connection manager for this table model."""
-        self.db_connection_manager = db_connection_manager
+        # the database and that link all the Sardes tables together.
+        self.table_models_manager = None
 
     @property
-    def table_models_manager(self):
-        """Return the table models manager."""
-        return self.db_connection_manager.table_models_manager
+    def db_connection_manager(self):
+        """Return Sardes database connection manager."""
+        return self.table_models_manager.db_manager
+
+    def set_table_models_manager(self, table_models_manager):
+        """Set namespace for the table models manager."""
+        self.table_models_manager = table_models_manager
 
     def update_data(self):
         """

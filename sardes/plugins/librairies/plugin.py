@@ -116,7 +116,7 @@ class Librairies(SardesPlugin):
         print('Setting up table {}...'.format(TableClass.__name__))
         table = TableClass(disabled_actions=['delete_row'])
 
-        self.main.db_connection_manager.register_table_model(table.model())
+        self.main.table_models_manager.register_table_model(table.model())
         table.register_to_plugin(self)
 
         self._tables[table.table_name()] = table
