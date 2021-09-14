@@ -110,19 +110,11 @@ class Tables(SardesPlugin):
 
     # ---- Private methods
     def _setup_tables(self):
-        self._create_and_register_table(
-            ObsWellsTableWidget)
-        self._create_and_register_table(
-            SondesInventoryTableWidget,
-            disabled_actions=['delete_row'])
-        self._create_and_register_table(
-            ManualMeasurementsTableWidget)
-        self._create_and_register_table(
-            SondeInstallationsTableWidget,
-            disabled_actions=['delete_row'])
-        self._create_and_register_table(
-            RepereTableWidget,
-            disabled_actions=['delete_row'])
+        self._create_and_register_table(ObsWellsTableWidget)
+        self._create_and_register_table(SondesInventoryTableWidget)
+        self._create_and_register_table(ManualMeasurementsTableWidget)
+        self._create_and_register_table(SondeInstallationsTableWidget)
+        self._create_and_register_table(RepereTableWidget)
 
         # Setup the current active tab from the value saved in the configs.
         self.tabwidget.setCurrentIndex(
