@@ -626,7 +626,7 @@ class SardesTableView(QTableView):
                 self, _("Save edits"),
                 icon='commit_changes',
                 tip=_('Save all edits made to the table in the database.'),
-                triggered=self._save_data_edits,
+                triggered=self._check_data_edits,
                 shortcut=['Ctrl+Enter', 'Ctrl+Return'],
                 context=Qt.WidgetShortcut,
                 name='sav_edits')
@@ -1420,6 +1420,34 @@ class SardesTableView(QTableView):
         self._ensure_visible(model_index)
         self.selectionModel().setCurrentIndex(
             model_index, self.selectionModel().NoUpdate)
+
+    def _check_data_edits(self):
+        """
+        Check if the data edits can be safely saved in the database.
+        """
+        self.model().check_data_edits(self._handle_data_edits_checked)
+
+    def _handle_data_edits_checked(self, error):
+        """
+        Handle results from the data edits check.
+        """
+        if error is None:
+            self._save_data_edits(force=False)
+        else:
+            row, col = error.get_error_iloc(self)
+            model_index = self.model().index(row, col)
+            self._ensure_visible(model_index)
+            self.selectionModel().setCurrentIndex(
+                model_index, self.selectionModel().ClearAndSelect)
+
+            msgbox = QMessageBox(
+                QMessageBox.Warning,
+                _('Save error'),
+                error.format_error_msg(self),
+                buttons=QMessageBox.Ok,
+                parent=self)
+            msgbox.button(msgbox.Ok).setText(_("Ok"))
+            msgbox.exec_()
 
     def _save_data_edits(self, force=True):
         """
