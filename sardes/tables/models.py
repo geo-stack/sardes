@@ -202,11 +202,23 @@ class StandardSardesTableModel(SardesTableModel):
         except NotImplementedError:
             return super().create_new_row_index()
 
-    def check_data_edits(self):
+    def check_data_edits(self, callback):
         """
         Check that there is no issues with the data edits of this model.
         """
-        raise NotImplementedError
+        edit_error = self._check_notnull_constraint()
+        if edit_error is not None:
+            callback(edit_error)
+            return
+
+        edit_error = self._check_unique_constraint()
+        if edit_error is not None:
+            callback(edit_error)
+            return
+
+        # A part of this check is done asynchroneously by the
+        # database connection manager, so we cannot fully handle it here.
+        self._check_foreign_constraint(callback)
 
     def save_data_edits(self):
         """
