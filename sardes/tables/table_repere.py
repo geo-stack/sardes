@@ -58,7 +58,7 @@ class RepereTableModel(StandardSardesTableModel):
             delegate=TextEditDelegate)
         ]
 
-    __tabledata__ = 'repere_data'
+    __dataname__ = 'repere_data'
     __tablelibs__ = ['observation_wells_data']
 
     # ---- Visual Data

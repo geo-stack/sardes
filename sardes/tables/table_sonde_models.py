@@ -32,7 +32,7 @@ class SondeModelsTableModel(StandardSardesTableModel):
             unique=True, unique_subset=['sonde_brand'])
         ]
 
-    __tabledata__ = 'sonde_models_lib'
+    __dataname__ = 'sonde_models_lib'
     __tablelibs__ = []
 
     # ---- SardesTableModel Public API

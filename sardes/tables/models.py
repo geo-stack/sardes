@@ -27,7 +27,7 @@ class StandardSardesTableModel(SardesTableModel):
 
     # The name that is used to reference in the database connection manager
     # the data shown in this table.
-    __tabledata__: str = None
+    __dataname__: str = None
 
     # The list of names that is used to reference in the database connection
     # manager the data that are used as libraries in this table.
@@ -196,7 +196,7 @@ class StandardSardesTableModel(SardesTableModel):
         manager to generate the new row index.
         """
         try:
-            return self.db_connection_manager.create_index(self.__tabledata__)
+            return self.db_connection_manager.create_index(self.__dataname__)
         except NotImplementedError:
             return super().create_new_row_index()
 
@@ -224,10 +224,10 @@ class StandardSardesTableModel(SardesTableModel):
         """
         self.sig_data_about_to_be_saved.emit()
 
-        self.db_connection_manager._data_changed.add(self.__tabledata__)
+        self.db_connection_manager._data_changed.add(self.__dataname__)
         self.db_connection_manager.add_task(
             'save_table_edits', None,
-            name=self.__tabledata__,
+            name=self.__dataname__,
             deleted_rows=self._datat.deleted_rows(),
             added_rows=self._datat.added_rows(),
             edited_values=self._datat.edited_values()

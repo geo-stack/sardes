@@ -56,7 +56,7 @@ class SondesInventoryTableModel(StandardSardesTableModel):
             delegate=TextEditDelegate)
         ]
 
-    __tabledata__ = 'sondes_data'
+    __dataname__ = 'sondes_data'
     __tablelibs__ = ['sonde_models_lib']
 
     # ---- Visual Data

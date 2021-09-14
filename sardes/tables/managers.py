@@ -67,16 +67,16 @@ class SardesTableModelsManager(QObject):
                           "registered to the Sardes table manager."
                           .format(table_model.name()))
             return
-        if table_model.__tabledata__ in self._dataname_map:
+        if table_model.__dataname__ in self._dataname_map:
             raise Warning("There is already a table model registered to the "
                           "Sardes table manager that displays '{}' data."
                           .format(table_model.name()))
             return
         table_model.set_table_models_manager(self)
-        self._dataname_map[table_model.__tabledata__] = table_model
+        self._dataname_map[table_model.__dataname__] = table_model
         self._table_models[table_model.name()] = table_model
         self._queued_model_updates[table_model.name()] = (
-            [table_model.__tabledata__] + table_model.__tablelibs__)
+            [table_model.__dataname__] + table_model.__tablelibs__)
         self._running_model_updates[table_model.name()] = []
 
     def update_table_model(self, table_name):
@@ -106,7 +106,7 @@ class SardesTableModelsManager(QObject):
         Set the data or library of the given table model.
         """
         table_model = self._table_models[table_name]
-        if data_name == table_model.__tabledata__:
+        if data_name == table_model.__dataname__:
             # Update the table model data.
             table_model.set_model_data(dataf)
         elif data_name in table_model.__tablelibs__:
@@ -126,7 +126,7 @@ class SardesTableModelsManager(QObject):
         """
         for table_name, table_model in self._table_models.items():
             data_libs_names = (
-                [table_model.__tabledata__] + table_model.__tablelibs__)
+                [table_model.__dataname__] + table_model.__tablelibs__)
             self._queued_model_updates[table_name].extend(
                 [name for name in data_changed if name in data_libs_names])
             self._queued_model_updates[table_name] = list(set(
@@ -140,7 +140,7 @@ class SardesTableModelsManager(QObject):
         if is_connected:
             for table_name, table_model in self._table_models.items():
                 self._queued_model_updates[table_name] = (
-                    [table_model.__tabledata__] + table_model.__tablelibs__)
+                    [table_model.__dataname__] + table_model.__tablelibs__)
         else:
             for table_name, table_model in self._table_models.items():
                 self._queued_model_updates[table_name] = []

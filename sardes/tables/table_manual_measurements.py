@@ -44,7 +44,7 @@ class ManualMeasurementsTableModel(StandardSardesTableModel):
             delegate=TextEditDelegate)
         ]
 
-    __tabledata__ = 'manual_measurements'
+    __dataname__ = 'manual_measurements'
     __tablelibs__ = ['observation_wells_data']
     __foreignconstraints__ = []
 

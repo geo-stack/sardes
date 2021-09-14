@@ -50,7 +50,7 @@ class SondeInstallationsTableModel(StandardSardesTableModel):
             delegate=TextEditDelegate)
         ]
 
-    __tabledata__ = 'sonde_installations'
+    __dataname__ = 'sonde_installations'
     __tablelibs__ = ['observation_wells_data',
                      'sondes_data',
                      'sonde_models_lib']
