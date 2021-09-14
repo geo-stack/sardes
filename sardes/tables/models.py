@@ -83,6 +83,73 @@ class StandardSardesTableModel(SardesTableModel):
             colname = is_null.index[is_null].get_level_values(1)[0]
             return NotNullTableEditError(index, self.column_at(colname))
 
+    def _check_unique_constraint(self):
+        """
+        Check that edits do not violate any UNIQUE constraint.
+        """
+        unique_columns = [col for col in self.columns() if col.unique]
+        if not len(unique_columns):
+            return
+
+        added_rows = self._datat.added_rows()
+        edited_values = self._datat.edited_values()
+        table_data = self.dataf
+
+        # Drop deleted rows from table data.
+        deleted_rows = self._datat.deleted_rows()
+        table_data = table_data.drop(deleted_rows, axis=0)
+
+        # Check for unique constraint violation.
+        for column in unique_columns:
+            column_data = (
+                table_data[[column.name] + column.unique_subset]
+                .dropna(how='all'))
+            column_record = pd.Series(
+                data=column_data.to_records(index=False).tolist(),
+                index=column_data.index)
+
+            column_duplicated = column_record[column_record.duplicated()]
+            if column_duplicated.empty:
+                continue
+
+            # Check if any duplicated value is in an added row.
+            column_added_rows = (
+                added_rows[[column.name] + column.unique_subset]
+                .dropna(how='all'))
+            column_added_record = pd.Series(
+                data=column_added_rows.to_records(index=False).tolist(),
+                index=column_added_rows.index)
+            isin_indexes = column_added_record.index[
+                column_added_record.isin(column_duplicated.array)]
+            if not isin_indexes.empty:
+                index = isin_indexes[0]
+                return UniqueTableEditError(index, column)
+
+            # Check if any duplicated value is an edited value.
+            try:
+                column_edited_indexes = (
+                    edited_values
+                    .loc[(slice(None), column.name), 'edited_value']
+                    .index.get_level_values(0))
+            except KeyError:
+                pass
+            else:
+                column_edited_data = (
+                    table_data.loc[column_edited_indexes]
+                    [[column.name] + column.unique_subset]
+                    .dropna(how='all'))
+                column_edited_record = pd.Series(
+                    data=column_edited_data.to_records(index=False).tolist(),
+                    index=column_edited_data.index)
+                isin_indexes = column_edited_record.index[
+                    column_edited_record.isin(column_duplicated.array)]
+                if not isin_indexes.empty:
+                    index = isin_indexes.get_level_values(0)[0]
+                    return UniqueTableEditError(index, column)
+
+            # Else this means the duplicated values were already in the
+            # database.
+
         """
         Raise an attribute error after trying to access an attribute of the
         database connection manager while the later is None.
