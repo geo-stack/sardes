@@ -181,14 +181,12 @@ class StandardSardesTableModel(SardesTableModel):
         if results is None:
             callback(error=None)
         else:
-            parent_index, foreign_column, foreign_name = results
-            for table_model in self.table_models_manager.table_models():
-                if table_model.__tabledata__ == foreign_name:
-                    foreign_table_model = table_model
-                    foreign_column = table_model.column_at(foreign_column)
-                    break
+            parent_index, foreign_colname, foreign_dataname = results
+            foreign_tablemodel = (
+                self.table_models_manager.find_dataname(foreign_dataname))
+            foreign_column = foreign_tablemodel.column_at(foreign_colname)
             callback(ForeignTableEditError(
-                parent_index, foreign_column, foreign_table_model
+                parent_index, foreign_column, foreign_tablemodel
                 ))
 
     # ---- SardesTableModel API
