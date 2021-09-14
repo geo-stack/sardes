@@ -159,6 +159,20 @@ class DatabaseConnectionWorker(WorkerBase):
             values.index = values.index.droplevel(0)
             self._set(name, index, values['edited_value'].to_dict())
 
+    def _check_foreign_constraints(self, parent_indexes, foreign_constraints):
+        """
+        Return the first foreign constraint violation found by checking
+        the parent indexes against the provided foreign constaints.
+        """
+        for foreign_column, foreign_name in foreign_constraints:
+            foreign_data = self._get(foreign_name)[0]
+            isin_indexes = parent_indexes[
+                parent_indexes.isin(foreign_data[foreign_column].array)]
+            if not isin_indexes.empty:
+                return (isin_indexes[0], foreign_column, foreign_name),
+        else:
+            return None,
+
     # ---- Timeseries
     def _get_timeseries_for_obs_well(self, sampling_feature_uuid,
                                      data_types=None):
@@ -883,5 +897,5 @@ if __name__ == '__main__':
         callback=None,
         postpone_exec=False, main_thread=True)
     print(readings)
-    
+
     dbmanager.close()
