@@ -32,6 +32,7 @@ from sardes.tables.models import StandardSardesTableModel
 from sardes.tables.delegates import (
     StringEditDelegate, BoolEditDelegate,
     NumEditDelegate, NotEditableDelegate, TextEditDelegate)
+from sardes.tables.errors import ForeignReadingsConstraintError
 
 
 class ObsWellsTableModel(StandardSardesTableModel):
@@ -98,6 +99,21 @@ class ObsWellsTableModel(StandardSardesTableModel):
     __tabledata__ = 'observation_wells_data'
     __tablelibs__ = ['observation_wells_data_overview',
                      'stored_attachments_info']
+
+    def _check_foreign_constraint(self, callback):
+        """
+        Extend base class method to check for Readings FOREIGN constraint.
+        """
+        deleted_rows = self._datat.deleted_rows()
+        if not deleted_rows.empty:
+            readings_overview = self.libraries[
+                'observation_wells_data_overview']
+            isin_indexes = deleted_rows[
+                deleted_rows.isin(readings_overview.index)]
+            if not isin_indexes.empty:
+                callback(ForeignReadingsConstraintError(isin_indexes[0]))
+                return
+        super()._check_foreign_constraint(callback)
 
     def set_model_data(self, dataf, dataf_columns_mapper=None):
         """
