@@ -107,3 +107,25 @@ class ForeignTableEditError(SardesTableEditError):
             ).format(row=row,
                      column=self.foreign_column.header,
                      table=self.foreign_table_model.title())
+
+
+class ForeignReadingsConstraintError(SardesTableEditError):
+    def __init__(self, parent_index):
+        self.parent_index = parent_index
+
+    def get_error_iloc(self, tableview):
+        row = tableview.model()._proxy_dataf_index.get_loc(self.parent_index)
+        col = 0
+        return row, col
+
+    def format_error_msg(self, tableview):
+        row = (tableview.model()._proxy_dataf_index
+               .get_loc(self.parent_index) + 1)
+        station_name = tableview.model()._datat.data.loc[
+            self.parent_index]['obs_well_id']
+        return _(
+            "<p>Deleting station {station_name} on <b>line {row}</b> violates "
+            "foreign key constraint with the <b>Readings</b> table.</p>"
+            "<p>Please delete all Readings data related to "
+            "station {station_name} first."
+            ).format(row=row, station_name=station_name)
