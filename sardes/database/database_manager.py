@@ -871,20 +871,6 @@ class DatabaseConnectionManager(TaskManagerBase):
         Register a new sardes table model to the manager.
         """
         table_model.set_database_connection_manager(self)
-        self.table_models_manager.register_table_model(
-            table_model, data_name, lib_names)
-
-    def update_table(self, table_name):
-        """
-        Update the given sardes table model.
-        """
-        self.table_models_manager.update_table(table_name)
-
-    def save_table_edits(self, table_id):
-        """
-        Save all edits made to the table related to table_id to the database.
-        """
-        self.table_models_manager.save_table_edits(table_id)
 
     # ---- Publish Network Data
     def publish_to_kml(self, filename, iri_data=None, iri_logs=None,
