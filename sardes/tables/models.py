@@ -51,6 +51,38 @@ class StandardSardesTableModel(SardesTableModel):
         else:
             self._raise_db_connmanager_attr_error()
     def _raise_db_connmanager_attr_error(self):
+
+    # ---- Table edit checks
+    def _check_notnull_constraint(self):
+        """
+        Check that edits do not violate any NOTNULL constraint.
+        """
+        notnull_colnames = [col.name for col in self.columns() if col.notnull]
+        if not len(notnull_colnames):
+            return
+
+        added_rows = self._datat.added_rows()
+        edited_values = self._datat.edited_values()
+
+        # We check first the new rows added to the database.
+        rows_with_null = added_rows[notnull_colnames][
+            added_rows[notnull_colnames].isnull().any(axis=1)]
+        if not rows_with_null.empty:
+            index = rows_with_null.index[0]
+            colname = rows_with_null.columns[
+                rows_with_null.loc[index].isnull()][0]
+            return NotNullTableEditError(index, self.column_at(colname))
+
+        # We check the edits made to existing rows.
+        is_null = (
+            edited_values
+            .loc[(slice(None), notnull_colnames), 'edited_value']
+            .isnull())
+        if is_null.any():
+            index = is_null.index[is_null].get_level_values(0)[0]
+            colname = is_null.index[is_null].get_level_values(1)[0]
+            return NotNullTableEditError(index, self.column_at(colname))
+
         """
         Raise an attribute error after trying to access an attribute of the
         database connection manager while the later is None.
