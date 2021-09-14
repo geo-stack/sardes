@@ -159,7 +159,7 @@ class StandardSardesTableModel(SardesTableModel):
         """
         Check that edits do not violate any FOREIGN constraint.
         """
-        deleted_rows = self._datat.deleted_rows()
+        deleted_rows = self.deleted_rows()
         foreign_contraints = self.__foreignconstraints__ or []
         if deleted_rows.empty or not len(foreign_contraints):
             callback(error=None)

@@ -492,6 +492,13 @@ class SardesTableModelBase(QAbstractTableModel):
                 self.index(self.rowCount() - 1, self.columnCount() - 1))
             self.sig_data_edited.emit(data_edit)
 
+    def deleted_row(self):
+        """
+        Return a pandas Index array containing the indexes of the rows that
+        were deleted in this table.
+        """
+        return self._datat.deleted_rows()
+
     def undo_last_data_edit(self):
         """
         Undo the last data edits that was added to the stack.
