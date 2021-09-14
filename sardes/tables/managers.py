@@ -19,16 +19,22 @@ class SardesTableModelsManager(QObject):
 
     def __init__(self, db_manager):
         super().__init__()
+        # A dictionary containing the table models registered to this manager
+        # using as key the name of the models.
         self._table_models = {}
+
+        # A dictionary mapping the name of the data being displayed for each
+        # table model registered to this manager.
+        self._dataname_map = {}
+
+        # Contains the lists of data and libraries that need to be updated
+        # for each table registered to this manager when the update_table
+        # is called.
         self._queued_model_updates = {}
-        self._running_model_updates = {}
-        # _queued_model_updates contains the lists of data and library names
-        # that need to be updated for each table registered to this manager
-        # when the update_table is called.
         #
-        # _running_model_updates contains the lists of data and library names
-        # that are currently being updated after the update_table was
-        # called.
+        # Contains the lists of data and library names that are currently
+        # being updated after the update_table was called.
+        self._running_model_updates = {}
 
         # Setup the database manager.
         self.db_manager = db_manager
@@ -44,15 +50,34 @@ class SardesTableModelsManager(QObject):
         """Return the list of table models registered to this manager."""
         return list(self._table_models.values())
 
+    def find_dataname(self, dataname):
+        """
+        Return the table model registered to this manager that is used to
+        display the data referenced as 'name' in the database connection
+        manager
+        """
+        return self._dataname_map[dataname]
+
     def register_table_model(self, table_model):
         """
         Register a new sardes table model to the manager.
         """
-        table_name = table_model.name()
-        self._table_models[table_name] = table_model
-        self._queued_model_updates[table_name] = (
+        if table_model.name() in self._table_models:
+            raise Warning("There is already a table model named '{}' "
+                          "registered to the Sardes table manager."
+                          .format(table_model.name()))
+            return
+        if table_model.__tabledata__ in self._dataname_map:
+            raise Warning("There is already a table model registered to the "
+                          "Sardes table manager that displays '{}' data."
+                          .format(table_model.name()))
+            return
+        table_model.set_table_models_manager(self)
+        self._dataname_map[table_model.__tabledata__] = table_model
+        self._table_models[table_model.name()] = table_model
+        self._queued_model_updates[table_model.name()] = (
             [table_model.__tabledata__] + table_model.__tablelibs__)
-        self._running_model_updates[table_name] = []
+        self._running_model_updates[table_model.name()] = []
 
     def update_table_model(self, table_name):
         """
