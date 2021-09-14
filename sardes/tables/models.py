@@ -7,9 +7,13 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+import pandas as pd
 
 # ---- Local imports
 from sardes.api.tablemodels import SardesTableModel
+from sardes.tables.errors import (
+    NotNullTableEditError, UniqueTableEditError, ForeignTableEditError,
+    ForeignReadingsConstraintError)
 
 
 class StandardSardesTableModel(SardesTableModel):
@@ -151,13 +155,41 @@ class StandardSardesTableModel(SardesTableModel):
             # Else this means the duplicated values were already in the
             # database.
 
+    def _check_foreign_constraint(self, callback):
         """
-        Raise an attribute error after trying to access an attribute of the
-        database connection manager while the later is None.
+        Check that edits do not violate any FOREIGN constraint.
         """
-        raise AttributeError(
-            "The database connections manager for the table "
-            "model {} is not set.".format(self.name()))
+        deleted_rows = self._datat.deleted_rows()
+        foreign_contraints = self.__foreignconstraints__ or []
+        if deleted_rows.empty or not len(foreign_contraints):
+            callback(error=None)
+            return
+
+        self.db_connection_manager.add_task(
+            'check_foreign_constraints',
+            callback=lambda results:
+                self._handle_check_foreign_constraints_results(
+                    results, callback),
+            parent_indexes=deleted_rows,
+            foreign_constraints=foreign_contraints)
+        self.db_connection_manager.run_tasks()
+
+    def _handle_check_foreign_constraints_results(self, results, callback):
+        """
+        Handle the check foreign constraints results.
+        """
+        if results is None:
+            callback(error=None)
+        else:
+            parent_index, foreign_column, foreign_name = results
+            for table_model in self.table_models_manager.table_models():
+                if table_model.__tabledata__ == foreign_name:
+                    foreign_table_model = table_model
+                    foreign_column = table_model.column_at(foreign_column)
+                    break
+            callback(ForeignTableEditError(
+                parent_index, foreign_column, foreign_table_model
+                ))
 
     # ---- SardesTableModel API
     def create_new_row_index(self):
