@@ -931,6 +931,17 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
+    def delete_repere_data(self, repere_ids):
+        """
+        Delete the repere data corresponding to the specified repere ids.
+        """
+        if not is_list_like(repere_ids):
+            repere_ids = [repere_ids, ]
+        for repere_id in repere_ids:
+            repere = self._get_repere_data(repere_id)
+            self._session.delete(repere)
+        self._session.commit()
+
     # ---- Sondes Models
     def get_sonde_models_lib(self):
         """
