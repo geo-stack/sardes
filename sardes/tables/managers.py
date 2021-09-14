@@ -10,9 +10,6 @@
 # ---- Third party imports
 from qtpy.QtCore import QObject, Signal
 
-# ---- Local imports
-from sardes.tables.errors import ForeignTableEditError
-
 
 class SardesTableModelsManager(QObject):
     """
@@ -47,7 +44,6 @@ class SardesTableModelsManager(QObject):
         """
         Register a new sardes table model to the manager.
         """
-        table_model.set_table_models_manager(self)
         table_name = table_model.name()
         self._table_models[table_name] = table_model
         self._queued_model_updates[table_name] = (
@@ -76,44 +72,6 @@ class SardesTableModelsManager(QObject):
             self.db_manager.run_tasks()
 
     # ---- Private API
-    def check_table_edits(self, table_name, callback):
-        """
-        Save the changes made to table 'name' to the database.
-        """
-        table_model = self._table_models[table_name]
-        deleted_rows = table_model._datat.deleted_rows()
-        if deleted_rows.empty:
-            callback(error=None)
-            return
-
-        if table_name == 'table_observation_wells':
-            foreign_contraints_data = [
-                (deleted_rows, 'sampling_feature_uuid', 'manual_measurements')]
-            self.db_manager.add_task(
-                'check_foreign_constraints',
-                callback=lambda results:
-                    self._handle_table_edits_check_results(results, callback),
-                constraints_data=foreign_contraints_data)
-            self.db_manager.run_tasks()
-        elif table_name == '':
-            pass
-        else:
-            callback(error=None)
-
-    def _handle_table_edits_check_results(self, results, callback):
-        if results is None:
-            callback(error=None)
-        else:
-            parent_index, foreign_column, foreign_name = results
-            for table_name, table_model in self._table_models.items():
-                if table_model.__tabledata__ == foreign_name:
-                    foreign_table_model = table_model
-                    foreign_column = table_model.column_at(foreign_column)
-                    break
-            callback(ForeignTableEditError(
-                parent_index, foreign_column, foreign_table_model
-                ))
-
     def _set_model_data_or_lib(self, dataf, data_name, table_name):
         """
         Set the data or library of the given table model.
