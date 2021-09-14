@@ -26,6 +26,7 @@ from sardes.api.taskmanagers import WorkerBase, TaskManagerBase
 from sardes.config.locale import _
 from sardes.config.ospath import get_documents_logo_filename
 from sardes.config.main import CONF
+from sardes.database.accessors.accessor_helpers import create_empty_readings
 from sardes.tools.hydrographs import HydrographCanvas
 from sardes.tools.save2excel import _save_reading_data_to_xlsx
 from sardes.utils.data_operations import format_reading_data
@@ -199,11 +200,8 @@ class DatabaseConnectionWorker(WorkerBase):
             print()
             print(type(error).__name__, end=': ')
             print(error)
-            readings = DataFrame(
-                [],
-                columns=['datetime', 'sonde_id', DataType(0),
-                         DataType(1), DataType(2), 'install_depth',
-                         'obs_id'])
+            readings = create_empty_readings(
+                [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC])
         else:
             print("Successfully fetched readings data for observation well {}."
                   .format(obs_well_data['obs_well_id']))
