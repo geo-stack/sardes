@@ -191,6 +191,12 @@ class DatabaseConnectionWorker(WorkerBase):
             obs_well_data = self._get('observation_wells_data')[0]
         obs_well_data = obs_well_data.loc[sampling_feature_uuid]
 
+        if data_types is None:
+            data_types = [
+                DataType.WaterLevel,
+                DataType.WaterTemp,
+                DataType.WaterEC]
+
         print("Fetching readings data for observation well {}..."
               .format(obs_well_data['obs_well_id']))
         try:
@@ -201,7 +207,7 @@ class DatabaseConnectionWorker(WorkerBase):
             print(type(error).__name__, end=': ')
             print(error)
             readings = create_empty_readings(
-                [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC])
+                )
         else:
             print("Successfully fetched readings data for observation well {}."
                   .format(obs_well_data['obs_well_id']))

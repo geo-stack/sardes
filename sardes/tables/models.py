@@ -12,8 +12,7 @@ import pandas as pd
 # ---- Local imports
 from sardes.api.tablemodels import SardesTableModel
 from sardes.tables.errors import (
-    NotNullTableEditError, UniqueTableEditError, ForeignTableEditError,
-    ForeignReadingsConstraintError)
+    NotNullTableEditError, UniqueTableEditError, ForeignTableEditError)
 
 
 class StandardSardesTableModel(SardesTableModel):
