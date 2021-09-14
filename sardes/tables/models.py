@@ -42,15 +42,16 @@ class StandardSardesTableModel(SardesTableModel):
         """Setup the database connection manager for this table model."""
         self.db_connection_manager = db_connection_manager
 
+    @property
+    def table_models_manager(self):
+        """Return the table models manager."""
+        return self.db_connection_manager.table_models_manager
+
     def update_data(self):
         """
         Update this model's data and library.
         """
-        if self.db_connection_manager is not None:
-            self.db_connection_manager.update_table(self.name())
-        else:
-            self._raise_db_connmanager_attr_error()
-    def _raise_db_connmanager_attr_error(self):
+        self.table_models_manager.update_table_model(self.name())
 
     # ---- Table edit checks
     def _check_notnull_constraint(self):
@@ -182,31 +183,25 @@ class StandardSardesTableModel(SardesTableModel):
         self.sig_data_about_to_be_saved.emit()
 
         self.db_connection_manager._data_changed.add(self.__tabledata__)
-        self.db_manager.add_task(
+        self.db_connection_manager.add_task(
             'save_table_edits', None,
             name=self.__tabledata__,
             deleted_rows=self._datat.deleted_rows(),
             added_rows=self._datat.added_rows(),
             edited_values=self._datat.edited_values()
             )
-        self.db_manager.run_tasks(callback=self.sig_data_saved.emit)
+        self.db_connection_manager.run_tasks(callback=self.sig_data_saved.emit)
 
     def confirm_before_saving_edits(self):
         """
         Return wheter we should ask confirmation to the user before saving
         the data edits to the database.
         """
-        if self.db_connection_manager is not None:
-            return self.db_connection_manager.confirm_before_saving_edits()
-        else:
-            self._raise_db_connmanager_attr_error()
+        return self.db_connection_manager.confirm_before_saving_edits()
 
     def set_confirm_before_saving_edits(self, x):
         """
         Set wheter we should ask confirmation to the user before saving
         the data edits to the database.
         """
-        if self.db_connection_manager is not None:
-            self.db_connection_manager.set_confirm_before_saving_edits(x)
-        else:
-            self._raise_db_connmanager_attr_error()
+        self.db_connection_manager.set_confirm_before_saving_edits(x)
