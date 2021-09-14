@@ -99,6 +99,11 @@ class ObsWellsTableModel(StandardSardesTableModel):
     __tabledata__ = 'observation_wells_data'
     __tablelibs__ = ['observation_wells_data_overview',
                      'stored_attachments_info']
+    __foreignconstraints__ = [
+        ('sampling_feature_uuid', 'manual_measurements'),
+        ('sampling_feature_uuid', 'sonde_installations'),
+        ('sampling_feature_uuid', 'repere_data')
+        ]
 
     def _check_foreign_constraint(self, callback):
         """
