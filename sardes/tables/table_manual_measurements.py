@@ -45,7 +45,7 @@ class ManualMeasurementsTableModel(StandardSardesTableModel):
         ]
 
     __dataname__ = 'manual_measurements'
-    __tablelibs__ = ['observation_wells_data']
+    __libnames__ = ['observation_wells_data']
     __foreignconstraints__ = []
 
     # ---- Visual Data

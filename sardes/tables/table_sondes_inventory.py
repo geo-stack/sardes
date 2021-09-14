@@ -57,7 +57,7 @@ class SondesInventoryTableModel(StandardSardesTableModel):
         ]
 
     __dataname__ = 'sondes_data'
-    __tablelibs__ = ['sonde_models_lib']
+    __libnames__ = ['sonde_models_lib']
 
     # ---- Visual Data
     def logical_to_visual_data(self, visual_dataf):

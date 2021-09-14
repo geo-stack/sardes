@@ -33,7 +33,7 @@ class SondeModelsTableModel(StandardSardesTableModel):
         ]
 
     __dataname__ = 'sonde_models_lib'
-    __tablelibs__ = []
+    __libnames__ = []
 
     # ---- SardesTableModel Public API
     def create_delegate_for_column(self, view, column):

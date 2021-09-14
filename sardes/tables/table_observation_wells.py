@@ -97,7 +97,7 @@ class ObsWellsTableModel(StandardSardesTableModel):
         ]
 
     __dataname__ = 'observation_wells_data'
-    __tablelibs__ = ['observation_wells_data_overview',
+    __libnames__ = ['observation_wells_data_overview',
                      'stored_attachments_info']
     __foreignconstraints__ = [
         ('sampling_feature_uuid', 'manual_measurements'),

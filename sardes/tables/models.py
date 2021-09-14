@@ -31,7 +31,7 @@ class StandardSardesTableModel(SardesTableModel):
 
     # The list of names that is used to reference in the database connection
     # manager the data that are used as libraries in this table.
-    __tablelibs__: list = None
+    __libnames__: list = None
 
     # A list of tuples containting the information about foreign constraints.
     __foreignconstraints__: list = None

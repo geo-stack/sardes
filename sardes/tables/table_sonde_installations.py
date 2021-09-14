@@ -51,7 +51,7 @@ class SondeInstallationsTableModel(StandardSardesTableModel):
         ]
 
     __dataname__ = 'sonde_installations'
-    __tablelibs__ = ['observation_wells_data',
+    __libnames__ = ['observation_wells_data',
                      'sondes_data',
                      'sonde_models_lib']
 
