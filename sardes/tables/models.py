@@ -65,14 +65,10 @@ class StandardSardesTableModel(SardesTableModel):
         Extend SardesTableModel method to use the database connection
         manager to generate the new row index.
         """
-        if self.db_connection_manager is not None:
-            try:
-                return self.db_connection_manager.create_new_model_index(
-                    self.name())
-            except NotImplementedError:
-                return super().create_new_row_index()
-        else:
-            self._raise_db_connmanager_attr_error()
+        try:
+            return self.db_connection_manager.create_index(self.__tabledata__)
+        except NotImplementedError:
+            return super().create_new_row_index()
 
     def check_data_edits(self):
         """
