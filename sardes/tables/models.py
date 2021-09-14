@@ -29,6 +29,9 @@ class StandardSardesTableModel(SardesTableModel):
     # manager the data that are used as libraries in this table.
     __tablelibs__: list = None
 
+    # A list of tuples containting the information about foreign constraints.
+    __foreignconstraints__: list = None
+
     def __init__(self, *args, **kargs):
         super().__init__(*args, **kargs)
         # The manager that handle fetching data and pushing data edits to
