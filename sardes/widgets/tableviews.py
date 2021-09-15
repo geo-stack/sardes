@@ -1429,12 +1429,13 @@ class SardesTableView(QTableView):
 
     def _handle_data_edits_checked(self, error):
         """
-        Handle results from the data edits check.
+        Handle results from the data edits check that is carried out
+        before saving the edits to the database.
         """
         if error is None:
             self._save_data_edits(force=False)
         else:
-            row, col = error.get_error_iloc(self)
+            row, col = error.error_iloc(self)
             model_index = self.model().index(row, col)
             self._ensure_visible(model_index)
             self.selectionModel().setCurrentIndex(
@@ -1442,8 +1443,8 @@ class SardesTableView(QTableView):
 
             msgbox = QMessageBox(
                 QMessageBox.Warning,
-                _('Save error'),
-                error.format_error_msg(self),
+                _('Save edits error'),
+                error.error_message(self),
                 buttons=QMessageBox.Ok,
                 parent=self)
             msgbox.button(msgbox.Ok).setText(_("Ok"))

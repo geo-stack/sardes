@@ -16,10 +16,10 @@ class SardesTableEditError(object):
     Basic functionality for Sardes data edit error.
     """
 
-    def get_error_iloc(self, tableview):
+    def error_iloc(self, tableview):
         raise NotImplementedError
 
-    def format_error_msg(self, tableview):
+    def error_message(self, tableview):
         raise NotImplementedError
 
 
@@ -28,12 +28,12 @@ class NotNullTableEditError(SardesTableEditError):
         self.index = index
         self.column = column
 
-    def get_error_iloc(self, tableview):
+    def error_iloc(self, tableview):
         row = tableview.model()._proxy_dataf_index.get_loc(self.index)
         col = tableview.model().columns().index(self.column)
         return row, col
 
-    def format_error_msg(self, tableview):
+    def error_message(self, tableview):
         row = tableview.model()._proxy_dataf_index.get_loc(self.index) + 1
         column = tableview.model().column_at(self.column.name)
         return _(
@@ -47,12 +47,12 @@ class UniqueTableEditError(SardesTableEditError):
         self.index = index
         self.column = column
 
-    def get_error_iloc(self, tableview):
+    def error_iloc(self, tableview):
         row = tableview.model()._proxy_dataf_index.get_loc(self.index)
         col = tableview.model().columns().index(self.column)
         return row, col
 
-    def format_error_msg(self, tableview):
+    def error_message(self, tableview):
         row = tableview.model()._proxy_dataf_index.get_loc(self.index) + 1
         column_subset = [tableview.model().column_at(col) for
                          col in self.column.unique_subset]
@@ -91,12 +91,12 @@ class ForeignTableEditError(SardesTableEditError):
         self.foreign_column = foreign_column
         self.foreign_table_model = foreign_table_model
 
-    def get_error_iloc(self, tableview):
+    def error_iloc(self, tableview):
         row = tableview.model()._proxy_dataf_index.get_loc(self.parent_index)
         col = 0
         return row, col
 
-    def format_error_msg(self, tableview):
+    def error_message(self, tableview):
         row = (tableview.model()._proxy_dataf_index
                .get_loc(self.parent_index) + 1)
         return _(
@@ -114,12 +114,12 @@ class ForeignReadingsConstraintError(SardesTableEditError):
     def __init__(self, parent_index):
         self.parent_index = parent_index
 
-    def get_error_iloc(self, tableview):
+    def error_iloc(self, tableview):
         row = tableview.model()._proxy_dataf_index.get_loc(self.parent_index)
         col = 0
         return row, col
 
-    def format_error_msg(self, tableview):
+    def error_message(self, tableview):
         row = (tableview.model()._proxy_dataf_index
                .get_loc(self.parent_index) + 1)
         station_name = tableview.model()._datat.data.loc[
