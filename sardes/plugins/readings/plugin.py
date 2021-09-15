@@ -21,7 +21,7 @@ from sardes.api.timeseries import DataType
 from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
 from sardes.tables.delegates import NumEditDelegate, NotEditableDelegate
-from sardes.tables.models import StandardSardesTableModel
+from sardes.api.tablemodels import SardesTableModel
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.utils.data_operations import format_reading_data
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
@@ -35,18 +35,24 @@ from sardes.tools import (
 """Readings plugin"""
 
 
-class ReadingsTableModel(StandardSardesTableModel):
+class ReadingsTableModel(SardesTableModel):
 
     def __init__(self, obs_well_data, obs_well_id, obs_well_uuid):
         self.__tablecolumns__ = []
         self.__tabletitle__ = obs_well_id
         self.__tablename__ = obs_well_uuid
         super().__init__()
+
+        self.dbconnmanager = None
         self._obs_well_data = obs_well_data
         self._obs_well_uuid = obs_well_data.name
         self._repere_data = pd.Series([], dtype=object)
         self._manual_measurements = pd.DataFrame(
             [], columns=['datetime', 'value'])
+
+    def set_database_connection_manager(self, dbconnmanager):
+        """Set the namespace for Sardes database connection manager."""
+        self.dbconnmanager = dbconnmanager
 
     # ---- Data
     def set_obs_well_data(self, obs_well_data):
@@ -137,19 +143,33 @@ class ReadingsTableModel(StandardSardesTableModel):
                     tseries_dels = tseries_dels.append(
                         delrows_data_type, ignore_index=True)
         tseries_dels.drop_duplicates()
-        self.db_connection_manager.delete_timeseries_data(
+        self.dbconnmanager.delete_timeseries_data(
             tseries_dels, self._obs_well_uuid,
             callback=None, postpone_exec=True)
-        self.db_connection_manager.save_timeseries_data_edits(
+        self.dbconnmanager.save_timeseries_data_edits(
             tseries_edits, self._obs_well_uuid,
             callback=self._handle_data_edits_saved, postpone_exec=True)
-        self.db_connection_manager.run_tasks()
+        self.dbconnmanager.run_tasks()
 
     def _handle_data_edits_saved(self):
         """
         Handle when data edits were all saved in the database.
         """
         self.sig_data_saved.emit()
+
+    def confirm_before_saving_edits(self):
+        """
+        Return wheter we should ask confirmation to the user before saving
+        the data edits to the database.
+        """
+        return self.dbconnmanager.confirm_before_saving_edits()
+
+    def set_confirm_before_saving_edits(self, x):
+        """
+        Set wheter we should ask confirmation to the user before saving
+        the data edits to the database.
+        """
+        self.dbconnmanager.set_confirm_before_saving_edits(x)
 
 
 class ReadingsTableWidget(SardesTableWidget):
