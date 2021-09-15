@@ -937,9 +937,11 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         if not is_list_like(repere_ids):
             repere_ids = [repere_ids, ]
-        for repere_id in repere_ids:
-            repere = self._get_repere_data(repere_id)
-            self._session.delete(repere)
+
+        # Delete the Repere items from the database.
+        self._session.execute(
+            Repere.__table__.delete().where(
+                Repere.repere_uuid.in_(repere_ids)))
         self._session.commit()
 
     # ---- Sondes Models
