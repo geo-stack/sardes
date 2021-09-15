@@ -1511,22 +1511,6 @@ class SardesTableView(QTableView):
         if not view_rect.contains(item_rect) or force:
             self.scrollTo(model_index, hint=self.PositionAtCenter)
 
-    def raise_edits_error(self, model_index, message):
-        """"
-        Raise a modal dialog that shows the specifed error message that
-        occured while editing the data at the specifed model index.
-        When the dialog is closed by the user, the focus is given back
-        the last edited cell and edit mode is turned on again, so that the
-        the user can correct the invalid edits accordingly.
-        """
-        QMessageBox.critical(
-            self, _('Edits error'),
-            message,
-            buttons=QMessageBox.Ok)
-        self.setCurrentIndex(model_index)
-        self._edit_current_item()
-        self.model().undo_last_data_edit()
-
     def show_message(self, title, message, func):
         """
         Show the provided message in a modal dialog.
