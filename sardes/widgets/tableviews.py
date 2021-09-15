@@ -429,6 +429,7 @@ class SardesTableView(QTableView):
     saved in the database.
     """
     sig_data_edited = Signal(object)
+    sig_rows_deleted = Signal(list)
     sig_current_changed = Signal(object)
     sig_show_event = Signal()
     sig_data_updated = Signal()
@@ -1500,7 +1501,10 @@ class SardesTableView(QTableView):
 
     def _delete_selected_rows(self):
         """Delete rows from the table with selected indexes"""
-        self.model().delete_row(self.get_rows_intersecting_selection())
+        rows = self.get_rows_intersecting_selection()
+        self.model().delete_row(rows)
+        if len(rows):
+            self.sig_rows_deleted.emit(rows)
 
     def _ensure_visible(self, model_index, force=False):
         """
