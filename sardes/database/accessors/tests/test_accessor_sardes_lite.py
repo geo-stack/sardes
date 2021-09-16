@@ -242,14 +242,16 @@ def test_manual_measurements_interface(dbaccessor0, obswells_data,
 
     Regression test for cgq-qgc/sardes#424
     """
+    dbaccessor = dbaccessor0
+
     # Add the observation wells.
     for obswell_id, obswell_data in obswells_data.iterrows():
-        dbaccessor0.add_observation_wells_data(
+        dbaccessor.add_observation_wells_data(
             obswell_id, obswell_data.to_dict())
 
     # Test the empty manual measurement dataframe is formatted as expected.
     # This covers the issue reported at cgq-qgc/sardes#427.
-    saved_manual_measurements = dbaccessor0.get_manual_measurements()
+    saved_manual_measurements = dbaccessor.get_manual_measurements()
     assert saved_manual_measurements.empty
     assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
 
@@ -257,9 +259,9 @@ def test_manual_measurements_interface(dbaccessor0, obswells_data,
     # Add
     # =========================================================================
     for index, row in manual_measurements.iterrows():
-        dbaccessor0.add_manual_measurements(index, row.to_dict())
+        dbaccessor.add_manual_measurements(index, row.to_dict())
 
-    saved_manual_measurements = dbaccessor0.get_manual_measurements()
+    saved_manual_measurements = dbaccessor.get_manual_measurements()
     assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
     assert_dataframe_equals(saved_manual_measurements, manual_measurements)
 
@@ -275,9 +277,9 @@ def test_manual_measurements_interface(dbaccessor0, obswells_data,
         'notes': 'test_edit_manual_measurements'}
     for attr_name, attr_value in edited_values.items():
         assert attr_value != old_values[attr_name]
-    dbaccessor0.set_manual_measurements(gen_num_value_uuid, edited_values)
+    dbaccessor.set_manual_measurements(gen_num_value_uuid, edited_values)
 
-    saved_manual_measurements = dbaccessor0.get_manual_measurements()
+    saved_manual_measurements = dbaccessor.get_manual_measurements()
     assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
     assert (saved_manual_measurements.loc[gen_num_value_uuid].to_dict() ==
             edited_values)
@@ -285,8 +287,8 @@ def test_manual_measurements_interface(dbaccessor0, obswells_data,
     # =========================================================================
     # Delete
     # =========================================================================
-    dbaccessor0.delete_manual_measurements(gen_num_value_uuid)
-    saved_manual_measurements = dbaccessor0.get_manual_measurements()
+    dbaccessor.delete_manual_measurements(gen_num_value_uuid)
+    saved_manual_measurements = dbaccessor.get_manual_measurements()
     assert (saved_manual_measurements.to_dict() ==
             manual_measurements.iloc[1:].to_dict())
 
@@ -296,13 +298,15 @@ def test_repere_data_interface(dbaccessor0, obswells_data, repere_data):
     Test that adding, editing and retrieving repere data is working as
     expected.
     """
+    dbaccessor = dbaccessor0
+
     # Add the observation wells.
     for obs_well_uuid, obs_well_data in obswells_data.iterrows():
-        dbaccessor0.add_observation_wells_data(
+        dbaccessor.add_observation_wells_data(
             obs_well_uuid, obs_well_data.to_dict())
 
     # Assert that the empty repere data dataframe is formatted as expected.
-    repere_data_bd = dbaccessor0.get_repere_data()
+    repere_data_bd = dbaccessor.get_repere_data()
     assert repere_data_bd.empty
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
     assert is_datetime64_any_dtype(repere_data_bd['end_date'])
@@ -311,9 +315,9 @@ def test_repere_data_interface(dbaccessor0, obswells_data, repere_data):
     # Add
     # =========================================================================
     for index, row in repere_data.iterrows():
-        dbaccessor0.add_repere_data(index, row.to_dict())
+        dbaccessor.add_repere_data(index, row.to_dict())
 
-    repere_data_bd = dbaccessor0.get_repere_data()
+    repere_data_bd = dbaccessor.get_repere_data()
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
     assert is_datetime64_any_dtype(repere_data_bd['end_date'])
     assert_dataframe_equals(repere_data_bd, repere_data)
@@ -334,9 +338,9 @@ def test_repere_data_interface(dbaccessor0, obswells_data, repere_data):
         }
     for attribute_name, attribute_value in edited_values.items():
         assert attribute_value != old_values[attribute_name]
-    dbaccessor0.set_repere_data(repere_uuid, edited_values)
+    dbaccessor.set_repere_data(repere_uuid, edited_values)
 
-    repere_data_bd = dbaccessor0.get_repere_data()
+    repere_data_bd = dbaccessor.get_repere_data()
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
     assert is_datetime64_any_dtype(repere_data_bd['end_date'])
     assert repere_data_bd.loc[repere_uuid].to_dict() == edited_values
@@ -346,15 +350,15 @@ def test_repere_data_interface(dbaccessor0, obswells_data, repere_data):
     # =========================================================================
 
     # Delete the first repere data of the database.
-    dbaccessor0.delete_repere_data(repere_data_bd.index[0])
+    dbaccessor.delete_repere_data(repere_data_bd.index[0])
 
-    repere_data_bd = dbaccessor0.get_repere_data()
+    repere_data_bd = dbaccessor.get_repere_data()
     assert len(repere_data_bd) == len(repere_data) - 1
 
     # Delete the remaining repere data.
-    dbaccessor0.delete_repere_data(repere_data_bd.index)
+    dbaccessor.delete_repere_data(repere_data_bd.index)
 
-    repere_data_bd = dbaccessor0.get_repere_data()
+    repere_data_bd = dbaccessor.get_repere_data()
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
     assert is_datetime64_any_dtype(repere_data_bd['end_date'])
     assert len(repere_data_bd) == 0
