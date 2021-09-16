@@ -113,12 +113,12 @@ class SondeInstallationsTableWidget(SardesTableWidget):
         msgbox = QMessageBox(
             QMessageBox.Information,
             _('Delete sonde installations warning'),
-            _("<p>When one or more sonde installations are deleted from "
-              "the database, the associated readings data are, however, "
-              "preserved.</p>"
-              "<p>Note however that the sonde and the depth of "
-              "acquisition of these readings data will afterward be "
-              "considered to be <b>unknow</b>.<br><br></p>"),
+            _("<p>Note that readings data associated with a sonde "
+              "installation that is being deleted are always kept in "
+              "the database.</p>"
+              "<p>However, the sonde and the depth of acquisition of these "
+              "readings data will afterward be considered to be "
+              "<b>unknow</b>.<br><br></p>"),
             buttons=QMessageBox.Ok,
             parent=self.tableview)
         msgbox.setTextInteractionFlags(Qt.TextSelectableByMouse)
