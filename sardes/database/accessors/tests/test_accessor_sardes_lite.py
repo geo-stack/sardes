@@ -646,6 +646,9 @@ def test_edit_sonde_feature(dbaccessor):
                 attribute_value), attribute_name
 
 
+# =============================================================================
+# ---- Tests timeseries
+# =============================================================================
 def test_timeseries_interface(dbaccessor0, obswells_data, sondes_data,
                               sondes_installation):
     """
