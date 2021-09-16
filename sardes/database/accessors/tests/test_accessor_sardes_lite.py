@@ -696,58 +696,6 @@ def test_edit_sonde_feature(dbaccessor):
                 attribute_value), attribute_name
 
 
-def test_add_sonde_installations(dbaccessor):
-    """
-    Test that adding a sonde installation to the database is working as
-    expected.
-    """
-    obs_wells_uuid = dbaccessor.get_observation_wells_data().index[0]
-    sonde_uuid = dbaccessor.get_sondes_data().index[0]
-    sonde_install = dbaccessor.get_sonde_installations()
-    assert len(sonde_install) == 0
-
-    # Add a new sonde installation to the database.
-    sonde_install_uuid = dbaccessor._create_index('sonde_installation')
-    attribute_values = {
-        'sampling_feature_uuid': obs_wells_uuid,
-        'sonde_uuid': sonde_uuid,
-        'start_date': datetime.date(2006, 4, 12),
-        'end_date': pd.NaT,
-        'install_depth': 10.25
-        }
-    dbaccessor.add_sonde_installations(sonde_install_uuid, attribute_values)
-
-    sonde_install = dbaccessor.get_sonde_installations()
-    assert len(sonde_install) == 1
-    for attribute_name, attribute_value in attribute_values.items():
-        if attribute_name == 'end_date':
-            assert pd.isnull(
-                sonde_install.at[sonde_install_uuid, attribute_name])
-        else:
-            assert (sonde_install.at[sonde_install_uuid, attribute_name] ==
-                    attribute_value), attribute_name
-
-
-def test_edit_sonde_installations(dbaccessor):
-    """
-    Test that editing a sonde installation in the database is working as
-    expected.
-    """
-    sonde_install_uuid = dbaccessor.get_sonde_installations().index[0]
-    edited_attribute_values = {
-        'start_date': datetime.date(2006, 4, 1),
-        'end_date': datetime.date(2016, 4, 1),
-        'install_depth': 11.25
-        }
-    dbaccessor.set_sonde_installations(
-        sonde_install_uuid, edited_attribute_values)
-
-    sonde_install = dbaccessor.get_sonde_installations()
-    for attribute_name, attribute_value in edited_attribute_values.items():
-        assert (sonde_install.at[sonde_install_uuid, attribute_name] ==
-                attribute_value), attribute_name
-
-
 def test_timeseries_interface(dbaccessor0, obswells_data, sondes_data,
                               sondes_installation):
     """
