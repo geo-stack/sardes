@@ -142,56 +142,6 @@ def test_connection(dbaccessor0):
     dbaccessor.close_connection()
 
 
-def test_add_delete_large_timeseries_record(dbaccessor0):
-    """
-    Test that large time series record are added and deleted as expected
-    to and from the database.
-
-    Regression test for cgq-qgc/sardes#378.
-    """
-    dbaccessor = dbaccessor0
-    sampling_feature_uuid = dbaccessor._create_index('observation_wells_data')
-
-    # Prepare the timeseries data.
-    new_tseries_data = pd.DataFrame(
-        [], columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
-    new_tseries_data['datetime'] = pd.date_range(
-        start='1/1/2000', end='1/1/2020')
-    new_tseries_data[DataType.WaterLevel] = np.random.rand(
-        len(new_tseries_data))
-    new_tseries_data[DataType.WaterTemp] = np.random.rand(
-        len(new_tseries_data))
-
-    # Add timeseries data to the database.
-    dbaccessor.add_timeseries_data(
-        new_tseries_data, sampling_feature_uuid, install_uuid=None)
-
-    wlevel_data = dbaccessor.get_timeseries_for_obs_well(
-        sampling_feature_uuid, DataType.WaterLevel)
-    assert len(wlevel_data) == 7306
-
-    wtemp_data = dbaccessor.get_timeseries_for_obs_well(
-        sampling_feature_uuid, DataType.WaterTemp)
-    assert len(wtemp_data) == 7306
-
-    # Delete all timeseries data from the database.
-    wlevel_data['data_type'] = DataType.WaterLevel
-    wtemp_data['data_type'] = DataType.WaterTemp
-    tseries_dels = pd.concat((
-        wlevel_data[['datetime', 'obs_id', 'data_type']],
-        wtemp_data[['datetime', 'obs_id', 'data_type']]
-        ))
-    dbaccessor.delete_timeseries_data(tseries_dels)
-
-    wlevel_data = dbaccessor.get_timeseries_for_obs_well(
-        sampling_feature_uuid, DataType.WaterLevel)
-    assert len(wlevel_data) == 0
-
-    wtemp_data = dbaccessor.get_timeseries_for_obs_well(
-        sampling_feature_uuid, DataType.WaterTemp)
-    assert len(wtemp_data) == 0
-
-
 def test_add_get_del_construction_logs(dbaccessor0, tmp_path):
     """
     Test that adding, getting and deleting construction logs in the database
@@ -929,6 +879,56 @@ def test_edit_non_existing_data(dbaccessor0):
         obswell_id, DataType.WaterEC)
     assert len(waterec_data) == 1
     assert waterec_data.iloc[0][DataType.WaterEC] == 1234.56
+
+
+def test_add_delete_large_timeseries_record(dbaccessor0):
+    """
+    Test that large time series record are added and deleted as expected
+    to and from the database.
+
+    Regression test for cgq-qgc/sardes#378.
+    """
+    dbaccessor = dbaccessor0
+    sampling_feature_uuid = dbaccessor._create_index('observation_wells_data')
+
+    # Prepare the timeseries data.
+    new_tseries_data = pd.DataFrame(
+        [], columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
+    new_tseries_data['datetime'] = pd.date_range(
+        start='1/1/2000', end='1/1/2020')
+    new_tseries_data[DataType.WaterLevel] = np.random.rand(
+        len(new_tseries_data))
+    new_tseries_data[DataType.WaterTemp] = np.random.rand(
+        len(new_tseries_data))
+
+    # Add timeseries data to the database.
+    dbaccessor.add_timeseries_data(
+        new_tseries_data, sampling_feature_uuid, install_uuid=None)
+
+    wlevel_data = dbaccessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, DataType.WaterLevel)
+    assert len(wlevel_data) == 7306
+
+    wtemp_data = dbaccessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, DataType.WaterTemp)
+    assert len(wtemp_data) == 7306
+
+    # Delete all timeseries data from the database.
+    wlevel_data['data_type'] = DataType.WaterLevel
+    wtemp_data['data_type'] = DataType.WaterTemp
+    tseries_dels = pd.concat((
+        wlevel_data[['datetime', 'obs_id', 'data_type']],
+        wtemp_data[['datetime', 'obs_id', 'data_type']]
+        ))
+    dbaccessor.delete_timeseries_data(tseries_dels)
+
+    wlevel_data = dbaccessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, DataType.WaterLevel)
+    assert len(wlevel_data) == 0
+
+    wtemp_data = dbaccessor.get_timeseries_for_obs_well(
+        sampling_feature_uuid, DataType.WaterTemp)
+    assert len(wtemp_data) == 0
 
 
 if __name__ == "__main__":
