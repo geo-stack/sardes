@@ -991,6 +991,30 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             ))
         self._session.commit()
 
+    def delete_sonde_models_lib(self, sonde_model_ids):
+        """
+        Delete the repere data corresponding to the specified repere ids.
+        """
+        if not is_list_like(sonde_model_ids):
+            sonde_model_ids = [sonde_model_ids, ]
+
+        # Check for foreign key violation.
+        foreign_sonde_features = (
+            self._session.query(SondeFeature)
+            .filter(SondeFeature.sonde_model_id.in_(sonde_model_ids))
+            )
+        if foreign_sonde_features.count() > 0:
+            raise DBAPIError(
+                "ERROR: deleting SondeModel items violate foreign key "
+                "contraint on SondeFeature.sonde_model_id."
+                )
+
+        # Delete the SondeModel items from the database.
+        self._session.execute(
+            SondeModel.__table__.delete().where(
+                SondeModel.sonde_model_id.in_(sonde_model_ids)))
+        self._session.commit()
+
     # ---- Sondes Inventory
     def _get_sonde(self, sonde_uuid):
         """
