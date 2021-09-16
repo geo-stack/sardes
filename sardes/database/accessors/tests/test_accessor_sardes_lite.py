@@ -289,7 +289,7 @@ def test_manual_measurements_interface(dbaccessor0, obswells_data,
             manual_measurements.iloc[1:].to_dict())
 
 
-def test_repere_data(dbaccessor0, obswells_data, repere_data):
+def test_repere_data_interface(dbaccessor0, obswells_data, repere_data):
     """
     Test that adding, editing and retrieving repere data is working as
     expected.
@@ -299,30 +299,26 @@ def test_repere_data(dbaccessor0, obswells_data, repere_data):
         dbaccessor0.add_observation_wells_data(
             obs_well_uuid, obs_well_data.to_dict())
 
-    # Test the empty repere data dataframe is formatted as expected.
+    # Assert that the empty repere data dataframe is formatted as expected.
     repere_data_bd = dbaccessor0.get_repere_data()
     assert repere_data_bd.empty
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
     assert is_datetime64_any_dtype(repere_data_bd['end_date'])
 
-    # Add repere data.
+    # =========================================================================
+    # Add
+    # =========================================================================
     for index, row in repere_data.iterrows():
         dbaccessor0.add_repere_data(index, row.to_dict())
 
     repere_data_bd = dbaccessor0.get_repere_data()
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
     assert is_datetime64_any_dtype(repere_data_bd['end_date'])
+    assert_dataframe_equals(repere_data_bd, repere_data)
 
-    # for attr_name in repere_dat.keys():
-    repere_data_bd = repere_data_bd.replace({np.nan: None, pd.NaT: None})
-    for index in repere_data.index:
-        for column in repere_data.columns:
-            assert are_values_equal(
-                repere_data_bd.loc[index, column],
-                repere_data.loc[index, column]
-                ), (index, column)
-
-    # Edit repere data.
+    # =========================================================================
+    # Edit
+    # =========================================================================
     repere_uuid = repere_data_bd.index[0]
     old_values = repere_data_bd.loc[repere_uuid].to_dict()
     edited_values = {
@@ -336,13 +332,30 @@ def test_repere_data(dbaccessor0, obswells_data, repere_data):
         }
     for attribute_name, attribute_value in edited_values.items():
         assert attribute_value != old_values[attribute_name]
-    dbaccessor0.set_repere_data(
-        repere_uuid, edited_values)
+    dbaccessor0.set_repere_data(repere_uuid, edited_values)
 
     repere_data_bd = dbaccessor0.get_repere_data()
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
     assert is_datetime64_any_dtype(repere_data_bd['end_date'])
     assert repere_data_bd.loc[repere_uuid].to_dict() == edited_values
+
+    # =========================================================================
+    # Delete
+    # =========================================================================
+
+    # Delete the first repere data of the database.
+    dbaccessor0.delete_repere_data(repere_data_bd.index[0])
+
+    repere_data_bd = dbaccessor0.get_repere_data()
+    assert len(repere_data_bd) == len(repere_data) - 1
+
+    # Delete the remaining repere data.
+    dbaccessor0.delete_repere_data(repere_data_bd.index)
+
+    repere_data_bd = dbaccessor0.get_repere_data()
+    assert is_datetime64_any_dtype(repere_data_bd['start_date'])
+    assert is_datetime64_any_dtype(repere_data_bd['end_date'])
+    assert len(repere_data_bd) == 0
 
 
 # =============================================================================
