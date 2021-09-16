@@ -771,6 +771,31 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
+    def delete_observation_wells_data(self, obswell_ids):
+        """
+        Delete the observation wells corresponding to the specified ids.
+        """
+        if not is_list_like(obswell_ids):
+            obswell_ids = [obswell_ids, ]
+
+        # Check for foreign key violation.
+        for table in [Observation, Process, Repere]:
+            foreign_items = (
+                self._session.query(table)
+                .filter(table.sampling_feature_uuid.in_(obswell_ids))
+                )
+            if foreign_items.count() > 0:
+                raise DBAPIError(
+                    "ERROR: deleting SamplingFeature items violate foreign "
+                    "key contraint on {}.sampling_feature_uuid."
+                    .format(table.__name__))
+
+        # Delete the SondeFeature items from the database.
+        self._session.execute(
+            SondeFeature.__table__.delete().where(
+                SamplingFeature.sampling_feature_uuid.in_(obswell_ids)))
+        self._session.commit()
+
     def get_observation_wells_data_overview(self):
         """
         Return a :class:`pandas.DataFrame` containing an overview of
