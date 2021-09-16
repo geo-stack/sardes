@@ -29,6 +29,7 @@ from qtpy.QtWidgets import QApplication
 # ---- Local imports
 from sardes.api.tablemodels import SardesTableColumn
 from sardes.tables.models import StandardSardesTableModel
+from sardes.tables.managers import SardesTableModelsManager
 from sardes.config.locale import _
 from sardes.widgets.tableviews import (
     SardesTableWidget, MSEC_MIN_PROGRESS_DISPLAY, QMessageBox, QCheckBox,
@@ -121,6 +122,9 @@ def tablemodel(qtbot, TABLE_DATAF):
                 delegate=NotEditableDelegate),
             ]
 
+        __dataname__ = 'test_table_dataf_name'
+        __libnames__ = []
+
         def logical_to_visual_data(self, visual_dataf):
             visual_dataf['col1'].replace(
                 to_replace={True: _('Yes'), False: _('No')}, inplace=True)
@@ -129,15 +133,17 @@ def tablemodel(qtbot, TABLE_DATAF):
     # Setup table and database connection manager.
     tablemodel = SardesTableModelMock()
 
-    db_connection_manager = DatabaseConnectionManager()
-    db_connection_manager.register_table_model(
-        tablemodel, 'test_table_dataf_name')
-    db_connection_manager.connect_to_db(DatabaseAccessorTest())
+    dbconnmanager = DatabaseConnectionManager()
+
+    table_models_manager = SardesTableModelsManager(dbconnmanager)
+    table_models_manager.register_table_model(tablemodel)
 
     # We need to connect manually the database manager data changed signal
     # to the method to update data because this is handled on the plugin side.
-    db_connection_manager.sig_database_data_changed.connect(
+    dbconnmanager.sig_database_data_changed.connect(
         tablemodel.update_data)
+
+    dbconnmanager.connect_to_db(DatabaseAccessorTest())
 
     return tablemodel
 
@@ -577,10 +583,29 @@ def test_add_new_empty_row(tablewidget, qtbot, mocker, TABLE_DATAF):
     assert selection_model.currentIndex().isValid()
     assert selection_model.currentIndex() == tableview.model().index(4, 0)
 
-    # Save the results.
-    mocker.patch.object(QMessageBox, 'exec_', return_value=QMessageBox.Save)
+    # Save the results. A 'Save edits error' message should pop up because
+    # values in 'Column #0' cannot be null.
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Ok)
     qtbot.keyPress(tablewidget, Qt.Key_Enter, modifier=Qt.ControlModifier)
     qtbot.wait(100)
+
+    assert qmsgbox_patcher.call_count == 1
+    assert tableview.row_count() == 5
+    assert len(TABLE_DATAF) == 3
+
+    # Edit the value in the column to a non null value and try to save the
+    # table edits again.
+    tableview.model().set_data_edit_at(
+        tableview.model().index(3, 0), 'new_value_row3')
+    tableview.model().set_data_edit_at(
+        tableview.model().index(4, 0), 'new_value_row4')
+
+    qmsgbox_patcher.return_value = QMessageBox.Save
+    qtbot.keyPress(tablewidget, Qt.Key_Enter, modifier=Qt.ControlModifier)
+    qtbot.wait(100)
+
+    assert qmsgbox_patcher.call_count == 2
     assert tableview.row_count() == 5
     assert len(TABLE_DATAF) == 5
 
