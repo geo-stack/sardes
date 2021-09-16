@@ -16,6 +16,7 @@ module. Therefore, the tests must be run sequentially and in the right order.
 
 # ---- Standard imports
 import datetime
+import itertools
 import os
 import os.path as osp
 os.environ['SARDES_PYTEST'] = 'True'
@@ -36,6 +37,16 @@ from sardes.database.accessors.accessor_sardes_lite import (
     DatabaseAccessorSardesLite, CURRENT_SCHEMA_VERSION, DATE_FORMAT)
 
 
+def assert_dataframe_equals(df1, df2):
+    """
+    Assert whether two Pandas dataframe df1 and df2 are equal or not.
+    Account for the fact that the equality of two numpy nan values is False.
+    """
+    for index, column in itertools.product(df1.index, df1.columns):
+        x1, x2 = df1.at[index, column], df2.at[index, column]
+        assert are_values_equal(x1, x2), '{} != {}'.format(x1, x2)
+
+
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
@@ -52,7 +63,10 @@ def dbaccessor0(tmp_path):
     dbaccessor.connect()
     assert dbaccessor.is_connected()
 
-    return dbaccessor
+    yield dbaccessor
+
+    dbaccessor.close_connection()
+    assert not dbaccessor.is_connected()
 
 
 @pytest.fixture(scope="module")
@@ -218,7 +232,8 @@ def test_add_get_del_construction_logs(dbaccessor0, tmp_path):
     assert dbaccessor0.get_stored_attachments_info().empty
 
 
-def test_manual_measurements(dbaccessor0, obswells_data, manual_measurements):
+def test_manual_measurements_interface(dbaccessor0, obswells_data,
+                                       manual_measurements):
     """
     Test that adding, editing and retrieving manual water level measurements
     is working as expected.
@@ -236,15 +251,19 @@ def test_manual_measurements(dbaccessor0, obswells_data, manual_measurements):
     assert saved_manual_measurements.empty
     assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
 
-    # Add manual measurements.
+    # =========================================================================
+    # Add
+    # =========================================================================
     for index, row in manual_measurements.iterrows():
         dbaccessor0.add_manual_measurements(index, row.to_dict())
 
     saved_manual_measurements = dbaccessor0.get_manual_measurements()
     assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
-    assert saved_manual_measurements.to_dict() == manual_measurements.to_dict()
+    assert_dataframe_equals(saved_manual_measurements, manual_measurements)
 
-    # Edit a manual measurement.
+    # =========================================================================
+    # Edit
+    # =========================================================================
     gen_num_value_uuid = manual_measurements.index[0]
     old_values = manual_measurements.loc[gen_num_value_uuid].to_dict()
     edited_values = {
@@ -261,7 +280,9 @@ def test_manual_measurements(dbaccessor0, obswells_data, manual_measurements):
     assert (saved_manual_measurements.loc[gen_num_value_uuid].to_dict() ==
             edited_values)
 
-    # Delete a manual measurements.
+    # =========================================================================
+    # Delete
+    # =========================================================================
     dbaccessor0.delete_manual_measurements(gen_num_value_uuid)
     saved_manual_measurements = dbaccessor0.get_manual_measurements()
     assert (saved_manual_measurements.to_dict() ==
