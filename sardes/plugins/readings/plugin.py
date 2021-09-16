@@ -115,6 +115,12 @@ class ReadingsTableModel(SardesTableModel):
         super().set_model_data(dataf, columns)
 
     # ---- SardesTableModel API
+    def check_data_edits(self, callback):
+        """
+        Check that there is no issues with the data edits of this model.
+        """
+        callback(error=None)
+
     def save_data_edits(self):
         """
         Save all data edits to the database.
