@@ -1139,6 +1139,38 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
+    def delete_sonde_installations(self, install_ids):
+        """
+        Delete the sonde installations corresponding to the specified ids.
+        """
+        if not is_list_like(install_ids):
+            install_ids = [install_ids, ]
+
+        # We need to update the "observations" and "process" tables to remove
+        # any reference to the sonde installations that are going to be
+        # removed from the database.
+        observations = (
+            self._session.query(Observation)
+            .filter(SondeInstallation.install_uuid.in_(install_ids))
+            .filter(Observation.process_id == SondeInstallation.process_id)
+            )
+        for observation in observations:
+            observation.process_id = None
+
+        processes = (
+            self._session.query(Process)
+            .filter(SondeInstallation.install_uuid.in_(install_ids))
+            .filter(Process.process_id == SondeInstallation.process_id)
+            )
+        for process in processes:
+            self._session.delete(process)
+
+        # Delete the SondeInstallation items from the database.
+        self._session.execute(
+            SondeInstallation.__table__.delete().where(
+                SondeInstallation.install_uuid.in_(install_ids)))
+        self._session.commit()
+
     # ---- Manual mesurements
     def _get_generic_num_value(self, gen_num_value_uuid):
         """
