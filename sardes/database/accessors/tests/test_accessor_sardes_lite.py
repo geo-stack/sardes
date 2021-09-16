@@ -358,6 +358,112 @@ def test_repere_data_interface(dbaccessor0, obswells_data, repere_data):
     assert len(repere_data_bd) == 0
 
 
+def test_sonde_installations_interface(dbaccessor0, obswells_data, sondes_data,
+                                       sondes_installation, readings_data):
+    """
+    Test that adding, editing and retrieving sonde installations is working as
+    expected.
+    """
+    dbaccessor = dbaccessor0
+
+    # Add the observation wells.
+    for obs_well_uuid, obs_well_data in obswells_data.iterrows():
+        dbaccessor.add_observation_wells_data(
+            obs_well_uuid, obs_well_data.to_dict())
+
+    # Add the inventory of data loggers.
+    for index, row in sondes_data.iterrows():
+        dbaccessor.add_sondes_data(index, row.to_dict())
+
+    # Assert that the empty dataframe of the sonde installations data is
+    # formatted as expected.
+    sonde_installs_bd = dbaccessor.get_sonde_installations()
+    assert sonde_installs_bd.empty
+    assert is_datetime64_any_dtype(sonde_installs_bd['start_date'])
+    assert is_datetime64_any_dtype(sonde_installs_bd['end_date'])
+
+    # =========================================================================
+    # Add
+    # =========================================================================
+    for index, row in sondes_installation.iterrows():
+        dbaccessor.add_sonde_installations(index, row.to_dict())
+
+    sonde_installs_bd = dbaccessor.get_sonde_installations()
+    assert is_datetime64_any_dtype(sonde_installs_bd['start_date'])
+    assert is_datetime64_any_dtype(sonde_installs_bd['end_date'])
+    assert_dataframe_equals(sondes_installation, sonde_installs_bd)
+
+    # =========================================================================
+    # Edit
+    # =========================================================================
+    sonde_install_id = dbaccessor.get_sonde_installations().index[0]
+    old_values = sonde_installs_bd.loc[sonde_install_id].to_dict()
+    edited_values = {
+        'start_date': datetime.date(2006, 4, 1),
+        'end_date': datetime.date(2016, 4, 1),
+        'install_depth': 11.25}
+    for attribute_name, attribute_value in edited_values.items():
+        assert attribute_value != old_values[attribute_name]
+    dbaccessor.set_sonde_installations(sonde_install_id, edited_values)
+
+    sonde_installs_bd = dbaccessor.get_sonde_installations()
+    for column, value in edited_values.items():
+        assert sonde_installs_bd.at[sonde_install_id, column] == value
+
+    # Assert that a process item has been added as expected for each
+    # sonde installation.
+    process_data = dbaccessor._get_process_data()
+    assert len(process_data) == len(sonde_installs_bd)
+    for process_id in sonde_installs_bd['process_id'].values:
+        assert process_id in process_data.index
+
+    # =========================================================================
+    # Delete
+    # =========================================================================
+    sonde_installs_bd = dbaccessor.get_sonde_installations()
+
+    # We add some readings data related to the first sonde installation and
+    # assert that it was linked correctly to the specified sonde
+    # installation.
+    dbaccessor.add_timeseries_data(
+        readings_data, obswells_data.index[0], sonde_installs_bd.index[0])
+    readings = dbaccessor.get_timeseries_for_obs_well(obswells_data.index[0])
+    assert (readings['sonde_id'] == '1016042').all()
+    assert (readings['install_depth'] == 11.25).all()
+
+    # Assert that an observation related to the sonde installation at index 0
+    # has been added as expected in the database.
+    observations = dbaccessor._get_observation_data()
+    sonde_installs_bd = dbaccessor.get_sonde_installations()
+    assert len(observations) == 1
+    assert (observations.iloc[0]['process_id'] ==
+            sonde_installs_bd.iloc[0]['process_id'])
+
+    # Delete the first sonde installation of the database.
+    dbaccessor.delete_sonde_installations(sonde_installs_bd.index[0])
+
+    sonde_installs_bd = dbaccessor.get_sonde_installations()
+    assert len(sonde_installs_bd) == len(sondes_installation) - 1
+
+    # Delete the remaining repere data.
+    dbaccessor.delete_sonde_installations(sonde_installs_bd.index)
+
+    sonde_installs_bd = dbaccessor.get_sonde_installations()
+    assert len(sonde_installs_bd) == 0
+
+    # Check that the 'process' and 'observation' were updated accordingly.
+    process_data = dbaccessor._get_process_data()
+    assert len(process_data) == 0
+
+    observations = dbaccessor._get_observation_data()
+    assert len(observations) == 1
+    assert pd.isnull(observations.iloc[0]['process_id'])
+
+    readings = dbaccessor.get_timeseries_for_obs_well(obswells_data.index[0])
+    assert pd.isnull(readings['sonde_id']).all()
+    assert pd.isnull(readings['install_depth']).all()
+
+
 # =============================================================================
 # ---- Inter-dependent Tests
 # =============================================================================
