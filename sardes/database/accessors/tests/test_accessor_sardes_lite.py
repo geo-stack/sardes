@@ -19,6 +19,7 @@ import datetime
 import itertools
 import os
 import os.path as osp
+import uuid
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
@@ -747,10 +748,27 @@ def test_edit_sonde_installations(dbaccessor):
                 attribute_value), attribute_name
 
 
-def test_add_timeseries(dbaccessor):
+def test_timeseries_interface(dbaccessor0, obswells_data, sondes_data,
+                              sondes_installation):
     """
-    Test that adding timeseries data to the database is working as expected.
+    Test that adding editing and deleting timeseries data in the database
+    is working as expected.
     """
+    dbaccessor = dbaccessor0
+
+    # Add the observation wells.
+    for obs_well_uuid, obs_well_data in obswells_data.iterrows():
+        dbaccessor.add_observation_wells_data(
+            obs_well_uuid, obs_well_data.to_dict())
+
+    # Add the inventory of data loggers.
+    for index, row in sondes_data.iterrows():
+        dbaccessor.add_sondes_data(index, row.to_dict())
+
+    # Add the sonde installations.
+    for index, row in sondes_installation.iterrows():
+        dbaccessor.add_sonde_installations(index, row.to_dict())
+
     # Assert that the accessor correctly return an empty dataframe when
     # no timeseries data is saved in the database for a given sampling feature
     # and data type.
@@ -760,6 +778,10 @@ def test_add_timeseries(dbaccessor):
         tseries_data = dbaccessor.get_timeseries_for_obs_well(
             obs_well_uuid, data_type)
     assert tseries_data.empty
+
+    # =========================================================================
+    # Add
+    # =========================================================================
 
     # Add new water level and water temperature times series to the database
     # and assert that those were saved and can be retrieved from the database
@@ -777,14 +799,14 @@ def test_add_timeseries(dbaccessor):
     wlevel_data = dbaccessor.get_timeseries_for_obs_well(
         obs_well_uuid, DataType.WaterLevel)
     assert len(wlevel_data) == 3
-    assert wlevel_data['obs_id'].unique() == [1]
-    assert wlevel_data['sonde_id'].unique() == ['1015973b']
+    assert (wlevel_data['obs_id'] == 1).all()
+    assert (wlevel_data['sonde_id'] == '1016042').all()
 
     wtemp_data = dbaccessor.get_timeseries_for_obs_well(
         obs_well_uuid, DataType.WaterTemp)
     assert len(wtemp_data) == 3
-    assert wtemp_data['obs_id'].unique() == [1]
-    assert wtemp_data['sonde_id'].unique() == ['1015973b']
+    assert (wtemp_data['obs_id'] == 1).all()
+    assert (wtemp_data['sonde_id'] == '1016042').all()
 
     wcond_data = dbaccessor.get_timeseries_for_obs_well(
         obs_well_uuid, DataType.WaterEC)
@@ -801,11 +823,9 @@ def test_add_timeseries(dbaccessor):
             datetime.date(2018, 9, 29))
     assert data_overview.at[obs_well_uuid, 'mean_water_level'] == 1.2
 
-
-def test_edit_timeseries(dbaccessor):
-    """
-    Test that editing timeseries data in the database is working as expected.
-    """
+    # =========================================================================
+    # Edit
+    # =========================================================================
     tseries_edits = init_tseries_edits()
     tseries_edits.loc[
         (datetime.datetime(2018, 9, 27, 7), 1, DataType.WaterLevel), 'value'
@@ -829,71 +849,13 @@ def test_edit_timeseries(dbaccessor):
     data_overview = dbaccessor.get_observation_wells_data_overview()
     assert data_overview.at[obs_well_uuid, 'mean_water_level'] == 1.917
 
-
-def test_delete_non_existing_data(dbaccessor):
-    """
-    Test that trying to delete a timeseries data when no data exist in the
-    database for the given datatype, datetime and observation id is handled
-    correctly by the accessor.
-
-    Regression test for cgq-qgc/sardes#312.
-    """
-    # Try deleting a timeseries data when no timeseries exist for the given
-    # datatype and observation id.
-    tseries_dels = init_tseries_dels()
-    tseries_dels = tseries_dels.append(
-        {'obs_id': 1,
-         'datetime': datetime.datetime(2018, 9, 29, 7),
-         'data_type': DataType.WaterEC},
-        ignore_index=True)
-    dbaccessor.delete_timeseries_data(tseries_dels)
-
-    # Try deleting a timeseries data that doesn't exist in the database for
-    # the given datatype, datetime and observation id.
-    tseries_dels = init_tseries_dels()
-    tseries_dels = tseries_dels.append(
-        {'obs_id': 1,
-         'datetime': datetime.datetime(2018, 9, 30, 7),
-         'data_type': DataType.WaterTemp},
-        ignore_index=True)
-    dbaccessor.delete_timeseries_data(tseries_dels)
-
-
-def test_edit_non_existing_data(dbaccessor):
-    """
-    Test that trying to edit a timeseries data when no data exist in the
-    database for the given datatype, datetime and observation id is handled
-    correctly by the accessor.
-
-    Regression test for cgq-qgc/sardes#312.
-    """
-    # Try editing a timeseries data that doesn't exist in the database for
-    # the given datatype, datetime and observation id.
-    tseries_edits = init_tseries_edits()
-    tseries_edits.loc[
-        (datetime.datetime(2018, 9, 29, 7), 1, DataType.WaterEC), 'value'
-        ] = 1234.56
-    dbaccessor.save_timeseries_data_edits(tseries_edits)
-
-    # Assert that the data we were trying to edit was added and saved
-    # correctly in the database.
-    obs_well_uuid = dbaccessor.get_observation_wells_data().index[0]
-    waterec_data = dbaccessor.get_timeseries_for_obs_well(
-        obs_well_uuid, DataType.WaterEC)
-    assert len(waterec_data) == 1
-    assert waterec_data.iloc[0][DataType.WaterEC] == 1234.56
-
-
-def test_delete_timeseries(dbaccessor):
-    """
-    Test that deleting timeseries data from the database is working
-    as expected.
-    """
+    # =========================================================================
+    # Delete
+    # =========================================================================
     data_types = [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC]
     tseries_dels = init_tseries_dels()
 
     # Delete the third data of the timeseries data.
-
     for data_type in data_types:
         tseries_dels = tseries_dels.append(
             {'obs_id': 1,
@@ -915,7 +877,7 @@ def test_delete_timeseries(dbaccessor):
     assert (data_overview.at[obs_well_uuid, 'last_date'] ==
             datetime.date(2018, 9, 28))
 
-    # Delete the remaning timeseries data.
+    # Delete the remaining timeseries data.
     for data_type in data_types:
         tseries_dels = tseries_dels.append(
             {'obs_id': 1,
@@ -939,6 +901,86 @@ def test_delete_timeseries(dbaccessor):
     # expected.
     data_overview = dbaccessor.get_observation_wells_data_overview()
     assert len(data_overview) == 0
+
+
+def test_delete_non_existing_data(dbaccessor0):
+    """
+    Test that trying to delete a timeseries data when no data exist in the
+    database for the given datatype, datetime and observation id is handled
+    correctly by the accessor.
+
+    Regression test for cgq-qgc/sardes#312.
+    """
+    dbaccessor = dbaccessor0
+
+    # Add timeseries data to the database.
+    new_tseries_data = pd.DataFrame(
+        [['2018-09-27 07:00:00', 1.1, 3],
+         ['2018-09-28 07:00:00', 1.2, 4],
+         ['2018-09-29 07:00:00', 1.3, 5]],
+        columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
+    new_tseries_data['datetime'] = pd.to_datetime(
+        new_tseries_data['datetime'], format=DATE_FORMAT)
+    dbaccessor.add_timeseries_data(
+        new_tseries_data, sampling_feature_uuid=None, install_uuid=None)
+
+    # Try deleting a timeseries data when no timeseries exist for the given
+    # datatype and observation id.
+    tseries_dels = init_tseries_dels()
+    tseries_dels = tseries_dels.append(
+        {'obs_id': 1,
+         'datetime': datetime.datetime(2018, 9, 29, 7),
+         'data_type': DataType.WaterEC},
+        ignore_index=True)
+    dbaccessor.delete_timeseries_data(tseries_dels)
+
+    # Try deleting a timeseries data that doesn't exist in the database for
+    # the given datatype, datetime and observation id.
+    tseries_dels = init_tseries_dels()
+    tseries_dels = tseries_dels.append(
+        {'obs_id': 1,
+         'datetime': datetime.datetime(2018, 9, 30, 7),
+         'data_type': DataType.WaterTemp},
+        ignore_index=True)
+    dbaccessor.delete_timeseries_data(tseries_dels)
+
+
+def test_edit_non_existing_data(dbaccessor0):
+    """
+    Test that trying to edit a timeseries data when no data exist in the
+    database for the given datatype, datetime and observation id is handled
+    correctly by the accessor.
+
+    Regression test for cgq-qgc/sardes#312.
+    """
+    dbaccessor = dbaccessor0
+
+    # Add timeseries data to the database.
+    obswell_id = uuid.uuid4()
+    new_tseries_data = pd.DataFrame(
+        [['2018-09-27 07:00:00', 1.1, 3],
+         ['2018-09-28 07:00:00', 1.2, 4],
+         ['2018-09-29 07:00:00', 1.3, 5]],
+        columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
+    new_tseries_data['datetime'] = pd.to_datetime(
+        new_tseries_data['datetime'], format=DATE_FORMAT)
+    dbaccessor.add_timeseries_data(
+        new_tseries_data, obswell_id, install_uuid=None)
+
+    # Try editing a timeseries data that doesn't exist in the database for
+    # the given datatype, datetime and observation id.
+    tseries_edits = init_tseries_edits()
+    tseries_edits.loc[
+        (datetime.datetime(2018, 9, 29, 7), 1, DataType.WaterEC), 'value'
+        ] = 1234.56
+    dbaccessor.save_timeseries_data_edits(tseries_edits)
+
+    # Assert that the data we were trying to edit was added and saved
+    # correctly in the database.
+    waterec_data = dbaccessor.get_timeseries_for_obs_well(
+        obswell_id, DataType.WaterEC)
+    assert len(waterec_data) == 1
+    assert waterec_data.iloc[0][DataType.WaterEC] == 1234.56
 
 
 if __name__ == "__main__":
