@@ -1669,6 +1669,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 date_times = (
                     sub_data[sub_data['data_type'] == data_type]
                     ['datetime'].dt.to_pydatetime())
+                # TODO: improve by deleting chunks of data at a time.
                 for date_time in date_times:
                     self._session.execute(
                         TimeSeriesData.__table__.delete().where(and_(
