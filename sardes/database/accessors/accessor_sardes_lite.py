@@ -1688,6 +1688,17 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.commit()
 
     # ---- Process
+    def _get_process_data(self):
+        """
+        Return a pandas dataframe containing the content of
+        the 'process' table.
+        """
+        query = self._session.query(Process)
+        process = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
+        process.set_index('process_id', inplace=True, drop=True)
+        return process
+
     def _get_process(self, process_id):
         """Return the process related to the given process_id."""
         return (self._session.query(Process)
@@ -1695,6 +1706,17 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 .one())
 
     # ---- Observations
+    def _get_observation_data(self):
+        """
+        Return a pandas dataframe containing the content of
+        the 'observation' table.
+        """
+        query = self._session.query(Observation)
+        observations = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
+        observations.set_index('observation_id', inplace=True, drop=True)
+        return observations
+
     def _get_observation(self, observation_id):
         """
         Return the observation related to the given id.
