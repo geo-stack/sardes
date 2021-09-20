@@ -1077,7 +1077,11 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         query = self._session.query(SondeFeature)
         sondes = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='sonde_uuid')
+
+        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
+        # directly in 'read_sql_query' with the new 'dtype' argument.
 
         # Make sure date_reception and date_withdrawal are considered as
         # datetime and strip the hour portion since it doesn't make sense here.
@@ -1086,8 +1090,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         sondes['date_withdrawal'] = pd.to_datetime(
             sondes['date_withdrawal']).dt.date
 
-        # Set the index to the sonde ids.
-        sondes.set_index('sonde_uuid', inplace=True, drop=True)
+        for column in ['in_repair', 'out_of_order', 'lost', 'off_network']:
+            sondes[column] = sondes[column].astype('boolean')
 
         return sondes
 
