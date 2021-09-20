@@ -429,18 +429,9 @@ def test_sonde_models_interface(dbaccessor0, obswells_data, sondes_data,
     """
     dbaccessor = dbaccessor0
 
-    # Add the observation wells.
-    for obs_well_uuid, obs_well_data in obswells_data.iterrows():
-        dbaccessor.add_observation_wells_data(
-            obs_well_uuid, obs_well_data.to_dict())
-
     # Add the inventory of data loggers.
     for index, row in sondes_data.iterrows():
         dbaccessor.add_sondes_data(index, row.to_dict())
-
-    # Add the sonde installations.
-    for index, row in sondes_installation.iterrows():
-        dbaccessor.add_sonde_installations(index, row.to_dict())
 
     len_sonde_models = len(dbaccessor.get_sonde_models_lib())
     assert len_sonde_models > 0
