@@ -26,7 +26,8 @@ os.environ['SARDES_PYTEST'] = 'True'
 import numpy as np
 import pytest
 import pandas as pd
-from pandas.api.types import is_datetime64_any_dtype
+from pandas.api.types import (
+    is_datetime64_any_dtype, is_int64_dtype, is_object_dtype, is_bool_dtype)
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 
@@ -510,6 +511,91 @@ def test_sonde_models_interface(dbaccessor0, sondes_data):
     assert len(sonde_models) == len_sonde_models
 
 
+def test_sonde_feature_interface(dbaccessor0, sondes_data, sondes_installation,
+                                 obswells_data):
+    """
+    Test that adding, editing and retrieving sonde features is working as
+    expected.
+    """
+    dbaccessor = dbaccessor0
+
+    # Assert that the empty repere data dataframe is formatted as expected.
+    sondes_data_bd = dbaccessor.get_sondes_data()
+    assert sondes_data_bd.empty
+    assert is_object_dtype(sondes_data_bd['date_reception'])
+    assert is_object_dtype(sondes_data_bd['date_withdrawal'])
+    for column in ['in_repair', 'out_of_order', 'lost', 'off_network']:
+        assert is_bool_dtype(sondes_data_bd[column])
+
+    # =========================================================================
+    # Add
+    # =========================================================================
+
+    # Add the inventory of data loggers.
+    for index, row in sondes_data.iterrows():
+        dbaccessor.add_sondes_data(index, row.to_dict())
+
+    sondes_data_bd = dbaccessor.get_sondes_data()
+    assert_dataframe_equals(sondes_data, sondes_data_bd)
+
+    # =========================================================================
+    # Edit
+    # =========================================================================
+    sonde_models = dbaccessor.get_sonde_models_lib()
+    sonde_id = sondes_data_bd.index[0]
+    old_values = sondes_data_bd.loc[sonde_id].to_dict()
+    edited_values = {
+        'sonde_serial_no': '1015973b',
+        'sonde_model_id': sonde_models.index[1],
+        'date_reception': datetime.date(2006, 3, 15),
+        'date_withdrawal': datetime.date(2010, 6, 12),
+        'in_repair': True,
+        'out_of_order': True,
+        'lost': True,
+        'off_network': True,
+        'sonde_notes': 'Edited fake sonde note.'
+        }
+    for attribute_name, attribute_value in edited_values.items():
+        assert attribute_value != old_values[attribute_name]
+    dbaccessor.set_sondes_data(sonde_id, edited_values)
+
+    sondes_data_bd = dbaccessor.get_sondes_data()
+    for column, value in edited_values.items():
+        assert sondes_data_bd.at[sonde_id, column] == value, column
+
+    # =========================================================================
+    # Delete
+    # =========================================================================
+
+    # Add the observation wells.
+    for obs_well_uuid, obs_well_data in obswells_data.iterrows():
+        dbaccessor.add_observation_wells_data(
+            obs_well_uuid, obs_well_data.to_dict())
+
+    # Add the sonde installations.
+    for index, row in sondes_installation.iterrows():
+        dbaccessor.add_sonde_installations(index, row.to_dict())
+
+    # Try to delete a sonde that is used in table 'sonde_installation'.
+    sondes_data_bd = dbaccessor.get_sondes_data()
+    assert len(sondes_data_bd) == 6
+
+    sonde_id = sondes_installation.iloc[0]['sonde_uuid']
+    with pytest.raises(DatabaseAccessorError):
+        dbaccessor.delete_sondes_data(sonde_id)
+
+    sondes_data_bd = dbaccessor.get_sondes_data()
+    assert len(sondes_data_bd) == 6
+
+    # We deleted all sonde installations and try to delete all sonde
+    # features from the database.
+    dbaccessor.delete_sonde_installations(sondes_installation.index)
+    dbaccessor.delete_sondes_data(sondes_data.index)
+
+    sondes_data_bd = dbaccessor.get_sondes_data()
+    assert len(sondes_data_bd) == 0
+
+
 # =============================================================================
 # ---- Inter-dependent Tests
 # =============================================================================
@@ -577,63 +663,6 @@ def test_edit_observation_well(dbaccessor):
     obs_wells = dbaccessor.get_observation_wells_data()
     for attribute_name, attribute_value in edited_attribute_values.items():
         assert (obs_wells.at[sampling_feature_uuid, attribute_name] ==
-                attribute_value), attribute_name
-
-
-def test_add_sonde_feature(dbaccessor):
-    """
-    Test that adding a sonde to the database is working as expected.
-    """
-    sonde_models = dbaccessor.get_sonde_models_lib()
-    sonde_data = dbaccessor.get_sondes_data()
-    assert len(sonde_data) == 0
-
-    sonde_feature_uuid = dbaccessor._create_index('sondes_data')
-    attribute_values = {
-        'sonde_serial_no': '1015973',
-        'sonde_model_id': sonde_models.index[0],
-        'date_reception': datetime.date(2006, 3, 30),
-        'date_withdrawal': pd.NaT,
-        'in_repair': False,
-        'out_of_order': False,
-        'lost': False,
-        'off_network': False,
-        'sonde_notes': 'This is a fake sonde for testing purposes only.'
-        }
-    dbaccessor.add_sondes_data(sonde_feature_uuid, attribute_values)
-
-    sonde_data = dbaccessor.get_sondes_data()
-    assert len(sonde_data) == 1
-    for attribute_name, attribute_value in attribute_values.items():
-        if attribute_name == 'date_withdrawal':
-            assert pd.isnull(sonde_data.at[sonde_feature_uuid, attribute_name])
-        else:
-            assert (sonde_data.at[sonde_feature_uuid, attribute_name] ==
-                    attribute_value), attribute_name
-
-
-def test_edit_sonde_feature(dbaccessor):
-    """
-    Test that editing a sonde in the database is working as expected.
-    """
-    sonde_models = dbaccessor.get_sonde_models_lib()
-    sonde_feature_uuid = dbaccessor.get_sondes_data().index[0]
-    edited_attribute_values = {
-        'sonde_serial_no': '1015973b',
-        'sonde_model_id': sonde_models.index[1],
-        'date_reception': datetime.date(2006, 3, 15),
-        'date_withdrawal': datetime.date(2010, 6, 12),
-        'in_repair': True,
-        'out_of_order': True,
-        'lost': True,
-        'off_network': True,
-        'sonde_notes': 'Edited fake sonde note.'
-        }
-    dbaccessor.set_sondes_data(sonde_feature_uuid, edited_attribute_values)
-
-    sonde_data = dbaccessor.get_sondes_data()
-    for attribute_name, attribute_value in edited_attribute_values.items():
-        assert (sonde_data.at[sonde_feature_uuid, attribute_name] ==
                 attribute_value), attribute_name
 
 
