@@ -33,10 +33,10 @@ from matplotlib.figure import Figure
 # ---- Local imports
 from sardes.utils.data_operations import are_values_equal
 from sardes.api.timeseries import DataType
-from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
+from sardes.api.database_accessor import (
+    DatabaseAccessorError, init_tseries_edits, init_tseries_dels)
 from sardes.database.accessors.accessor_sardes_lite import (
-    DatabaseAccessorSardesLite, CURRENT_SCHEMA_VERSION, DATE_FORMAT,
-    DBAPIError)
+    DatabaseAccessorSardesLite, CURRENT_SCHEMA_VERSION, DATE_FORMAT)
 
 
 def assert_dataframe_equals(df1, df2):
@@ -421,8 +421,7 @@ def test_sonde_installations_interface(dbaccessor0, obswells_data, sondes_data,
     assert pd.isnull(readings['install_depth']).all()
 
 
-def test_sonde_models_interface(dbaccessor0, obswells_data, sondes_data,
-                                sondes_installation):
+def test_sonde_models_interface(dbaccessor0, sondes_data):
     """
     Test that adding, editing and retrieving sonde models is working as
     expected.
@@ -495,16 +494,17 @@ def test_sonde_models_interface(dbaccessor0, obswells_data, sondes_data,
     sonde_models = dbaccessor.get_sonde_models_lib()
     assert len(sonde_models) == len_sonde_models + 2
 
-    with pytest.raises(DBAPIError):
-        dbaccessor.delete_sonde_models_lib(sondes_data.index[0])
+    with pytest.raises(DatabaseAccessorError):
+        dbaccessor.delete_sonde_models_lib(
+            sondes_data.iloc[0]['sonde_model_id'])
 
     sonde_models = dbaccessor.get_sonde_models_lib()
     assert len(sonde_models) == len_sonde_models + 2
 
     # Try to delete the last two new sonde models that were added previously
     # in this test and are not referenced in table 'sonde_installation'.
-    dbaccessor.delete_sonde_models_lib(len(sonde_models))
-    dbaccessor.delete_sonde_models_lib(len(sonde_models) - 1)
+    dbaccessor.delete_sonde_models_lib(sonde_models.index[-1])
+    dbaccessor.delete_sonde_models_lib(sonde_models.index[-2])
 
     sonde_models = dbaccessor.get_sonde_models_lib()
     assert len(sonde_models) == len_sonde_models
