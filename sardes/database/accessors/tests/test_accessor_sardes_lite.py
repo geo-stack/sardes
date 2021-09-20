@@ -54,7 +54,7 @@ def assert_dataframe_equals(df1, df2):
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture()
-def dbaccessor0(tmp_path):
+def dbaccessor(tmp_path):
     """
     A Database SQlite accessor connected to an empty database that is
     reinitialized after each test.
@@ -72,31 +72,13 @@ def dbaccessor0(tmp_path):
     assert not dbaccessor.is_connected()
 
 
-@pytest.fixture(scope="module")
-def dbaccessor(tmp_path_factory):
-    """
-    A Database SQlite accessor that is connected to a database that is
-    shared among all tests that are inter-dependent.
-    """
-    tmp_path = tmp_path_factory.mktemp("database")
-    dbaccessor = DatabaseAccessorSardesLite(
-        osp.join(tmp_path, 'sqlite_database_test.db'))
-    dbaccessor.init_database()
-
-    dbaccessor.connect()
-    assert dbaccessor.is_connected()
-
-    return dbaccessor
-
-
 # =============================================================================
 # ---- Independent Tests
 # =============================================================================
-def test_connection(dbaccessor0):
+def test_connection(dbaccessor):
     """
     Test that connecting to the BD fails and succeed as expected.
     """
-    dbaccessor = dbaccessor0
     dbaccessor.close_connection()
 
     # Assert that the connection fails if the version of the BD is outdated.
@@ -143,17 +125,17 @@ def test_connection(dbaccessor0):
     dbaccessor.close_connection()
 
 
-def test_construction_logs_interface(dbaccessor0, tmp_path):
+def test_construction_logs_interface(dbaccessor, tmp_path):
     """
     Test that adding, getting and deleting construction logs in the database
     is working as expected.
     """
     attachment_type = 1
-    assert dbaccessor0.get_stored_attachments_info().empty
+    assert dbaccessor.get_stored_attachments_info().empty
 
     # Add a new observation well to the database.
-    sampling_feature_uuid = dbaccessor0._create_index('observation_wells_data')
-    dbaccessor0.add_observation_wells_data(
+    sampling_feature_uuid = dbaccessor._create_index('observation_wells_data')
+    dbaccessor.add_observation_wells_data(
         sampling_feature_uuid, attribute_values={})
 
     for fext in ['.png', '.jpg', '.jpeg', '.tif', '.pdf']:
@@ -170,23 +152,23 @@ def test_construction_logs_interface(dbaccessor0, tmp_path):
         figure.savefig(filename)
 
         # Attach the construction log file.
-        dbaccessor0.set_attachment(
+        dbaccessor.set_attachment(
             sampling_feature_uuid, attachment_type, filename)
-        assert len(dbaccessor0.get_stored_attachments_info()) == 1
+        assert len(dbaccessor.get_stored_attachments_info()) == 1
 
         # Retrieve the construction log file from the database.
-        data, name = dbaccessor0.get_attachment(
+        data, name = dbaccessor.get_attachment(
             sampling_feature_uuid, attachment_type)
         assert name == osp.basename(filename)
         with open(filename, 'rb') as f:
             assert f.read() == data
 
     # Remove the construction log file from the database.
-    dbaccessor0.del_attachment(sampling_feature_uuid, attachment_type)
-    assert dbaccessor0.get_stored_attachments_info().empty
+    dbaccessor.del_attachment(sampling_feature_uuid, attachment_type)
+    assert dbaccessor.get_stored_attachments_info().empty
 
 
-def test_manual_measurements_interface(dbaccessor0, obswells_data,
+def test_manual_measurements_interface(dbaccessor, obswells_data,
                                        manual_measurements):
     """
     Test that adding, editing and retrieving manual water level measurements
@@ -194,8 +176,6 @@ def test_manual_measurements_interface(dbaccessor0, obswells_data,
 
     Regression test for cgq-qgc/sardes#424
     """
-    dbaccessor = dbaccessor0
-
     # Add the observation wells.
     for obswell_id, obswell_data in obswells_data.iterrows():
         dbaccessor.add_observation_wells_data(
@@ -245,13 +225,11 @@ def test_manual_measurements_interface(dbaccessor0, obswells_data,
             manual_measurements.iloc[1:].to_dict())
 
 
-def test_repere_data_interface(dbaccessor0, obswells_data, repere_data):
+def test_repere_data_interface(dbaccessor, obswells_data, repere_data):
     """
     Test that adding, editing and retrieving repere data is working as
     expected.
     """
-    dbaccessor = dbaccessor0
-
     # Add the observation wells.
     for obs_well_uuid, obs_well_data in obswells_data.iterrows():
         dbaccessor.add_observation_wells_data(
@@ -316,14 +294,12 @@ def test_repere_data_interface(dbaccessor0, obswells_data, repere_data):
     assert len(repere_data_bd) == 0
 
 
-def test_sonde_installations_interface(dbaccessor0, obswells_data, sondes_data,
+def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
                                        sondes_installation, readings_data):
     """
     Test that adding, editing and retrieving sonde installations is working as
     expected.
     """
-    dbaccessor = dbaccessor0
-
     # Add the observation wells.
     for obs_well_uuid, obs_well_data in obswells_data.iterrows():
         dbaccessor.add_observation_wells_data(
@@ -422,13 +398,11 @@ def test_sonde_installations_interface(dbaccessor0, obswells_data, sondes_data,
     assert pd.isnull(readings['install_depth']).all()
 
 
-def test_sonde_models_interface(dbaccessor0, sondes_data):
+def test_sonde_models_interface(dbaccessor, sondes_data):
     """
     Test that adding, editing and retrieving sonde models is working as
     expected.
     """
-    dbaccessor = dbaccessor0
-
     # Add the inventory of data loggers.
     for index, row in sondes_data.iterrows():
         dbaccessor.add_sondes_data(index, row.to_dict())
@@ -511,14 +485,12 @@ def test_sonde_models_interface(dbaccessor0, sondes_data):
     assert len(sonde_models) == len_sonde_models
 
 
-def test_sonde_feature_interface(dbaccessor0, sondes_data, sondes_installation,
+def test_sonde_feature_interface(dbaccessor, sondes_data, sondes_installation,
                                  obswells_data):
     """
     Test that adding, editing and retrieving sonde features is working as
     expected.
     """
-    dbaccessor = dbaccessor0
-
     # Assert that the empty repere data dataframe is formatted as expected.
     sondes_data_bd = dbaccessor.get_sondes_data()
     assert sondes_data_bd.empty
@@ -599,17 +571,19 @@ def test_sonde_feature_interface(dbaccessor0, sondes_data, sondes_installation,
 # =============================================================================
 # ---- Inter-dependent Tests
 # =============================================================================
-def test_add_observation_well(dbaccessor):
+def test_observation_well_interface(dbaccessor):
     """
-    Test that adding an observation well to the database is working
-    as expected.
+    Test that adding, editing and retrieving  observation wells in the
+    database is working as expected.
 
     Regression test for cgq-qgc/sardes#244.
     """
     obs_wells = dbaccessor.get_observation_wells_data()
     assert len(obs_wells) == 0
 
-    # Add a new observation well to the database.
+    # =========================================================================
+    # Add
+    # =========================================================================
     sampling_feature_uuid = dbaccessor._create_index('observation_wells_data')
     attribute_values = {
         'obs_well_id': '123A2456',
@@ -634,14 +608,9 @@ def test_add_observation_well(dbaccessor):
         assert (obs_wells.at[sampling_feature_uuid, attribute_name] ==
                 attribute_value), attribute_name
 
-
-def test_edit_observation_well(dbaccessor):
-    """
-    Test that editing an observation well in the database is working
-    as expected.
-
-    Regression test for cgq-qgc/sardes#244.
-    """
+    # =========================================================================
+    # Edit
+    # =========================================================================
     sampling_feature_uuid = dbaccessor.get_observation_wells_data().index[0]
     edited_attribute_values = {
         'obs_well_id': '123A2456_edited',
@@ -669,14 +638,12 @@ def test_edit_observation_well(dbaccessor):
 # =============================================================================
 # ---- Tests timeseries
 # =============================================================================
-def test_timeseries_interface(dbaccessor0, obswells_data, sondes_data,
+def test_timeseries_interface(dbaccessor, obswells_data, sondes_data,
                               sondes_installation):
     """
     Test that adding editing and deleting timeseries data in the database
     is working as expected.
     """
-    dbaccessor = dbaccessor0
-
     # Add the observation wells.
     for obs_well_uuid, obs_well_data in obswells_data.iterrows():
         dbaccessor.add_observation_wells_data(
@@ -824,7 +791,7 @@ def test_timeseries_interface(dbaccessor0, obswells_data, sondes_data,
     assert len(data_overview) == 0
 
 
-def test_delete_non_existing_data(dbaccessor0):
+def test_delete_non_existing_data(dbaccessor):
     """
     Test that trying to delete a timeseries data when no data exist in the
     database for the given datatype, datetime and observation id is handled
@@ -832,8 +799,6 @@ def test_delete_non_existing_data(dbaccessor0):
 
     Regression test for cgq-qgc/sardes#312.
     """
-    dbaccessor = dbaccessor0
-
     # Add timeseries data to the database.
     new_tseries_data = pd.DataFrame(
         [['2018-09-27 07:00:00', 1.1, 3],
@@ -866,7 +831,7 @@ def test_delete_non_existing_data(dbaccessor0):
     dbaccessor.delete_timeseries_data(tseries_dels)
 
 
-def test_edit_non_existing_data(dbaccessor0):
+def test_edit_non_existing_data(dbaccessor):
     """
     Test that trying to edit a timeseries data when no data exist in the
     database for the given datatype, datetime and observation id is handled
@@ -874,8 +839,6 @@ def test_edit_non_existing_data(dbaccessor0):
 
     Regression test for cgq-qgc/sardes#312.
     """
-    dbaccessor = dbaccessor0
-
     # Add timeseries data to the database.
     obswell_id = uuid.uuid4()
     new_tseries_data = pd.DataFrame(
@@ -904,14 +867,13 @@ def test_edit_non_existing_data(dbaccessor0):
     assert waterec_data.iloc[0][DataType.WaterEC] == 1234.56
 
 
-def test_add_delete_large_timeseries_record(dbaccessor0):
+def test_add_delete_large_timeseries_record(dbaccessor):
     """
     Test that large time series record are added and deleted as expected
     to and from the database.
 
     Regression test for cgq-qgc/sardes#378.
     """
-    dbaccessor = dbaccessor0
     sampling_feature_uuid = dbaccessor._create_index('observation_wells_data')
 
     # Prepare the timeseries data.
