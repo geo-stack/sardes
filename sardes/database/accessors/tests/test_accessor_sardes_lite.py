@@ -142,7 +142,7 @@ def test_connection(dbaccessor0):
     dbaccessor.close_connection()
 
 
-def test_add_get_del_construction_logs(dbaccessor0, tmp_path):
+def test_construction_logs_interface(dbaccessor0, tmp_path):
     """
     Test that adding, getting and deleting construction logs in the database
     is working as expected.
