@@ -568,51 +568,30 @@ def test_sonde_feature_interface(dbaccessor, sondes_data, sondes_installation,
     assert len(sondes_data_bd) == 0
 
 
-# =============================================================================
-# ---- Inter-dependent Tests
-# =============================================================================
-def test_observation_well_interface(dbaccessor):
+def test_observation_well_interface(dbaccessor, database_filler,
+                                    obswells_data):
     """
     Test that adding, editing and retrieving  observation wells in the
     database is working as expected.
 
     Regression test for cgq-qgc/sardes#244.
     """
-    obs_wells = dbaccessor.get_observation_wells_data()
-    assert len(obs_wells) == 0
+    obs_wells_bd = dbaccessor.get_observation_wells_data()
+    assert obs_wells_bd.empty
 
     # =========================================================================
     # Add
     # =========================================================================
-    sampling_feature_uuid = dbaccessor._create_index('observation_wells_data')
-    attribute_values = {
-        'obs_well_id': '123A2456',
-        'latitude': 48.0775,
-        'longitude': -65.24964,
-        'common_name': 'well_123A2456_name',
-        'municipality': 'well_123A2456_minicipality',
-        'aquifer_type': 'well_123A2456_aquifer_type',
-        'confinement': 'well_123A2456_confinement',
-        'aquifer_code': 5,
-        'in_recharge_zone': 'Yes',
-        'is_influenced': 'No',
-        'is_station_active': True,
-        'obs_well_notes': 'well_123A2456_notes'
-        }
-    dbaccessor.add_observation_wells_data(
-        sampling_feature_uuid, attribute_values)
+    database_filler(dbaccessor)
 
-    obs_wells = dbaccessor.get_observation_wells_data()
-    assert len(obs_wells) == 1
-    for attribute_name, attribute_value in attribute_values.items():
-        assert (obs_wells.at[sampling_feature_uuid, attribute_name] ==
-                attribute_value), attribute_name
+    obs_wells_bd = dbaccessor.get_observation_wells_data()
+    assert_dataframe_equals(obswells_data, obs_wells_bd)
 
     # =========================================================================
     # Edit
     # =========================================================================
-    sampling_feature_uuid = dbaccessor.get_observation_wells_data().index[0]
-    edited_attribute_values = {
+    sampling_feature_uuid = obs_wells_bd.index[0]
+    edited_values = {
         'obs_well_id': '123A2456_edited',
         'latitude': 42.424242,
         'longitude': -65.656565,
@@ -627,12 +606,62 @@ def test_observation_well_interface(dbaccessor):
         'obs_well_notes': 'well_123A2456_notes_edited'
         }
     dbaccessor.set_observation_wells_data(
-        sampling_feature_uuid, edited_attribute_values)
+        sampling_feature_uuid, edited_values)
 
-    obs_wells = dbaccessor.get_observation_wells_data()
-    for attribute_name, attribute_value in edited_attribute_values.items():
-        assert (obs_wells.at[sampling_feature_uuid, attribute_name] ==
-                attribute_value), attribute_name
+    obs_wells_bd = dbaccessor.get_observation_wells_data()
+    for column, value in edited_values.items():
+        assert obs_wells_bd.at[sampling_feature_uuid, column] == value, column
+
+    # =========================================================================
+    # Delete
+    # =========================================================================
+    obs_wells_id = obs_wells_bd.index[0]
+    assert len(dbaccessor.get_observation_wells_data()) == 5
+
+    # Try to delete a station with readings, repere and sonde installations.
+    with pytest.raises(DatabaseAccessorError):
+        dbaccessor.delete_observation_wells_data(obs_wells_id)
+    assert len(dbaccessor.get_observation_wells_data()) == 5
+
+    # We delete the timeseries and try again.
+    readings = dbaccessor.get_timeseries_for_obs_well(obs_wells_id)
+    data_types = [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC]
+    tseries_dels = init_tseries_dels()
+    for data_type in data_types:
+        to_delete = readings[
+            [data_type, 'datetime', 'obs_id']].dropna(subset=[data_type])
+        to_delete['data_type'] = data_type
+        to_delete = to_delete.drop(labels=data_type, axis=1)
+        tseries_dels = tseries_dels.append(
+            to_delete, ignore_index=True)
+    dbaccessor.delete_timeseries_data(tseries_dels)
+
+    with pytest.raises(DatabaseAccessorError):
+        dbaccessor.delete_observation_wells_data(obs_wells_id)
+    assert len(dbaccessor.get_observation_wells_data()) == 5
+
+    # We delete the manual measurements and try again.
+    dbaccessor.delete_manual_measurements(
+        dbaccessor.get_manual_measurements().index)
+
+    with pytest.raises(DatabaseAccessorError):
+        dbaccessor.delete_observation_wells_data(obs_wells_id)
+    assert len(dbaccessor.get_observation_wells_data()) == 5
+
+    # We delete the repere data and try again.
+    dbaccessor.delete_repere_data(
+        dbaccessor.get_repere_data().index)
+
+    with pytest.raises(DatabaseAccessorError):
+        dbaccessor.delete_observation_wells_data(obs_wells_id)
+    assert len(dbaccessor.get_observation_wells_data()) == 5
+
+    # We delete the sonde installations and try again (now it should work).
+    dbaccessor.delete_sonde_installations(
+        dbaccessor.get_sonde_installations().index)
+
+    dbaccessor.delete_observation_wells_data(obs_wells_id)
+    assert len(dbaccessor.get_observation_wells_data()) == 4
 
 
 # =============================================================================
