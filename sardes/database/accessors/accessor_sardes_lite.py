@@ -810,6 +810,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             query.statement, query.session.bind, coerce_float=True,
             index_col='sampling_feature_uuid')
 
+        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
+        # directly in 'read_sql_query' with the new 'dtype' argument.
 
         # Make sure first_date and last_date are considered as
         # datetime and strip the hour portion from it.
@@ -933,6 +935,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             query.statement, query.session.bind, coerce_float=True,
             index_col='repere_uuid')
 
+        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
+        # directly in 'read_sql_query' with the new 'dtype' argument.
 
         # Make sure datetime data is considered as datetime.
         # See cgq-qgc/sardes#427.
@@ -1188,6 +1192,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             query.statement, query.session.bind, coerce_float=True,
             index_col='install_uuid')
 
+        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
+        # directly in 'read_sql_query' with the new 'dtype' argument.
 
         # Format the data.
         data['start_date'] = pd.to_datetime(data['start_date'])
@@ -1308,6 +1314,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         measurements = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True,
             index_col='gen_num_value_uuid')
+
+        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
+        # directly in 'read_sql_query' with the new 'dtype' argument.
 
         # Make sure datetime data is considered as datetime.
         # This is required to avoid problems when the manual measurements
