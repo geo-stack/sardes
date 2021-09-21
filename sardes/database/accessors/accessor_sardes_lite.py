@@ -716,29 +716,25 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         to the observation wells that are saved in the database.
         """
         query = (
-            self._session.query(SamplingFeature,
-                                Location.latitude,
-                                Location.longitude,
-                                Location.municipality,
-                                SamplingFeatureMetadata.in_recharge_zone,
-                                SamplingFeatureMetadata.aquifer_type,
-                                SamplingFeatureMetadata.confinement,
-                                SamplingFeatureMetadata.common_name,
-                                SamplingFeatureMetadata.aquifer_code,
-                                SamplingFeatureMetadata.is_station_active,
-                                SamplingFeatureMetadata.is_influenced)
+            self._session.query(
+                SamplingFeature.sampling_feature_uuid,
+                SamplingFeature.sampling_feature_name.label('obs_well_id'),
+                SamplingFeature.sampling_feature_notes.label('obs_well_notes'),
+                Location.latitude,
+                Location.longitude,
+                Location.municipality,
+                SamplingFeatureMetadata.in_recharge_zone,
+                SamplingFeatureMetadata.aquifer_type,
+                SamplingFeatureMetadata.confinement,
+                SamplingFeatureMetadata.common_name,
+                SamplingFeatureMetadata.aquifer_code,
+                SamplingFeatureMetadata.is_station_active,
+                SamplingFeatureMetadata.is_influenced)
             .filter(Location.loc_id == SamplingFeature.loc_id)
             .filter(SamplingFeatureMetadata.sampling_feature_uuid ==
                     SamplingFeature.sampling_feature_uuid)
             )
         obs_wells = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
-
-        obs_wells.rename({'sampling_feature_name': 'obs_well_id'},
-                         axis='columns', inplace=True)
-        obs_wells.rename({'sampling_feature_notes': 'obs_well_notes'},
-                         axis='columns', inplace=True)
-
             query.statement, query.session.bind, coerce_float=True,
             index_col='sampling_feature_uuid'
             )
