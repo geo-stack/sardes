@@ -739,8 +739,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         obs_wells.rename({'sampling_feature_notes': 'obs_well_notes'},
                          axis='columns', inplace=True)
 
-        # Set the index to the observation well ids.
-        obs_wells.set_index('sampling_feature_uuid', inplace=True, drop=True)
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='sampling_feature_uuid'
+            )
 
         # Replace nan by None.
         obs_wells = obs_wells.where(obs_wells.notnull(), None)
@@ -806,8 +807,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # Fetch data from the materialized view.
         query = self._session.query(SamplingFeatureDataOverview)
         data = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
-        data.set_index('sampling_feature_uuid', inplace=True, drop=True)
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='sampling_feature_uuid')
+
 
         # Make sure first_date and last_date are considered as
         # datetime and strip the hour portion from it.
@@ -928,10 +930,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         query = self._session.query(Repere)
         repere = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='repere_uuid')
 
-        # Set the index to the observation well ids.
-        repere.set_index('repere_uuid', inplace=True, drop=True)
 
         # Make sure datetime data is considered as datetime.
         # See cgq-qgc/sardes#427.
@@ -978,7 +979,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         query = self._session.query(SondeModel)
         sonde_models = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='sonde_model_id')
 
         # Combine the brand and model into a same field.
         sonde_models['sonde_brand_model'] = (
@@ -986,9 +988,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 lambda values: ' '.join([x or '' for x in values]).strip(),
                 axis=1)
             )
-
-        # Set the index to the observation well ids.
-        sonde_models.set_index('sonde_model_id', inplace=True, drop=True)
 
         return sonde_models
 
@@ -1186,14 +1185,13 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .filter(SondeInstallation.process_id == Process.process_id)
             )
         data = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='install_uuid')
+
 
         # Format the data.
         data['start_date'] = pd.to_datetime(data['start_date'])
         data['end_date'] = pd.to_datetime(data['end_date'])
-
-        # Set the index of the dataframe.
-        data.set_index('install_uuid', inplace=True, drop=True)
 
         return data
 
@@ -1308,8 +1306,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     Observation.observation_id)
             )
         measurements = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
-        measurements.set_index('gen_num_value_uuid', inplace=True, drop=True)
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='gen_num_value_uuid')
 
         # Make sure datetime data is considered as datetime.
         # This is required to avoid problems when the manual measurements
