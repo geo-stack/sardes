@@ -788,10 +788,28 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     "key contraint on {}.sampling_feature_uuid."
                     .format(table.__name__))
 
-        # Delete the SondeFeature items from the database.
+        # Delete the SamplingFeature items from the database.
+        for table in [SamplingFeature, SamplingFeatureMetadata,
+                      SamplingFeatureDataOverview, SamplingFeatureAttachment]:
+            self._session.execute(
+                table.__table__.delete().where(
+                    table.sampling_feature_uuid.in_(obswell_ids))
+                )
+
+        # Delete associated Location items from the database.
+        query = (
+            self._session.query(Location.loc_id)
+            .filter(SamplingFeature.loc_id == Location.loc_id)
+            .filter(SamplingFeature.sampling_feature_uuid.in_(obswell_ids))
+            )
+        loc_ids = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True
+            )['loc_id'].values.tolist()
         self._session.execute(
-            SondeFeature.__table__.delete().where(
-                SamplingFeature.sampling_feature_uuid.in_(obswell_ids)))
+            Location.__table__.delete().where(
+                Location.loc_id.in_(loc_ids))
+            )
+
         self._session.commit()
 
     def get_observation_wells_data_overview(self):
