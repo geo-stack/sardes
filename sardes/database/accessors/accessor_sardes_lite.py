@@ -778,13 +778,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Check for foreign key violation.
         for table in [Observation, Process, Repere]:
-            foreign_items = (
+            foreign_items_count = (
                 self._session.query(table)
                 .filter(table.sampling_feature_uuid.in_(obswell_ids))
+                .count()
                 )
-            if foreign_items.count() > 0:
-                raise DBAPIError(
-                    "ERROR: deleting SamplingFeature items violate foreign "
+            if foreign_items_count > 0:
+                raise DatabaseAccessorError(
+                    self,
+                    "deleting SamplingFeature items violate foreign "
                     "key contraint on {}.sampling_feature_uuid."
                     .format(table.__name__))
 
