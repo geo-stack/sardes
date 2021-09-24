@@ -21,6 +21,7 @@ import pandas as pd
 import pytest
 
 # ---- Local imports
+from sardes.tables import ManualMeasurementsTableWidget
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 
 
@@ -28,24 +29,24 @@ from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def tablewidget(mainwindow, qtbot, dbaccessor, manual_measurements):
-    # Select the tab corresponding to the observation wells table.
-    tablewidget = mainwindow.plugin._tables['table_manual_measurements']
-    mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
-    tableview = tablewidget.tableview
-    qtbot.waitUntil(
-        lambda: tableview.visible_row_count() == len(manual_measurements))
-    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
+def tablewidget(tablesmanager, qtbot, dbaccessor, manual_measurements):
+    tablewidget = ManualMeasurementsTableWidget()
+    qtbot.addWidget(tablewidget)
+    tablewidget.show()
 
-    assert tableview.row_count() == len(manual_measurements)
-    assert tableview.column_count() == len(manual_measurements.columns)
+    tablemodel = tablewidget.model()
+    tablesmanager.register_table_model(tablemodel)
 
-    yield tablewidget
+    # This connection is usually made by the plugin, but we need to make it
+    # here manually for testing purposes.
+    tablesmanager.sig_models_data_changed.connect(tablemodel.update_data)
 
-    # We need to wait for the mainwindow to close properly to avoid
-    # runtime errors on the c++ side.
-    with qtbot.waitSignal(mainwindow.sig_about_to_close):
-        mainwindow.close()
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablemodel.update_data()
+    assert (tablewidget.tableview.visible_row_count() ==
+            len(manual_measurements))
+
+    return tablewidget
 
 
 # =============================================================================

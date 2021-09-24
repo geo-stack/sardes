@@ -22,7 +22,7 @@ import pandas as pd
 import pytest
 
 # ---- Local imports
-from sardes.tables.table_repere import RepereTableWidget
+from sardes.tables import RepereTableWidget
 
 
 # =============================================================================
