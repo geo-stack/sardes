@@ -27,7 +27,7 @@ import numpy as np
 import pytest
 import pandas as pd
 from pandas.api.types import (
-    is_datetime64_any_dtype, is_int64_dtype, is_object_dtype, is_bool_dtype)
+    is_datetime64_any_dtype, is_object_dtype, is_bool_dtype)
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 
