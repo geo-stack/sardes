@@ -13,8 +13,6 @@ Tests for the Observation Wells table.
 
 # ---- Standard imports
 import os
-import os.path as osp
-from unittest.mock import Mock
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
@@ -26,6 +24,7 @@ from qtpy.QtGui import QDesktopServices
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
+from sardes.tables import ObsWellsTableWidget
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 
 
@@ -33,21 +32,25 @@ from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def tablewidget(mainwindow, qtbot, dbaccessor, obswells_data):
-    # Select the tab corresponding to the observation wells table.
-    tablewidget = mainwindow.plugin._tables['table_observation_wells']
-    mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
-    qtbot.waitUntil(
-        lambda: tablewidget.tableview.visible_row_count() == len(obswells_data)
-        )
+def tablewidget(tablesmanager, qtbot, dbaccessor, obswells_data):
+    tablewidget = ObsWellsTableWidget()
+    qtbot.addWidget(tablewidget)
+    tablewidget.show()
+
+    tablemodel = tablewidget.model()
+    tablesmanager.register_table_model(tablemodel)
+
+    # This connection is usually made by the plugin, but we need to make it
+    # here manually for testing purposes.
+    tablesmanager.sig_models_data_changed.connect(tablemodel.update_data)
+
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablemodel.update_data()
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
 
-    yield tablewidget
+    assert tablewidget.tableview.visible_row_count() == len(obswells_data)
 
-    # We need to wait for the mainwindow to close properly to avoid
-    # runtime errors on the c++ side.
-    with qtbot.waitSignal(mainwindow.sig_about_to_close):
-        mainwindow.close()
+    return tablewidget
 
 
 # =============================================================================
@@ -73,7 +76,7 @@ def test_show_in_google_maps(tablewidget, qtbot, mocker):
         ))
 
 
-def test_select_observation_well(tablewidget, qtbot, mocker):
+def test_select_observation_well(tablewidget, qtbot):
     """
     Test that selecting an observation well is working as expected.
     """
@@ -85,6 +88,7 @@ def test_select_observation_well(tablewidget, qtbot, mocker):
 
     assert not tablewidget.model().is_new_row_at(tableview.current_index())
     assert tablewidget.show_data_btn.isEnabled()
+    assert tablewidget.show_gmap_btn.isEnabled()
     assert tablewidget.construction_logs_manager.isEnabled()
     assert tablewidget.water_quality_reports.isEnabled()
 
