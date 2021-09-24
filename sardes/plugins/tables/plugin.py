@@ -83,7 +83,7 @@ class Tables(SardesPlugin):
         manager to update the tables' data.
         """
         super().register_plugin()
-        self.main.db_connection_manager.sig_models_data_changed.connect(
+        self.main.table_models_manager.sig_models_data_changed.connect(
             self._update_current_table)
 
     def on_docked(self):

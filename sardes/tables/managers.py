@@ -42,8 +42,6 @@ class SardesTableModelsManager(QObject):
             self._handle_db_connection_changed)
         db_manager.sig_database_data_changed.connect(
             self._handle_db_data_changed)
-        self.sig_models_data_changed.connect(
-            self.db_manager.sig_models_data_changed.emit)
 
     # ---- Public API
     def table_models(self):

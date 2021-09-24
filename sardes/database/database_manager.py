@@ -606,7 +606,6 @@ class DatabaseConnectionManager(TaskManagerBase):
     sig_database_connection_changed = Signal(bool)
     sig_database_data_changed = Signal(list)
     sig_tseries_data_changed = Signal(list)
-    sig_models_data_changed = Signal()
     sig_publish_progress = Signal(float)
 
     def __init__(self):
