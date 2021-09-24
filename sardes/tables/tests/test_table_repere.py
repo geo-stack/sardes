@@ -12,7 +12,7 @@ Tests for the Repere table.
 """
 
 # ---- Standard imports
-from datetime import datetime, date
+from datetime import datetime
 import os
 import os.path as osp
 os.environ['SARDES_PYTEST'] = 'True'
@@ -22,27 +22,30 @@ import pandas as pd
 import pytest
 
 # ---- Local imports
-from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
+from sardes.tables.table_repere import RepereTableWidget
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def tablewidget(mainwindow, qtbot, dbaccessor, repere_data):
-    # Select the tab corresponding to the observation wells table.
-    tablewidget = mainwindow.plugin._tables['table_repere']
-    mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
-    qtbot.waitUntil(
-        lambda: tablewidget.tableview.visible_row_count() == len(repere_data))
-    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
+def tablewidget(tablesmanager, qtbot, dbaccessor, repere_data):
+    tablewidget = RepereTableWidget()
+    qtbot.addWidget(tablewidget)
+    tablewidget.show()
 
-    yield tablewidget
+    tablemodel = tablewidget.model()
+    tablesmanager.register_table_model(tablemodel)
 
-    # We need to wait for the mainwindow to close properly to avoid
-    # runtime errors on the c++ side.
-    with qtbot.waitSignal(mainwindow.sig_about_to_close):
-        mainwindow.close()
+    # This connection is usually made by the plugin, but we need to make it
+    # here manually for testing purposes.
+    tablesmanager.sig_models_data_changed.connect(tablemodel.update_data)
+
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablemodel.update_data()
+    assert tablewidget.tableview.visible_row_count() == len(repere_data)
+
+    return tablewidget
 
 
 # =============================================================================
