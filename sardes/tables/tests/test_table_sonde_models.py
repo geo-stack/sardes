@@ -20,6 +20,7 @@ import pytest
 
 # ---- Local imports
 from sardes.tables import SondeModelsTableWidget
+from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 
 
 # =============================================================================
@@ -40,6 +41,8 @@ def tablewidget(tablesmanager, qtbot, dbaccessor):
 
     with qtbot.waitSignal(tablemodel.sig_data_updated):
         tablemodel.update_data()
+    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
+
     assert tablewidget.tableview.visible_row_count() == 23
 
     return tablewidget

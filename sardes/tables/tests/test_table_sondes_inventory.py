@@ -22,6 +22,7 @@ import pytest
 
 # ---- Local imports
 from sardes.tables import SondesInventoryTableWidget
+from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 
 
 # =============================================================================
@@ -42,6 +43,8 @@ def tablewidget(tablesmanager, qtbot, dbaccessor, sondes_data):
 
     with qtbot.waitSignal(tablemodel.sig_data_updated):
         tablemodel.update_data()
+    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
+
     assert tablewidget.tableview.visible_row_count() == len(sondes_data)
 
     return tablewidget
