@@ -12,9 +12,8 @@ Tests for the Sonde Installations table.
 """
 
 # ---- Standard imports
-from datetime import datetime, date
+from datetime import datetime
 import os
-import os.path as osp
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
@@ -22,28 +21,31 @@ import pandas as pd
 import pytest
 
 # ---- Local imports
-from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
+from sardes.tables import SondeInstallationsTableWidget
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def tablewidget(mainwindow, qtbot, dbaccessor, sondes_installation):
-    # Select the tab corresponding to the observation wells table.
-    tablewidget = mainwindow.plugin._tables['table_sonde_installations']
-    mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
-    tableview = tablewidget.tableview
-    qtbot.waitUntil(
-        lambda: tableview.visible_row_count() == len(sondes_installation))
-    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
+def tablewidget(tablesmanager, qtbot, dbaccessor, sondes_installation):
+    tablewidget = SondeInstallationsTableWidget()
+    qtbot.addWidget(tablewidget)
+    tablewidget.show()
 
-    yield tablewidget
+    tablemodel = tablewidget.model()
+    tablesmanager.register_table_model(tablemodel)
 
-    # We need to wait for the mainwindow to close properly to avoid
-    # runtime errors on the c++ side.
-    with qtbot.waitSignal(mainwindow.sig_about_to_close):
-        mainwindow.close()
+    # This connection is usually made by the plugin, but we need to make it
+    # here manually for testing purposes.
+    tablesmanager.sig_models_data_changed.connect(tablemodel.update_data)
+
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablemodel.update_data()
+    assert (tablewidget.tableview.visible_row_count() ==
+            len(sondes_installation))
+
+    return tablewidget
 
 
 # =============================================================================

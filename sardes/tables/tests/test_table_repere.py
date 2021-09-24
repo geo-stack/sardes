@@ -14,7 +14,6 @@ Tests for the Repere table.
 # ---- Standard imports
 from datetime import datetime
 import os
-import os.path as osp
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports

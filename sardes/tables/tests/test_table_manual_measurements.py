@@ -22,7 +22,6 @@ import pytest
 
 # ---- Local imports
 from sardes.tables import ManualMeasurementsTableWidget
-from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 
 
 # =============================================================================
