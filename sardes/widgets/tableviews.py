@@ -898,11 +898,36 @@ class SardesTableView(QTableView):
         self.sort_by_column(self.current_index().column(), sorting_order)
 
     # ---- Data selection
+    def current_index(self):
+        """
+        Return the currently selected index in the table view.
+        """
+        return self.selectionModel().currentIndex()
+
     def current_data(self):
         """
         Return the value of the current index.
         """
         return self.current_index().data()
+
+    def set_current_index(self, row, col, command='SelectCurrent'):
+        """
+        Set the current index in the table view to that corresponding to the
+        provided logical row and column.
+        """
+        index = self.model().index(row, col)
+        sm = self.selectionModel()
+        sm.setCurrentIndex(index, getattr(sm, command))
+        return index
+
+    def select(self, row, col, command='Select'):
+        """
+        Do the selection operation at the specified row and col.
+        """
+        index = self.model().index(row, col)
+        sm = self.selectionModel()
+        sm.select(index, getattr(sm, command))
+        return index
 
     def get_current_row_data(self):
         """
@@ -1145,31 +1170,6 @@ class SardesTableView(QTableView):
             selection, QItemSelectionModel.Select)
 
     # ---- Utilities
-    def current_index(self):
-        """
-        Return the currently selected index in the table view.
-        """
-        return self.selectionModel().currentIndex()
-
-    def set_current_index(self, row, col, command='SelectCurrent'):
-        """
-        Set the current index in the table view to that corresponding to the
-        provided logical row and column.
-        """
-        index = self.model().index(row, col)
-        sm = self.selectionModel()
-        sm.setCurrentIndex(index, getattr(sm, command))
-        return index
-
-    def select(self, row, col, command='Select'):
-        """
-        Do the selection operation at the specified row and col.
-        """
-        index = self.model().index(row, col)
-        sm = self.selectionModel()
-        sm.select(index, getattr(sm, command))
-        return index
-
     def copy_to_clipboard(self):
         """
         Put a copy of the selection on the Clipboard.
