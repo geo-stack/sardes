@@ -19,8 +19,9 @@ os.environ['SARDES_PYTEST'] = 'True'
 import numpy as np
 import pandas as pd
 import pytest
-from qtpy.QtCore import Qt, QUrl
+from qtpy.QtCore import Qt, QUrl, QPoint
 from qtpy.QtGui import QDesktopServices
+from qtpy.QtWidgets import QFileDialog
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
@@ -39,6 +40,13 @@ def tablewidget(tablesmanager, qtbot, dbaccessor, obswells_data):
 
     tablemodel = tablewidget.model()
     tablesmanager.register_table_model(tablemodel)
+
+    # Set the database connection manager of the file managers. This is
+    # usually done on the plugin side.
+    tablewidget.construction_logs_manager.set_dbmanager(
+        tablesmanager.db_manager)
+    tablewidget.water_quality_reports.set_dbmanager(
+        tablesmanager.db_manager)
 
     # This connection is usually made by the plugin, but we need to make it
     # here manually for testing purposes.
@@ -74,6 +82,65 @@ def test_show_in_google_maps(tablewidget, qtbot, mocker):
     patcher_qdesktopservices.assert_called_once_with(QUrl(
         'https://www.google.com/maps/search/?api=1&query=45.445178,-72.828773'
         ))
+
+
+def test_construction_log_tool(tablewidget, constructlog, qtbot, mocker):
+    """
+    Test that the tool to add, show and delete construction logs
+    is working as expected.
+    """
+    tablemodel = tablewidget.model()
+    constructlogs_manager = tablewidget.construction_logs_manager
+
+    # Check that the number of file attachment is as expected. There is
+    # supposed to be 2 files for the first 4 wells of the test database:
+    # one construction log and one water quality file.
+    assert (len(tablemodel.libraries['stored_attachments_info']) == 4 * 2)
+
+    # Select the last row of the table, which corresponds to well '09000001'.
+    # This well does not have any attachment or monitoring data.
+    tablewidget.set_current_index(4, 0)
+    assert tablewidget.current_data() == '09000001'
+
+    # Make sure the state of the construction log menu is as expected.
+    # Note that we need to show the menu to trigger an update of its state.
+    pos = constructlogs_manager.toolbutton.mapToGlobal(QPoint(0, 0))
+    constructlogs_manager.toolbutton.menu().popup(pos)
+    assert constructlogs_manager.attach_action.isEnabled()
+    assert not constructlogs_manager.show_action.isEnabled()
+    assert not constructlogs_manager.remove_action.isEnabled()
+
+    # Attach a construction log to well '09000001'.
+    mocker.patch.object(
+        QFileDialog, 'getOpenFileName', return_value=(constructlog, None))
+    with qtbot.waitSignal(constructlogs_manager.sig_attachment_added):
+        constructlogs_manager.attach_action.trigger()
+    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
+    assert len(tablemodel.libraries['stored_attachments_info']) == 4 * 2 + 1
+
+    pos = constructlogs_manager.toolbutton.mapToGlobal(QPoint(0, 0))
+    constructlogs_manager.toolbutton.menu().popup(pos)
+    assert constructlogs_manager.attach_action.isEnabled()
+    assert constructlogs_manager.show_action.isEnabled()
+    assert constructlogs_manager.remove_action.isEnabled()
+
+    # Show the newly added construction log in an external application.
+    mocker.patch('os.startfile')
+    with qtbot.waitSignal(constructlogs_manager.sig_attachment_shown):
+        constructlogs_manager.show_action.trigger()
+
+    # Delete the newly added construction log from the database.
+    with qtbot.waitSignal(constructlogs_manager.sig_attachment_removed):
+        constructlogs_manager.remove_action.trigger()
+    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
+    assert len(tablemodel.libraries['stored_attachments_info']) == 4 * 2
+
+    pos = constructlogs_manager.toolbutton.mapToGlobal(QPoint(0, 0))
+    constructlogs_manager.toolbutton.menu().popup(pos)
+    assert constructlogs_manager.attach_action.isEnabled()
+    assert not constructlogs_manager.show_action.isEnabled()
+    assert not constructlogs_manager.remove_action.isEnabled()
+    constructlogs_manager.toolbutton.menu().close()
 
 
 def test_select_observation_well(tablewidget, qtbot):
