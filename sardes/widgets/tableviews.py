@@ -898,6 +898,12 @@ class SardesTableView(QTableView):
         self.sort_by_column(self.current_index().column(), sorting_order)
 
     # ---- Data selection
+    def current_data(self):
+        """
+        Return the value of the current index.
+        """
+        return self.current_index().data()
+
     def get_current_row_data(self):
         """
         Return the data relative to the row with the current item (the item
