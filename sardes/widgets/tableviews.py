@@ -1652,6 +1652,21 @@ class SardesTableWidget(SardesPaneWidget):
         if statusbar is True:
             self._setup_status_bar()
 
+    # ---- Tableview Public API
+    def __getattr__(self, name):
+        """
+        Expose the attributes of the tableview because the tablewidget is
+        conceptually simply an extension of a tableview and should have
+        the same interface.
+        """
+        try:
+            return super().__getattr__(name)
+        except AttributeError as error:
+            try:
+                return getattr(self.tableview, name)
+            except AttributeError:
+                raise error
+
     # ---- Layout
     def install_message_box(self, message_box):
         """
@@ -1694,28 +1709,12 @@ class SardesTableWidget(SardesPaneWidget):
         """Return the name of the table of the table widget."""
         return self.tableview.source_model.name()
 
-    def model(self):
-        """
-        Return the model associated with this table widget.
-        """
-        return self.tableview.model()
-
     def update_model_data(self):
         """
         Fetch the data from the database and update the model's data and
         library of this table widget.
         """
         return self.model().update_data()
-
-    # ---- Tableview Public API
-    def show_message(self, *args, **kargs):
-        return self.tableview.show_message(*args, **kargs)
-
-    def get_data_for_row(self, *args, **kargs):
-        return self.tableview.get_data_for_row(*args, **kargs)
-
-    def get_values_for_row(self, *args, **kargs):
-        return self.tableview.get_values_for_row(*args, **kargs)
 
     # ---- Setup
     def eventFilter(self, widget, event):
