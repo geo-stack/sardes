@@ -21,12 +21,15 @@ import pandas as pd
 import pytest
 from qtpy.QtCore import Qt, QUrl, QPoint
 from qtpy.QtGui import QDesktopServices
-from qtpy.QtWidgets import QFileDialog
+from qtpy.QtWidgets import QFileDialog, QMessageBox
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
 from sardes.tables import ObsWellsTableWidget
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
+from sardes.api.database_accessor import init_tseries_dels
+from sardes.tables import (ManualMeasurementsTableModel, RepereTableModel,
+                           SondeInstallationsTableModel)
 
 
 # =============================================================================
@@ -40,6 +43,12 @@ def tablewidget(tablesmanager, qtbot, dbaccessor, obswells_data):
 
     tablemodel = tablewidget.model()
     tablesmanager.register_table_model(tablemodel)
+
+    # We also need to register table models that have foreign relation
+    # with the table observation wells.
+    tablesmanager.register_table_model(ManualMeasurementsTableModel())
+    tablesmanager.register_table_model(RepereTableModel())
+    tablesmanager.register_table_model(SondeInstallationsTableModel())
 
     # Set the database connection manager of the file managers. This is
     # usually done on the plugin side.
@@ -294,6 +303,91 @@ def test_clear_observation_well(tablewidget, qtbot, dbaccessor, obswells_data):
     saved_values = dbaccessor.get_observation_wells_data().iloc[0].to_dict()
     for attr in clearable_attrs:
         assert pd.isnull(saved_values[attr])
+
+
+def test_delete_observation_well(tablewidget, qtbot, dbaccessor, mocker,
+                                 dbconnmanager):
+    """
+    Test that deleting observation wells is working as expected.
+    """
+    assert tablewidget.visible_row_count() == 5
+    assert len(dbaccessor.get_observation_wells_data()) == 5
+
+    # Delete the first row of the table.
+    tablewidget.set_current_index(0, 0)
+    assert tablewidget.current_data() == '03037041'
+
+    tablewidget.delete_row_action.trigger()
+    assert len(tablewidget.model().tabledata().deleted_rows()) == 1
+    assert tablewidget.model().data_edit_count() == 1
+    assert tablewidget.visible_row_count() == 5
+    assert len(dbaccessor.get_observation_wells_data()) == 5
+
+    # Try to save the changes to the database. A foreign constraint error
+    # message should appear.
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Ok)
+
+    tablewidget.save_edits_action.trigger()
+    qtbot.waitUntil(lambda: qmsgbox_patcher.call_count == 1)
+
+    # Delete the timeseries associated with station '03037041' and try again.
+    obswell_id = tablewidget.model().dataf.index[0]
+    readings = dbaccessor.get_timeseries_for_obs_well(obswell_id)
+    data_types = [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC]
+    tseries_dels = init_tseries_dels()
+    for data_type in data_types:
+        to_delete = readings[
+            [data_type, 'datetime', 'obs_id']].dropna(subset=[data_type])
+        to_delete['data_type'] = data_type
+        to_delete = to_delete.drop(labels=data_type, axis=1)
+        tseries_dels = tseries_dels.append(
+            to_delete, ignore_index=True)
+
+    with qtbot.waitSignal(dbconnmanager.sig_run_tasks_finished, timeout=5000):
+        dbconnmanager.delete_timeseries_data(tseries_dels, obswell_id)
+    assert dbaccessor.get_timeseries_for_obs_well(obswell_id).empty
+
+    tablewidget.save_edits_action.trigger()
+    qtbot.waitUntil(lambda: qmsgbox_patcher.call_count == 2)
+
+    # Delete the manual measurements and try again.
+    with qtbot.waitSignal(dbconnmanager.sig_run_tasks_finished, timeout=5000):
+        dbconnmanager.delete(
+            'manual_measurements',
+            dbaccessor.get_manual_measurements().index[:3])
+
+    tablewidget.save_edits_action.trigger()
+    qtbot.waitUntil(lambda: qmsgbox_patcher.call_count == 3)
+
+    # Delete the repere data and try again.
+    with qtbot.waitSignal(dbconnmanager.sig_run_tasks_finished, timeout=5000):
+        dbconnmanager.delete(
+            'repere_data',
+            dbaccessor.get_repere_data().index[0])
+
+    tablewidget.save_edits_action.trigger()
+    qtbot.waitUntil(lambda: qmsgbox_patcher.call_count == 4)
+
+    # Delete the sonde installations and try again (now it should work).
+    with qtbot.waitSignal(dbconnmanager.sig_run_tasks_finished, timeout=5000):
+        dbconnmanager.delete(
+            'sonde_installations',
+            dbaccessor.get_sonde_installations().index[0])
+
+    assert tablewidget.visible_row_count() == 5
+    assert len(dbaccessor.get_observation_wells_data()) == 5
+
+    # We need to set the option to 'confirm before saving' to False to avoid
+    # showing an additional message.
+    tablewidget.set_confirm_before_saving_edits(False)
+
+    with qtbot.waitSignal(tablewidget.model().sig_data_updated):
+        tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 4
+
+    assert tablewidget.visible_row_count() == 4
+    assert len(dbaccessor.get_observation_wells_data()) == 4
 
 
 if __name__ == "__main__":
