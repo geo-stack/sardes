@@ -191,6 +191,12 @@ class SardesTableModelBase(QAbstractTableModel):
                 **column.delegate_options)
 
     # ---- Table data
+    def tabledata(self):
+        """
+        Return the sardes table data of this table.
+        """
+        return self._datat
+
     @property
     def dataf(self):
         """
