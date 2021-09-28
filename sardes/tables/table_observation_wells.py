@@ -8,27 +8,19 @@
 # -----------------------------------------------------------------------------
 
 
-# ---- Standard imports
-import os
-import os.path as osp
-import tempfile
-
 # ---- Third party imports
 import pandas as pd
-from qtpy.QtCore import Signal, QObject, QUrl
+from qtpy.QtCore import Signal, QUrl
 from qtpy.QtGui import QDesktopServices
-from qtpy.QtWidgets import QMenu, QFileDialog
 
 # ---- Local imports
 from sardes.api.tablemodels import SardesTableColumn
 from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
-from sardes.config.main import TEMP_DIR
-from sardes.config.ospath import (
-    get_select_file_dialog_dir, set_select_file_dialog_dir)
-from sardes.utils.qthelpers import create_toolbutton, create_action
+from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import SardesTableWidget
-from sardes.tables.models import StandardSardesTableModel
+from sardes.tables.models import (
+    StandardSardesTableModel, FileAttachmentManager)
 from sardes.tables.delegates import (
     StringEditDelegate, BoolEditDelegate,
     NumEditDelegate, NotEditableDelegate, TextEditDelegate)
@@ -300,175 +292,3 @@ class ObsWellsTableWidget(SardesTableWidget):
                    ).format(lat_dd, lon_dd)
             return QDesktopServices.openUrl(QUrl(url))
         return False
-
-
-class FileAttachmentManager(QObject):
-    """
-    A class to handle adding, viewing, and removing file attachments
-    in the database.
-    """
-    sig_attach_request = Signal(object, object, object)
-
-    sig_attachment_added = Signal()
-    sig_attachment_shown = Signal()
-    sig_attachment_removed = Signal()
-
-    def __init__(self, tablewidget, icon, attachment_type,
-                 qfiledialog_namefilters, qfiledialog_title,
-                 text, tooltip, attach_text, attach_tooltip, show_text,
-                 show_tooltip, remove_text, remove_tooltip):
-        super().__init__()
-        self._enabled = True
-        self.dbmanager = None
-
-        self.tablewidget = tablewidget
-        self.attachment_type = attachment_type
-
-        self.qfiledialog_namefilters = qfiledialog_namefilters
-        self.qfiledialog_title = qfiledialog_title
-
-        self.toolbutton = create_toolbutton(
-            tablewidget, text=text, tip=tooltip, icon=icon,
-            iconsize=get_iconsize())
-        self.attach_action = create_action(
-            tablewidget, text=attach_text, tip=attach_tooltip,
-            icon='attachment', triggered=self._handle_attach_request)
-        self.show_action = create_action(
-            tablewidget, text=show_text, tip=show_tooltip,
-            icon='magnifying_glass', triggered=self._handle_show_request)
-        self.remove_action = create_action(
-            tablewidget, text=remove_text, tip=remove_tooltip,
-            icon='delete_data', triggered=self._handle_remove_request)
-
-        menu = QMenu()
-        menu.addAction(self.attach_action)
-        menu.addAction(self.show_action)
-        menu.addAction(self.remove_action)
-        menu.aboutToShow.connect(self._handle_menu_aboutToShow)
-
-        self.toolbutton.setMenu(menu)
-        self.toolbutton.setPopupMode(self.toolbutton.InstantPopup)
-
-    # ---- Qt widget interface emulation
-    def isEnabled(self):
-        """
-        Treturn whether this file attachment manager is enabled.
-        """
-        return self._enabled
-
-    def setEnabled(self, enabled):
-        """
-        Set this file attachment manager state to the provided enabled value.
-        """
-        self._enabled = bool(enabled)
-        self.toolbutton.setEnabled(self._enabled)
-
-    def set_dbmanager(self, dbmanager):
-        """
-        Set the database manager for this file attachment manager.
-        """
-        self.dbmanager = dbmanager
-
-    # ---- Convenience Methods
-    def current_station_id(self):
-        """
-        Return the id of the station that is currently selected
-        in the table in which this file attachment manager is installed.
-        """
-        station_data = self.tablewidget.get_current_obs_well_data()
-        if station_data is None:
-            return None
-        else:
-            return station_data.name
-
-    def current_station_name(self):
-        """
-        Return the name of the station that is currently selected
-        in the table in which this file attachment manager is installed.
-        """
-        station_data = self.tablewidget.get_current_obs_well_data()
-        return station_data['obs_well_id']
-
-    def is_attachment_exists(self):
-        """
-        Return whether an attachment exists in the database for the
-        currently selected station in the table.
-        """
-        return bool((
-            self.tablewidget.model().libraries['stored_attachments_info'] ==
-            [self.current_station_id(), self.attachment_type]
-            ).all(1).any())
-
-    # ---- Handlers
-    def _handle_menu_aboutToShow(self):
-        """
-        Handle when the menu is about to be shown so that we can
-        disable/enable the items depending on the availability or
-        not of an attachment for the currently selected station.
-        """
-        self.tablewidget.tableview.setFocus()
-        station_id = self.current_station_id()
-        if station_id is None:
-            self.attach_action.setEnabled(False)
-            self.show_action.setEnabled(False)
-            self.remove_action.setEnabled(False)
-        else:
-            is_attachment_exists = self.is_attachment_exists()
-            self.attach_action.setEnabled(True)
-            self.show_action.setEnabled(is_attachment_exists)
-            self.remove_action.setEnabled(is_attachment_exists)
-
-    def _handle_attach_request(self):
-        """
-        Handle when a request is made by the user to add an attachment
-        to the currently selected station.
-        """
-        filename, filefilter = QFileDialog.getOpenFileName(
-            self.tablewidget.parent() or self.tablewidget,
-            self.qfiledialog_title.format(self.current_station_name()),
-            get_select_file_dialog_dir(),
-            self.qfiledialog_namefilters)
-        if filename:
-            set_select_file_dialog_dir(osp.dirname(filename))
-            if self.dbmanager is not None:
-                station_id = self.current_station_id()
-                self.dbmanager.set_attachment(
-                    station_id, self.attachment_type, filename,
-                    callback=self.sig_attachment_added.emit)
-
-    def _handle_show_request(self):
-        """
-        Handle when a request is made by the user to show the attachment
-        of the currently selected station.
-        """
-        if self.dbmanager is not None:
-            station_id = self.current_station_id()
-            self.dbmanager.get_attachment(
-                station_id,
-                self.attachment_type,
-                callback=self._open_attachment_in_external)
-
-    def _handle_remove_request(self):
-        """
-        Handle when a request is made by the user to remove the attachment
-        of the currently selected station.
-        """
-        if self.dbmanager is not None:
-            station_id = self.current_station_id()
-            self.dbmanager.del_attachment(
-                station_id,
-                self.attachment_type,
-                callback=self.sig_attachment_removed.emit)
-
-    # ---- Callbacks
-    def _open_attachment_in_external(self, data, name):
-        """
-        Open the attachment file in an external application that is
-        chosen by the OS.
-        """
-        temp_path = tempfile.mkdtemp(dir=TEMP_DIR)
-        temp_filename = osp.join(temp_path, name)
-        with open(temp_filename, 'wb') as f:
-            f.write(data)
-        os.startfile(temp_filename)
-        self.sig_attachment_shown.emit()
