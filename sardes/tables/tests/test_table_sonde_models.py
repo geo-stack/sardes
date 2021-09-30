@@ -17,9 +17,10 @@ os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import pytest
+from qtpy.QtWidgets import QMessageBox
 
 # ---- Local imports
-from sardes.tables import SondeModelsTableWidget
+from sardes.tables import SondeModelsTableWidget, SondesInventoryTableModel
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 
 
@@ -34,6 +35,10 @@ def tablewidget(tablesmanager, qtbot, dbaccessor):
 
     tablemodel = tablewidget.model()
     tablesmanager.register_table_model(tablemodel)
+
+    # We also need to register table models that have foreign relation
+    # with the table Sonde Models.
+    tablesmanager.register_table_model(SondesInventoryTableModel())
 
     # This connection is usually made by the plugin, but we need to make it
     # here manually for testing purposes.
@@ -124,6 +129,50 @@ def test_clear_sonde_model(tablewidget, qtbot, dbaccessor):
     for col in range(tableview.visible_column_count()):
         current_index = tableview.set_current_index(0, col)
         assert tableview.is_data_required_at(current_index)
+
+
+def test_delete_sonde_model(tablewidget, qtbot, dbaccessor, mocker,
+                            dbconnmanager, sondes_data):
+    """
+    Test that deleting repere data is working as expected.
+    """
+    assert tablewidget.visible_row_count() == 23
+    assert len(dbaccessor.get_sonde_models_lib()) == 23
+
+    # Select and delete the fourth row of the table.
+    tablewidget.set_current_index(3, 0)
+    assert tablewidget.get_rows_intersecting_selection() == [3]
+
+    tablewidget.delete_row_action.trigger()
+    assert tablewidget.model().data_edit_count() == 1
+
+    # Try to save the changes to the database. A foreign constraint error
+    # message should appear, so we need to patch the message box.
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Ok)
+
+    tablewidget.save_edits_action.trigger()
+    qtbot.waitUntil(lambda: qmsgbox_patcher.call_count == 1)
+
+    # Change in the database the model of the sondes that are associated with
+    # the sonde model that we are trying to delete from the table.
+    with qtbot.waitSignal(dbconnmanager.sig_run_tasks_finished, timeout=5000):
+        for sonde_id, sonde_data in sondes_data.iterrows():
+            if sonde_data['sonde_model_id'] == 4:
+                dbconnmanager.set(
+                    'sondes_data', sonde_id, {'sonde_model_id': 1},
+                    postpone_exec=True)
+        dbconnmanager.run_tasks()
+
+    assert tablewidget.visible_row_count() == 23
+    assert len(dbaccessor.get_sonde_models_lib()) == 23
+
+    with qtbot.waitSignal(tablewidget.model().sig_data_updated):
+        tablewidget.save_edits_action.trigger()
+
+    assert qmsgbox_patcher.call_count == 1
+    assert tablewidget.visible_row_count() == 22
+    assert len(dbaccessor.get_sonde_models_lib()) == 22
 
 
 if __name__ == "__main__":
