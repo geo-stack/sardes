@@ -19,8 +19,8 @@ from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.tableviews import SardesTableWidget
-from sardes.tables.models import (
-    StandardSardesTableModel, FileAttachmentManager)
+from sardes.tables.models import StandardSardesTableModel
+from sardes.tables.managers import FileAttachmentManager
 from sardes.tables.delegates import (
     StringEditDelegate, BoolEditDelegate,
     NumEditDelegate, NotEditableDelegate, TextEditDelegate)
