@@ -44,6 +44,10 @@ def tablewidget(tablesmanager, qtbot, dbaccessor, obswells_data):
     tablemodel = tablewidget.model()
     tablesmanager.register_table_model(tablemodel)
 
+    # We set the option to 'confirm before saving' to False to avoid
+    # showing the associated message when saving table edits.
+    tablewidget.set_confirm_before_saving_edits(False)
+
     # We also need to register table models that have foreign relation
     # with the table observation wells.
     tablesmanager.register_table_model(ManualMeasurementsTableModel())
@@ -377,10 +381,6 @@ def test_delete_observation_well(tablewidget, qtbot, dbaccessor, mocker,
 
     assert tablewidget.visible_row_count() == 5
     assert len(dbaccessor.get_observation_wells_data()) == 5
-
-    # We need to set the option to 'confirm before saving' to False to avoid
-    # showing an additional message.
-    tablewidget.set_confirm_before_saving_edits(False)
 
     with qtbot.waitSignal(tablewidget.model().sig_data_updated):
         tablewidget.save_edits_action.trigger()
