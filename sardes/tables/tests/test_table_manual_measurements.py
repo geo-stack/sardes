@@ -41,6 +41,10 @@ def tablewidget(tablesmanager, qtbot, dbaccessor, manual_measurements):
     # here manually for testing purposes.
     tablesmanager.sig_models_data_changed.connect(tablemodel.update_data)
 
+    # We set the option to 'confirm before saving' to False to avoid
+    # showing the associated message when saving table edits.
+    tablewidget.set_confirm_before_saving_edits(False)
+
     with qtbot.waitSignal(tablemodel.sig_data_updated):
         tablemodel.update_data()
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
@@ -161,28 +165,25 @@ def test_clear_manual_measurements(tablewidget, qtbot, dbaccessor):
         assert pd.isnull(saved_values[attr])
 
 
-def test_delete_manual_measurements(tablewidget, qtbot, manual_measurements,
-                                    obswells_data, dbaccessor):
+def test_delete_manual_measurements(tablewidget, qtbot, dbaccessor):
     """
     Test that deleting manual measurements is working as expected.
     """
-    tableview = tablewidget.tableview
-
     # Select and delete the first two rows of the table.
-    tableview.set_current_index(0, 0)
-    tableview.select(1, 0)
-    assert tableview.get_rows_intersecting_selection() == [0, 1]
+    tablewidget.set_current_index(0, 0)
+    tablewidget.select(1, 0)
+    assert tablewidget.get_rows_intersecting_selection() == [0, 1]
 
-    tableview.delete_row_action.trigger()
-    assert tableview.model().data_edit_count() == 1
+    tablewidget.delete_row_action.trigger()
+    assert tablewidget.model().data_edit_count() == 1
 
     # Save the changes to the database.
-    saved_values = dbaccessor.get_manual_measurements()
-    assert len(saved_values) == len(manual_measurements)
-    assert saved_values.iloc[0]['value'] == 5.23
+    manual_measurements = dbaccessor.get_manual_measurements()
+    assert len(manual_measurements) == 6
+    assert manual_measurements.iloc[0]['value'] == 5.23
 
-    with qtbot.waitSignal(tableview.model().sig_data_updated):
-        tableview._save_data_edits(force=True)
+    with qtbot.waitSignal(tablewidget.model().sig_data_updated):
+        tablewidget.save_edits_action.trigger()
 
     saved_values = dbaccessor.get_manual_measurements()
     assert len(saved_values) == len(manual_measurements) - 2
