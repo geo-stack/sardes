@@ -162,5 +162,31 @@ def test_clear_repere_data(tablewidget, qtbot, dbaccessor):
         assert pd.isnull(saved_values[attr])
 
 
+def test_repere_data(tablewidget, qtbot, dbaccessor, mocker, dbconnmanager):
+    """
+    Test that deleting repere data is working as expected.
+    """
+    assert tablewidget.visible_row_count() == 5
+    assert len(dbaccessor.get_repere_data()) == 5
+
+    # Select and delete the first two rows of the table.
+    tablewidget.set_current_index(0, 0)
+    tablewidget.select(1, 0)
+    assert tablewidget.get_rows_intersecting_selection() == [0, 1]
+
+    tablewidget.delete_row_action.trigger()
+    assert tablewidget.model().data_edit_count() == 1
+
+    # Save the changes to the database.
+    repere_data = dbaccessor.get_repere_data()
+    assert len(repere_data) == 5
+
+    with qtbot.waitSignal(tablewidget.model().sig_data_updated):
+        tablewidget.save_edits_action.trigger()
+
+    repere_data = dbaccessor.get_repere_data()
+    assert len(repere_data) == 3
+
+
 if __name__ == "__main__":
     pytest.main(['-x', __file__, '-v', '-rw'])
