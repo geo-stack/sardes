@@ -41,10 +41,6 @@ def tablewidget(tablesmanager, qtbot, dbaccessor, manual_measurements):
     # here manually for testing purposes.
     tablesmanager.sig_models_data_changed.connect(tablemodel.update_data)
 
-    # We set the option to 'confirm before saving' to False to avoid
-    # showing the associated message when saving table edits.
-    tablewidget.set_confirm_before_saving_edits(False)
-
     with qtbot.waitSignal(tablemodel.sig_data_updated):
         tablemodel.update_data()
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)

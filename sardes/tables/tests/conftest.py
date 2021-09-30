@@ -38,6 +38,11 @@ def dbconnmanager(dbaccessor, qtbot):
     with qtbot.waitSignal(dbconnmanager.sig_database_connected, timeout=3000):
         dbconnmanager.connect_to_db(dbaccessor)
     assert dbconnmanager.is_connected()
+
+    # We set the option to 'confirm before saving' to False to avoid
+    # showing the associated message when saving table edits.
+    dbconnmanager.set_confirm_before_saving_edits(False)
+
     return dbconnmanager
 
 
