@@ -19,6 +19,7 @@ os.environ['SARDES_PYTEST'] = 'True'
 # ---- Third party imports
 import pandas as pd
 import pytest
+from qtpy.QtWidgets import QMessageBox
 
 # ---- Local imports
 from sardes.tables import SondeInstallationsTableWidget
@@ -167,6 +168,38 @@ def test_clear_sonde_installations(tablewidget, qtbot, dbaccessor):
     saved_values = dbaccessor.get_sonde_installations().iloc[0].to_dict()
     for attr in clearable_attrs:
         assert pd.isnull(saved_values[attr])
+
+
+def test_delete_sonde_installations(tablewidget, qtbot, dbaccessor, mocker):
+    """
+    Test that deleting repere data is working as expected.
+    """
+    assert tablewidget.visible_row_count() == 6
+    assert len(dbaccessor.get_sonde_installations()) == 6
+
+    # We need to patch the message box that appears to warn user when
+    # deleting a sonde installation from the database.
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Ok)
+
+    # Select and delete the first two rows of the table.
+    tablewidget.set_current_index(0, 0)
+    tablewidget.select(1, 0)
+    assert tablewidget.get_rows_intersecting_selection() == [0, 1]
+
+    tablewidget.delete_row_action.trigger()
+    assert tablewidget.model().data_edit_count() == 1
+    assert qmsgbox_patcher.call_count == 1
+
+    # Save the changes to the database.
+    assert tablewidget.visible_row_count() == 6
+    assert len(dbaccessor.get_sonde_installations()) == 6
+
+    with qtbot.waitSignal(tablewidget.model().sig_data_updated):
+        tablewidget.save_edits_action.trigger()
+
+    assert tablewidget.visible_row_count() == 4
+    assert len(dbaccessor.get_sonde_installations()) == 4
 
 
 if __name__ == "__main__":
