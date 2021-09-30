@@ -165,6 +165,9 @@ def test_delete_manual_measurements(tablewidget, qtbot, dbaccessor):
     """
     Test that deleting manual measurements is working as expected.
     """
+    assert tablewidget.visible_row_count() == 6
+    assert len(dbaccessor.get_manual_measurements()) == 6
+
     # Select and delete the first two rows of the table.
     tablewidget.set_current_index(0, 0)
     tablewidget.select(1, 0)
@@ -177,13 +180,15 @@ def test_delete_manual_measurements(tablewidget, qtbot, dbaccessor):
     manual_measurements = dbaccessor.get_manual_measurements()
     assert len(manual_measurements) == 6
     assert manual_measurements.iloc[0]['value'] == 5.23
+    assert tablewidget.visible_row_count() == 6
 
     with qtbot.waitSignal(tablewidget.model().sig_data_updated):
         tablewidget.save_edits_action.trigger()
 
-    saved_values = dbaccessor.get_manual_measurements()
-    assert len(saved_values) == len(manual_measurements) - 2
-    assert saved_values.iloc[0]['value'] == 4.91
+    manual_measurements = dbaccessor.get_manual_measurements()
+    assert len(manual_measurements) == 4
+    assert manual_measurements.iloc[0]['value'] == 4.91
+    assert tablewidget.visible_row_count() == 4
 
 
 if __name__ == "__main__":

@@ -162,7 +162,7 @@ def test_clear_repere_data(tablewidget, qtbot, dbaccessor):
         assert pd.isnull(saved_values[attr])
 
 
-def test_repere_data(tablewidget, qtbot, dbaccessor, mocker, dbconnmanager):
+def test_delete_repere_data(tablewidget, qtbot, dbaccessor):
     """
     Test that deleting repere data is working as expected.
     """
