@@ -19,9 +19,11 @@ os.environ['SARDES_PYTEST'] = 'True'
 # ---- Third party imports
 import pandas as pd
 import pytest
+from qtpy.QtWidgets import QMessageBox
 
 # ---- Local imports
-from sardes.tables import SondesInventoryTableWidget
+from sardes.tables import (
+    SondesInventoryTableWidget, SondeInstallationsTableModel)
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 
 
@@ -36,6 +38,10 @@ def tablewidget(tablesmanager, qtbot, dbaccessor, sondes_data):
 
     tablemodel = tablewidget.model()
     tablesmanager.register_table_model(tablemodel)
+
+    # We also need to register table models that have foreign relation
+    # with the table Sonde Models.
+    tablesmanager.register_table_model(SondeInstallationsTableModel())
 
     # This connection is usually made by the plugin, but we need to make it
     # here manually for testing purposes.
@@ -164,6 +170,50 @@ def test_clear_sondes_data(tablewidget, qtbot, dbaccessor):
     saved_values = dbaccessor.get_sondes_data().iloc[0].to_dict()
     for attr in clearable_attrs:
         assert pd.isnull(saved_values[attr])
+
+
+def test_delete_sondes_data(tablewidget, qtbot, dbaccessor, mocker,
+                            dbconnmanager):
+    """
+    Test that deleting a sonde from the database is working as expected.
+    """
+    assert tablewidget.visible_row_count() == 6
+    assert len(dbaccessor.get_sondes_data()) == 6
+
+    # Select and delete the second row of the table.
+    tablewidget.set_current_index(1, 0)
+    assert tablewidget.get_rows_intersecting_selection() == [1]
+
+    tablewidget.delete_row_action.trigger()
+    assert tablewidget.model().data_edit_count() == 1
+
+    # Try to save the changes to the database. A foreign constraint error
+    # message should appear, so we need to patch the message box.
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Ok)
+
+    tablewidget.save_edits_action.trigger()
+    qtbot.waitUntil(lambda: qmsgbox_patcher.call_count == 1)
+
+    # Delete from the database the sonde installations that are causing
+    # a foreign constraint violations when we try to delete the sonde on the
+    # second row of the table.
+    with qtbot.waitSignal(dbconnmanager.sig_run_tasks_finished, timeout=5000):
+        sonde_uuid = dbaccessor.get_sondes_data().index[1]
+        sonde_installs = dbaccessor.get_sonde_installations()
+        sonde_install_ids = sonde_installs.index[
+            sonde_installs['sonde_uuid'] == sonde_uuid]
+        dbconnmanager.delete('sonde_installations', sonde_install_ids)
+
+    assert tablewidget.visible_row_count() == 6
+    assert len(dbaccessor.get_sondes_data()) == 6
+
+    with qtbot.waitSignal(tablewidget.model().sig_data_updated):
+        tablewidget.save_edits_action.trigger()
+
+    assert qmsgbox_patcher.call_count == 1
+    assert tablewidget.visible_row_count() == 5
+    assert len(dbaccessor.get_sondes_data()) == 5
 
 
 if __name__ == "__main__":
