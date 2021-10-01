@@ -125,9 +125,9 @@ class Tables(SardesPlugin):
             table.tableview.sig_show_event.connect(self._update_current_table)
         self._update_current_table
 
-    def _create_and_register_table(self, TableClass, disabled_actions=None):
+    def _create_and_register_table(self, TableClass):
         print('Setting up table {}...'.format(TableClass.__name__))
-        table = TableClass(disabled_actions=disabled_actions)
+        table = TableClass()
 
         self.main.table_models_manager.register_table_model(table.model())
         table.register_to_plugin(self)
