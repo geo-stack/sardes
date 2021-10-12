@@ -19,9 +19,11 @@ os.environ['SARDES_PYTEST'] = 'True'
 # ---- Third party imports
 import pandas as pd
 import pytest
+from qtpy.QtWidgets import QMessageBox
 
 # ---- Local imports
 from sardes.tables import ManualMeasurementsTableWidget
+from sardes.utils.data_operations import are_values_equal
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 
 
@@ -54,30 +56,57 @@ def tablewidget(tablesmanager, qtbot, dbaccessor, manual_measurements):
 # =============================================================================
 # ---- Tests
 # =============================================================================
-def test_add_manual_measurements(tablewidget, qtbot, manual_measurements,
-                                 dbaccessor):
+def test_add_manual_measurements(tablewidget, qtbot, dbaccessor, mocker):
     """
     Test that adding new manual measurements is working as expected.
     """
-    tableview = tablewidget.tableview
+    tablemodel = tablewidget.model()
+    assert tablewidget.visible_row_count() == 6
+    assert len(dbaccessor.get_manual_measurements()) == 6
 
     # We add a new row and assert that the UI state is as expected.
-    new_row = len(manual_measurements)
-    assert tableview.visible_row_count() == len(manual_measurements)
-    tableview.new_row_action.trigger()
-    assert tableview.visible_row_count() == len(manual_measurements) + 1
-    assert tableview.model().is_new_row_at(tableview.current_index())
-    assert tableview.get_data_for_row(new_row) == ['', '', '', '']
+    tablewidget.new_row_action.trigger()
+    assert tablewidget.visible_row_count() == 7
+    assert len(dbaccessor.get_manual_measurements()) == 6
+    assert tablewidget.model().is_new_row_at(tablewidget.current_index())
+    assert tablewidget.get_data_for_row(6) == ['', '', '', '']
+    assert tablemodel.data_edit_count() == 1
+
+    # We need to patch the message box that appears to warn user when
+    # a Notnull constraint is violated.
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Ok)
+
+    # Try to save the changes to the database and assert that a
+    # "Notnull constraint violation" message is shown.
+    tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+
+    # Enter a non null value for the fields 'obswell', 'datetime' and 'value'.
+    obswells = dbaccessor.get_observation_wells_data()
+    edited_values = {
+        'sampling_feature_uuid': obswells.index[0],
+        'datetime': datetime(2012, 3, 2, 16, 15),
+        'value': 24.7}
+    for colname, edited_value in edited_values.items():
+        col = tablemodel.column_names().index(colname)
+        model_index = tablemodel.index(6, col)
+        tablewidget.model().set_data_edit_at(model_index, edited_value)
+    assert tablewidget.get_data_for_row(6) == [
+        '03037041', '2012-03-02 16:15:00', '24.7', '']
+    assert tablemodel.data_edit_count() == 4
 
     # Save the changes to the database.
-    saved_values = dbaccessor.get_manual_measurements()
-    assert len(saved_values) == len(manual_measurements)
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+    assert tablemodel.data_edit_count() == 0
 
-    with qtbot.waitSignal(tableview.model().sig_data_updated):
-        tableview._save_data_edits(force=True)
-
-    saved_values = dbaccessor.get_manual_measurements()
-    assert len(saved_values) == len(manual_measurements) + 1
+    manual_measurements = dbaccessor.get_manual_measurements()
+    assert tablewidget.visible_row_count() == 7
+    assert len(manual_measurements) == 7
+    for name, value in edited_values.items():
+        assert are_values_equal(manual_measurements.iloc[6][name], value)
 
 
 def test_edit_manual_measurements(tablewidget, qtbot, manual_measurements,
