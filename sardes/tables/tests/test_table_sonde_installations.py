@@ -172,13 +172,14 @@ def test_clear_sonde_installations(tablewidget, qtbot, dbaccessor):
 
 def test_delete_sonde_installations(tablewidget, qtbot, dbaccessor, mocker):
     """
-    Test that deleting repere data is working as expected.
+    Test that deleting sonde installations is working as expected.
     """
     assert tablewidget.visible_row_count() == 6
     assert len(dbaccessor.get_sonde_installations()) == 6
 
-    # We need to patch the message box that appears to warn user when
-    # deleting a sonde installation from the database.
+    # We need to patch the message box that appears to warn users about
+    # what happens with the associated monitoring data when deleting a
+    # sonde installation from the database.
     qmsgbox_patcher = mocker.patch.object(
         QMessageBox, 'exec_', return_value=QMessageBox.Ok)
 
