@@ -107,7 +107,8 @@ class StandardSardesTableModel(SardesTableModel):
                 .dropna(how='all'))
             column_record = pd.Series(
                 data=column_data.to_records(index=False).tolist(),
-                index=column_data.index)
+                index=column_data.index,
+                dtype='object')
 
             column_duplicated = column_record[column_record.duplicated()]
             if column_duplicated.empty:
@@ -119,7 +120,8 @@ class StandardSardesTableModel(SardesTableModel):
                 .dropna(how='all'))
             column_added_record = pd.Series(
                 data=column_added_rows.to_records(index=False).tolist(),
-                index=column_added_rows.index)
+                index=column_added_rows.index,
+                dtype='object')
             isin_indexes = column_added_record.index[
                 column_added_record.isin(column_duplicated.array)]
             if not isin_indexes.empty:
@@ -141,7 +143,8 @@ class StandardSardesTableModel(SardesTableModel):
                     .dropna(how='all'))
                 column_edited_record = pd.Series(
                     data=column_edited_data.to_records(index=False).tolist(),
-                    index=column_edited_data.index)
+                    index=column_edited_data.index,
+                    dtype='object')
                 isin_indexes = column_edited_record.index[
                     column_edited_record.isin(column_duplicated.array)]
                 if not isin_indexes.empty:
