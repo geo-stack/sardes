@@ -191,5 +191,59 @@ def test_delete_manual_measurements(tablewidget, qtbot, dbaccessor):
     assert tablewidget.visible_row_count() == 4
 
 
+def test_unique_constraint(tablewidget, qtbot, mocker, dbaccessor):
+    """
+    Test that unique constraint violations are reported as expected.
+    """
+    tablemodel = tablewidget.model()
+
+    # We need to patch the message box that appears to warn user when
+    # a unique constraint is violated.
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Ok)
+
+    # Set the station of the fourth as that of the first row.
+    col = tablemodel.column_names().index('sampling_feature_uuid')
+    orig_value = tablemodel.get_value_at(tablemodel.index(3, col))
+    tablewidget.model().set_data_edit_at(
+        tablemodel.index(3, col),
+        tablemodel.get_value_at(tablemodel.index(0, col)))
+    assert tablemodel.is_data_edited_at(tablemodel.index(3, col))
+    assert tablemodel.data_edit_count() == 1
+
+    # Save the changes to the database.
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 0
+    assert not tablemodel.is_data_edited_at(tablemodel.index(3, col))
+    assert tablemodel.data_edit_count() == 0
+
+    # Set the datetime of the fourth row as that of the first row.
+    col = tablemodel.column_names().index('datetime')
+    tablewidget.model().set_data_edit_at(
+        tablemodel.index(3, col),
+        tablemodel.get_value_at(tablemodel.index(0, col)))
+    assert tablemodel.is_data_edited_at(tablemodel.index(3, col))
+    assert tablemodel.data_edit_count() == 1
+
+    # Try to save the changes to the database and assert that a
+    # "Unique constraint violation" message is shown as expected.
+    tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+
+    # Change back the station of the fourth row to its original value and
+    # save the results to the database.
+    col = tablemodel.column_names().index('sampling_feature_uuid')
+    tablewidget.model().set_data_edit_at(tablemodel.index(3, col), orig_value)
+    assert tablemodel.is_data_edited_at(tablemodel.index(3, col))
+    assert tablemodel.data_edit_count() == 2
+
+    # Save the changes to the database.
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+    assert tablemodel.data_edit_count() == 0
+
+
 if __name__ == "__main__":
     pytest.main(['-x', __file__, '-v', '-rw'])
