@@ -169,8 +169,7 @@ def test_select_observation_well(tablewidget, qtbot):
     assert tablewidget.water_quality_reports.isEnabled()
 
 
-def test_add_observation_well(tablewidget, qtbot, obswells_data, dbaccessor,
-                              mocker):
+def test_add_observation_well(tablewidget, qtbot, dbaccessor, mocker):
     """
     Test that adding a new observation well is working as expected.
     """
@@ -442,4 +441,4 @@ def test_unique_constraint(tablewidget, qtbot, mocker, dbaccessor):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', __file__, '-v', '-rw', '-k', 'test_unique_constraint'])
+    pytest.main(['-x', __file__, '-v', '-rw'])
