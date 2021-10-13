@@ -14,11 +14,13 @@ Tests for the Repere table.
 # ---- Standard imports
 from datetime import datetime
 import os
+from uuid import UUID
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import pandas as pd
 import pytest
+from qtpy.QtWidgets import QMessageBox
 
 # ---- Local imports
 from sardes.tables import RepereTableWidget
@@ -53,27 +55,67 @@ def tablewidget(tablesmanager, qtbot, dbaccessor, repere_data):
 # =============================================================================
 # ---- Tests
 # =============================================================================
-def test_add_repere_data(tablewidget, qtbot, repere_data, dbaccessor):
+def test_add_repere_data(tablewidget, dbaccessor, qtbot, mocker):
     """
     Test that adding a new repere is working as expected.
     """
-    tableview = tablewidget.tableview
+    tablemodel = tablewidget.model()
+    assert tablewidget.visible_row_count() == 5
+    assert len(dbaccessor.get_repere_data()) == 5
 
     # We add a new row and assert that the UI state is as expected.
-    assert tableview.visible_row_count() == len(repere_data)
-    tableview.new_row_action.trigger()
-    assert tableview.visible_row_count() == len(repere_data) + 1
-    assert tableview.model().is_new_row_at(tableview.current_index())
+    tablewidget.new_row_action.trigger()
+    assert tablewidget.visible_row_count() == 6
+    assert tablemodel.data_edit_count() == 1
+    assert tablewidget.get_data_for_row(5) == [''] * 7
+    assert len(dbaccessor.get_repere_data()) == 5
+    assert tablemodel.is_new_row_at(tablewidget.current_index())
+
+    # We need to patch the message box that warns the user when
+    # a Notnull constraint is violated.
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Ok)
+
+    # Try to save the changes to the database and assert that a
+    # "Notnull constraint violation" message is shown.
+    tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+    assert tablewidget.visible_row_count() == 6
+    assert len(dbaccessor.get_repere_data()) == 5
+
+    # Enter a non null value for the fields 'sampling_feature_uuid',
+    # 'top_casing_alt', 'casing_length', 'start_date' and 'is_alt_geodesic'.
+    edited_values = {
+        'sampling_feature_uuid': UUID('e23753a9-c13d-44ac-9c13-8b7e1278075f'),
+        'top_casing_alt': 527.45,
+        'casing_length': 3.1,
+        'start_date': datetime(2015, 6, 12, 15, 34, 12),
+        'is_alt_geodesic': False}
+    for colname, edited_value in edited_values.items():
+        col = tablemodel.column_names().index(colname)
+        model_index = tablemodel.index(5, col)
+        tablewidget.model().set_data_edit_at(model_index, edited_value)
+    assert tablewidget.get_data_for_row(5) == [
+        '09000001', '527.45', '3.1', '2015-06-12 15:34', '', 'No', '']
+    assert tablemodel.data_edit_count() == 6
 
     # Save the changes to the database.
-    saved_values = dbaccessor.get_repere_data()
-    assert len(saved_values) == len(repere_data)
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+    assert tablemodel.data_edit_count() == 0
 
-    with qtbot.waitSignal(tableview.model().sig_data_updated):
-        tableview._save_data_edits(force=True)
-
-    saved_values = dbaccessor.get_repere_data()
-    assert len(saved_values) == len(repere_data) + 1
+    repere_data = dbaccessor.get_repere_data()
+    assert tablewidget.visible_row_count() == 6
+    assert len(repere_data) == 6
+    assert repere_data.iloc[5]['sampling_feature_uuid'] == UUID(
+        'e23753a9-c13d-44ac-9c13-8b7e1278075f')
+    assert repere_data.iloc[5]['top_casing_alt'] == 527.45
+    assert repere_data.iloc[5]['casing_length'] == 3.1
+    assert repere_data.iloc[5]['start_date'] == datetime(
+        2015, 6, 12, 15, 34, 12)
+    assert pd.isnull(repere_data.iloc[5]['end_date'])
+    assert repere_data.iloc[5]['is_alt_geodesic'] == False
 
 
 def test_edit_repere_data(tablewidget, qtbot, dbaccessor, obswells_data):
