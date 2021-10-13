@@ -15,6 +15,7 @@ from datetime import datetime, date
 import os.path as osp
 from random import randrange
 import uuid
+from uuid import UUID
 
 # ---- Third party imports
 import xlsxwriter
@@ -49,7 +50,11 @@ def obswells_data():
         ]
     return pd.DataFrame(
         data=data,
-        index=[uuid.uuid4() for row in data],
+        index=[UUID('3c6d0e15-6775-4304-964a-5db89e463c55'),
+               UUID('dcc36634-ae7e-42c0-966d-77f575232ead'),
+               UUID('f61556e8-13a1-43c7-9fbb-aec4d9b0a369'),
+               UUID('f9b519b8-2d86-44cf-ba97-61427e30398f'),
+               UUID('e23753a9-c13d-44ac-9c13-8b7e1278075f')],
         columns=['obs_well_id', 'common_name', 'municipality',
                  'aquifer_type', 'confinement', 'aquifer_code',
                  'in_recharge_zone', 'is_influenced', 'latitude',
