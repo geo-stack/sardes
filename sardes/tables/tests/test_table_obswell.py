@@ -169,31 +169,63 @@ def test_select_observation_well(tablewidget, qtbot):
     assert tablewidget.water_quality_reports.isEnabled()
 
 
-def test_add_observation_well(tablewidget, qtbot, obswells_data, dbaccessor):
+def test_add_observation_well(tablewidget, qtbot, obswells_data, dbaccessor,
+                              mocker):
     """
     Test that adding a new observation well is working as expected.
     """
-    tableview = tablewidget.tableview
+    tablemodel = tablewidget.model()
+    assert tablewidget.visible_row_count() == 5
+    assert len(dbaccessor.get_observation_wells_data()) == 5
 
     # We add a new row and assert that the UI state is as expected.
-    assert tableview.visible_row_count() == len(obswells_data)
-    tableview.new_row_action.trigger()
-    assert tableview.visible_row_count() == len(obswells_data) + 1
+    tablewidget.new_row_action.trigger()
+    assert tablewidget.visible_row_count() == 6
+    assert tablemodel.data_edit_count() == 1
+    assert tablewidget.get_data_for_row(5) == [''] * 15
+    assert len(dbaccessor.get_observation_wells_data()) == 5
 
-    assert tableview.model().is_new_row_at(tableview.current_index())
+    assert tablemodel.is_new_row_at(tablewidget.current_index())
     assert not tablewidget.show_data_btn.isEnabled()
     assert not tablewidget.construction_logs_manager.isEnabled()
     assert not tablewidget.water_quality_reports.isEnabled()
 
+    # We need to patch the message box that warns the user when
+    # a Notnull constraint is violated.
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Ok)
+
+    # Try to save the changes to the database and assert that a
+    # "Notnull constraint violation" message is shown.
+    tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+    assert tablewidget.visible_row_count() == 6
+    assert len(dbaccessor.get_observation_wells_data()) == 5
+
+    # Enter a non null value for the fields 'obs_well_id' and
+    # 'is_station_active'.
+    edited_values = {
+        'obs_well_id': 'new_well_id',
+        'is_station_active': True}
+    for colname, edited_value in edited_values.items():
+        col = tablemodel.column_names().index(colname)
+        model_index = tablemodel.index(5, col)
+        tablewidget.model().set_data_edit_at(model_index, edited_value)
+    assert tablewidget.get_data_for_row(5)[0] == 'new_well_id'
+    assert tablewidget.get_data_for_row(5)[-2] == 'Yes'
+    assert tablemodel.data_edit_count() == 3
+
     # Save the changes to the database.
-    db_obswell_data = dbaccessor.get_observation_wells_data()
-    assert len(db_obswell_data) == len(obswells_data)
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+    assert tablemodel.data_edit_count() == 0
 
-    with qtbot.waitSignal(tableview.model().sig_data_updated):
-        tableview._save_data_edits(force=True)
-
-    db_obswell_data = dbaccessor.get_observation_wells_data()
-    assert len(db_obswell_data) == len(obswells_data) + 1
+    obswells = dbaccessor.get_observation_wells_data()
+    assert tablewidget.visible_row_count() == 6
+    assert len(obswells) == 6
+    assert obswells.iloc[5]['obs_well_id'] == 'new_well_id'
+    assert obswells.iloc[5]['is_station_active'] == True
 
 
 def test_edit_observation_well(tablewidget, qtbot, obswells_data, dbaccessor):
@@ -386,5 +418,28 @@ def test_delete_observation_well(tablewidget, qtbot, dbaccessor, mocker,
     assert len(dbaccessor.get_observation_wells_data()) == 4
 
 
+def test_unique_constraint(tablewidget, qtbot, mocker, dbaccessor):
+    """
+    Test that unique constraint violations are reported as expected.
+    """
+    tablemodel = tablewidget.model()
+
+    # We need to patch the message box that appears to warn user when
+    # a unique constraint is violated.
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Ok)
+
+    # Set the station id of the second row as that of the first row.
+    model_index = tablemodel.index(1, 0)
+    tablemodel.set_data_edit_at(model_index, '03037041')
+    assert tablemodel.is_data_edited_at(model_index)
+    assert tablemodel.data_edit_count() == 1
+
+    # Try to save the changes to the database and assert that a
+    # "Unique constraint violation" message is shown as expected.
+    tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+
+
 if __name__ == "__main__":
-    pytest.main(['-x', __file__, '-v', '-rw'])
+    pytest.main(['-x', __file__, '-v', '-rw', '-k', 'test_unique_constraint'])
