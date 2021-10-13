@@ -20,6 +20,7 @@ import itertools
 import os
 import os.path as osp
 import uuid
+from uuid import UUID
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
@@ -37,7 +38,9 @@ from sardes.api.timeseries import DataType
 from sardes.api.database_accessor import (
     DatabaseAccessorError, init_tseries_edits, init_tseries_dels)
 from sardes.database.accessors.accessor_sardes_lite import (
-    DatabaseAccessorSardesLite, CURRENT_SCHEMA_VERSION, DATE_FORMAT)
+    DatabaseAccessorSardesLite, CURRENT_SCHEMA_VERSION, DATE_FORMAT,
+    SamplingFeature, Location, SamplingFeature, SamplingFeatureMetadata,
+    SamplingFeatureDataOverview, SamplingFeatureAttachment)
 
 
 def assert_dataframe_equals(df1, df2):
@@ -615,7 +618,7 @@ def test_observation_well_interface(dbaccessor, database_filler,
     # =========================================================================
     # Delete
     # =========================================================================
-    obs_wells_id = obs_wells_bd.index[0]
+    obs_wells_id = UUID('3c6d0e15-6775-4304-964a-5db89e463c55')
     assert len(dbaccessor.get_observation_wells_data()) == 5
 
     # Try to delete a station with readings, repere and sonde installations.
@@ -662,6 +665,21 @@ def test_observation_well_interface(dbaccessor, database_filler,
 
     dbaccessor.delete_observation_wells_data(obs_wells_id)
     assert len(dbaccessor.get_observation_wells_data()) == 4
+
+    # Assert that the DB was cleaned as expected.
+    assert (
+        dbaccessor._session.query(Location.loc_id)
+        .filter(SamplingFeature.sampling_feature_uuid == obs_wells_id)
+        .filter(SamplingFeature.loc_id == Location.loc_id)
+        .count()
+        ) == 0
+    for table in [SamplingFeature, SamplingFeatureMetadata,
+                  SamplingFeatureDataOverview, SamplingFeatureAttachment]:
+        assert (
+            dbaccessor._session.query(table)
+            .filter(table.sampling_feature_uuid == obs_wells_id)
+            .count()
+            ) == 0
 
 
 # =============================================================================
