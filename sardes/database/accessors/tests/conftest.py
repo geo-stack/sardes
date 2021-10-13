@@ -142,7 +142,12 @@ def sondes_data():
         ]
     return pd.DataFrame(
         data,
-        index=[uuid.uuid4() for row in data],
+        index=[UUID('3b8f4a6b-14d0-461e-8f1a-08a5ea465a1e'),
+               UUID('dd4435b1-8699-4694-a303-5ca9b9bff111'),
+               UUID('776ca385-cf2c-4afe-a7d6-559ffa0e2735'),
+               UUID('e8e9782c-773a-48ba-9f4d-a7253e2642ee'),
+               UUID('ae2d95ee-e3b6-40c9-9628-fe0833b3dd37'),
+               UUID('f9d0dbb6-6379-49f8-8473-59bc8007e20d')],
         columns=['sonde_model_id', 'sonde_serial_no',
                  'date_reception', 'date_withdrawal', 'in_repair',
                  'out_of_order', 'lost', 'off_network', 'sonde_notes']
