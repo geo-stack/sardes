@@ -56,27 +56,58 @@ def tablewidget(tablesmanager, qtbot, dbaccessor):
 # =============================================================================
 # ---- Tests
 # =============================================================================
-def test_add_sonde_model(tablewidget, qtbot, dbaccessor):
+def test_add_sonde_model(tablewidget, qtbot, dbaccessor, mocker):
     """
     Test that adding a new sonde model is working as expected.
     """
-    tableview = tablewidget.tableview
+    tablemodel = tablewidget.model()
+    assert tablewidget.visible_row_count() == 23
+    assert len(dbaccessor.get_sonde_models_lib()) == 23
 
     # We add a new row and assert that the UI state is as expected.
-    assert tableview.visible_row_count() == 23
-    tableview.new_row_action.trigger()
-    assert tableview.visible_row_count() == 23 + 1
-    assert tableview.model().is_new_row_at(tableview.current_index())
+    tablewidget.new_row_action.trigger()
+    assert tablewidget.visible_row_count() == 24
+    assert tablemodel.data_edit_count() == 1
+    assert tablewidget.get_data_for_row(23) == [''] * 2
+    assert tablemodel.is_new_row_at(tablewidget.current_index())
+    assert len(dbaccessor.get_sonde_models_lib()) == 23
+
+    # We need to patch the message box that warns the user when
+    # a Notnull constraint is violated.
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Ok)
+
+    # Try to save the changes to the database and assert that a
+    # "Notnull constraint violation" message is shown.
+    tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+    assert tablewidget.visible_row_count() == 24
+    assert len(dbaccessor.get_sonde_models_lib()) == 23
+
+    # Enter a non null value for the fields 'sonde_model_id',
+    # 'in_repair', 'out_of_order', 'lost', and 'off_network'.
+    edited_values = {
+        'sonde_brand': 'new_sonde_brand',
+        'sonde_model': 'new_sonde_model'}
+    for colname, edited_value in edited_values.items():
+        col = tablemodel.column_names().index(colname)
+        model_index = tablemodel.index(23, col)
+        tablewidget.model().set_data_edit_at(model_index, edited_value)
+    assert tablewidget.get_data_for_row(23) == [
+        'new_sonde_brand', 'new_sonde_model']
+    assert tablemodel.data_edit_count() == 3
 
     # Save the changes to the database.
-    saved_values = dbaccessor.get_sonde_models_lib()
-    assert len(saved_values) == 23
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+    assert tablemodel.data_edit_count() == 0
 
-    with qtbot.waitSignal(tableview.model().sig_data_updated):
-        tableview._save_data_edits(force=True)
-
-    saved_values = dbaccessor.get_sonde_models_lib()
-    assert len(saved_values) == 23 + 1
+    sonde_models = dbaccessor.get_sonde_models_lib()
+    assert tablewidget.visible_row_count() == 24
+    assert len(sonde_models) == 24
+    assert sonde_models.iloc[23]['sonde_brand'] == 'new_sonde_brand'
+    assert sonde_models.iloc[23]['sonde_model'] == 'new_sonde_model'
 
 
 def test_edit_sonde_model(tablewidget, qtbot, dbaccessor, obswells_data):
@@ -173,6 +204,46 @@ def test_delete_sonde_model(tablewidget, qtbot, dbaccessor, mocker,
     assert qmsgbox_patcher.call_count == 1
     assert tablewidget.visible_row_count() == 22
     assert len(dbaccessor.get_sonde_models_lib()) == 22
+
+
+def test_unique_constraint(tablewidget, dbaccessor, qtbot, mocker):
+    """
+    Test that unique constraint violations are reported as expected.
+    """
+    tablemodel = tablewidget.model()
+
+    # We need to patch the message box that appears to warn user when
+    # a unique constraint is violated.
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Ok)
+
+    # Set the 'sonde_model' of the second row to that of the first row.
+    # Note that the 'sonde_brand' of the first and second row are the same.
+    row = 1
+    col = tablemodel.column_names().index('sonde_model')
+    model_index = tablemodel.index(row, col)
+    tablewidget.model().set_data_edit_at(model_index, 'LT M10 Gold')
+    assert tablemodel.is_data_edited_at(tablemodel.index(row, col))
+    assert tablemodel.data_edit_count() == 1
+
+    # Try to save the changes to the database and assert that a
+    # "Unique constraint violation" message is shown as expected.
+    tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+
+    # Change the 'sonde_brand' of the second row to a different value than
+    # that of the first row.
+    col = tablemodel.column_names().index('sonde_brand')
+    model_index = tablemodel.index(row, col)
+    tablewidget.model().set_data_edit_at(model_index, 'another_sonde_brand')
+    assert tablemodel.is_data_edited_at(model_index)
+    assert tablemodel.data_edit_count() == 2
+
+    # Save the changes to the database.
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+    assert tablemodel.data_edit_count() == 0
 
 
 if __name__ == "__main__":
