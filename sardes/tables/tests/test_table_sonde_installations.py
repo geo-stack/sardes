@@ -14,6 +14,7 @@ Tests for the Sonde Installations table.
 # ---- Standard imports
 from datetime import datetime
 import os
+from uuid import UUID
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
@@ -55,30 +56,66 @@ def tablewidget(tablesmanager, qtbot, dbaccessor, sondes_installation):
 # =============================================================================
 # ---- Tests
 # =============================================================================
-def test_add_sonde_installations(tablewidget, qtbot, sondes_installation,
-                                 dbaccessor):
+def test_add_sonde_installations(tablewidget, dbaccessor, qtbot, mocker):
     """
     Test that adding new sonde installations is working as expected.
     """
-    tableview = tablewidget.tableview
+    tablemodel = tablewidget.model()
+    assert tablewidget.visible_row_count() == 6
+    assert len(dbaccessor.get_sonde_installations()) == 6
 
     # We add a new row and assert that the UI state is as expected.
-    new_row = len(sondes_installation)
-    assert tableview.visible_row_count() == len(sondes_installation)
-    tableview.new_row_action.trigger()
-    assert tableview.visible_row_count() == len(sondes_installation) + 1
-    assert tableview.model().is_new_row_at(tableview.current_index())
-    assert tableview.get_data_for_row(new_row) == [''] * 6
+    tablewidget.new_row_action.trigger()
+    assert tablewidget.visible_row_count() == 7
+    assert tablemodel.data_edit_count() == 1
+    assert tablewidget.get_data_for_row(6) == [''] * 6
+    assert tablemodel.is_new_row_at(tablewidget.current_index())
+    assert len(dbaccessor.get_sonde_installations()) == 6
+
+    # We need to patch the message box that warns the user when
+    # a Notnull constraint is violated.
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Ok)
+
+    # Try to save the changes to the database and assert that a
+    # "Notnull constraint violation" message is shown.
+    tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+    assert tablewidget.visible_row_count() == 7
+    assert len(dbaccessor.get_sonde_installations()) == 6
+
+    # Enter a non null value for the fields 'sampling_feature_uuid',
+    # 'sonde_uuid', 'start_date', and 'install_depth'.
+    edited_values = {
+        'sampling_feature_uuid': UUID('e23753a9-c13d-44ac-9c13-8b7e1278075f'),
+        'sonde_uuid': UUID('3b8f4a6b-14d0-461e-8f1a-08a5ea465a1e'),
+        'start_date': datetime(2015, 6, 12, 15, 34, 12),
+        'install_depth': 12.23}
+    for colname, edited_value in edited_values.items():
+        col = tablemodel.column_names().index(colname)
+        model_index = tablemodel.index(6, col)
+        tablewidget.model().set_data_edit_at(model_index, edited_value)
+    assert tablewidget.get_data_for_row(6) == [
+        '09000001', 'Solinst Barologger M1.5 - 1016042', '2015-06-12 15:34',
+        '', '12.23', '']
+    assert tablemodel.data_edit_count() == 5
 
     # Save the changes to the database.
-    saved_values = dbaccessor.get_sonde_installations()
-    assert len(saved_values) == len(sondes_installation)
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+    assert tablemodel.data_edit_count() == 0
 
-    with qtbot.waitSignal(tableview.model().sig_data_updated):
-        tableview._save_data_edits(force=True)
-
-    saved_values = dbaccessor.get_sonde_installations()
-    assert len(saved_values) == len(sondes_installation) + 1
+    sonde_installations = dbaccessor.get_sonde_installations()
+    assert tablewidget.visible_row_count() == 7
+    assert len(sonde_installations) == 7
+    assert sonde_installations.iloc[6]['sampling_feature_uuid'] == UUID(
+        'e23753a9-c13d-44ac-9c13-8b7e1278075f')
+    assert sonde_installations.iloc[6]['sonde_uuid'] == UUID(
+        '3b8f4a6b-14d0-461e-8f1a-08a5ea465a1e')
+    assert sonde_installations.iloc[6]['start_date'] == datetime(
+        2015, 6, 12, 15, 34, 12)
+    assert sonde_installations.iloc[6]['install_depth'] == 12.23
 
 
 def test_edit_sonde_installations(tablewidget, qtbot, sondes_installation,
