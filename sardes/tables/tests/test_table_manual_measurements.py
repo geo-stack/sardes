@@ -72,7 +72,7 @@ def test_add_manual_measurements(tablewidget, qtbot, dbaccessor, mocker):
     assert tablewidget.get_data_for_row(6) == ['', '', '', '']
     assert tablemodel.data_edit_count() == 1
 
-    # We need to patch the message box that appears to warn user when
+    # We need to patch the message box that warns the user when
     # a Notnull constraint is violated.
     qmsgbox_patcher = mocker.patch.object(
         QMessageBox, 'exec_', return_value=QMessageBox.Ok)
@@ -82,7 +82,8 @@ def test_add_manual_measurements(tablewidget, qtbot, dbaccessor, mocker):
     tablewidget.save_edits_action.trigger()
     assert qmsgbox_patcher.call_count == 1
 
-    # Enter a non null value for the fields 'obswell', 'datetime' and 'value'.
+    # Enter a non null value for the fields 'sampling_feature_uuid', 'datetime'
+    # and 'value'.
     obswells = dbaccessor.get_observation_wells_data()
     edited_values = {
         'sampling_feature_uuid': obswells.index[0],
