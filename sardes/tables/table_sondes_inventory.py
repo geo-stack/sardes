@@ -31,7 +31,7 @@ class SondesInventoryTableModel(StandardSardesTableModel):
             delegate=SondeModelEditDelegate),
         SardesTableColumn(
             'sonde_serial_no', _('Serial Number'), 'str',
-            notnull=True, unique=True, unique_subset=['sonde_model_id'],
+            unique=True, unique_subset=['sonde_model_id'],
             delegate=StringEditDelegate),
         SardesTableColumn(
             'date_reception', _('Date Reception'), 'datetime64[ns]',
@@ -55,6 +55,9 @@ class SondesInventoryTableModel(StandardSardesTableModel):
             'sonde_notes', _('Notes'), 'boolean',
             delegate=TextEditDelegate)
         ]
+
+    __dataname__ = 'sondes_data'
+    __libnames__ = ['sonde_models_lib']
 
     # ---- Visual Data
     def logical_to_visual_data(self, visual_dataf):

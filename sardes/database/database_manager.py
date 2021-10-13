@@ -26,10 +26,24 @@ from sardes.api.taskmanagers import WorkerBase, TaskManagerBase
 from sardes.config.locale import _
 from sardes.config.ospath import get_documents_logo_filename
 from sardes.config.main import CONF
-from sardes.tables.managers import SardesTableModelsManager
+from sardes.database.accessors.accessor_helpers import create_empty_readings
 from sardes.tools.hydrographs import HydrographCanvas
 from sardes.tools.save2excel import _save_reading_data_to_xlsx
 from sardes.utils.data_operations import format_reading_data
+
+DATA_FOREIGN_CONSTRAINTS = {
+    'observation_wells_data': [
+        ('sampling_feature_uuid', 'manual_measurements'),
+        ('sampling_feature_uuid', 'sonde_installations'),
+        ('sampling_feature_uuid', 'repere_data')],
+    'sonde_models_lib': [
+        ('sonde_model_id', 'sondes_data')],
+    'sondes_data': [
+        ('sonde_uuid', 'sonde_installations')],
+    'manual_measurements': [],
+    'repere_data': [],
+    'sonde_installations': []
+    }
 
 
 class DatabaseConnectionWorker(WorkerBase):
@@ -160,6 +174,22 @@ class DatabaseConnectionWorker(WorkerBase):
             values.index = values.index.droplevel(0)
             self._set(name, index, values['edited_value'].to_dict())
 
+    def _check_foreign_constraints(self, parent_indexes, data_name):
+        """
+        Return the first foreign constraint violation found by checking
+        the parent indexes of the data related to data_name against the
+        foreign constraints specified in FOREIGN_CONSTRAINTS.
+        """
+        foreign_constraints = DATA_FOREIGN_CONSTRAINTS.get(data_name, [])
+        for foreign_column, foreign_name in foreign_constraints:
+            foreign_data = self._get(foreign_name)[0]
+            isin_indexes = parent_indexes[
+                parent_indexes.isin(foreign_data[foreign_column].array)]
+            if not isin_indexes.empty:
+                return (isin_indexes[0], foreign_column, foreign_name),
+        else:
+            return None,
+
     # ---- Timeseries
     def _get_timeseries_for_obs_well(self, sampling_feature_uuid,
                                      data_types=None):
@@ -177,6 +207,12 @@ class DatabaseConnectionWorker(WorkerBase):
             obs_well_data = self._get('observation_wells_data')[0]
         obs_well_data = obs_well_data.loc[sampling_feature_uuid]
 
+        if data_types is None:
+            data_types = [
+                DataType.WaterLevel,
+                DataType.WaterTemp,
+                DataType.WaterEC]
+
         print("Fetching readings data for observation well {}..."
               .format(obs_well_data['obs_well_id']))
         try:
@@ -186,11 +222,8 @@ class DatabaseConnectionWorker(WorkerBase):
             print()
             print(type(error).__name__, end=': ')
             print(error)
-            readings = DataFrame(
-                [],
-                columns=['datetime', 'sonde_id', DataType(0),
-                         DataType(1), DataType(2), 'install_depth',
-                         'obs_id'])
+            readings = create_empty_readings(
+                )
         else:
             print("Successfully fetched readings data for observation well {}."
                   .format(obs_well_data['obs_well_id']))
@@ -573,7 +606,6 @@ class DatabaseConnectionManager(TaskManagerBase):
     sig_database_connection_changed = Signal(bool)
     sig_database_data_changed = Signal(list)
     sig_tseries_data_changed = Signal(list)
-    sig_models_data_changed = Signal()
     sig_publish_progress = Signal(float)
 
     def __init__(self):
@@ -587,9 +619,6 @@ class DatabaseConnectionManager(TaskManagerBase):
         self.sig_run_tasks_finished.connect(self._handle_run_tasks_finished)
         self.worker().sig_publish_progress.connect(
             self.sig_publish_progress.emit)
-
-        # Setup the table models manager.
-        self.models_manager = SardesTableModelsManager(self)
 
     def is_connected(self):
         """Return whether a connection to a database is currently active."""
@@ -857,35 +886,6 @@ class DatabaseConnectionManager(TaskManagerBase):
                 list(self._tseries_data_changed))
             self._tseries_data_changed = set()
 
-    # ---- Tables
-    def create_new_model_index(self, table_id):
-        """
-        Return a new index that can be used subsequently to add new item
-        to a Sardes model.
-        """
-        name = self.models_manager._models_req_data[table_id][0]
-        return self.create_index(name)
-
-    def register_model(self, table_model, data_name, lib_names=None):
-        """
-        Register a new sardes table model to the manager.
-        """
-        table_model.set_database_connection_manager(self)
-        self.models_manager.register_model(
-            table_model, data_name, lib_names)
-
-    def update_model(self, table_id):
-        """
-        Update the given sardes data model and libraries.
-        """
-        self.models_manager.update_model(table_id)
-
-    def save_table_edits(self, table_id):
-        """
-        Save all edits made to the table related to table_id to the database.
-        """
-        self.models_manager.save_table_edits(table_id)
-
     # ---- Publish Network Data
     def publish_to_kml(self, filename, iri_data=None, iri_logs=None,
                        iri_graphs=None, iri_quality=None, callback=None,
@@ -916,5 +916,5 @@ if __name__ == '__main__':
         callback=None,
         postpone_exec=False, main_thread=True)
     print(readings)
-    
+
     dbmanager.close()

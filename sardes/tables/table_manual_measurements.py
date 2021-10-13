@@ -27,13 +27,13 @@ class ManualMeasurementsTableModel(StandardSardesTableModel):
     __tablecolumns__ = [
         SardesTableColumn(
             'sampling_feature_uuid', _('Well ID'), 'str',
-            notnull=True, unique=True,
+            notnull=True, unique=True, unique_subset=['datetime'],
             delegate=ObsWellIdEditDelegate),
         SardesTableColumn(
             'datetime', _('Date/Time'), 'datetime64[ns]', notnull=True,
             unique=True, unique_subset=['sampling_feature_uuid'],
             delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm:ss"}),
         SardesTableColumn(
             'value', _('Water Level'), 'float64', notnull=True,
             delegate=NumEditDelegate,
@@ -43,6 +43,9 @@ class ManualMeasurementsTableModel(StandardSardesTableModel):
             'notes', _('Notes'), 'str',
             delegate=TextEditDelegate)
         ]
+
+    __dataname__ = 'manual_measurements'
+    __libnames__ = ['observation_wells_data']
 
     # ---- Visual Data
     def logical_to_visual_data(self, visual_dataf):
@@ -57,8 +60,7 @@ class ManualMeasurementsTableModel(StandardSardesTableModel):
                 )
         except KeyError:
             pass
-        visual_dataf['datetime'] = (visual_dataf['datetime']
-                                    .dt.strftime('%Y-%m-%d %H:%M'))
+
         return visual_dataf
 
 

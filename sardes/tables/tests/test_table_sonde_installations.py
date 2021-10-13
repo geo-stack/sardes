@@ -12,16 +12,18 @@ Tests for the Sonde Installations table.
 """
 
 # ---- Standard imports
-from datetime import datetime, date
+from datetime import datetime
 import os
-import os.path as osp
+from uuid import UUID
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import pandas as pd
 import pytest
+from qtpy.QtWidgets import QMessageBox
 
 # ---- Local imports
+from sardes.tables import SondeInstallationsTableWidget
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 
 
@@ -29,50 +31,91 @@ from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def tablewidget(mainwindow, qtbot, dbaccessor, sondes_installation):
-    # Select the tab corresponding to the observation wells table.
-    tablewidget = mainwindow.plugin._tables['table_sonde_installations']
-    mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
-    tableview = tablewidget.tableview
-    qtbot.waitUntil(
-        lambda: tableview.visible_row_count() == len(sondes_installation))
+def tablewidget(tablesmanager, qtbot, dbaccessor, sondes_installation):
+    tablewidget = SondeInstallationsTableWidget()
+    qtbot.addWidget(tablewidget)
+    tablewidget.show()
+
+    tablemodel = tablewidget.model()
+    tablesmanager.register_table_model(tablemodel)
+
+    # This connection is usually made by the plugin, but we need to make it
+    # here manually for testing purposes.
+    tablesmanager.sig_models_data_changed.connect(tablemodel.update_data)
+
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablemodel.update_data()
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
 
-    yield tablewidget
+    assert (tablewidget.tableview.visible_row_count() ==
+            len(sondes_installation))
 
-    # We need to wait for the mainwindow to close properly to avoid
-    # runtime errors on the c++ side.
-    with qtbot.waitSignal(mainwindow.sig_about_to_close):
-        mainwindow.close()
+    return tablewidget
 
 
 # =============================================================================
 # ---- Tests
 # =============================================================================
-def test_add_sonde_installations(tablewidget, qtbot, sondes_installation,
-                                 dbaccessor):
+def test_add_sonde_installations(tablewidget, dbaccessor, qtbot, mocker):
     """
     Test that adding new sonde installations is working as expected.
     """
-    tableview = tablewidget.tableview
+    tablemodel = tablewidget.model()
+    assert tablewidget.visible_row_count() == 6
+    assert len(dbaccessor.get_sonde_installations()) == 6
 
     # We add a new row and assert that the UI state is as expected.
-    new_row = len(sondes_installation)
-    assert tableview.visible_row_count() == len(sondes_installation)
-    tableview.new_row_action.trigger()
-    assert tableview.visible_row_count() == len(sondes_installation) + 1
-    assert tableview.model().is_new_row_at(tableview.current_index())
-    assert tableview.get_data_for_row(new_row) == [''] * 6
+    tablewidget.new_row_action.trigger()
+    assert tablewidget.visible_row_count() == 7
+    assert tablemodel.data_edit_count() == 1
+    assert tablewidget.get_data_for_row(6) == [''] * 6
+    assert tablemodel.is_new_row_at(tablewidget.current_index())
+    assert len(dbaccessor.get_sonde_installations()) == 6
+
+    # We need to patch the message box that warns the user when
+    # a Notnull constraint is violated.
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Ok)
+
+    # Try to save the changes to the database and assert that a
+    # "Notnull constraint violation" message is shown.
+    tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+    assert tablewidget.visible_row_count() == 7
+    assert len(dbaccessor.get_sonde_installations()) == 6
+
+    # Enter a non null value for the fields 'sampling_feature_uuid',
+    # 'sonde_uuid', 'start_date', and 'install_depth'.
+    edited_values = {
+        'sampling_feature_uuid': UUID('e23753a9-c13d-44ac-9c13-8b7e1278075f'),
+        'sonde_uuid': UUID('3b8f4a6b-14d0-461e-8f1a-08a5ea465a1e'),
+        'start_date': datetime(2015, 6, 12, 15, 34, 12),
+        'install_depth': 12.23}
+    for colname, edited_value in edited_values.items():
+        col = tablemodel.column_names().index(colname)
+        model_index = tablemodel.index(6, col)
+        tablewidget.model().set_data_edit_at(model_index, edited_value)
+    assert tablewidget.get_data_for_row(6) == [
+        '09000001', 'Solinst Barologger M1.5 - 1016042', '2015-06-12 15:34',
+        '', '12.23', '']
+    assert tablemodel.data_edit_count() == 5
 
     # Save the changes to the database.
-    saved_values = dbaccessor.get_sonde_installations()
-    assert len(saved_values) == len(sondes_installation)
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+    assert tablemodel.data_edit_count() == 0
 
-    with qtbot.waitSignal(tableview.model().sig_data_updated):
-        tableview._save_data_edits(force=True)
-
-    saved_values = dbaccessor.get_sonde_installations()
-    assert len(saved_values) == len(sondes_installation) + 1
+    sonde_installations = dbaccessor.get_sonde_installations()
+    assert tablewidget.visible_row_count() == 7
+    assert len(sonde_installations) == 7
+    assert sonde_installations.iloc[6]['sampling_feature_uuid'] == UUID(
+        'e23753a9-c13d-44ac-9c13-8b7e1278075f')
+    assert sonde_installations.iloc[6]['sonde_uuid'] == UUID(
+        '3b8f4a6b-14d0-461e-8f1a-08a5ea465a1e')
+    assert sonde_installations.iloc[6]['start_date'] == datetime(
+        2015, 6, 12, 15, 34, 12)
+    assert sonde_installations.iloc[6]['install_depth'] == 12.23
 
 
 def test_edit_sonde_installations(tablewidget, qtbot, sondes_installation,
@@ -162,6 +205,39 @@ def test_clear_sonde_installations(tablewidget, qtbot, dbaccessor):
     saved_values = dbaccessor.get_sonde_installations().iloc[0].to_dict()
     for attr in clearable_attrs:
         assert pd.isnull(saved_values[attr])
+
+
+def test_delete_sonde_installations(tablewidget, qtbot, dbaccessor, mocker):
+    """
+    Test that deleting sonde installations is working as expected.
+    """
+    assert tablewidget.visible_row_count() == 6
+    assert len(dbaccessor.get_sonde_installations()) == 6
+
+    # We need to patch the message box that appears to warn users about
+    # what happens with the associated monitoring data when deleting a
+    # sonde installation from the database.
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Ok)
+
+    # Select and delete the first two rows of the table.
+    tablewidget.set_current_index(0, 0)
+    tablewidget.select(1, 0)
+    assert tablewidget.get_rows_intersecting_selection() == [0, 1]
+
+    tablewidget.delete_row_action.trigger()
+    assert tablewidget.model().data_edit_count() == 1
+    assert qmsgbox_patcher.call_count == 1
+
+    # Save the changes to the database.
+    assert tablewidget.visible_row_count() == 6
+    assert len(dbaccessor.get_sonde_installations()) == 6
+
+    with qtbot.waitSignal(tablewidget.model().sig_data_updated):
+        tablewidget.save_edits_action.trigger()
+
+    assert tablewidget.visible_row_count() == 4
+    assert len(dbaccessor.get_sonde_installations()) == 4
 
 
 if __name__ == "__main__":

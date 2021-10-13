@@ -15,6 +15,15 @@ import pandas as pd
 from pandas import Series, DataFrame
 
 
+class DatabaseAccessorError(Exception):
+    """The basic Exception class for Sardes database accessor."""
+
+    def __init__(self, accessor, message):
+        super().__init__(
+            "{} ERROR: {}".format(accessor.__class__.__name__, message)
+            )
+
+
 class DatabaseAccessorBase(ABC):
     """
     Basic functionality for Sardes database accessor.

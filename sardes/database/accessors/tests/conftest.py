@@ -15,6 +15,7 @@ from datetime import datetime, date
 import os.path as osp
 from random import randrange
 import uuid
+from uuid import UUID
 
 # ---- Third party imports
 import xlsxwriter
@@ -49,7 +50,11 @@ def obswells_data():
         ]
     return pd.DataFrame(
         data=data,
-        index=[uuid.uuid4() for row in data],
+        index=[UUID('3c6d0e15-6775-4304-964a-5db89e463c55'),
+               UUID('dcc36634-ae7e-42c0-966d-77f575232ead'),
+               UUID('f61556e8-13a1-43c7-9fbb-aec4d9b0a369'),
+               UUID('f9b519b8-2d86-44cf-ba97-61427e30398f'),
+               UUID('e23753a9-c13d-44ac-9c13-8b7e1278075f')],
         columns=['obs_well_id', 'common_name', 'municipality',
                  'aquifer_type', 'confinement', 'aquifer_code',
                  'in_recharge_zone', 'is_influenced', 'latitude',
@@ -88,10 +93,10 @@ def repere_data(obswells_data):
 def manual_measurements(obswells_data):
     data = [
         [obswells_data.index[0], datetime(2010, 8, 10, 16, 10, 34), 5.23,
-         'Note for first measurement'],
+         'Note first measurement'],
         [obswells_data.index[0], datetime(2010, 11, 10, 12, 55, 22), 4.36, ''],
         [obswells_data.index[0], datetime(2011, 8, 2, 18, 50, 17), 4.91,
-         'Note for third measurement'],
+         'Note third measurement'],
         [obswells_data.index[1], datetime(2009, 8, 2, 18, 34, 38), 28.34, ''],
         [obswells_data.index[2], datetime(2015, 8, 2, 18, 37, 23), 14.87, ''],
         [obswells_data.index[2], datetime(2016, 2, 4, 13, 26, 3), 2.03, '']]
@@ -137,7 +142,12 @@ def sondes_data():
         ]
     return pd.DataFrame(
         data,
-        index=[uuid.uuid4() for row in data],
+        index=[UUID('3b8f4a6b-14d0-461e-8f1a-08a5ea465a1e'),
+               UUID('dd4435b1-8699-4694-a303-5ca9b9bff111'),
+               UUID('776ca385-cf2c-4afe-a7d6-559ffa0e2735'),
+               UUID('e8e9782c-773a-48ba-9f4d-a7253e2642ee'),
+               UUID('ae2d95ee-e3b6-40c9-9628-fe0833b3dd37'),
+               UUID('f9d0dbb6-6379-49f8-8473-59bc8007e20d')],
         columns=['sonde_model_id', 'sonde_serial_no',
                  'date_reception', 'date_withdrawal', 'in_repair',
                  'out_of_order', 'lost', 'off_network', 'sonde_notes']

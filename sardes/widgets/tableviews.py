@@ -429,6 +429,7 @@ class SardesTableView(QTableView):
     saved in the database.
     """
     sig_data_edited = Signal(object)
+    sig_rows_deleted = Signal(list)
     sig_current_changed = Signal(object)
     sig_show_event = Signal()
     sig_data_updated = Signal()
@@ -626,7 +627,7 @@ class SardesTableView(QTableView):
                 self, _("Save edits"),
                 icon='commit_changes',
                 tip=_('Save all edits made to the table in the database.'),
-                triggered=self._save_data_edits,
+                triggered=self._check_data_edits,
                 shortcut=['Ctrl+Enter', 'Ctrl+Return'],
                 context=Qt.WidgetShortcut,
                 name='sav_edits')
@@ -897,6 +898,37 @@ class SardesTableView(QTableView):
         self.sort_by_column(self.current_index().column(), sorting_order)
 
     # ---- Data selection
+    def current_index(self):
+        """
+        Return the currently selected index in the table view.
+        """
+        return self.selectionModel().currentIndex()
+
+    def current_data(self):
+        """
+        Return the value of the current index.
+        """
+        return self.current_index().data()
+
+    def set_current_index(self, row, col, command='SelectCurrent'):
+        """
+        Set the current index in the table view to that corresponding to the
+        provided logical row and column.
+        """
+        index = self.model().index(row, col)
+        sm = self.selectionModel()
+        sm.setCurrentIndex(index, getattr(sm, command))
+        return index
+
+    def select(self, row, col, command='Select'):
+        """
+        Do the selection operation at the specified row and col.
+        """
+        index = self.model().index(row, col)
+        sm = self.selectionModel()
+        sm.select(index, getattr(sm, command))
+        return index
+
     def get_current_row_data(self):
         """
         Return the data relative to the row with the current item (the item
@@ -1138,31 +1170,6 @@ class SardesTableView(QTableView):
             selection, QItemSelectionModel.Select)
 
     # ---- Utilities
-    def current_index(self):
-        """
-        Return the currently selected index in the table view.
-        """
-        return self.selectionModel().currentIndex()
-
-    def set_current_index(self, row, col, command='SelectCurrent'):
-        """
-        Set the current index in the table view to that corresponding to the
-        provided logical row and column.
-        """
-        index = self.model().index(row, col)
-        sm = self.selectionModel()
-        sm.setCurrentIndex(index, getattr(sm, command))
-        return index
-
-    def select(self, row, col, command='Select'):
-        """
-        Do the selection operation at the specified row and col.
-        """
-        index = self.model().index(row, col)
-        sm = self.selectionModel()
-        sm.select(index, getattr(sm, command))
-        return index
-
     def copy_to_clipboard(self):
         """
         Put a copy of the selection on the Clipboard.
@@ -1421,6 +1428,35 @@ class SardesTableView(QTableView):
         self.selectionModel().setCurrentIndex(
             model_index, self.selectionModel().NoUpdate)
 
+    def _check_data_edits(self):
+        """
+        Check if the data edits can be safely saved in the database.
+        """
+        self.model().check_data_edits(self._handle_data_edits_checked)
+
+    def _handle_data_edits_checked(self, error):
+        """
+        Handle results from the data edits check that is carried out
+        before saving the edits to the database.
+        """
+        if error is None:
+            self._save_data_edits(force=False)
+        else:
+            row, col = error.error_iloc(self)
+            model_index = self.model().index(row, col)
+            self._ensure_visible(model_index)
+            self.selectionModel().setCurrentIndex(
+                model_index, self.selectionModel().ClearAndSelect)
+
+            msgbox = QMessageBox(
+                QMessageBox.Warning,
+                _('Save edits error'),
+                error.error_message(self),
+                buttons=QMessageBox.Ok,
+                parent=self)
+            msgbox.button(msgbox.Ok).setText(_("Ok"))
+            msgbox.exec_()
+
     def _save_data_edits(self, force=True):
         """
         Save the data edits to the database. If 'force' is 'False', a message
@@ -1471,7 +1507,10 @@ class SardesTableView(QTableView):
 
     def _delete_selected_rows(self):
         """Delete rows from the table with selected indexes"""
-        self.model().delete_row(self.get_rows_intersecting_selection())
+        rows = self.get_rows_intersecting_selection()
+        self.model().delete_row(rows)
+        if len(rows):
+            self.sig_rows_deleted.emit(rows)
 
     def _ensure_visible(self, model_index, force=False):
         """
@@ -1482,22 +1521,6 @@ class SardesTableView(QTableView):
         view_rect = self.geometry()
         if not view_rect.contains(item_rect) or force:
             self.scrollTo(model_index, hint=self.PositionAtCenter)
-
-    def raise_edits_error(self, model_index, message):
-        """"
-        Raise a modal dialog that shows the specifed error message that
-        occured while editing the data at the specifed model index.
-        When the dialog is closed by the user, the focus is given back
-        the last edited cell and edit mode is turned on again, so that the
-        the user can correct the invalid edits accordingly.
-        """
-        QMessageBox.critical(
-            self, _('Edits error'),
-            message,
-            buttons=QMessageBox.Ok)
-        self.setCurrentIndex(model_index)
-        self._edit_current_item()
-        self.model().undo_last_data_edit()
 
     def show_message(self, title, message, func):
         """
@@ -1629,6 +1652,21 @@ class SardesTableWidget(SardesPaneWidget):
         if statusbar is True:
             self._setup_status_bar()
 
+    # ---- Tableview Public API
+    def __getattr__(self, name):
+        """
+        Expose the attributes of the tableview because the tablewidget is
+        conceptually simply an extension of a tableview and should have
+        the same interface.
+        """
+        try:
+            return super().__getattr__(name)
+        except AttributeError as error:
+            try:
+                return getattr(self.tableview, name)
+            except AttributeError:
+                raise error
+
     # ---- Layout
     def install_message_box(self, message_box):
         """
@@ -1671,28 +1709,12 @@ class SardesTableWidget(SardesPaneWidget):
         """Return the name of the table of the table widget."""
         return self.tableview.source_model.name()
 
-    def model(self):
-        """
-        Return the model associated with this table widget.
-        """
-        return self.tableview.model()
-
     def update_model_data(self):
         """
         Fetch the data from the database and update the model's data and
         library of this table widget.
         """
         return self.model().update_data()
-
-    # ---- Tableview Public API
-    def show_message(self, *args, **kargs):
-        return self.tableview.show_message(*args, **kargs)
-
-    def get_data_for_row(self, *args, **kargs):
-        return self.tableview.get_data_for_row(*args, **kargs)
-
-    def get_values_for_row(self, *args, **kargs):
-        return self.tableview.get_values_for_row(*args, **kargs)
 
     # ---- Setup
     def eventFilter(self, widget, event):

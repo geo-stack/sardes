@@ -86,11 +86,18 @@ class MainWindowBase(QMainWindow):
         self._is_panes_and_toolbars_locked = False
 
         # Setup the database connection manager.
-        from sardes.database.database_manager import DatabaseConnectionManager
         print("Setting up the database connection manager...")
+        from sardes.database.database_manager import DatabaseConnectionManager
         self.set_splash(_("Setting up the database connection manager..."))
         self.db_connection_manager = DatabaseConnectionManager()
         print("Database connection manager set up succesfully.")
+
+        # Setup the table models manager.
+        print("Setting up the table models manager...")
+        from sardes.tables.managers import SardesTableModelsManager
+        self.table_models_manager = SardesTableModelsManager(
+            self.db_connection_manager)
+        print("Table models manager set up succesfully.")
 
         self.setup()
 

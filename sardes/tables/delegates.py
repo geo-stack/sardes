@@ -115,9 +115,6 @@ class StringEditDelegate(SardesItemDelegate):
         editor.setMaxLength(self.MAX_LENGTH)
         return editor
 
-    def validate_edits(self):
-        return self.validate_unique_constaint()
-
 
 class IntEditDelegate(SardesItemDelegate):
     """

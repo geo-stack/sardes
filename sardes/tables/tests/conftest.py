@@ -10,16 +10,15 @@
 # ---- Standard imports
 import os
 import os.path as osp
-from unittest.mock import Mock
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import pytest
 
 # ---- Local imports
-from sardes.plugins.librairies import SARDES_PLUGIN_CLASS
+from sardes.database.database_manager import DatabaseConnectionManager
+from sardes.tables.managers import SardesTableModelsManager
 from sardes.database.accessors import DatabaseAccessorSardesLite
-from sardes.app.mainwindow import MainWindowBase
 from sardes.database.accessors.tests.conftest import *
 
 
@@ -34,24 +33,20 @@ def dbaccessor(tmp_path, database_filler):
 
 
 @pytest.fixture
-def mainwindow(qtbot, dbaccessor):
-    class MainWindowMock(MainWindowBase):
-        def __init__(self):
-            self.view_timeseries_data = Mock()
-            super().__init__()
-
-        def setup_internal_plugins(self):
-            self.plugin = SARDES_PLUGIN_CLASS(self)
-            self.plugin.register_plugin()
-            self.internal_plugins.append(self.plugin)
-
-    mainwindow = MainWindowMock()
-    mainwindow.show()
-    qtbot.waitExposed(mainwindow)
-
-    dbconnmanager = mainwindow.db_connection_manager
+def dbconnmanager(dbaccessor, qtbot):
+    dbconnmanager = DatabaseConnectionManager()
     with qtbot.waitSignal(dbconnmanager.sig_database_connected, timeout=3000):
         dbconnmanager.connect_to_db(dbaccessor)
     assert dbconnmanager.is_connected()
 
-    return mainwindow
+    # We set the option to 'confirm before saving' to False to avoid
+    # showing the associated message when saving table edits.
+    dbconnmanager.set_confirm_before_saving_edits(False)
+
+    return dbconnmanager
+
+
+@pytest.fixture
+def tablesmanager(dbconnmanager):
+    tablesmanager = SardesTableModelsManager(dbconnmanager)
+    return tablesmanager

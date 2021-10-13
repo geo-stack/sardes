@@ -12,16 +12,18 @@ Tests for the Repere table.
 """
 
 # ---- Standard imports
-from datetime import datetime, date
+from datetime import datetime
 import os
-import os.path as osp
+from uuid import UUID
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import pandas as pd
 import pytest
+from qtpy.QtWidgets import QMessageBox
 
 # ---- Local imports
+from sardes.tables import RepereTableWidget
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 
 
@@ -29,46 +31,91 @@ from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def tablewidget(mainwindow, qtbot, dbaccessor, repere_data):
-    # Select the tab corresponding to the observation wells table.
-    tablewidget = mainwindow.plugin._tables['table_repere']
-    mainwindow.plugin.tabwidget.setCurrentWidget(tablewidget)
-    qtbot.waitUntil(
-        lambda: tablewidget.tableview.visible_row_count() == len(repere_data))
+def tablewidget(tablesmanager, qtbot, dbaccessor, repere_data):
+    tablewidget = RepereTableWidget()
+    qtbot.addWidget(tablewidget)
+    tablewidget.show()
+
+    tablemodel = tablewidget.model()
+    tablesmanager.register_table_model(tablemodel)
+
+    # This connection is usually made by the plugin, but we need to make it
+    # here manually for testing purposes.
+    tablesmanager.sig_models_data_changed.connect(tablemodel.update_data)
+
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablemodel.update_data()
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
 
-    yield tablewidget
+    assert tablewidget.tableview.visible_row_count() == len(repere_data)
 
-    # We need to wait for the mainwindow to close properly to avoid
-    # runtime errors on the c++ side.
-    with qtbot.waitSignal(mainwindow.sig_about_to_close):
-        mainwindow.close()
+    return tablewidget
 
 
 # =============================================================================
 # ---- Tests
 # =============================================================================
-def test_add_repere_data(tablewidget, qtbot, repere_data, dbaccessor):
+def test_add_repere_data(tablewidget, dbaccessor, qtbot, mocker):
     """
     Test that adding a new repere is working as expected.
     """
-    tableview = tablewidget.tableview
+    tablemodel = tablewidget.model()
+    assert tablewidget.visible_row_count() == 5
+    assert len(dbaccessor.get_repere_data()) == 5
 
     # We add a new row and assert that the UI state is as expected.
-    assert tableview.visible_row_count() == len(repere_data)
-    tableview.new_row_action.trigger()
-    assert tableview.visible_row_count() == len(repere_data) + 1
-    assert tableview.model().is_new_row_at(tableview.current_index())
+    tablewidget.new_row_action.trigger()
+    assert tablewidget.visible_row_count() == 6
+    assert tablemodel.data_edit_count() == 1
+    assert tablewidget.get_data_for_row(5) == [''] * 7
+    assert len(dbaccessor.get_repere_data()) == 5
+    assert tablemodel.is_new_row_at(tablewidget.current_index())
+
+    # We need to patch the message box that warns the user when
+    # a Notnull constraint is violated.
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'exec_', return_value=QMessageBox.Ok)
+
+    # Try to save the changes to the database and assert that a
+    # "Notnull constraint violation" message is shown.
+    tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+    assert tablewidget.visible_row_count() == 6
+    assert len(dbaccessor.get_repere_data()) == 5
+
+    # Enter a non null value for the fields 'sampling_feature_uuid',
+    # 'top_casing_alt', 'casing_length', 'start_date' and 'is_alt_geodesic'.
+    edited_values = {
+        'sampling_feature_uuid': UUID('e23753a9-c13d-44ac-9c13-8b7e1278075f'),
+        'top_casing_alt': 527.45,
+        'casing_length': 3.1,
+        'start_date': datetime(2015, 6, 12, 15, 34, 12),
+        'is_alt_geodesic': False}
+    for colname, edited_value in edited_values.items():
+        col = tablemodel.column_names().index(colname)
+        model_index = tablemodel.index(5, col)
+        tablewidget.model().set_data_edit_at(model_index, edited_value)
+    assert tablewidget.get_data_for_row(5) == [
+        '09000001', '527.45', '3.1', '2015-06-12 15:34', '', 'No', '']
+    assert tablemodel.data_edit_count() == 6
 
     # Save the changes to the database.
-    saved_values = dbaccessor.get_repere_data()
-    assert len(saved_values) == len(repere_data)
+    with qtbot.waitSignal(tablemodel.sig_data_updated):
+        tablewidget.save_edits_action.trigger()
+    assert qmsgbox_patcher.call_count == 1
+    assert tablemodel.data_edit_count() == 0
 
-    with qtbot.waitSignal(tableview.model().sig_data_updated):
-        tableview._save_data_edits(force=True)
-
-    saved_values = dbaccessor.get_repere_data()
-    assert len(saved_values) == len(repere_data) + 1
+    repere_data = dbaccessor.get_repere_data()
+    assert tablewidget.visible_row_count() == 6
+    assert len(repere_data) == 6
+    assert repere_data.iloc[5]['sampling_feature_uuid'] == UUID(
+        'e23753a9-c13d-44ac-9c13-8b7e1278075f')
+    assert repere_data.iloc[5]['top_casing_alt'] == 527.45
+    assert repere_data.iloc[5]['casing_length'] == 3.1
+    assert repere_data.iloc[5]['start_date'] == datetime(
+        2015, 6, 12, 15, 34, 12)
+    assert pd.isnull(repere_data.iloc[5]['end_date'])
+    assert repere_data.iloc[5]['is_alt_geodesic'] == False
 
 
 def test_edit_repere_data(tablewidget, qtbot, dbaccessor, obswells_data):
@@ -155,6 +202,32 @@ def test_clear_repere_data(tablewidget, qtbot, dbaccessor):
     saved_values = dbaccessor.get_repere_data().iloc[0].to_dict()
     for attr in clearable_attrs:
         assert pd.isnull(saved_values[attr])
+
+
+def test_delete_repere_data(tablewidget, qtbot, dbaccessor):
+    """
+    Test that deleting repere data is working as expected.
+    """
+    assert tablewidget.visible_row_count() == 5
+    assert len(dbaccessor.get_repere_data()) == 5
+
+    # Select and delete the first two rows of the table.
+    tablewidget.set_current_index(0, 0)
+    tablewidget.select(1, 0)
+    assert tablewidget.get_rows_intersecting_selection() == [0, 1]
+
+    tablewidget.delete_row_action.trigger()
+    assert tablewidget.model().data_edit_count() == 1
+
+    # Save the changes to the database.
+    repere_data = dbaccessor.get_repere_data()
+    assert len(repere_data) == 5
+
+    with qtbot.waitSignal(tablewidget.model().sig_data_updated):
+        tablewidget.save_edits_action.trigger()
+
+    repere_data = dbaccessor.get_repere_data()
+    assert len(repere_data) == 3
 
 
 if __name__ == "__main__":

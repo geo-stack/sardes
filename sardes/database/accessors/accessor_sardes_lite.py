@@ -34,7 +34,8 @@ from sqlalchemy.orm.exc import NoResultFound
 # ---- Local imports
 from sardes.database.accessors.accessor_helpers import create_empty_readings
 from sardes.config.locale import _
-from sardes.api.database_accessor import DatabaseAccessor
+from sardes.api.database_accessor import (
+    DatabaseAccessor, DatabaseAccessorError)
 from sardes.database.utils import format_sqlobject_repr
 from sardes.api.timeseries import DataType
 
@@ -715,31 +716,28 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         to the observation wells that are saved in the database.
         """
         query = (
-            self._session.query(SamplingFeature,
-                                Location.latitude,
-                                Location.longitude,
-                                Location.municipality,
-                                SamplingFeatureMetadata.in_recharge_zone,
-                                SamplingFeatureMetadata.aquifer_type,
-                                SamplingFeatureMetadata.confinement,
-                                SamplingFeatureMetadata.common_name,
-                                SamplingFeatureMetadata.aquifer_code,
-                                SamplingFeatureMetadata.is_station_active,
-                                SamplingFeatureMetadata.is_influenced)
+            self._session.query(
+                SamplingFeature.sampling_feature_uuid,
+                SamplingFeature.sampling_feature_name.label('obs_well_id'),
+                SamplingFeature.sampling_feature_notes.label('obs_well_notes'),
+                Location.latitude,
+                Location.longitude,
+                Location.municipality,
+                SamplingFeatureMetadata.in_recharge_zone,
+                SamplingFeatureMetadata.aquifer_type,
+                SamplingFeatureMetadata.confinement,
+                SamplingFeatureMetadata.common_name,
+                SamplingFeatureMetadata.aquifer_code,
+                SamplingFeatureMetadata.is_station_active,
+                SamplingFeatureMetadata.is_influenced)
             .filter(Location.loc_id == SamplingFeature.loc_id)
             .filter(SamplingFeatureMetadata.sampling_feature_uuid ==
                     SamplingFeature.sampling_feature_uuid)
             )
         obs_wells = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
-
-        obs_wells.rename({'sampling_feature_name': 'obs_well_id'},
-                         axis='columns', inplace=True)
-        obs_wells.rename({'sampling_feature_notes': 'obs_well_notes'},
-                         axis='columns', inplace=True)
-
-        # Set the index to the observation well ids.
-        obs_wells.set_index('sampling_feature_uuid', inplace=True, drop=True)
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='sampling_feature_uuid'
+            )
 
         # Replace nan by None.
         obs_wells = obs_wells.where(obs_wells.notnull(), None)
@@ -771,6 +769,51 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
+    def delete_observation_wells_data(self, obswell_ids):
+        """
+        Delete the observation wells corresponding to the specified ids.
+        """
+        if not is_list_like(obswell_ids):
+            obswell_ids = [obswell_ids, ]
+
+        # Check for foreign key violation.
+        for table in [Observation, Process, Repere]:
+            foreign_items_count = (
+                self._session.query(table)
+                .filter(table.sampling_feature_uuid.in_(obswell_ids))
+                .count()
+                )
+            if foreign_items_count > 0:
+                raise DatabaseAccessorError(
+                    self,
+                    "deleting SamplingFeature items violate foreign "
+                    "key contraint on {}.sampling_feature_uuid."
+                    .format(table.__name__))
+
+        # Delete the SamplingFeature items from the database.
+        for table in [SamplingFeature, SamplingFeatureMetadata,
+                      SamplingFeatureDataOverview, SamplingFeatureAttachment]:
+            self._session.execute(
+                table.__table__.delete().where(
+                    table.sampling_feature_uuid.in_(obswell_ids))
+                )
+
+        # Delete associated Location items from the database.
+        query = (
+            self._session.query(Location.loc_id)
+            .filter(SamplingFeature.loc_id == Location.loc_id)
+            .filter(SamplingFeature.sampling_feature_uuid.in_(obswell_ids))
+            )
+        loc_ids = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True
+            )['loc_id'].values.tolist()
+        self._session.execute(
+            Location.__table__.delete().where(
+                Location.loc_id.in_(loc_ids))
+            )
+
+        self._session.commit()
+
     def get_observation_wells_data_overview(self):
         """
         Return a :class:`pandas.DataFrame` containing an overview of
@@ -780,8 +823,11 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # Fetch data from the materialized view.
         query = self._session.query(SamplingFeatureDataOverview)
         data = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
-        data.set_index('sampling_feature_uuid', inplace=True, drop=True)
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='sampling_feature_uuid')
+
+        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
+        # directly in 'read_sql_query' with the new 'dtype' argument.
 
         # Make sure first_date and last_date are considered as
         # datetime and strip the hour portion from it.
@@ -902,10 +948,11 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         query = self._session.query(Repere)
         repere = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='repere_uuid')
 
-        # Set the index to the observation well ids.
-        repere.set_index('repere_uuid', inplace=True, drop=True)
+        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
+        # directly in 'read_sql_query' with the new 'dtype' argument.
 
         # Make sure datetime data is considered as datetime.
         # See cgq-qgc/sardes#427.
@@ -931,6 +978,19 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
+    def delete_repere_data(self, repere_ids):
+        """
+        Delete the repere data corresponding to the specified repere ids.
+        """
+        if not is_list_like(repere_ids):
+            repere_ids = [repere_ids, ]
+
+        # Delete the Repere items from the database.
+        self._session.execute(
+            Repere.__table__.delete().where(
+                Repere.repere_uuid.in_(repere_ids)))
+        self._session.commit()
+
     # ---- Sondes Models
     def get_sonde_models_lib(self):
         """
@@ -939,7 +999,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         query = self._session.query(SondeModel)
         sonde_models = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='sonde_model_id')
 
         # Combine the brand and model into a same field.
         sonde_models['sonde_brand_model'] = (
@@ -947,9 +1008,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 lambda values: ' '.join([x or '' for x in values]).strip(),
                 axis=1)
             )
-
-        # Set the index to the observation well ids.
-        sonde_models.set_index('sonde_model_id', inplace=True, drop=True)
 
         return sonde_models
 
@@ -976,6 +1034,32 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             sonde_model_id=sonde_model_id,
             **attribute_values
             ))
+        self._session.commit()
+
+    def delete_sonde_models_lib(self, sonde_model_ids):
+        """
+        Delete the repere data corresponding to the specified repere ids.
+        """
+        if not is_list_like(sonde_model_ids):
+            sonde_model_ids = [sonde_model_ids, ]
+
+        # Check for foreign key violation.
+        foreign_sonde_features_count = (
+            self._session.query(SondeFeature)
+            .filter(SondeFeature.sonde_model_id.in_(sonde_model_ids))
+            .count()
+            )
+        if foreign_sonde_features_count > 0:
+            raise DatabaseAccessorError(
+                self,
+                "deleting SondeModel items violate foreign key "
+                "contraint on SondeFeature.sonde_model_id."
+                )
+
+        # Delete the SondeModel items from the database.
+        self._session.execute(
+            SondeModel.__table__.delete().where(
+                SondeModel.sonde_model_id.in_(sonde_model_ids)))
         self._session.commit()
 
     # ---- Sondes Inventory
@@ -1012,7 +1096,11 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         query = self._session.query(SondeFeature)
         sondes = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='sonde_uuid')
+
+        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
+        # directly in 'read_sql_query' with the new 'dtype' argument.
 
         # Make sure date_reception and date_withdrawal are considered as
         # datetime and strip the hour portion since it doesn't make sense here.
@@ -1021,8 +1109,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         sondes['date_withdrawal'] = pd.to_datetime(
             sondes['date_withdrawal']).dt.date
 
-        # Set the index to the sonde ids.
-        sondes.set_index('sonde_uuid', inplace=True, drop=True)
+        for column in ['in_repair', 'out_of_order', 'lost', 'off_network']:
+            sondes[column] = sondes[column].astype('boolean')
 
         return sondes
 
@@ -1041,6 +1129,31 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             setattr(sonde, attr_name, attr_value)
         if auto_commit:
             self._session.commit()
+
+    def delete_sondes_data(self, sonde_ids):
+        """
+        Delete the sonde data corresponding to the specified ids.
+        """
+        if not is_list_like(sonde_ids):
+            sonde_ids = [sonde_ids, ]
+
+        # Check for foreign key violation.
+        foreign_sonde_installation = (
+            self._session.query(SondeInstallation)
+            .filter(SondeInstallation.sonde_uuid.in_(sonde_ids))
+            )
+        if foreign_sonde_installation.count() > 0:
+            raise DatabaseAccessorError(
+                self,
+                "deleting SondeFeature items violate foreign key "
+                "constraint on SondeInstallation.sonde_uuid."
+                )
+
+        # Delete the SondeFeature items from the database.
+        self._session.execute(
+            SondeFeature.__table__.delete().where(
+                SondeFeature.sonde_uuid.in_(sonde_ids)))
+        self._session.commit()
 
     # ---- Sonde installations
     def _get_sonde_installation(self, install_uuid):
@@ -1092,14 +1205,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .filter(SondeInstallation.process_id == Process.process_id)
             )
         data = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='install_uuid')
+
+        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
+        # directly in 'read_sql_query' with the new 'dtype' argument.
 
         # Format the data.
         data['start_date'] = pd.to_datetime(data['start_date'])
         data['end_date'] = pd.to_datetime(data['end_date'])
-
-        # Set the index of the dataframe.
-        data.set_index('install_uuid', inplace=True, drop=True)
 
         return data
 
@@ -1125,6 +1239,38 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # Commit changes to the BD.
         if auto_commit:
             self._session.commit()
+
+    def delete_sonde_installations(self, install_ids):
+        """
+        Delete the sonde installations corresponding to the specified ids.
+        """
+        if not is_list_like(install_ids):
+            install_ids = [install_ids, ]
+
+        # We need to update the "observations" and "process" tables to remove
+        # any reference to the sonde installations that are going to be
+        # removed from the database.
+        observations = (
+            self._session.query(Observation)
+            .filter(SondeInstallation.install_uuid.in_(install_ids))
+            .filter(Observation.process_id == SondeInstallation.process_id)
+            )
+        for observation in observations:
+            observation.process_id = None
+
+        processes = (
+            self._session.query(Process)
+            .filter(SondeInstallation.install_uuid.in_(install_ids))
+            .filter(Process.process_id == SondeInstallation.process_id)
+            )
+        for process in processes:
+            self._session.delete(process)
+
+        # Delete the SondeInstallation items from the database.
+        self._session.execute(
+            SondeInstallation.__table__.delete().where(
+                SondeInstallation.install_uuid.in_(install_ids)))
+        self._session.commit()
 
     # ---- Manual mesurements
     def _get_generic_num_value(self, gen_num_value_uuid):
@@ -1182,8 +1328,11 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     Observation.observation_id)
             )
         measurements = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
-        measurements.set_index('gen_num_value_uuid', inplace=True, drop=True)
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='gen_num_value_uuid')
+
+        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
+        # directly in 'read_sql_query' with the new 'dtype' argument.
 
         # Make sure datetime data is considered as datetime.
         # This is required to avoid problems when the manual measurements
@@ -1551,6 +1700,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 date_times = (
                     sub_data[sub_data['data_type'] == data_type]
                     ['datetime'].dt.to_pydatetime())
+                # TODO: improve by deleting chunks of data at a time.
                 for date_time in date_times:
                     self._session.execute(
                         TimeSeriesData.__table__.delete().where(and_(
@@ -1569,6 +1719,17 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.commit()
 
     # ---- Process
+    def _get_process_data(self):
+        """
+        Return a pandas dataframe containing the content of
+        the 'process' table.
+        """
+        query = self._session.query(Process)
+        process = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
+        process.set_index('process_id', inplace=True, drop=True)
+        return process
+
     def _get_process(self, process_id):
         """Return the process related to the given process_id."""
         return (self._session.query(Process)
@@ -1576,6 +1737,17 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 .one())
 
     # ---- Observations
+    def _get_observation_data(self):
+        """
+        Return a pandas dataframe containing the content of
+        the 'observation' table.
+        """
+        query = self._session.query(Observation)
+        observations = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
+        observations.set_index('observation_id', inplace=True, drop=True)
+        return observations
+
     def _get_observation(self, observation_id):
         """
         Return the observation related to the given id.
