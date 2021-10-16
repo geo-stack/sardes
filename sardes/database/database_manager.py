@@ -177,6 +177,9 @@ class DatabaseConnectionWorker(WorkerBase):
             values.index = values.index.droplevel(0)
             self._set(name, index, values['edited_value'].to_dict())
 
+        # Get and return the updated table.
+        return self._get(name)[0],
+
     def _check_foreign_constraints(self, parent_indexes, data_name):
         """
         Return the first foreign constraint violation found by checking
