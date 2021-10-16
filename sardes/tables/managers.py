@@ -113,6 +113,9 @@ class SardesTableModelsManager(QObject):
             self.db_manager.run_tasks()
 
     def save_table_model_edits(self, table_name):
+        """
+        Save the changes made to table 'table_name' in the database.
+        """
         if table_name not in self._table_models:
             raise Warning("Warning: Table model '{}' is not registered."
                           .format(table_name))
@@ -132,7 +135,22 @@ class SardesTableModelsManager(QObject):
 
     # ---- Private API
     def _handle_table_model_edits_saved(self, dataf):
+        """
+        Handle when edits made to a table model have been saved in the
+        database.
+        """
+        data_name = dataf.attrs['name']
+        table_model = self._dataname_map[data_name]
         table_model.sig_data_saved.emit()
+
+        table_model.sig_data_about_to_be_saved.emit()
+        table_model.set_model_data(dataf)
+        table_model.sig_data_updated.emit()
+
+        self._running_model_updates[table_model.name()].append(data_name)
+        self._handle_db_data_changed([data_name])
+        self._running_model_updates[table_model.name()].remove(data_name)
+
     def _set_model_data_or_lib(self, dataf, data_name, table_name):
         """
         Set the data or library of the given table model.
@@ -164,10 +182,12 @@ class SardesTableModelsManager(QObject):
         for table_name, table_model in self._table_models.items():
             data_libs_names = (
                 [table_model.__dataname__] + table_model.__libnames__)
-            self._queued_model_updates[table_name].extend(
-                [name for name in data_changed if name in data_libs_names])
-            self._queued_model_updates[table_name] = list(set(
-                self._queued_model_updates[table_name]))
+            self._queued_model_updates[table_name].extend([
+                name for name in data_changed if
+                (name in data_libs_names and
+                 name not in self._queued_model_updates[table_name] and
+                 name not in self._running_model_updates[table_name])
+                ])
         self.sig_models_data_changed.emit()
 
     def _handle_db_connection_changed(self, is_connected):
