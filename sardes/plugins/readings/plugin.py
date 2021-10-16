@@ -27,9 +27,10 @@ from sardes.utils.data_operations import format_reading_data
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
 from sardes.widgets.tableviews import (
     SardesTableWidget, SardesStackedTableWidget)
-from sardes.api.database_accessor import init_tseries_edits, init_tseries_dels
 from sardes.tools import (
     SaveReadingsToExcelTool, HydrographTool, SatisticalHydrographTool)
+from sardes.database.accessors.accessor_helpers import (
+    init_tseries_edits, init_tseries_dels)
 
 
 """Readings plugin"""

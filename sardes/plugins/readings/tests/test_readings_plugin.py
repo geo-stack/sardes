@@ -20,12 +20,12 @@ os.environ['SARDES_PYTEST'] = 'True'
 import pytest
 
 # ---- Local imports
-from sardes.api.database_accessor import init_tseries_edits
 from sardes.api.timeseries import DataType
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.plugins.readings import SARDES_PLUGIN_CLASS
 from sardes.widgets.tableviews import QMessageBox
 from sardes.database.accessors import DatabaseAccessorSardesLite
+from sardes.database.accessors.accessor_helpers import init_tseries_edits
 from sardes.app.mainwindow import MainWindowBase
 
 
