@@ -126,12 +126,15 @@ class DatabaseConnectionWorker(WorkerBase):
                 print('-' * 20)
                 data = DataFrame([])
             else:
+                data.attrs['name'] = name
                 self._cache[name] = data
         else:
             print(("Failed to fetch '{}' from the database "
                    "because Sardes is not connected to a database."
                    ).format(name))
             data = DataFrame([])
+            data.attrs['name'] = name
+
         return data,
 
     def _delete(self, name, *args, **kargs):
