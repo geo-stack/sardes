@@ -155,6 +155,11 @@ class SardesTableModelsManager(QObject):
 
         Note that changes made to the database outside of Sardes are not
         taken into account here.
+
+        Parameters
+        ----------
+        data_changed : list of str
+            A list of table data names that were changed in the database.
         """
         for table_name, table_model in self._table_models.items():
             data_libs_names = (
