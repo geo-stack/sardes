@@ -220,17 +220,7 @@ class StandardSardesTableModel(SardesTableModel):
         """
         Save all data edits to the database.
         """
-        self.sig_data_about_to_be_saved.emit()
-
-        self.db_connection_manager._data_changed.add(self.__dataname__)
-        self.db_connection_manager.add_task(
-            'save_table_edits', None,
-            name=self.__dataname__,
-            deleted_rows=self._datat.deleted_rows(),
-            added_rows=self._datat.added_rows(),
-            edited_values=self._datat.edited_values()
-            )
-        self.db_connection_manager.run_tasks(callback=self.sig_data_saved.emit)
+        self.table_models_manager.save_table_model_edits(self.name())
 
     def confirm_before_saving_edits(self):
         """

@@ -112,7 +112,27 @@ class SardesTableModelsManager(QObject):
             self._queued_model_updates[table_name] = []
             self.db_manager.run_tasks()
 
+    def save_table_model_edits(self, table_name):
+        if table_name not in self._table_models:
+            raise Warning("Warning: Table model '{}' is not registered."
+                          .format(table_name))
+            return
+
+        tablemodel = self._table_models[table_name]
+        tablemodel.sig_data_about_to_be_saved.emit()
+        self.db_manager.add_task(
+            'save_table_edits',
+            callback=self._handle_table_model_edits_saved,
+            name=tablemodel.__dataname__,
+            deleted_rows=tablemodel.tabledata().deleted_rows(),
+            added_rows=tablemodel.tabledata().added_rows(),
+            edited_values=tablemodel.tabledata().edited_values()
+            )
+        self.db_manager.run_tasks()
+
     # ---- Private API
+    def _handle_table_model_edits_saved(self, dataf):
+        table_model.sig_data_saved.emit()
     def _set_model_data_or_lib(self, dataf, data_name, table_name):
         """
         Set the data or library of the given table model.
