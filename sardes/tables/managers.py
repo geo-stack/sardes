@@ -143,12 +143,12 @@ class SardesTableModelsManager(QObject):
         table_model = self._dataname_map[data_name]
         table_model.sig_data_saved.emit()
 
-        table_model.sig_data_about_to_be_saved.emit()
+        table_model.sig_data_about_to_be_updated.emit()
+        self._running_model_updates[table_model.name()].append(data_name)
         table_model.set_model_data(dataf)
         table_model.sig_data_updated.emit()
 
-        self._running_model_updates[table_model.name()].append(data_name)
-        self._handle_db_data_changed([data_name])
+        self.db_manager.sig_database_data_changed.emit([data_name])
         self._running_model_updates[table_model.name()].remove(data_name)
 
     def _set_model_data_or_lib(self, dataf, data_name, table_name):
