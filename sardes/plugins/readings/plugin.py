@@ -499,6 +499,31 @@ class Readings(SardesPlugin):
         table_widget.update_data(self.main.db_connection_manager)
 
     # ---- Database Changes Handlers
+    def _set_obs_well_data(self, obs_well_data):
+        """
+        Set the observation well data for all readings tables currently
+        opened in Sardes.
+        """
+        for obs_well_uuid, table in self._tseries_table_widgets.items():
+            table.set_obs_well_data(obs_well_data)
+        self.tabwidget._update_tab_names()
+
+    def _set_manual_measurements(self, manual_measurements):
+        """
+        Set the manual measurements for all readings tables currently
+        opened in Sardes.
+        """
+        for obs_well_uuid, table in self._tseries_table_widgets.items():
+            table.set_manual_measurements(manual_measurements)
+
+    def _set_repere_data(self, repere_data):
+        """
+        Set the repere data for all readings tables currently
+        opened in Sardes.
+        """
+        for obs_well_uuid, table in self._tseries_table_widgets.items():
+            table.set_repere_data(repere_data)
+
     def _handle_database_data_changed(self, data_names):
         """
         Handle when data needed by the readings table changed.
@@ -525,31 +550,6 @@ class Readings(SardesPlugin):
                     postpone_exec=True)
         if run_tasks is True:
             self.main.db_connection_manager.run_tasks()
-
-    def _set_obs_well_data(self, obs_well_data):
-        """
-        Set the observation well data for all readings tables currently
-        opened in Sardes.
-        """
-        for obs_well_uuid, table in self._tseries_table_widgets.items():
-            table.set_obs_well_data(obs_well_data)
-        self.tabwidget._update_tab_names()
-
-    def _set_manual_measurements(self, manual_measurements):
-        """
-        Set the manual measurements for all readings tables currently
-        opened in Sardes.
-        """
-        for obs_well_uuid, table in self._tseries_table_widgets.items():
-            table.set_manual_measurements(manual_measurements)
-
-    def _set_repere_data(self, repere_data):
-        """
-        Set the repere data for all readings tables currently
-        opened in Sardes.
-        """
-        for obs_well_uuid, table in self._tseries_table_widgets.items():
-            table.set_repere_data(repere_data)
 
     def _handle_tseries_data_changed(self, obs_well_uuids):
         """
