@@ -325,7 +325,7 @@ class Readings(SardesPlugin):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self._tseries_data_tables = {}
+        self._tseries_table_widgets = {}
 
     # ---- Public methods implementation
     def current_table(self):
@@ -338,7 +338,7 @@ class Readings(SardesPlugin):
         """
         Return the number of tables installed this plugin.
         """
-        return len(self._tseries_data_tables)
+        return len(self._tseries_table_widgets)
 
     @classmethod
     def get_plugin_title(cls):
@@ -385,7 +385,7 @@ class Readings(SardesPlugin):
         self.tabwidget.statusBar().hide()
 
         # Register each table to main.
-        for table in self._tseries_data_tables.values():
+        for table in self._tseries_table_widgets.values():
             self.main.register_table(table.tableview)
 
     def on_undocked(self):
@@ -396,7 +396,7 @@ class Readings(SardesPlugin):
         self.tabwidget.statusBar().show()
 
         # Un-register each table from main.
-        for table in self._tseries_data_tables.values():
+        for table in self._tseries_table_widgets.values():
             self.main.unregister_table(table.tableview)
 
     def on_pane_view_toggled(self, toggled):
@@ -405,7 +405,7 @@ class Readings(SardesPlugin):
         """
         if toggled is False:
             # Close tools for all tables.
-            for table in self._tseries_data_tables.values():
+            for table in self._tseries_table_widgets.values():
                 for tool in table.tools():
                     tool.close()
 
@@ -416,8 +416,8 @@ class Readings(SardesPlugin):
         Handle when a timeseries data table is destroyed.
         """
         self.main.unregister_table(
-            self._tseries_data_tables[obs_well_uuid].tableview)
-        del self._tseries_data_tables[obs_well_uuid]
+            self._tseries_table_widgets[obs_well_uuid].tableview)
+        del self._tseries_table_widgets[obs_well_uuid]
 
     # ---- Readings tables
     def view_timeseries_data(self, obs_well_uuid):
@@ -426,14 +426,14 @@ class Readings(SardesPlugin):
         in tseries_groups.
         """
         self.switch_to_plugin()
-        if obs_well_uuid not in self._tseries_data_tables:
+        if obs_well_uuid not in self._tseries_table_widgets:
             self.main.db_connection_manager.get(
                 'observation_wells_data',
                 callback=lambda obs_wells_data: self._create_readings_table(
                     obs_wells_data.loc[obs_well_uuid])
                 )
         else:
-            data_table = self._tseries_data_tables[obs_well_uuid]
+            data_table = self._tseries_table_widgets[obs_well_uuid]
             self.tabwidget.setCurrentWidget(data_table)
             data_table.tableview.setFocus()
 
@@ -489,7 +489,7 @@ class Readings(SardesPlugin):
         horizontal_header.setDefaultSectionSize(125)
 
         # Add the table to the tab widget.
-        self._tseries_data_tables[obs_well_uuid] = table_widget
+        self._tseries_table_widgets[obs_well_uuid] = table_widget
         self.tabwidget.add_table(
             table_widget, obs_well_data['obs_well_id'], switch_to_table=True)
         if self.dockwindow.is_docked():
@@ -531,7 +531,7 @@ class Readings(SardesPlugin):
         Set the observation well data for all readings tables currently
         opened in Sardes.
         """
-        for obs_well_uuid, table in self._tseries_data_tables.items():
+        for obs_well_uuid, table in self._tseries_table_widgets.items():
             table.set_obs_well_data(obs_well_data)
         self.tabwidget._update_tab_names()
 
@@ -540,7 +540,7 @@ class Readings(SardesPlugin):
         Set the manual measurements for all readings tables currently
         opened in Sardes.
         """
-        for obs_well_uuid, table in self._tseries_data_tables.items():
+        for obs_well_uuid, table in self._tseries_table_widgets.items():
             table.set_manual_measurements(manual_measurements)
 
     def _set_repere_data(self, repere_data):
@@ -548,7 +548,7 @@ class Readings(SardesPlugin):
         Set the repere data for all readings tables currently
         opened in Sardes.
         """
-        for obs_well_uuid, table in self._tseries_data_tables.items():
+        for obs_well_uuid, table in self._tseries_table_widgets.items():
             table.set_repere_data(repere_data)
 
     def _handle_tseries_data_changed(self, obs_well_uuids):
@@ -558,9 +558,9 @@ class Readings(SardesPlugin):
         """
         run_tasks = False
         for obs_well_uuid in obs_well_uuids:
-            if obs_well_uuid in self._tseries_data_tables:
+            if obs_well_uuid in self._tseries_table_widgets:
                 run_tasks = True
-                table = self._tseries_data_tables[obs_well_uuid]
+                table = self._tseries_table_widgets[obs_well_uuid]
                 datatypes = [DataType.WaterLevel,
                              DataType.WaterTemp,
                              DataType.WaterEC]

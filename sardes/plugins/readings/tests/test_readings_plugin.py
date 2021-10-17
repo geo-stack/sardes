@@ -78,10 +78,10 @@ def mainwindow(qtbot, mocker, dbconnmanager, dbaccessor, obswell_uuid,
 
     # Show data for observation well #1.
     mainwindow.plugin.view_timeseries_data(obswell_uuid)
-    qtbot.waitUntil(lambda: len(mainwindow.plugin._tseries_data_tables) == 1)
+    qtbot.waitUntil(lambda: len(mainwindow.plugin._tseries_table_widgets) == 1)
 
     # Wait until the data are loaded in the table.
-    table = mainwindow.plugin._tseries_data_tables[obswell_uuid]
+    table = mainwindow.plugin._tseries_table_widgets[obswell_uuid]
     qtbot.waitUntil(lambda: table.tableview.row_count() == len(readings_data))
     assert table.isVisible()
     assert not table.model()._repere_data.empty
@@ -95,7 +95,7 @@ def mainwindow(qtbot, mocker, dbconnmanager, dbaccessor, obswell_uuid,
     with qtbot.waitSignal(mainwindow.sig_about_to_close):
         mainwindow.close()
 
-    for table in mainwindow.plugin._tseries_data_tables.values():
+    for table in mainwindow.plugin._tseries_table_widgets.values():
         assert not table.isVisible()
         assert table.plot_viewer is None
 
@@ -107,7 +107,7 @@ def test_plot_viewer(mainwindow, qtbot, obswell_uuid, readings_data):
     """
     Test that plotting the monitoring data is working as expected.
     """
-    table = mainwindow.plugin._tseries_data_tables[obswell_uuid]
+    table = mainwindow.plugin._tseries_table_widgets[obswell_uuid]
     assert table.plot_viewer is None
 
     # Test that the plot viewer is created as expected.
@@ -140,7 +140,7 @@ def test_plot_viewer_update(mainwindow, qtbot, obswell_uuid):
     Test that the plot viewer is updated as expected when the monitoring data
     and metadata of the observation well are modified.
     """
-    table = mainwindow.plugin._tseries_data_tables[obswell_uuid]
+    table = mainwindow.plugin._tseries_table_widgets[obswell_uuid]
     dbconnmanager = mainwindow.db_connection_manager
 
     assert table.plot_viewer is None
@@ -203,7 +203,7 @@ def test_delete_timeseries_data(mainwindow, qtbot, mocker, obswell_uuid,
 
     Regression test for cgq-qgc/sardes#210
     """
-    table = mainwindow.plugin._tseries_data_tables[obswell_uuid]
+    table = mainwindow.plugin._tseries_table_widgets[obswell_uuid]
 
     # Select one row in the table.
     model = table.model()
@@ -239,7 +239,7 @@ def test_delete_timeseries_data(mainwindow, qtbot, mocker, obswell_uuid,
 
     # Close the timeseries table.
     mainwindow.plugin.tabwidget.tabCloseRequested.emit(0)
-    qtbot.waitUntil(lambda: len(mainwindow.plugin._tseries_data_tables) == 0)
+    qtbot.waitUntil(lambda: len(mainwindow.plugin._tseries_table_widgets) == 0)
 
 
 def test_edit_then_delete_row(mainwindow, qtbot, mocker, obswell_uuid,
@@ -250,7 +250,7 @@ def test_edit_then_delete_row(mainwindow, qtbot, mocker, obswell_uuid,
 
     Regression test for cgq-qgc/sardes#337
     """
-    table = mainwindow.plugin._tseries_data_tables[obswell_uuid]
+    table = mainwindow.plugin._tseries_table_widgets[obswell_uuid]
 
     # Edit the water level value on the second row of the table.
     expected_value = readings_data.iloc[2][DataType.WaterLevel]
