@@ -143,7 +143,8 @@ def tablemodel(qtbot, TABLE_DATAF):
     dbconnmanager.sig_database_data_changed.connect(
         tablemodel.update_data)
 
-    dbconnmanager.connect_to_db(DatabaseAccessorTest())
+    with qtbot.waitSignal(dbconnmanager.sig_database_connection_changed):
+        dbconnmanager.connect_to_db(DatabaseAccessorTest())
 
     return tablemodel
 
@@ -171,8 +172,9 @@ def tablewidget(qtbot, tablemodel):
     # Fetch the model data explicitely. We need to do this because
     # the table view that we use for testing is not connected to a
     # database connection manager.
-    tablewidget.update_model_data()
-    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 150)
+    with qtbot.waitSignal(tablewidget.model().sig_data_updated, timeout=5000):
+        tablewidget.update_model_data()
+    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY)
 
     return tablewidget
 
