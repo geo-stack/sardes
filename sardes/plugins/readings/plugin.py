@@ -89,6 +89,7 @@ class ReadingsTableModel(SardesTableModel):
         Format the data contained in the list of timeseries group and
         set the content of this table model data.
         """
+        self.sig_data_about_to_be_updated.emit()
         columns = [
             SardesTableColumn(
                 'datetime', _('Datetime'), 'datetime64[ns]',
@@ -115,6 +116,7 @@ class ReadingsTableModel(SardesTableModel):
                 delegate=NotEditableDelegate)
             ])
         super().set_model_data(dataf, columns)
+        self.sig_data_updated.emit()
 
     # ---- SardesTableModel API
     def check_data_edits(self, callback):
@@ -127,6 +129,7 @@ class ReadingsTableModel(SardesTableModel):
         """
         Save all data edits to the database.
         """
+        self._is_saving_edits = True
         self.sig_data_about_to_be_saved.emit()
 
         tseries_edits = init_tseries_edits()
@@ -151,19 +154,24 @@ class ReadingsTableModel(SardesTableModel):
                     tseries_dels = tseries_dels.append(
                         delrows_data_type, ignore_index=True)
         tseries_dels.drop_duplicates()
-        self.dbconnmanager.delete_timeseries_data(
-            tseries_dels, self._obs_well_uuid,
-            callback=None, postpone_exec=True)
-        self.dbconnmanager.save_timeseries_data_edits(
-            tseries_edits, self._obs_well_uuid,
-            callback=self._handle_data_edits_saved, postpone_exec=True)
+
+        self.dbconnmanager.add_task(
+            'save_readings_edits',
+            callback=self._handle_data_edits_saved,
+            station_id=self._obs_well_uuid,
+            tseries_edits=tseries_edits,
+            tseries_dels=tseries_dels,
+            )
         self.dbconnmanager.run_tasks()
 
-    def _handle_data_edits_saved(self):
+    def _handle_data_edits_saved(self, dataf):
         """
         Handle when data edits were all saved in the database.
         """
         self.sig_data_saved.emit()
+        self.set_model_data(dataf)
+        self.dbconnmanager.sig_tseries_data_changed.emit([self._obs_well_uuid])
+        self._is_saving_edits = False
 
     def confirm_before_saving_edits(self):
         """
@@ -189,6 +197,7 @@ class ReadingsTableWidget(SardesTableWidget):
         self.setAttribute(Qt.WA_DeleteOnClose)
         self._parent = parent
         self.plot_viewer = None
+        table_model.sig_data_updated.connect(self._handle_model_data_updated)
 
     @property
     def station_uuid(self):
@@ -214,7 +223,7 @@ class ReadingsTableWidget(SardesTableWidget):
         dbmanager.get_timeseries_for_obs_well(
             self.station_uuid,
             [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC],
-            callback=self.set_model_data,
+            callback=self.model().set_model_data,
             postpone_exec=True)
         dbmanager.run_tasks()
 
@@ -249,13 +258,10 @@ class ReadingsTableWidget(SardesTableWidget):
         for tool in self.tools():
             tool.update()
 
-    def set_model_data(self, dataf):
+    def _handle_model_data_updated(self):
         """
-        Set the readings data of the model and plot viewer.
+        Handle when the data of the readings table model have been updated.
         """
-        self.model().sig_data_about_to_be_updated.emit()
-        self.model().set_model_data(dataf)
-        self.model().sig_data_updated.emit()
         if self.plot_viewer is not None:
             self.plot_viewer.update_data(
                 self.model().dataf, self.model()._obs_well_data)
@@ -573,7 +579,7 @@ class Readings(SardesPlugin):
             self.main.db_connection_manager.get_timeseries_for_obs_well(
                 obs_well_uuid,
                 datatypes,
-                callback=table_widget.set_model_data,
+                callback=table_widget.model().set_model_data,
                 postpone_exec=True)
 
         if run_tasks is True:

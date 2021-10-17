@@ -201,6 +201,15 @@ class DatabaseConnectionWorker(WorkerBase):
             return None,
 
     # ---- Timeseries
+    def _save_readings_edits(self, station_id, tseries_edits, tseries_dels):
+        """
+        Save the changes made to readings data related to the specified
+        station id.
+        """
+        self._save_timeseries_data_edits(tseries_edits)
+        self._delete_timeseries_data(tseries_dels)
+        return self._get_timeseries_for_obs_well(station_id)[0],
+
     def _get_timeseries_for_obs_well(self, sampling_feature_uuid,
                                      data_types=None):
         """
