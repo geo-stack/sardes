@@ -35,12 +35,13 @@ from matplotlib.figure import Figure
 # ---- Local imports
 from sardes.utils.data_operations import are_values_equal
 from sardes.api.timeseries import DataType
-from sardes.api.database_accessor import (
-    DatabaseAccessorError, init_tseries_edits, init_tseries_dels)
+from sardes.api.database_accessor import DatabaseAccessorError
 from sardes.database.accessors.accessor_sardes_lite import (
     DatabaseAccessorSardesLite, CURRENT_SCHEMA_VERSION, DATE_FORMAT,
-    SamplingFeature, Location, SamplingFeature, SamplingFeatureMetadata,
+    SamplingFeature, Location, SamplingFeatureMetadata,
     SamplingFeatureDataOverview, SamplingFeatureAttachment)
+from sardes.database.accessors.accessor_helpers import (
+    init_tseries_edits, init_tseries_dels)
 
 
 def assert_dataframe_equals(df1, df2):

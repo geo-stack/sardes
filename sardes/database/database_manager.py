@@ -126,12 +126,15 @@ class DatabaseConnectionWorker(WorkerBase):
                 print('-' * 20)
                 data = DataFrame([])
             else:
+                data.attrs['name'] = name
                 self._cache[name] = data
         else:
             print(("Failed to fetch '{}' from the database "
                    "because Sardes is not connected to a database."
                    ).format(name))
             data = DataFrame([])
+            data.attrs['name'] = name
+
         return data,
 
     def _delete(self, name, *args, **kargs):
@@ -161,6 +164,7 @@ class DatabaseConnectionWorker(WorkerBase):
         """
         Save the changes made to table 'name' to the database.
         """
+        print("Saving edits for table '{}' in the database...".format(name))
         # We delete rows from the database.
         for index in deleted_rows:
             self._delete(name, index)
@@ -173,6 +177,12 @@ class DatabaseConnectionWorker(WorkerBase):
         for index, values in edited_values.groupby(level=0):
             values.index = values.index.droplevel(0)
             self._set(name, index, values['edited_value'].to_dict())
+
+        print("Edits for table '{}' saved successfully in the database..."
+              .format(name))
+
+        # Get and return the updated table.
+        return self._get(name)[0],
 
     def _check_foreign_constraints(self, parent_indexes, data_name):
         """
@@ -191,6 +201,15 @@ class DatabaseConnectionWorker(WorkerBase):
             return None,
 
     # ---- Timeseries
+    def _save_readings_edits(self, station_id, tseries_edits, tseries_dels):
+        """
+        Save the changes made to readings data related to the specified
+        station id.
+        """
+        self._save_timeseries_data_edits(tseries_edits)
+        self._delete_timeseries_data(tseries_dels)
+        return self._get_timeseries_for_obs_well(station_id)[0],
+
     def _get_timeseries_for_obs_well(self, sampling_feature_uuid,
                                      data_types=None):
         """
@@ -251,7 +270,7 @@ class DatabaseConnectionWorker(WorkerBase):
         if 'observation_wells_data_overview' in self._cache:
             del self._cache['observation_wells_data_overview']
         self.db_accessor.save_timeseries_data_edits(tseries_edits)
-        print("...timeseries data edits saved sucessfully.")
+        print("Timeseries data edits saved sucessfully.")
 
     def _add_timeseries_data(self, tseries_data, obs_well_uuid,
                              sonde_installation_uuid):
@@ -259,12 +278,12 @@ class DatabaseConnectionWorker(WorkerBase):
         Save in the database a set of timeseries data associated with the
         given well and sonde installation id.
         """
-        print("Saving timeseries data...")
+        print("Adding timeseries data...")
         if 'observation_wells_data_overview' in self._cache:
             del self._cache['observation_wells_data_overview']
         self.db_accessor.add_timeseries_data(
             tseries_data, obs_well_uuid, sonde_installation_uuid)
-        print("...timeseries data edits saved sucessfully.")
+        print("Timeseries data edits added sucessfully.")
 
     def _delete_timeseries_data(self, tseries_dels):
         """
@@ -275,7 +294,7 @@ class DatabaseConnectionWorker(WorkerBase):
         if 'observation_wells_data_overview' in self._cache:
             del self._cache['observation_wells_data_overview']
         self.db_accessor.delete_timeseries_data(tseries_dels)
-        print("...timeseries data deleted sucessfully.")
+        print("Timeseries data deleted sucessfully.")
 
     # ---- Attachments
     def _get_attachment(self, sampling_feature_uuid, attachment_type):
@@ -645,6 +664,13 @@ class DatabaseConnectionManager(TaskManagerBase):
         self._confirm_before_saving_edits = bool(x)
 
     # ---- Public methods
+    def create_index(self, name):
+        """
+        Return a new index that can be used subsequently to add new item
+        to the data related to name in the database.
+        """
+        return self.worker()._create_index(name)
+
     def add(self, *args, callback=None, postpone_exec=False):
         """
         Add a new item to the data related to name in the database.
@@ -670,13 +696,6 @@ class DatabaseConnectionManager(TaskManagerBase):
         self.add_task('delete', callback, *args)
         if not postpone_exec:
             self.run_tasks()
-
-    def create_index(self, name):
-        """
-        Return a new index that can be used subsequently to add new item
-        to the data related to name in the database.
-        """
-        return self.worker()._create_index(name)
 
     def set(self, *args, callback=None, postpone_exec=False):
         """

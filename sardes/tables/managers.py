@@ -112,7 +112,45 @@ class SardesTableModelsManager(QObject):
             self._queued_model_updates[table_name] = []
             self.db_manager.run_tasks()
 
+    def save_table_model_edits(self, table_name):
+        """
+        Save the changes made to table 'table_name' in the database.
+        """
+        if table_name not in self._table_models:
+            raise Warning("Warning: Table model '{}' is not registered."
+                          .format(table_name))
+            return
+
+        tablemodel = self._table_models[table_name]
+        tablemodel.sig_data_about_to_be_saved.emit()
+        self.db_manager.add_task(
+            'save_table_edits',
+            callback=self._handle_table_model_edits_saved,
+            name=tablemodel.__dataname__,
+            deleted_rows=tablemodel.tabledata().deleted_rows(),
+            added_rows=tablemodel.tabledata().added_rows(),
+            edited_values=tablemodel.tabledata().edited_values()
+            )
+        self.db_manager.run_tasks()
+
     # ---- Private API
+    def _handle_table_model_edits_saved(self, dataf):
+        """
+        Handle when edits made to a table model have been saved in the
+        database.
+        """
+        data_name = dataf.attrs['name']
+        table_model = self._dataname_map[data_name]
+        table_model.sig_data_saved.emit()
+
+        table_model.sig_data_about_to_be_updated.emit()
+        self._running_model_updates[table_model.name()].append(data_name)
+        table_model.set_model_data(dataf)
+        table_model.sig_data_updated.emit()
+
+        self.db_manager.sig_database_data_changed.emit([data_name])
+        self._running_model_updates[table_model.name()].remove(data_name)
+
     def _set_model_data_or_lib(self, dataf, data_name, table_name):
         """
         Set the data or library of the given table model.
@@ -135,14 +173,21 @@ class SardesTableModelsManager(QObject):
 
         Note that changes made to the database outside of Sardes are not
         taken into account here.
+
+        Parameters
+        ----------
+        data_changed : list of str
+            A list of table data names that were changed in the database.
         """
         for table_name, table_model in self._table_models.items():
             data_libs_names = (
                 [table_model.__dataname__] + table_model.__libnames__)
-            self._queued_model_updates[table_name].extend(
-                [name for name in data_changed if name in data_libs_names])
-            self._queued_model_updates[table_name] = list(set(
-                self._queued_model_updates[table_name]))
+            self._queued_model_updates[table_name].extend([
+                name for name in data_changed if
+                (name in data_libs_names and
+                 name not in self._queued_model_updates[table_name] and
+                 name not in self._running_model_updates[table_name])
+                ])
         self.sig_models_data_changed.emit()
 
     def _handle_db_connection_changed(self, is_connected):

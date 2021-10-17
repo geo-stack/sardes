@@ -256,18 +256,18 @@ def test_view_readings(mainwindow, qtbot, database, readings_data,
 
     # Click on the button to show the readings data for the selected well.
     readings_plugin = mainwindow.readings_plugin
-    assert len(readings_plugin._tseries_data_tables) == 0
+    assert len(readings_plugin._tseries_table_widgets) == 0
 
     qtbot.mouseClick(table_obs_well.show_data_btn, Qt.LeftButton)
-    qtbot.waitUntil(lambda: len(readings_plugin._tseries_data_tables) == 1)
+    qtbot.waitUntil(lambda: len(readings_plugin._tseries_table_widgets) == 1)
 
-    table = readings_plugin._tseries_data_tables[obswells_data.index[0]]
+    table = readings_plugin._tseries_table_widgets[obswells_data.index[0]]
     qtbot.waitUntil(lambda: table.tableview.row_count() == len(readings_data))
     assert table.isVisible()
 
     # Close the timeseries table.
     readings_plugin.tabwidget.tabCloseRequested.emit(0)
-    qtbot.waitUntil(lambda: len(readings_plugin._tseries_data_tables) == 0)
+    qtbot.waitUntil(lambda: len(readings_plugin._tseries_table_widgets) == 0)
 
 
 def test_close_plugins_when_undocked(mainwindow, qtbot):

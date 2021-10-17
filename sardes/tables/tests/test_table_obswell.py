@@ -27,7 +27,7 @@ from qtpy.QtWidgets import QFileDialog, QMessageBox
 from sardes.api.timeseries import DataType
 from sardes.tables import ObsWellsTableWidget
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
-from sardes.api.database_accessor import init_tseries_dels
+from sardes.database.accessors.accessor_helpers import init_tseries_dels
 from sardes.tables import (ManualMeasurementsTableModel, RepereTableModel,
                            SondeInstallationsTableModel)
 

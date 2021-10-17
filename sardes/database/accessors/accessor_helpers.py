@@ -11,6 +11,32 @@
 import pandas as pd
 
 
+def init_tseries_edits():
+    """
+    Init and return an empty multiindex pandas dataframe that can be
+    used to edit timeseries data in the database with
+    :func:`DatabaseAccessor.save_timeseries_data_edits`.
+    """
+    tseries_edits = pd.DataFrame(
+        [], columns=['datetime', 'obs_id', 'data_type', 'value'])
+    tseries_edits.set_index(
+        'datetime', inplace=True, drop=True)
+    tseries_edits.set_index(
+        'obs_id', inplace=True, drop=True, append=True)
+    tseries_edits.set_index(
+        'data_type', inplace=True, drop=True, append=True)
+    return tseries_edits
+
+
+def init_tseries_dels():
+    """
+    Init and return an empty pandas dataframe that can be
+    used to delete timeseries data from the database with
+    :func:`DatabaseAccessor.delete_timeseries_data`.
+    """
+    return pd.DataFrame([], columns=['obs_id', 'datetime', 'data_type'])
+
+
 def create_empty_readings(data_types):
     """
     Create an empty pandas dataframe specifically formatted to hold
