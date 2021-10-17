@@ -164,6 +164,7 @@ class DatabaseConnectionWorker(WorkerBase):
         """
         Save the changes made to table 'name' to the database.
         """
+        print("Saving edits for table '{}' in the database...".format(name))
         # We delete rows from the database.
         for index in deleted_rows:
             self._delete(name, index)
@@ -176,6 +177,9 @@ class DatabaseConnectionWorker(WorkerBase):
         for index, values in edited_values.groupby(level=0):
             values.index = values.index.droplevel(0)
             self._set(name, index, values['edited_value'].to_dict())
+
+        print("Edits for table '{}' saved successfully in the database..."
+              .format(name))
 
         # Get and return the updated table.
         return self._get(name)[0],
