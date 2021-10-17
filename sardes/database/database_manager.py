@@ -270,7 +270,7 @@ class DatabaseConnectionWorker(WorkerBase):
         if 'observation_wells_data_overview' in self._cache:
             del self._cache['observation_wells_data_overview']
         self.db_accessor.save_timeseries_data_edits(tseries_edits)
-        print("...timeseries data edits saved sucessfully.")
+        print("Timeseries data edits saved sucessfully.")
 
     def _add_timeseries_data(self, tseries_data, obs_well_uuid,
                              sonde_installation_uuid):
@@ -278,12 +278,12 @@ class DatabaseConnectionWorker(WorkerBase):
         Save in the database a set of timeseries data associated with the
         given well and sonde installation id.
         """
-        print("Saving timeseries data...")
+        print("Adding timeseries data...")
         if 'observation_wells_data_overview' in self._cache:
             del self._cache['observation_wells_data_overview']
         self.db_accessor.add_timeseries_data(
             tseries_data, obs_well_uuid, sonde_installation_uuid)
-        print("...timeseries data edits saved sucessfully.")
+        print("Timeseries data edits added sucessfully.")
 
     def _delete_timeseries_data(self, tseries_dels):
         """
@@ -294,7 +294,7 @@ class DatabaseConnectionWorker(WorkerBase):
         if 'observation_wells_data_overview' in self._cache:
             del self._cache['observation_wells_data_overview']
         self.db_accessor.delete_timeseries_data(tseries_dels)
-        print("...timeseries data deleted sucessfully.")
+        print("Timeseries data deleted sucessfully.")
 
     # ---- Attachments
     def _get_attachment(self, sampling_feature_uuid, attachment_type):
