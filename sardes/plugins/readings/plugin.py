@@ -42,9 +42,10 @@ class ReadingsTableModel(SardesTableModel):
         self.__tablecolumns__ = []
         self.__tabletitle__ = obs_well_id
         self.__tablename__ = obs_well_uuid
+        self._is_saving_edits = False
+        self.dbconnmanager = None
         super().__init__()
 
-        self.dbconnmanager = None
         self._obs_well_data = obs_well_data
         self._obs_well_uuid = obs_well_data.name
         self._repere_data = pd.Series([], dtype=object)
@@ -558,16 +559,22 @@ class Readings(SardesPlugin):
         """
         run_tasks = False
         for obs_well_uuid in obs_well_uuids:
-            if obs_well_uuid in self._tseries_table_widgets:
-                run_tasks = True
-                table = self._tseries_table_widgets[obs_well_uuid]
-                datatypes = [DataType.WaterLevel,
-                             DataType.WaterTemp,
-                             DataType.WaterEC]
-                self.main.db_connection_manager.get_timeseries_for_obs_well(
-                    obs_well_uuid,
-                    datatypes,
-                    callback=table.set_model_data,
-                    postpone_exec=True)
+            if obs_well_uuid not in self._tseries_table_widgets:
+                continue
+
+            table_widget = self._tseries_table_widgets[obs_well_uuid]
+            if table_widget.model()._is_saving_edits:
+                continue
+
+            run_tasks = True
+            datatypes = [DataType.WaterLevel,
+                         DataType.WaterTemp,
+                         DataType.WaterEC]
+            self.main.db_connection_manager.get_timeseries_for_obs_well(
+                obs_well_uuid,
+                datatypes,
+                callback=table_widget.set_model_data,
+                postpone_exec=True)
+
         if run_tasks is True:
             self.main.db_connection_manager.run_tasks()
