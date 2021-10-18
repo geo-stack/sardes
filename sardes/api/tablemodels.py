@@ -80,7 +80,7 @@ class SardesTableModelBase(QAbstractTableModel):
     def __init__(self):
         super().__init__()
 
-        self.BackgroundColorBase = QStyleOption().palette.base().color()
+        self.BackgroundColorBase = QColor('white')
         self.BackgroundColorDeleted = QColor('#FF9999')
         self.BackgroundColorEdited = QColor('#CCFF99')
 
