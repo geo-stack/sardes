@@ -348,6 +348,11 @@ class SardesHeaderView(QHeaderView):
         opt.text = self.model().headerData(
             logicalIndex, Qt.Horizontal, Qt.DisplayRole)
 
+        foreground_color = self.model().headerData(
+            logicalIndex, Qt.Horizontal, Qt.ForegroundRole)
+        if foreground_color.isValid():
+            opt.palette.setBrush(QPalette.ButtonText, QBrush(foreground_color))
+
         # Elide text.
         text_rect = self.style().subElementRect(
             QStyle.SE_HeaderLabel, opt, self)
