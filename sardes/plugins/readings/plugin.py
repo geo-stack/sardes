@@ -93,10 +93,10 @@ class ReadingsTableModel(SardesTableModel):
         columns = [
             SardesTableColumn(
                 'datetime', _('Datetime'), 'datetime64[ns]',
-                delegate=NotEditableDelegate),
+                delegate=NotEditableDelegate, editable=False),
             SardesTableColumn(
                 'sonde_id', _('Sonde Serial Number'), 'str',
-                delegate=NotEditableDelegate)
+                delegate=NotEditableDelegate, editable=False)
             ]
         for dtype in DataType:
             if dtype in dataf.columns:
@@ -110,10 +110,10 @@ class ReadingsTableModel(SardesTableModel):
         columns.extend([
             SardesTableColumn(
                 'install_depth', _('Depth'), 'float64',
-                delegate=NotEditableDelegate),
+                delegate=NotEditableDelegate, editable=False),
             SardesTableColumn(
                 'obs_id', _('Observation ID'), 'str',
-                delegate=NotEditableDelegate)
+                delegate=NotEditableDelegate, editable=False)
             ])
         super().set_model_data(dataf, columns)
         self.sig_data_updated.emit()

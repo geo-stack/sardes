@@ -73,13 +73,13 @@ class ObsWellsTableModel(StandardSardesTableModel):
             ),
         SardesTableColumn(
             'first_date', _('First Date'), 'datetime64[ns]',
-            delegate=NotEditableDelegate),
+            delegate=NotEditableDelegate, editable=False),
         SardesTableColumn(
             'last_date', _('Last Date'), 'datetime64[ns]',
-            delegate=NotEditableDelegate),
+            delegate=NotEditableDelegate, editable=False),
         SardesTableColumn(
             'mean_water_level', _('Mean level (m)'), 'float64',
-            delegate=NotEditableDelegate),
+            delegate=NotEditableDelegate, editable=False),
         SardesTableColumn(
             'is_station_active', _('Active'), 'boolean', notnull=True,
             delegate=BoolEditDelegate),
