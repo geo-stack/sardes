@@ -15,8 +15,8 @@ import sys
 import numpy as np
 import pandas as pd
 from qtpy.QtCore import (QEvent, Qt, Signal, Slot, QItemSelection, QSize,
-                         QItemSelectionModel, QRect, QTimer, QModelIndex)
-from qtpy.QtGui import QCursor
+                         QItemSelectionModel, QRect, QTimer, QModelIndex,)
+from qtpy.QtGui import QCursor, QBrush, QPalette, QColor
 from qtpy.QtWidgets import (
     QApplication, QCheckBox,
     QHeaderView, QLabel, QMenu, QMessageBox, QTableView, QStyle, QStyleOption,
@@ -250,6 +250,14 @@ class SardesHeaderView(QHeaderView):
         self.hover = -1
         self.pressed = -1
         self.parent().model().sig_data_sorted.connect(self._update_sections)
+        self.setMinimumSectionSize(self._minimum_section_size())
+
+    def restoreState(self, state):
+        """
+        Override Qt method to enforce sections minimum size.
+        """
+        super().restoreState(state)
+        self.setMinimumSectionSize(self._minimum_section_size())
 
     def mousePressEvent(self, e):
         """
@@ -319,6 +327,17 @@ class SardesHeaderView(QHeaderView):
         opt.orientation = Qt.Horizontal
         opt.state |= state
 
+        margin = 2 * self.style().pixelMetric(
+            QStyle.PM_HeaderMargin, opt, self)
+
+        # Icon options.
+        if not self.model().columns()[logicalIndex].editable:
+            opt.iconAlignment = Qt.AlignVCenter
+            opt.icon = get_icon('table_column_lock')
+            margin += (
+                self.style().pixelMetric(QStyle.PM_SmallIconSize, opt, self) +
+                self.style().pixelMetric(QStyle.PM_HeaderMargin, opt, self))
+
         # Text options.
         text_alignment = self.model().headerData(
             logicalIndex, Qt.Horizontal, Qt.TextAlignmentRole)
@@ -329,9 +348,12 @@ class SardesHeaderView(QHeaderView):
         opt.text = self.model().headerData(
             logicalIndex, Qt.Horizontal, Qt.DisplayRole)
 
+        foreground_color = self.model().headerData(
+            logicalIndex, Qt.Horizontal, Qt.ForegroundRole)
+        if foreground_color.isValid():
+            opt.palette.setBrush(QPalette.ButtonText, QBrush(foreground_color))
+
         # Elide text.
-        margin = 2 * self.style().pixelMetric(
-            QStyle.PM_HeaderMargin, opt, self)
         text_rect = self.style().subElementRect(
             QStyle.SE_HeaderLabel, opt, self)
         opt.text = opt.fontMetrics.elidedText(
@@ -405,6 +427,22 @@ class SardesHeaderView(QHeaderView):
                      self.sectionSize(section), self.size().height())
 
     # ---- Private methods
+    def _minimum_section_size(self):
+        """
+        Calcul a minimum section size to include the width of the braces '[]'
+        enclosing the titles of columns that are not editable.
+
+        Based on the qt 'minimumSectionSize' source code at:
+        https://code.woboq.org/qt5/qtbase/src/widgets/itemviews/qheaderview.cpp.html
+        """
+        strut = QApplication.globalStrut()
+        margin = self.style().pixelMetric(
+            QStyle.PM_HeaderMargin, None, self)
+        icon_size = self.style().pixelMetric(
+            QStyle.PM_SmallIconSize, None, self)
+        fm = self.fontMetrics()
+        return max(strut.width(), fm.maxWidth() + 3 * margin + icon_size)
+
     @Slot(int)
     def _handle_section_doubleclick(self, section):
         """
