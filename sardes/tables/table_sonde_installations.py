@@ -34,7 +34,7 @@ class SondeInstallationsTableModel(StandardSardesTableModel):
             'sampling_feature_uuid', _('Well ID'), 'str', notnull=True,
             delegate=ObsWellIdEditDelegate),
         SardesTableColumn(
-            'sonde_uuid', _('Brand Model Serial'), 'str', notnull=True,
+            'sonde_uuid', _('Serial - Brand Model'), 'str', notnull=True,
             delegate=SondesSelectionDelegate),
         SardesTableColumn(
             'start_date', _('Date From'), 'datetime64[ns]', notnull=True,
