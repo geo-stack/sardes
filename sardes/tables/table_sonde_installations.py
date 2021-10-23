@@ -76,11 +76,18 @@ class SondeInstallationsTableModel(StandardSardesTableModel):
         try:
             sondes_data = self.libraries['sondes_data']
             sonde_models_lib = self.libraries['sonde_models_lib']
+
             sondes_data['sonde_brand_model'] = sonde_models_lib.loc[
                 sondes_data['sonde_model_id']]['sonde_brand_model'].values
-            sondes_data['sonde_brand_model_serial'] = (
-                sondes_data[['sonde_brand_model', 'sonde_serial_no']]
-                .apply(lambda x: ' - '.join(x), axis=1))
+
+            mask = sondes_data['sonde_serial_no'].notnull()
+            sondes_data['sonde_brand_model_serial'] = sondes_data[
+                'sonde_brand_model']
+            sondes_data.loc[mask, 'sonde_brand_model_serial'] = (
+                sondes_data['sonde_serial_no'] +
+                ' - ' +
+                sondes_data['sonde_brand_model'])
+
             visual_dataf['sonde_uuid'] = (
                 visual_dataf['sonde_uuid']
                 .map(sondes_data['sonde_brand_model_serial'].to_dict().get)
