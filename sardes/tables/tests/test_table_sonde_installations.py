@@ -96,7 +96,7 @@ def test_add_sonde_installations(tablewidget, dbaccessor, qtbot, mocker):
         model_index = tablemodel.index(6, col)
         tablewidget.model().set_data_edit_at(model_index, edited_value)
     assert tablewidget.get_data_for_row(6) == [
-        '09000001', 'Solinst Barologger M1.5 - 1016042', '2015-06-12 15:34',
+        '09000001', '1016042 - Solinst Barologger M1.5', '2015-06-12 15:34',
         '', '12.23', '']
     assert tablemodel.data_edit_count() == 5
 
@@ -136,7 +136,7 @@ def test_edit_sonde_installations(tablewidget, qtbot, sondes_installation,
 
     # Edit each editable field of the first row of the table.
     assert tableview.get_data_for_row(0) == [
-        '03037041', 'Solinst Barologger M1.5 - 1016042',
+        '03037041', '1016042 - Solinst Barologger M1.5',
         '2006-08-24 18:00', '2020-12-31 07:14', '9.02',
         'Note for first sonde installation.']
     for col in range(tableview.visible_column_count()):
@@ -156,7 +156,7 @@ def test_edit_sonde_installations(tablewidget, qtbot, sondes_installation,
         assert tableview.model().is_data_edited_at(current_index)
         assert tableview.model().get_value_at(current_index) == edit_value
     assert tableview.get_data_for_row(0) == [
-        '03040002', 'Solinst LT M10 Gold - 1016387',
+        '03040002', '1016387 - Solinst LT M10 Gold',
         '2010-08-01 12:00', '2010-08-30 19:16', '6.34',
         'Edited sonde install note.']
 
@@ -178,7 +178,7 @@ def test_clear_sonde_installations(tablewidget, qtbot, dbaccessor):
 
     # Clear each non required field of the first row of the table.
     assert tableview.get_data_for_row(0) == [
-        '03037041', 'Solinst Barologger M1.5 - 1016042',
+        '03037041', '1016042 - Solinst Barologger M1.5',
         '2006-08-24 18:00', '2020-12-31 07:14', '9.02',
         'Note for first sonde installation.']
     for col in range(tableview.visible_column_count()):
@@ -195,7 +195,7 @@ def test_clear_sonde_installations(tablewidget, qtbot, dbaccessor):
             assert tableview.model().is_data_edited_at(current_index)
             assert tableview.model().is_null(current_index)
     assert tableview.get_data_for_row(0) == [
-        '03037041', 'Solinst Barologger M1.5 - 1016042',
+        '03037041', '1016042 - Solinst Barologger M1.5',
         '2006-08-24 18:00', '', '9.02', '']
 
     # Save the changes to the database.
