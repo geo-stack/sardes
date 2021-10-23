@@ -900,6 +900,8 @@ def test_ensure_visible(tablewidget, qtbot, mocker):
     """
     Test that the method to ensure a cell at a given model index is
     visible is working as expected.
+
+    See #cgq-qgc/sardes#506.
     """
     horiz_header = tablewidget.horizontalHeader()
     tablewidget.set_current_index(0, 0)
