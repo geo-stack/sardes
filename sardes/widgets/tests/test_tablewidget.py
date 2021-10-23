@@ -904,8 +904,6 @@ def test_ensure_visible(tablewidget, qtbot, mocker):
     See #cgq-qgc/sardes#506.
     """
     horiz_header = tablewidget.horizontalHeader()
-    tablewidget.set_current_index(0, 0)
-    assert tablewidget.current_data() == 'str1'
 
     # Hide the third column of the table.
     col = 2
