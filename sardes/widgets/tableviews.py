@@ -1555,6 +1555,11 @@ class SardesTableView(QTableView):
         Scroll to the item located at the given model index if it is not
         currently visible in the scrollarea.
         """
+        # Make sure the column of the model index is visible.
+        if self.horizontalHeader().isSectionHidden(model_index.column()):
+            self.horizontalHeader().setSectionHidden(
+                model_index.column(), False)
+
         item_rect = self.visualRect(model_index)
         view_rect = self.geometry()
         if not view_rect.contains(item_rect) or force:
