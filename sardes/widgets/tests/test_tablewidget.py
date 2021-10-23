@@ -896,6 +896,30 @@ def test_save_edits(tablewidget, qtbot, mocker):
     assert tableview.model().has_unsaved_data_edits() is False
 
 
+def test_ensure_visible(tablewidget, qtbot, mocker):
+    """
+    Test that the method to ensure a cell at a given model index is
+    visible is working as expected.
+
+    See #cgq-qgc/sardes#506.
+    """
+    horiz_header = tablewidget.horizontalHeader()
+
+    # Hide the third column of the table.
+    col = 2
+    action = tablewidget._toggle_column_visibility_actions[col]
+    action.toggle()
+
+    assert not action.isChecked()
+    assert horiz_header.isSectionHidden(col)
+
+    # Check that columns become visible again when we call
+    # '_ensure_visible' on a cell that is in a hidden column.
+    model_index = tablewidget.model().index(1, col)
+    tablewidget._ensure_visible(model_index)
+    qtbot.waitUntil(lambda: horiz_header.isSectionHidden(col) is False)
+
+
 def test_select_all_and_clear(tablewidget, qtbot, TABLE_DATAF):
     """
     Test select all and clear actions.
