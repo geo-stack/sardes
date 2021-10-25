@@ -423,14 +423,21 @@ class SardesTableModelBase(QAbstractTableModel):
         self.dataChanged.emit(model_index, model_index)
         self.sig_data_edited.emit(data_edit)
 
+    def is_data_clearable_at(self, model_index):
+        """
+        Return whether the value of the cell at the specified model index
+        is clearable or not.
+        """
+        return (
+            not self.is_null(model_index) and
+            self.is_data_editable_at(model_index) and
+            not self.columns()[model_index.column()].notnull)
+
     def clear_model_data_at(self, model_index):
         """
         Set the data at the given provided model index to a null value.
         """
-        if (model_index.isValid() and
-                not self.is_null(model_index) and
-                not self.columns()[model_index.column()].notnull and
-                self.columns()[model_index.column()].editable):
+        if model_index.isValid() and self.is_data_clearable_at(model_index):
             self.set_data_edit_at(model_index, None)
 
     def create_new_row_index(self):
@@ -801,6 +808,10 @@ class SardesSortFilterModel(QSortFilterProxyModel):
 
     def is_data_editable_at(self, proxy_index):
         return self.sourceModel().is_data_editable_at(
+            self.mapToSource(proxy_index))
+
+    def is_data_clearable_at(self, proxy_index):
+        return self.sourceModel().is_data_clearable_at(
             self.mapToSource(proxy_index))
 
     def is_data_deleted_at(self, proxy_index):
