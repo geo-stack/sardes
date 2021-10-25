@@ -287,9 +287,9 @@ class SardesTableModelBase(QAbstractTableModel):
     def flags(self, model_index):
         """Qt method override."""
         if self.is_data_editable_at(model_index):
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsEditable | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
     def get_visual_data_at(self, model_index):
         """
