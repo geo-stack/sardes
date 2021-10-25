@@ -184,7 +184,7 @@ def test_clear_sonde_installations(tablewidget, qtbot, dbaccessor):
     for col in range(tableview.visible_column_count()):
         current_index = tableview.set_current_index(0, col)
         column = tableview.visible_columns()[col]
-        if tableview.is_data_required_at(current_index):
+        if not tableview.is_data_clearable_at(current_index):
             assert column not in clearable_attrs, column
         else:
             assert column in clearable_attrs, column

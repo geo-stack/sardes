@@ -160,6 +160,7 @@ def test_clear_sonde_model(tablewidget, qtbot, dbaccessor):
     for col in range(tableview.visible_column_count()):
         current_index = tableview.set_current_index(0, col)
         assert tableview.is_data_required_at(current_index)
+        assert not tableview.is_data_clearable_at(current_index)
 
 
 def test_delete_sonde_model(tablewidget, qtbot, dbaccessor, mocker,
