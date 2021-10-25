@@ -1390,10 +1390,7 @@ class SardesTableView(QTableView):
         """
         Return whether the item at the specified model index is editable.
         """
-        try:
-            return self.itemDelegate(model_index).is_editable
-        except AttributeError:
-            return False
+        return self.model().is_data_editable_at(model_index)
 
     def is_data_required_at(self, model_index):
         """
