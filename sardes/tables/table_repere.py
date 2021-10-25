@@ -43,6 +43,12 @@ class RepereTableModel(StandardSardesTableModel):
             delegate_options={
                 'decimals': 3, 'minimum': -99999, 'maximum': 99999}),
         SardesTableColumn(
+            'ground_altitude', _('Ground Alt. (m)'), 'float64',
+            notnull=True, editable=False,
+            delegate=NumEditDelegate,
+            delegate_options={
+                'decimals': 3, 'minimum': -99999, 'maximum': 99999}),
+        SardesTableColumn(
             'start_date', _('Date From'), 'datetime64[ns]', notnull=True,
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
@@ -75,6 +81,8 @@ class RepereTableModel(StandardSardesTableModel):
         except KeyError:
             pass
 
+        visual_dataf['ground_altitude'] = (
+            visual_dataf['top_casing_alt'] - visual_dataf['casing_length'])
         visual_dataf['start_date'] = (
             pd.to_datetime(visual_dataf['start_date'], format="%Y-%m-%d %H:%M")
             .dt.strftime('%Y-%m-%d %H:%M'))
