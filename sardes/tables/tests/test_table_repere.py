@@ -67,7 +67,7 @@ def test_add_repere_data(tablewidget, dbaccessor, qtbot, mocker):
     tablewidget.new_row_action.trigger()
     assert tablewidget.visible_row_count() == 6
     assert tablemodel.data_edit_count() == 1
-    assert tablewidget.get_data_for_row(5) == [''] * 7
+    assert tablewidget.get_data_for_row(5) == [''] * 8
     assert len(dbaccessor.get_repere_data()) == 5
     assert tablemodel.is_new_row_at(tablewidget.current_index())
 
@@ -96,7 +96,8 @@ def test_add_repere_data(tablewidget, dbaccessor, qtbot, mocker):
         model_index = tablemodel.index(5, col)
         tablewidget.model().set_data_edit_at(model_index, edited_value)
     assert tablewidget.get_data_for_row(5) == [
-        '09000001', '527.45', '3.1', '2015-06-12 15:34', '', 'No', '']
+        '09000001', '527.45', '3.1', '524.35',
+        '2015-06-12 15:34', '', 'No', '']
     assert tablemodel.data_edit_count() == 6
 
     # Save the changes to the database.
@@ -136,7 +137,8 @@ def test_edit_repere_data(tablewidget, qtbot, dbaccessor, obswells_data):
 
     # Edit each editable field of the first row of the table.
     assert tableview.get_data_for_row(0) == [
-        '03037041', '9.3', '1.3', '2009-07-14 09:00', '2020-08-03 19:14',
+        '03037041', '9.3', '1.3', '8.0',
+        '2009-07-14 09:00', '2020-08-03 19:14',
         'Yes', 'Repere note #1']
     for col in range(tableview.visible_column_count()):
 
@@ -156,7 +158,8 @@ def test_edit_repere_data(tablewidget, qtbot, dbaccessor, obswells_data):
         assert tableview.model().is_data_edited_at(current_index)
         assert tableview.model().get_value_at(current_index) == edit_value
     assert tableview.get_data_for_row(0) == [
-        '02200001', '10.1', '0.7', '2009-07-14 00:00', '2020-08-03 07:14',
+        '02200001', '10.1', '0.7', '9.4',
+        '2009-07-14 00:00', '2020-08-03 07:14',
         'No', 'Edited repere note.']
 
     # Save the changes to the database.
@@ -177,12 +180,13 @@ def test_clear_repere_data(tablewidget, qtbot, dbaccessor):
 
     # Clear each non required field of the first row of the table.
     assert tableview.get_data_for_row(0) == [
-        '03037041', '9.3', '1.3', '2009-07-14 09:00', '2020-08-03 19:14',
+        '03037041', '9.3', '1.3', '8.0',
+        '2009-07-14 09:00', '2020-08-03 19:14',
         'Yes', 'Repere note #1']
     for col in range(tableview.visible_column_count()):
         current_index = tableview.set_current_index(0, col)
         column = tableview.visible_columns()[col]
-        if tableview.is_data_required_at(current_index):
+        if not tableview.is_data_clearable_at(current_index):
             assert column not in clearable_attrs
         else:
             assert column in clearable_attrs
@@ -193,7 +197,8 @@ def test_clear_repere_data(tablewidget, qtbot, dbaccessor):
             assert tableview.model().is_data_edited_at(current_index)
             assert tableview.model().is_null(current_index)
     assert tableview.get_data_for_row(0) == [
-        '03037041', '9.3', '1.3', '2009-07-14 09:00', '', 'Yes', '']
+        '03037041', '9.3', '1.3', '8.0',
+        '2009-07-14 09:00', '', 'Yes', '']
 
     # Save the changes to the database.
     with qtbot.waitSignal(tableview.model().sig_data_updated):
