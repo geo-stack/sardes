@@ -343,6 +343,22 @@ class SardesTableModelBase(QAbstractTableModel):
         self.visual_dataf = self.logical_to_visual_data(self.visual_dataf)
 
     # ---- Data edits
+    def is_data_clearable_at(self, model_index):
+        """
+        Return whether the value of the cell at the specified model index
+        is clearable or not.
+        """
+        return (
+            not self.is_null(model_index) and
+            self.is_data_editable_at(model_index) and
+            not self.columns()[model_index.column()].notnull)
+
+    def is_data_deleted_at(self, model_index):
+        """
+        Return whether the row at model index is deleted.
+        """
+        return self._datat.is_data_deleted_at(model_index.row())
+
     def is_data_editable_at(self, model_index):
         """
         Return whether the cell at the specified model index is editable.
@@ -350,6 +366,14 @@ class SardesTableModelBase(QAbstractTableModel):
         return (
             self.columns()[model_index.column()].editable and
             not self.is_data_deleted_at(model_index))
+
+    def is_data_edited_at(self, model_index):
+        """
+        Return whether edits were made at the specified model index
+        since last save.
+        """
+        return self._datat.is_value_edited_at(
+            model_index.row(), model_index.column())
 
     def data_edits(self):
         """
@@ -375,25 +399,11 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         return self._datat.has_unsaved_edits()
 
-    def is_data_deleted_at(self, model_index):
-        """
-        Return whether the row at model index is deleted.
-        """
-        return self._datat.is_data_deleted_at(model_index.row())
-
     def is_new_row_at(self, model_index):
         """
         Return whether the row at model index is new.
         """
         return self._datat.is_new_row_at(model_index.row())
-
-    def is_data_edited_at(self, model_index):
-        """
-        Return whether edits were made at the specified model index
-        since last save.
-        """
-        return self._datat.is_value_edited_at(
-            model_index.row(), model_index.column())
 
     def cancel_data_edits(self):
         """
@@ -422,16 +432,6 @@ class SardesTableModelBase(QAbstractTableModel):
         self._update_visual_data()
         self.dataChanged.emit(model_index, model_index)
         self.sig_data_edited.emit(data_edit)
-
-    def is_data_clearable_at(self, model_index):
-        """
-        Return whether the value of the cell at the specified model index
-        is clearable or not.
-        """
-        return (
-            not self.is_null(model_index) and
-            self.is_data_editable_at(model_index) and
-            not self.columns()[model_index.column()].notnull)
 
     def clear_model_data_at(self, model_index):
         """
