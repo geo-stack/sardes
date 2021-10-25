@@ -43,8 +43,7 @@ class RepereTableModel(StandardSardesTableModel):
             delegate_options={
                 'decimals': 3, 'minimum': -99999, 'maximum': 99999}),
         SardesTableColumn(
-            'ground_altitude', _('Ground Alt. (m)'), 'float64',
-            notnull=True, editable=False,
+            'ground_altitude', _('Ground Alt. (m)'), 'float64', editable=False,
             delegate=NumEditDelegate,
             delegate_options={
                 'decimals': 3, 'minimum': -99999, 'maximum': 99999}),
