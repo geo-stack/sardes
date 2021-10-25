@@ -286,7 +286,7 @@ class SardesTableModelBase(QAbstractTableModel):
 
     def flags(self, model_index):
         """Qt method override."""
-        if self.is_data_deleted_at(model_index):
+        if self.is_data_editable_at(model_index):
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsEditable | Qt.ItemIsSelectable
@@ -343,6 +343,14 @@ class SardesTableModelBase(QAbstractTableModel):
         self.visual_dataf = self.logical_to_visual_data(self.visual_dataf)
 
     # ---- Data edits
+    def is_data_editable_at(self, model_index):
+        """
+        Return whether the cell at the specified model index is editable.
+        """
+        return (
+            self.columns()[model_index.column()].editable and
+            not self.is_data_deleted_at(model_index))
+
     def data_edits(self):
         """
         Return a list of all edits made to the data since last save.
@@ -789,6 +797,10 @@ class SardesSortFilterModel(QSortFilterProxyModel):
 
     def get_value_at(self, proxy_index):
         return self.sourceModel().get_value_at(
+            self.mapToSource(proxy_index))
+
+    def is_data_editable_at(self, proxy_index):
+        return self.sourceModel().is_data_editable_at(
             self.mapToSource(proxy_index))
 
     def is_data_deleted_at(self, proxy_index):
