@@ -116,9 +116,11 @@ def tablemodel(qtbot, TABLE_DATAF):
                 delegate=IntEditDelegate),
             SardesTableColumn(
                 'col4', 'Column #4', 'str',
+                editable=False,
                 delegate=NotEditableDelegate),
             SardesTableColumn(
                 'col5', 'Column #5', 'str',
+                editable=False,
                 delegate=NotEditableDelegate),
             ]
 
