@@ -848,11 +848,10 @@ class SardesTableView(QTableView):
         """
         current_index = self.current_index()
         if current_index.isValid():
-            is_required = self.is_data_required_at(current_index)
             is_editable = self.is_data_editable_at(current_index)
+            is_clearable = self.is_data_clearable_at(current_index)
             if 'clear_item' not in self._disabled_actions:
-                self.clear_item_action.setEnabled(
-                    not is_required and is_editable)
+                self.clear_item_action.setEnabled(is_clearable)
             if 'edit_item' not in self._disabled_actions:
                 self.edit_item_action.setEnabled(is_editable)
 
@@ -1390,10 +1389,7 @@ class SardesTableView(QTableView):
         """
         Return whether the item at the specified model index is editable.
         """
-        try:
-            return self.itemDelegate(model_index).is_editable
-        except AttributeError:
-            return False
+        return self.model().is_data_editable_at(model_index)
 
     def is_data_required_at(self, model_index):
         """
@@ -1401,6 +1397,13 @@ class SardesTableView(QTableView):
         specified model index.
         """
         return self.itemDelegate(model_index).is_required
+
+    def is_data_clearable_at(self, model_index):
+        """
+        Return whether the value of the cell at the specified model index
+        is clearable or not.
+        """
+        return self.model().is_data_clearable_at(model_index)
 
     def _clear_current_item(self):
         """

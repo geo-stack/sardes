@@ -286,10 +286,10 @@ class SardesTableModelBase(QAbstractTableModel):
 
     def flags(self, model_index):
         """Qt method override."""
-        if self.is_data_deleted_at(model_index):
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        if self.is_data_editable_at(model_index):
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsEditable | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
     def get_visual_data_at(self, model_index):
         """
@@ -343,6 +343,38 @@ class SardesTableModelBase(QAbstractTableModel):
         self.visual_dataf = self.logical_to_visual_data(self.visual_dataf)
 
     # ---- Data edits
+    def is_data_clearable_at(self, model_index):
+        """
+        Return whether the value of the cell at the specified model index
+        is clearable or not.
+        """
+        return (
+            not self.is_null(model_index) and
+            self.is_data_editable_at(model_index) and
+            not self.columns()[model_index.column()].notnull)
+
+    def is_data_deleted_at(self, model_index):
+        """
+        Return whether the row at model index is deleted.
+        """
+        return self._datat.is_data_deleted_at(model_index.row())
+
+    def is_data_editable_at(self, model_index):
+        """
+        Return whether the cell at the specified model index is editable.
+        """
+        return (
+            self.columns()[model_index.column()].editable and
+            not self.is_data_deleted_at(model_index))
+
+    def is_data_edited_at(self, model_index):
+        """
+        Return whether edits were made at the specified model index
+        since last save.
+        """
+        return self._datat.is_value_edited_at(
+            model_index.row(), model_index.column())
+
     def data_edits(self):
         """
         Return a list of all edits made to the data since last save.
@@ -367,25 +399,11 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         return self._datat.has_unsaved_edits()
 
-    def is_data_deleted_at(self, model_index):
-        """
-        Return whether the row at model index is deleted.
-        """
-        return self._datat.is_data_deleted_at(model_index.row())
-
     def is_new_row_at(self, model_index):
         """
         Return whether the row at model index is new.
         """
         return self._datat.is_new_row_at(model_index.row())
-
-    def is_data_edited_at(self, model_index):
-        """
-        Return whether edits were made at the specified model index
-        since last save.
-        """
-        return self._datat.is_value_edited_at(
-            model_index.row(), model_index.column())
 
     def cancel_data_edits(self):
         """
@@ -419,10 +437,7 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         Set the data at the given provided model index to a null value.
         """
-        if (model_index.isValid() and
-                not self.is_null(model_index) and
-                not self.columns()[model_index.column()].notnull and
-                self.columns()[model_index.column()].editable):
+        if model_index.isValid() and self.is_data_clearable_at(model_index):
             self.set_data_edit_at(model_index, None)
 
     def create_new_row_index(self):
@@ -789,6 +804,14 @@ class SardesSortFilterModel(QSortFilterProxyModel):
 
     def get_value_at(self, proxy_index):
         return self.sourceModel().get_value_at(
+            self.mapToSource(proxy_index))
+
+    def is_data_editable_at(self, proxy_index):
+        return self.sourceModel().is_data_editable_at(
+            self.mapToSource(proxy_index))
+
+    def is_data_clearable_at(self, proxy_index):
+        return self.sourceModel().is_data_clearable_at(
             self.mapToSource(proxy_index))
 
     def is_data_deleted_at(self, proxy_index):
