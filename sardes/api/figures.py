@@ -170,3 +170,18 @@ class SardesFigureCanvas(FigureCanvasQTAgg):
             QApplication.restoreOverrideCursor()
             QApplication.processEvents()
 
+
+if __name__ == '__main__':
+    import sys
+    import matplotlib.pyplot as plt
+    app = QApplication(sys.argv)
+
+    figure, ax = plt.subplots(1, 1)
+    ax.plot([1, 2, 3], [1, 2, 3], '.')
+
+    canvas = SardesFigureCanvas(figure)
+    widget = SardesFigureWidget(canvas)
+
+    widget.show()
+
+    sys.exit(app.exec_())
