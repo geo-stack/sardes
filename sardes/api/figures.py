@@ -30,6 +30,40 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 
 
+class SardesFigureWidget(QMainWindow):
+    def __init__(self, canvas):
+        super().__init__()
+        self.canvas = canvas
+
+        self.setContextMenuPolicy(Qt.NoContextMenu)
+        self.setCentralWidget(self.canvas)
+        self._setup_toolbar()
+
+    def _setup_toolbar(self):
+        """Setup the toolbar of this widget."""
+
+        self.toolbar = create_mainwindow_toolbar('test')
+        self.addToolBar(self.toolbar)
+
+        self.save_figure_btn = create_toolbutton(
+            self, icon='save',
+            text=_("Save"),
+            tip=_('Save the figure to a file'),
+            shortcut='Ctrl+S',
+            triggered=lambda: self.canvas.select_and_save_file(),
+            iconsize=get_iconsize())
+        self.toolbar.addWidget(self.save_figure_btn)
+
+        self.copy_to_clipboard_btn = create_toolbutton(
+            self, icon='copy_clipboard',
+            text=_("Copy"),
+            tip=_("Put a copy of the figure on the Clipboard."),
+            triggered=self.canvas.copy_to_clipboard,
+            shortcut='Ctrl+C',
+            iconsize=get_iconsize())
+        self.toolbar.addWidget(self.copy_to_clipboard_btn)
+
+
 class SardesFigureCanvas(FigureCanvasQTAgg):
     """
     Basic functionality for Sardes figure canvas.
