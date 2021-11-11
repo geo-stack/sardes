@@ -17,9 +17,8 @@ import os.path as osp
 # ---- Third party imports
 import matplotlib.pyplot as plt
 import pytest
-from unittest.mock import DEFAULT
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QApplication, QMainWindow
+from qtpy.QtWidgets import QApplication
 
 # ---- Local imports
 from sardes.api.figures import (
