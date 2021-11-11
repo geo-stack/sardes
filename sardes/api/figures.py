@@ -19,10 +19,9 @@ from qtpy.QtWidgets import (
 
 # ---- Local imports
 from sardes.config.locale import _
-from sardes.config.icons import get_icon
 from sardes.config.gui import get_iconsize
 from sardes.utils.qthelpers import (
-    format_tooltip, create_toolbutton, create_mainwindow_toolbar)
+    create_toolbutton, create_mainwindow_toolbar)
 from sardes.config.ospath import (
     get_select_file_dialog_dir, set_select_file_dialog_dir)
 
