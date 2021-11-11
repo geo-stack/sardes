@@ -41,8 +41,9 @@ class SardesFigureWidget(QMainWindow):
 
     def _setup_toolbar(self):
         """Setup the toolbar of this widget."""
-
-        self.toolbar = create_mainwindow_toolbar('test')
+        toolbarname = 'toolbar_{}_{}'.format(
+            self.__class__.__name__, id(self))
+        self.toolbar = create_mainwindow_toolbar(toolbarname)
         self.addToolBar(self.toolbar)
 
         self.save_figure_btn = create_toolbutton(
