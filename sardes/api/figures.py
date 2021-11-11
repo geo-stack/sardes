@@ -72,7 +72,7 @@ class SardesFigureCanvas(FigureCanvasQTAgg):
         '.pdf': 'Portable Document Format (*.pdf)',
         '.svg': 'Scalable Vector Graphics (*.svg)',
         '.png': 'Portable Network Graphics (*.png)',
-        '.jpg': 'JPEG (*.jpg)'
+        '.jpg': 'Joint Photographic Expert Group (*.jpg)'
         }
     SAVEFIGDPI = 600
     CLIPFIGDPI = 300
