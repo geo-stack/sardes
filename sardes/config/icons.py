@@ -49,6 +49,9 @@ FA_ICONS = {
     'console': [
         ('mdi.console',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'chart_pie': [
+        ('mdi.chart-pie',),
+        {'color': ICON_COLOR, 'scale_factor': 1}],
     'checklist': [
         ('mdi.format-list-checkbox',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
