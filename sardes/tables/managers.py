@@ -55,7 +55,7 @@ class SardesTableModelsManager(QObject):
         db_manager.sig_database_connection_changed.connect(
             self._handle_db_connection_changed)
         db_manager.sig_database_data_changed.connect(
-            self._handle_db_data_changed)
+            self._handle_database_data_changed)
 
     # ---- Public API
     def table_models(self):
@@ -66,7 +66,7 @@ class SardesTableModelsManager(QObject):
         """
         Return the table model registered to this manager that is used to
         display the data referenced as 'name' in the database connection
-        manager
+        manager.
         """
         return self._dataname_map[dataname]
 
@@ -106,8 +106,8 @@ class SardesTableModelsManager(QObject):
                 self._running_model_updates[table_name].append(name)
                 self.db_manager.get(
                     name,
-                    callback=lambda dataf, name=name:
-                        self._set_model_data_or_lib(dataf, name, table_name),
+                    callback=lambda dataf:
+                        self._update_table_model_callback(dataf, table_name),
                     postpone_exec=True)
             self._queued_model_updates[table_name] = []
             self.db_manager.run_tasks()
@@ -125,7 +125,7 @@ class SardesTableModelsManager(QObject):
         tablemodel.sig_data_about_to_be_saved.emit()
         self.db_manager.add_task(
             'save_table_edits',
-            callback=self._handle_table_model_edits_saved,
+            callback=self._save_table_model_edits_callback,
             name=tablemodel.__dataname__,
             deleted_rows=tablemodel.tabledata().deleted_rows(),
             added_rows=tablemodel.tabledata().added_rows(),
@@ -134,40 +134,55 @@ class SardesTableModelsManager(QObject):
         self.db_manager.run_tasks()
 
     # ---- Private API
-    def _handle_table_model_edits_saved(self, dataf):
+    def _save_table_model_edits_callback(self, dataf):
         """
-        Handle when edits made to a table model have been saved in the
-        database.
+        A callback that handles when edits made to a table model have been
+        saved in the database.
         """
         data_name = dataf.attrs['name']
-        table_model = self._dataname_map[data_name]
+        table_model = self.find_dataname(data_name)
         table_model.sig_data_saved.emit()
 
-        table_model.sig_data_about_to_be_updated.emit()
+        # We add 'data_name' to '_running_model_updates' to prevent the data
+        # of the corresponding table model from being updated a second time
+        # unecessarily.
+        #
+        # Concretely, after 'db_manager.sig_database_data_changed' is emitted,
+        # this prevents 'data_name' from being added to '_queued_model_updates'
+        # in '_handle_database_data_changed'. This thus prevents an unecessary
+        # update of the table model's data when 'update_table_model'
+        # is called from the plugin side after 'sig_models_data_changed' is
+        # emitted in '_handle_database_data_changed'.
+
         self._running_model_updates[table_model.name()].append(data_name)
+
+        table_model.sig_data_about_to_be_updated.emit()
         table_model.set_model_data(dataf)
         table_model.sig_data_updated.emit()
 
         self.db_manager.sig_database_data_changed.emit([data_name])
         self._running_model_updates[table_model.name()].remove(data_name)
 
-    def _set_model_data_or_lib(self, dataf, data_name, table_name):
+    def _update_table_model_callback(self, dataf, table_name):
         """
-        Set the data or library of the given table model.
+        A callback used in 'update_table_model' to set the data or library
+        of a table model.
         """
+        data_name = dataf.attrs['name']
         table_model = self._table_models[table_name]
+
         if data_name == table_model.__dataname__:
-            # Update the table model data.
+            # Update the data of the table model.
             table_model.set_model_data(dataf)
         elif data_name in table_model.__libnames__:
-            # Update the table model library.
+            # Update the corresponding library of the table model.
             table_model.set_model_library(dataf, data_name)
 
         self._running_model_updates[table_name].remove(data_name)
         if not len(self._running_model_updates[table_name]):
             table_model.sig_data_updated.emit()
 
-    def _handle_db_data_changed(self, data_changed):
+    def _handle_database_data_changed(self, data_changed):
         """
         Handle when changes are made to the database.
 

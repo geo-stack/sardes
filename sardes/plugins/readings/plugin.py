@@ -197,7 +197,6 @@ class ReadingsTableWidget(SardesTableWidget):
         self.setAttribute(Qt.WA_DeleteOnClose)
         self._parent = parent
         self.plot_viewer = None
-        table_model.sig_data_updated.connect(self._handle_model_data_updated)
 
     @property
     def station_uuid(self):
@@ -258,9 +257,10 @@ class ReadingsTableWidget(SardesTableWidget):
         for tool in self.tools():
             tool.update()
 
-    def _handle_model_data_updated(self):
+    def _handle_data_updated(self):
         """
-        Handle when the data of the readings table model have been updated.
+        Extend SardesTableWidget method to update the plot viewer after
+        the data of the model of this table widget were updated.
         """
         if self.plot_viewer is not None:
             self.plot_viewer.update_data(
@@ -272,9 +272,7 @@ class ReadingsTableWidget(SardesTableWidget):
             self.plot_viewer.set_manual_measurements(
                 DataType.WaterLevel, self.model().manual_measurements())
 
-        # Update tools.
-        for tool in self.tools():
-            tool.update()
+        super()._handle_data_updated()
 
     def get_formatted_data(self):
         """Return a dataframe contraining formatted readings data."""
