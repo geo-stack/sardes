@@ -25,6 +25,7 @@ from sardes.tables.delegates import (
     StringEditDelegate, BoolEditDelegate,
     NumEditDelegate, NotEditableDelegate, TextEditDelegate)
 from sardes.tables.errors import ForeignReadingsConstraintError
+from sardes.tools import NetworkBarchartTool
 
 
 class ObsWellsTableModel(StandardSardesTableModel):
@@ -148,8 +149,8 @@ class ObsWellsTableWidget(SardesTableWidget):
         super().__init__(table_model, *args, **kargs)
 
         self.add_toolbar_separator()
-        for button in self._create_extra_toolbuttons():
-            self.add_toolbar_widget(button)
+        self.setup_extra_toolbuttons()
+        self.setup_tools()
 
     # ---- SardesPaneWidget public API
     def register_to_plugin(self, plugin):
@@ -186,7 +187,7 @@ class ObsWellsTableWidget(SardesTableWidget):
         except AttributeError:
             return None
 
-    def _create_extra_toolbuttons(self):
+    def setup_extra_toolbuttons(self):
         # Setup show data button.
         self.show_data_btn = create_toolbutton(
             self,
@@ -197,6 +198,7 @@ class ObsWellsTableWidget(SardesTableWidget):
             triggered=self._view_current_timeseries_data,
             iconsize=get_iconsize()
             )
+        self.add_toolbar_widget(self.show_data_btn)
 
         # Setup show in Google map button.
         self.show_gmap_btn = create_toolbutton(
@@ -208,6 +210,7 @@ class ObsWellsTableWidget(SardesTableWidget):
             triggered=self.show_in_google_maps,
             iconsize=get_iconsize()
             )
+        self.add_toolbar_widget(self.show_gmap_btn)
 
         # Setup construction logs manager.
         self.construction_logs_manager = FileAttachmentManager(
@@ -235,6 +238,7 @@ class ObsWellsTableWidget(SardesTableWidget):
                 "Remove the construction log attached to the currently "
                 "selected station.")
             )
+        self.add_toolbar_widget(self.construction_logs_manager.toolbutton)
 
         # Setup water quality reports manager.
         self.water_quality_reports = FileAttachmentManager(
@@ -262,10 +266,11 @@ class ObsWellsTableWidget(SardesTableWidget):
                 "Remove the water quality report attached to the "
                 "currently selected station.")
             )
+        self.add_toolbar_widget(self.water_quality_reports.toolbutton)
 
-        return [self.show_data_btn, self.show_gmap_btn,
-                self.construction_logs_manager.toolbutton,
-                self.water_quality_reports.toolbutton]
+    def setup_tools(self):
+        self.add_toolbar_separator()
+        self.install_tool(NetworkBarchartTool(parent=self))
 
     def _view_current_timeseries_data(self):
         """
