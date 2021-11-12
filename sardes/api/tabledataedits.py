@@ -62,16 +62,6 @@ class TableDataEdit(TableDataEditBase):
         pass
 
 
-class NoDataEdit(TableDataEdit):
-    """
-    A class to indicate that no edit have been done to the data since last
-    save.
-    """
-
-    def __init__(self, index, column):
-        super() .__init__(index, column)
-
-
 class ValueChanged(TableDataEdit):
     """
     A class that represents a change of a value at a given model index.
