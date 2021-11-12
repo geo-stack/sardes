@@ -175,7 +175,7 @@ class RowAdded(TableDataEdit):
         match the parent SardesTableData columns.
     """
     index: pd.Index
-    values: list
+    values: list[dict]
     row: pd.Index = field(init=False)
 
     def __post_init__(self):
