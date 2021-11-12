@@ -125,7 +125,7 @@ class SardesTableModelsManager(QObject):
         tablemodel.sig_data_about_to_be_saved.emit()
         self.db_manager.add_task(
             'save_table_edits',
-            callback=self._handle_table_model_edits_saved,
+            callback=self._save_table_model_edits_callback,
             name=tablemodel.__dataname__,
             deleted_rows=tablemodel.tabledata().deleted_rows(),
             added_rows=tablemodel.tabledata().added_rows(),
@@ -134,10 +134,10 @@ class SardesTableModelsManager(QObject):
         self.db_manager.run_tasks()
 
     # ---- Private API
-    def _handle_table_model_edits_saved(self, dataf):
+    def _save_table_model_edits_callback(self, dataf):
         """
-        Handle when edits made to a table model have been saved in the
-        database.
+        A callback that handles when edits made to a table model have been
+        saved in the database.
         """
         data_name = dataf.attrs['name']
         table_model = self._dataname_map[data_name]
