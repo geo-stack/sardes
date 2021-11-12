@@ -58,7 +58,6 @@ class SardesTableModelBase(QAbstractTableModel):
 
     ValueChanged = SardesTableData.ValueChanged
     RowAdded = SardesTableData.RowAdded
-    RowRemoved = SardesTableData.RowRemoved
     RowDeleted = SardesTableData.RowDeleted
 
     # =========================================================================

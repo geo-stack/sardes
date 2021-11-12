@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Standard imports
+from enum import Enum
 from abc import ABC
 import uuid
 
@@ -18,9 +19,16 @@ import pandas as pd
 from sardes.utils.data_operations import are_values_equal
 
 
-# =============================================================================
-# ---- Sardes Data and Edits
-# =============================================================================
+class TableDataEditTypes(Enum):
+    """
+    An enum that list all types of edits that are supported by the
+    TableData class.
+    """
+    ValueChanged = 0
+    RowAdded = 1
+    RowDeleted = 2
+
+
 class TableDataEditBase(ABC):
     """
     Basic functionality Sardes data edit class.
@@ -103,7 +111,7 @@ class ValueChanged(TableDataEdit):
         Return an integer that indicates the type of data edit this
         edit correspond to, as defined in :class:`SardesTableModelBase`.
         """
-        return SardesTableData.ValueChanged
+        return TableDataEditTypes.ValueChanged
 
     def _undo(self):
         """
@@ -162,7 +170,7 @@ class RowDeleted(TableDataEdit):
         Return an integer that indicates the type of data edit this
         edit correspond to, as defined in :class:`SardesTableModelBase`.
         """
-        return SardesTableData.RowDeleted
+        return TableDataEditTypes.RowDeleted
 
     def _undo(self):
         """Undo this row deleted edit."""
@@ -214,7 +222,7 @@ class RowAdded(TableDataEdit):
         Return an integer that indicates the type of data edit this
         edit correspond to, as defined in :class:`SardesTableModelBase`.
         """
-        return SardesTableData.RowAdded
+        return TableDataEditTypes.RowAdded
 
     def _undo(self):
         """Undo this row added edit."""

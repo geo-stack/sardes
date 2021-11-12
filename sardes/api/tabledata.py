@@ -12,17 +12,16 @@ import pandas as pd
 
 # ---- Local imports
 from sardes.api.tabledataedits import (
-    ValueChanged, RowAdded, RowDeleted)
+    TableDataEditTypes, TableDataEdit, ValueChanged, RowAdded, RowDeleted)
 
 
 class SardesTableData(object):
     """
     A container to hold data of a logical table and manage edits.
     """
-    ValueChanged = 0
-    RowAdded = 1
-    RowRemoved = 2
-    RowDeleted = 3
+    ValueChanged = TableDataEditTypes.ValueChanged
+    RowAdded = TableDataEditTypes.RowAdded
+    RowDeleted = TableDataEditTypes.RowDeleted
 
     def __init__(self, data):
         self.data = data.copy()
