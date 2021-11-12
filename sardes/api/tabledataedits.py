@@ -21,7 +21,7 @@ from sardes.utils.data_operations import are_values_equal
 # =============================================================================
 # ---- Sardes Data and Edits
 # =============================================================================
-class SardesDataEditBase(ABC):
+class TableDataEditBase(ABC):
     """
     Basic functionality Sardes data edit class.
 
@@ -41,7 +41,7 @@ class SardesDataEditBase(ABC):
             self._undo()
 
 
-class SardesDataEdit(SardesDataEditBase):
+class TableDataEdit(TableDataEditBase):
     """
     Sardes data edit class.
 
@@ -54,7 +54,7 @@ class SardesDataEdit(SardesDataEditBase):
         pass
 
 
-class NoDataEdit(SardesDataEdit):
+class NoDataEdit(TableDataEdit):
     """
     A class to indicate that no edit have been done to the data since last
     save.
@@ -64,7 +64,7 @@ class NoDataEdit(SardesDataEdit):
         super() .__init__(index, column)
 
 
-class ValueChanged(SardesDataEdit):
+class ValueChanged(TableDataEdit):
     """
     A class that represents a change of a value at a given model index.
     """
@@ -129,9 +129,9 @@ class ValueChanged(SardesDataEdit):
         self.parent.data.iat[self.row, self.col] = self.previous_value
 
 
-class RowDeleted(SardesDataEdit):
+class RowDeleted(TableDataEdit):
     """
-    A SardesDataEdit class used to delete one or more rows from a
+    A TableDataEdit class used to delete one or more rows from a
     SardesTableData.
 
     Note that the rows are not actually deleted from the data. They are
@@ -169,9 +169,9 @@ class RowDeleted(SardesDataEdit):
         self.parent._deleted_rows = self.parent._deleted_rows.drop(self.row)
 
 
-class RowAdded(SardesDataEdit):
+class RowAdded(TableDataEdit):
     """
-    A SardesDataEdit class to add one or more new rows to a SardesTableData.
+    A TableDataEdit class to add one or more new rows to a SardesTableData.
 
     Note that new rows are always added at the end of the dataframe.
     """
