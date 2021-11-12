@@ -140,11 +140,23 @@ class SardesTableModelsManager(QObject):
         saved in the database.
         """
         data_name = dataf.attrs['name']
-        table_model = self._dataname_map[data_name]
+        table_model = self.find_dataname(data_name)
         table_model.sig_data_saved.emit()
 
-        table_model.sig_data_about_to_be_updated.emit()
+        # We add 'data_name' to '_running_model_updates' to prevent the data
+        # of the corresponding table model from being updated a second time
+        # unecessarily.
+        #
+        # Concretely, after 'db_manager.sig_database_data_changed' is emitted,
+        # this prevents 'data_name' from being added to '_queued_model_updates'
+        # in '_handle_database_data_changed'. This thus prevents an unecessary
+        # update of the table model's data when 'update_table_model'
+        # is called from the plugin side after 'sig_models_data_changed' is
+        # emitted in '_handle_database_data_changed'.
+
         self._running_model_updates[table_model.name()].append(data_name)
+
+        table_model.sig_data_about_to_be_updated.emit()
         table_model.set_model_data(dataf)
         table_model.sig_data_updated.emit()
 
