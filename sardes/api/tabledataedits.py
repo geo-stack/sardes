@@ -135,17 +135,20 @@ class RowDeleted(TableDataEdit):
 
     Attributes
     ----------
-    index : Index
-        A pandas Index array that contains the list of values corresponding
-        to the dataframe indexes of the rows that needs to be deleted
-        from the parent SardesTableData.
     row : Index
         A pandas Index array that contains the list of integers
         corresponding to the logical indexes of the rows that needs to be
         deleted from the parent SardesTableData.
+    index : Index
+        A pandas Index array that contains the list of values corresponding
+        to the dataframe indexes of the rows that needs to be deleted
+        from the parent SardesTableData.
     """
-    index: pd.Index
     row: pd.Index
+    index: pd.Index = field(init=False)
+
+    def __post_init__(self):
+        self.index = self.parent.data.index[self.row]
 
     def execute(self):
         self.parent._deleted_rows = self.parent._deleted_rows.append(self.row)

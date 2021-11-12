@@ -60,8 +60,7 @@ class SardesTableData(object):
             parent=self,
             index=self.data.index[row],
             column=self.data.columns[col],
-            edited_value=value
-            )
+            edited_value=value)
         edit.execute()
         self._data_edits_stack.append(edit)
         return edit
@@ -98,8 +97,7 @@ class SardesTableData(object):
         edit = RowAdded(
             parent=self,
             index=index,
-            values=values or [{}]
-            )
+            values=values or [{}])
         edit.execute()
         self._data_edits_stack.append(edit)
         return edit
@@ -120,9 +118,7 @@ class SardesTableData(object):
             # We only delete rows that are not already deleted.
             edit = RowDeleted(
                 parent=self,
-                index=self.data.index[unique_rows],
-                row=unique_rows,
-                )
+                row=unique_rows)
             edit.execute()
             self._data_edits_stack.append(edit)
             return edit
