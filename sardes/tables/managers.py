@@ -66,7 +66,7 @@ class SardesTableModelsManager(QObject):
         """
         Return the table model registered to this manager that is used to
         display the data referenced as 'name' in the database connection
-        manager
+        manager.
         """
         return self._dataname_map[dataname]
 
@@ -106,8 +106,8 @@ class SardesTableModelsManager(QObject):
                 self._running_model_updates[table_name].append(name)
                 self.db_manager.get(
                     name,
-                    callback=lambda dataf, name=name:
-                        self._set_model_data_or_lib(dataf, name, table_name),
+                    callback=lambda dataf:
+                        self._update_table_model_callback(dataf, table_name),
                     postpone_exec=True)
             self._queued_model_updates[table_name] = []
             self.db_manager.run_tasks()
@@ -163,16 +163,19 @@ class SardesTableModelsManager(QObject):
         self.db_manager.sig_database_data_changed.emit([data_name])
         self._running_model_updates[table_model.name()].remove(data_name)
 
-    def _set_model_data_or_lib(self, dataf, data_name, table_name):
+    def _update_table_model_callback(self, dataf, table_name):
         """
-        Set the data or library of the given table model.
+        A callback used in 'update_table_model' to set the data or library
+        of a table model.
         """
+        data_name = dataf.attrs['name']
         table_model = self._table_models[table_name]
+
         if data_name == table_model.__dataname__:
-            # Update the table model data.
+            # Update the data of the table model.
             table_model.set_model_data(dataf)
         elif data_name in table_model.__libnames__:
-            # Update the table model library.
+            # Update the corresponding library of the table model.
             table_model.set_model_library(dataf, data_name)
 
         self._running_model_updates[table_name].remove(data_name)
