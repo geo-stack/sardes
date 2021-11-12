@@ -70,7 +70,6 @@ class ValueChanged(TableDataEdit):
     index: object
     column: object
     edited_value: object
-
     row: int = field(init=False)
     col: int = field(init=False)
     previous_value: object = field(init=False)
@@ -174,6 +173,7 @@ class RowAdded(TableDataEdit):
     """
     index: pd.Index
     values: list
+    row: pd.Index = field(init=False)
 
     def __post_init__(self):
         self.row = pd.Index(
