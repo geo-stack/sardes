@@ -7,7 +7,7 @@ matplotlib == 3.1.*
 numpy == 1.19.*
 pandas == 1.1.*
 pillow
-psycopg2
+psycopg2 == 2.8.*
 pyqt5 == 5.15.*
 qtawesome == 1.0.*
 qtpy
