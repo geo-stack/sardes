@@ -58,7 +58,8 @@ class SardesTableData(object):
         to the stack.
         """
         self._data_edits_stack.append(ValueChanged(
-            self.data.index[row], self.data.columns[col],
+            self.data.index[row],
+            self.data.columns[col],
             edited_value,
             row, col,
             parent=self
