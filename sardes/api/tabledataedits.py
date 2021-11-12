@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Standard imports
+from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC
 import uuid
@@ -29,84 +30,81 @@ class TableDataEditTypes(Enum):
     RowDeleted = 2
 
 
-class TableDataEditBase(ABC):
+@dataclass
+class TableDataEdit(ABC):
     """
-    Basic functionality Sardes data edit class.
-
-    WARNING: Don't override any methods or attributes present here unless you
-    know what you are doing.
-    """
-
-    def __init__(self, index, column=None, parent=None):
-        self.index = index
-        self.column = column
-        self.id = uuid.uuid4()
-        self.parent = parent
-
-    def undo(self):
-        """Undo this data edit."""
-        if self.parent is not None:
-            self._undo()
-
-
-class TableDataEdit(TableDataEditBase):
-    """
-    Sardes data edit class.
+    Sardes table data edit base class.
 
     All database accessors *must* inherit this class and reimplement
     its interface.
-    """
 
-    def _undo(self):
+    Attributes
+    ----------
+    parent : SardesTableData
+        A SardesTableData object on which the edit are executed.
+    """
+    parent: object
+    id: uuid.UUID = field(default_factory=uuid.uuid4, init=False)
+
+    def execute(self):
+        pass
+
+    def undo(self):
         """Undo this data edit."""
         pass
 
+    @classmethod
+    def type(cls):
+        """
+        Return the member of TableDataEditTypes corresponding to this
+        table data edit class.
+        """
+        return getattr(TableDataEditTypes, cls.__name__)
 
+
+@dataclass
 class ValueChanged(TableDataEdit):
     """
     A class that represents a change of a value at a given model index.
     """
+    index: object
+    column: object
+    edited_value: object
 
-    def __init__(self, index, column, edited_value, row, col, parent):
-        super() .__init__(index, column, parent)
-        self.edited_value = edited_value
-        self.row = row
-        self.col = col
-        self.previous_value = self.parent.data.iat[row, col]
+    row: int = field(init=False)
+    col: int = field(init=False)
+    previous_value: object = field(init=False)
 
+    def __post_init__(self):
+        self.row = self.parent.data.index.get_loc(self.index)
+        self.col = self.parent.data.columns.get_loc(self.column)
+        self.previous_value = self.parent.data.iat[self.row, self.col]
+
+    def execute(self):
         if self.row not in self.parent._new_rows:
             # Update the list of original values that have been edited.
             # We store the original values in an independent list for
             # performance reasons when displaying the data in a tableview.
-            if (row, col) in self.parent._original_data.index:
+            if (self.row, self.col) in self.parent._original_data.index:
                 original_value = self.parent._original_data.loc[
-                    (row, col), 'value']
-                self.parent._original_data.drop((row, col), inplace=True)
+                    (self.row, self.col), 'value']
+                self.parent._original_data.drop(
+                    (self.row, self.col), inplace=True)
             else:
-                original_value = self.parent.data.iat[row, col]
+                original_value = self.parent.data.iat[self.row, self.col]
 
             # We only track edited values that differ from their corresponding
             # original value (the value that is saved in the database).
             # This allow to take into account the situation where an edited
             # value is edited back to its original value.
-            if not are_values_equal(original_value, edited_value):
+            if not are_values_equal(original_value, self.edited_value):
                 self.parent._original_data.loc[
-                    (row, col), 'value'] = original_value
+                    (self.row, self.col), 'value'] = original_value
 
         # We apply the new value to the data.
-        self.parent.data.iat[row, col] = edited_value
+        self.parent.data.iat[self.row, self.col] = self.edited_value
 
-    def type(self):
-        """
-        Return an integer that indicates the type of data edit this
-        edit correspond to, as defined in :class:`SardesTableModelBase`.
-        """
-        return TableDataEditTypes.ValueChanged
-
-    def _undo(self):
-        """
-        Undo this value changed edit.
-        """
+    def undo(self):
         if self.row not in self.parent._new_rows:
             # Update the list of original values that have been edited.
             if (self.row, self.col) in self.parent._original_data.index:
@@ -127,6 +125,7 @@ class ValueChanged(TableDataEdit):
         self.parent.data.iat[self.row, self.col] = self.previous_value
 
 
+@dataclass
 class RowDeleted(TableDataEdit):
     """
     A TableDataEdit class used to delete one or more rows from a
@@ -134,72 +133,63 @@ class RowDeleted(TableDataEdit):
 
     Note that the rows are not actually deleted from the data. They are
     simply highlighted in red in the table until the edits are commited.
-    """
 
-    def __init__(self, index, row, parent):
-        """
-        Parameters
-        ----------
-        index : Index
-            A pandas Index array that contains the list of values corresponding
-            to the dataframe indexes of the rows that needs to be deleted
-            from the parent SardesTableData.
-        row : Index
-            A pandas Index array that contains the list of integers
-            corresponding to the logical indexes of the rows that needs to be
-            deleted from the parent SardesTableData.
-        parent : SardesTableData, optional
-            A SardesTableData object where rows need to be deleted.
-        """
-        super() .__init__(index, None, parent)
-        self.row = row
+    Attributes
+    ----------
+    index : Index
+        A pandas Index array that contains the list of values corresponding
+        to the dataframe indexes of the rows that needs to be deleted
+        from the parent SardesTableData.
+    row : Index
+        A pandas Index array that contains the list of integers
+        corresponding to the logical indexes of the rows that needs to be
+        deleted from the parent SardesTableData.
+    """
+    index: pd.Index
+    row: pd.Index
+
+    def execute(self):
         self.parent._deleted_rows = self.parent._deleted_rows.append(self.row)
 
-    def type(self):
-        """
-        Return an integer that indicates the type of data edit this
-        edit correspond to, as defined in :class:`SardesTableModelBase`.
-        """
-        return TableDataEditTypes.RowDeleted
-
-    def _undo(self):
-        """Undo this row deleted edit."""
+    def undo(self):
         self.parent._deleted_rows = self.parent._deleted_rows.drop(self.row)
 
 
+@dataclass
 class RowAdded(TableDataEdit):
     """
     A TableDataEdit class to add one or more new rows to a SardesTableData.
 
     Note that new rows are always added at the end of the dataframe.
+
+    Attributes
+    ----------
+    index : Index
+        A pandas Index array that contains the indexes of the rows that
+        needs to be added to the parent SardesTableData.
+    values: list of dict
+        A list of dict containing the values of the rows that needs to be
+        added to the parent SardesTableData. The keys of the dict must
+        match the parent SardesTableData columns.
     """
+    index: pd.Index
+    values: list
 
-    def __init__(self, index, values, parent):
-        """
-        Parameters
-        ----------
-        index : Index
-            A pandas Index array that contains the indexes of the rows that
-            needs to be added to the parent SardesTableData.
-        values: list of dict
-            A list of dict containing the values of the rows that needs to be
-            added to the parent SardesTableData. The keys of the dict must
-            match the parent SardesTableData columns.
-        parent : SardesTableData
-            A SardesTableData object where rows need to be added.
-        """
-        super() .__init__(index, None, parent)
-        self.values = values
+    def __post_init__(self):
         self.row = pd.Index(
-            [i + len(self.parent.data) for i in range(len(index))])
+            [i + len(self.parent.data) for i in range(len(self.index))])
 
+    def execute(self):
         # We update the table's variable that is used to track new rows.
         self.parent._new_rows = self.parent._new_rows.append(self.row)
 
         # We then add the new row to the data.
-        self.parent.data = self.parent.data.append(pd.DataFrame(
-            values, columns=self.parent.data.columns, index=index
-            ))
+        self.parent.data = self.parent.data.append(
+            pd.DataFrame(
+                self.values,
+                columns=self.parent.data.columns,
+                index=self.index
+                ))
 
     def __len__(self):
         """
@@ -207,14 +197,7 @@ class RowAdded(TableDataEdit):
         """
         return len(self.index)
 
-    def type(self):
-        """
-        Return an integer that indicates the type of data edit this
-        edit correspond to, as defined in :class:`SardesTableModelBase`.
-        """
-        return TableDataEditTypes.RowAdded
-
-    def _undo(self):
+    def undo(self):
         """Undo this row added edit."""
         self.parent._new_rows = self.parent._new_rows.drop(self.row)
 

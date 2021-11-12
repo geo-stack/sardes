@@ -12,7 +12,7 @@ import pandas as pd
 
 # ---- Local imports
 from sardes.api.tabledataedits import (
-    TableDataEditTypes, TableDataEdit, ValueChanged, RowAdded, RowDeleted)
+    TableDataEditTypes, ValueChanged, RowAdded, RowDeleted)
 
 
 class SardesTableData(object):
@@ -51,19 +51,20 @@ class SardesTableData(object):
     def __str__(self):
         return self.data.__str__()
 
-    def set(self, row, col, edited_value):
+    def set(self, row, col, value):
         """
         Store the new value at the given index and column and add the edit
         to the stack.
         """
-        self._data_edits_stack.append(ValueChanged(
-            self.data.index[row],
-            self.data.columns[col],
-            edited_value,
-            row, col,
-            parent=self
-            ))
-        return self._data_edits_stack[-1]
+        edit = ValueChanged(
+            parent=self,
+            index=self.data.index[row],
+            column=self.data.columns[col],
+            edited_value=value
+            )
+        edit.execute()
+        self._data_edits_stack.append(edit)
+        return edit
 
     def get(self, row, col=None):
         """
@@ -94,8 +95,14 @@ class SardesTableData(object):
             added to this SardesTableData. The keys of the dict must
             match the data..
         """
-        self._data_edits_stack.append(RowAdded(index, values or [{}], self))
-        return self._data_edits_stack[-1]
+        edit = RowAdded(
+            parent=self,
+            index=index,
+            values=values or [{}]
+            )
+        edit.execute()
+        self._data_edits_stack.append(edit)
+        return edit
 
     def delete_row(self, rows):
         """
@@ -111,9 +118,14 @@ class SardesTableData(object):
         unique_rows = unique_rows[~unique_rows.isin(self._deleted_rows)]
         if not unique_rows.empty:
             # We only delete rows that are not already deleted.
-            self._data_edits_stack.append(RowDeleted(
-                self.data.index[unique_rows], unique_rows, parent=self))
-            return self._data_edits_stack[-1]
+            edit = RowDeleted(
+                parent=self,
+                index=self.data.index[unique_rows],
+                row=unique_rows,
+                )
+            edit.execute()
+            self._data_edits_stack.append(edit)
+            return edit
 
     def deleted_rows(self):
         """
