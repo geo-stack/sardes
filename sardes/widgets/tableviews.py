@@ -1661,8 +1661,7 @@ class SardesTableWidget(SardesPaneWidget):
 
         self.model().sig_data_about_to_be_updated.connect(
             lambda: self._start_process(None))
-        self.model().sig_data_updated.connect(
-            lambda: self._handle_process_ended(None))
+        self.model().sig_data_updated.connect(self._handle_data_updated)
         self.model().sig_data_about_to_be_saved.connect(
             lambda: self._start_process(_('Saving edits in the database...')))
         self.model().sig_data_saved.connect(
@@ -1983,6 +1982,15 @@ class SardesTableWidget(SardesPaneWidget):
         self.get_upper_toolbar().setEnabled(False)
         self.tableview.setEnabled(False)
         self.progressbar.show()
+
+    def _handle_data_updated(self):
+        """
+        Handle when the data of the model of this table widget have
+        been updated.
+        """
+        for tool in self.tools():
+            tool.update()
+        self._handle_process_ended()
 
     def _handle_process_ended(self, text=None):
         if text is not None:
