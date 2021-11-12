@@ -55,7 +55,7 @@ class SardesTableModelsManager(QObject):
         db_manager.sig_database_connection_changed.connect(
             self._handle_db_connection_changed)
         db_manager.sig_database_data_changed.connect(
-            self._handle_db_data_changed)
+            self._handle_database_data_changed)
 
     # ---- Public API
     def table_models(self):
@@ -167,7 +167,7 @@ class SardesTableModelsManager(QObject):
         if not len(self._running_model_updates[table_name]):
             table_model.sig_data_updated.emit()
 
-    def _handle_db_data_changed(self, data_changed):
+    def _handle_database_data_changed(self, data_changed):
         """
         Handle when changes are made to the database.
 
