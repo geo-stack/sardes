@@ -319,14 +319,14 @@ class SardesTableModelBase(QAbstractTableModel):
     # ---- Visual Data
     def dataf_index_at(self, model_index):
         """
-        Return the dataframe index corresponding to the specified visual
+        Return the index of the dataframe corresponding to the given
         model index.
         """
         return self.visual_dataf.index[model_index.row()]
 
     def dataf_column_at(self, model_index):
         """
-        Return the dataframe column corresponding to the specified visual
+        Return the column of the dataframe corresponding to the given
         model index.
         """
         return self.column_names()[model_index.column()]
