@@ -7,12 +7,55 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+# ---- Standard imports
+from __future__ import annotations
+from dataclasses import dataclass, field
+
 # ---- Third party imports
 import pandas as pd
 
 # ---- Local imports
 from sardes.api.tabledataedits import (
-    TableDataEditTypes, ValueChanged, RowAdded, RowDeleted)
+    TableDataEditTypes, TableDataEdit, ValueChanged, RowAdded, RowDeleted)
+
+
+@dataclass
+class TableDataEditsController(object):
+    undo_stack: list[TableDataEdit] = field(default_factory=list)
+    redo_stack: list[TableDataEdit] = field(default_factory=list)
+
+    def undo_count(self):
+        """Return the number of edits in the undo stack."""
+        return len(self.undo_stack)
+
+    def redo_count(self):
+        """Return the number of edits in the redo stack."""
+        return len(self.redo_stack)
+
+    def execute(self, edit: TableDataEdit):
+        """Execute and return the given table data edit."""
+        edit.execute()
+        self.redo_stack.clear()
+        self.undo_stack.append(edit)
+        return edit
+
+    def undo(self):
+        """Undo and return the last edit added to the undo stack."""
+        if not self.undo_stack:
+            return
+        edit = self.undo_stack.pop()
+        edit.undo()
+        self.redo_stack.append(edit)
+        return edit
+
+    def redo(self):
+        """Redo and return the last edit added to the undo stack."""
+        if not self.redo_stack:
+            return
+        edit = self.redo_stack.pop()
+        edit.execute()
+        self.undo_stack.append(edit)
+        return edit
 
 
 class SardesTableData(object):
@@ -26,9 +69,7 @@ class SardesTableData(object):
     def __init__(self, data):
         self.data = data.copy()
 
-        # A list containing the edits made by the user to the data
-        # in chronological order.
-        self._data_edits_stack = []
+        self.edits_controller = TableDataEditsController()
 
         self._new_rows = pd.Index([])
         self._deleted_rows = pd.Index([])
@@ -56,14 +97,13 @@ class SardesTableData(object):
         Store the new value at the given index and column and add the edit
         to the stack.
         """
-        edit = ValueChanged(
-            parent=self,
-            index=self.data.index[row],
-            column=self.data.columns[col],
-            edited_value=value)
-        edit.execute()
-        self._data_edits_stack.append(edit)
-        return edit
+        return self.edits_controller.execute(
+            ValueChanged(
+                parent=self,
+                index=self.data.index[row],
+                column=self.data.columns[col],
+                edited_value=value)
+            )
 
     def get(self, row, col=None):
         """
@@ -94,13 +134,12 @@ class SardesTableData(object):
             added to this SardesTableData. The keys of the dict must
             match the data..
         """
-        edit = RowAdded(
-            parent=self,
-            index=index,
-            values=values or [{}])
-        edit.execute()
-        self._data_edits_stack.append(edit)
-        return edit
+        return self.edits_controller.execute(
+            RowAdded(
+                parent=self,
+                index=index,
+                values=values or [{}])
+            )
 
     def delete_row(self, rows):
         """
@@ -112,16 +151,15 @@ class SardesTableData(object):
             A list of integers corresponding to the logical indexes of the
             rows that need to be deleted from the data.
         """
+        # We only delete rows that are not already deleted.
         unique_rows = pd.Index(rows)
         unique_rows = unique_rows[~unique_rows.isin(self._deleted_rows)]
         if not unique_rows.empty:
-            # We only delete rows that are not already deleted.
-            edit = RowDeleted(
-                parent=self,
-                row=unique_rows)
-            edit.execute()
-            self._data_edits_stack.append(edit)
-            return edit
+            return self.edits_controller.execute(
+                RowDeleted(
+                    parent=self,
+                    row=unique_rows)
+                )
 
     def deleted_rows(self):
         """
@@ -185,13 +223,19 @@ class SardesTableData(object):
         """
         Return a list of all edits made to the data since last save.
         """
-        return self._data_edits_stack
+        return self.edits_controller.undo_stack
 
     def edit_count(self):
-        """
-        Return the number of edits in the stack.
-        """
-        return len(self._data_edits_stack)
+        """Return the number of edits in the stack."""
+        return self.edits_controller.undo_count()
+
+    def edit_undo_count(self):
+        """Return the number of edits in the undo stack."""
+        return self.edits_controller.undo_count()
+
+    def edit_redo_count(self):
+        """Return the number of edits in the redo stack."""
+        return self.edits_controller.redo_count()
 
     def has_unsaved_edits(self):
         """
@@ -238,9 +282,13 @@ class SardesTableData(object):
         """
         Undo the last data edit that was added to the stack.
         """
-        if len(self._data_edits_stack):
-            last_edit = self._data_edits_stack.pop(-1)
-            last_edit.undo()
+        return self.edits_controller.undo()
+
+    def redo_edit(self):
+        """
+        Redo the last undone data edit.
+        """
+        return self.edits_controller.redo()
 
 
 if __name__ == '__main__':

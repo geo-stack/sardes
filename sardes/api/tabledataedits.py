@@ -8,6 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Standard imports
+from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC
@@ -201,8 +202,7 @@ class RowAdded(TableDataEdit):
         return len(self.index)
 
     def undo(self):
-        """Undo this row added edit."""
         self.parent._new_rows = self.parent._new_rows.drop(self.row)
 
-        # We remove the new row to the data.
+        # We remove the new row from the data.
         self.parent.data.drop(self.index, inplace=True)
