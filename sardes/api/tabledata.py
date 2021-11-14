@@ -194,6 +194,8 @@ class SardesTableData(object):
 
         self.edits_controller = TableEditsController()
 
+        # Pandas Index of integers to track the logical indexes of rows that
+        # were added or deleted to or from the dataframe.
         self._new_rows = pd.Index([])
         self._deleted_rows = pd.Index([])
 
