@@ -126,6 +126,8 @@ class SardesTableData(object):
         Add one or more new rows at the end of the data using the provided
         values.
 
+        Parameters
+        ----------
         index : Index
             A pandas Index array that contains the indexes of the rows that
             needs to be added to the data.
