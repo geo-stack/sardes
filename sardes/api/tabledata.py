@@ -246,7 +246,7 @@ class SardesTableData(object):
         pandas series at the given row if no column index is given.
         """
         if col is not None:
-            return self._data.iat[row, col].copy()
+            return self._data.iat[row, col]
         else:
             return self._data.iloc[row].copy()
 
