@@ -364,25 +364,25 @@ class SardesTableData(object):
         return edited_values
 
     # ---- Utils
-    def edits(self):
+    def edits(self) -> list[TableEdit]:
         """
         Return a list of all edits made to the data since last save.
         """
         return self.edits_controller.undo_stack
 
-    def edit_count(self):
+    def edit_count(self) -> int:
         """Return the number of edits in the stack."""
         return self.edits_controller.undo_count()
 
-    def undo_count(self):
+    def undo_count(self) -> int:
         """Return the number of edits in the undo stack."""
         return self.edits_controller.undo_count()
 
-    def redo_count(self):
+    def redo_count(self) -> int:
         """Return the number of edits in the redo stack."""
         return self.edits_controller.redo_count()
 
-    def has_unsaved_edits(self):
+    def has_unsaved_edits(self) -> bool:
         """
         Return whether any edits were made to the table's data since last save.
         """
@@ -390,26 +390,26 @@ class SardesTableData(object):
                     len(self._deleted_rows) +
                     len(self._new_rows))
 
-    def is_value_in_column(self, col, value):
+    def is_value_in_column(self, col: int, value: object) -> bool:
         """
         Check if the specified value is in the given column of the data.
         """
         isin_indexes = self.data[self.data.iloc[:, col].isin([value])]
         return bool(len(isin_indexes))
 
-    def is_data_deleted_at(self, row):
+    def is_data_deleted_at(self, row: int) -> bool:
         """
         Return whether the row at row is deleted.
         """
         return row in self._deleted_rows
 
-    def is_new_row_at(self, row):
+    def is_new_row_at(self, row: int) -> bool:
         """
         Return whether the row at row is new.
         """
         return row in self._new_rows
 
-    def is_value_edited_at(self, row, col):
+    def is_value_edited_at(self, row: int, col: int) -> bool:
         """
         Return whether edits were made at the specified model index
         since last save.
