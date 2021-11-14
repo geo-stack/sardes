@@ -210,10 +210,10 @@ class SardesTableData(object):
 
     def __len__(self):
         """Return the len of the data."""
-        return len(self.data)
+        return len(self._data)
 
     def __str__(self):
-        return self.data.__str__()
+        return self._data.__str__()
 
     @property
     def data(self):
@@ -222,7 +222,7 @@ class SardesTableData(object):
 
     def copy(self):
         """Return a copy of the wrapped dataframe."""
-        return self.data
+        return self._data.copy()
 
     # ---- Data edits
     def set(self, row, col, value):
@@ -233,8 +233,8 @@ class SardesTableData(object):
         return self.edits_controller.execute(
             EditValue(
                 parent=self,
-                index=self.data.index[row],
-                column=self.data.columns[col],
+                index=self._data.index[row],
+                column=self._data.columns[col],
                 edited_value=value)
             )
 
@@ -244,9 +244,9 @@ class SardesTableData(object):
         pandas series at the given row if no column index is given.
         """
         if col is not None:
-            return self.data.iat[row, col]
+            return self._data.iat[row, col].copy()
         else:
-            return self.data.iloc[row]
+            return self._data.iloc[row].copy()
 
     def add_row(self, index, values=None):
         """
@@ -311,12 +311,13 @@ class SardesTableData(object):
         Return a pandas Index array containing the indexes of the rows that
         were deleted in the dataframe.
         """
-        deleted_rows = self.data.index[self._deleted_rows]
+        deleted_rows = self._data.index[self._deleted_rows].copy()
 
         # We remove rows that were added to the dataset since these were not
         # even added to the database yet.
         deleted_rows = deleted_rows.drop(
-            self.data.index[self._new_rows], errors='ignore')
+            self._data.index[self._new_rows],
+            errors='ignore')
 
         return deleted_rows
 
@@ -325,14 +326,15 @@ class SardesTableData(object):
         Return a pandas dataframe containing the the new rows that were
         added to the data of this table.
         """
-        added_row_indexes = self.data.index[self._new_rows]
+        added_row_indexes = self._data.index[self._new_rows]
 
         # We remove new rows that were subsequently deleted from the
         # dataframe since there is no need to even add these to the database.
         added_row_indexes = added_row_indexes.drop(
-            self.data.index[self._deleted_rows], errors='ignore')
+            self._data.index[self._deleted_rows],
+            errors='ignore')
 
-        return self.data.loc[added_row_indexes]
+        return self._data.loc[added_row_indexes].copy()
 
     def edited_values(self):
         """
@@ -347,8 +349,8 @@ class SardesTableData(object):
         edited_values = pd.DataFrame(
             data=[],
             index=pd.MultiIndex.from_arrays([
-                self.data.index[orig_data_indexes.get_level_values(0)],
-                self.data.columns[orig_data_indexes.get_level_values(1)]
+                self._data.index[orig_data_indexes.get_level_values(0)],
+                self._data.columns[orig_data_indexes.get_level_values(1)]
                 ]),
             columns=['edited_value'],
             dtype='object'
@@ -356,8 +358,10 @@ class SardesTableData(object):
 
         # We fetch the edited values from the data column by column.
         for col, data in edited_values.groupby(level=1):
-            edited_values.loc[data.index, 'edited_value'] = self.data.loc[
-                data.index.get_level_values(0), col].astype('object').array
+            edited_values.loc[data.index, 'edited_value'] = (
+                self._data.loc[data.index.get_level_values(0), col]
+                .astype('object')
+                .array)
             # Note that we need to use .array instead of .values to avoid
             # any unwanted dtype conversion from pandas to numpy when using
             # .values to access the data (ex. pd.datetime).
@@ -394,7 +398,7 @@ class SardesTableData(object):
         """
         Check if the specified value is in the given column of the data.
         """
-        isin_indexes = self.data[self.data.iloc[:, col].isin([value])]
+        isin_indexes = self._data[self._data.iloc[:, col].isin([value])]
         return bool(len(isin_indexes))
 
     def is_data_deleted_at(self, row: int) -> bool:
