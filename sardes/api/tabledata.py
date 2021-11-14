@@ -9,14 +9,168 @@
 
 # ---- Standard imports
 from __future__ import annotations
+from dataclasses import dataclass, field
 
 # ---- Third party imports
 import pandas as pd
 
 # ---- Local imports
-from sardes.api.tableedits import TableEditsController
-from sardes.api.tabledataedits import (
-    TableDataEditTypes, EditValue, AddRows, DeleteRows)
+from sardes.api.tableedits import TableEdit, TableEditsController
+from sardes.utils.data_operations import are_values_equal
+
+
+@dataclass
+class EditValue(TableEdit):
+    """
+    An edit command to change the value at a given location in a Sardes
+    table dataframe.
+    """
+    index: object
+    column: object
+    edited_value: object
+    row: int = field(init=False)
+    col: int = field(init=False)
+    previous_value: object = field(init=False)
+
+    def __post_init__(self):
+        self.row = self.parent.data.index.get_loc(self.index)
+        self.col = self.parent.data.columns.get_loc(self.column)
+        self.previous_value = self.parent.data.iat[self.row, self.col]
+
+    def execute(self):
+        if self.row not in self.parent._new_rows:
+            # Update the list of original values that have been edited.
+            # We store the original values in an independent list for
+            # performance reasons when displaying the data in a tableview.
+            if (self.row, self.col) in self.parent._original_data.index:
+                original_value = self.parent._original_data.loc[
+                    (self.row, self.col), 'value']
+                self.parent._original_data.drop(
+                    (self.row, self.col), inplace=True)
+            else:
+                original_value = self.parent.data.iat[self.row, self.col]
+
+            # We only track edited values that differ from their corresponding
+            # original value (the value that is saved in the database).
+            # This allow to take into account the situation where an edited
+            # value is edited back to its original value.
+            if not are_values_equal(original_value, self.edited_value):
+                self.parent._original_data.loc[
+                    (self.row, self.col), 'value'] = original_value
+
+        # We apply the new value to the data.
+        self.parent.data.iat[self.row, self.col] = self.edited_value
+
+    def undo(self):
+        if self.row not in self.parent._new_rows:
+            # Update the list of original values that have been edited.
+            if (self.row, self.col) in self.parent._original_data.index:
+                original_value = self.parent._original_data.loc[
+                    (self.row, self.col), 'value']
+                self.parent._original_data.drop(
+                    (self.row, self.col), inplace=True)
+            else:
+                original_value = self.parent.data.iat[self.row, self.col]
+
+            values_equal = are_values_equal(
+                self.previous_value, original_value)
+            if not values_equal:
+                self.parent._original_data.loc[
+                    (self.row, self.col), 'value'] = original_value
+
+        # We apply the previous value to the data.
+        self.parent.data.iat[self.row, self.col] = self.previous_value
+
+
+@dataclass
+class DeleteRows(TableEdit):
+    """
+    An edit command to delete one or more rows from a Sardes table dataframe.
+    SardesTableData.
+
+    Note that the rows are not actually deleted from the data. They are
+    simply flagged as deleted until the edits are commited.
+
+    Parameters
+    ----------
+    row : Index
+        A pandas Index array that contains the list of integers
+        corresponding to the logical indexes of the rows that needs to be
+        deleted from the parent SardesTableData.
+
+    Attributes
+    ----------
+    index : Index
+        A pandas Index array that contains the list of values corresponding
+        to the dataframe indexes of the rows that needs to be deleted
+        from the parent SardesTableData.
+    """
+    row: pd.Index
+    index: pd.Index = field(init=False)
+
+    def __post_init__(self):
+        self.index = self.parent.data.index[self.row]
+
+    def execute(self):
+        self.parent._deleted_rows = self.parent._deleted_rows.append(self.row)
+
+    def undo(self):
+        self.parent._deleted_rows = self.parent._deleted_rows.drop(self.row)
+
+
+@dataclass
+class AddRows(TableEdit):
+    """
+    An edit command to add one or more new rows to a Sardes table dataframe.
+
+    Note that new rows are always added at the end of the dataframe.
+
+    Parameters
+    ----------
+    index : Index
+        A pandas Index array that contains the indexes of the rows that
+        needs to be added to the parent SardesTableData.
+    values: list of dict
+        A list of dict containing the values of the rows that needs to be
+        added to the parent SardesTableData. The keys of the dict must
+        match the parent SardesTableData columns.
+
+    Attributes
+    ----------
+    row : Index
+        A pandas Index array that contains the list of integers
+        corresponding to the logical indexes of the rows that were added to
+        the parent SardesTableData.
+    """
+    index: pd.Index
+    values: list[dict]
+    row: pd.Index = field(init=False)
+
+    def __post_init__(self):
+        self.row = pd.Index(
+            [i + len(self.parent.data) for i in range(len(self.index))])
+
+    def __len__(self):
+        """Return the number of rows added by this edit."""
+        return len(self.index)
+
+    def execute(self):
+        # We update the table's variable that is used to track new rows.
+        self.parent._new_rows = self.parent._new_rows.append(self.row)
+
+        # We then add the new row to the data.
+        self.parent.data = self.parent.data.append(
+            pd.DataFrame(
+                self.values,
+                columns=self.parent.data.columns,
+                index=self.index
+                ))
+
+    def undo(self):
+        self.parent._new_rows = self.parent._new_rows.drop(self.row)
+
+        # We remove the new row from the data.
+        self.parent.data.drop(self.index, inplace=True)
 
 
 class SardesTableData(object):
