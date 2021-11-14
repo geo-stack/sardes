@@ -444,10 +444,11 @@ class SardesTableModelBase(QAbstractTableModel):
         Return a new index that can be used to add a new item this
         model's data table.
         """
-        if str(self._datat.data.index.dtype) == 'object':
+        index = self.tabledata.index
+        if str(index.dtype) == 'object':
             return uuid.uuid4()
-        elif str(self._datat.data.index.dtype) == 'int64':
-            return max(self._datat.data.index) + 1
+        elif str(index.dtype) == 'int64':
+            return index.max() + 1
 
     def add_new_row(self):
         """

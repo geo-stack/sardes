@@ -218,6 +218,11 @@ class SardesTableData(object):
         return self._data.__str__()
 
     @property
+    def index(self):
+        """Return a copy of the index of the wrapped dataframe."""
+        return self._data.index.copy()
+
+    @property
     def data(self):
         """Return a copy of the wrapped dataframe."""
         return self._data.copy()
