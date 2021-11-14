@@ -128,11 +128,11 @@ class ValueChanged(TableDataEdit):
 @dataclass
 class RowDeleted(TableDataEdit):
     """
-    A TableDataEdit class used to delete one or more rows from a
+    An edit command to delete one or more rows from a Sardes table dataframe.
     SardesTableData.
 
     Note that the rows are not actually deleted from the data. They are
-    simply highlighted in red in the table until the edits are commited.
+    simply flagged as deleted until the edits are commited.
 
     Attributes
     ----------
@@ -161,7 +161,7 @@ class RowDeleted(TableDataEdit):
 @dataclass
 class AddRows(TableDataEdit):
     """
-    A TableDataEdit class to add one or more new rows to a SardesTableData.
+    An edit command to add one or more new rows to a Sardes table dataframe.
 
     Note that new rows are always added at the end of the dataframe.
 
