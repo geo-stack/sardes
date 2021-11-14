@@ -10,61 +10,17 @@
 # ---- Standard imports
 from __future__ import annotations
 from dataclasses import dataclass, field
-from enum import Enum
-from abc import ABC
-import uuid
 
 # ---- Third party imports
 import pandas as pd
 
 # ---- Local imports
+from sardes.api.tableedits import TableEdit
 from sardes.utils.data_operations import are_values_equal
 
 
-class TableDataEditTypes(Enum):
-    """
-    An enum that list all types of edits that are supported by the
-    TableData class.
-    """
-    EditValue = 0
-    AddRows = 1
-    DeleteRows = 2
-
-
 @dataclass
-class TableDataEdit(ABC):
-    """
-    Sardes table data edit base class.
-
-    All database accessors *must* inherit this class and reimplement
-    its interface.
-
-    Attributes
-    ----------
-    parent : SardesTableData
-        A SardesTableData object on which the edit are executed.
-    """
-    parent: object
-    id: uuid.UUID = field(default_factory=uuid.uuid4, init=False)
-
-    def execute(self):
-        pass
-
-    def undo(self):
-        """Undo this data edit."""
-        pass
-
-    @classmethod
-    def type(cls):
-        """
-        Return the member of TableDataEditTypes corresponding to this
-        table data edit class.
-        """
-        return getattr(TableDataEditTypes, cls.__name__)
-
-
-@dataclass
-class EditValue(TableDataEdit):
+class EditValue(TableEdit):
     """
     An edit command to change the value at a given location in a Sardes
     table dataframe.
@@ -127,7 +83,7 @@ class EditValue(TableDataEdit):
 
 
 @dataclass
-class DeleteRows(TableDataEdit):
+class DeleteRows(TableEdit):
     """
     An edit command to delete one or more rows from a Sardes table dataframe.
     SardesTableData.
@@ -135,12 +91,15 @@ class DeleteRows(TableDataEdit):
     Note that the rows are not actually deleted from the data. They are
     simply flagged as deleted until the edits are commited.
 
-    Attributes
+    Parameters
     ----------
     row : Index
         A pandas Index array that contains the list of integers
         corresponding to the logical indexes of the rows that needs to be
         deleted from the parent SardesTableData.
+
+    Attributes
+    ----------
     index : Index
         A pandas Index array that contains the list of values corresponding
         to the dataframe indexes of the rows that needs to be deleted
@@ -160,13 +119,13 @@ class DeleteRows(TableDataEdit):
 
 
 @dataclass
-class AddRows(TableDataEdit):
+class AddRows(TableEdit):
     """
     An edit command to add one or more new rows to a Sardes table dataframe.
 
     Note that new rows are always added at the end of the dataframe.
 
-    Attributes
+    Parameters
     ----------
     index : Index
         A pandas Index array that contains the indexes of the rows that
@@ -175,6 +134,13 @@ class AddRows(TableDataEdit):
         A list of dict containing the values of the rows that needs to be
         added to the parent SardesTableData. The keys of the dict must
         match the parent SardesTableData columns.
+
+    Attributes
+    ----------
+    row : Index
+        A pandas Index array that contains the list of integers
+        corresponding to the logical indexes of the rows that were added to
+        the parent SardesTableData.
     """
     index: pd.Index
     values: list[dict]
@@ -183,6 +149,10 @@ class AddRows(TableDataEdit):
     def __post_init__(self):
         self.row = pd.Index(
             [i + len(self.parent.data) for i in range(len(self.index))])
+
+    def __len__(self):
+        """Return the number of rows added by this edit."""
+        return len(self.index)
 
     def execute(self):
         # We update the table's variable that is used to track new rows.
@@ -195,12 +165,6 @@ class AddRows(TableDataEdit):
                 columns=self.parent.data.columns,
                 index=self.index
                 ))
-
-    def __len__(self):
-        """
-        Return the number of rows that were added to the data with this edit.
-        """
-        return len(self.index)
 
     def undo(self):
         self.parent._new_rows = self.parent._new_rows.drop(self.row)
