@@ -53,6 +53,11 @@ class SardesTableData(object):
     def __str__(self):
         return self.data.__str__()
 
+    @property
+    def data(self):
+        """Return a copy of the wrapped dataframe."""
+        return self._data.copy()
+
     def set(self, row, col, value):
         """
         Store the new value at the given index and column and add the edit
