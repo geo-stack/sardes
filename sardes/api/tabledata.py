@@ -9,53 +9,14 @@
 
 # ---- Standard imports
 from __future__ import annotations
-from dataclasses import dataclass, field
 
 # ---- Third party imports
 import pandas as pd
 
 # ---- Local imports
+from sardes.api.tableedits import TableEditsController
 from sardes.api.tabledataedits import (
-    TableDataEditTypes, TableDataEdit, EditValue, AddRows, DeleteRows)
-
-
-@dataclass
-class TableDataEditsController(object):
-    undo_stack: list[TableDataEdit] = field(default_factory=list)
-    redo_stack: list[TableDataEdit] = field(default_factory=list)
-
-    def undo_count(self):
-        """Return the number of edits in the undo stack."""
-        return len(self.undo_stack)
-
-    def redo_count(self):
-        """Return the number of edits in the redo stack."""
-        return len(self.redo_stack)
-
-    def execute(self, edit: TableDataEdit):
-        """Execute and return the given table data edit."""
-        edit.execute()
-        self.redo_stack.clear()
-        self.undo_stack.append(edit)
-        return edit
-
-    def undo(self):
-        """Undo and return the last edit added to the undo stack."""
-        if not self.undo_stack:
-            return
-        edit = self.undo_stack.pop()
-        edit.undo()
-        self.redo_stack.append(edit)
-        return edit
-
-    def redo(self):
-        """Redo and return the last edit added to the undo stack."""
-        if not self.redo_stack:
-            return
-        edit = self.redo_stack.pop()
-        edit.execute()
-        self.undo_stack.append(edit)
-        return edit
+    TableDataEditTypes, EditValue, AddRows, DeleteRows)
 
 
 class SardesTableData(object):
@@ -69,7 +30,7 @@ class SardesTableData(object):
     def __init__(self, data):
         self.data = data.copy()
 
-        self.edits_controller = TableDataEditsController()
+        self.edits_controller = TableEditsController()
 
         self._new_rows = pd.Index([])
         self._deleted_rows = pd.Index([])
