@@ -21,14 +21,22 @@ from sardes.api.tabledataedits import (
 
 class SardesTableData(object):
     """
-    A container to hold data of a logical table and manage edits.
+    A wrapper around a pandas dataframe to hold the data of a Sarde table model
+    and to add data edits management and changes tracking capabilities.
+
+    Data edits are managed via a Command Design Pattern.
+    See https://en.wikipedia.org/wiki/Command_pattern
+    See also https://youtu.be/FM71_a3txTo
+
+    Avoid applying changes to the wrapped dataframe outside of the public
+    interface of SardesTableData unless you really know what you are doing.
     """
-    EditValue = TableDataEditTypes.EditValue
-    AddRows = TableDataEditTypes.AddRows
-    DeleteRows = TableDataEditTypes.DeleteRows
+    EditValue = EditValue.type()
+    AddRows = AddRows.type()
+    DeleteRows = DeleteRows.type()
 
     def __init__(self, data):
-        self.data = data.copy()
+        self._data = data.copy()
 
         self.edits_controller = TableEditsController()
 
@@ -58,6 +66,11 @@ class SardesTableData(object):
         """Return a copy of the wrapped dataframe."""
         return self._data.copy()
 
+    def copy(self):
+        """Return a copy of the wrapped dataframe."""
+        return self.data
+
+    # ---- Data edits
     def set(self, row, col, value):
         """
         Store the new value at the given index and column and add the edit
@@ -80,12 +93,6 @@ class SardesTableData(object):
             return self.data.iat[row, col]
         else:
             return self.data.iloc[row]
-
-    def copy(self):
-        """
-        Return a copy of the data.
-        """
-        return self.data.copy()
 
     def add_row(self, index, values=None):
         """
@@ -129,6 +136,22 @@ class SardesTableData(object):
                     row=unique_rows)
                 )
 
+    def cancel_edits(self):
+        """
+        Cancel all the edits that were made to the table data since last save.
+        """
+        while self.edit_count():
+            self.undo_edit()
+
+    def undo_edit(self):
+        """Undo the last edit that was added to the stack."""
+        return self.edits_controller.undo()
+
+    def redo_edit(self):
+        """Redo the last undone data edit."""
+        return self.edits_controller.redo()
+
+    # ---- Change tracking
     def deleted_rows(self):
         """
         Return a pandas Index array containing the indexes of the rows that
@@ -186,7 +209,7 @@ class SardesTableData(object):
             # .values to access the data (ex. pd.datetime).
         return edited_values
 
-    # ---- Edits
+    # ---- Utils
     def edits(self):
         """
         Return a list of all edits made to the data since last save.
@@ -197,11 +220,11 @@ class SardesTableData(object):
         """Return the number of edits in the stack."""
         return self.edits_controller.undo_count()
 
-    def edit_undo_count(self):
+    def undo_count(self):
         """Return the number of edits in the undo stack."""
         return self.edits_controller.undo_count()
 
-    def edit_redo_count(self):
+    def redo_count(self):
         """Return the number of edits in the redo stack."""
         return self.edits_controller.redo_count()
 
@@ -238,25 +261,6 @@ class SardesTableData(object):
         since last save.
         """
         return row in self._new_rows or (row, col) in self._original_data.index
-
-    def cancel_edits(self):
-        """
-        Cancel all the edits that were made to the table data since last save.
-        """
-        while self.edit_count():
-            self.undo_edit()
-
-    def undo_edit(self):
-        """
-        Undo the last data edit that was added to the stack.
-        """
-        return self.edits_controller.undo()
-
-    def redo_edit(self):
-        """
-        Redo the last undone data edit.
-        """
-        return self.edits_controller.redo()
 
 
 if __name__ == '__main__':
