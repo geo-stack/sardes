@@ -57,7 +57,7 @@ class SardesTableModelBase(QAbstractTableModel):
     sig_columns_mapper_changed = Signal()
 
     ValueChanged = SardesTableData.ValueChanged
-    RowAdded = SardesTableData.RowAdded
+    AddRows = SardesTableData.AddRows
     RowDeleted = SardesTableData.RowDeleted
 
     # =========================================================================
@@ -524,7 +524,7 @@ class SardesTableModelBase(QAbstractTableModel):
                 self.index(last_edit.row, last_edit.col),
                 self.index(last_edit.row, last_edit.col),
                 )
-        elif last_edit.type() == SardesTableModelBase.RowAdded:
+        elif last_edit.type() == SardesTableModelBase.AddRows:
             self.beginRemoveRows(
                 QModelIndex(), min(last_edit.row), max(last_edit.row))
             self._datat.undo_edit()

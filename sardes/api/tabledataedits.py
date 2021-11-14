@@ -27,7 +27,7 @@ class TableDataEditTypes(Enum):
     TableData class.
     """
     ValueChanged = 0
-    RowAdded = 1
+    AddRows = 1
     RowDeleted = 2
 
 
@@ -159,7 +159,7 @@ class RowDeleted(TableDataEdit):
 
 
 @dataclass
-class RowAdded(TableDataEdit):
+class AddRows(TableDataEdit):
     """
     A TableDataEdit class to add one or more new rows to a SardesTableData.
 
