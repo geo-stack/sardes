@@ -56,7 +56,7 @@ class SardesTableModelBase(QAbstractTableModel):
     sig_data_saved = Signal()
     sig_columns_mapper_changed = Signal()
 
-    ValueChanged = SardesTableData.ValueChanged
+    EditValue = SardesTableData.EditValue
     AddRows = SardesTableData.AddRows
     DeleteRows = SardesTableData.DeleteRows
 
@@ -517,7 +517,7 @@ class SardesTableModelBase(QAbstractTableModel):
         Undo the last data edits that was added to the stack.
         """
         last_edit = self.last_data_edit()
-        if last_edit.type() == SardesTableModelBase.ValueChanged:
+        if last_edit.type() == SardesTableModelBase.EditValue:
             self._datat.undo_edit()
             self._update_visual_data()
             self.dataChanged.emit(

@@ -26,7 +26,7 @@ class TableDataEditTypes(Enum):
     An enum that list all types of edits that are supported by the
     TableData class.
     """
-    ValueChanged = 0
+    EditValue = 0
     AddRows = 1
     DeleteRows = 2
 
@@ -64,9 +64,10 @@ class TableDataEdit(ABC):
 
 
 @dataclass
-class ValueChanged(TableDataEdit):
+class EditValue(TableDataEdit):
     """
-    A class that represents a change of a value at a given model index.
+    An edit command to change the value at a given location in a Sardes
+    table dataframe.
     """
     index: object
     column: object

@@ -827,7 +827,7 @@ class SardesTableView(QTableView):
                         self.source_model.index(data_edit.row[0], column))
                     self._ensure_visible(model_index, force=True)
                     self.setCurrentIndex(model_index)
-                elif data_edit.type() == SardesTableModelBase.ValueChanged:
+                elif data_edit.type() == SardesTableModelBase.EditValue:
                     model_index = self.model().mapFromSource(
                         self.source_model.index(data_edit.row, data_edit.col))
                     self._ensure_visible(model_index)
