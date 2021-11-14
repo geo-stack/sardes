@@ -143,7 +143,7 @@ class ReadingsTableModel(SardesTableModel):
                 obs_id = row_data['obs_id']
                 indexes = (date_time, obs_id, edit.column)
                 tseries_edits.loc[indexes, 'value'] = edit.edited_value
-            elif edit.type() == self.RowDeleted:
+            elif edit.type() == self.DeleteRows:
                 delrows_data = self._datat.get(edit.row)
                 data_types = [dtype for dtype in DataType if
                               dtype in delrows_data.keys()]

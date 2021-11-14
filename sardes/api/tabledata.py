@@ -16,7 +16,7 @@ import pandas as pd
 
 # ---- Local imports
 from sardes.api.tabledataedits import (
-    TableDataEditTypes, TableDataEdit, ValueChanged, AddRows, RowDeleted)
+    TableDataEditTypes, TableDataEdit, ValueChanged, AddRows, DeleteRows)
 
 
 @dataclass
@@ -64,7 +64,7 @@ class SardesTableData(object):
     """
     ValueChanged = TableDataEditTypes.ValueChanged
     AddRows = TableDataEditTypes.AddRows
-    RowDeleted = TableDataEditTypes.RowDeleted
+    DeleteRows = TableDataEditTypes.DeleteRows
 
     def __init__(self, data):
         self.data = data.copy()
@@ -158,7 +158,7 @@ class SardesTableData(object):
         unique_rows = unique_rows[~unique_rows.isin(self._deleted_rows)]
         if not unique_rows.empty:
             return self.edits_controller.execute(
-                RowDeleted(
+                DeleteRows(
                     parent=self,
                     row=unique_rows)
                 )

@@ -28,7 +28,7 @@ class TableDataEditTypes(Enum):
     """
     ValueChanged = 0
     AddRows = 1
-    RowDeleted = 2
+    DeleteRows = 2
 
 
 @dataclass
@@ -126,7 +126,7 @@ class ValueChanged(TableDataEdit):
 
 
 @dataclass
-class RowDeleted(TableDataEdit):
+class DeleteRows(TableDataEdit):
     """
     An edit command to delete one or more rows from a Sardes table dataframe.
     SardesTableData.

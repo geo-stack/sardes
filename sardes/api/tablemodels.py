@@ -58,7 +58,7 @@ class SardesTableModelBase(QAbstractTableModel):
 
     ValueChanged = SardesTableData.ValueChanged
     AddRows = SardesTableData.AddRows
-    RowDeleted = SardesTableData.RowDeleted
+    DeleteRows = SardesTableData.DeleteRows
 
     # =========================================================================
     # ---- API: Mandatory attributes
@@ -534,7 +534,7 @@ class SardesTableModelBase(QAbstractTableModel):
                 self.index(min(last_edit.row), 0),
                 self.index(max(last_edit.row), self.columnCount() - 1),
                 )
-        elif last_edit.type() == SardesTableModelBase.RowDeleted:
+        elif last_edit.type() == SardesTableModelBase.DeleteRows:
             self._datat.undo_edit()
             self.dataChanged.emit(
                 self.index(0, 0),
