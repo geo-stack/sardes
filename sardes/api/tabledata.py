@@ -33,9 +33,9 @@ class EditValue(TableEdit):
     previous_value: object = field(init=False)
 
     def __post_init__(self):
-        self.row = self.parent.data.index.get_loc(self.index)
-        self.col = self.parent.data.columns.get_loc(self.column)
-        self.previous_value = self.parent.data.iat[self.row, self.col]
+        self.row = self.parent._data.index.get_loc(self.index)
+        self.col = self.parent._data.columns.get_loc(self.column)
+        self.previous_value = self.parent._data.iat[self.row, self.col]
 
     def execute(self):
         if self.row not in self.parent._new_rows:
@@ -48,7 +48,7 @@ class EditValue(TableEdit):
                 self.parent._original_data.drop(
                     (self.row, self.col), inplace=True)
             else:
-                original_value = self.parent.data.iat[self.row, self.col]
+                original_value = self.parent._data.iat[self.row, self.col]
 
             # We only track edited values that differ from their corresponding
             # original value (the value that is saved in the database).
@@ -59,7 +59,7 @@ class EditValue(TableEdit):
                     (self.row, self.col), 'value'] = original_value
 
         # We apply the new value to the data.
-        self.parent.data.iat[self.row, self.col] = self.edited_value
+        self.parent._data.iat[self.row, self.col] = self.edited_value
 
     def undo(self):
         if self.row not in self.parent._new_rows:
@@ -70,7 +70,7 @@ class EditValue(TableEdit):
                 self.parent._original_data.drop(
                     (self.row, self.col), inplace=True)
             else:
-                original_value = self.parent.data.iat[self.row, self.col]
+                original_value = self.parent._data.iat[self.row, self.col]
 
             values_equal = are_values_equal(
                 self.previous_value, original_value)
@@ -79,7 +79,7 @@ class EditValue(TableEdit):
                     (self.row, self.col), 'value'] = original_value
 
         # We apply the previous value to the data.
-        self.parent.data.iat[self.row, self.col] = self.previous_value
+        self.parent._data.iat[self.row, self.col] = self.previous_value
 
 
 @dataclass
@@ -109,7 +109,7 @@ class DeleteRows(TableEdit):
     index: pd.Index = field(init=False)
 
     def __post_init__(self):
-        self.index = self.parent.data.index[self.row]
+        self.index = self.parent._data.index[self.row]
 
     def execute(self):
         self.parent._deleted_rows = self.parent._deleted_rows.append(self.row)
@@ -148,7 +148,7 @@ class AddRows(TableEdit):
 
     def __post_init__(self):
         self.row = pd.Index(
-            [i + len(self.parent.data) for i in range(len(self.index))])
+            [i + len(self.parent._data) for i in range(len(self.index))])
 
     def __len__(self):
         """Return the number of rows added by this edit."""
@@ -159,10 +159,10 @@ class AddRows(TableEdit):
         self.parent._new_rows = self.parent._new_rows.append(self.row)
 
         # We then add the new row to the data.
-        self.parent.data = self.parent.data.append(
+        self.parent._data = self.parent._data.append(
             pd.DataFrame(
                 self.values,
-                columns=self.parent.data.columns,
+                columns=self.parent._data.columns,
                 index=self.index
                 ))
 
@@ -170,7 +170,7 @@ class AddRows(TableEdit):
         self.parent._new_rows = self.parent._new_rows.drop(self.row)
 
         # We remove the new row from the data.
-        self.parent.data.drop(self.index, inplace=True)
+        self.parent._data.drop(self.index, inplace=True)
 
 
 class SardesTableData(object):
