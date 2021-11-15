@@ -81,6 +81,9 @@ class EditValue(TableEdit):
         # We apply the previous value to the data.
         self.parent._data.iat[self.row, self.col] = self.previous_value
 
+    def redo(self):
+        self.execute()
+
 
 @dataclass
 class DeleteRows(TableEdit):
@@ -116,6 +119,9 @@ class DeleteRows(TableEdit):
 
     def undo(self):
         self.parent._deleted_rows = self.parent._deleted_rows.drop(self.row)
+
+    def redo(self):
+        self.execute()
 
 
 @dataclass
@@ -171,6 +177,9 @@ class AddRows(TableEdit):
 
         # We remove the new row from the data.
         self.parent._data.drop(self.index, inplace=True)
+
+    def redo(self):
+        self.execute()
 
 
 class SardesTableData(object):
