@@ -817,7 +817,7 @@ class SardesTableView(QTableView):
                 # This mean that the given data edit was just undone.
                 del self._data_edit_cursor_pos[data_edit.id]
             else:
-                if data_edit.type() == SardesTableModelBase.RowAdded:
+                if data_edit.type() == SardesTableModelBase.AddRows:
                     if self.visible_column_count():
                         column = self.model().column_names().index(
                             self.visible_columns()[0])
@@ -827,7 +827,7 @@ class SardesTableView(QTableView):
                         self.source_model.index(data_edit.row[0], column))
                     self._ensure_visible(model_index, force=True)
                     self.setCurrentIndex(model_index)
-                elif data_edit.type() == SardesTableModelBase.ValueChanged:
+                elif data_edit.type() == SardesTableModelBase.EditValue:
                     model_index = self.model().mapFromSource(
                         self.source_model.index(data_edit.row, data_edit.col))
                     self._ensure_visible(model_index)
@@ -1436,7 +1436,7 @@ class SardesTableView(QTableView):
         """
         self.closePersistentEditor(self.current_index())
         last_edit = self.model().data_edits()[-1]
-        if last_edit.type() == SardesTableModelBase.RowAdded:
+        if last_edit.type() == SardesTableModelBase.AddRows:
             # We keep the selected item. If the selected item is part of the
             # addrow edit, which means that it will be removed by this undo
             # operation, we select the first item above it that is not

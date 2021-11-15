@@ -56,10 +56,9 @@ class SardesTableModelBase(QAbstractTableModel):
     sig_data_saved = Signal()
     sig_columns_mapper_changed = Signal()
 
-    ValueChanged = SardesTableData.ValueChanged
-    RowAdded = SardesTableData.RowAdded
-    RowRemoved = SardesTableData.RowRemoved
-    RowDeleted = SardesTableData.RowDeleted
+    EditValue = SardesTableData.EditValue
+    AddRows = SardesTableData.AddRows
+    DeleteRows = SardesTableData.DeleteRows
 
     # =========================================================================
     # ---- API: Mandatory attributes
@@ -320,14 +319,14 @@ class SardesTableModelBase(QAbstractTableModel):
     # ---- Visual Data
     def dataf_index_at(self, model_index):
         """
-        Return the dataframe index corresponding to the specified visual
+        Return the index of the dataframe corresponding to the given
         model index.
         """
         return self.visual_dataf.index[model_index.row()]
 
     def dataf_column_at(self, model_index):
         """
-        Return the dataframe column corresponding to the specified visual
+        Return the column of the dataframe corresponding to the given
         model index.
         """
         return self.column_names()[model_index.column()]
@@ -445,10 +444,11 @@ class SardesTableModelBase(QAbstractTableModel):
         Return a new index that can be used to add a new item this
         model's data table.
         """
-        if str(self._datat.data.index.dtype) == 'object':
+        index = self.tabledata.index
+        if str(index.dtype) == 'object':
             return uuid.uuid4()
-        elif str(self._datat.data.index.dtype) == 'int64':
-            return max(self._datat.data.index) + 1
+        elif str(index.dtype) == 'int64':
+            return index.max() + 1
 
     def add_new_row(self):
         """
@@ -518,14 +518,14 @@ class SardesTableModelBase(QAbstractTableModel):
         Undo the last data edits that was added to the stack.
         """
         last_edit = self.last_data_edit()
-        if last_edit.type() == SardesTableModelBase.ValueChanged:
+        if last_edit.type() == SardesTableModelBase.EditValue:
             self._datat.undo_edit()
             self._update_visual_data()
             self.dataChanged.emit(
                 self.index(last_edit.row, last_edit.col),
                 self.index(last_edit.row, last_edit.col),
                 )
-        elif last_edit.type() == SardesTableModelBase.RowAdded:
+        elif last_edit.type() == SardesTableModelBase.AddRows:
             self.beginRemoveRows(
                 QModelIndex(), min(last_edit.row), max(last_edit.row))
             self._datat.undo_edit()
@@ -535,7 +535,7 @@ class SardesTableModelBase(QAbstractTableModel):
                 self.index(min(last_edit.row), 0),
                 self.index(max(last_edit.row), self.columnCount() - 1),
                 )
-        elif last_edit.type() == SardesTableModelBase.RowDeleted:
+        elif last_edit.type() == SardesTableModelBase.DeleteRows:
             self._datat.undo_edit()
             self.dataChanged.emit(
                 self.index(0, 0),
