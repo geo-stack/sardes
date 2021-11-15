@@ -348,8 +348,8 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
     A matplotlib canvas where the figure is drawn.
     """
 
-    def __init__(self):
-        figure = SatisticalHydrographFigure(figsize=(8, 6), facecolor='white')
+    def __init__(self, figsize=(8, 6)):
+        figure = SatisticalHydrographFigure(figsize=figsize, facecolor='white')
         super().__init__(figure)
         self.wlevels = None
         self.year = None
