@@ -56,11 +56,12 @@ class DatabaseAccessorBase(ABC):
         """
         getattr(self, 'set_' + name)(*args, **kargs)
 
-    def add(self, name, primary_key, values={}):
+    def add(self, name, primary_key, values=None):
         """
         Add a new item to the data related to name in the database using
         the given primary_key and values.
         """
+        values = {} if values is None else values
         getattr(self, 'add_' + name)(primary_key, values)
         self.del_temp_index(name, primary_key)
 
