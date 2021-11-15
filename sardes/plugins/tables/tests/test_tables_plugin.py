@@ -175,7 +175,7 @@ def test_edit_sonde_model(mainwindow, qtbot, dbaccessor):
     assert tabwidget.tabText(1) == tablewidget.table_title() + '*'
 
     # Undo the last edit.
-    tableview._undo_last_data_edit()
+    tableview._undo_edit()
     assert model_index.data() == 'Solinst Barologger M1.5'
     assert model.get_value_at(model_index) == 5
     assert tabwidget.tabText(1) == tablewidget.table_title()
