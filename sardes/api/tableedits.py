@@ -20,8 +20,9 @@ import pandas as pd
 
 class TableEditTypes(Enum):
     """
-    An enum that list all types of edits that are supported by the
-    TableData class.
+    An enum that list all types of commands that are used to edit
+    the content of SardesTableData, SardesTableModel and SardesTableView
+    classes.
     """
     EditValue = 0
     AddRows = 1
