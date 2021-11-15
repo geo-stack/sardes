@@ -391,7 +391,21 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
         self._update_figure()
 
     def set_data(self, wlevels, year, month):
-        """Set the data of the statistical hydrograph."""
+        """
+        Set the data of the statistical hydrograph.
+
+        Parameters
+        ----------
+        wlevels : Series
+            A pandas timeseries containing formatted water level data in
+            meters above mean sea level.
+        year : int
+            The year for which the statistical hydrograph needs to be plotted.
+        month : int
+            An integer value corresponding to the month for which the
+            statistical hydrograph needs to be plotted, where 1 corresponds
+            to January and 12 to december.
+        """
         self.year = year
         self.month = month
         self.wlevels = wlevels
