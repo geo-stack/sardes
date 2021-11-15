@@ -48,7 +48,11 @@ class TableEdit(ABC):
         pass
 
     def undo(self):
-        """Undo this data edit."""
+        """Undo this table edit."""
+        pass
+    
+    def redo(self):
+        """Redo this table edit."""
         pass
 
     @classmethod
@@ -96,6 +100,6 @@ class TableEditsController(object):
         if not self.redo_stack:
             return
         edit = self.redo_stack.pop()
-        edit.execute()
+        edit.redo()
         self.undo_stack.append(edit)
         return edit
