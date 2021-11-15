@@ -112,6 +112,13 @@ class DeleteRows(TableEdit):
     index: pd.Index = field(init=False)
 
     def __post_init__(self):
+        # We only delete rows that are not already deleted.
+
+        # If we keep track of rows that are already deleted, this is
+        # causing problems if we undo this edit later. Indeed, this will
+        # "undelete" rows that should remain deleted because they were
+        # deleted in an earlier edit.
+        self.row = self.row[~self.row.isin(self.parent._deleted_rows)]
         self.index = self.parent._data.index[self.row]
 
     def execute(self):
@@ -283,7 +290,7 @@ class SardesTableData(object):
             AddRows(
                 parent=self,
                 index=index,
-                values=values or [{}])
+                values=[{}] if values is None else values)
             )
 
     def delete_row(self, rows):
@@ -296,15 +303,11 @@ class SardesTableData(object):
             A list of integers corresponding to the logical indexes of the
             rows that need to be deleted from the data.
         """
-        # We only delete rows that are not already deleted.
-        unique_rows = pd.Index(rows)
-        unique_rows = unique_rows[~unique_rows.isin(self._deleted_rows)]
-        if not unique_rows.empty:
-            return self.edits_controller.execute(
-                DeleteRows(
-                    parent=self,
-                    row=unique_rows)
-                )
+        return self.edits_controller.execute(
+            DeleteRows(
+                parent=self,
+                row=pd.Index(rows))
+            )
 
     def cancel_edits(self):
         """
