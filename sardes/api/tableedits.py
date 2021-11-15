@@ -103,3 +103,8 @@ class TableEditsController(object):
         edit.redo()
         self.undo_stack.append(edit)
         return edit
+
+    def clear(self):
+        """Clear all edits from the undo and redo stacks."""
+        self.undo_stack.clear()
+        self.redo_stack.clear()
