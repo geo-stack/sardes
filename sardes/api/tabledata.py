@@ -198,33 +198,33 @@ class SardesTableData(object):
     See https://en.wikipedia.org/wiki/Command_pattern
     See also https://youtu.be/FM71_a3txTo
 
-    Avoid applying changes to the wrapped dataframe outside of the public
-    interface of SardesTableData unless you really know what you are doing.
+    Please avoid doing changes to the wrapped dataframe directly outside of
+    the public interface provided in SardesTableData unless you really know
+    what you are doing.
     """
     EditValue = EditValue.type()
     AddRows = AddRows.type()
     DeleteRows = DeleteRows.type()
 
-    def __init__(self, data):
+    def __init__(self, data: pd.DataFrame):
         self._data = data.copy()
 
         self.edits_controller = TableEditsController()
 
-        # Pandas Index of integers to track the logical indexes of rows that
+        # Pandas Index arrays to track the integer position of the rows that
         # were added or deleted to or from the dataframe.
-        self._new_rows = pd.Index([])
-        self._deleted_rows = pd.Index([])
+        self._new_rows = pd.Index([], dtype='int64')
+        self._deleted_rows = pd.Index([], dtype='int64')
 
-        # A pandas multiindex dataframe that contains the original data at
-        # the rows and columns where data was edited. This is tracked
-        # independently from the data edits stack for performance purposes
-        # when displaying the data in a GUI.
+        # A pandas multi-index dataframe containing the original data at
+        # the integer positions (rows and columns) where the dataframe was
+        # edited. This is tracked independently from the data edits history
+        # for performance purposes.
         self._original_data = pd.DataFrame(
-            [], columns=['row', 'column', 'value'])
-        self._original_data.set_index(
-            'row', inplace=True, drop=True)
-        self._original_data.set_index(
-            'column', inplace=True, drop=True, append=True)
+            [],
+            columns=['value'],
+            index=pd.MultiIndex.from_tuples([], names=['row', 'column'])
+            )
 
     def __len__(self):
         """Return the len of the data."""
@@ -247,12 +247,27 @@ class SardesTableData(object):
         """Return a copy of the wrapped dataframe."""
         return self._data.copy()
 
-    # ---- Data edits
-    def set(self, row, col, value):
+    def get(self, row: int = None, col: int = None) -> object | pd.Series:
         """
-        Store the new value at the given index and column and add the edit
-        to the stack.
+        Get a single value or an entire row or column by integer position.
+
+        Return the value stored in the dataframe at the given integer
+        position (row and col) or return a pandas series containing the
+        data of an entire row or column if only the integer position of the
+        row or column is specified.
         """
+        if col is None and row is None:
+            return None
+        elif col is not None and row is not None:
+            return self._data.iat[row, col]
+        elif row is not None:
+            return self._data.iloc[row].copy()
+        elif col is not None:
+            return self._data.iloc[:, col].copy()
+
+    # ---- Table edits
+    def set(self, row: int, col: int, value) -> TableEdit:
+        """Set a single value by integer position."""
         return self.edits_controller.execute(
             EditValue(
                 parent=self,
@@ -261,47 +276,36 @@ class SardesTableData(object):
                 edited_value=value)
             )
 
-    def get(self, row, col=None):
+    def add_row(self, index: list, values: list[dict] = None) -> TableEdit:
         """
-        Return the value at the given row and column indexes or the
-        pandas series at the given row if no column index is given.
-        """
-        if col is not None:
-            return self._data.iat[row, col]
-        else:
-            return self._data.iloc[row].copy()
-
-    def add_row(self, index, values=None):
-        """
-        Add one or more new rows at the end of the data using the provided
-        values.
+        Add one or more new rows at the end of the datataframe.
 
         Parameters
         ----------
-        index : Index
-            A pandas Index array that contains the indexes of the rows that
-            needs to be added to the data.
-        values: list of dict
-            A list of dict containing the values of the rows that needs to be
-            added to this SardesTableData. The keys of the dict must
-            match the data..
+        index : list
+            A list containing the index of the rows that are to be added
+            to the dataframe.
+        values: list[dict], optional
+            A list of dict containing the values of each row that are to be
+            added to the dataframe. The keys of the dict must
+            correspond to the labels of the dataframe columns.
         """
         return self.edits_controller.execute(
             AddRows(
                 parent=self,
-                index=index,
+                index=pd.Index(index),
                 values=[{}] if values is None else values)
             )
 
-    def delete_row(self, rows):
+    def delete_row(self, rows: list[int]) -> TableEdit:
         """
-        Delete the rows at the given row logical indexes from data.
+        Delete the rows at the given integer positions.
 
         Parameters
         ----------
-        rows: list of int
-            A list of integers corresponding to the logical indexes of the
-            rows that need to be deleted from the data.
+        rows: list[int]
+            A list containing the integer positions of the rows that are to
+            be deleted from the dataframe.
         """
         return self.edits_controller.execute(
             DeleteRows(
@@ -311,21 +315,21 @@ class SardesTableData(object):
 
     def cancel_edits(self):
         """
-        Cancel all the edits that were made to the table data since last save.
+        Cancel all the edits that were made to the dataframe since last save.
         """
         while self.edit_count():
             self.undo_edit()
 
-    def undo_edit(self):
-        """Undo the last edit that was added to the stack."""
+    def undo_edit(self) -> TableEdit:
+        """Undo the last edit made to the dataframe."""
         return self.edits_controller.undo()
 
-    def redo_edit(self):
-        """Redo the last undone data edit."""
+    def redo_edit(self) -> TableEdit:
+        """Redo the last undone edit made to the dataframe."""
         return self.edits_controller.redo()
 
     # ---- Change tracking
-    def deleted_rows(self):
+    def deleted_rows(self) -> pd.Index:
         """
         Return a pandas Index array containing the indexes of the rows that
         were deleted in the dataframe.
@@ -340,10 +344,10 @@ class SardesTableData(object):
 
         return deleted_rows
 
-    def added_rows(self):
+    def added_rows(self) -> pd.DataFrame:
         """
-        Return a pandas dataframe containing the the new rows that were
-        added to the data of this table.
+        Return a pandas dataframe containing the rows that were added to
+        the dataframe.
         """
         added_row_indexes = self._data.index[self._new_rows]
 
@@ -355,10 +359,10 @@ class SardesTableData(object):
 
         return self._data.loc[added_row_indexes].copy()
 
-    def edited_values(self):
+    def edited_values(self) -> pd.DataFrame:
         """
-        Return a multiindex dataframe containing the edited values at
-        the corresponding indexes and columns of the dataframe.
+        Return a multi-index dataframe containing the values that were edited
+        at the corresponding indexes and columns of the dataframe.
         """
         # We remove deleted rows from the original data indexes.
         orig_data_indexes = self._original_data.index.drop(
@@ -389,12 +393,12 @@ class SardesTableData(object):
     # ---- Utils
     def edits(self) -> list[TableEdit]:
         """
-        Return a list of all edits made to the data since last save.
+        Return a list of all edits made to the dataframe since last save.
         """
         return self.edits_controller.undo_stack
 
     def edit_count(self) -> int:
-        """Return the number of edits in the stack."""
+        """Return the number of edits made to the dataframe since last save."""
         return self.edits_controller.undo_count()
 
     def undo_count(self) -> int:
@@ -407,7 +411,8 @@ class SardesTableData(object):
 
     def has_unsaved_edits(self) -> bool:
         """
-        Return whether any edits were made to the table's data since last save.
+        Return whether the sum of all edits made to the dataframe since last
+        save resulted in any net changes of the dataframe.
         """
         return bool(len(self._original_data) +
                     len(self._deleted_rows) +
@@ -415,27 +420,35 @@ class SardesTableData(object):
 
     def is_value_in_column(self, col: int, value: object) -> bool:
         """
-        Check if the specified value is in the given column of the data.
+        Return whether the given value is in the column located at the
+        specified integer position (col) in the dataframe.
         """
-        isin_indexes = self._data[self._data.iloc[:, col].isin([value])]
-        return bool(len(isin_indexes))
+        # We need first to actually remove deleted rows from the dataframe.
+        _not_deleted = self._data.drop(
+            index=self._data.index[self._deleted_rows])
+
+        # Then we check if value is in the column specified at the
+        # specified integer position.
+        isin_result = _not_deleted.iloc[:, col].isin([value])
+
+        return bool(isin_result.sum())
 
     def is_data_deleted_at(self, row: int) -> bool:
         """
-        Return whether the row at row is deleted.
+        Return whether the row at the given integer location (row) is deleted.
         """
         return row in self._deleted_rows
 
     def is_new_row_at(self, row: int) -> bool:
         """
-        Return whether the row at row is new.
+        Return whether the row at the given integer location (row) is new.
         """
         return row in self._new_rows
 
     def is_value_edited_at(self, row: int, col: int) -> bool:
         """
-        Return whether edits were made at the specified model index
-        since last save.
+        Return whether net changes were made at the specified integer
+        location (row and col).
         """
         return row in self._new_rows or (row, col) in self._original_data.index
 
