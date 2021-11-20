@@ -687,12 +687,23 @@ class SardesTableView(QTableView):
                 self, _("Undo"),
                 icon='undo',
                 tip=_('Undo last edit made to the table.'),
-                triggered=self._undo_last_data_edit,
+                triggered=self._undo_edit,
                 shortcut='Ctrl+Z',
                 context=Qt.WidgetShortcut,
                 name='undo_edits')
             self.undo_edits_action.setEnabled(False)
             self._actions['edit'].append(self.undo_edits_action)
+        if 'redo_edits' not in self._disabled_actions:
+            self.redo_edits_action = create_action(
+                self, _("Redo"),
+                icon='redo',
+                tip=_('Redo the last edit that was undone.'),
+                triggered=self._redo_edit,
+                shortcut='Ctrl+Shift+Z',
+                context=Qt.WidgetShortcut,
+                name='redo_edits')
+            self.redo_edits_action.setEnabled(False)
+            self._actions['edit'].append(self.redo_edits_action)
         self.addActions(self._actions['edit'])
 
         # ---- Setup selection actions.
@@ -812,34 +823,55 @@ class SardesTableView(QTableView):
         """
         Handle when an edit is made to the data of the table model.
         """
-        if data_edit is not None:
-            if data_edit.id in self._data_edit_cursor_pos:
-                # This mean that the given data edit was just undone.
-                del self._data_edit_cursor_pos[data_edit.id]
-            else:
-                if data_edit.type() == SardesTableModelBase.AddRows:
-                    if self.visible_column_count():
-                        column = self.model().column_names().index(
-                            self.visible_columns()[0])
-                    else:
-                        column = 0
-                    model_index = self.model().mapFromSource(
-                        self.source_model.index(data_edit.row[0], column))
-                    self._ensure_visible(model_index, force=True)
-                    self.setCurrentIndex(model_index)
-                elif data_edit.type() == SardesTableModelBase.EditValue:
-                    model_index = self.model().mapFromSource(
-                        self.source_model.index(data_edit.row, data_edit.col))
-                    self._ensure_visible(model_index)
-                    self.setCurrentIndex(model_index)
+        if data_edit is None:
+            # This means that all tablem model edits were cancelled.
+            self._data_edit_cursor_pos.clear()
+            self._update_actions_state()
+            return
 
-                # Save the cursor position for that edit.
-                current_source_index = self.model().mapToSource(
-                    self.current_index())
-                self._data_edit_cursor_pos[data_edit.id] = (
-                    current_source_index.row(), current_source_index.column())
-        else:
-            self._data_edit_cursor_pos = {}
+        if data_edit != self.model().last_edit():
+            # This means that this given edit was just undone.
+            self._update_actions_state()
+            return
+
+        if data_edit.id in self._data_edit_cursor_pos:
+            # This means that this given edit was just redone.
+            cursor_pos = self._data_edit_cursor_pos[data_edit.id]
+            model_index = self.model().mapFromSource(
+                self.source_model.index(*cursor_pos))
+
+            self.selectionModel().clearSelection()
+            self._ensure_visible(model_index)
+            self.selectionModel().setCurrentIndex(
+                model_index, self.selectionModel().NoUpdate)
+
+            self._update_actions_state()
+            return
+
+        if data_edit.type() == SardesTableModelBase.AddRows:
+            if self.visible_column_count():
+                column = self.model().column_names().index(
+                    self.visible_columns()[0])
+            else:
+                column = 0
+            model_index = self.model().mapFromSource(
+                self.source_model.index(data_edit.row[0], column))
+            self._ensure_visible(model_index, force=True)
+            self.setCurrentIndex(model_index)
+        elif data_edit.type() == SardesTableModelBase.EditValue:
+            model_index = self.model().mapFromSource(
+                self.source_model.index(data_edit.row, data_edit.col))
+            self._ensure_visible(model_index)
+            self.setCurrentIndex(model_index)
+        elif data_edit.type() == SardesTableModelBase.DeleteRows:
+            pass
+
+        # Save the cursor position for that edit.
+        current_source_index = self.model().mapToSource(
+            self.current_index())
+        self._data_edit_cursor_pos[data_edit.id] = (
+            current_source_index.row(), current_source_index.column())
+
         self._update_actions_state()
 
     def _update_actions_state(self):
@@ -856,11 +888,14 @@ class SardesTableView(QTableView):
                 self.edit_item_action.setEnabled(is_editable)
 
         has_unsaved_data_edits = self.model().has_unsaved_data_edits()
-        is_data_edit_count = bool(self.model().data_edit_count())
         if 'save_edits' not in self._disabled_actions:
             self.save_edits_action.setEnabled(has_unsaved_data_edits)
         if 'undo_edits' not in self._disabled_actions:
-            self.undo_edits_action.setEnabled(is_data_edit_count)
+            self.undo_edits_action.setEnabled(
+                bool(self.model().data_edit_count()))
+        if 'redo_edits' not in self._disabled_actions:
+            self.redo_edits_action.setEnabled(
+                bool(self.model().undone_edit_count()))
         if 'cancel_edits' not in self._disabled_actions:
             self.cancel_edits_action.setEnabled(has_unsaved_data_edits)
 
@@ -1430,12 +1465,12 @@ class SardesTableView(QTableView):
         self.closePersistentEditor(self.current_index())
         self.model().cancel_data_edits()
 
-    def _undo_last_data_edit(self):
+    def _undo_edit(self):
         """
-        Undo the last data edits that was added to the table.
+        Undo the last edits that was made to the table.
         """
         self.closePersistentEditor(self.current_index())
-        last_edit = self.model().data_edits()[-1]
+        last_edit = self.model().last_edit()
         if last_edit.type() == SardesTableModelBase.AddRows:
             # We keep the selected item. If the selected item is part of the
             # addrow edit, which means that it will be removed by this undo
@@ -1456,11 +1491,11 @@ class SardesTableView(QTableView):
             else:
                 source_model_index = QModelIndex()
 
-            self.model().undo_last_data_edit()
+            self.model().undo_edit()
             model_index = self.model().mapFromSource(source_model_index)
         else:
             last_edit_cursor_pos = self._data_edit_cursor_pos[last_edit.id]
-            self.model().undo_last_data_edit()
+            self.model().undo_edit()
             model_index = self.model().mapFromSource(
                 self.source_model.index(*last_edit_cursor_pos))
 
@@ -1468,6 +1503,13 @@ class SardesTableView(QTableView):
         self._ensure_visible(model_index)
         self.selectionModel().setCurrentIndex(
             model_index, self.selectionModel().NoUpdate)
+
+    def _redo_edit(self):
+        """
+        Redo the last edit that was undone from the table.
+        """
+        self.closePersistentEditor(self.current_index())
+        self.model().redo_edit()
 
     def _check_data_edits(self):
         """

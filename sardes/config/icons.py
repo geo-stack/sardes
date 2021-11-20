@@ -214,6 +214,9 @@ FA_ICONS = {
     'publish_piezometric_network': [
         ('mdi.earth-box',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
+    'redo': [
+        ('mdi.redo-variant',),
+        {'color': ICON_COLOR}],
     'remove_row': [
         ('mdi.table-row-remove',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],

@@ -14,9 +14,6 @@ from enum import Enum
 from abc import ABC
 import uuid
 
-# ---- Third party imports
-import pandas as pd
-
 
 class TableEditTypes(Enum):
     """
@@ -48,19 +45,23 @@ class TableEdit(ABC):
         pass
 
     def undo(self):
-        """Undo this data edit."""
+        """Undo this table edit."""
+        pass
+
+    def redo(self):
+        """Redo this table edit."""
         pass
 
     @classmethod
     def type(cls):
         """
         Return the type of table edits this edit command corresponds to.
-        
+
         This make sure unified edit command names and types are used for
         all SardesTableData, SardesTableModel and SardesTableView.
         """
         return getattr(TableEditTypes, cls.__name__)
-    
+
 
 @dataclass
 class TableEditsController(object):
@@ -96,6 +97,11 @@ class TableEditsController(object):
         if not self.redo_stack:
             return
         edit = self.redo_stack.pop()
-        edit.execute()
+        edit.redo()
         self.undo_stack.append(edit)
         return edit
+
+    def clear(self):
+        """Clear all edits from the undo and redo stacks."""
+        self.undo_stack.clear()
+        self.redo_stack.clear()
