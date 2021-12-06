@@ -89,7 +89,6 @@ class EditValue(TableEdit):
 class DeleteRows(TableEdit):
     """
     An edit command to delete one or more rows from a Sardes table dataframe.
-    SardesTableData.
 
     Note that the rows are not actually deleted from the data. They are
     simply flagged as deleted until the edits are commited.
