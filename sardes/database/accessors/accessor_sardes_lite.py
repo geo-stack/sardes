@@ -769,13 +769,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
-    def delete_observation_wells_data(self, obswell_ids):
+    def _del_observation_wells_data(self, obswell_ids):
         """
         Delete the observation wells corresponding to the specified ids.
-        """
-        if not is_list_like(obswell_ids):
-            obswell_ids = [obswell_ids, ]
 
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete` provided by `DatabaseAccessorBase`.
+        """
         # Check for foreign key violation.
         for table in [Observation, Process, Repere]:
             foreign_items_count = (
