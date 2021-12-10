@@ -76,7 +76,7 @@ class DatabaseAccessorBase(ABC):
         else:
             indexes = list(indexes)
 
-        getattr(self, 'delete_' + name)(indexes)
+        getattr(self, '_del_' + name)(indexes)
         for index in indexes:
             self.del_temp_index(name, index)
 
