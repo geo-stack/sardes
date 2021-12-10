@@ -13,6 +13,7 @@ from abc import ABC, abstractmethod
 # ---- Third party imports
 import pandas as pd
 from pandas import Series, DataFrame
+from pandas.api.types import is_list_like
 
 
 class DatabaseAccessorError(Exception):
@@ -65,13 +66,19 @@ class DatabaseAccessorBase(ABC):
         getattr(self, 'add_' + name)(primary_key, values)
         self.del_temp_index(name, primary_key)
 
-    def delete(self, name, primary_key):
+    def delete(self, name: str, indexes: list):
         """
-        Delete the item related to name in the database using the given
-        primary_key.
+        Delete from the database the items related to name at the
+        specified indexes.
         """
-        getattr(self, 'delete_' + name)(primary_key)
-        self.del_temp_index(name, primary_key)
+        if not is_list_like(indexes):
+            indexes = [indexes, ]
+        else:
+            indexes = list(indexes)
+
+        getattr(self, 'delete_' + name)(indexes)
+        for index in indexes:
+            self.del_temp_index(name, index)
 
     def create_index(self, name):
         """
