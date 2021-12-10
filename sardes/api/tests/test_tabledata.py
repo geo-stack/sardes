@@ -372,4 +372,4 @@ def test_undo_redo(tabledata):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', __file__, '-v', '-rw', '-k', 'test_undo_redo'])
+    pytest.main(['-x', __file__, '-v', '-rw'])
