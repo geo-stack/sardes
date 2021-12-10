@@ -197,8 +197,8 @@ class SardesTableData(object):
     See https://en.wikipedia.org/wiki/Command_pattern
     See also https://youtu.be/FM71_a3txTo
 
-    Please avoid doing changes to the wrapped dataframe directly outside of
-    the public interface provided in SardesTableData unless you really know
+    Please avoid making changes to the wrapped dataframe directly outside of
+    the public interface provided by SardesTableData unless you really know
     what you are doing.
     """
     EditValue = EditValue.type()
