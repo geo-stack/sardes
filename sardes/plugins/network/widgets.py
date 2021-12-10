@@ -28,7 +28,7 @@ from sardes.widgets.statusbar import ProcessStatusBar
 
 class PublishNetworkDialog(QDialog):
     """
-    A dialog window to manage the connection to the database.
+    A dialog window to manage the publication of the data with a kml file.
     """
     sig_closed = Signal()
     sig_start_publish_network_request = Signal(str)

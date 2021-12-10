@@ -348,8 +348,8 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
     A matplotlib canvas where the figure is drawn.
     """
 
-    def __init__(self):
-        figure = SatisticalHydrographFigure(figsize=(8, 6), facecolor='white')
+    def __init__(self, figsize=(8, 6)):
+        figure = SatisticalHydrographFigure(figsize=figsize, facecolor='white')
         super().__init__(figure)
         self.wlevels = None
         self.year = None
@@ -391,7 +391,21 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
         self._update_figure()
 
     def set_data(self, wlevels, year, month):
-        """Set the data of the statistical hydrograph."""
+        """
+        Set the data of the statistical hydrograph.
+
+        Parameters
+        ----------
+        wlevels : Series
+            A pandas timeseries containing formatted water level data in
+            meters above mean sea level.
+        year : int
+            The year for which the statistical hydrograph needs to be plotted.
+        month : int
+            An integer value corresponding to the month for which the
+            statistical hydrograph needs to be plotted, where 1 corresponds
+            to January and 12 to december.
+        """
         self.year = year
         self.month = month
         self.wlevels = wlevels
