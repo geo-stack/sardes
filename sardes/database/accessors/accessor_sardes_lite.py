@@ -979,13 +979,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
-    def delete_repere_data(self, repere_ids):
+    def _del_repere_data(self, repere_ids):
         """
         Delete the repere data corresponding to the specified repere ids.
-        """
-        if not is_list_like(repere_ids):
-            repere_ids = [repere_ids, ]
 
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete` provided by `DatabaseAccessorBase`.
+        """
         # Delete the Repere items from the database.
         self._session.execute(
             Repere.__table__.delete().where(
