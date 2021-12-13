@@ -284,13 +284,13 @@ def test_repere_data_interface(dbaccessor, obswells_data, repere_data):
     # =========================================================================
 
     # Delete the first repere data of the database.
-    dbaccessor.delete_repere_data(repere_data_bd.index[0])
+    dbaccessor.delete('repere_data', repere_data_bd.index[0])
 
     repere_data_bd = dbaccessor.get_repere_data()
     assert len(repere_data_bd) == len(repere_data) - 1
 
     # Delete the remaining repere data.
-    dbaccessor.delete_repere_data(repere_data_bd.index)
+    dbaccessor.delete('repere_data', repere_data_bd.index)
 
     repere_data_bd = dbaccessor.get_repere_data()
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
@@ -624,7 +624,7 @@ def test_observation_well_interface(dbaccessor, database_filler,
 
     # Try to delete a station with readings, repere and sonde installations.
     with pytest.raises(DatabaseAccessorError):
-        dbaccessor.delete_observation_wells_data(obs_wells_id)
+        dbaccessor.delete('observation_wells_data', obs_wells_id)
     assert len(dbaccessor.get_observation_wells_data()) == 5
 
     # We delete the timeseries and try again.
@@ -641,7 +641,7 @@ def test_observation_well_interface(dbaccessor, database_filler,
     dbaccessor.delete_timeseries_data(tseries_dels)
 
     with pytest.raises(DatabaseAccessorError):
-        dbaccessor.delete_observation_wells_data(obs_wells_id)
+        dbaccessor.delete('observation_wells_data', obs_wells_id)
     assert len(dbaccessor.get_observation_wells_data()) == 5
 
     # We delete the manual measurements and try again.
@@ -649,22 +649,22 @@ def test_observation_well_interface(dbaccessor, database_filler,
         dbaccessor.get_manual_measurements().index)
 
     with pytest.raises(DatabaseAccessorError):
-        dbaccessor.delete_observation_wells_data(obs_wells_id)
+        dbaccessor.delete('observation_wells_data', obs_wells_id)
     assert len(dbaccessor.get_observation_wells_data()) == 5
 
     # We delete the repere data and try again.
-    dbaccessor.delete_repere_data(
-        dbaccessor.get_repere_data().index)
+    dbaccessor.delete(
+        'repere_data', dbaccessor.get_repere_data().index)
 
     with pytest.raises(DatabaseAccessorError):
-        dbaccessor.delete_observation_wells_data(obs_wells_id)
+        dbaccessor.delete('observation_wells_data', obs_wells_id)
     assert len(dbaccessor.get_observation_wells_data()) == 5
 
     # We delete the sonde installations and try again (now it should work).
     dbaccessor.delete_sonde_installations(
         dbaccessor.get_sonde_installations().index)
 
-    dbaccessor.delete_observation_wells_data(obs_wells_id)
+    dbaccessor.delete('observation_wells_data', obs_wells_id)
     assert len(dbaccessor.get_observation_wells_data()) == 4
 
     # Assert that the DB was cleaned as expected.
