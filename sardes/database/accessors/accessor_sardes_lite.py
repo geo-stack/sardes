@@ -1038,13 +1038,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             ))
         self._session.commit()
 
-    def delete_sonde_models_lib(self, sonde_model_ids):
+    def _del_sonde_models_lib(self, sonde_model_ids):
         """
-        Delete the repere data corresponding to the specified repere ids.
-        """
-        if not is_list_like(sonde_model_ids):
-            sonde_model_ids = [sonde_model_ids, ]
+        Delete the sonde model corresponding to the specified sonde_model_ids.
 
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete` provided by `DatabaseAccessorBase`.
+        """
         # Check for foreign key violation.
         foreign_sonde_features_count = (
             self._session.query(SondeFeature)
