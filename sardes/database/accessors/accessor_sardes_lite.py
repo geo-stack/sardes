@@ -1133,13 +1133,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
-    def delete_sondes_data(self, sonde_ids):
+    def _del_sondes_data(self, sonde_ids):
         """
         Delete the sonde data corresponding to the specified ids.
-        """
-        if not is_list_like(sonde_ids):
-            sonde_ids = [sonde_ids, ]
 
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete` provided by `DatabaseAccessorBase`.
+        """
         # Check for foreign key violation.
         foreign_sonde_installation = (
             self._session.query(SondeInstallation)
