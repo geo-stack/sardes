@@ -637,90 +637,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         pass
 
-    # ---- Timeseries
-    def get_timeseries_for_obs_well(self, obs_well_id, data_types=None):
-        """
-        Return a pandas dataframe containing the readings for the given
-        data types and monitoring station.
-
-        If no data type are specified, then return the entire dataset for
-        the specified monitoring station.
-
-        Parameters
-        ----------
-        obs_well_id: object
-            A unique identifier that is used to reference the observation well
-            in the database.
-        data_type: list of str or list of DataType
-            A list of timeseries data types that we want to extract
-            from the database.
-
-        Returns
-        -------
-        tseries_dataf: pandas.DataFrame
-            A pandas dataframe containing the readings for the given
-            data types and obervation well.
-            Time must be saved as datetime in a column named 'datetime'.
-            The columns in which the numerical values are stored must be a
-            member of :class:`sardes.api.timeseries.DataType`.
-            Finally, the observation ID and a sonde serial number must be
-            provided for each value and stored in columns named, respectively,
-            'obs_id' and 'sonde_id'.
-        """
-        raise NotImplementedError
-
-    def save_timeseries_data_edits(self, tseries_edits):
-        """
-        Save in the database a set of edits that were made to to timeseries
-        data that were already saved in the database.
-
-        Parameters
-        ----------
-        tseries_edits: pandas.DataFrame
-            A multi-indexes pandas dataframe that contains the edited
-            numerical values that need to be saved in the database.
-            The indexes of the dataframe correspond, respectively, to the
-            datetime (datetime), observation ID (str) and the data type
-            (DataType) corresponding to the edited value.
-        """
-        raise NotImplementedError
-
-    def add_timeseries_data(self, tseries_data, obs_well_uuid,
-                            sonde_installation_uuid=None):
-        """
-        Save in the database a set of timeseries data associated with the
-        given well and sonde installation id.
-
-        Parameters
-        ----------
-        tseries_data: pandas.DataFrame
-            A pandas dataframe where time is saved as datetime in a column
-            named 'datetime'. The columns in which the numerical values are
-            saved must be a member of :class:`sardes.api.timeseries.DataType`
-            enum.
-        obs_well_id: int, :class:`uuid.UUID`
-            A unique identifier that is used to reference in the database
-            the observation well in which the data were measured.
-        installation_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the sonde installation, if
-            any, corresponding to the current set of data.
-        """
-        raise NotImplementedError
-
-    def delete_timeseries_data(self, tseries_dels):
-        """
-        Delete data in the database for the observation IDs, datetime and
-        data type specified in tseries_dels.
-
-        Parameters
-        ----------
-        tseries_dels: pandas.DataFrame
-            A pandas dataframe that contains the observation IDs, datetime,
-            and data_type for which timeseries data need to be deleted
-            from the database.
-        """
-        raise NotImplementedError
-
     # ---- Manual Measurements
     def add_manual_measurements(self, measurement_id, attribute_values):
         """
@@ -814,3 +730,87 @@ class DatabaseAccessor(DatabaseAccessorBase):
             public method `delete`.
         """
         pass
+
+    # ---- Timeseries
+    def get_timeseries_for_obs_well(self, obs_well_id, data_types=None):
+        """
+        Return a pandas dataframe containing the readings for the given
+        data types and monitoring station.
+
+        If no data type are specified, then return the entire dataset for
+        the specified monitoring station.
+
+        Parameters
+        ----------
+        obs_well_id: object
+            A unique identifier that is used to reference the observation well
+            in the database.
+        data_type: list of str or list of DataType
+            A list of timeseries data types that we want to extract
+            from the database.
+
+        Returns
+        -------
+        tseries_dataf: pandas.DataFrame
+            A pandas dataframe containing the readings for the given
+            data types and obervation well.
+            Time must be saved as datetime in a column named 'datetime'.
+            The columns in which the numerical values are stored must be a
+            member of :class:`sardes.api.timeseries.DataType`.
+            Finally, the observation ID and a sonde serial number must be
+            provided for each value and stored in columns named, respectively,
+            'obs_id' and 'sonde_id'.
+        """
+        raise NotImplementedError
+
+    def save_timeseries_data_edits(self, tseries_edits):
+        """
+        Save in the database a set of edits that were made to to timeseries
+        data that were already saved in the database.
+
+        Parameters
+        ----------
+        tseries_edits: pandas.DataFrame
+            A multi-indexes pandas dataframe that contains the edited
+            numerical values that need to be saved in the database.
+            The indexes of the dataframe correspond, respectively, to the
+            datetime (datetime), observation ID (str) and the data type
+            (DataType) corresponding to the edited value.
+        """
+        raise NotImplementedError
+
+    def add_timeseries_data(self, tseries_data, obs_well_uuid,
+                            sonde_installation_uuid=None):
+        """
+        Save in the database a set of timeseries data associated with the
+        given well and sonde installation id.
+
+        Parameters
+        ----------
+        tseries_data: pandas.DataFrame
+            A pandas dataframe where time is saved as datetime in a column
+            named 'datetime'. The columns in which the numerical values are
+            saved must be a member of :class:`sardes.api.timeseries.DataType`
+            enum.
+        obs_well_id: int, :class:`uuid.UUID`
+            A unique identifier that is used to reference in the database
+            the observation well in which the data were measured.
+        installation_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the sonde installation, if
+            any, corresponding to the current set of data.
+        """
+        raise NotImplementedError
+
+    def delete_timeseries_data(self, tseries_dels):
+        """
+        Delete data in the database for the observation IDs, datetime and
+        data type specified in tseries_dels.
+
+        Parameters
+        ----------
+        tseries_dels: pandas.DataFrame
+            A pandas dataframe that contains the observation IDs, datetime,
+            and data_type for which timeseries data need to be deleted
+            from the database.
+        """
+        raise NotImplementedError
