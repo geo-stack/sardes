@@ -1244,13 +1244,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
-    def delete_sonde_installations(self, install_ids):
+    def _del_sonde_installations(self, install_ids):
         """
         Delete the sonde installations corresponding to the specified ids.
-        """
-        if not is_list_like(install_ids):
-            install_ids = [install_ids, ]
 
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete` provided by `DatabaseAccessorBase`.
+        """
         # We need to update the "observations" and "process" tables to remove
         # any reference to the sonde installations that are going to be
         # removed from the database.
