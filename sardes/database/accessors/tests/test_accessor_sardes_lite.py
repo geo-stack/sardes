@@ -223,7 +223,7 @@ def test_manual_measurements_interface(dbaccessor, obswells_data,
     # =========================================================================
     # Delete
     # =========================================================================
-    dbaccessor.delete_manual_measurements(gen_num_value_uuid)
+    dbaccessor._del_manual_measurements(gen_num_value_uuid)
     saved_manual_measurements = dbaccessor.get_manual_measurements()
     assert (saved_manual_measurements.to_dict() ==
             manual_measurements.iloc[1:].to_dict())
@@ -378,13 +378,13 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
             sonde_installs_bd.iloc[0]['process_id'])
 
     # Delete the first sonde installation of the database.
-    dbaccessor.delete_sonde_installations(sonde_installs_bd.index[0])
+    dbaccessor._del_sonde_installations(sonde_installs_bd.index[0])
 
     sonde_installs_bd = dbaccessor.get_sonde_installations()
     assert len(sonde_installs_bd) == len(sondes_installation) - 1
 
     # Delete the remaining repere data.
-    dbaccessor.delete_sonde_installations(sonde_installs_bd.index)
+    dbaccessor._del_sonde_installations(sonde_installs_bd.index)
 
     sonde_installs_bd = dbaccessor.get_sonde_installations()
     assert len(sonde_installs_bd) == 0
@@ -558,15 +558,15 @@ def test_sonde_feature_interface(dbaccessor, sondes_data, sondes_installation,
 
     sonde_id = sondes_installation.iloc[0]['sonde_uuid']
     with pytest.raises(DatabaseAccessorError):
-        dbaccessor.delete_sondes_data(sonde_id)
+        dbaccessor._del_sondes_data(sonde_id)
 
     sondes_data_bd = dbaccessor.get_sondes_data()
     assert len(sondes_data_bd) == 6
 
     # We deleted all sonde installations and try to delete all sonde
     # features from the database.
-    dbaccessor.delete_sonde_installations(sondes_installation.index)
-    dbaccessor.delete_sondes_data(sondes_data.index)
+    dbaccessor._del_sonde_installations(sondes_installation.index)
+    dbaccessor._del_sondes_data(sondes_data.index)
 
     sondes_data_bd = dbaccessor.get_sondes_data()
     assert len(sondes_data_bd) == 0
@@ -645,7 +645,7 @@ def test_observation_well_interface(dbaccessor, database_filler,
     assert len(dbaccessor.get_observation_wells_data()) == 5
 
     # We delete the manual measurements and try again.
-    dbaccessor.delete_manual_measurements(
+    dbaccessor._del_manual_measurements(
         dbaccessor.get_manual_measurements().index)
 
     with pytest.raises(DatabaseAccessorError):
@@ -661,7 +661,7 @@ def test_observation_well_interface(dbaccessor, database_filler,
     assert len(dbaccessor.get_observation_wells_data()) == 5
 
     # We delete the sonde installations and try again (now it should work).
-    dbaccessor.delete_sonde_installations(
+    dbaccessor._del_sonde_installations(
         dbaccessor.get_sonde_installations().index)
 
     dbaccessor.delete('observation_wells_data', obs_wells_id)
