@@ -298,6 +298,17 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def _del_observation_wells_data(self, indexes: list):
+        """
+        Delete the observation wells corresponding to the specified indexes.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete`.
+        """
+        pass
+
     # ---- Repere
     def add_repere_data(self, repere_id, attribute_values):
         """
@@ -368,6 +379,17 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def _del_repere_data(self, indexes: list):
+        """
+        Delete the repere data corresponding to the specified indexes.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete`.
+        """
+        pass
+
     # ---- Sonde Brands and Models Library
     def get_sonde_models_lib(self):
         """
@@ -430,6 +452,17 @@ class DatabaseAccessor(DatabaseAccessorBase):
             sonde model.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def _del_sonde_models_lib(self, indexes: list):
+        """
+        Delete the sonde models corresponding to the specified indexes.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete`.
+        """
+        pass
 
     # ---- Sondes Inventory
     def add_sondes_data(self, sonde_id, attribute_values):
@@ -514,6 +547,17 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def _del_sondes_data(self, indexes: list):
+        """
+        Delete the sondes data corresponding to the specified indexes.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete`.
+        """
+        pass
+
     # ---- Sonde installations
     def add_sonde_installations(self, installation_id, attribute_values):
         """
@@ -581,6 +625,17 @@ class DatabaseAccessor(DatabaseAccessorBase):
                 The depth at which the sonde was installed in the well.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def _del_sonde_installations(self, indexes: list):
+        """
+        Delete the sonde installations corresponding to the specified indexes.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete`.
+        """
+        pass
 
     # ---- Timeseries
     def get_timeseries_for_obs_well(self, obs_well_id, data_types=None):
@@ -748,3 +803,14 @@ class DatabaseAccessor(DatabaseAccessorBase):
             changed in the database for the corresponding measurement_id.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def _del_manual_measurements(self, indexes: list):
+        """
+        Delete the manual measurements corresponding to the specified indexes.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete`.
+        """
+        pass
