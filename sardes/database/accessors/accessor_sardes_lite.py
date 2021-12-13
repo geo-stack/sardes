@@ -1371,13 +1371,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 measurement.gen_num_value_notes = attr_value
         self._session.commit()
 
-    def delete_manual_measurements(self, gen_num_value_uuids):
+    def _del_manual_measurements(self, gen_num_value_uuids):
         """
         Delete the manual measurements corresponding to the specified
         gen_num_value_uuids.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete` provided by `DatabaseAccessorBase`.
         """
-        if not is_list_like(gen_num_value_uuids):
-            gen_num_value_uuids = [gen_num_value_uuids, ]
         for gen_num_value_uuid in gen_num_value_uuids:
             measurement = self._get_generic_num_value(gen_num_value_uuid)
             observation = self._get_observation(measurement.observation_id)
