@@ -474,7 +474,7 @@ def test_sonde_models_interface(dbaccessor, sondes_data):
     assert len(sonde_models) == len_sonde_models + 2
 
     with pytest.raises(DatabaseAccessorError):
-        dbaccessor.delete_sonde_models_lib(
+        dbaccessor._del_sonde_models_lib(
             sondes_data.iloc[0]['sonde_model_id'])
 
     sonde_models = dbaccessor.get_sonde_models_lib()
@@ -482,8 +482,8 @@ def test_sonde_models_interface(dbaccessor, sondes_data):
 
     # Try to delete the last two new sonde models that were added previously
     # in this test and are not referenced in table 'sonde_installation'.
-    dbaccessor.delete_sonde_models_lib(sonde_models.index[-1])
-    dbaccessor.delete_sonde_models_lib(sonde_models.index[-2])
+    dbaccessor._del_sonde_models_lib(sonde_models.index[-1])
+    dbaccessor._del_sonde_models_lib(sonde_models.index[-2])
 
     sonde_models = dbaccessor.get_sonde_models_lib()
     assert len(sonde_models) == len_sonde_models
