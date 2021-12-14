@@ -94,7 +94,7 @@ class DatabaseAccessorBase(ABC):
         Create a new connection object to communicate with the database.
         """
         self._temp_indexes = {}
-        return self._connect()
+        self._connection, self._connection_error = self._connect()
 
     # ---- Temp indexes
     def temp_indexes(self, name):

@@ -511,16 +511,17 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Create a new connection object to communicate with the database.
         """
         if not osp.exists(self._database):
-            self._connection = None
-            self._connection_error = IOError(_(
+            connection = None
+            connection_error = IOError(_(
                 "'{}' does not exist.").format(self._database))
-            return
+            return connection, connection_error
+
         root, ext = osp.splitext(self._database)
         if ext != '.db':
-            self._connection = None
-            self._connection_error = IOError(_(
+            connection = None
+            connection_error = IOError(_(
                 "'{}' is not a valid database file.").format(self._database))
-            return
+            return connection, connection_error
 
         # We only test that a connection can be made correctly with the
         # database, but we do not keep a reference to that connection.
@@ -532,37 +533,36 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         try:
             conn = self._engine.connect()
         except DBAPIError as e:
-            self._connection = None
-            self._connection_error = e
+            connection = None
+            connection_error = e
         else:
             app_id = self.application_id()
             version = self.version()
             if app_id != APPLICATION_ID:
-                self._connection = None
-                self._connection_error = sqlite3.DatabaseError(_(
+                connection = None
+                connection_error = sqlite3.DatabaseError(_(
                     "'{}' does not appear to be a Sardes SQLite database. "
                     "The application id set in the database is {}, "
                     "but should be {}.").format(
                         self._database, app_id, APPLICATION_ID))
-                sqlite3.DatabaseError()
             elif version < CURRENT_SCHEMA_VERSION:
-                self._connection = None
-                self._connection_error = sqlite3.DatabaseError(_(
+                connection = None
+                connection_error = sqlite3.DatabaseError(_(
                     "The version of this database is {} and is outdated. "
                     "Please update your database to version {} and try again."
                     ).format(version, CURRENT_SCHEMA_VERSION))
             elif version > CURRENT_SCHEMA_VERSION:
-                self._connection = None
-                self._connection_error = sqlite3.DatabaseError(_(
+                connection = None
+                connection_error = sqlite3.DatabaseError(_(
                     "Your Sardes application is outdated and does not support "
                     "databases whose version is higher than {}. Please "
                     "update Sardes and try again."
                     ).format(CURRENT_SCHEMA_VERSION))
             else:
-                self._connection = True
-                self._connection_error = None
-
+                connection = True
+                connection_error = None
             conn.close()
+        return connection, connection_error
 
     def close_connection(self):
         """
