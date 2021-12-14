@@ -26,25 +26,39 @@ from qtpy.QtCore import Qt
 from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.plugins.databases.widgets import DatabaseConnectionWidget
 from sardes.widgets.statusbar import ProcessStatusBar
-from sardes.database.dialogs import (
-    DatabaseConnectDialogRSESQ as DatabaseConnectDialog)
+from sardes.api.database_dialog import DatabaseConnectDialogBase
+from sardes.api.database_accessor import DatabaseAccessorBase
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
-@pytest.fixture
-def dbconnmanager():
-    dbconnmanager = DatabaseConnectionManager()
-    return dbconnmanager
+class DatabaseAccessorMock(DatabaseAccessorBase):
+    dbconnection = None
+    dbconnection_error = None
+
+    def _connect(self):
+        pass
+
+    def is_connected(self):
+        return self._connection is not None
+
+    def close_connection(self):
+        self._connection = None
+
+
+class DatabaseConnectDialogMock(DatabaseConnectDialogBase):
+    __DatabaseAccessor__ = DatabaseAccessorMock
+    __database_type_name__ = 'test_connection'
+    __database_type_desc__ = 'An accessor to test the connection logic.'
 
 
 @pytest.fixture
-def dbconnwidget(qtbot, mocker, dbconnmanager):
-    dbconnwidget = DatabaseConnectionWidget(dbconnmanager)
+def dbconnwidget(qtbot, mocker):
+    dbconnwidget = DatabaseConnectionWidget(DatabaseConnectionManager())
 
     # Add a database connection dialog to the database connection widget.
-    database_dialog = DatabaseConnectDialog()
+    database_dialog = DatabaseConnectDialogMock()
     dbconnwidget.add_database_dialog(database_dialog)
 
     qtbot.addWidget(dbconnwidget)
@@ -68,13 +82,14 @@ def test_dbconnwidget_connect(dbconnwidget, qtbot, mocker):
     """
     dbconnmanager = dbconnwidget.db_connection_manager
 
-    def sqlalchemy_connect_mock(*args, **kargs):
+    def _connect_mock(*args, **kargs):
         qtbot.wait(300)
-        mocked_connection = Mock()
-        mocked_connection.closed = False
-        return mocked_connection
-    mocker.patch('sqlalchemy.engine.Engine.connect',
-                 side_effect=sqlalchemy_connect_mock)
+        connection = Mock()
+        connection_error = None
+        return connection, connection_error
+
+    mocker.patch.object(
+        DatabaseAccessorMock, '_connect', side_effect=_connect_mock)
 
     # Try connecting to the database.
     with qtbot.waitSignal(dbconnmanager.sig_database_connected,
@@ -89,8 +104,7 @@ def test_dbconnwidget_connect(dbconnwidget, qtbot, mocker):
 
     # Assert that a connection to the database was created sucessfully.
     assert dbconnmanager.is_connected() is True
-    assert (dbconnwidget.status_bar.status ==
-            ProcessStatusBar.PROCESS_SUCCEEDED)
+    assert dbconnwidget.status_bar.status == ProcessStatusBar.PROCESS_SUCCEEDED
     assert not dbconnwidget.stacked_dialogs.isEnabled()
     assert dbconnwidget.connect_button.isEnabled()
     assert dbconnwidget.connect_button.text() == 'Disconnect'
@@ -119,14 +133,18 @@ def test_dbconnwidget_failed_connect(mode, dbconnwidget, qtbot, mocker):
     """
     dbconnmanager = dbconnwidget.db_connection_manager
 
-    def sqlalchemy_connect_mock(*args, **kargs):
+    def _connect_mock(*args, **kargs):
         qtbot.wait(300)
         if mode == 'return none':
-            return None
+            connection = None
+            connection_error = None
         elif mode == 'raise exception':
-            raise OperationalError(Mock(), Mock(), Mock())
-    mocker.patch('sqlalchemy.engine.Engine.connect',
-                 side_effect=sqlalchemy_connect_mock)
+            connection = None
+            connection_error = OperationalError(Mock(), Mock(), Mock())
+        return connection, connection_error
+
+    mocker.patch.object(
+        DatabaseAccessorMock, '_connect', side_effect=_connect_mock)
 
     # Try connecting to the database.
     with qtbot.waitSignal(dbconnmanager.sig_database_connected,

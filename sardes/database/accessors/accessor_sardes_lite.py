@@ -511,16 +511,17 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Create a new connection object to communicate with the database.
         """
         if not osp.exists(self._database):
-            self._connection = None
-            self._connection_error = IOError(_(
+            connection = None
+            connection_error = IOError(_(
                 "'{}' does not exist.").format(self._database))
-            return
+            return connection, connection_error
+
         root, ext = osp.splitext(self._database)
         if ext != '.db':
-            self._connection = None
-            self._connection_error = IOError(_(
+            connection = None
+            connection_error = IOError(_(
                 "'{}' is not a valid database file.").format(self._database))
-            return
+            return connection, connection_error
 
         # We only test that a connection can be made correctly with the
         # database, but we do not keep a reference to that connection.
@@ -532,37 +533,36 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         try:
             conn = self._engine.connect()
         except DBAPIError as e:
-            self._connection = None
-            self._connection_error = e
+            connection = None
+            connection_error = e
         else:
             app_id = self.application_id()
             version = self.version()
             if app_id != APPLICATION_ID:
-                self._connection = None
-                self._connection_error = sqlite3.DatabaseError(_(
+                connection = None
+                connection_error = sqlite3.DatabaseError(_(
                     "'{}' does not appear to be a Sardes SQLite database. "
                     "The application id set in the database is {}, "
                     "but should be {}.").format(
                         self._database, app_id, APPLICATION_ID))
-                sqlite3.DatabaseError()
             elif version < CURRENT_SCHEMA_VERSION:
-                self._connection = None
-                self._connection_error = sqlite3.DatabaseError(_(
+                connection = None
+                connection_error = sqlite3.DatabaseError(_(
                     "The version of this database is {} and is outdated. "
                     "Please update your database to version {} and try again."
                     ).format(version, CURRENT_SCHEMA_VERSION))
             elif version > CURRENT_SCHEMA_VERSION:
-                self._connection = None
-                self._connection_error = sqlite3.DatabaseError(_(
+                connection = None
+                connection_error = sqlite3.DatabaseError(_(
                     "Your Sardes application is outdated and does not support "
                     "databases whose version is higher than {}. Please "
                     "update Sardes and try again."
                     ).format(CURRENT_SCHEMA_VERSION))
             else:
-                self._connection = True
-                self._connection_error = None
-
+                connection = True
+                connection_error = None
             conn.close()
+        return connection, connection_error
 
     def close_connection(self):
         """
@@ -769,13 +769,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
-    def delete_observation_wells_data(self, obswell_ids):
+    def _del_observation_wells_data(self, obswell_ids):
         """
         Delete the observation wells corresponding to the specified ids.
-        """
-        if not is_list_like(obswell_ids):
-            obswell_ids = [obswell_ids, ]
 
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete` provided by `DatabaseAccessorBase`.
+        """
         # Check for foreign key violation.
         for table in [Observation, Process, Repere]:
             foreign_items_count = (
@@ -978,13 +979,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
-    def delete_repere_data(self, repere_ids):
+    def _del_repere_data(self, repere_ids):
         """
         Delete the repere data corresponding to the specified repere ids.
-        """
-        if not is_list_like(repere_ids):
-            repere_ids = [repere_ids, ]
 
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete` provided by `DatabaseAccessorBase`.
+        """
         # Delete the Repere items from the database.
         self._session.execute(
             Repere.__table__.delete().where(
@@ -1036,13 +1038,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             ))
         self._session.commit()
 
-    def delete_sonde_models_lib(self, sonde_model_ids):
+    def _del_sonde_models_lib(self, sonde_model_ids):
         """
-        Delete the repere data corresponding to the specified repere ids.
-        """
-        if not is_list_like(sonde_model_ids):
-            sonde_model_ids = [sonde_model_ids, ]
+        Delete the sonde model corresponding to the specified sonde_model_ids.
 
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete` provided by `DatabaseAccessorBase`.
+        """
         # Check for foreign key violation.
         foreign_sonde_features_count = (
             self._session.query(SondeFeature)
@@ -1130,13 +1133,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
-    def delete_sondes_data(self, sonde_ids):
+    def _del_sondes_data(self, sonde_ids):
         """
         Delete the sonde data corresponding to the specified ids.
-        """
-        if not is_list_like(sonde_ids):
-            sonde_ids = [sonde_ids, ]
 
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete` provided by `DatabaseAccessorBase`.
+        """
         # Check for foreign key violation.
         foreign_sonde_installation = (
             self._session.query(SondeInstallation)
@@ -1240,13 +1244,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
-    def delete_sonde_installations(self, install_ids):
+    def _del_sonde_installations(self, install_ids):
         """
         Delete the sonde installations corresponding to the specified ids.
-        """
-        if not is_list_like(install_ids):
-            install_ids = [install_ids, ]
 
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete` provided by `DatabaseAccessorBase`.
+        """
         # We need to update the "observations" and "process" tables to remove
         # any reference to the sonde installations that are going to be
         # removed from the database.
@@ -1366,13 +1371,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 measurement.gen_num_value_notes = attr_value
         self._session.commit()
 
-    def delete_manual_measurements(self, gen_num_value_uuids):
+    def _del_manual_measurements(self, gen_num_value_uuids):
         """
         Delete the manual measurements corresponding to the specified
         gen_num_value_uuids.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete` provided by `DatabaseAccessorBase`.
         """
-        if not is_list_like(gen_num_value_uuids):
-            gen_num_value_uuids = [gen_num_value_uuids, ]
         for gen_num_value_uuid in gen_num_value_uuids:
             measurement = self._get_generic_num_value(gen_num_value_uuid)
             observation = self._get_observation(measurement.observation_id)

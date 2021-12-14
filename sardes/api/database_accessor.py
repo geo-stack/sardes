@@ -13,6 +13,7 @@ from abc import ABC, abstractmethod
 # ---- Third party imports
 import pandas as pd
 from pandas import Series, DataFrame
+from pandas.api.types import is_list_like
 
 
 class DatabaseAccessorError(Exception):
@@ -65,13 +66,19 @@ class DatabaseAccessorBase(ABC):
         getattr(self, 'add_' + name)(primary_key, values)
         self.del_temp_index(name, primary_key)
 
-    def delete(self, name, primary_key):
+    def delete(self, name: str, indexes: list):
         """
-        Delete the item related to name in the database using the given
-        primary_key.
+        Delete from the database the items related to name at the
+        specified indexes.
         """
-        getattr(self, 'delete_' + name)(primary_key)
-        self.del_temp_index(name, primary_key)
+        if not is_list_like(indexes):
+            indexes = [indexes, ]
+        else:
+            indexes = list(indexes)
+
+        getattr(self, '_del_' + name)(indexes)
+        for index in indexes:
+            self.del_temp_index(name, index)
 
     def create_index(self, name):
         """
@@ -87,7 +94,7 @@ class DatabaseAccessorBase(ABC):
         Create a new connection object to communicate with the database.
         """
         self._temp_indexes = {}
-        return self._connect()
+        self._connection, self._connection_error = self._connect()
 
     # ---- Temp indexes
     def temp_indexes(self, name):
@@ -291,6 +298,17 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def _del_observation_wells_data(self, indexes: list):
+        """
+        Delete the observation wells corresponding to the specified indexes.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete`.
+        """
+        pass
+
     # ---- Repere
     def add_repere_data(self, repere_id, attribute_values):
         """
@@ -361,6 +379,17 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def _del_repere_data(self, indexes: list):
+        """
+        Delete the repere data corresponding to the specified indexes.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete`.
+        """
+        pass
+
     # ---- Sonde Brands and Models Library
     def get_sonde_models_lib(self):
         """
@@ -423,6 +452,17 @@ class DatabaseAccessor(DatabaseAccessorBase):
             sonde model.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def _del_sonde_models_lib(self, indexes: list):
+        """
+        Delete the sonde models corresponding to the specified indexes.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete`.
+        """
+        pass
 
     # ---- Sondes Inventory
     def add_sondes_data(self, sonde_id, attribute_values):
@@ -507,6 +547,17 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def _del_sondes_data(self, indexes: list):
+        """
+        Delete the sondes data corresponding to the specified indexes.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete`.
+        """
+        pass
+
     # ---- Sonde installations
     def add_sonde_installations(self, installation_id, attribute_values):
         """
@@ -574,6 +625,111 @@ class DatabaseAccessor(DatabaseAccessorBase):
                 The depth at which the sonde was installed in the well.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def _del_sonde_installations(self, indexes: list):
+        """
+        Delete the sonde installations corresponding to the specified indexes.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete`.
+        """
+        pass
+
+    # ---- Manual Measurements
+    def add_manual_measurements(self, measurement_id, attribute_values):
+        """
+        Add a new manual measurement to the database using the provided ID
+        and attribute values.
+
+        Parameters
+        ----------
+        measurement_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the manual measurement
+            in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values for the new
+            manual measurement.
+
+            Required elements
+            ~~~~~~~~~~~~~~~~~
+            - datetime :class:`datetime.Datetime`
+                A datetime object corresponding to the date and time when the
+                manual measurement was made in the well.
+            - value: float
+                The numerical value of the water level that was
+                measured manually in the well.
+            - sampling_feature_uuid: object
+                The unique identifier that is used to reference the observation
+                well in which the manual measurement was made.
+
+            Optional elements
+            ~~~~~~~~~~~~~~~~~
+            - notes: str
+                A note related to the manual measurement.
+        """
+        raise NotImplementedError
+
+    def get_manual_measurements(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the water level manual
+        measurements made in the observation wells for the entire monitoring
+        network.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A :class:`pandas.DataFrame` containing the information related
+            to the observation wells that are saved in the database.
+
+            The row indexes of the dataframe must correspond to the
+            IDs used to reference each manual measurement in the database.
+
+            The dataframe must contain the following columns.
+
+            Required Columns
+            ~~~~~~~~~~~~~~~~
+            - sampling_feature_uuid: object
+                A unique identifier that is used to reference the observation
+                well in the database in which the manual measurement was made.
+            - datetime: :class:`datetime.Datetime`
+                A datetime object corresponding to the date and time when the
+                manual measurement was made in the well.
+            - value: float
+                The value of the water level that was measured manually
+                in the well.
+            - notes: str
+                Any notes related to the manual measurement.
+        """
+        raise NotImplementedError
+
+    def set_manual_measurements(self, measurement_id, attribute_values):
+        """
+        Save in the database the new attribute values for the
+        measurement corresponding to the specified measurement_id.
+
+        Parameters
+        ----------
+        measurement_id: int, :class:`uuid.UUID`
+            A unique identifier used to reference the manual measurement
+            in the database.
+        attribute_values: dict
+            A dictionary containing the attribute values that need to be
+            changed in the database for the corresponding measurement_id.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def _del_manual_measurements(self, indexes: list):
+        """
+        Delete the manual measurements corresponding to the specified indexes.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `delete`.
+        """
+        pass
 
     # ---- Timeseries
     def get_timeseries_for_obs_well(self, obs_well_id, data_types=None):
@@ -656,88 +812,5 @@ class DatabaseAccessor(DatabaseAccessorBase):
             A pandas dataframe that contains the observation IDs, datetime,
             and data_type for which timeseries data need to be deleted
             from the database.
-        """
-        raise NotImplementedError
-
-    # ---- Manual Measurements
-    def add_manual_measurements(self, measurement_id, attribute_values):
-        """
-        Add a new manual measurement to the database using the provided ID
-        and attribute values.
-
-        Parameters
-        ----------
-        measurement_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the manual measurement
-            in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values for the new
-            manual measurement.
-
-            Required elements
-            ~~~~~~~~~~~~~~~~~
-            - datetime :class:`datetime.Datetime`
-                A datetime object corresponding to the date and time when the
-                manual measurement was made in the well.
-            - value: float
-                The numerical value of the water level that was
-                measured manually in the well.
-            - sampling_feature_uuid: object
-                The unique identifier that is used to reference the observation
-                well in which the manual measurement was made.
-
-            Optional elements
-            ~~~~~~~~~~~~~~~~~
-            - notes: str
-                A note related to the manual measurement.
-        """
-        raise NotImplementedError
-
-    def get_manual_measurements(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the water level manual
-        measurements made in the observation wells for the entire monitoring
-        network.
-
-        Returns
-        -------
-        :class:`pandas.DataFrame`
-            A :class:`pandas.DataFrame` containing the information related
-            to the observation wells that are saved in the database.
-
-            The row indexes of the dataframe must correspond to the
-            IDs used to reference each manual measurement in the database.
-
-            The dataframe must contain the following columns.
-
-            Required Columns
-            ~~~~~~~~~~~~~~~~
-            - sampling_feature_uuid: object
-                A unique identifier that is used to reference the observation
-                well in the database in which the manual measurement was made.
-            - datetime: :class:`datetime.Datetime`
-                A datetime object corresponding to the date and time when the
-                manual measurement was made in the well.
-            - value: float
-                The value of the water level that was measured manually
-                in the well.
-            - notes: str
-                Any notes related to the manual measurement.
-        """
-        raise NotImplementedError
-
-    def set_manual_measurements(self, measurement_id, attribute_values):
-        """
-        Save in the database the new attribute values for the
-        measurement corresponding to the specified measurement_id.
-
-        Parameters
-        ----------
-        measurement_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the manual measurement
-            in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values that need to be
-            changed in the database for the corresponding measurement_id.
         """
         raise NotImplementedError

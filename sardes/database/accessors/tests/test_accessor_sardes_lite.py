@@ -223,7 +223,7 @@ def test_manual_measurements_interface(dbaccessor, obswells_data,
     # =========================================================================
     # Delete
     # =========================================================================
-    dbaccessor.delete_manual_measurements(gen_num_value_uuid)
+    dbaccessor.delete('manual_measurements', gen_num_value_uuid)
     saved_manual_measurements = dbaccessor.get_manual_measurements()
     assert (saved_manual_measurements.to_dict() ==
             manual_measurements.iloc[1:].to_dict())
@@ -284,13 +284,13 @@ def test_repere_data_interface(dbaccessor, obswells_data, repere_data):
     # =========================================================================
 
     # Delete the first repere data of the database.
-    dbaccessor.delete_repere_data(repere_data_bd.index[0])
+    dbaccessor.delete('repere_data', repere_data_bd.index[0])
 
     repere_data_bd = dbaccessor.get_repere_data()
     assert len(repere_data_bd) == len(repere_data) - 1
 
     # Delete the remaining repere data.
-    dbaccessor.delete_repere_data(repere_data_bd.index)
+    dbaccessor.delete('repere_data', repere_data_bd.index)
 
     repere_data_bd = dbaccessor.get_repere_data()
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
@@ -378,13 +378,13 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
             sonde_installs_bd.iloc[0]['process_id'])
 
     # Delete the first sonde installation of the database.
-    dbaccessor.delete_sonde_installations(sonde_installs_bd.index[0])
+    dbaccessor.delete('sonde_installations', sonde_installs_bd.index[0])
 
     sonde_installs_bd = dbaccessor.get_sonde_installations()
     assert len(sonde_installs_bd) == len(sondes_installation) - 1
 
     # Delete the remaining repere data.
-    dbaccessor.delete_sonde_installations(sonde_installs_bd.index)
+    dbaccessor.delete('sonde_installations', sonde_installs_bd.index)
 
     sonde_installs_bd = dbaccessor.get_sonde_installations()
     assert len(sonde_installs_bd) == 0
@@ -474,7 +474,8 @@ def test_sonde_models_interface(dbaccessor, sondes_data):
     assert len(sonde_models) == len_sonde_models + 2
 
     with pytest.raises(DatabaseAccessorError):
-        dbaccessor.delete_sonde_models_lib(
+        dbaccessor.delete(
+            'sonde_models_lib',
             sondes_data.iloc[0]['sonde_model_id'])
 
     sonde_models = dbaccessor.get_sonde_models_lib()
@@ -482,8 +483,8 @@ def test_sonde_models_interface(dbaccessor, sondes_data):
 
     # Try to delete the last two new sonde models that were added previously
     # in this test and are not referenced in table 'sonde_installation'.
-    dbaccessor.delete_sonde_models_lib(sonde_models.index[-1])
-    dbaccessor.delete_sonde_models_lib(sonde_models.index[-2])
+    dbaccessor.delete('sonde_models_lib', sonde_models.index[-1])
+    dbaccessor.delete('sonde_models_lib', sonde_models.index[-2])
 
     sonde_models = dbaccessor.get_sonde_models_lib()
     assert len(sonde_models) == len_sonde_models
@@ -558,15 +559,15 @@ def test_sonde_feature_interface(dbaccessor, sondes_data, sondes_installation,
 
     sonde_id = sondes_installation.iloc[0]['sonde_uuid']
     with pytest.raises(DatabaseAccessorError):
-        dbaccessor.delete_sondes_data(sonde_id)
+        dbaccessor.delete('sondes_data', sonde_id)
 
     sondes_data_bd = dbaccessor.get_sondes_data()
     assert len(sondes_data_bd) == 6
 
     # We deleted all sonde installations and try to delete all sonde
     # features from the database.
-    dbaccessor.delete_sonde_installations(sondes_installation.index)
-    dbaccessor.delete_sondes_data(sondes_data.index)
+    dbaccessor.delete('sonde_installations', sondes_installation.index)
+    dbaccessor.delete('sondes_data', sondes_data.index)
 
     sondes_data_bd = dbaccessor.get_sondes_data()
     assert len(sondes_data_bd) == 0
@@ -624,7 +625,7 @@ def test_observation_well_interface(dbaccessor, database_filler,
 
     # Try to delete a station with readings, repere and sonde installations.
     with pytest.raises(DatabaseAccessorError):
-        dbaccessor.delete_observation_wells_data(obs_wells_id)
+        dbaccessor.delete('observation_wells_data', obs_wells_id)
     assert len(dbaccessor.get_observation_wells_data()) == 5
 
     # We delete the timeseries and try again.
@@ -641,30 +642,32 @@ def test_observation_well_interface(dbaccessor, database_filler,
     dbaccessor.delete_timeseries_data(tseries_dels)
 
     with pytest.raises(DatabaseAccessorError):
-        dbaccessor.delete_observation_wells_data(obs_wells_id)
+        dbaccessor.delete('observation_wells_data', obs_wells_id)
     assert len(dbaccessor.get_observation_wells_data()) == 5
 
     # We delete the manual measurements and try again.
-    dbaccessor.delete_manual_measurements(
+    dbaccessor.delete(
+        'manual_measurements',
         dbaccessor.get_manual_measurements().index)
 
     with pytest.raises(DatabaseAccessorError):
-        dbaccessor.delete_observation_wells_data(obs_wells_id)
+        dbaccessor.delete('observation_wells_data', obs_wells_id)
     assert len(dbaccessor.get_observation_wells_data()) == 5
 
     # We delete the repere data and try again.
-    dbaccessor.delete_repere_data(
-        dbaccessor.get_repere_data().index)
+    dbaccessor.delete(
+        'repere_data', dbaccessor.get_repere_data().index)
 
     with pytest.raises(DatabaseAccessorError):
-        dbaccessor.delete_observation_wells_data(obs_wells_id)
+        dbaccessor.delete('observation_wells_data', obs_wells_id)
     assert len(dbaccessor.get_observation_wells_data()) == 5
 
     # We delete the sonde installations and try again (now it should work).
-    dbaccessor.delete_sonde_installations(
+    dbaccessor.delete(
+        'sonde_installations',
         dbaccessor.get_sonde_installations().index)
 
-    dbaccessor.delete_observation_wells_data(obs_wells_id)
+    dbaccessor.delete('observation_wells_data', obs_wells_id)
     assert len(dbaccessor.get_observation_wells_data()) == 4
 
     # Assert that the DB was cleaned as expected.
