@@ -38,7 +38,7 @@ from sardes.tables.delegates import (
     NotEditableDelegate, StringEditDelegate,
     IntEditDelegate, NumEditDelegate, BoolEditDelegate)
 from sardes.database.database_manager import DatabaseConnectionManager
-from sardes.api.database_accessor import DatabaseAccessor
+from sardes.api.database_accessor import DatabaseAccessorBase
 from sardes.utils.data_operations import are_values_equal
 
 
@@ -69,12 +69,14 @@ def TABLE_DATAF():
 @pytest.fixture
 def tablemodel(qtbot, TABLE_DATAF):
 
-    class DatabaseAccessorTest(DatabaseAccessor):
+    class DatabaseAccessorTest(DatabaseAccessorBase):
         def is_connected(self):
             return self._connection is not None
 
         def _connect(self):
-            self._connection = True
+            connection = True
+            connection_error = None
+            return connection, connection_error
 
         def close_connection(self):
             self._connection = None
@@ -89,7 +91,7 @@ def tablemodel(qtbot, TABLE_DATAF):
             for column, edited_value in attribute_values.items():
                 TABLE_DATAF.loc[index, column] = edited_value
 
-        def delete_test_table_dataf_name(self, index):
+        def _del_test_table_dataf_name(self, index):
             TABLE_DATAF.drop(index, axis='index', inplace=True)
 
         def add_test_table_dataf_name(self, index, attribute_values):
