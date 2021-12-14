@@ -42,16 +42,17 @@ def dbmanager(qtbot, mocker):
 @pytest.fixture
 def dbaccessor(qtbot, mocker, DATAF):
     class DatabaseAccessorMock(DatabaseAccessorBase):
-        dbconnection = False
 
         def _connect(self):
-            self.dbconnection = True
+            connection = True
+            connection_error = None
+            return connection, connection_error
 
         def is_connected(self):
-            return self.dbconnection
+            return self._connection is True
 
         def close_connection(self):
-            self.dbconnection = False
+            self._connection = None
 
         def get_something(self):
             sleep(0.5)
