@@ -271,21 +271,24 @@ class DatabaseAccessor(DatabaseAccessorBase):
         pass
 
     # ---- Repere
-    def add_repere_data(self, repere_id, attribute_values):
+    @abstractmethod
+    def _add_repere_data(self, attribute_values: list[dict]) -> list:
         """
-        Add a new observation well repere data to the database using the
-        provided repere ID and attribute values.
+        Add a list of repere to the database.
 
         Parameters
         ----------
-        repere_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the repere data in
-            the database.
-        attribute_values: dict
-            A dictionary containing the attribute values for the new
-            repere data.
+        values: list[dict]
+            A list of dictionaries containing the attribute values for the new
+            repere to be added to the database.
+
+        Returns
+        -------
+        list
+            The list of indexes that are used to reference the new repere
+            that were added to the database.
         """
-        raise NotImplementedError
+        pass
 
     def set_repere_data(self, repere_id, attribute_values):
         """
