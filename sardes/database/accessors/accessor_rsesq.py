@@ -416,22 +416,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         self._engine.dispose()
         self._connection = None
 
-    # --- Indexes
-    def _create_index(self, name):
-        """
-        Return a new index that can be used subsequently to add a new item
-        related to name in the database.
-
-        Note that you need to take into account temporary indexes that might
-        have been requested by the database manager but haven't been
-        commited yet to the database.
-        """
-        if name in ['observation_wells_data', 'sondes_data',
-                    'manual_measurements', 'sonde_installations']:
-            return uuid.uuid4()
-        else:
-            raise NotImplementedError
-
     # ---- Locations
     def _get_location(self, loc_id):
         """
