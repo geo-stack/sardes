@@ -667,32 +667,34 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             if auto_commit:
                 self._session.commit()
 
-    def add_observation_wells_data(self, obswell_id, attribute_values):
-        """
-        Add a new observation well to the database using the provided
-        obswell_id and attribute values.
-        """
-        # We need first to create a new location in table rsesq.localisation.
-        new_location = Location()
-        self._session.add(new_location)
-        self._session.commit()
+    def _add_observation_wells_data(self, attribute_values):
+        n = len(attribute_values)
 
-        # We then add the new observation well.
-        new_obs_well = SamplingFeature(
-            sampling_feature_uuid=obswell_id,
-            sampling_feature_type_id=1,
-            loc_id=new_location.loc_id)
-        self._session.add(new_obs_well)
+        # Add a location for each new observation well to be added
+        # to the database.
+        new_locations = [Location() for i in range(n)]
+        self._session.add_all(new_locations)
+        self._session.flush()
 
-        # We then create a new metadata object for the new observation well.
-        new_obs_well._metadata = SamplingFeatureMetadata(
-            sampling_feature_uuid=obswell_id)
+        # Add the new observation wells to the database.
+        new_indexes = [uuid.uuid4() for i in range(n)]
+        new_obs_wells = [
+            SamplingFeature(
+                sampling_feature_uuid=index,
+                sampling_feature_type_id=1,
+                loc_id=location.loc_id,
+                _metadata=SamplingFeatureMetadata(sampling_feature_uuid=index)
+                ) for index, location in zip(new_indexes, new_locations)
+            ]
+        self._session.add_all(new_obs_wells)
+        self._session.flush()
 
-        # We then set the attribute values provided in argument for this
-        # new observation well if any.
-        self.set_observation_wells_data(
-            obswell_id, attribute_values, auto_commit=False)
-        self._session.commit()
+        # Set the attribute values of the new observation wells.
+        for i in range(n):
+            self.set_observation_wells_data(
+                new_indexes[i], attribute_values[i])
+
+        return new_indexes
 
     def get_observation_wells_data(self):
         """
