@@ -918,15 +918,20 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .filter(Repere.repere_uuid == repere_id)
             .one())
 
-    def add_repere_data(self, repere_id, attribute_values):
-        """
-        Add a new observation well repere data to the database using the
-        provided repere ID and attribute values.
-        """
-        # We create a new repere item.
-        repere = Repere(repere_uuid=repere_id)
-        self._session.add(repere)
-        self.set_repere_data(repere_id, attribute_values)
+    def _add_repere_data(self, attribute_values):
+        n = len(attribute_values)
+
+        new_indexes = [uuid.uuid4() for i in range(n)]
+        self._session.add_all(
+            Repere(repere_uuid=index) for index in new_indexes)
+        self._session.flush()
+
+        # Set the attribute values of the new repere data.
+        for i in range(n):
+            self.set_repere_data(
+                new_indexes[i], attribute_values[i], auto_commit=False)
+
+        return new_indexes
 
     def get_repere_data(self):
         """
