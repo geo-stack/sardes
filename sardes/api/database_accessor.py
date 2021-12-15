@@ -70,17 +70,17 @@ class DatabaseAccessorBase(ABC):
             self.commit()
         return indexes[0] if is_dict else indexes
 
-    def delete(self, name: str, indexes: list):
+    def delete(self, name: str,
+               indexes: list,
+               auto_commit: bool = True) -> None:
         """
         Delete from the database the items related to name at the
         specified indexes.
         """
-        if not is_list_like(indexes):
-            indexes = [indexes, ]
-        else:
-            indexes = list(indexes)
-
+        indexes = [indexes, ] if not is_list_like(indexes) else list(indexes)
         getattr(self, '_del_' + name)(indexes)
+        if auto_commit:
+            self.commit()
 
     def connect(self):
         """
