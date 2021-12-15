@@ -99,6 +99,11 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
     # ---- Database connection
     @abstractmethod
+    def commit(self):
+        "Commit transaction to the database"
+        pass
+
+    @abstractmethod
     def is_connected(self):
         """
         Return whether a connection to the database is currently active or not.
