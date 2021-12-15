@@ -412,21 +412,28 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
-    def add_sonde_models_lib(self, sonde_model_id, attribute_values):
+    @abstractmethod
+    def _add_sonde_models_lib(self, attribute_values: list[dict]) -> list:
         """
-        Add a new sonde model to the database using the provided
-        sonde_model_id and attribute_values.
+        Add a list of sonde models to the database.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `add`.
 
         Parameters
         ----------
-        sonde_model_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the sonde model in the
-            database.
-        attribute_values: dict
-            A dictionary containing the attribute values for the new
-            sonde model.
+        attribute_values: list[dict]
+            A list of dictionaries containing the attribute values for the new
+            sonde models to be added to the database.
+
+        Returns
+        -------
+        list
+            The list of indexes that are used to reference the new sonde
+            models that were added to the database.
         """
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def _del_sonde_models_lib(self, indexes: list):

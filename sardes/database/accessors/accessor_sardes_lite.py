@@ -985,16 +985,26 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
-    def add_sonde_models_lib(self, sonde_model_id, attribute_values):
-        """
-        Add a new sonde model to the database using the provided
-        sonde_model_id and attribute_values.
-        """
-        self._session.add(SondeModel(
-            sonde_model_id=sonde_model_id,
-            **attribute_values
-            ))
-        self._session.commit()
+    def _add_sonde_models_lib(self, attribute_values):
+        n = len(attribute_values)
+
+        try:
+            max_commited_id = (
+                self._session.query(func.max(SondeModel.sonde_model_id))
+                .one())[0]
+        except TypeError:
+            max_commited_id = 0
+
+        new_indexes = [i + max_commited_id + 1 for i in range(n)]
+        self._session.add_all([
+            SondeModel(
+                sonde_model_id=new_indexes[i],
+                **attribute_values[i]
+                ) for i in range(n)
+            ])
+        self._session.flush()
+
+        return new_indexes
 
     def _del_sonde_models_lib(self, sonde_model_ids):
         """
