@@ -455,22 +455,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             print(p)
             raise p
 
-    def _create_index(self, name):
-        """
-        Return a new index that can be used subsequently to add a new item
-        related to name in the database.
-        """
-        if name == 'sonde_models_lib':
-            try:
-                max_commited_id = (
-                    self._session.query(func.max(SondeModel.sonde_model_id))
-                    .one())[0]
-            except TypeError:
-                max_commited_id = 0
-            return max(self.temp_indexes(name) + [max_commited_id]) + 1
-        else:
-            return uuid.uuid4()
-
     # ---- Database setup
     def init_database(self):
         """
