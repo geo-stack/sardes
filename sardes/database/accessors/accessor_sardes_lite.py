@@ -697,10 +697,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return new_indexes
 
     def get_observation_wells_data(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to the observation wells that are saved in the database.
-        """
         query = (
             self._session.query(
                 SamplingFeature.sampling_feature_uuid,
@@ -731,11 +727,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return obs_wells
 
     def set_observation_wells_data(self, sampling_feature_uuid,
-                                   attribute_values, auto_commit=True):
-        """
-        Save in the database the new attribute value for the observation well
-        corresponding to the specified sampling feature UUID.
-        """
+                                   attribute_values):
         obs_well = self._get_sampling_feature(sampling_feature_uuid)
         for attr_name, attr_value in attribute_values.items():
             if attr_name == 'obs_well_id':
@@ -751,18 +743,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 location = self._get_location(obs_well.loc_id)
                 setattr(location, attr_name, attr_value)
 
-        # Commit changes to the BD.
-        if auto_commit:
-            self._session.commit()
-
     def _del_observation_wells_data(self, obswell_ids):
-        """
-        Delete the observation wells corresponding to the specified ids.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete` provided by `DatabaseAccessorBase`.
-        """
         # Check for foreign key violation.
         for table in [Observation, Process, Repere]:
             foreign_items_count = (
@@ -798,8 +779,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             Location.__table__.delete().where(
                 Location.loc_id.in_(loc_ids))
             )
-
-        self._session.commit()
 
     def get_observation_wells_data_overview(self):
         """
@@ -909,10 +888,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
     # ---- Repere
     def _get_repere_data(self, repere_id):
-        """
-        Return the sqlalchemy Repere object corresponding to the
-        given repere ID.
-        """
         return (
             self._session.query(Repere)
             .filter(Repere.repere_uuid == repere_id)
@@ -971,14 +946,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._session.commit()
 
     def _del_repere_data(self, repere_ids):
-        """
-        Delete the repere data corresponding to the specified repere ids.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete` provided by `DatabaseAccessorBase`.
-        """
-        # Delete the Repere items from the database.
         self._session.execute(
             Repere.__table__.delete().where(
                 Repere.repere_uuid.in_(repere_ids)))

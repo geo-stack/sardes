@@ -166,13 +166,18 @@ class DatabaseAccessor(DatabaseAccessorBase):
         raise NotImplementedError
 
     @abstractmethod
-    def _add_observation_wells_data(self, values: list[dict]) -> list:
+    def _add_observation_wells_data(
+            self, attribute_values: list[dict]) -> list:
         """
         Add a list of new observation wells to the database.
 
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `add`.
+
         Parameters
         ----------
-        values: list[dict]
+        attribute_values: list[dict]
             A list of dictionaries containing the attribute values for the new
             observation wells to be added to the database.
 
@@ -278,9 +283,13 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         Add a list of repere to the database.
 
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `add`.
+
         Parameters
         ----------
-        values: list[dict]
+        attribute_values: list[dict]
             A list of dictionaries containing the attribute values for the new
             repere to be added to the database.
 
