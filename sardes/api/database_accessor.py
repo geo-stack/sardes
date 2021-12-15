@@ -7,6 +7,8 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+from __future__ import annotations
+
 # ---- Standard imports
 from abc import ABC, abstractmethod
 
