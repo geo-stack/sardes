@@ -439,6 +439,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Session = sessionmaker(bind=self._engine)
         self._session = Session()
 
+    def commit(self):
+        self._session.commit()
+
     def version(self):
         """Return the current version of the database."""
         return self.execute("PRAGMA user_version").first()[0]
