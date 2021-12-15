@@ -163,22 +163,24 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
-    def add_observation_wells_data(self, sampling_feature_id,
-                                   attribute_values):
+    @abstractmethod
+    def _add_observation_wells_data(self, values: list[dict]) -> list:
         """
-        Add a new observation well to the database using the provided
-        sampling feature ID and attribute values.
+        Add a list of new observation wells to the database.
 
         Parameters
         ----------
-        sampling_feature_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the observation well
-            in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values for the new
-            observation well.
+        values: list[dict]
+            A list of dictionaries containing the attribute values for the new
+            observation wells to be added to the database.
+
+        Returns
+        -------
+        list
+            The list of indexes that are used to reference the new observation
+            wells that were added to the database.
         """
-        raise NotImplementedError
+        pass
 
     def set_observation_wells_data(self, sampling_feature_id,
                                    attribute_values):
