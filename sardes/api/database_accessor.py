@@ -62,22 +62,24 @@ class DatabaseAccessorBase(ABC):
         if auto_commit:
             self.commit()
 
-    def add(self, name: str,
-            values: dict | list[dict],
-            auto_commit: bool = True) -> list:
+    def add(self, name: str, values: list[dict],
+            indexes: list = None, auto_commit: bool = True) -> list:
         """
         Add a new item to the data related to name in the database using
         the given primary_key and values.
         """
         is_dict = isinstance(values, dict)
-        values = [values] if is_dict else list(values)
-        indexes = getattr(self, '_add_' + name)(values)
+        values = [values, ] if is_dict else list(values)
+        if indexes is not None:
+            indexes = [indexes, ] if is_dict else list(indexes)
+
+        indexes = getattr(self, '_add_' + name)(values, indexes)
         if auto_commit:
             self.commit()
+
         return indexes[0] if is_dict else indexes
 
-    def delete(self, name: str,
-               indexes: list,
+    def delete(self, name: str, indexes: list,
                auto_commit: bool = True) -> None:
         """
         Delete from the database the items related to name at the
@@ -171,7 +173,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
     @abstractmethod
     def _add_observation_wells_data(
-            self, attribute_values: list[dict]) -> list:
+            self, attribute_values: list[dict], indexes: list = None) -> list:
         """
         Add a list of new observation wells to the database.
 
@@ -184,6 +186,9 @@ class DatabaseAccessor(DatabaseAccessorBase):
         attribute_values: list[dict]
             A list of dictionaries containing the attribute values for the new
             observation wells to be added to the database.
+        indexes: list, optional
+            A list of indexes to use when adding the new observation wells
+            to the database.
 
         Returns
         -------
@@ -283,7 +288,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
     # ---- Repere
     @abstractmethod
-    def _add_repere_data(self, attribute_values: list[dict]) -> list:
+    def _add_repere_data(
+            self, attribute_values: list[dict], indexes: list = None) -> list:
         """
         Add a list of repere to the database.
 
@@ -296,6 +302,9 @@ class DatabaseAccessor(DatabaseAccessorBase):
         attribute_values: list[dict]
             A list of dictionaries containing the attribute values for the new
             repere to be added to the database.
+        indexes: list, optional
+            A list of indexes to use when adding the new repere
+            to the database.
 
         Returns
         -------
@@ -417,7 +426,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
         raise NotImplementedError
 
     @abstractmethod
-    def _add_sonde_models_lib(self, attribute_values: list[dict]) -> list:
+    def _add_sonde_models_lib(
+            self, attribute_values: list[dict], indexes: list = None) -> list:
         """
         Add a list of sonde models to the database.
 
@@ -430,6 +440,9 @@ class DatabaseAccessor(DatabaseAccessorBase):
         attribute_values: list[dict]
             A list of dictionaries containing the attribute values for the new
             sonde models to be added to the database.
+        indexes: list, optional
+            A list of indexes to use when adding the new sonde models
+            to the database.
 
         Returns
         -------
