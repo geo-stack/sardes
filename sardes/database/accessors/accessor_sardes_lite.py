@@ -670,8 +670,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             if auto_commit:
                 self._session.commit()
 
-    def _add_observation_wells_data(self, attribute_values):
+    def _add_observation_wells_data(self, attribute_values, indexes=None):
         n = len(attribute_values)
+
+        # Generate new indexes if needed.
+        if indexes is None:
+            indexes = [uuid.uuid4() for i in range(n)]
 
         # Add a location for each new observation well to be added
         # to the database.
@@ -680,14 +684,13 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.flush()
 
         # Add the new observation wells to the database.
-        new_indexes = [uuid.uuid4() for i in range(n)]
         new_obs_wells = [
             SamplingFeature(
                 sampling_feature_uuid=index,
                 sampling_feature_type_id=1,
                 loc_id=location.loc_id,
                 _metadata=SamplingFeatureMetadata(sampling_feature_uuid=index)
-                ) for index, location in zip(new_indexes, new_locations)
+                ) for index, location in zip(indexes, new_locations)
             ]
         self._session.add_all(new_obs_wells)
         self._session.flush()
@@ -695,9 +698,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # Set the attribute values of the new observation wells.
         for i in range(n):
             self.set_observation_wells_data(
-                new_indexes[i], attribute_values[i])
+                indexes[i], attribute_values[i])
 
-        return new_indexes
+        return indexes
 
     def get_observation_wells_data(self):
         query = (
@@ -896,20 +899,24 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .filter(Repere.repere_uuid == repere_id)
             .one())
 
-    def _add_repere_data(self, attribute_values):
+    def _add_repere_data(self, attribute_values, indexes=None):
         n = len(attribute_values)
 
-        new_indexes = [uuid.uuid4() for i in range(n)]
-        self._session.add_all(
-            Repere(repere_uuid=index) for index in new_indexes)
+        # Generate new indexes if needed.
+        if indexes is None:
+            indexes = [uuid.uuid4() for i in range(n)]
+
+        self._session.add_all([
+            Repere(repere_uuid=index) for index in indexes
+            ])
         self._session.flush()
 
         # Set the attribute values of the new repere data.
         for i in range(n):
             self.set_repere_data(
-                new_indexes[i], attribute_values[i], auto_commit=False)
+                indexes[i], attribute_values[i], auto_commit=False)
 
-        return new_indexes
+        return indexes
 
     def get_repere_data(self):
         """
@@ -988,26 +995,28 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
-    def _add_sonde_models_lib(self, attribute_values):
+    def _add_sonde_models_lib(self, attribute_values, indexes=None):
         n = len(attribute_values)
 
-        try:
-            max_commited_id = (
-                self._session.query(func.max(SondeModel.sonde_model_id))
-                .one())[0]
-        except TypeError:
-            max_commited_id = 0
+        # Generate new indexes if needed.
+        if indexes is None:
+            try:
+                max_commited_id = (
+                    self._session.query(func.max(SondeModel.sonde_model_id))
+                    .one())[0]
+            except TypeError:
+                max_commited_id = 0
+            indexes = [i + max_commited_id + 1 for i in range(n)]
 
-        new_indexes = [i + max_commited_id + 1 for i in range(n)]
         self._session.add_all([
             SondeModel(
-                sonde_model_id=new_indexes[i],
+                sonde_model_id=indexes[i],
                 **attribute_values[i]
                 ) for i in range(n)
             ])
         self._session.flush()
 
-        return new_indexes
+        return indexes
 
     def _del_sonde_models_lib(self, sonde_model_ids):
         """
