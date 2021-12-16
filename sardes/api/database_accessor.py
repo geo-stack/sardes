@@ -52,11 +52,15 @@ class DatabaseAccessorBase(ABC):
             pass
         return result
 
-    def set(self, name, *args, **kargs):
+    def set(self, name: str, index: object,
+            values: dict, auto_commit: bool = True) -> None:
         """
-        Save the data related to name in the database.
+        Set in the database the values related to the specified name
+        and index.
         """
-        getattr(self, 'set_' + name)(*args, **kargs)
+        getattr(self, 'set_' + name)(index, values)
+        if auto_commit:
+            self.commit()
 
     def add(self, name: str,
             values: dict | list[dict],

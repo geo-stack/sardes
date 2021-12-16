@@ -213,7 +213,7 @@ def test_manual_measurements_interface(dbaccessor, obswells_data,
         'notes': 'test_edit_manual_measurements'}
     for attr_name, attr_value in edited_values.items():
         assert attr_value != old_values[attr_name]
-    dbaccessor.set_manual_measurements(gen_num_value_uuid, edited_values)
+    dbaccessor.set('manual_measurements', gen_num_value_uuid, edited_values)
 
     saved_manual_measurements = dbaccessor.get_manual_measurements()
     assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
@@ -272,7 +272,7 @@ def test_repere_data_interface(dbaccessor, obswells_data, repere_data):
         }
     for attribute_name, attribute_value in edited_values.items():
         assert attribute_value != old_values[attribute_name]
-    dbaccessor.set_repere_data(repere_uuid, edited_values)
+    dbaccessor.set('repere_data', repere_uuid, edited_values)
 
     repere_data_bd = dbaccessor.get_repere_data()
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
@@ -342,7 +342,7 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
         'install_depth': 11.25}
     for attribute_name, attribute_value in edited_values.items():
         assert attribute_value != old_values[attribute_name]
-    dbaccessor.set_sonde_installations(sonde_install_id, edited_values)
+    dbaccessor.set('sonde_installations', sonde_install_id, edited_values)
 
     sonde_installs_bd = dbaccessor.get_sonde_installations()
     for column, value in edited_values.items():
@@ -455,8 +455,8 @@ def test_sonde_models_interface(dbaccessor, sondes_data):
     # Edit the sonde model of the last item of the sonde models librairie.
     sonde_models = dbaccessor.get_sonde_models_lib()
     sonde_model_id = len(sonde_models)
-    dbaccessor.set_sonde_models_lib(
-        sonde_model_id, {'sonde_model': 'some_model_2'})
+    dbaccessor.set(
+        'sonde_models_lib', sonde_model_id, {'sonde_model': 'some_model_2'})
 
     # Assert that the attribute of the given sonde model was edited as
     # expected.
@@ -534,7 +534,7 @@ def test_sonde_feature_interface(dbaccessor, sondes_data, sondes_installation,
         }
     for attribute_name, attribute_value in edited_values.items():
         assert attribute_value != old_values[attribute_name]
-    dbaccessor.set_sondes_data(sonde_id, edited_values)
+    dbaccessor.set('sondes_data', sonde_id, edited_values)
 
     sondes_data_bd = dbaccessor.get_sondes_data()
     for column, value in edited_values.items():
@@ -610,8 +610,10 @@ def test_observation_well_interface(dbaccessor, database_filler,
         'is_station_active': False,
         'obs_well_notes': 'well_123A2456_notes_edited'
         }
-    dbaccessor.set_observation_wells_data(
-        sampling_feature_uuid, edited_values)
+    dbaccessor.set(
+        'observation_wells_data',
+        sampling_feature_uuid,
+        edited_values)
 
     obs_wells_bd = dbaccessor.get_observation_wells_data()
     for column, value in edited_values.items():
