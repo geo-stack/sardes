@@ -671,8 +671,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             if auto_commit:
                 self._session.commit()
 
-    def _add_observation_wells_data(self, attribute_values, indexes=None):
-        n = len(attribute_values)
+    def _add_observation_wells_data(self, values, indexes=None):
+        n = len(values)
 
         # Generate new indexes if needed.
         if indexes is None:
@@ -699,7 +699,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # Set the attribute values of the new observation wells.
         for i in range(n):
             self.set_observation_wells_data(
-                indexes[i], attribute_values[i])
+                indexes[i], values[i])
 
         return indexes
 
@@ -900,8 +900,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .filter(Repere.repere_uuid == repere_id)
             .one())
 
-    def _add_repere_data(self, attribute_values, indexes=None):
-        n = len(attribute_values)
+    def _add_repere_data(self, values, indexes=None):
+        n = len(values)
 
         # Generate new indexes if needed.
         if indexes is None:
@@ -914,8 +914,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Set the attribute values of the new repere data.
         for i in range(n):
-            self.set_repere_data(
-                indexes[i], attribute_values[i], auto_commit=False)
+            self.set_repere_data(indexes[i], values[i], auto_commit=False)
 
         return indexes
 
@@ -996,8 +995,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
-    def _add_sonde_models_lib(self, attribute_values, indexes=None):
-        n = len(attribute_values)
+    def _add_sonde_models_lib(self, values, indexes=None):
+        n = len(values)
 
         # Generate new indexes if needed.
         if indexes is None:
@@ -1012,7 +1011,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.add_all([
             SondeModel(
                 sonde_model_id=indexes[i],
-                **attribute_values[i]
+                **values[i]
                 ) for i in range(n)
             ])
         self._session.flush()
@@ -1056,8 +1055,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 .filter(SondeFeature.sonde_uuid == sonde_uuid)
                 .one())
 
-    def _add_sondes_data(self, attribute_values, indexes=None):
-        n = len(attribute_values)
+    def _add_sondes_data(self, values, indexes=None):
+        n = len(values)
 
         # Generate new indexes if needed.
         if indexes is None:
@@ -1066,15 +1065,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # Make sure pandas NaT are replaced by None for datetime fields
         # to avoid errors in sqlalchemy.
         for i in range(n):
-            if pd.isnull(attribute_values[i].get('date_reception', True)):
-                attribute_values[i]['date_reception'] = None
-            if pd.isnull(attribute_values[i].get('date_withdrawal', True)):
-                attribute_values[i]['date_withdrawal'] = None
+            if pd.isnull(values[i].get('date_reception', True)):
+                values[i]['date_reception'] = None
+            if pd.isnull(values[i].get('date_withdrawal', True)):
+                values[i]['date_withdrawal'] = None
 
         self._session.add_all([
             SondeFeature(
                 sonde_uuid=indexes[i],
-                **attribute_values[i]
+                **values[i]
                 ) for i in range(n)
             ])
         self._session.flush()
