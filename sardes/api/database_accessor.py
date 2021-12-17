@@ -173,7 +173,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
     @abstractmethod
     def _add_observation_wells_data(
-            self, attribute_values: list[dict], indexes: list = None) -> list:
+            self, values: list[dict], indexes: list = None) -> list:
         """
         Add a list of new observation wells to the database.
 
@@ -183,7 +183,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
         Parameters
         ----------
-        attribute_values: list[dict]
+        values: list[dict]
             A list of dictionaries containing the attribute values for the new
             observation wells to be added to the database.
         indexes: list, optional
@@ -289,7 +289,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
     # ---- Repere
     @abstractmethod
     def _add_repere_data(
-            self, attribute_values: list[dict], indexes: list = None) -> list:
+            self, values: list[dict], indexes: list = None) -> list:
         """
         Add a list of repere to the database.
 
@@ -299,7 +299,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
         Parameters
         ----------
-        attribute_values: list[dict]
+        values: list[dict]
             A list of dictionaries containing the attribute values for the new
             repere to be added to the database.
         indexes: list, optional
@@ -381,7 +381,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
     # ---- Sonde Brands and Models Library
     @abstractmethod
     def _add_sonde_models_lib(
-            self, attribute_values: list[dict], indexes: list = None) -> list:
+            self, values: list[dict], indexes: list = None) -> list:
         """
         Add a list of sonde models to the database.
 
@@ -391,7 +391,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
         Parameters
         ----------
-        attribute_values: list[dict]
+        values: list[dict]
             A list of dictionaries containing the attribute values for the new
             sonde models to be added to the database.
         indexes: list, optional
@@ -466,7 +466,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
     # ---- Sondes Inventory
     @abstractmethod
     def _add_sondes_data(
-            self, attribute_values: list[dict], indexes: list = None) -> list:
+            self, values: list[dict], indexes: list = None) -> list:
         """
         Add a list of new piezometric sondes to the database.
 
@@ -476,7 +476,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
         Parameters
         ----------
-        attribute_values: list[dict]
+        values: list[dict]
             A list of dictionaries containing the attribute values for the new
             sondes to be added to the database.
         indexes: list, optional
@@ -572,7 +572,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
     # ---- Sonde installations
     def _add_sonde_installations(
-            self, attribute_values: list[dict], indexes: list = None) -> list:
+            self, values: list[dict], indexes: list = None) -> list:
         """
         Add a list of sonde installations to the database.
 
@@ -582,7 +582,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
         Parameters
         ----------
-        attribute_values: list[dict]
+        values: list[dict]
             A list of dictionaries containing the attribute values for the new
             sonde installations to be added to the database.
         indexes: list, optional
