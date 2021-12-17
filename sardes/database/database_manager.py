@@ -145,13 +145,6 @@ class DatabaseConnectionWorker(WorkerBase):
             del self._cache[name]
         self.db_accessor.delete(name, *args, **kargs)
 
-    def _create_index(self, name):
-        """
-        Return a new index that can be used subsequently to add new item
-        to the data related to name in the database.
-        """
-        return self.db_accessor.create_index(name)
-
     def _set(self, name, *args, **kargs):
         """
         Save the data related to name in the database.
@@ -664,13 +657,6 @@ class DatabaseConnectionManager(TaskManagerBase):
         self._confirm_before_saving_edits = bool(x)
 
     # ---- Public methods
-    def create_index(self, name):
-        """
-        Return a new index that can be used subsequently to add new item
-        to the data related to name in the database.
-        """
-        return self.worker()._create_index(name)
-
     def add(self, *args, callback=None, postpone_exec=False):
         """
         Add a new item to the data related to name in the database.
