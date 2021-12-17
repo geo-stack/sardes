@@ -1285,31 +1285,35 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     gen_num_value_uuid)
             .one())
 
-    def add_manual_measurements(self, gen_num_value_uuid, attribute_values):
-        """
-        Add a new manual measurements to the database using the provided ID
-        and attribute values.
-        """
-        # We need first to create a new observation in table observation.
-        new_observation = Observation(
-            obs_datetime=attribute_values.get('datetime', None),
-            sampling_feature_uuid=attribute_values.get(
-                'sampling_feature_uuid', None),
-            obs_type_id=4
-            )
-        self._session.add(new_observation)
-        self._session.commit()
+    def _add_manual_measurements(self, values, indexes=None):
+        n = len(values)
 
-        # We now create a new measurement in table 'generic_numerial_data'.
-        measurement = GenericNumericalData(
-            gen_num_value_uuid=gen_num_value_uuid,
-            gen_num_value=attribute_values.get('value', None),
-            observation_id=new_observation.observation_id,
-            obs_property_id=2,
-            gen_num_value_notes=attribute_values.get('notes', None)
-            )
-        self._session.add(measurement)
-        self._session.commit()
+        # Generate new indexes if needed.
+        if indexes is None:
+            indexes = [uuid.uuid4() for i in range(n)]
+
+        # Add new observations in table observation.
+        new_observations = [
+            Observation(
+                obs_datetime=values[i].get('datetime', None),
+                sampling_feature_uuid=values[i].get(
+                    'sampling_feature_uuid', None),
+                obs_type_id=4) for i in range(n)
+            ]
+        self._session.add_all(new_observations)
+        self._session.flush()
+
+        # Add the new measurements in table 'generic_numerial_data'.
+        self._session.add_all([
+            GenericNumericalData(
+                gen_num_value_uuid=indexes[i],
+                gen_num_value=values[i].get('value', None),
+                observation_id=new_observations[i].observation_id,
+                obs_property_id=2,
+                gen_num_value_notes=values[i].get('notes', None)
+                ) for i in range(n)
+            ])
+        self._session.flush()
 
     def get_manual_measurements(self):
         """

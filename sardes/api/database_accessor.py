@@ -660,38 +660,31 @@ class DatabaseAccessor(DatabaseAccessorBase):
         pass
 
     # ---- Manual Measurements
-    def add_manual_measurements(self, measurement_id, attribute_values):
+    def _add_manual_measurements(
+            self, values: list[dict], indexes: list = None) -> list:
         """
-        Add a new manual measurement to the database using the provided ID
-        and attribute values.
+        Add a list of manual measurements to the database.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `add`.
 
         Parameters
         ----------
-        measurement_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the manual measurement
-            in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values for the new
-            manual measurement.
+        values: list[dict]
+            A list of dictionaries containing the attribute values for the new
+            manual measurements to be added to the database.
+        indexes: list, optional
+            A list of indexes to use when adding the manual measurements
+            to the database.
 
-            Required elements
-            ~~~~~~~~~~~~~~~~~
-            - datetime :class:`datetime.Datetime`
-                A datetime object corresponding to the date and time when the
-                manual measurement was made in the well.
-            - value: float
-                The numerical value of the water level that was
-                measured manually in the well.
-            - sampling_feature_uuid: object
-                The unique identifier that is used to reference the observation
-                well in which the manual measurement was made.
-
-            Optional elements
-            ~~~~~~~~~~~~~~~~~
-            - notes: str
-                A note related to the manual measurement.
+        Returns
+        -------
+        list
+            The list of indexes that are used to reference the new
+            manual measurements that were added to the database.
         """
-        raise NotImplementedError
+        pass
 
     def get_manual_measurements(self):
         """
