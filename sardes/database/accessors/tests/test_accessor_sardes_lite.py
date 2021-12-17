@@ -44,14 +44,19 @@ from sardes.database.accessors.accessor_helpers import (
     init_tseries_edits, init_tseries_dels)
 
 
-def assert_dataframe_equals(df1, df2):
+def assert_dataframe_equals(df1, df2, ignore_index=False):
     """
     Assert whether two Pandas dataframe df1 and df2 are equal or not.
     Account for the fact that the equality of two numpy nan values is False.
     """
-    for index, column in itertools.product(df1.index, df1.columns):
-        x1, x2 = df1.at[index, column], df2.at[index, column]
-        assert are_values_equal(x1, x2), '{} != {}'.format(x1, x2)
+    if ignore_index is False:
+        for index, column in itertools.product(df1.index, df1.columns):
+            x1, x2 = df1.at[index, column], df2.at[index, column]
+            assert are_values_equal(x1, x2), '{} != {}'.format(x1, x2)
+    else:
+        df2 = df2[df1.columns].copy()
+        for x1, x2 in zip(df1.values.flatten(), df2.values.flatten()):
+            assert are_values_equal(x1, x2), '{} != {}'.format(x1, x2)
 
 
 # =============================================================================
@@ -138,9 +143,9 @@ def test_construction_logs_interface(dbaccessor, tmp_path):
     assert dbaccessor.get_stored_attachments_info().empty
 
     # Add a new observation well to the database.
-    sampling_feature_uuid = dbaccessor._create_index('observation_wells_data')
-    dbaccessor.add_observation_wells_data(
-        sampling_feature_uuid, attribute_values={})
+    sampling_feature_uuid = dbaccessor.add(
+        name='observation_wells_data',
+        values={})
 
     for fext in ['.png', '.jpg', '.jpeg', '.tif', '.pdf']:
         # Create a dummy construction log file.
@@ -181,9 +186,12 @@ def test_manual_measurements_interface(dbaccessor, obswells_data,
     Regression test for cgq-qgc/sardes#424
     """
     # Add the observation wells.
-    for obswell_id, obswell_data in obswells_data.iterrows():
-        dbaccessor.add_observation_wells_data(
-            obswell_id, obswell_data.to_dict())
+    _dict = obswells_data.to_dict('index')
+    dbaccessor.add(
+        name=obswells_data.attrs['name'],
+        values=_dict.values(),
+        indexes=_dict.keys()
+        )
 
     # Test the empty manual measurement dataframe is formatted as expected.
     # This covers the issue reported at cgq-qgc/sardes#427.
@@ -194,8 +202,11 @@ def test_manual_measurements_interface(dbaccessor, obswells_data,
     # =========================================================================
     # Add
     # =========================================================================
-    for index, row in manual_measurements.iterrows():
-        dbaccessor.add_manual_measurements(index, row.to_dict())
+    _dict = manual_measurements.to_dict('index')
+    dbaccessor.add(
+        name=manual_measurements.attrs['name'],
+        values=_dict.values(),
+        indexes=_dict.keys())
 
     saved_manual_measurements = dbaccessor.get_manual_measurements()
     assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
@@ -235,9 +246,12 @@ def test_repere_data_interface(dbaccessor, obswells_data, repere_data):
     expected.
     """
     # Add the observation wells.
-    for obs_well_uuid, obs_well_data in obswells_data.iterrows():
-        dbaccessor.add_observation_wells_data(
-            obs_well_uuid, obs_well_data.to_dict())
+    _dict = obswells_data.to_dict('index')
+    dbaccessor.add(
+        name=obswells_data.attrs['name'],
+        values=_dict.values(),
+        indexes=_dict.keys()
+        )
 
     # Assert that the empty repere data dataframe is formatted as expected.
     repere_data_bd = dbaccessor.get_repere_data()
@@ -248,13 +262,17 @@ def test_repere_data_interface(dbaccessor, obswells_data, repere_data):
     # =========================================================================
     # Add
     # =========================================================================
-    for index, row in repere_data.iterrows():
-        dbaccessor.add_repere_data(index, row.to_dict())
+    _dict = repere_data.to_dict('index')
+    dbaccessor.add(
+        name=repere_data.attrs['name'],
+        values=_dict.values(),
+        indexes=_dict.keys()
+        )
 
     repere_data_bd = dbaccessor.get_repere_data()
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
     assert is_datetime64_any_dtype(repere_data_bd['end_date'])
-    assert_dataframe_equals(repere_data_bd, repere_data)
+    assert_dataframe_equals(repere_data_bd, repere_data, ignore_index=True)
 
     # =========================================================================
     # Edit
@@ -304,14 +322,13 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
     Test that adding, editing and retrieving sonde installations is working as
     expected.
     """
-    # Add the observation wells.
-    for obs_well_uuid, obs_well_data in obswells_data.iterrows():
-        dbaccessor.add_observation_wells_data(
-            obs_well_uuid, obs_well_data.to_dict())
-
-    # Add the inventory of data loggers.
-    for index, row in sondes_data.iterrows():
-        dbaccessor.add_sondes_data(index, row.to_dict())
+    # Add the observation wells and sondes to the database.
+    for _df in [obswells_data, sondes_data]:
+        _dict = _df.to_dict('index')
+        dbaccessor.add(
+            name=_df.attrs['name'],
+            values=_dict.values(),
+            indexes=_dict.keys())
 
     # Assert that the empty dataframe of the sonde installations data is
     # formatted as expected.
@@ -323,8 +340,11 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
     # =========================================================================
     # Add
     # =========================================================================
-    for index, row in sondes_installation.iterrows():
-        dbaccessor.add_sonde_installations(index, row.to_dict())
+    _dict = sondes_installation.to_dict('index')
+    dbaccessor.add(
+        name=sondes_installation.attrs['name'],
+        values=_dict.values(),
+        indexes=_dict.keys())
 
     sonde_installs_bd = dbaccessor.get_sonde_installations()
     assert is_datetime64_any_dtype(sonde_installs_bd['start_date'])
@@ -359,6 +379,8 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
     # Delete
     # =========================================================================
     sonde_installs_bd = dbaccessor.get_sonde_installations()
+    obswells_data = dbaccessor.get('observation_wells_data')
+    sondes_data = dbaccessor.get('sondes_data')
 
     # We add some readings data related to the first sonde installation and
     # assert that it was linked correctly to the specified sonde
@@ -366,6 +388,7 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
     dbaccessor.add_timeseries_data(
         readings_data, obswells_data.index[0], sonde_installs_bd.index[0])
     readings = dbaccessor.get_timeseries_for_obs_well(obswells_data.index[0])
+    print(readings)
     assert (readings['sonde_id'] == '1016042').all()
     assert (readings['install_depth'] == 11.25).all()
 
@@ -408,8 +431,12 @@ def test_sonde_models_interface(dbaccessor, sondes_data):
     expected.
     """
     # Add the inventory of data loggers.
-    for index, row in sondes_data.iterrows():
-        dbaccessor.add_sondes_data(index, row.to_dict())
+    _dict = sondes_data.to_dict('index')
+    dbaccessor.add(
+        name=sondes_data.attrs['name'],
+        values=_dict.values(),
+        indexes=_dict.keys()
+        )
 
     len_sonde_models = len(dbaccessor.get_sonde_models_lib())
     assert len_sonde_models > 0
@@ -418,10 +445,9 @@ def test_sonde_models_interface(dbaccessor, sondes_data):
     # Add
     # =========================================================================
 
-    # Create a new sonde model id and add a new sonde model to the database.
-    sonde_model_id = dbaccessor.create_index('sonde_models_lib')
-    dbaccessor.add_sonde_models_lib(
-        sonde_model_id,
+    # Add a new sonde model to the database.
+    sonde_model_id = dbaccessor.add(
+        'sonde_models_lib',
         {'sonde_brand': 'some_brand', 'sonde_model': 'some_model'})
 
     # Assert that the sonde model was added as expected to the database.
@@ -435,9 +461,9 @@ def test_sonde_models_interface(dbaccessor, sondes_data):
 
     # Create a new sonde model id and add a new sonde model to the database,
     # but without an empty model.
-    sonde_model_id = dbaccessor.create_index('sonde_models_lib')
-    dbaccessor.add_sonde_models_lib(
-        sonde_model_id, {'sonde_brand': 'some_brand_2'})
+    sonde_model_id = dbaccessor.add(
+        'sonde_models_lib',
+        {'sonde_brand': 'some_brand_2'})
 
     # Assert that the sonde model was added as expected to the database.
     sonde_models_lib = dbaccessor.get_sonde_models_lib()
@@ -507,13 +533,14 @@ def test_sonde_feature_interface(dbaccessor, sondes_data, sondes_installation,
     # =========================================================================
     # Add
     # =========================================================================
-
-    # Add the inventory of data loggers.
-    for index, row in sondes_data.iterrows():
-        dbaccessor.add_sondes_data(index, row.to_dict())
-
+    _dict = sondes_data.to_dict('index')
+    dbaccessor.add(
+        name=sondes_data.attrs['name'],
+        values=_dict.values(),
+        indexes=_dict.keys()
+        )
     sondes_data_bd = dbaccessor.get_sondes_data()
-    assert_dataframe_equals(sondes_data, sondes_data_bd)
+    assert_dataframe_equals(sondes_data, sondes_data_bd, ignore_index=True)
 
     # =========================================================================
     # Edit
@@ -545,13 +572,19 @@ def test_sonde_feature_interface(dbaccessor, sondes_data, sondes_installation,
     # =========================================================================
 
     # Add the observation wells.
-    for obs_well_uuid, obs_well_data in obswells_data.iterrows():
-        dbaccessor.add_observation_wells_data(
-            obs_well_uuid, obs_well_data.to_dict())
+    _dict = obswells_data.to_dict('index')
+    dbaccessor.add(
+        name='observation_wells_data',
+        values=_dict.values(),
+        indexes=_dict.keys()
+        )
 
     # Add the sonde installations.
-    for index, row in sondes_installation.iterrows():
-        dbaccessor.add_sonde_installations(index, row.to_dict())
+    _dict = sondes_installation.to_dict('index')
+    dbaccessor.add(
+        name='sonde_installations',
+        values=_dict.values(),
+        indexes=_dict.keys())
 
     # Try to delete a sonde that is used in table 'sonde_installation'.
     sondes_data_bd = dbaccessor.get_sondes_data()
@@ -697,18 +730,15 @@ def test_timeseries_interface(dbaccessor, obswells_data, sondes_data,
     Test that adding editing and deleting timeseries data in the database
     is working as expected.
     """
-    # Add the observation wells.
-    for obs_well_uuid, obs_well_data in obswells_data.iterrows():
-        dbaccessor.add_observation_wells_data(
-            obs_well_uuid, obs_well_data.to_dict())
-
-    # Add the inventory of data loggers.
-    for index, row in sondes_data.iterrows():
-        dbaccessor.add_sondes_data(index, row.to_dict())
-
-    # Add the sonde installations.
-    for index, row in sondes_installation.iterrows():
-        dbaccessor.add_sonde_installations(index, row.to_dict())
+    # Add observation wells, sondes, and sonde installations to the
+    # database.
+    for _df in [obswells_data, sondes_data, sondes_installation]:
+        _dict = _df.to_dict('index')
+        dbaccessor.add(
+            name=_df.attrs['name'],
+            values=_dict.values(),
+            indexes=_dict.keys()
+            )
 
     # Assert that the accessor correctly return an empty dataframe when
     # no timeseries data is saved in the database for a given sampling feature
@@ -927,7 +957,7 @@ def test_add_delete_large_timeseries_record(dbaccessor):
 
     Regression test for cgq-qgc/sardes#378.
     """
-    sampling_feature_uuid = dbaccessor._create_index('observation_wells_data')
+    sampling_feature_uuid = uuid.uuid4()
 
     # Prepare the timeseries data.
     new_tseries_data = pd.DataFrame(
