@@ -10,6 +10,7 @@
 """
 Object-Relational Mapping and Accessor implementation of the Sardes database.
 """
+from __future__ import annotations
 
 # ---- Standard imports
 import os.path as osp
