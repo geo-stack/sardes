@@ -48,7 +48,7 @@ def obswells_data():
          'MT', 'Libre', 4, 'Yes', 'No',
          56.56248, -76.47886, False, None]
         ]
-    return pd.DataFrame(
+    df = pd.DataFrame(
         data=data,
         index=[UUID('3c6d0e15-6775-4304-964a-5db89e463c55'),
                UUID('dcc36634-ae7e-42c0-966d-77f575232ead'),
@@ -60,6 +60,8 @@ def obswells_data():
                  'in_recharge_zone', 'is_influenced', 'latitude',
                  'longitude', 'is_station_active', 'obs_well_notes']
         )
+    df.attrs['name'] = 'observation_wells_data'
+    return df
 
 
 @pytest.fixture
@@ -81,12 +83,14 @@ def repere_data(obswells_data):
          datetime(2008, 11, 20, 1, 25), None,
          True, 'Repere note #5']
         ]
-    return pd.DataFrame(
+    df = pd.DataFrame(
         data,
         index=[uuid.uuid4() for row in data],
         columns=['sampling_feature_uuid', 'top_casing_alt', 'casing_length',
                  'start_date', 'end_date', 'is_alt_geodesic', 'repere_note']
         )
+    df.attrs['name'] = 'repere_data'
+    return df
 
 
 @pytest.fixture
@@ -100,16 +104,18 @@ def manual_measurements(obswells_data):
         [obswells_data.index[1], datetime(2009, 8, 2, 18, 34, 38), 28.34, ''],
         [obswells_data.index[2], datetime(2015, 8, 2, 18, 37, 23), 14.87, ''],
         [obswells_data.index[2], datetime(2016, 2, 4, 13, 26, 3), 2.03, '']]
-    return pd.DataFrame(
+    df = pd.DataFrame(
         data,
         index=[uuid.uuid4() for row in data],
         columns=['sampling_feature_uuid', 'datetime', 'value', 'notes']
         )
+    df.attrs['name'] = 'manual_measurements'
+    return df
 
 
 @pytest.fixture
 def sonde_models():
-    return pd.DataFrame(
+    df = pd.DataFrame(
         [['Solinst', 'Barologger M1.5 Gold'],
          ['Solinst', 'LT M10 Gold'],
          ['Solinst', 'LT M10 Edge'],
@@ -122,6 +128,8 @@ def sonde_models():
          ['In-Situ', 'Troll']],
         columns=['sonde_brand', 'sonde_model']
         )
+    df.attrs['name'] = 'sonde_models'
+    return df
 
 
 @pytest.fixture
@@ -140,7 +148,7 @@ def sondes_data():
         [1, '1048409', date(2010, 2, 8), pd.NaT,
          False, False, False, False, None],
         ]
-    return pd.DataFrame(
+    df = pd.DataFrame(
         data,
         index=[UUID('3b8f4a6b-14d0-461e-8f1a-08a5ea465a1e'),
                UUID('dd4435b1-8699-4694-a303-5ca9b9bff111'),
@@ -152,6 +160,8 @@ def sondes_data():
                  'date_reception', 'date_withdrawal', 'in_repair',
                  'out_of_order', 'lost', 'off_network', 'sonde_notes']
         )
+    df.attrs['name'] = 'sondes_data'
+    return df
 
 
 @pytest.fixture
@@ -171,12 +181,20 @@ def sondes_installation(obswells_data, sondes_data):
         [datetime(2012, 5, 5, 19), pd.NaT, 1.0,
          obswells_data.index[3], sondes_data.index[5], None]
         ]
-    return pd.DataFrame(
+    df = pd.DataFrame(
         data,
-        index=[uuid.uuid4() for row in data],
+        index=[
+            UUID('a540e969-a950-41c1-846f-1f9d2ea86ade'),
+            UUID('b71d5f2d-a1cf-474d-bc35-b827090f1998'),
+            UUID('646bbc29-f02c-437a-b3cf-e985cc39f154'),
+            UUID('d4c37ded-090b-4d8b-8724-fc03b7d4d427'),
+            UUID('bab4e1c1-3d87-4fe2-922c-f33ac25baf30'),
+            UUID('559831cb-012a-4f97-9eef-5b84b4e3869d')],
         columns=['start_date', 'end_date', 'install_depth',
                  'sampling_feature_uuid', 'sonde_uuid', 'install_note']
         )
+    df.attrs['name'] = 'sonde_installations'
+    return df
 
 
 @pytest.fixture
@@ -222,11 +240,19 @@ def database_filler(
         sondes_installation, waterquality):
 
     def fill_database(dbaccessor):
-        for obs_well_uuid, obs_well_data in obswells_data.iterrows():
-            # Add the observation well.
-            dbaccessor.add_observation_wells_data(
-                obs_well_uuid, attribute_values=obs_well_data.to_dict())
+        # Add the observation wells, repere, sondes, sonde installations,
+        # and manual measurements to the database.
+        for df in [obswells_data, repere_data, sondes_data,
+                   sondes_installation, manual_measurements]:
+            _dict = df.to_dict('index')
+            dbaccessor.add(
+                name=df.attrs['name'],
+                values=_dict.values(),
+                indexes=_dict.keys()
+                )
 
+        # Add attachments and monitoring data.
+        for obs_well_uuid, obs_well_data in obswells_data.iterrows():
             if obs_well_data['obs_well_id'] == '09000001':
                 # We don't want to add any attachment or monitoring data
                 # to that well.
@@ -239,23 +265,11 @@ def database_filler(
             dbaccessor.set_attachment(obs_well_uuid, 2, waterquality)
 
             # Add timeseries data.
+            if obs_well_uuid == obswells_data.index[0]:
+                install_uuid = sondes_installation.index[0]
+            else:
+                install_uuid = None
             dbaccessor.add_timeseries_data(
-                readings_data, obs_well_uuid, install_uuid=None)
-
-        # Add repere data to the database.
-        for index, row in repere_data.iterrows():
-            dbaccessor.add_repere_data(index, row.to_dict())
-
-        # Add manual measurements.
-        for index, row in manual_measurements.iterrows():
-            dbaccessor.add_manual_measurements(index, row.to_dict())
-
-        # Add sonde data.
-        for index, row in sondes_data.iterrows():
-            dbaccessor.add_sondes_data(index, row.to_dict())
-
-        # Add sonde installation.
-        for index, row in sondes_installation.iterrows():
-            dbaccessor.add_sonde_installations(index, row.to_dict())
+                readings_data, obs_well_uuid, install_uuid)
 
     return fill_database
