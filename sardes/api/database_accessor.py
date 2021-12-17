@@ -571,21 +571,31 @@ class DatabaseAccessor(DatabaseAccessorBase):
         pass
 
     # ---- Sonde installations
-    def add_sonde_installations(self, installation_id, attribute_values):
+    def _add_sonde_installations(
+            self, attribute_values: list[dict], indexes: list = None) -> list:
         """
-        Add a new sonde installation to the database using the provided
-        installation_id and attribute values.
+        Add a list of sonde installations to the database.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `add`.
 
         Parameters
         ----------
-        installation_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the sonde installation
-            in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values for the new
-            sonde installation.
+        attribute_values: list[dict]
+            A list of dictionaries containing the attribute values for the new
+            sonde installations to be added to the database.
+        indexes: list, optional
+            A list of indexes to use when adding the new sonde installations
+            to the database.
+
+        Returns
+        -------
+        list
+            The list of indexes that are used to reference the new sonde
+            installations that were added to the database.
         """
-        raise NotImplementedError
+        pass
 
     def set_sonde_installations(self, installation_id, attribute_values):
         """

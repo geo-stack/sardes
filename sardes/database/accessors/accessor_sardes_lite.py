@@ -1158,32 +1158,40 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .filter(SondeInstallation.install_uuid == install_uuid)
             .one())
 
-    def add_sonde_installations(self, new_install_uuid, attribute_values):
-        """
-        Add a new sonde installation to the database using the provided ID
-        and attribute values.
-        """
+    def _add_sonde_installations(self, values, indexes=None):
+        n = len(values)
+
+        # Generate new indexes if needed.
+        if indexes is None:
+            indexes = [uuid.uuid4() for i in range(n)]
+
         # Make sure pandas NaT are replaced by None for datetime fields
         # to avoid errors in sqlalchemy.
-        for field in ['start_date', 'end_date']:
-            if pd.isnull(attribute_values.get(field, None)):
-                attribute_values[field] = None
+        for i in range(n):
+            if pd.isnull(values[i].get('start_date', True)):
+                values[i]['start_date'] = None
+            if pd.isnull(values[i].get('end_date', True)):
+                values[i]['end_date'] = None
 
-        # We first create new items in the tables process.
-        new_process = Process(process_type='sonde installation')
-        self._session.add(new_process)
-        self._session.commit()
+        # Add new items to the tables process.
+        new_processes = [
+            Process(process_type='sonde installation') for i in range(n)]
+        self._session.add_all(new_processes)
+        self._session.flush()
 
-        # We then create a new sonde installation.
-        sonde_installation = SondeInstallation(
-            install_uuid=new_install_uuid,
-            process_id=new_process.process_id
-            )
-        self._session.add(sonde_installation)
+        # Add the new sonde installations.
+        self._session.add_all([
+            SondeInstallation(
+                install_uuid=indexes[i],
+                process_id=new_processes[i].process_id
+                ) for i in range(n)
+            ])
+        self._session.flush()
 
         # We then set the attribute valuesfor this new sonde installation.
-        self.set_sonde_installations(
-            new_install_uuid, attribute_values, auto_commit=True)
+        for i in range(n):
+            self.set_sonde_installations(
+                indexes[i], values[i], auto_commit=False)
 
     def get_sonde_installations(self):
         """
