@@ -7,10 +7,13 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+from __future__ import annotations
+
 # ---- Standard imports
 import datetime
 import os
 import os.path as osp
+from typing import Callable
 import urllib
 
 # ---- Third party imports
@@ -137,13 +140,14 @@ class DatabaseConnectionWorker(WorkerBase):
 
         return data,
 
-    def _delete(self, name, *args, **kargs):
+    def _delete(self, name: str, indexes: list):
         """
-        Delete an item related to name from the database.
+        Delete from the database the items related to name at the
+        specified indexes.
         """
         if name in self._cache:
             del self._cache[name]
-        self.db_accessor.delete(name, *args, **kargs)
+        self.db_accessor.delete(name, indexes)
 
     def _set(self, name, *args, **kargs):
         """
@@ -158,9 +162,9 @@ class DatabaseConnectionWorker(WorkerBase):
         Save the changes made to table 'name' to the database.
         """
         print("Saving edits for table '{}' in the database...".format(name))
+
         # We delete rows from the database.
-        for index in deleted_rows:
-            self._delete(name, index)
+        self._delete(name, deleted_rows)
 
         # We add new rows to the database.
         for index, values in added_rows.iterrows():
@@ -674,12 +678,13 @@ class DatabaseConnectionManager(TaskManagerBase):
         if not postpone_exec:
             self.run_tasks()
 
-    def delete(self, *args, callback=None, postpone_exec=False):
+    def delete(self, name: str, indexes: list, callback: Callable = None,
+               postpone_exec: bool = False):
         """
         Delete an item related to name from the database.
         """
-        self._data_changed.add(args[0])
-        self.add_task('delete', callback, *args)
+        self._data_changed.add(name)
+        self.add_task('delete', callback, name, indexes)
         if not postpone_exec:
             self.run_tasks()
 
