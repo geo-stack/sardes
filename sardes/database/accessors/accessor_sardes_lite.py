@@ -1055,22 +1055,30 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 .filter(SondeFeature.sonde_uuid == sonde_uuid)
                 .one())
 
-    def add_sondes_data(self, sonde_uuid, attribute_values):
-        """
-        Add a new sonde to the database using the provided sonde UUID
-        and attribute values.
-        """
+    def _add_sondes_data(self, attribute_values, indexes=None):
+        n = len(attribute_values)
+
+        # Generate new indexes if needed.
+        if indexes is None:
+            indexes = [uuid.uuid4() for i in range(n)]
+
         # Make sure pandas NaT are replaced by None for datetime fields
         # to avoid errors in sqlalchemy.
-        for field in ['date_reception', 'date_withdrawal']:
-            if pd.isnull(attribute_values.get(field, None)):
-                attribute_values[field] = None
+        for i in range(n):
+            if pd.isnull(attribute_values[i].get('date_reception', True)):
+                attribute_values[i]['date_reception'] = None
+            if pd.isnull(attribute_values[i].get('date_withdrawal', True)):
+                attribute_values[i]['date_withdrawal'] = None
 
-        self._session.add(SondeFeature(
-            sonde_uuid=sonde_uuid,
-            **attribute_values
-            ))
-        self._session.commit()
+        self._session.add_all([
+            SondeFeature(
+                sonde_uuid=indexes[i],
+                **attribute_values[i]
+                ) for i in range(n)
+            ])
+        self._session.flush()
+
+        return indexes
 
     def get_sondes_data(self):
         """

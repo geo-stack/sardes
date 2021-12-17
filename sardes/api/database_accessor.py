@@ -464,19 +464,32 @@ class DatabaseAccessor(DatabaseAccessorBase):
         pass
 
     # ---- Sondes Inventory
-    def add_sondes_data(self, sonde_id, attribute_values):
+    @abstractmethod
+    def _add_sondes_data(
+            self, attribute_values: list[dict], indexes: list = None) -> list:
         """
-        Add a new sonde to the database using the provided sonde ID
-        and attribute values.
+        Add a list of new piezometric sondes to the database.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `add`.
 
         Parameters
         ----------
-        sonde_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the sonde in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values for the new sonde.
+        attribute_values: list[dict]
+            A list of dictionaries containing the attribute values for the new
+            sondes to be added to the database.
+        indexes: list, optional
+            A list of indexes to use when adding the new sondes
+            to the database.
+
+        Returns
+        -------
+        list
+            The list of indexes that are used to reference the new sondes
+            that were added to the database.
         """
-        raise NotImplementedError
+        pass
 
     def get_sondes_data(self):
         """
