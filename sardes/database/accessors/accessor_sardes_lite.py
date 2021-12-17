@@ -1725,7 +1725,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 sampling_feature_uuid, auto_commit=False)
         self._session.commit()
 
-    # ---- Process
+    # ---- Private methods
     def _get_process_data(self):
         """
         Return a pandas dataframe containing the content of
@@ -1743,7 +1743,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 .filter(Process.process_id == process_id)
                 .one())
 
-    # ---- Observations
     def _get_observation_data(self):
         """
         Return a pandas dataframe containing the content of
