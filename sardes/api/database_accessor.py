@@ -379,6 +379,33 @@ class DatabaseAccessor(DatabaseAccessorBase):
         pass
 
     # ---- Sonde Brands and Models Library
+    @abstractmethod
+    def _add_sonde_models_lib(
+            self, attribute_values: list[dict], indexes: list = None) -> list:
+        """
+        Add a list of sonde models to the database.
+
+        Note:
+            This method should not be called directly. Please use instead the
+            public method `add`.
+
+        Parameters
+        ----------
+        attribute_values: list[dict]
+            A list of dictionaries containing the attribute values for the new
+            sonde models to be added to the database.
+        indexes: list, optional
+            A list of indexes to use when adding the new sonde models
+            to the database.
+
+        Returns
+        -------
+        list
+            The list of indexes that are used to reference the new sonde
+            models that were added to the database.
+        """
+        pass
+
     def get_sonde_models_lib(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -424,33 +451,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
             changed in the database for the corresponding sonde_model_id.
         """
         raise NotImplementedError
-
-    @abstractmethod
-    def _add_sonde_models_lib(
-            self, attribute_values: list[dict], indexes: list = None) -> list:
-        """
-        Add a list of sonde models to the database.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `add`.
-
-        Parameters
-        ----------
-        attribute_values: list[dict]
-            A list of dictionaries containing the attribute values for the new
-            sonde models to be added to the database.
-        indexes: list, optional
-            A list of indexes to use when adding the new sonde models
-            to the database.
-
-        Returns
-        -------
-        list
-            The list of indexes that are used to reference the new sonde
-            models that were added to the database.
-        """
-        pass
 
     @abstractmethod
     def _del_sonde_models_lib(self, indexes: list):
