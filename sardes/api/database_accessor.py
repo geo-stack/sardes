@@ -27,6 +27,233 @@ class DatabaseAccessorError(Exception):
             )
 
 
+DATABASE_CONCEPTUAL_MODEL = {
+    'manual_measurements': {
+        'sampling_feature_uuid': {
+            'type': 'object',
+            'desc': ("A unique identifier that is used to reference the "
+                     "observation well in the database in which the manual "
+                     "measurement was made."),
+            },
+        'datetime': {
+            'type': 'datetime64[ns]',
+            'desc': ("A datetime object corresponding to the date and time "
+                     "when the manual measurement was made in the well.")
+            },
+        'value': {
+            'type': 'float64',
+            'desc': ("The value of the water level that was measured manually "
+                     "in the well.")
+            },
+        'notes': {
+            'type': 'str',
+            'desc': ("Any notes related to the manual measurement.")
+            }
+        },
+    'sonde_installations': {
+        'sampling_feature_uuid': {
+            'type': 'object',
+            'desc': ("A unique identifier that is used to reference the "
+                     "observation well in which the sonde are installed.")
+            },
+        'sonde_uuid': {
+            'type': 'object',
+            'desc': ("A unique identifier used to reference each sonde in the "
+                     "database.")
+            },
+        'start_date': {
+            'type': 'datetime64[ns]',
+            'desc': ("The date and time at which the sonde was installed "
+                     "in the well.")
+            },
+        'end_date': {
+            'type': 'datetime64[ns]',
+            'desc': ("The date and time at which the sonde was removed "
+                     "from the well.")
+            },
+        'install_depth': {
+            'type': 'float',
+            'desc': ("The depth at which the sonde was installed in the well.")
+            }
+        },
+    'repere_data': {
+        'foreign_constraints': [],
+        'columns': {
+            'sampling_feature_uuid': {
+                'type': 'object',
+                'desc': ("A unique identifier that is used to reference the "
+                         "observation well for which the repere data are "
+                         "associated.")
+                },
+            'top_casing_alt': {
+                'type': 'float',
+                'desc': ("The altitude values given in meters of the top of "
+                         "the observation wells' casing.")
+                },
+            'casing_length': {
+                'type': 'float',
+                'desc': ("The lenght of the casing above ground level "
+                         "given in meters.")
+                },
+            'start_date': {
+                'type': 'datetime64[ns]',
+                'desc': ("The date and time after which repere data "
+                         "are valid.")
+                },
+            'end_date': {
+                'type': 'datetime64[ns]',
+                'desc': ("The date and time before which repere data "
+                         "are valid.")
+                },
+            'is_alt_geodesic': {
+                'type': 'bool',
+                'desc': ("Whether the top_casing_alt value is geodesic.")
+                },
+            'repere_note': {
+                'type': 'str',
+                'desc': ("Any note related to the repere data.")
+                },
+            }
+        },
+    'sondes_data': {
+        'foreign_constraints': [
+            ('sonde_uuid', 'sonde_installations')],
+        'columns': {
+            'sonde_serial_no': {
+                'type': 'str',
+                'desc': ("The serial number of the sonde.")
+                },
+            'sonde_model_id': {
+                'type': 'object',
+                'desc': ("The ID used to reference the sonde brand and model "
+                         "in the database.")
+                },
+            'date_reception': {
+                'type': 'datetime64[ns]',
+                'desc': ("The date when the sonde was added to the inventory.")
+                },
+            'date_withdrawal': {
+                'type': 'datetime64[ns]',
+                'desc': ("The date when the sonde was removed from the "
+                         "inventory.")
+                },
+            'in_repair': {
+                'type': 'bool',
+                'desc': ("Indicate wheter the sonde is currently being "
+                         "repaired.")
+                },
+            'out_of_order': {
+                'type': 'bool',
+                'desc': ("Indicate whether the sonde is out of order. "
+                         "unconsolidated sediment.")
+                },
+            'lost': {
+                'type': 'bool',
+                'desc': ("Indicates whether the sonde has been lost.")
+                },
+            'off_network': {
+                'type': 'bool',
+                'desc': ("Indicate whether the sonde is currently being used "
+                         "outside of the monitoring network.")
+                },
+            'sonde_notes': {
+                'type': 'str',
+                'desc': ("Any notes related to the sonde.")
+                },
+            }
+        },
+    'observation_wells_data': {
+        'foreign_constraints': [
+            ('sampling_feature_uuid', 'manual_measurements'),
+            ('sampling_feature_uuid', 'sonde_installations'),
+            ('sampling_feature_uuid', 'repere_data')],
+        'columns': {
+            'obs_well_id': {
+                'type': 'str',
+                'desc': ("The unique identifier of the observation well.")
+                },
+            'latitude': {
+                'type': 'float',
+                'desc': ("The latitude of the observation well location "
+                         "in decimal degrees.")
+                },
+            'longitude': {
+                'type': 'float',
+                'desc': ("The longitude of the observation well location "
+                         "in decimal degrees.")
+                },
+            'common_name': {
+                'type': 'str',
+                'desc': ("The human readable name of the well.")
+                },
+            'municipality': {
+                'type': 'str',
+                'desc': ("The municipality where the well is installed.")
+                },
+            'aquifer_type': {
+                'type': 'str',
+                'desc': ("Indicates if the well is open in the bedrock or "
+                         "in the unconsolidated sediment.")
+                },
+            'confinement': {
+                'type': 'str',
+                'desc': ("Indicates if the confinement at the well location "
+                         "is confined, unconfined or semi-confined.")
+                },
+            'aquifer_code': {
+                'type': 'Int64',
+                'desc': ("A code that represents the combination of aquifer "
+                         "type and confinement for the well.")
+                },
+            'in_recharge_zone': {
+                'type': 'str',
+                'desc': ("Indicates whether the observation well is located "
+                         "in or in the proximity a recharge zone.")
+                },
+            'is_influenced': {
+                'type': 'str',
+                'desc': ("Indicates whether the water levels measured in "
+                         "that well are influenced or not by anthropic "
+                         "phenomenon.")
+                },
+            'elevation': {
+                'type': 'float',
+                'desc': ("The elevation of the ground surface at the "
+                         "observation well location in meters above "
+                         "sea level.")
+                },
+            'is_station_active': {
+                'type': 'bool',
+                'desc': ("Indicates whether the station is still "
+                         "active or not.")
+                },
+            'obs_well_notes': {
+                'type': 'str',
+                'desc': ("Any notes related to the observation well.")
+                },
+            }
+        },
+    'sonde_models_lib': {
+        'foreign_constraints': [
+            ('sonde_model_id', 'sondes_data')],
+        'columns': {
+            'sonde_brand_model': {
+                'type': 'str',
+                'desc': ("A sonde brand and model combination.")
+                },
+            'sonde_brand': {
+                'type': 'str',
+                'desc': ("A sonde manufacturer.")
+                },
+            'sonde_model': {
+                'type': 'str',
+                'desc': ("A sonde model.")
+                },
+            }
+        },
+}
+
+
 class DatabaseAccessorBase(ABC):
     """
     Basic functionality for Sardes database accessor.
@@ -137,7 +364,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         pass
 
-    # ---- Observation Wells
     def get_observation_wells_data_overview(self):
         """
         Return a :class:`pandas.DataFrame` containing an overview of
@@ -171,21 +397,26 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
+    # ---- Observation Wells Interface
+    # =========================================================================
+    # Note: The methods in this section should not be called directly. Please
+    #       use instead the public methods "add", "get", "delete", and "set".
+    # =========================================================================
     @abstractmethod
     def _add_observation_wells_data(
             self, values: list[dict], indexes: list = None) -> list:
         """
         Add a list of new observation wells to the database.
 
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `add`.
-
         Parameters
         ----------
         values: list[dict]
             A list of dictionaries containing the attribute values for the new
             observation wells to be added to the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that each
+            dictionary must follow.
         indexes: list, optional
             A list of indexes to use when adding the new observation wells
             to the database.
@@ -223,55 +454,15 @@ class DatabaseAccessor(DatabaseAccessorBase):
         Returns
         -------
         :class:`pandas.DataFrame`
-            A :class:`pandas.DataFrame` containing the information related
-            to the observation wells that are saved in the database.
+            A pandas dataframe containing information related to the
+            observation wells that are saved in the database.
 
-            The row indexes of the dataframe must correspond to the
-            observation well IDs, which are unique identifiers used to
-            reference the wells in the database.
+            The index of the dataframe must contain the indexes or keys that
+            are used to reference the observation wells in the database.
 
-            The dataframe must contain at least the required columns and any
-            of the optional columns that are listed below.
-
-            Required Columns
-            ~~~~~~~~~~~~~~~~
-            - obs_well_id: str
-                The unique identifier of the observation well.
-            - latitude: float
-                The latitude of the observation well location in decimal
-                degrees.
-            - longitude: float
-                The longitude of the observation well location in decimal
-                degrees.
-
-            Optional Columns
-            ~~~~~~~~~~~~~~~~
-            - common_name: str
-                The human readable name of the well.
-            - municipality: str
-                The municipality where the well is installed.
-            - aquifer_type: str
-                Indicates if the well is open in the bedrock or in the
-                unconsolidated sediment.
-            - confinement: str
-                Indicates if the confinement at the well location is confined,
-                unconfined or semi-confined,
-            - aquifer_code: int
-                A code that represents the combination of aquifer type and
-                confinement for the well.
-            - in_recharge_zone: str
-                Indicates whether the observation well is located in or in
-                the proximity a recharge zone.
-            - is_influenced: str
-                Indicates whether the water levels measured in that well are
-                influenced or not by anthropic phenomenon.
-            - elevation: float
-                The elevation of the ground surface at the observation well
-                location in meters above sea level.
-            - is_station_active: bool
-                Indicates whether the station is still active or not.
-            - obs_well_notes: str
-                Any notes related to the observation well.
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that the dataframe
+            returned by this method should follow.
         """
         raise NotImplementedError
 
@@ -286,22 +477,26 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         pass
 
-    # ---- Repere
+    # ---- Repere Data Interface
+    # =========================================================================
+    # Note: The methods in this section should not be called directly. Please
+    #       use instead the public methods "add", "get", "delete", and "set".
+    # =========================================================================
     @abstractmethod
     def _add_repere_data(
             self, values: list[dict], indexes: list = None) -> list:
         """
         Add a list of repere to the database.
 
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `add`.
-
         Parameters
         ----------
         values: list[dict]
             A list of dictionaries containing the attribute values for the new
             repere to be added to the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that each
+            dictionary must follow.
         indexes: list, optional
             A list of indexes to use when adding the new repere
             to the database.
@@ -338,32 +533,15 @@ class DatabaseAccessor(DatabaseAccessorBase):
         Returns
         -------
         :class:`pandas.DataFrame`
-            A :class:`pandas.DataFrame` containing the information related
-            to observation wells repere data.
+            A pandas dataframe containing information related to the
+            observation wells repere data that are saved in the database.
 
-            The row indexes of the dataframe must correspond to the IDs
-            used to reference the repere data in the database.
+            The index of the dataframe must contain the indexes or keys that
+            are used to reference the repere data in the database.
 
-            The dataframe can contain any of the columns that are listed below.
-
-            Columns
-            ~~~~~~~~~~~~~~~~
-            - sampling_feature_uuid: int, :class:`uuid.UUID`
-                A unique identifier that is used to reference the observation
-                well for which the repere data are associated.
-            - top_casing_alt: float
-                The altitude values given in meters of the top of the
-                observation wells' casing.
-            - casing_length: str
-                The lenght of the casing above ground level given in meters.
-            - start_date: datetime
-                The date and time after which repere data are valid.
-            - end_date: datetime
-                The date and time before which repere data are valid.
-            - is_alt_geodesic: bool
-                Whether the top_casing_alt value is geodesic.
-            - repere_note: bool
-                Any note related to the repere data.
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that the dataframe
+            returned by this method should follow.
         """
         raise NotImplementedError
 
@@ -378,22 +556,26 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         pass
 
-    # ---- Sonde Brands and Models Library
+    # ---- Sonde Models Interface
+    # =========================================================================
+    # Note: The methods in this section should not be called directly. Please
+    #       use instead the public methods "add", "get", "delete", and "set".
+    # =========================================================================
     @abstractmethod
     def _add_sonde_models_lib(
             self, values: list[dict], indexes: list = None) -> list:
         """
         Add a list of sonde models to the database.
 
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `add`.
-
         Parameters
         ----------
         values: list[dict]
             A list of dictionaries containing the attribute values for the new
             sonde models to be added to the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that each
+            dictionary must follow.
         indexes: list, optional
             A list of indexes to use when adding the new sonde models
             to the database.
@@ -414,26 +596,17 @@ class DatabaseAccessor(DatabaseAccessorBase):
         Returns
         -------
         :class:`pandas.DataFrame`
-            A :class:`pandas.DataFrame` containing the information related
-            to sonde brands and models.
+            A pandas dataframe containing information related to existing
+            sonde models that are saved in the database.
 
-            The row indexes of the dataframe must correspond to the IDs
-            used to reference the sonde model and brand combination in
-            the database.
+            The index of the dataframe must contain the indexes or keys that
+            are used to reference the sonde models in the database.
 
-            The dataframe can contain any of the columns that are
-            listed below.
-
-            Columns
-            ~~~~~~~~~~~~~~~~
-            - sonde_brand_model: str
-                A sonde brand and model combination.
-            - sonde_brand: str
-                A sonde manufacturer.
-            - sonde_model: str
-                A sonde model.
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that the dataframe
+            returned by this method should follow.
         """
-        raise NotImplementedError
+        pass
 
     def set_sonde_models_lib(self, sonde_model_id, attribute_values,
                              auto_commit=True):
@@ -456,14 +629,10 @@ class DatabaseAccessor(DatabaseAccessorBase):
     def _del_sonde_models_lib(self, indexes: list):
         """
         Delete the sonde models corresponding to the specified indexes.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete`.
         """
         pass
 
-    # ---- Sondes Inventory
+    # ---- Sondes Inventory Interface
     @abstractmethod
     def _add_sondes_data(
             self, values: list[dict], indexes: list = None) -> list:
@@ -511,27 +680,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
             Required Columns
             ~~~~~~~~~~~~~~~~
-            - sonde_serial_no: str
-                The serial number of the sonde.
-            - sonde_model_id: int, :class:`uuid.UUID`
-                The ID used to reference the sonde brand and model in the
-                database.
-            - date_reception: datetime
-                The date when the sonde was added to the inventory.
-            - date_withdrawal: datetime
-                The date when the sonde was removed from the inventory.
-            - in_repair: bool
-                Indicate wheter the sonde is currently being repaired.
-            - out_of_order: bool
-                Indicate whether the sonde is out of order.
-                unconsolidated sediment.
-            - lost: bool
-                Indicates whether the sonde has been lost.
-            - off_network: bool
-                Indicate whether the sonde is currently being used outside
-                of the monitoring network.
-            - sonde_notes: str
-                Any notes related to the sonde.
+
 
             Optional Columns
             ~~~~~~~~~~~~~~~~
@@ -570,21 +719,25 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         pass
 
-    # ---- Sonde installations
+    # ---- Sonde Installations Interface
+    # =========================================================================
+    # Note: The methods in this section should not be called directly. Please
+    #       use instead the public methods "add", "get", "delete", and "set".
+    # =========================================================================
     def _add_sonde_installations(
             self, values: list[dict], indexes: list = None) -> list:
         """
         Add a list of sonde installations to the database.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `add`.
 
         Parameters
         ----------
         values: list[dict]
             A list of dictionaries containing the attribute values for the new
             sonde installations to be added to the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that each
+            dictionary must follow.
         indexes: list, optional
             A list of indexes to use when adding the new sonde installations
             to the database.
@@ -615,36 +768,21 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
     def get_sonde_installations(self):
         """
-        Return a :class:`pandas.DataFrame` containing information related to
-        sonde installations made in the observation wells of the monitoring
-        network.
+        Return the information related to the installations of the sondes in
+        the wells.
 
         Returns
         -------
         :class:`pandas.DataFrame`
-            A :class:`pandas.DataFrame` containing information related to
-            sonde installations made in the observation wells of the monitoring
-            network.
+            A pandas dataframe containing information related to the
+            installations of the sonde in the wells.
 
-            The row indexes of the dataframe must correspond to the
-            IDs used to reference each installation in the database.
+            The index of the dataframe must contain the indexes or keys that
+            are used to reference the sonde installations in the database.
 
-            The dataframe must contain the following columns.
-
-            Required Columns
-            ~~~~~~~~~~~~~~~~
-            - sampling_feature_uuid: object
-                A unique identifier that is used to reference the observation
-                well in which the sonde are installed.
-            - sonde_uuid: object
-                A unique identifier used to reference each sonde in the
-                database.
-            - start_date: datetime
-                The date and time at which the sonde was installed in the well.
-            - end_date: datetime
-                The date and time at which the sonde was removed from the well.
-            - install_depth: float
-                The depth at which the sonde was installed in the well.
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that the dataframe
+            returned by this method should follow.
         """
         raise NotImplementedError
 
@@ -652,28 +790,28 @@ class DatabaseAccessor(DatabaseAccessorBase):
     def _del_sonde_installations(self, indexes: list):
         """
         Delete the sonde installations corresponding to the specified indexes.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete`.
         """
         pass
 
-    # ---- Manual Measurements
+    # ---- Manual Measurements Interface
+    # =========================================================================
+    # Note: The methods in this section should not be called directly. Please
+    #       use instead the public methods "add", "get", "delete", and "set".
+    # =========================================================================
     def _add_manual_measurements(
             self, values: list[dict], indexes: list = None) -> list:
         """
         Add a list of manual measurements to the database.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `add`.
 
         Parameters
         ----------
         values: list[dict]
             A list of dictionaries containing the attribute values for the new
             manual measurements to be added to the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that each
+            dictionary must follow.
         indexes: list, optional
             A list of indexes to use when adding the manual measurements
             to the database.
@@ -688,34 +826,21 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
     def get_manual_measurements(self):
         """
-        Return a :class:`pandas.DataFrame` containing the water level manual
-        measurements made in the observation wells for the entire monitoring
-        network.
+        Return the water level manual measurements that are saved in
+        the database.
 
         Returns
         -------
         :class:`pandas.DataFrame`
-            A :class:`pandas.DataFrame` containing the information related
-            to the observation wells that are saved in the database.
+            A pandas dataframe containing the manual measurements of the
+            water level that are saved in the database.
 
-            The row indexes of the dataframe must correspond to the
-            IDs used to reference each manual measurement in the database.
+            The index of the dataframe must contain the indexes or keys that
+            are used to reference the manual measurements in the database.
 
-            The dataframe must contain the following columns.
-
-            Required Columns
-            ~~~~~~~~~~~~~~~~
-            - sampling_feature_uuid: object
-                A unique identifier that is used to reference the observation
-                well in the database in which the manual measurement was made.
-            - datetime: :class:`datetime.Datetime`
-                A datetime object corresponding to the date and time when the
-                manual measurement was made in the well.
-            - value: float
-                The value of the water level that was measured manually
-                in the well.
-            - notes: str
-                Any notes related to the manual measurement.
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that the dataframe
+            returned by this method should follow.
         """
         raise NotImplementedError
 
@@ -739,14 +864,10 @@ class DatabaseAccessor(DatabaseAccessorBase):
     def _del_manual_measurements(self, indexes: list):
         """
         Delete the manual measurements corresponding to the specified indexes.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete`.
         """
         pass
 
-    # ---- Timeseries
+    # ---- Timeseries Interface
     def get_timeseries_for_obs_well(self, obs_well_id, data_types=None):
         """
         Return a pandas dataframe containing the readings for the given
