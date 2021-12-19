@@ -10,6 +10,14 @@
 DATABASE_CONCEPTUAL_MODEL = {
     'manual_measurements': {
         'foreign_constraints': [],
+        'unique_constraints': [
+            ['datetime', 'sampling_feature_uuid']
+        ],
+        'notnull_constraints': [
+            'sampling_feature_uuid',
+            'datetime',
+            'value'
+        ],
         'columns': {
             'sampling_feature_uuid': {
                 'dtype': 'object',
@@ -36,6 +44,8 @@ DATABASE_CONCEPTUAL_MODEL = {
     },
     'sonde_installations': {
         'foreign_constraints': [],
+        'unique_constraints': [],
+        'notnull_constraints': [],
         'columns': {
             'sampling_feature_uuid': {
                 'dtype': 'object',
@@ -66,6 +76,8 @@ DATABASE_CONCEPTUAL_MODEL = {
     },
     'repere_data': {
         'foreign_constraints': [],
+        'unique_constraints': [],
+        'notnull_constraints': [],
         'columns': {
             'sampling_feature_uuid': {
                 'dtype': 'object',
@@ -105,7 +117,10 @@ DATABASE_CONCEPTUAL_MODEL = {
     },
     'sondes_data': {
         'foreign_constraints': [
-            ('sonde_uuid', 'sonde_installations')],
+            ('sonde_uuid', 'sonde_installations')
+        ],
+        'unique_constraints': [],
+        'notnull_constraints': [],
         'columns': {
             'sonde_serial_no': {
                 'dtype': 'str',
@@ -154,7 +169,15 @@ DATABASE_CONCEPTUAL_MODEL = {
         'foreign_constraints': [
             ('sampling_feature_uuid', 'manual_measurements'),
             ('sampling_feature_uuid', 'sonde_installations'),
-            ('sampling_feature_uuid', 'repere_data')],
+            ('sampling_feature_uuid', 'repere_data')
+        ],
+        'unique_constraints': [
+            ['obs_well_id']
+        ],
+        'notnull_constraints': [
+            'obs_well_id',
+            'is_station_active'
+        ],
         'columns': {
             'obs_well_id': {
                 'dtype': 'str',
@@ -223,7 +246,10 @@ DATABASE_CONCEPTUAL_MODEL = {
     },
     'sonde_models_lib': {
         'foreign_constraints': [
-            ('sonde_model_id', 'sondes_data')],
+            ('sonde_model_id', 'sondes_data')
+        ],
+        'unique_constraints': [],
+        'notnull_constraints': [],
         'columns': {
             'sonde_brand_model': {
                 'dtype': 'str',
