@@ -106,7 +106,8 @@ class DatabaseConnectionWorker(WorkerBase):
         print("Fetching '{}' from the database...".format(name))
         if self.is_connected():
             try:
-                data = self.db_accessor.get(name, *args, **kargs)
+                data = self.db_accessor.get(name)
+                data.attrs['name'] = name
                 print("Successfully fetched '{}' from the database."
                       .format(name))
             except Exception as e:
@@ -116,8 +117,8 @@ class DatabaseConnectionWorker(WorkerBase):
                 print(e)
                 print('-' * 20)
                 data = DataFrame([])
-            else:
                 data.attrs['name'] = name
+            else:
                 self._cache[name] = data
         else:
             print(("Failed to fetch '{}' from the database "

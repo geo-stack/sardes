@@ -44,16 +44,12 @@ class DatabaseAccessorBase(ABC):
         self._connection_error = None
 
     # ---- Public API
-    def get(self, name, *args, **kargs):
+    def get(self, name: str):
         """
         Get the data related to name from the database.
         """
         method_to_exec = getattr(self, 'get_' + name)
-        result = method_to_exec(*args, **kargs)
-        try:
-            result.name = name
-        except AttributeError:
-            pass
+        result = method_to_exec(name)
         return result
 
     def set(self, name: str, index: Any,
