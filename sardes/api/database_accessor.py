@@ -45,8 +45,7 @@ class DatabaseAccessorBase(ABC):
         """
         Get the data related to name from the database.
         """
-        method_to_exec = getattr(self, 'get_' + name)
-        result = method_to_exec(name)
+        result = getattr(self, 'get_' + name)()
         return result
 
     def set(self, name: str, index: Any,
@@ -55,7 +54,7 @@ class DatabaseAccessorBase(ABC):
         Set in the database the values related to the specified name
         and index.
         """
-        getattr(self, 'set_' + name)(index, values)
+        getattr(self, '_set_' + name)(index, values)
         if auto_commit:
             self.commit()
 

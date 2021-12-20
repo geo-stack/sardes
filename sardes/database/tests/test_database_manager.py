@@ -61,7 +61,7 @@ def dbaccessor(qtbot, mocker, DATAF):
             sleep(0.5)
             return DATAF.copy()
 
-        def set_something(self, index, value):
+        def _set_something(self, index, value):
             sleep(0.5)
             DATAF.loc[index, 'values'] = value
 
