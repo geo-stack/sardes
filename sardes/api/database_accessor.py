@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 # ---- Standard imports
+from typing import Any
 from abc import ABC, abstractmethod
 
 # ---- Third party imports
@@ -55,7 +56,7 @@ class DatabaseAccessorBase(ABC):
             pass
         return result
 
-    def set(self, name: str, index: object,
+    def set(self, name: str, index: Any,
             values: dict, auto_commit: bool = True) -> None:
         """
         Set in the database the values related to the specified name
@@ -66,7 +67,7 @@ class DatabaseAccessorBase(ABC):
             self.commit()
 
     def add(self, name: str, values: list[dict],
-            indexes: list = None, auto_commit: bool = True) -> list:
+            indexes: list[Any] = None, auto_commit: bool = True) -> list:
         """
         Add a new item to the data related to name in the database using
         the given primary_key and values.
@@ -82,7 +83,7 @@ class DatabaseAccessorBase(ABC):
 
         return indexes[0] if is_dict else indexes
 
-    def delete(self, name: str, indexes: list,
+    def delete(self, name: str, indexes: list[Any],
                auto_commit: bool = True) -> None:
         """
         Delete from the database the items related to name at the
