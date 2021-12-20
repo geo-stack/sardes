@@ -1162,13 +1162,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return measurements
 
-    def set_manual_measurements(self, gen_num_value_uuid, attribute_values):
-        """
-        Save in the database the new attribute value for the manual
-        measurement corresponding to the specified id.
-        """
-        measurement = self._get_generic_num_value(gen_num_value_uuid)
-        for attr_name, attr_value in attribute_values.items():
+    def _set_manual_measurements(self, index, values):
+        measurement = self._get_generic_num_value(index)
+        for attr_name, attr_value in values.items():
             if attr_name == 'sampling_feature_uuid':
                 observation = self._get_observation(measurement.observation_id)
                 observation.sampling_feature_uuid = attr_value
@@ -1183,7 +1179,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 measurement.gen_num_value = float(attr_value)
             elif attr_name == 'notes':
                 measurement.gen_num_value_notes = attr_value
-        self._session.commit()
 
     def _del_manual_measurements(self, gen_num_value_uuids):
         for gen_num_value_uuid in gen_num_value_uuids:

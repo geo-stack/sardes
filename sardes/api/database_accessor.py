@@ -601,21 +601,23 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
-    def set_manual_measurements(self, measurement_id, attribute_values):
+    @abstractmethod
+    def _set_manual_measurements(self, index: Any, values: dict):
         """
-        Save in the database the new attribute values for the
-        measurement corresponding to the specified measurement_id.
+        Set in the database the values of the manual measurement
+        corresponding to the specified index.
 
         Parameters
         ----------
-        measurement_id: int, :class:`uuid.UUID`
+        index: Any
             A unique identifier used to reference the manual measurement
             in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values that need to be
-            changed in the database for the corresponding measurement_id.
+        values: dict
+            A dictionary containing the attribute values of the manual
+            measurement that needs to be updated in the database for
+            the specified index.
         """
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def _del_manual_measurements(self, indexes: list):
