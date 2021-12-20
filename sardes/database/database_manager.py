@@ -92,7 +92,8 @@ class DatabaseConnectionWorker(WorkerBase):
         """
         if name in self._cache:
             del self._cache[name]
-        self.db_accessor.add(name, values, auto_commit)
+        self.db_accessor.add(
+            name, values, indexes=None, auto_commit=auto_commit)
 
     def _get(self, name, *args, **kargs):
         """
