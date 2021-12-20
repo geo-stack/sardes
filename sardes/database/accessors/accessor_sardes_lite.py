@@ -677,7 +677,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             )
         self._session.flush()
 
-    # ---- Attachments
+    # ---- Attachments Interface
     def get_stored_attachments_info(self):
         """
         Return a pandas dataframe containing a list of sampling_feature_uuid
@@ -759,7 +759,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._session.delete(attachment)
             self._session.commit()
 
-    # ---- Repere
+    # ---- Repere Data Interface
     def _get_repere_data(self, repere_id):
         return (
             self._session.query(Repere)
@@ -827,7 +827,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 Repere.repere_uuid.in_(repere_ids)))
         self._session.flush()
 
-    # ---- Sondes Models
+    # ---- Sondes Models Interface
     def get_sonde_models_lib(self):
         """
         Return a :class:`pandas.DataFrame` containing the information related
@@ -904,7 +904,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 SondeModel.sonde_model_id.in_(sonde_model_ids)))
         self._session.flush()
 
-    # ---- Sondes Inventory
+    # ---- Sondes Inventory Interface
     def _get_sonde(self, sonde_uuid):
         """
         Return the sqlalchemy Sondes object corresponding to the
@@ -999,7 +999,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 SondeFeature.sonde_uuid.in_(sonde_ids)))
         self._session.flush()
 
-    # ---- Sonde installations
+    # ---- Sonde Installations Interface
     def _get_sonde_installation(self, install_uuid):
         """
         Return the sqlalchemy SondeInstallation object corresponding to the
@@ -1118,7 +1118,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 SondeInstallation.install_uuid.in_(install_ids)))
         self._session.flush()
 
-    # ---- Manual mesurements
+    # ---- Manual mesurements Interface
     def _get_generic_num_value(self, gen_num_value_uuid):
         """
         Return the sqlalchemy GenericNumericalData object corresponding
@@ -1327,7 +1327,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         data['mean_water_level'] = data['mean_water_level'].round(decimals=3)
         return data
 
-    # ---- Timeseries
+    # ---- Timeseries  Interface
     def _get_timeseriesdata(self, date_time, obs_id, data_type):
         """
         Return the sqlalchemy TimeSeriesData object corresponding to a
