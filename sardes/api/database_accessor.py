@@ -18,9 +18,6 @@ import pandas as pd
 from pandas import Series, DataFrame
 from pandas.api.types import is_list_like
 
-# ---- Local imports
-from sardes.api.database_model import DATABASE_CONCEPTUAL_MODEL
-
 
 class DatabaseAccessorError(Exception):
     """The basic Exception class for Sardes database accessor."""
@@ -423,6 +420,10 @@ class DatabaseAccessor(DatabaseAccessorBase):
         values: list[dict]
             A list of dictionaries containing the attribute values for the new
             sondes to be added to the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that each
+            dictionary must follow.
         indexes: list, optional
             A list of indexes to use when adding the new sondes
             to the database.
