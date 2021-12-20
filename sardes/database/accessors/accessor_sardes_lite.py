@@ -839,19 +839,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return sonde_models
 
-    def set_sonde_models_lib(self, sonde_model_id, attribute_values,
-                             auto_commit=True):
-        """
-        Save in the database the new attribute value for the sonde model
-        corresponding to the specified sonde_model_id.
-        """
+    def _set_sonde_models_lib(self, index, values):
         sonde = (self._session.query(SondeModel)
-                 .filter(SondeModel.sonde_model_id == sonde_model_id)
+                 .filter(SondeModel.sonde_model_id == index)
                  .one())
-        for attr_name, attr_value in attribute_values.items():
+        for attr_name, attr_value in values.items():
             setattr(sonde, attr_name, attr_value)
-        if auto_commit:
-            self._session.commit()
 
     def _add_sonde_models_lib(self, values, indexes=None):
         n = len(values)

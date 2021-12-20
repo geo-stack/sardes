@@ -323,10 +323,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
     def _del_repere_data(self, indexes: list):
         """
         Delete the repere data corresponding to the specified indexes.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete`.
         """
         pass
 
@@ -382,22 +378,22 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         pass
 
-    def set_sonde_models_lib(self, sonde_model_id, attribute_values,
-                             auto_commit=True):
+    @abstractmethod
+    def _set_sonde_models_lib(self, index: Any, values: dict):
         """
-        Save in the database the new attribute values for the sonde model
-        corresponding to the specified sonde_model_id.
+        Set in the database the values of the sonde model
+        corresponding to the specified index.
 
         Parameters
         ----------
-        sonde_model_id: object
-            A unique identifier used to reference the sonde model for wich
-            attribute values need to be changed in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values that need to be
-            changed in the database for the corresponding sonde_model_id.
+        index: Any
+            A unique identifier used to reference the sonde model
+            in the database.
+        values: dict
+            A dictionary containing the attribute values of the sonde model
+            that needs to be updated in the database for the specified index.
         """
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def _del_sonde_models_lib(self, indexes: list):
