@@ -51,6 +51,9 @@ def dbaccessor(qtbot, mocker, DATAF):
         def is_connected(self):
             return self._connection is True
 
+        def commit(self):
+            pass
+
         def close_connection(self):
             self._connection = None
 
