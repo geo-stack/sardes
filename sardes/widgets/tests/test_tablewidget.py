@@ -102,7 +102,7 @@ def tablemodel(qtbot, TABLE_DATAF):
         def get_test_table_dataf_name(self, *args, **kargs):
             return TABLE_DATAF.copy()
 
-        def set_test_table_dataf_name(self, index, attribute_values):
+        def _set_test_table_dataf_name(self, index, attribute_values):
             for column, edited_value in attribute_values.items():
                 TABLE_DATAF.loc[index, column] = edited_value
 
