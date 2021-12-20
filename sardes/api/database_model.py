@@ -11,9 +11,9 @@ from collections import UserDict
 
 
 class ReadOnlyDict(UserDict):
-    def __init__(self, input_dict):
+    def __init__(self, data: dict):
         super().__init__()
-        self.data = input_dict
+        self.data = data
 
     def __setitem__(self, key, val):
         raise NotImplementedError('This dictionary cannot be updated')
