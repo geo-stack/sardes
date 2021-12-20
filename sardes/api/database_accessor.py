@@ -205,22 +205,23 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         pass
 
-    def set_observation_wells_data(self, sampling_feature_id,
-                                   attribute_values):
+    @abstractmethod
+    def _set_observation_wells_data(self, index: Any, values: dict):
         """
-        Save in the database new attribute values for the observation well
-        corresponding to the specified sampling feature ID.
+        Set in the database the values of the observation well data
+        corresponding to the specified index.
 
         Parameters
         ----------
-        sampling_feature_id: int, :class:`uuid.UUID`
+        index: Any
             A unique identifier used to reference the observation well
             in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values that need to be
-            changed in the database for the corresponding sampling_feature_id.
+        values: dict
+            A dictionary containing the attribute values of the observation
+            well that need to be updated in the database for the specified
+            index .
         """
-        raise NotImplementedError
+        pass
 
     def get_observation_wells_data(self):
         """
@@ -246,10 +247,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
     def _del_observation_wells_data(self, indexes: list):
         """
         Delete the observation wells corresponding to the specified indexes.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete`.
         """
         pass
 

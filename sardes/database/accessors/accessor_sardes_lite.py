@@ -587,8 +587,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Set the attribute values of the new observation wells.
         for i in range(n):
-            self.set_observation_wells_data(
-                indexes[i], values[i])
+            self._set_observation_wells_data(indexes[i], values[i])
 
         return indexes
 
@@ -622,10 +621,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return obs_wells
 
-    def set_observation_wells_data(self, sampling_feature_uuid,
-                                   attribute_values):
-        obs_well = self._get_sampling_feature(sampling_feature_uuid)
-        for attr_name, attr_value in attribute_values.items():
+    def _set_observation_wells_data(self, index, values):
+        obs_well = self._get_sampling_feature(index)
+        for attr_name, attr_value in values.items():
             if attr_name == 'obs_well_id':
                 setattr(obs_well, 'sampling_feature_name', attr_value)
             elif attr_name == 'obs_well_notes':
