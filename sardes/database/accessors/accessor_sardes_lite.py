@@ -1021,8 +1021,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # We then set the attribute valuesfor this new sonde installation.
         for i in range(n):
-            self.set_sonde_installations(
-                indexes[i], values[i], auto_commit=False)
+            self._set_sonde_installations(indexes[i], values[i])
 
     def get_sonde_installations(self):
         """
@@ -1048,14 +1047,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return data
 
-    def set_sonde_installations(self, install_uuid, attribute_values,
-                                auto_commit=True):
-        """
-        Save in the database the new attribute values for the sonde
-        installation corresponding to the specified installation_id.
-        """
-        sonde_installation = self._get_sonde_installation(install_uuid)
-        for attr_name, attr_value in attribute_values.items():
+    def _set_sonde_installations(self, index, values):
+        sonde_installation = self._get_sonde_installation(index)
+        for attr_name, attr_value in values.items():
             # Make sure pandas NaT are replaced by None for datetime fields
             # to avoid errors in sqlalchemy.
             if attr_name in ['start_date', 'end_date']:
@@ -1066,10 +1060,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 setattr(process, 'sampling_feature_uuid', attr_value)
             else:
                 setattr(sonde_installation, attr_name, attr_value)
-
-        # Commit changes to the BD.
-        if auto_commit:
-            self._session.commit()
 
     def _del_sonde_installations(self, install_ids):
         # We need to update the "observations" and "process" tables to remove

@@ -505,21 +505,23 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         pass
 
-    def set_sonde_installations(self, installation_id, attribute_values):
+    @abstractmethod
+    def _set_sonde_installations(self, index: Any, values: dict):
         """
-        Save in the database the new attribute values for the sonde
-        installation corresponding to the specified installation_id.
+        Set in the database the values of the sonde installation
+        corresponding to the specified index.
 
         Parameters
         ----------
-        installation_id: object
+        index: Any
             A unique identifier used to reference the sonde installation
-            for wich attribute values need to be changed in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values that need to be
-            changed in the database for the corresponding installation_id.
+            in the database.
+        values: dict
+            A dictionary containing the attribute values of the sonde
+            installation that needs to be updated in the database for
+            the specified index.
         """
-        raise NotImplementedError
+        pass
 
     def get_sonde_installations(self):
         """
