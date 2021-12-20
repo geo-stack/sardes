@@ -153,11 +153,14 @@ class DatabaseConnectionWorker(WorkerBase):
         print("Saving edits for table '{}' in the database...".format(name))
 
         # We delete rows from the database.
-        self._delete(name, deleted_rows, auto_commit=False)
+        if not deleted_rows.empty:
+            self._delete(name, deleted_rows, auto_commit=False)
 
         # We add new rows to the database.
-        values = [row.dropna().to_dict() for idx, row in added_rows.iterrows()]
-        self._add(name, values, auto_commit=False)
+        if not added_rows.empty:
+            values = [row.dropna().to_dict() for
+                      idx, row in added_rows.iterrows()]
+            self._add(name, values, auto_commit=False)
 
         # We commit edits to existing rows.
         for index, values in edited_values.groupby(level=0):
