@@ -24,6 +24,7 @@ from qtpy.QtCore import Signal, Slot
 import simplekml
 
 # ---- Local imports
+from sardes.api.database_model import DATABASE_CONCEPTUAL_MODEL
 from sardes.api.timeseries import DataType
 from sardes.api.taskmanagers import WorkerBase, TaskManagerBase
 from sardes.config.locale import _
@@ -33,20 +34,6 @@ from sardes.database.accessors.accessor_helpers import create_empty_readings
 from sardes.tools.hydrographs import HydrographCanvas
 from sardes.tools.save2excel import _save_reading_data_to_xlsx
 from sardes.utils.data_operations import format_reading_data
-
-DATA_FOREIGN_CONSTRAINTS = {
-    'observation_wells_data': [
-        ('sampling_feature_uuid', 'manual_measurements'),
-        ('sampling_feature_uuid', 'sonde_installations'),
-        ('sampling_feature_uuid', 'repere_data')],
-    'sonde_models_lib': [
-        ('sonde_model_id', 'sondes_data')],
-    'sondes_data': [
-        ('sonde_uuid', 'sonde_installations')],
-    'manual_measurements': [],
-    'repere_data': [],
-    'sonde_installations': []
-    }
 
 
 class DatabaseConnectionWorker(WorkerBase):
@@ -187,7 +174,8 @@ class DatabaseConnectionWorker(WorkerBase):
         the parent indexes of the data related to data_name against the
         foreign constraints specified in FOREIGN_CONSTRAINTS.
         """
-        foreign_constraints = DATA_FOREIGN_CONSTRAINTS.get(data_name, [])
+        foreign_constraints = (
+            DATABASE_CONCEPTUAL_MODEL[data_name]['foreign_constraints'])
         for foreign_column, foreign_name in foreign_constraints:
             foreign_data = self._get(foreign_name)[0]
             isin_indexes = parent_indexes[
