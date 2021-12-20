@@ -776,6 +776,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             Location.__table__.delete().where(
                 Location.loc_id.in_(loc_ids))
             )
+        self._session.flush()
 
     def get_observation_wells_data_overview(self):
         """
@@ -949,7 +950,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.execute(
             Repere.__table__.delete().where(
                 Repere.repere_uuid.in_(repere_ids)))
-        self._session.commit()
+        self._session.flush()
 
     # ---- Sondes Models
     def get_sonde_models_lib(self):
@@ -1009,13 +1010,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return indexes
 
     def _del_sonde_models_lib(self, sonde_model_ids):
-        """
-        Delete the sonde model corresponding to the specified sonde_model_ids.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete` provided by `DatabaseAccessorBase`.
-        """
         # Check for foreign key violation.
         foreign_sonde_features_count = (
             self._session.query(SondeFeature)
@@ -1033,7 +1027,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.execute(
             SondeModel.__table__.delete().where(
                 SondeModel.sonde_model_id.in_(sonde_model_ids)))
-        self._session.commit()
+        self._session.flush()
 
     # ---- Sondes Inventory
     def _get_sonde(self, sonde_uuid):
@@ -1112,13 +1106,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._session.commit()
 
     def _del_sondes_data(self, sonde_ids):
-        """
-        Delete the sonde data corresponding to the specified ids.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete` provided by `DatabaseAccessorBase`.
-        """
         # Check for foreign key violation.
         foreign_sonde_installation = (
             self._session.query(SondeInstallation)
@@ -1135,7 +1122,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.execute(
             SondeFeature.__table__.delete().where(
                 SondeFeature.sonde_uuid.in_(sonde_ids)))
-        self._session.commit()
+        self._session.flush()
 
     # ---- Sonde installations
     def _get_sonde_installation(self, install_uuid):
@@ -1231,13 +1218,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._session.commit()
 
     def _del_sonde_installations(self, install_ids):
-        """
-        Delete the sonde installations corresponding to the specified ids.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete` provided by `DatabaseAccessorBase`.
-        """
         # We need to update the "observations" and "process" tables to remove
         # any reference to the sonde installations that are going to be
         # removed from the database.
@@ -1261,7 +1241,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.execute(
             SondeInstallation.__table__.delete().where(
                 SondeInstallation.install_uuid.in_(install_ids)))
-        self._session.commit()
+        self._session.flush()
 
     # ---- Manual mesurements
     def _get_generic_num_value(self, gen_num_value_uuid):
@@ -1362,20 +1342,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.commit()
 
     def _del_manual_measurements(self, gen_num_value_uuids):
-        """
-        Delete the manual measurements corresponding to the specified
-        gen_num_value_uuids.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete` provided by `DatabaseAccessorBase`.
-        """
         for gen_num_value_uuid in gen_num_value_uuids:
             measurement = self._get_generic_num_value(gen_num_value_uuid)
             observation = self._get_observation(measurement.observation_id)
             self._session.delete(observation)
             self._session.delete(measurement)
-        self._session.commit()
+        self._session.flush()
 
     # ---- Timeseries
     def _get_timeseriesdata(self, date_time, obs_id, data_type):
