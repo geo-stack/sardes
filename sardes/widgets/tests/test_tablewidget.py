@@ -37,7 +37,8 @@ from sardes.widgets.tableviews import (
 from sardes.tables.delegates import (
     NotEditableDelegate, StringEditDelegate,
     IntEditDelegate, NumEditDelegate, BoolEditDelegate)
-from sardes.database.database_manager import DatabaseConnectionManager
+from sardes.database.database_manager import (
+    DatabaseConnectionManager, DATABASE_CONCEPTUAL_MODEL)
 from sardes.api.database_accessor import DatabaseAccessorBase
 from sardes.utils.data_operations import are_values_equal
 
@@ -53,6 +54,19 @@ VALUES = [['str1', True, 1.111, 3, 'not editable', None],
           ['str3', True, 3.333, 29, 'not editable', None]]
 DTYPES = ['str', 'boolean', 'float64', 'Int64', 'str', 'str']
 INDEXES = [uuid.uuid4() for i in range(len(VALUES))]
+
+
+# We need to extend the database conceptual model with our test table.
+DATABASE_CONCEPTUAL_MODEL.data['test_table_dataf_name'] = {
+    'foreign_constraints': (),
+    'unique_constraints': (),
+    'notnull_constraints': (),
+    'columns': {
+        COLUMNS[i]: {'dtype': DTYPES[i],
+                     'desc': ("Description for {}".format(COLUMNS[i]))}
+        for i in range(NCOL)
+    },
+}
 
 
 @pytest.fixture
@@ -101,7 +115,7 @@ def tablemodel(qtbot, TABLE_DATAF):
             if indexes is None:
                 indexes = [uuid.uuid4() for i in range(n)]
 
-            for i in range(len(n)):
+            for i in range(n):
                 for column in TABLE_DATAF.columns:
                     TABLE_DATAF.loc[indexes[i], column] = (
                         values[i].get(column, None))
