@@ -66,22 +66,28 @@ class DatabaseAccessorBase(ABC):
         if auto_commit:
             self.commit()
 
-    def add(self, name: str, values: list[dict],
+    def add(self, name: str, values: list[dict] = None,
             indexes: list[Any] = None, auto_commit: bool = True) -> list:
         """
         Add a new item to the data related to name in the database using
         the given primary_key and values.
         """
-        is_dict = isinstance(values, dict)
-        values = [values, ] if is_dict else list(values)
+        if values is None:
+            if not is_list_like(indexes):
+                values = {}
+            else:
+                values = [{}] * len(indexes)
+        is_single = isinstance(values, dict)
+
+        values = [values, ] if is_single else list(values)
         if indexes is not None:
-            indexes = [indexes, ] if is_dict else list(indexes)
+            indexes = [indexes, ] if is_single else list(indexes)
 
         indexes = getattr(self, '_add_' + name)(values, indexes)
         if auto_commit:
             self.commit()
 
-        return indexes[0] if is_dict else indexes
+        return indexes[0] if is_single else indexes
 
     def delete(self, name: str, indexes: list[Any],
                auto_commit: bool = True) -> None:

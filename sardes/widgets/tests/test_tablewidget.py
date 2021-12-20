@@ -81,8 +81,9 @@ def tablemodel(qtbot, TABLE_DATAF):
         def close_connection(self):
             self._connection = None
 
-        def _create_index(self, name):
-            return uuid.uuid4()
+        def commit(self):
+            # This accessor does not support journal logging.
+            pass
 
         def get_test_table_dataf_name(self, *args, **kargs):
             return TABLE_DATAF.copy()
@@ -91,13 +92,19 @@ def tablemodel(qtbot, TABLE_DATAF):
             for column, edited_value in attribute_values.items():
                 TABLE_DATAF.loc[index, column] = edited_value
 
-        def _del_test_table_dataf_name(self, index):
-            TABLE_DATAF.drop(index, axis='index', inplace=True)
+        def _del_test_table_dataf_name(self, indexes):
+            TABLE_DATAF.drop(indexes, axis='index', inplace=True)
 
-        def add_test_table_dataf_name(self, index, attribute_values):
-            for column in TABLE_DATAF.columns:
-                TABLE_DATAF.loc[index, column] = (
-                    attribute_values.get(column, None))
+        def _add_test_table_dataf_name(self, values, indexes=None):
+            n = len(values)
+
+            if indexes is None:
+                indexes = [uuid.uuid4() for i in range(n)]
+
+            for i in range(len(n)):
+                for column in TABLE_DATAF.columns:
+                    TABLE_DATAF.loc[indexes[i], column] = (
+                        values[i].get(column, None))
 
     class SardesTableModelMock(StandardSardesTableModel):
         __tabletitle__ = 'Sardes Test Table'
