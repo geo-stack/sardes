@@ -13,7 +13,7 @@ from __future__ import annotations
 import datetime
 import os
 import os.path as osp
-from typing import Callable
+from typing import Any, Callable
 import urllib
 
 # ---- Third party imports
@@ -86,13 +86,13 @@ class DatabaseConnectionWorker(WorkerBase):
         return None,
 
     # ---- Add, Get, Set data
-    def _add(self, name, *args, **kargs):
+    def _add(self, name: str, values: list[dict], auto_commit: bool = True):
         """
         Add a new item to the data related to name in the database.
         """
         if name in self._cache:
             del self._cache[name]
-        self.db_accessor.add(name, *args, **kargs)
+        self.db_accessor.add(name, values, auto_commit)
 
     def _get(self, name, *args, **kargs):
         """
@@ -127,22 +127,23 @@ class DatabaseConnectionWorker(WorkerBase):
 
         return data,
 
-    def _delete(self, name: str, indexes: list):
+    def _delete(self, name: str, indexes: list[Any], auto_commit: bool = True):
         """
         Delete from the database the items related to name at the
         specified indexes.
         """
         if name in self._cache:
             del self._cache[name]
-        self.db_accessor.delete(name, indexes)
+        self.db_accessor.delete(name, indexes, auto_commit)
 
-    def _set(self, name, *args, **kargs):
+    def _set(self, name: str, index: Any,
+             values: dict, auto_commit: bool = True):
         """
         Save the data related to name in the database.
         """
         if name in self._cache:
             del self._cache[name]
-        self.db_accessor.set(name, *args, **kargs)
+        self.db_accessor.set(name, index, values, auto_commit)
 
     def _save_table_edits(self, name, deleted_rows, added_rows, edited_values):
         """
@@ -151,16 +152,18 @@ class DatabaseConnectionWorker(WorkerBase):
         print("Saving edits for table '{}' in the database...".format(name))
 
         # We delete rows from the database.
-        self._delete(name, deleted_rows)
+        self._delete(name, deleted_rows, auto_commit=False)
 
         # We add new rows to the database.
-        for index, values in added_rows.iterrows():
-            self._add(name, index, values.dropna().to_dict())
+        values = [row.dropna().to_dict() for idx, row in added_rows.iterrows()]
+        self._add(name, values, auto_commit=False)
 
         # We commit edits to existing rows.
         for index, values in edited_values.groupby(level=0):
             values.index = values.index.droplevel(0)
             self._set(name, index, values['edited_value'].to_dict())
+
+        self.db_accessor.commit()
 
         print("Edits for table '{}' saved successfully in the database..."
               .format(name))
