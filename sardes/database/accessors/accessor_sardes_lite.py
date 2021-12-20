@@ -778,7 +778,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Set the attribute values of the new repere data.
         for i in range(n):
-            self.set_repere_data(indexes[i], values[i], auto_commit=False)
+            self._set_repere_data(indexes[i], values[i])
 
         return indexes
 
@@ -804,20 +804,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return repere
 
-    def set_repere_data(self, repere_id, attribute_values, auto_commit=True):
-        """
-        Save in the database the new attribute values for the repere data
-        corresponding to the specified repere_id.
-        """
-        repere = self._get_repere_data(repere_id)
-        for attr_name, attr_value in attribute_values.items():
+    def _set_repere_data(self, index, values):
+        repere = self._get_repere_data(index)
+        for attr_name, attr_value in values.items():
             if attr_name in ['start_date', 'end_date']:
                 # We need to make sure pandas NaT are replaced by None
                 # to avoid errors in sqlalchemy.
                 attr_value = None if pd.isnull(attr_value) else attr_value
             setattr(repere, attr_name, attr_value)
-        if auto_commit:
-            self._session.commit()
 
     def _del_repere_data(self, repere_ids):
         self._session.execute(

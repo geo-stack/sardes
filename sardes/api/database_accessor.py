@@ -218,8 +218,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
             in the database.
         values: dict
             A dictionary containing the attribute values of the observation
-            well that need to be updated in the database for the specified
-            index .
+            well that needs to be updated in the database for the specified
+            index.
         """
         pass
 
@@ -282,21 +282,22 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         pass
 
-    def set_repere_data(self, repere_id, attribute_values):
+    @abstractmethod
+    def _set_repere_data(self, index: Any, values: dict):
         """
-        Save in the database the new attribute values for the repere data
-        corresponding to the specified repere_id.
+        Set in the database the values of the repere data
+        corresponding to the specified index.
 
         Parameters
         ----------
-        repere_id: object
-            A unique identifier used to reference the repere data for wich
-            attribute values need to be changed in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values that need to be
-            changed in the database for the corresponding repere_id.
+        index: Any
+            A unique identifier used to reference the repere data
+            in the database.
+        values: dict
+            A dictionary containing the attribute values of the repere data
+            that needs to be updated in the database for the specified index.
         """
-        raise NotImplementedError
+        pass
 
     def get_repere_data(self):
         """
