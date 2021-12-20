@@ -559,16 +559,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._engine.dispose()
         self._connection = None
 
-    # ---- Locations
-    def _get_location(self, loc_id):
-        """
-        Return the sqlalchemy Location object corresponding to the
-        specified location ID.
-        """
-        return (self._session.query(Location)
-                .filter(Location.loc_id == loc_id)
-                .one())
-
     # ---- Observation Wells
     def _get_sampling_feature(self, sampling_feature_uuid):
         """
@@ -1726,6 +1716,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.commit()
 
     # ---- Private methods
+    def _get_location(self, loc_id):
+        """
+        Return the sqlalchemy Location object corresponding to the
+        specified location ID.
+        """
+        return (self._session.query(Location)
+                .filter(Location.loc_id == loc_id)
+                .one())
+
     def _get_process_data(self):
         """
         Return a pandas dataframe containing the content of
