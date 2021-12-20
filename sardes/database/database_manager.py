@@ -85,15 +85,15 @@ class DatabaseConnectionWorker(WorkerBase):
         print("Connection with database closed.")
         return None,
 
-    # ---- Add, Get, Set data
-    def _add(self, name: str, values: list[dict], auto_commit: bool = True):
+    # ---- Basic database operations
+    def _add(self, name: str, values: list[dict],
+             indexes: list[Any] = None, auto_commit: bool = True):
         """
         Add a new item to the data related to name in the database.
         """
         if name in self._cache:
             del self._cache[name]
-        self.db_accessor.add(
-            name, values, indexes=None, auto_commit=auto_commit)
+        self.db_accessor.add(name, values, indexes, auto_commit)
 
     def _get(self, name, *args, **kargs):
         """
@@ -165,7 +165,10 @@ class DatabaseConnectionWorker(WorkerBase):
         # We commit edits to existing rows.
         for index, values in edited_values.groupby(level=0):
             values.index = values.index.droplevel(0)
-            self._set(name, index, values['edited_value'].to_dict())
+            self._set(name,
+                      index,
+                      values['edited_value'].to_dict(),
+                      auto_commit=False)
 
         self.db_accessor.commit()
 
