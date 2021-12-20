@@ -132,7 +132,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
     }),
     'sondes_data': ReadOnlyDict({
         'foreign_constraints': (
-            ('sonde_uuid', 'sonde_installations')
+            ('sonde_uuid', 'sonde_installations'),
         ),
         'unique_constraints': (),
         'notnull_constraints': (),
@@ -184,7 +184,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
         'foreign_constraints': (
             ('sampling_feature_uuid', 'manual_measurements'),
             ('sampling_feature_uuid', 'sonde_installations'),
-            ('sampling_feature_uuid', 'repere_data')
+            ('sampling_feature_uuid', 'repere_data'),
         ),
         'unique_constraints': (
             ['obs_well_id']
@@ -261,7 +261,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
     }),
     'sonde_models_lib': ReadOnlyDict({
         'foreign_constraints': (
-            ('sonde_model_id', 'sondes_data')
+            ('sonde_model_id', 'sondes_data'),
         ),
         'unique_constraints': (),
         'notnull_constraints': (),
