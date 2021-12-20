@@ -416,11 +416,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
     def _add_sondes_data(
             self, values: list[dict], indexes: list = None) -> list:
         """
-        Add a list of new piezometric sondes to the database.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `add`.
+        Add a list of new sondes to the database.
 
         Parameters
         ----------
@@ -447,28 +443,15 @@ class DatabaseAccessor(DatabaseAccessorBase):
         Returns
         -------
         :class:`pandas.DataFrame`
-            A :class:`pandas.DataFrame` containing the information related
-            to the sondes used to monitor groundwater properties in the wells.
+            A pandas dataframe containing information related to the
+            sondes used to monitor groundwater properties in the wells.
 
-            The row indexes of the dataframe must correspond to the
-            sonde IDs, which are unique identifiers used to reference the
-            sondes in the database.
+            The index of the dataframe must contain the indexes or keys that
+            are used to reference the sondes in the database.
 
-            The dataframe can contain any of the columns that are
-            listed below.
-
-            Required Columns
-            ~~~~~~~~~~~~~~~~
-
-
-            Optional Columns
-            ~~~~~~~~~~~~~~~~
-            - sonde_brand_model: str
-                The brand and model of the sonde.
-            - sonde_brand: str
-                The brand of the sonde.
-            - sonde_model: str
-                The model of the sonde.
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that the dataframe
+            returned by this method should follow.
         """
         raise NotImplementedError
 
@@ -491,10 +474,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
     def _del_sondes_data(self, indexes: list):
         """
         Delete the sondes data corresponding to the specified indexes.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete`.
         """
         pass
 
