@@ -949,21 +949,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return sondes
 
-    def set_sondes_data(self, sonde_uuid, attribute_values, auto_commit=True):
-        """
-        Save in the database the new attribute value for the sonde
-        corresponding to the specified sonde_id.
-        """
-        sonde = self._get_sonde(sonde_uuid)
-        for attr_name, attr_value in attribute_values.items():
+    def _set_sondes_data(self, index, values):
+        sonde = self._get_sonde(index)
+        for attr_name, attr_value in values.items():
             # Make sure pandas NaT are replaced by None for datetime fields
             # to avoid errors in sqlalchemy.
             if attr_name in ['date_reception', 'date_withdrawal']:
                 attr_value = None if pd.isnull(attr_value) else attr_value
 
             setattr(sonde, attr_name, attr_value)
-        if auto_commit:
-            self._session.commit()
 
     def _del_sondes_data(self, sonde_ids):
         # Check for foreign key violation.

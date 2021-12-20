@@ -450,20 +450,22 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
-    def set_sondes_data(self, sonde_id, attribute_values):
+    @abstractmethod
+    def _set_sondes_data(self, index: Any, values: dict):
         """
-        Save in the database the new attribute value for the sonde
-        corresponding to the specified sonde_id.
+        Set in the database the values of the sondes data
+        corresponding to the specified index.
 
         Parameters
         ----------
-        sonde_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the sonde in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values that need to be
-            changed in the database for the corresponding sonde_id.
+        index: Any
+            A unique identifier used to reference the sondes data
+            in the database.
+        values: dict
+            A dictionary containing the attribute values of the sondes data
+            that needs to be updated in the database for the specified index.
         """
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def _del_sondes_data(self, indexes: list):
