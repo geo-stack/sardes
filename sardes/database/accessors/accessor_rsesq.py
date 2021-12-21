@@ -615,11 +615,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
-    def get_observation_wells_data(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to the observation wells that are saved in the database.
-        """
+    def _get_observation_wells_data(self):
         query = (
             self._session.query(ObservationWell,
                                 Location.latitude,
@@ -1391,7 +1387,7 @@ def test_duplicate_timeseries_data(accessor):
     varnames = [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC]
     duplicate_count = {}
     duplicated_data = {}
-    obs_wells = accessor.get_observation_wells_data()
+    obs_wells = accessor.get('observation_wells_data')
 
     for var in varnames:
         print('Testing', var.name, 'for duplicate data...')
@@ -1419,7 +1415,7 @@ def update_repere_table(filename, accessor):
         Repere.__table__.drop(accessor._engine)
     Base.metadata.create_all(accessor._engine, tables=[Repere.__table__])
 
-    obs_wells = accessor.get_observation_wells_data()
+    obs_wells = accessor.get('observation_wells_data')
     repere_data = pd.read_excel(filename)
     for row in range(len(repere_data)):
         row_data = repere_data.iloc[row]
@@ -1458,7 +1454,7 @@ def update_manual_measurements(filename, accessor):
     Update the manual measurements in the database from an Excel file.
     """
     manual_measurements = accessor.get_manual_measurements()
-    obs_wells = accessor.get_observation_wells_data()
+    obs_wells = accessor.get('observation_wells_data')
 
     # Delete all observations related to water level manual measurements.
     for index in manual_measurements.index:
@@ -1552,7 +1548,7 @@ def update_sonde_installations(filename, accessor):
     """
     Update the sonde installations in the database from an Excel file.
     """
-    obs_wells = accessor.get_observation_wells_data()
+    obs_wells = accessor.get('observation_wells_data')
     sonde_installs = accessor.get_sonde_installations()
 
     xls_installations = pd.read_excel(filename)
@@ -1612,7 +1608,7 @@ if __name__ == "__main__":
     accessor = DatabaseAccessorRSESQ(**dbconfig)
     accessor.connect()
 
-    obs_wells = accessor.get_observation_wells_data()
+    obs_wells = accessor.get('observation_wells_data')
     obs_wells_stats = accessor.get_observation_wells_statistics()
     sondes_data = accessor.get_sondes_data()
     sonde_models_lib = accessor.get_sonde_models_lib()

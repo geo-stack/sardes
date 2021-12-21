@@ -84,7 +84,7 @@ def test_add_manual_measurements(tablewidget, qtbot, dbaccessor, mocker):
 
     # Enter a non null value for the fields 'sampling_feature_uuid', 'datetime'
     # and 'value'.
-    obswells = dbaccessor.get_observation_wells_data()
+    obswells = dbaccessor.get('observation_wells_data')
     edited_values = {
         'sampling_feature_uuid': obswells.index[0],
         'datetime': datetime(2012, 3, 2, 16, 15),

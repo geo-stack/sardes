@@ -560,6 +560,36 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._connection = None
 
     # ---- Observation Wells Interface
+    def _get_observation_wells_data(self):
+        query = (
+            self._session.query(
+                SamplingFeature.sampling_feature_uuid,
+                SamplingFeature.sampling_feature_name.label('obs_well_id'),
+                SamplingFeature.sampling_feature_notes.label('obs_well_notes'),
+                Location.latitude,
+                Location.longitude,
+                Location.municipality,
+                SamplingFeatureMetadata.in_recharge_zone,
+                SamplingFeatureMetadata.aquifer_type,
+                SamplingFeatureMetadata.confinement,
+                SamplingFeatureMetadata.common_name,
+                SamplingFeatureMetadata.aquifer_code,
+                SamplingFeatureMetadata.is_station_active,
+                SamplingFeatureMetadata.is_influenced)
+            .filter(Location.loc_id == SamplingFeature.loc_id)
+            .filter(SamplingFeatureMetadata.sampling_feature_uuid ==
+                    SamplingFeature.sampling_feature_uuid)
+            )
+        obs_wells = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='sampling_feature_uuid'
+            )
+
+        # Replace nan by None.
+        obs_wells = obs_wells.where(obs_wells.notnull(), None)
+
+        return obs_wells
+
     def _add_observation_wells_data(self, values, indexes=None):
         n = len(values)
 
@@ -590,36 +620,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._set_observation_wells_data(indexes[i], values[i])
 
         return indexes
-
-    def get_observation_wells_data(self):
-        query = (
-            self._session.query(
-                SamplingFeature.sampling_feature_uuid,
-                SamplingFeature.sampling_feature_name.label('obs_well_id'),
-                SamplingFeature.sampling_feature_notes.label('obs_well_notes'),
-                Location.latitude,
-                Location.longitude,
-                Location.municipality,
-                SamplingFeatureMetadata.in_recharge_zone,
-                SamplingFeatureMetadata.aquifer_type,
-                SamplingFeatureMetadata.confinement,
-                SamplingFeatureMetadata.common_name,
-                SamplingFeatureMetadata.aquifer_code,
-                SamplingFeatureMetadata.is_station_active,
-                SamplingFeatureMetadata.is_influenced)
-            .filter(Location.loc_id == SamplingFeature.loc_id)
-            .filter(SamplingFeatureMetadata.sampling_feature_uuid ==
-                    SamplingFeature.sampling_feature_uuid)
-            )
-        obs_wells = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True,
-            index_col='sampling_feature_uuid'
-            )
-
-        # Replace nan by None.
-        obs_wells = obs_wells.where(obs_wells.notnull(), None)
-
-        return obs_wells
 
     def _set_observation_wells_data(self, index, values):
         obs_well = self._get_sampling_feature(index)
@@ -1754,7 +1754,7 @@ if __name__ == "__main__":
     accessor.init_database()
     accessor.connect()
 
-    obs_wells = accessor.get_observation_wells_data()
+    obs_wells = accessor.get('observation_wells_data')
     sonde_data = accessor.get_sondes_data()
     sonde_models_lib = accessor.get_sonde_models_lib()
     sonde_installations = accessor.get_sonde_installations()
