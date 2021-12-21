@@ -386,7 +386,7 @@ def test_delete_observation_well(tablewidget, qtbot, dbaccessor, mocker,
     with qtbot.waitSignal(dbconnmanager.sig_run_tasks_finished, timeout=5000):
         dbconnmanager.delete(
             'manual_measurements',
-            dbaccessor.get_manual_measurements().index[:3])
+            dbaccessor.get('manual_measurements').index[:3])
 
     tablewidget.save_edits_action.trigger()
     qtbot.waitUntil(lambda: qmsgbox_patcher.call_count == 3)

@@ -195,7 +195,7 @@ def test_manual_measurements_interface(dbaccessor, obswells_data,
 
     # Test the empty manual measurement dataframe is formatted as expected.
     # This covers the issue reported at cgq-qgc/sardes#427.
-    saved_manual_measurements = dbaccessor.get_manual_measurements()
+    saved_manual_measurements = dbaccessor.get('manual_measurements')
     assert saved_manual_measurements.empty
     assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
 
@@ -208,7 +208,7 @@ def test_manual_measurements_interface(dbaccessor, obswells_data,
         values=_dict.values(),
         indexes=_dict.keys())
 
-    saved_manual_measurements = dbaccessor.get_manual_measurements()
+    saved_manual_measurements = dbaccessor.get('manual_measurements')
     assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
     assert_dataframe_equals(saved_manual_measurements, manual_measurements)
 
@@ -226,7 +226,7 @@ def test_manual_measurements_interface(dbaccessor, obswells_data,
         assert attr_value != old_values[attr_name]
     dbaccessor.set('manual_measurements', gen_num_value_uuid, edited_values)
 
-    saved_manual_measurements = dbaccessor.get_manual_measurements()
+    saved_manual_measurements = dbaccessor.get('manual_measurements')
     assert is_datetime64_any_dtype(saved_manual_measurements['datetime'])
     assert (saved_manual_measurements.loc[gen_num_value_uuid].to_dict() ==
             edited_values)
@@ -235,7 +235,7 @@ def test_manual_measurements_interface(dbaccessor, obswells_data,
     # Delete
     # =========================================================================
     dbaccessor.delete('manual_measurements', gen_num_value_uuid)
-    saved_manual_measurements = dbaccessor.get_manual_measurements()
+    saved_manual_measurements = dbaccessor.get('manual_measurements')
     assert (saved_manual_measurements.to_dict() ==
             manual_measurements.iloc[1:].to_dict())
 
@@ -683,7 +683,7 @@ def test_observation_well_interface(dbaccessor, database_filler,
     # We delete the manual measurements and try again.
     dbaccessor.delete(
         'manual_measurements',
-        dbaccessor.get_manual_measurements().index)
+        dbaccessor.get('manual_measurements').index)
 
     with pytest.raises(DatabaseAccessorError):
         dbaccessor.delete('observation_wells_data', obs_wells_id)

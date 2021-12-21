@@ -1288,12 +1288,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         self._session.add(measurement)
         self._session.commit()
 
-    def get_manual_measurements(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the water level manual
-        measurements made in the observation wells for the entire monitoring
-        network.
-        """
+    def _get_manual_measurements(self):
         # Define a query to fetch the water level manual measurements
         # from the database.
         query = (
@@ -1429,7 +1424,7 @@ def update_manual_measurements(filename, accessor):
     """
     Update the manual measurements in the database from an Excel file.
     """
-    manual_measurements = accessor.get_manual_measurements()
+    manual_measurements = accessor.get('manual_measurements')
     obs_wells = accessor.get('observation_wells_data')
 
     # Delete all observations related to water level manual measurements.
@@ -1588,7 +1583,7 @@ if __name__ == "__main__":
     obs_wells_stats = accessor.get_observation_wells_statistics()
     sondes_data = accessor.get('sondes_data')
     sonde_models_lib = accessor.get('sonde_models_lib')
-    manual_measurements = accessor.get_manual_measurements()
+    manual_measurements = accessor.get('manual_measurements')
     sonde_installations = accessor.get('sonde_installations')
     repere_data = accessor.get('repere_data')
 

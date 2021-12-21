@@ -62,12 +62,12 @@ def test_add_manual_measurements(tablewidget, qtbot, dbaccessor, mocker):
     """
     tablemodel = tablewidget.model()
     assert tablewidget.visible_row_count() == 6
-    assert len(dbaccessor.get_manual_measurements()) == 6
+    assert len(dbaccessor.get('manual_measurements')) == 6
 
     # We add a new row and assert that the UI state is as expected.
     tablewidget.new_row_action.trigger()
     assert tablewidget.visible_row_count() == 7
-    assert len(dbaccessor.get_manual_measurements()) == 6
+    assert len(dbaccessor.get('manual_measurements')) == 6
     assert tablewidget.model().is_new_row_at(tablewidget.current_index())
     assert tablewidget.get_data_for_row(6) == ['', '', '', '']
     assert tablemodel.data_edit_count() == 1
@@ -103,7 +103,7 @@ def test_add_manual_measurements(tablewidget, qtbot, dbaccessor, mocker):
     assert qmsgbox_patcher.call_count == 1
     assert tablemodel.data_edit_count() == 0
 
-    manual_measurements = dbaccessor.get_manual_measurements()
+    manual_measurements = dbaccessor.get('manual_measurements')
     assert tablewidget.visible_row_count() == 7
     assert len(manual_measurements) == 7
     for name, value in edited_values.items():
@@ -151,7 +151,7 @@ def test_edit_manual_measurements(tablewidget, qtbot, manual_measurements,
     with qtbot.waitSignal(tableview.model().sig_data_updated):
         tableview._save_data_edits(force=True)
 
-    saved_values = dbaccessor.get_manual_measurements().iloc[0].to_dict()
+    saved_values = dbaccessor.get('manual_measurements').iloc[0].to_dict()
     for key in edited_values.keys():
         assert saved_values[key] == edited_values[key]
 
@@ -186,7 +186,7 @@ def test_clear_manual_measurements(tablewidget, qtbot, dbaccessor):
     with qtbot.waitSignal(tableview.model().sig_data_updated):
         tableview._save_data_edits(force=True)
 
-    saved_values = dbaccessor.get_manual_measurements().iloc[0].to_dict()
+    saved_values = dbaccessor.get('manual_measurements').iloc[0].to_dict()
     for attr in clearable_attrs:
         assert pd.isnull(saved_values[attr])
 
@@ -196,7 +196,7 @@ def test_delete_manual_measurements(tablewidget, qtbot, dbaccessor):
     Test that deleting manual measurements is working as expected.
     """
     assert tablewidget.visible_row_count() == 6
-    assert len(dbaccessor.get_manual_measurements()) == 6
+    assert len(dbaccessor.get('manual_measurements')) == 6
 
     # Select and delete the first two rows of the table.
     tablewidget.set_current_index(0, 0)
@@ -207,7 +207,7 @@ def test_delete_manual_measurements(tablewidget, qtbot, dbaccessor):
     assert tablewidget.model().data_edit_count() == 1
 
     # Save the changes to the database.
-    manual_measurements = dbaccessor.get_manual_measurements()
+    manual_measurements = dbaccessor.get('manual_measurements')
     assert len(manual_measurements) == 6
     assert manual_measurements.iloc[0]['value'] == 5.23
     assert tablewidget.visible_row_count() == 6
@@ -215,7 +215,7 @@ def test_delete_manual_measurements(tablewidget, qtbot, dbaccessor):
     with qtbot.waitSignal(tablewidget.model().sig_data_updated):
         tablewidget.save_edits_action.trigger()
 
-    manual_measurements = dbaccessor.get_manual_measurements()
+    manual_measurements = dbaccessor.get('manual_measurements')
     assert len(manual_measurements) == 4
     assert manual_measurements.iloc[0]['value'] == 4.91
     assert tablewidget.visible_row_count() == 4

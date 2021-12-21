@@ -1058,16 +1058,33 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.flush()
 
     # ---- Manual mesurements Interface
-    def _get_generic_num_value(self, gen_num_value_uuid):
-        """
-        Return the sqlalchemy GenericNumericalData object corresponding
-        to the given ID.
-        """
-        return (
-            self._session.query(GenericNumericalData)
-            .filter(GenericNumericalData.gen_num_value_uuid ==
-                    gen_num_value_uuid)
-            .one())
+    def _get_manual_measurements(self):
+        query = (
+            self._session.query(
+                GenericNumericalData.gen_num_value.label('value'),
+                GenericNumericalData.gen_num_value_notes.label('notes'),
+                GenericNumericalData.gen_num_value_uuid,
+                Observation.obs_datetime.label('datetime'),
+                Observation.sampling_feature_uuid)
+            .filter(GenericNumericalData.obs_property_id == 2)
+            .filter(GenericNumericalData.observation_id ==
+                    Observation.observation_id)
+            )
+        measurements = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='gen_num_value_uuid')
+
+        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
+        # directly in 'read_sql_query' with the new 'dtype' argument.
+
+        # Make sure datetime data is considered as datetime.
+        # This is required to avoid problems when the manual measurements
+        # table is empty. See cgq-qgc/sardes#427.
+        if not is_datetime64_ns_dtype(measurements['datetime']):
+            print('Converting manual measurements to datetime.')
+            measurements['datetime'] = pd.to_datetime(measurements['datetime'])
+
+        return measurements
 
     def _add_manual_measurements(self, values, indexes=None):
         n = len(values)
@@ -1098,39 +1115,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 ) for i in range(n)
             ])
         self._session.flush()
-
-    def get_manual_measurements(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the water level manual
-        measurements made in the observation wells for the entire monitoring
-        network.
-        """
-        query = (
-            self._session.query(
-                GenericNumericalData.gen_num_value.label('value'),
-                GenericNumericalData.gen_num_value_notes.label('notes'),
-                GenericNumericalData.gen_num_value_uuid,
-                Observation.obs_datetime.label('datetime'),
-                Observation.sampling_feature_uuid)
-            .filter(GenericNumericalData.obs_property_id == 2)
-            .filter(GenericNumericalData.observation_id ==
-                    Observation.observation_id)
-            )
-        measurements = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True,
-            index_col='gen_num_value_uuid')
-
-        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
-        # directly in 'read_sql_query' with the new 'dtype' argument.
-
-        # Make sure datetime data is considered as datetime.
-        # This is required to avoid problems when the manual measurements
-        # table is empty. See cgq-qgc/sardes#427.
-        if not is_datetime64_ns_dtype(measurements['datetime']):
-            print('Converting manual measurements to datetime.')
-            measurements['datetime'] = pd.to_datetime(measurements['datetime'])
-
-        return measurements
 
     def _set_manual_measurements(self, index, values):
         measurement = self._get_generic_num_value(index)
@@ -1600,6 +1584,17 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.commit()
 
     # ---- Private methods
+    def _get_generic_num_value(self, gen_num_value_uuid):
+        """
+        Return the sqlalchemy GenericNumericalData object corresponding
+        to the given ID.
+        """
+        return (
+            self._session.query(GenericNumericalData)
+            .filter(GenericNumericalData.gen_num_value_uuid ==
+                    gen_num_value_uuid)
+            .one())
+
     def _get_sampling_feature(self, sampling_feature_uuid):
         """
         Return the sqlalchemy ObservationWell object corresponding to the

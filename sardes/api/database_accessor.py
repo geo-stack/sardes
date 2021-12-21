@@ -578,6 +578,28 @@ class DatabaseAccessor(DatabaseAccessorBase):
     # Note: The methods in this section should not be called directly. Please
     #       use instead the public methods "add", "get", "delete", and "set".
     # =========================================================================
+    @abstractmethod
+    def _get_manual_measurements(self):
+        """
+        Return the water level manual measurements that are saved in
+        the database.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A pandas dataframe containing the manual measurements of the
+            water level that are saved in the database.
+
+            The index of the dataframe must contain the indexes or keys that
+            are used to reference the manual measurements in the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that the dataframe
+            returned by this method should follow.
+        """
+        pass
+
+    @abstractmethod
     def _add_manual_measurements(
             self, values: list[dict], indexes: list = None) -> list:
         """
@@ -603,26 +625,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
             manual measurements that were added to the database.
         """
         pass
-
-    def get_manual_measurements(self):
-        """
-        Return the water level manual measurements that are saved in
-        the database.
-
-        Returns
-        -------
-        :class:`pandas.DataFrame`
-            A pandas dataframe containing the manual measurements of the
-            water level that are saved in the database.
-
-            The index of the dataframe must contain the indexes or keys that
-            are used to reference the manual measurements in the database.
-
-            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
-            description of the content and structure that the dataframe
-            returned by this method should follow.
-        """
-        raise NotImplementedError
 
     @abstractmethod
     def _set_manual_measurements(self, index: Any, values: dict):
