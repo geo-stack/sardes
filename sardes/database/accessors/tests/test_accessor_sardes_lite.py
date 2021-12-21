@@ -332,7 +332,7 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
 
     # Assert that the empty dataframe of the sonde installations data is
     # formatted as expected.
-    sonde_installs_bd = dbaccessor.get_sonde_installations()
+    sonde_installs_bd = dbaccessor.get('sonde_installations')
     assert sonde_installs_bd.empty
     assert is_datetime64_any_dtype(sonde_installs_bd['start_date'])
     assert is_datetime64_any_dtype(sonde_installs_bd['end_date'])
@@ -346,7 +346,7 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
         values=_dict.values(),
         indexes=_dict.keys())
 
-    sonde_installs_bd = dbaccessor.get_sonde_installations()
+    sonde_installs_bd = dbaccessor.get('sonde_installations')
     assert is_datetime64_any_dtype(sonde_installs_bd['start_date'])
     assert is_datetime64_any_dtype(sonde_installs_bd['end_date'])
     assert_dataframe_equals(sondes_installation, sonde_installs_bd)
@@ -354,7 +354,7 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
     # =========================================================================
     # Edit
     # =========================================================================
-    sonde_install_id = dbaccessor.get_sonde_installations().index[0]
+    sonde_install_id = dbaccessor.get('sonde_installations').index[0]
     old_values = sonde_installs_bd.loc[sonde_install_id].to_dict()
     edited_values = {
         'start_date': datetime.date(2006, 4, 1),
@@ -364,7 +364,7 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
         assert attribute_value != old_values[attribute_name]
     dbaccessor.set('sonde_installations', sonde_install_id, edited_values)
 
-    sonde_installs_bd = dbaccessor.get_sonde_installations()
+    sonde_installs_bd = dbaccessor.get('sonde_installations')
     for column, value in edited_values.items():
         assert sonde_installs_bd.at[sonde_install_id, column] == value
 
@@ -378,7 +378,7 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
     # =========================================================================
     # Delete
     # =========================================================================
-    sonde_installs_bd = dbaccessor.get_sonde_installations()
+    sonde_installs_bd = dbaccessor.get('sonde_installations')
     obswells_data = dbaccessor.get('observation_wells_data')
     sondes_data = dbaccessor.get('sondes_data')
 
@@ -395,7 +395,7 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
     # Assert that an observation related to the sonde installation at index 0
     # has been added as expected in the database.
     observations = dbaccessor._get_observation_data()
-    sonde_installs_bd = dbaccessor.get_sonde_installations()
+    sonde_installs_bd = dbaccessor.get('sonde_installations')
     assert len(observations) == 1
     assert (observations.iloc[0]['process_id'] ==
             sonde_installs_bd.iloc[0]['process_id'])
@@ -403,13 +403,13 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
     # Delete the first sonde installation of the database.
     dbaccessor.delete('sonde_installations', sonde_installs_bd.index[0])
 
-    sonde_installs_bd = dbaccessor.get_sonde_installations()
+    sonde_installs_bd = dbaccessor.get('sonde_installations')
     assert len(sonde_installs_bd) == len(sondes_installation) - 1
 
     # Delete the remaining repere data.
     dbaccessor.delete('sonde_installations', sonde_installs_bd.index)
 
-    sonde_installs_bd = dbaccessor.get_sonde_installations()
+    sonde_installs_bd = dbaccessor.get('sonde_installations')
     assert len(sonde_installs_bd) == 0
 
     # Check that the 'process' and 'observation' were updated accordingly.
@@ -700,7 +700,7 @@ def test_observation_well_interface(dbaccessor, database_filler,
     # We delete the sonde installations and try again (now it should work).
     dbaccessor.delete(
         'sonde_installations',
-        dbaccessor.get_sonde_installations().index)
+        dbaccessor.get('sonde_installations').index)
 
     dbaccessor.delete('observation_wells_data', obs_wells_id)
     assert len(dbaccessor.get('observation_wells_data')) == 4
@@ -744,7 +744,7 @@ def test_timeseries_interface(dbaccessor, obswells_data, sondes_data,
     # no timeseries data is saved in the database for a given sampling feature
     # and data type.
     obs_well_uuid = dbaccessor.get('observation_wells_data').index[0]
-    sonde_install_uuid = dbaccessor.get_sonde_installations().index[0]
+    sonde_install_uuid = dbaccessor.get('sonde_installations').index[0]
     for data_type in DataType:
         tseries_data = dbaccessor.get_timeseries_for_obs_well(
             obs_well_uuid, data_type)

@@ -899,12 +899,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
-    def get_sonde_installations(self):
-        """
-        Return a :class:`pandas.DataFrame` containing information related to
-        sonde installations made in the observation wells of the monitoring
-        network.
-        """
+    def _get_sonde_installations(self):
         # Define the query to fetch the data.
         query = (
             self._session.query(
@@ -1530,7 +1525,7 @@ def update_sonde_installations(filename, accessor):
     Update the sonde installations in the database from an Excel file.
     """
     obs_wells = accessor.get('observation_wells_data')
-    sonde_installs = accessor.get_sonde_installations()
+    sonde_installs = accessor.get('sonde_installations')
 
     xls_installations = pd.read_excel(filename)
     for row in range(len(xls_installations)):
@@ -1594,7 +1589,7 @@ if __name__ == "__main__":
     sondes_data = accessor.get('sondes_data')
     sonde_models_lib = accessor.get('sonde_models_lib')
     manual_measurements = accessor.get_manual_measurements()
-    sonde_installations = accessor.get_sonde_installations()
+    sonde_installations = accessor.get('sonde_installations')
     repere_data = accessor.get('repere_data')
 
     t1 = perf_counter()

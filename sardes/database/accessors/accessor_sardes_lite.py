@@ -960,15 +960,24 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.flush()
 
     # ---- Sonde Installations Interface
-    def _get_sonde_installation(self, install_uuid):
-        """
-        Return the sqlalchemy SondeInstallation object corresponding to the
-        specified sonde ID.
-        """
-        return (
-            self._session.query(SondeInstallation)
-            .filter(SondeInstallation.install_uuid == install_uuid)
-            .one())
+    def _get_sonde_installations(self):
+        query = (
+            self._session.query(SondeInstallation,
+                                Process.sampling_feature_uuid)
+            .filter(SondeInstallation.process_id == Process.process_id)
+            )
+        data = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='install_uuid')
+
+        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
+        # directly in 'read_sql_query' with the new 'dtype' argument.
+
+        # Format the data.
+        data['start_date'] = pd.to_datetime(data['start_date'])
+        data['end_date'] = pd.to_datetime(data['end_date'])
+
+        return data
 
     def _add_sonde_installations(self, values, indexes=None):
         n = len(values)
@@ -1004,32 +1013,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         for i in range(n):
             self._set_sonde_installations(indexes[i], values[i])
 
-    def get_sonde_installations(self):
-        """
-        Return a :class:`pandas.DataFrame` containing information related to
-        sonde installations made in the observation wells of the monitoring
-        network.
-        """
-        query = (
-            self._session.query(SondeInstallation,
-                                Process.sampling_feature_uuid)
-            .filter(SondeInstallation.process_id == Process.process_id)
-            )
-        data = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True,
-            index_col='install_uuid')
-
-        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
-        # directly in 'read_sql_query' with the new 'dtype' argument.
-
-        # Format the data.
-        data['start_date'] = pd.to_datetime(data['start_date'])
-        data['end_date'] = pd.to_datetime(data['end_date'])
-
-        return data
-
     def _set_sonde_installations(self, index, values):
-        sonde_installation = self._get_sonde_installation(index)
+        sonde_installation = (
+            self._session.query(SondeInstallation)
+            .filter(SondeInstallation.install_uuid == index)
+            .one())
+
         for attr_name, attr_value in values.items():
             # Make sure pandas NaT are replaced by None for datetime fields
             # to avoid errors in sqlalchemy.
@@ -1738,7 +1727,7 @@ if __name__ == "__main__":
     obs_wells = accessor.get('observation_wells_data')
     sonde_data = accessor.get('sondes_data')
     sonde_models_lib = accessor.get('sonde_models_lib')
-    sonde_installations = accessor.get_sonde_installations()
+    sonde_installations = accessor.get('sonde_installations')
     repere_data = accessor.get('repere_data')
 
     stored_attachments_info = accessor.get_stored_attachments_info()

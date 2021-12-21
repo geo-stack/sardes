@@ -496,6 +496,28 @@ class DatabaseAccessor(DatabaseAccessorBase):
     # Note: The methods in this section should not be called directly. Please
     #       use instead the public methods "add", "get", "delete", and "set".
     # =========================================================================
+    @abstractmethod
+    def _get_sonde_installations(self):
+        """
+        Return the information related to the installations of the sondes in
+        the wells.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A pandas dataframe containing information related to the
+            installations of the sonde in the wells.
+
+            The index of the dataframe must contain the indexes or keys that
+            are used to reference the sonde installations in the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that the dataframe
+            returned by this method should follow.
+        """
+        pass
+
+    @abstractmethod
     def _add_sonde_installations(
             self, values: list[dict], indexes: list = None) -> list:
         """
@@ -543,26 +565,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
             can contained.
         """
         pass
-
-    def get_sonde_installations(self):
-        """
-        Return the information related to the installations of the sondes in
-        the wells.
-
-        Returns
-        -------
-        :class:`pandas.DataFrame`
-            A pandas dataframe containing information related to the
-            installations of the sonde in the wells.
-
-            The index of the dataframe must contain the indexes or keys that
-            are used to reference the sonde installations in the database.
-
-            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
-            description of the content and structure that the dataframe
-            returned by this method should follow.
-        """
-        raise NotImplementedError
 
     @abstractmethod
     def _del_sonde_installations(self, indexes: list):

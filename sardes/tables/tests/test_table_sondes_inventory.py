@@ -85,7 +85,7 @@ def test_add_sondes_data(tablewidget, dbaccessor, qtbot, mocker):
     tablewidget.save_edits_action.trigger()
     assert qmsgbox_patcher.call_count == 1
     assert tablewidget.visible_row_count() == 7
-    assert len(dbaccessor.get_sonde_installations()) == 6
+    assert len(dbaccessor.get('sonde_installations')) == 6
 
     # Enter a non null value for the fields 'sonde_model_id',
     # 'in_repair', 'out_of_order', 'lost', and 'off_network'.
@@ -238,7 +238,7 @@ def test_delete_sondes_data(tablewidget, qtbot, dbaccessor, mocker,
     # second row of the table.
     with qtbot.waitSignal(dbconnmanager.sig_run_tasks_finished, timeout=5000):
         sonde_uuid = dbaccessor.get('sondes_data').index[1]
-        sonde_installs = dbaccessor.get_sonde_installations()
+        sonde_installs = dbaccessor.get('sonde_installations')
         sonde_install_ids = sonde_installs.index[
             sonde_installs['sonde_uuid'] == sonde_uuid]
         dbconnmanager.delete('sonde_installations', sonde_install_ids)

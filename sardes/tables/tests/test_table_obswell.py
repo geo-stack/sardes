@@ -404,7 +404,7 @@ def test_delete_observation_well(tablewidget, qtbot, dbaccessor, mocker,
     with qtbot.waitSignal(dbconnmanager.sig_run_tasks_finished, timeout=5000):
         dbconnmanager.delete(
             'sonde_installations',
-            dbaccessor.get_sonde_installations().index[0])
+            dbaccessor.get('sonde_installations').index[0])
 
     assert tablewidget.visible_row_count() == 5
     assert len(dbaccessor.get('observation_wells_data')) == 5
