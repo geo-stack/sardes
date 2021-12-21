@@ -57,7 +57,7 @@ def dbaccessor(qtbot, mocker, DATAF):
         def close_connection(self):
             self._connection = None
 
-        def get_something(self):
+        def _get_something(self):
             sleep(0.5)
             return DATAF.copy()
 
