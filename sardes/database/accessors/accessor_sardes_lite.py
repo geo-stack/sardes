@@ -880,14 +880,26 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.flush()
 
     # ---- Sondes Inventory Interface
-    def _get_sonde(self, sonde_uuid):
-        """
-        Return the sqlalchemy Sondes object corresponding to the
-        specified sonde ID.
-        """
-        return (self._session.query(SondeFeature)
-                .filter(SondeFeature.sonde_uuid == sonde_uuid)
-                .one())
+    def _get_sondes_data(self):
+        query = self._session.query(SondeFeature)
+        sondes = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='sonde_uuid')
+
+        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
+        # directly in 'read_sql_query' with the new 'dtype' argument.
+
+        # Make sure date_reception and date_withdrawal are considered as
+        # datetime and strip the hour portion since it doesn't make sense here.
+        sondes['date_reception'] = pd.to_datetime(
+            sondes['date_reception']).dt.date
+        sondes['date_withdrawal'] = pd.to_datetime(
+            sondes['date_withdrawal']).dt.date
+
+        for column in ['in_repair', 'out_of_order', 'lost', 'off_network']:
+            sondes[column] = sondes[column].astype('boolean')
+
+        return sondes
 
     def _add_sondes_data(self, values, indexes=None):
         n = len(values)
@@ -914,33 +926,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return indexes
 
-    def get_sondes_data(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to the sondes used to monitor groundwater properties in the wells.
-        """
-        query = self._session.query(SondeFeature)
-        sondes = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True,
-            index_col='sonde_uuid')
-
-        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
-        # directly in 'read_sql_query' with the new 'dtype' argument.
-
-        # Make sure date_reception and date_withdrawal are considered as
-        # datetime and strip the hour portion since it doesn't make sense here.
-        sondes['date_reception'] = pd.to_datetime(
-            sondes['date_reception']).dt.date
-        sondes['date_withdrawal'] = pd.to_datetime(
-            sondes['date_withdrawal']).dt.date
-
-        for column in ['in_repair', 'out_of_order', 'lost', 'off_network']:
-            sondes[column] = sondes[column].astype('boolean')
-
-        return sondes
-
     def _set_sondes_data(self, index, values):
-        sonde = self._get_sonde(index)
+        sonde = (
+            self._session.query(SondeFeature)
+            .filter(SondeFeature.sonde_uuid == index)
+            .one())
+
         for attr_name, attr_value in values.items():
             # Make sure pandas NaT are replaced by None for datetime fields
             # to avoid errors in sqlalchemy.
@@ -1745,7 +1736,7 @@ if __name__ == "__main__":
     accessor.connect()
 
     obs_wells = accessor.get('observation_wells_data')
-    sonde_data = accessor.get_sondes_data()
+    sonde_data = accessor.get('sondes_data')
     sonde_models_lib = accessor.get('sonde_models_lib')
     sonde_installations = accessor.get_sonde_installations()
     repere_data = accessor.get('repere_data')

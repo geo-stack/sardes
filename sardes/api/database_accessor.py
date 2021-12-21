@@ -342,8 +342,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
     @abstractmethod
     def _get_sonde_models_lib(self):
         """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to sonde brands and models.
+        Return the information related to existing sonde models.
 
         Returns
         -------
@@ -417,6 +416,27 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
     # ---- Sondes Inventory Interface
     @abstractmethod
+    def _get_sondes_data(self):
+        """
+        Return the information related to the sondes used to monitor
+        groundwater properties in the wells.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A pandas dataframe containing information related to the
+            sondes used to monitor groundwater properties in the wells.
+
+            The index of the dataframe must contain the indexes or keys that
+            are used to reference the sondes in the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that the dataframe
+            returned by this method should follow.
+        """
+        pass
+
+    @abstractmethod
     def _add_sondes_data(
             self, values: list[dict], indexes: list = None) -> list:
         """
@@ -442,26 +462,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
             that were added to the database.
         """
         pass
-
-    def get_sondes_data(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to the sondes used to monitor groundwater properties in the wells.
-
-        Returns
-        -------
-        :class:`pandas.DataFrame`
-            A pandas dataframe containing information related to the
-            sondes used to monitor groundwater properties in the wells.
-
-            The index of the dataframe must contain the indexes or keys that
-            are used to reference the sondes in the database.
-
-            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
-            description of the content and structure that the dataframe
-            returned by this method should follow.
-        """
-        raise NotImplementedError
 
     @abstractmethod
     def _set_sondes_data(self, index: Any, values: dict):

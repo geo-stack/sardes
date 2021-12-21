@@ -523,7 +523,7 @@ def test_sonde_feature_interface(dbaccessor, sondes_data, sondes_installation,
     expected.
     """
     # Assert that the empty repere data dataframe is formatted as expected.
-    sondes_data_bd = dbaccessor.get_sondes_data()
+    sondes_data_bd = dbaccessor.get('sondes_data')
     assert sondes_data_bd.empty
     assert is_object_dtype(sondes_data_bd['date_reception'])
     assert is_object_dtype(sondes_data_bd['date_withdrawal'])
@@ -539,7 +539,7 @@ def test_sonde_feature_interface(dbaccessor, sondes_data, sondes_installation,
         values=_dict.values(),
         indexes=_dict.keys()
         )
-    sondes_data_bd = dbaccessor.get_sondes_data()
+    sondes_data_bd = dbaccessor.get('sondes_data')
     assert_dataframe_equals(sondes_data, sondes_data_bd, ignore_index=True)
 
     # =========================================================================
@@ -563,7 +563,7 @@ def test_sonde_feature_interface(dbaccessor, sondes_data, sondes_installation,
         assert attribute_value != old_values[attribute_name]
     dbaccessor.set('sondes_data', sonde_id, edited_values)
 
-    sondes_data_bd = dbaccessor.get_sondes_data()
+    sondes_data_bd = dbaccessor.get('sondes_data')
     for column, value in edited_values.items():
         assert sondes_data_bd.at[sonde_id, column] == value, column
 
@@ -587,14 +587,14 @@ def test_sonde_feature_interface(dbaccessor, sondes_data, sondes_installation,
         indexes=_dict.keys())
 
     # Try to delete a sonde that is used in table 'sonde_installation'.
-    sondes_data_bd = dbaccessor.get_sondes_data()
+    sondes_data_bd = dbaccessor.get('sondes_data')
     assert len(sondes_data_bd) == 6
 
     sonde_id = sondes_installation.iloc[0]['sonde_uuid']
     with pytest.raises(DatabaseAccessorError):
         dbaccessor.delete('sondes_data', sonde_id)
 
-    sondes_data_bd = dbaccessor.get_sondes_data()
+    sondes_data_bd = dbaccessor.get('sondes_data')
     assert len(sondes_data_bd) == 6
 
     # We deleted all sonde installations and try to delete all sonde
@@ -602,7 +602,7 @@ def test_sonde_feature_interface(dbaccessor, sondes_data, sondes_installation,
     dbaccessor.delete('sonde_installations', sondes_installation.index)
     dbaccessor.delete('sondes_data', sondes_data.index)
 
-    sondes_data_bd = dbaccessor.get_sondes_data()
+    sondes_data_bd = dbaccessor.get('sondes_data')
     assert len(sondes_data_bd) == 0
 
 

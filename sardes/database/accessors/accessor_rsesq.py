@@ -769,11 +769,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         self._session.add(sonde)
         self._session.commit()
 
-    def get_sondes_data(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to the sondes used to monitor groundwater properties in the wells.
-        """
+    def _get_sondes_data(self):
         query = (
             self._session.query(Sondes)
             .order_by(Sondes.sonde_model_id,
@@ -941,7 +937,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         data['end_date'] = data['end_date'].dt.tz_localize(None)
 
         # Replace sonde serial number with the corresponding sonde uuid.
-        sondes_data = self.get_sondes_data()
+        sondes_data = self.get('sondes_data')
         for index in data.index:
             sonde_serial_no = data.loc[index]['sonde_serial_no']
             if sonde_serial_no is None:
@@ -1477,7 +1473,7 @@ def update_sondes_data(filename, accessor):
     """
     Update the sondes data in the database from an Excel file.
     """
-    sondes_data = accessor.get_sondes_data()
+    sondes_data = accessor.get('sondes_data')
     sonde_models_lib = accessor.get('sonde_models_lib')
     xls_sondes_data = pd.read_excel(filename)
 
@@ -1595,7 +1591,7 @@ if __name__ == "__main__":
 
     obs_wells = accessor.get('observation_wells_data')
     obs_wells_stats = accessor.get_observation_wells_statistics()
-    sondes_data = accessor.get_sondes_data()
+    sondes_data = accessor.get('sondes_data')
     sonde_models_lib = accessor.get('sonde_models_lib')
     manual_measurements = accessor.get_manual_measurements()
     sonde_installations = accessor.get_sonde_installations()

@@ -65,7 +65,7 @@ def test_add_sondes_data(tablewidget, dbaccessor, qtbot, mocker):
     """
     tablemodel = tablewidget.model()
     assert tablewidget.visible_row_count() == 6
-    assert len(dbaccessor.get_sondes_data()) == 6
+    assert len(dbaccessor.get('sondes_data')) == 6
 
     # We add a new row and assert that the UI state is as expected.
     tablewidget.new_row_action.trigger()
@@ -73,7 +73,7 @@ def test_add_sondes_data(tablewidget, dbaccessor, qtbot, mocker):
     assert tablemodel.data_edit_count() == 1
     assert tablewidget.get_data_for_row(6) == [''] * 9
     assert tablemodel.is_new_row_at(tablewidget.current_index())
-    assert len(dbaccessor.get_sondes_data()) == 6
+    assert len(dbaccessor.get('sondes_data')) == 6
 
     # We need to patch the message box that warns the user when
     # a Notnull constraint is violated.
@@ -110,7 +110,7 @@ def test_add_sondes_data(tablewidget, dbaccessor, qtbot, mocker):
     assert qmsgbox_patcher.call_count == 1
     assert tablemodel.data_edit_count() == 0
 
-    sondes_data = dbaccessor.get_sondes_data()
+    sondes_data = dbaccessor.get('sondes_data')
     assert tablewidget.visible_row_count() == 7
     assert len(sondes_data) == 7
     assert sondes_data.iloc[6]['sonde_model_id'] == 2
@@ -168,7 +168,7 @@ def test_edit_sondes_data(tablewidget, qtbot, dbaccessor):
     with qtbot.waitSignal(tableview.model().sig_data_updated):
         tableview._save_data_edits(force=True)
 
-    saved_values = dbaccessor.get_sondes_data().iloc[0].to_dict()
+    saved_values = dbaccessor.get('sondes_data').iloc[0].to_dict()
     for key in edited_values.keys():
         assert saved_values[key] == edited_values[key]
 
@@ -205,7 +205,7 @@ def test_clear_sondes_data(tablewidget, qtbot, dbaccessor):
     with qtbot.waitSignal(tableview.model().sig_data_updated):
         tableview._save_data_edits(force=True)
 
-    saved_values = dbaccessor.get_sondes_data().iloc[0].to_dict()
+    saved_values = dbaccessor.get('sondes_data').iloc[0].to_dict()
     for attr in clearable_attrs:
         assert pd.isnull(saved_values[attr])
 
@@ -216,7 +216,7 @@ def test_delete_sondes_data(tablewidget, qtbot, dbaccessor, mocker,
     Test that deleting a sonde from the database is working as expected.
     """
     assert tablewidget.visible_row_count() == 6
-    assert len(dbaccessor.get_sondes_data()) == 6
+    assert len(dbaccessor.get('sondes_data')) == 6
 
     # Select and delete the second row of the table.
     tablewidget.set_current_index(1, 0)
@@ -237,21 +237,21 @@ def test_delete_sondes_data(tablewidget, qtbot, dbaccessor, mocker,
     # a foreign constraint violations when we try to delete the sonde on the
     # second row of the table.
     with qtbot.waitSignal(dbconnmanager.sig_run_tasks_finished, timeout=5000):
-        sonde_uuid = dbaccessor.get_sondes_data().index[1]
+        sonde_uuid = dbaccessor.get('sondes_data').index[1]
         sonde_installs = dbaccessor.get_sonde_installations()
         sonde_install_ids = sonde_installs.index[
             sonde_installs['sonde_uuid'] == sonde_uuid]
         dbconnmanager.delete('sonde_installations', sonde_install_ids)
 
     assert tablewidget.visible_row_count() == 6
-    assert len(dbaccessor.get_sondes_data()) == 6
+    assert len(dbaccessor.get('sondes_data')) == 6
 
     with qtbot.waitSignal(tablewidget.model().sig_data_updated):
         tablewidget.save_edits_action.trigger()
 
     assert qmsgbox_patcher.call_count == 1
     assert tablewidget.visible_row_count() == 5
-    assert len(dbaccessor.get_sondes_data()) == 5
+    assert len(dbaccessor.get('sondes_data')) == 5
 
 
 def test_unique_constraint(tablewidget, dbaccessor, qtbot, mocker):
