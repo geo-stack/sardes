@@ -219,6 +219,10 @@ class DatabaseAccessor(DatabaseAccessorBase):
             A dictionary containing the attribute values of the observation
             well that needs to be updated in the database for the specified
             index.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the attributes and data types that the dictionary
+            can contained.
         """
         pass
 
@@ -295,6 +299,10 @@ class DatabaseAccessor(DatabaseAccessorBase):
         values: dict
             A dictionary containing the attribute values of the repere data
             that needs to be updated in the database for the specified index.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the attributes and data types that the dictionary
+            can contained.
         """
         pass
 
@@ -391,6 +399,10 @@ class DatabaseAccessor(DatabaseAccessorBase):
         values: dict
             A dictionary containing the attribute values of the sonde model
             that needs to be updated in the database for the specified index.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the attributes and data types that the dictionary
+            can contained.
         """
         pass
 
@@ -463,6 +475,10 @@ class DatabaseAccessor(DatabaseAccessorBase):
         values: dict
             A dictionary containing the attribute values of the sondes data
             that needs to be updated in the database for the specified index.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the attributes and data types that the dictionary
+            can contained.
         """
         pass
 
@@ -519,6 +535,10 @@ class DatabaseAccessor(DatabaseAccessorBase):
             A dictionary containing the attribute values of the sonde
             installation that needs to be updated in the database for
             the specified index.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the attributes and data types that the dictionary
+            can contained.
         """
         pass
 
@@ -615,6 +635,10 @@ class DatabaseAccessor(DatabaseAccessorBase):
             A dictionary containing the attribute values of the manual
             measurement that needs to be updated in the database for
             the specified index.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the attributes and data types that the dictionary
+            can contained.
         """
         pass
 
