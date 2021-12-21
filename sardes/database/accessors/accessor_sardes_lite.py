@@ -814,11 +814,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.flush()
 
     # ---- Sondes Models Interface
-    def get_sonde_models_lib(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to sonde brands and models.
-        """
+    def _get_sonde_models_lib(self):
         query = self._session.query(SondeModel)
         sonde_models = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True,
@@ -1750,7 +1746,7 @@ if __name__ == "__main__":
 
     obs_wells = accessor.get('observation_wells_data')
     sonde_data = accessor.get_sondes_data()
-    sonde_models_lib = accessor.get_sonde_models_lib()
+    sonde_models_lib = accessor.get('sonde_models_lib')
     sonde_installations = accessor.get_sonde_installations()
     repere_data = accessor.get('repere_data')
 

@@ -438,7 +438,7 @@ def test_sonde_models_interface(dbaccessor, sondes_data):
         indexes=_dict.keys()
         )
 
-    len_sonde_models = len(dbaccessor.get_sonde_models_lib())
+    len_sonde_models = len(dbaccessor.get('sonde_models_lib'))
     assert len_sonde_models > 0
 
     # =========================================================================
@@ -451,7 +451,7 @@ def test_sonde_models_interface(dbaccessor, sondes_data):
         {'sonde_brand': 'some_brand', 'sonde_model': 'some_model'})
 
     # Assert that the sonde model was added as expected to the database.
-    sonde_models_lib = dbaccessor.get_sonde_models_lib()
+    sonde_models_lib = dbaccessor.get('sonde_models_lib')
     assert sonde_model_id == len_sonde_models + 1
     assert len(sonde_models_lib) == len_sonde_models + 1
     assert sonde_models_lib.at[sonde_model_id, 'sonde_brand'] == 'some_brand'
@@ -466,7 +466,7 @@ def test_sonde_models_interface(dbaccessor, sondes_data):
         {'sonde_brand': 'some_brand_2'})
 
     # Assert that the sonde model was added as expected to the database.
-    sonde_models_lib = dbaccessor.get_sonde_models_lib()
+    sonde_models_lib = dbaccessor.get('sonde_models_lib')
     assert sonde_model_id == len_sonde_models + 2
     assert len(sonde_models_lib) == len_sonde_models + 2
     assert sonde_models_lib.at[sonde_model_id, 'sonde_brand'] == 'some_brand_2'
@@ -479,14 +479,14 @@ def test_sonde_models_interface(dbaccessor, sondes_data):
     # =========================================================================
 
     # Edit the sonde model of the last item of the sonde models librairie.
-    sonde_models = dbaccessor.get_sonde_models_lib()
+    sonde_models = dbaccessor.get('sonde_models_lib')
     sonde_model_id = len(sonde_models)
     dbaccessor.set(
         'sonde_models_lib', sonde_model_id, {'sonde_model': 'some_model_2'})
 
     # Assert that the attribute of the given sonde model was edited as
     # expected.
-    sonde_models = dbaccessor.get_sonde_models_lib()
+    sonde_models = dbaccessor.get('sonde_models_lib')
     assert sonde_models.at[sonde_model_id, 'sonde_model'] == 'some_model_2'
     assert (sonde_models.at[sonde_model_id, 'sonde_brand_model'] ==
             'some_brand_2 some_model_2')
@@ -496,7 +496,7 @@ def test_sonde_models_interface(dbaccessor, sondes_data):
     # =========================================================================
 
     # Try to delete a sonde model that is used in table 'sonde_installation'.
-    sonde_models = dbaccessor.get_sonde_models_lib()
+    sonde_models = dbaccessor.get('sonde_models_lib')
     assert len(sonde_models) == len_sonde_models + 2
 
     with pytest.raises(DatabaseAccessorError):
@@ -504,7 +504,7 @@ def test_sonde_models_interface(dbaccessor, sondes_data):
             'sonde_models_lib',
             sondes_data.iloc[0]['sonde_model_id'])
 
-    sonde_models = dbaccessor.get_sonde_models_lib()
+    sonde_models = dbaccessor.get('sonde_models_lib')
     assert len(sonde_models) == len_sonde_models + 2
 
     # Try to delete the last two new sonde models that were added previously
@@ -512,7 +512,7 @@ def test_sonde_models_interface(dbaccessor, sondes_data):
     dbaccessor.delete('sonde_models_lib', sonde_models.index[-1])
     dbaccessor.delete('sonde_models_lib', sonde_models.index[-2])
 
-    sonde_models = dbaccessor.get_sonde_models_lib()
+    sonde_models = dbaccessor.get('sonde_models_lib')
     assert len(sonde_models) == len_sonde_models
 
 
@@ -545,7 +545,7 @@ def test_sonde_feature_interface(dbaccessor, sondes_data, sondes_installation,
     # =========================================================================
     # Edit
     # =========================================================================
-    sonde_models = dbaccessor.get_sonde_models_lib()
+    sonde_models = dbaccessor.get('sonde_models_lib')
     sonde_id = sondes_data_bd.index[0]
     old_values = sondes_data_bd.loc[sonde_id].to_dict()
     edited_values = {

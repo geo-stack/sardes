@@ -712,11 +712,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         return repere
 
     # ---- Sonde Brands and Models Library
-    def get_sonde_models_lib(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to sonde brands and models.
-        """
+    def _get_sonde_models_lib(self):
         query = (
             self._session.query(SondeModels)
             .order_by(SondeModels.sonde_brand,
@@ -1482,7 +1478,7 @@ def update_sondes_data(filename, accessor):
     Update the sondes data in the database from an Excel file.
     """
     sondes_data = accessor.get_sondes_data()
-    sonde_models_lib = accessor.get_sonde_models_lib()
+    sonde_models_lib = accessor.get('sonde_models_lib')
     xls_sondes_data = pd.read_excel(filename)
 
     for i in range(len(xls_sondes_data)):
@@ -1600,7 +1596,7 @@ if __name__ == "__main__":
     obs_wells = accessor.get('observation_wells_data')
     obs_wells_stats = accessor.get_observation_wells_statistics()
     sondes_data = accessor.get_sondes_data()
-    sonde_models_lib = accessor.get_sonde_models_lib()
+    sonde_models_lib = accessor.get('sonde_models_lib')
     manual_measurements = accessor.get_manual_measurements()
     sonde_installations = accessor.get_sonde_installations()
     repere_data = accessor.get('repere_data')

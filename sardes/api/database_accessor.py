@@ -340,6 +340,27 @@ class DatabaseAccessor(DatabaseAccessorBase):
     #       use instead the public methods "add", "get", "delete", and "set".
     # =========================================================================
     @abstractmethod
+    def _get_sonde_models_lib(self):
+        """
+        Return a :class:`pandas.DataFrame` containing the information related
+        to sonde brands and models.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A pandas dataframe containing information related to existing
+            sonde models that are saved in the database.
+
+            The index of the dataframe must contain the indexes or keys that
+            are used to reference the sonde models in the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that the dataframe
+            returned by this method should follow.
+        """
+        pass
+
+    @abstractmethod
     def _add_sonde_models_lib(
             self, values: list[dict], indexes: list = None) -> list:
         """
@@ -363,26 +384,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
         list
             The list of indexes that are used to reference the new sonde
             models that were added to the database.
-        """
-        pass
-
-    def get_sonde_models_lib(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to sonde brands and models.
-
-        Returns
-        -------
-        :class:`pandas.DataFrame`
-            A pandas dataframe containing information related to existing
-            sonde models that are saved in the database.
-
-            The index of the dataframe must contain the indexes or keys that
-            are used to reference the sonde models in the database.
-
-            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
-            description of the content and structure that the dataframe
-            returned by this method should follow.
         """
         pass
 
