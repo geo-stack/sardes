@@ -663,18 +663,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         return obs_wells
 
     # ---- Repere
-    def _get_repere_data(self, repere_id):
-        """
-        Return the sqlalchemy Repere object corresponding to the
-        given repere ID.
-        """
-        repere = (
-            self._session.query(Repere)
-            .filter(Repere.repere_uuid == repere_id)
-            .one()
-            )
-        return repere
-
     def add_repere_data(self, repere_id, attribute_values):
         """
         Add a new observation well repere data to the database using the
@@ -696,16 +684,17 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         Save in the database the new attribute value for the observation well
         repere data corresponding to the specified ID.
         """
-        repere = self._get_repere_data(repere_id)
+        repere = repere = (
+            self._session.query(Repere)
+            .filter(Repere.repere_uuid == repere_id)
+            .one()
+            )
+
         setattr(repere, attribute_name, attribute_value)
         if auto_commit:
             self._session.commit()
 
-    def get_repere_data(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to observation wells repere data.
-        """
+    def _get_repere_data(self):
         query = (
             self._session.query(Repere)
             ).with_labels()
@@ -1614,7 +1603,7 @@ if __name__ == "__main__":
     sonde_models_lib = accessor.get_sonde_models_lib()
     manual_measurements = accessor.get_manual_measurements()
     sonde_installations = accessor.get_sonde_installations()
-    repere_data = accessor.get_repere_data()
+    repere_data = accessor.get('repere_data')
 
     t1 = perf_counter()
     print('Fetching timeseries... ', end='')

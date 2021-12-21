@@ -845,7 +845,7 @@ if __name__ == "__main__":
     readings_data = accessor.get_timeseries_for_obs_well(
         sampling_feature_uuid, [DataType.WaterLevel])
 
-    repere_data = accessor.get_repere_data()
+    repere_data = accessor.get('repere_data')
     repere_data = (
         repere_data
         [repere_data['sampling_feature_uuid'] == sampling_feature_uuid]

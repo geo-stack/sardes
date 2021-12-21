@@ -389,7 +389,7 @@ if __name__ == '__main__':
         'D:/Desktop/rsesq_prod_21072020_v1.db')
 
     obs_wells_data = dbaccessor.get('observation_wells_data')
-    repere_data = dbaccessor.get_repere_data()
+    repere_data = dbaccessor.get('repere_data')
 
     with PdfPages('D:/hydrographs_example.pdf') as pdf:
         count = 0

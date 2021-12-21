@@ -758,11 +758,23 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._session.commit()
 
     # ---- Repere Data Interface
-    def _get_repere_data(self, repere_id):
-        return (
-            self._session.query(Repere)
-            .filter(Repere.repere_uuid == repere_id)
-            .one())
+    def _get_repere_data(self):
+        query = self._session.query(Repere)
+        repere = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='repere_uuid')
+
+        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
+        # directly in 'read_sql_query' with the new 'dtype' argument.
+
+        # Make sure datetime data is considered as datetime.
+        # See cgq-qgc/sardes#427.
+        for column in ['start_date', 'end_date']:
+            if not is_datetime64_ns_dtype(repere[column]):
+                print('Converting {} data to datetime.'.format(column))
+                repere[column] = pd.to_datetime(repere[column])
+
+        return repere
 
     def _add_repere_data(self, values, indexes=None):
         n = len(values)
@@ -782,30 +794,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return indexes
 
-    def get_repere_data(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to observation wells repere data.
-        """
-        query = self._session.query(Repere)
-        repere = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True,
-            index_col='repere_uuid')
-
-        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
-        # directly in 'read_sql_query' with the new 'dtype' argument.
-
-        # Make sure datetime data is considered as datetime.
-        # See cgq-qgc/sardes#427.
-        for column in ['start_date', 'end_date']:
-            if not is_datetime64_ns_dtype(repere[column]):
-                print('Converting {} data to datetime.'.format(column))
-                repere[column] = pd.to_datetime(repere[column])
-
-        return repere
-
     def _set_repere_data(self, index, values):
-        repere = self._get_repere_data(index)
+        repere = (
+            self._session.query(Repere)
+            .filter(Repere.repere_uuid == index)
+            .one())
+
         for attr_name, attr_value in values.items():
             if attr_name in ['start_date', 'end_date']:
                 # We need to make sure pandas NaT are replaced by None
@@ -1758,7 +1752,7 @@ if __name__ == "__main__":
     sonde_data = accessor.get_sondes_data()
     sonde_models_lib = accessor.get_sonde_models_lib()
     sonde_installations = accessor.get_sonde_installations()
-    repere_data = accessor.get_repere_data()
+    repere_data = accessor.get('repere_data')
 
     stored_attachments_info = accessor.get_stored_attachments_info()
 

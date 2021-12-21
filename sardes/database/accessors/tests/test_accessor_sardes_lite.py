@@ -254,7 +254,7 @@ def test_repere_data_interface(dbaccessor, obswells_data, repere_data):
         )
 
     # Assert that the empty repere data dataframe is formatted as expected.
-    repere_data_bd = dbaccessor.get_repere_data()
+    repere_data_bd = dbaccessor.get('repere_data')
     assert repere_data_bd.empty
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
     assert is_datetime64_any_dtype(repere_data_bd['end_date'])
@@ -269,7 +269,7 @@ def test_repere_data_interface(dbaccessor, obswells_data, repere_data):
         indexes=_dict.keys()
         )
 
-    repere_data_bd = dbaccessor.get_repere_data()
+    repere_data_bd = dbaccessor.get('repere_data')
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
     assert is_datetime64_any_dtype(repere_data_bd['end_date'])
     assert_dataframe_equals(repere_data_bd, repere_data, ignore_index=True)
@@ -292,7 +292,7 @@ def test_repere_data_interface(dbaccessor, obswells_data, repere_data):
         assert attribute_value != old_values[attribute_name]
     dbaccessor.set('repere_data', repere_uuid, edited_values)
 
-    repere_data_bd = dbaccessor.get_repere_data()
+    repere_data_bd = dbaccessor.get('repere_data')
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
     assert is_datetime64_any_dtype(repere_data_bd['end_date'])
     assert repere_data_bd.loc[repere_uuid].to_dict() == edited_values
@@ -304,13 +304,13 @@ def test_repere_data_interface(dbaccessor, obswells_data, repere_data):
     # Delete the first repere data of the database.
     dbaccessor.delete('repere_data', repere_data_bd.index[0])
 
-    repere_data_bd = dbaccessor.get_repere_data()
+    repere_data_bd = dbaccessor.get('repere_data')
     assert len(repere_data_bd) == len(repere_data) - 1
 
     # Delete the remaining repere data.
     dbaccessor.delete('repere_data', repere_data_bd.index)
 
-    repere_data_bd = dbaccessor.get_repere_data()
+    repere_data_bd = dbaccessor.get('repere_data')
     assert is_datetime64_any_dtype(repere_data_bd['start_date'])
     assert is_datetime64_any_dtype(repere_data_bd['end_date'])
     assert len(repere_data_bd) == 0
@@ -691,7 +691,7 @@ def test_observation_well_interface(dbaccessor, database_filler,
 
     # We delete the repere data and try again.
     dbaccessor.delete(
-        'repere_data', dbaccessor.get_repere_data().index)
+        'repere_data', dbaccessor.get('repere_data').index)
 
     with pytest.raises(DatabaseAccessorError):
         dbaccessor.delete('observation_wells_data', obs_wells_id)

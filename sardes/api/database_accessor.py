@@ -259,6 +259,27 @@ class DatabaseAccessor(DatabaseAccessorBase):
     #       use instead the public methods "add", "get", "delete", and "set".
     # =========================================================================
     @abstractmethod
+    def _get_repere_data(self):
+        """
+        Return the information related to the repere data of the
+        observation wells.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A pandas dataframe containing information related to the
+            observation wells repere data that are saved in the database.
+
+            The index of the dataframe must contain the indexes or keys that
+            are used to reference the repere data in the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that the dataframe
+            returned by this method should follow.
+        """
+        pass
+
+    @abstractmethod
     def _add_repere_data(
             self, values: list[dict], indexes: list = None) -> list:
         """
@@ -305,26 +326,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
             can contained.
         """
         pass
-
-    def get_repere_data(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to observation wells repere data.
-
-        Returns
-        -------
-        :class:`pandas.DataFrame`
-            A pandas dataframe containing information related to the
-            observation wells repere data that are saved in the database.
-
-            The index of the dataframe must contain the indexes or keys that
-            are used to reference the repere data in the database.
-
-            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
-            description of the content and structure that the dataframe
-            returned by this method should follow.
-        """
-        raise NotImplementedError
 
     @abstractmethod
     def _del_repere_data(self, indexes: list):

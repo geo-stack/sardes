@@ -395,7 +395,7 @@ def test_delete_observation_well(tablewidget, qtbot, dbaccessor, mocker,
     with qtbot.waitSignal(dbconnmanager.sig_run_tasks_finished, timeout=5000):
         dbconnmanager.delete(
             'repere_data',
-            dbaccessor.get_repere_data().index[0])
+            dbaccessor.get('repere_data').index[0])
 
     tablewidget.save_edits_action.trigger()
     qtbot.waitUntil(lambda: qmsgbox_patcher.call_count == 4)
