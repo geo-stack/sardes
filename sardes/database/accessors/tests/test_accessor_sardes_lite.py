@@ -785,7 +785,7 @@ def test_timeseries_interface(dbaccessor, obswells_data, sondes_data,
 
     # Assert that the sampling feature data overview was updated and
     # cached correctly in the database.
-    data_overview = dbaccessor.get_observation_wells_data_overview()
+    data_overview = dbaccessor.get('observation_wells_data_overview')
     assert len(data_overview) == 1
     assert data_overview.index[0] == obs_well_uuid
     assert (data_overview.at[obs_well_uuid, 'first_date'] ==
@@ -817,7 +817,7 @@ def test_timeseries_interface(dbaccessor, obswells_data, sondes_data,
 
     # Assert that the sampling feature data overview was updated and
     # cached correctly in the database.
-    data_overview = dbaccessor.get_observation_wells_data_overview()
+    data_overview = dbaccessor.get('observation_wells_data_overview')
     assert data_overview.at[obs_well_uuid, 'mean_water_level'] == 1.917
 
     # =========================================================================
@@ -843,7 +843,7 @@ def test_timeseries_interface(dbaccessor, obswells_data, sondes_data,
 
     # Assert that the sampling feature data overview was updated and
     # cached correctly in the database.
-    data_overview = dbaccessor.get_observation_wells_data_overview()
+    data_overview = dbaccessor.get('observation_wells_data_overview')
     assert data_overview.at[obs_well_uuid, 'mean_water_level'] == 2.225
     assert (data_overview.at[obs_well_uuid, 'last_date'] ==
             datetime.date(2018, 9, 28))
@@ -870,7 +870,7 @@ def test_timeseries_interface(dbaccessor, obswells_data, sondes_data,
 
     # Assert that the sampling feature data overview is now empty as
     # expected.
-    data_overview = dbaccessor.get_observation_wells_data_overview()
+    data_overview = dbaccessor.get('observation_wells_data_overview')
     assert len(data_overview) == 0
 
 

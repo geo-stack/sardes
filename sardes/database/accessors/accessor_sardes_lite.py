@@ -1060,91 +1060,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._session.delete(measurement)
         self._session.flush()
 
-    # ---- Observation Wells Data Overview
-    def _refresh_sampling_feature_data_overview(
-            self, sampling_feature_uuid=None, auto_commit=True):
-        """
-        Refresh the content of the table where the overview of the
-        sampling feature monitoring data is cached.
-
-        If a sampling_feature_uuid is provided, only the overview of that
-        sampling feature is updated, else the content of the whole table
-        is updated.
-        """
-        if sampling_feature_uuid is None:
-            # We delete and update the content of the whole table.
-            print("Updating sampling feature data overview...")
-            self._session.query(SamplingFeatureDataOverview).delete()
-
-            sampling_feature_uuids = [
-                item[0] for item in
-                self._session.query(SamplingFeature.sampling_feature_uuid)]
-            for sampling_feature_uuid in sampling_feature_uuids:
-                self._refresh_sampling_feature_data_overview(
-                    sampling_feature_uuid, auto_commit=False)
-            self._session.commit()
-            print("Successfuly updated sampling feature data overview.")
-        else:
-            # We update the data overview only for the specified
-            # sampling feature.
-            select_query = (
-                self._session.query(Observation.sampling_feature_uuid
-                                    .label('sampling_feature_uuid'),
-                                    func.max(TimeSeriesData.datetime)
-                                    .label('last_date'),
-                                    func.min(TimeSeriesData.datetime)
-                                    .label('first_date'),
-                                    func.avg(TimeSeriesData.value)
-                                    .label('mean_water_level'))
-                .filter(Observation.observation_id ==
-                        TimeSeriesChannel.observation_id)
-                .filter(TimeSeriesData.channel_id ==
-                        TimeSeriesChannel.channel_id)
-                .filter(TimeSeriesChannel.obs_property_id == 2)
-                .filter(Observation.sampling_feature_uuid ==
-                        sampling_feature_uuid)
-                .one()
-                )
-
-            try:
-                data_overview = (
-                    self._session.query(SamplingFeatureDataOverview)
-                    .filter(SamplingFeatureDataOverview
-                            .sampling_feature_uuid ==
-                            sampling_feature_uuid)
-                    .one())
-            except NoResultFound:
-                if select_query[0] is None:
-                    # This means either that this sampling feature doesn't
-                    # exist or that there is no monitoring data associated with
-                    # it. Therefore, there is no need to add anything to the
-                    # data overview table.
-                    return
-                else:
-                    data_overview = SamplingFeatureDataOverview(
-                        sampling_feature_uuid=sampling_feature_uuid)
-                    self._session.add(data_overview)
-
-            if select_query[0] is None:
-                # This means either that this sampling feature doesn't
-                # exist or that there is no monitoring data associated with
-                # it anymore. Therefore, we need to remove the corresponding
-                # entry from the data overview table.
-                self._session.delete(data_overview)
-            else:
-                data_overview.last_date = select_query[1]
-                data_overview.first_date = select_query[2]
-                data_overview.mean_water_level = select_query[3]
-
-            if auto_commit:
-                self._session.commit()
-
-    def get_observation_wells_data_overview(self):
-        """
-        Return a :class:`pandas.DataFrame` containing an overview of
-        the water level data that are available for each observation well
-        of the monitoring network.
-        """
+    # ---- Timeseries  Interface
+    def _get_observation_wells_data_overview(self):
         # Fetch data from the materialized view.
         query = self._session.query(SamplingFeatureDataOverview)
         data = pd.read_sql_query(
@@ -1163,7 +1080,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         data['mean_water_level'] = data['mean_water_level'].round(decimals=3)
         return data
 
-    # ---- Timeseries  Interface
     def _get_timeseriesdata(self, date_time, obs_id, data_type):
         """
         Return the sqlalchemy TimeSeriesData object corresponding to a
@@ -1569,6 +1485,84 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._session.commit()
 
     # ---- Private methods
+    def _refresh_sampling_feature_data_overview(
+            self, sampling_feature_uuid=None, auto_commit=True):
+        """
+        Refresh the content of the table where the overview of the
+        sampling feature monitoring data is cached.
+
+        If a sampling_feature_uuid is provided, only the overview of that
+        sampling feature is updated, else the content of the whole table
+        is updated.
+        """
+        if sampling_feature_uuid is None:
+            # We delete and update the content of the whole table.
+            print("Updating sampling feature data overview...")
+            self._session.query(SamplingFeatureDataOverview).delete()
+
+            sampling_feature_uuids = [
+                item[0] for item in
+                self._session.query(SamplingFeature.sampling_feature_uuid)]
+            for sampling_feature_uuid in sampling_feature_uuids:
+                self._refresh_sampling_feature_data_overview(
+                    sampling_feature_uuid, auto_commit=False)
+            self._session.commit()
+            print("Successfuly updated sampling feature data overview.")
+        else:
+            # We update the data overview only for the specified
+            # sampling feature.
+            select_query = (
+                self._session.query(Observation.sampling_feature_uuid
+                                    .label('sampling_feature_uuid'),
+                                    func.max(TimeSeriesData.datetime)
+                                    .label('last_date'),
+                                    func.min(TimeSeriesData.datetime)
+                                    .label('first_date'),
+                                    func.avg(TimeSeriesData.value)
+                                    .label('mean_water_level'))
+                .filter(Observation.observation_id ==
+                        TimeSeriesChannel.observation_id)
+                .filter(TimeSeriesData.channel_id ==
+                        TimeSeriesChannel.channel_id)
+                .filter(TimeSeriesChannel.obs_property_id == 2)
+                .filter(Observation.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .one()
+                )
+
+            try:
+                data_overview = (
+                    self._session.query(SamplingFeatureDataOverview)
+                    .filter(SamplingFeatureDataOverview
+                            .sampling_feature_uuid ==
+                            sampling_feature_uuid)
+                    .one())
+            except NoResultFound:
+                if select_query[0] is None:
+                    # This means either that this sampling feature doesn't
+                    # exist or that there is no monitoring data associated with
+                    # it. Therefore, there is no need to add anything to the
+                    # data overview table.
+                    return
+                else:
+                    data_overview = SamplingFeatureDataOverview(
+                        sampling_feature_uuid=sampling_feature_uuid)
+                    self._session.add(data_overview)
+
+            if select_query[0] is None:
+                # This means either that this sampling feature doesn't
+                # exist or that there is no monitoring data associated with
+                # it anymore. Therefore, we need to remove the corresponding
+                # entry from the data overview table.
+                self._session.delete(data_overview)
+            else:
+                data_overview.last_date = select_query[1]
+                data_overview.first_date = select_query[2]
+                data_overview.mean_water_level = select_query[3]
+
+            if auto_commit:
+                self._session.commit()
+
     def _get_generic_num_value(self, gen_num_value_uuid):
         """
         Return the sqlalchemy GenericNumericalData object corresponding
@@ -1712,7 +1706,7 @@ if __name__ == "__main__":
 
     attachments_info = accessor.get('attachments_info')
 
-    overview = accessor.get_observation_wells_data_overview()
+    overview = accessor.get('observation_wells_data_overview')
     from time import perf_counter
     t1 = perf_counter()
     sampling_feature_uuid = (

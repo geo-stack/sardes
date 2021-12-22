@@ -500,7 +500,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             self.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY "
                          "resultats.obs_well_statistics")
 
-    def get_observation_wells_data_overview(self):
+    def _get_observation_wells_data_overview(self):
         """
         Return a :class:`pandas.DataFrame` containing an overview of
         the water level data that are available for each observation well
