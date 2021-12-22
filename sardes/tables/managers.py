@@ -313,7 +313,7 @@ class FileAttachmentManager(QObject):
         currently selected station in the table.
         """
         return bool((
-            self.tablewidget.model().libraries['stored_attachments_info'] ==
+            self.tablewidget.model().libraries['attachments_info'] ==
             [self.current_station_id(), self.attachment_type]
             ).all(1).any())
 

@@ -676,11 +676,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.flush()
 
     # ---- Attachments Interface
-    def get_stored_attachments_info(self):
-        """
-        Return a pandas dataframe containing a list of sampling_feature_uuid
-        and attachment_type for which a file is attached in the database.
-        """
+    def _get_attachments_info(self):
         query = (
             self._session.query(
                 SamplingFeatureAttachment.sampling_feature_uuid,
@@ -1725,7 +1721,7 @@ if __name__ == "__main__":
     sonde_installations = accessor.get('sonde_installations')
     repere_data = accessor.get('repere_data')
 
-    stored_attachments_info = accessor.get_stored_attachments_info()
+    attachments_info = accessor.get('attachments_info')
 
     overview = accessor.get_observation_wells_data_overview()
     from time import perf_counter

@@ -737,3 +737,12 @@ class DatabaseAccessor(DatabaseAccessorBase):
             from the database.
         """
         raise NotImplementedError
+
+    # ---- Attachments Interface
+    @abstractmethod
+    def _get_attachments_info(self):
+        """
+        Return the list observation well attachments that are stored in the
+        database.
+        """
+        pass

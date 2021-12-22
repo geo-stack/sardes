@@ -140,7 +140,7 @@ def test_construction_logs_interface(dbaccessor, tmp_path):
     is working as expected.
     """
     attachment_type = 1
-    assert dbaccessor.get_stored_attachments_info().empty
+    assert dbaccessor.get('attachments_info').empty
 
     # Add a new observation well to the database.
     sampling_feature_uuid = dbaccessor.add(
@@ -163,7 +163,7 @@ def test_construction_logs_interface(dbaccessor, tmp_path):
         # Attach the construction log file.
         dbaccessor.set_attachment(
             sampling_feature_uuid, attachment_type, filename)
-        assert len(dbaccessor.get_stored_attachments_info()) == 1
+        assert len(dbaccessor.get('attachments_info')) == 1
 
         # Retrieve the construction log file from the database.
         data, name = dbaccessor.get_attachment(
@@ -174,7 +174,7 @@ def test_construction_logs_interface(dbaccessor, tmp_path):
 
     # Remove the construction log file from the database.
     dbaccessor.del_attachment(sampling_feature_uuid, attachment_type)
-    assert dbaccessor.get_stored_attachments_info().empty
+    assert dbaccessor.get('attachments_info').empty
 
 
 def test_manual_measurements_interface(dbaccessor, obswells_data,

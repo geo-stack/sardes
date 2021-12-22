@@ -104,7 +104,7 @@ def test_construction_log_tool(tablewidget, constructlog, qtbot, mocker):
     # Check that the number of file attachment is as expected. There is
     # supposed to be 2 files for the first 4 wells of the test database:
     # one construction log and one water quality file.
-    assert (len(tablemodel.libraries['stored_attachments_info']) == 4 * 2)
+    assert (len(tablemodel.libraries['attachments_info']) == 4 * 2)
 
     # Select the last row of the table, which corresponds to well '09000001'.
     # This well does not have any attachment or monitoring data.
@@ -125,7 +125,7 @@ def test_construction_log_tool(tablewidget, constructlog, qtbot, mocker):
     with qtbot.waitSignal(constructlogs_manager.sig_attachment_added):
         constructlogs_manager.attach_action.trigger()
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
-    assert len(tablemodel.libraries['stored_attachments_info']) == 4 * 2 + 1
+    assert len(tablemodel.libraries['attachments_info']) == 4 * 2 + 1
 
     pos = constructlogs_manager.toolbutton.mapToGlobal(QPoint(0, 0))
     constructlogs_manager.toolbutton.menu().popup(pos)
@@ -142,7 +142,7 @@ def test_construction_log_tool(tablewidget, constructlog, qtbot, mocker):
     with qtbot.waitSignal(constructlogs_manager.sig_attachment_removed):
         constructlogs_manager.remove_action.trigger()
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
-    assert len(tablemodel.libraries['stored_attachments_info']) == 4 * 2
+    assert len(tablemodel.libraries['attachments_info']) == 4 * 2
 
     pos = constructlogs_manager.toolbutton.mapToGlobal(QPoint(0, 0))
     constructlogs_manager.toolbutton.menu().popup(pos)

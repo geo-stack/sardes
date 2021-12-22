@@ -307,8 +307,8 @@ class DatabaseConnectionWorker(WorkerBase):
         Save and attach the given attachment to the specified
         sampling_feature_uuid in the database.
         """
-        if 'stored_attachments_info' in self._cache:
-            del self._cache['stored_attachments_info']
+        if 'attachments_info' in self._cache:
+            del self._cache['attachments_info']
         self.db_accessor.set_attachment(
             sampling_feature_uuid, attachment_type, filename)
 
@@ -317,8 +317,8 @@ class DatabaseConnectionWorker(WorkerBase):
         Delete from the database the attachment of the specified type that
         is currently attached to the specified sampling_feature_uuid.
         """
-        if 'stored_attachments_info' in self._cache:
-            del self._cache['stored_attachments_info']
+        if 'attachments_info' in self._cache:
+            del self._cache['attachments_info']
         self.db_accessor.del_attachment(
             sampling_feature_uuid, attachment_type)
 
@@ -844,7 +844,7 @@ class DatabaseConnectionManager(TaskManagerBase):
         Save and attach the given attachment to the specified
         sampling_feature_uuid in the database.
         """
-        self._data_changed.add('stored_attachments_info')
+        self._data_changed.add('attachments_info')
         self.add_task('set_attachment', callback,
                       sampling_feature_uuid, attachment_type, filename)
         if not postpone_exec:
@@ -856,7 +856,7 @@ class DatabaseConnectionManager(TaskManagerBase):
         Delete from the database the attachment of the specified type that
         is currently attached to the specified sampling_feature_uuid.
         """
-        self._data_changed.add('stored_attachments_info')
+        self._data_changed.add('attachments_info')
         self.add_task(
             'del_attachment', callback,
             sampling_feature_uuid, attachment_type)
