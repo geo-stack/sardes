@@ -143,7 +143,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
     # Note: The methods in this section should not be called directly. Please
     #       use instead the public methods "add", "get", "delete", and "set".
     # =========================================================================
-    @abstractmethod
     def _get_observation_wells_data(self):
         """
         Return the information related to the observation wells that are
@@ -162,9 +161,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
             description of the content and structure that the dataframe
             returned by this method should follow.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _add_observation_wells_data(
             self, values: list[dict], indexes: list = None) -> list:
         """
@@ -189,9 +187,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
             The list of indexes that are used to reference the new observation
             wells that were added to the database.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _set_observation_wells_data(self, index: Any, values: dict):
         """
         Set in the database the values of the observation well data
@@ -211,21 +208,19 @@ class DatabaseAccessor(DatabaseAccessorBase):
             description of the attributes and data types that the dictionary
             can contained.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _del_observation_wells_data(self, indexes: list):
         """
         Delete the observation wells corresponding to the specified indexes.
         """
-        pass
+        raise NotImplementedError
 
     # ---- Repere Data Interface
     # =========================================================================
     # Note: The methods in this section should not be called directly. Please
     #       use instead the public methods "add", "get", "delete", and "set".
     # =========================================================================
-    @abstractmethod
     def _get_repere_data(self):
         """
         Return the information related to the repere data of the
@@ -244,9 +239,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
             description of the content and structure that the dataframe
             returned by this method should follow.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _add_repere_data(
             self, values: list[dict], indexes: list = None) -> list:
         """
@@ -271,9 +265,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
             The list of indexes that are used to reference the new repere
             that were added to the database.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _set_repere_data(self, index: Any, values: dict):
         """
         Set in the database the values of the repere data
@@ -292,21 +285,19 @@ class DatabaseAccessor(DatabaseAccessorBase):
             description of the attributes and data types that the dictionary
             can contained.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _del_repere_data(self, indexes: list):
         """
         Delete the repere data corresponding to the specified indexes.
         """
-        pass
+        raise NotImplementedError
 
     # ---- Sonde Models Interface
     # =========================================================================
     # Note: The methods in this section should not be called directly. Please
     #       use instead the public methods "add", "get", "delete", and "set".
     # =========================================================================
-    @abstractmethod
     def _get_sonde_models_lib(self):
         """
         Return the information related to existing sonde models.
@@ -324,9 +315,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
             description of the content and structure that the dataframe
             returned by this method should follow.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _add_sonde_models_lib(
             self, values: list[dict], indexes: list = None) -> list:
         """
@@ -351,9 +341,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
             The list of indexes that are used to reference the new sonde
             models that were added to the database.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _set_sonde_models_lib(self, index: Any, values: dict):
         """
         Set in the database the values of the sonde model
@@ -372,17 +361,15 @@ class DatabaseAccessor(DatabaseAccessorBase):
             description of the attributes and data types that the dictionary
             can contained.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _del_sonde_models_lib(self, indexes: list):
         """
         Delete the sonde models corresponding to the specified indexes.
         """
-        pass
+        raise NotImplementedError
 
     # ---- Sondes Inventory Interface
-    @abstractmethod
     def _get_sondes_data(self):
         """
         Return the information related to the sondes used to monitor
@@ -401,9 +388,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
             description of the content and structure that the dataframe
             returned by this method should follow.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _add_sondes_data(
             self, values: list[dict], indexes: list = None) -> list:
         """
@@ -428,9 +414,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
             The list of indexes that are used to reference the new sondes
             that were added to the database.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _set_sondes_data(self, index: Any, values: dict):
         """
         Set in the database the values of the sondes data
@@ -449,21 +434,19 @@ class DatabaseAccessor(DatabaseAccessorBase):
             description of the attributes and data types that the dictionary
             can contained.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _del_sondes_data(self, indexes: list):
         """
         Delete the sondes data corresponding to the specified indexes.
         """
-        pass
+        raise NotImplementedError
 
     # ---- Sonde Installations Interface
     # =========================================================================
     # Note: The methods in this section should not be called directly. Please
     #       use instead the public methods "add", "get", "delete", and "set".
     # =========================================================================
-    @abstractmethod
     def _get_sonde_installations(self):
         """
         Return the information related to the installations of the sondes in
@@ -482,9 +465,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
             description of the content and structure that the dataframe
             returned by this method should follow.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _add_sonde_installations(
             self, values: list[dict], indexes: list = None) -> list:
         """
@@ -509,9 +491,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
             The list of indexes that are used to reference the new sonde
             installations that were added to the database.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _set_sonde_installations(self, index: Any, values: dict):
         """
         Set in the database the values of the sonde installation
@@ -531,21 +512,19 @@ class DatabaseAccessor(DatabaseAccessorBase):
             description of the attributes and data types that the dictionary
             can contained.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _del_sonde_installations(self, indexes: list):
         """
         Delete the sonde installations corresponding to the specified indexes.
         """
-        pass
+        raise NotImplementedError
 
     # ---- Manual Measurements Interface
     # =========================================================================
     # Note: The methods in this section should not be called directly. Please
     #       use instead the public methods "add", "get", "delete", and "set".
     # =========================================================================
-    @abstractmethod
     def _get_manual_measurements(self):
         """
         Return the water level manual measurements that are saved in
@@ -564,9 +543,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
             description of the content and structure that the dataframe
             returned by this method should follow.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _add_manual_measurements(
             self, values: list[dict], indexes: list = None) -> list:
         """
@@ -591,9 +569,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
             The list of indexes that are used to reference the new
             manual measurements that were added to the database.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _set_manual_measurements(self, index: Any, values: dict):
         """
         Set in the database the values of the manual measurement
@@ -613,14 +590,13 @@ class DatabaseAccessor(DatabaseAccessorBase):
             description of the attributes and data types that the dictionary
             can contained.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def _del_manual_measurements(self, indexes: list):
         """
         Delete the manual measurements corresponding to the specified indexes.
         """
-        pass
+        raise NotImplementedError
 
     # ---- Timeseries Interface
     def get_observation_wells_data_overview(self):
@@ -739,15 +715,13 @@ class DatabaseAccessor(DatabaseAccessorBase):
         raise NotImplementedError
 
     # ---- Attachments Interface
-    @abstractmethod
     def _get_attachments_info(self):
         """
         Return the list observation well attachments that are stored in the
         database.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def get_attachment(self, index: Any, attachment_type: int):
         """
         Return the data of the file attachment corresponding to the specified
@@ -762,9 +736,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
             The type of observation well attachment that is to be stored
             in the database.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def set_attachment(self, index: Any, attachment_type: int, filepath: str):
         """
         Attach a file to an observation well in the database.
@@ -781,9 +754,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
             The absolute path of the file that is to be stored in the
             database as an observation well attachment.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def del_attachment(self, index: Any, attachment_type: int):
         """
         Delete the data of the file of the specified type that is attached
@@ -798,4 +770,4 @@ class DatabaseAccessor(DatabaseAccessorBase):
             The type of observation well attachment that is to be stored
             in the database.
         """
-        pass
+        raise NotImplementedError
