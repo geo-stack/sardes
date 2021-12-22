@@ -41,11 +41,11 @@ class DatabaseAccessorBase(ABC):
         self._connection_error = None
 
     # ---- Public API
-    def get(self, name: str):
+    def get(self, name: str, *args, **kargs):
         """
         Get the data related to name from the database.
         """
-        return getattr(self, '_get_' + name)()
+        return getattr(self, '_get_' + name)(*args, **kargs)
 
     def set(self, name: str, index: Any,
             values: dict, auto_commit: bool = True) -> None:
