@@ -746,3 +746,56 @@ class DatabaseAccessor(DatabaseAccessorBase):
         database.
         """
         pass
+
+    @abstractmethod
+    def get_attachment(self, index: Any, attachment_type: int):
+        """
+        Return the data of the file attachment corresponding to the specified
+        type and observation well index.
+
+        Parameters
+        ----------
+        index: Any
+            A unique identifier used to reference the observation well
+            in the database.
+        attachment_type: int
+            The type of observation well attachment that is to be stored
+            in the database.
+        """
+        pass
+
+    @abstractmethod
+    def set_attachment(self, index: Any, attachment_type: int, filepath: str):
+        """
+        Attach a file to an observation well in the database.
+
+        Parameters
+        ----------
+        index: Any
+            A unique identifier used to reference the observation well
+            in the database to which a file is to be attached.
+        attachment_type: int
+            The type of observation well attachment that is to be stored
+            in the database.
+        filepath: str
+            The absolute path of the file that is to be stored in the
+            database as an observation well attachment.
+        """
+        pass
+
+    @abstractmethod
+    def del_attachment(self, index: Any, attachment_type: int):
+        """
+        Delete the data of the file of the specified type that is attached
+        to the specified sampling_feature_uuid.
+
+        Parameters
+        ----------
+        index: Any
+            A unique identifier used to reference the observation well
+            in the database.
+        attachment_type: int
+            The type of observation well attachment that is to be stored
+            in the database.
+        """
+        pass

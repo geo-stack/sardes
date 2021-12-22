@@ -687,10 +687,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return result
 
     def get_attachment(self, sampling_feature_uuid, attachment_type):
-        """
-        Return the data of the file of the specified type that is
-        attached to the specified station.
-        """
         try:
             attachment = (
                 self._session.query(SamplingFeatureAttachment)
@@ -706,9 +702,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
     def set_attachment(self, sampling_feature_uuid, attachment_type,
                        filename):
-        """
-        Attach the data of a file to the specified sampling_feature_uuid.
-        """
         try:
             # We first check if a file of this type is already attached to
             # the monitoring station.
@@ -733,10 +726,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.commit()
 
     def del_attachment(self, sampling_feature_uuid, attachment_type):
-        """
-        Delete the data of the file of the specified type that is attached
-        to the specified sampling_feature_uuid.
-        """
         try:
             attachment = (
                 self._session.query(SamplingFeatureAttachment)
