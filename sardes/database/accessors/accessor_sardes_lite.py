@@ -675,73 +675,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             )
         self._session.flush()
 
-    # ---- Attachments Interface
-    def _get_attachments_info(self):
-        query = (
-            self._session.query(
-                SamplingFeatureAttachment.sampling_feature_uuid,
-                SamplingFeatureAttachment.attachment_type)
-            )
-        result = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
-        return result
-
-    def get_attachment(self, sampling_feature_uuid, attachment_type):
-        try:
-            attachment = (
-                self._session.query(SamplingFeatureAttachment)
-                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
-                        sampling_feature_uuid)
-                .filter(SamplingFeatureAttachment.attachment_type ==
-                        attachment_type)
-                .one())
-        except NoResultFound:
-            return (None, None)
-        else:
-            return (attachment.attachment_data, attachment.attachment_fname)
-
-    def set_attachment(self, sampling_feature_uuid, attachment_type,
-                       filename):
-        try:
-            # We first check if a file of this type is already attached to
-            # the monitoring station.
-            attachment = (
-                self._session.query(SamplingFeatureAttachment)
-                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
-                        sampling_feature_uuid)
-                .filter(SamplingFeatureAttachment.attachment_type ==
-                        attachment_type)
-                .one())
-        except NoResultFound:
-            # This means we need to add a new attachment to save the file.
-            attachment = SamplingFeatureAttachment(
-                attachment_type=attachment_type,
-                sampling_feature_uuid=sampling_feature_uuid)
-            self._session.add(attachment)
-
-        if osp.exists(filename):
-            with open(filename, 'rb') as f:
-                attachment.attachment_data = memoryview(f.read())
-        attachment.attachment_fname = osp.basename(filename)
-        self._session.commit()
-
-    def del_attachment(self, sampling_feature_uuid, attachment_type):
-        try:
-            attachment = (
-                self._session.query(SamplingFeatureAttachment)
-                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
-                        sampling_feature_uuid)
-                .filter(SamplingFeatureAttachment.attachment_type ==
-                        attachment_type)
-                .one())
-        except NoResultFound:
-            # This means there is currently no file of this type attached to
-            # the specified sampling_feature_uuid.
-            pass
-        else:
-            self._session.delete(attachment)
-            self._session.commit()
-
     # ---- Repere Data Interface
     def _get_repere_data(self):
         query = self._session.query(Repere)
@@ -1567,6 +1500,73 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._refresh_sampling_feature_data_overview(
                 sampling_feature_uuid, auto_commit=False)
         self._session.commit()
+
+    # ---- Attachments Interface
+    def _get_attachments_info(self):
+        query = (
+            self._session.query(
+                SamplingFeatureAttachment.sampling_feature_uuid,
+                SamplingFeatureAttachment.attachment_type)
+            )
+        result = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
+        return result
+
+    def get_attachment(self, sampling_feature_uuid, attachment_type):
+        try:
+            attachment = (
+                self._session.query(SamplingFeatureAttachment)
+                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .filter(SamplingFeatureAttachment.attachment_type ==
+                        attachment_type)
+                .one())
+        except NoResultFound:
+            return (None, None)
+        else:
+            return (attachment.attachment_data, attachment.attachment_fname)
+
+    def set_attachment(self, sampling_feature_uuid, attachment_type,
+                       filename):
+        try:
+            # We first check if a file of this type is already attached to
+            # the monitoring station.
+            attachment = (
+                self._session.query(SamplingFeatureAttachment)
+                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .filter(SamplingFeatureAttachment.attachment_type ==
+                        attachment_type)
+                .one())
+        except NoResultFound:
+            # This means we need to add a new attachment to save the file.
+            attachment = SamplingFeatureAttachment(
+                attachment_type=attachment_type,
+                sampling_feature_uuid=sampling_feature_uuid)
+            self._session.add(attachment)
+
+        if osp.exists(filename):
+            with open(filename, 'rb') as f:
+                attachment.attachment_data = memoryview(f.read())
+        attachment.attachment_fname = osp.basename(filename)
+        self._session.commit()
+
+    def del_attachment(self, sampling_feature_uuid, attachment_type):
+        try:
+            attachment = (
+                self._session.query(SamplingFeatureAttachment)
+                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .filter(SamplingFeatureAttachment.attachment_type ==
+                        attachment_type)
+                .one())
+        except NoResultFound:
+            # This means there is currently no file of this type attached to
+            # the specified sampling_feature_uuid.
+            pass
+        else:
+            self._session.delete(attachment)
+            self._session.commit()
 
     # ---- Private methods
     def _get_generic_num_value(self, gen_num_value_uuid):
