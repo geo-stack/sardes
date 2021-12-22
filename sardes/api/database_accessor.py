@@ -138,39 +138,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         pass
 
-    def get_observation_wells_data_overview(self):
-        """
-        Return a :class:`pandas.DataFrame` containing an overview of
-        the water level data that are available for each observation well
-        of the monitoring network.
-
-        Returns
-        -------
-        :class:`pandas.DataFrame`
-            A :class:`pandas.DataFrame` containing an overview of
-            the water level data that are available for each observation well
-            of the monitoring network.
-
-            The row indexes of the dataframe must correspond to the
-            observation well IDs, which are unique identifiers used to
-            reference the wells in the database.
-
-            The dataframe can contain any of the following optional columns.
-
-            Optional Columns
-            ~~~~~~~~~~~~~~~~
-            - first_date: datetime
-                The date of the first water level measurements made in each
-                observation well.
-            - last_date: datetime
-                The date of the last water level measurements made in each
-                observation well.
-            - mean_water_level: float
-                The average water level value calculated over the whole
-                monitoring period for each well.
-        """
-        raise NotImplementedError
-
     # ---- Observation Wells Interface
     # =========================================================================
     # Note: The methods in this section should not be called directly. Please
@@ -656,6 +623,38 @@ class DatabaseAccessor(DatabaseAccessorBase):
         pass
 
     # ---- Timeseries Interface
+    def get_observation_wells_data_overview(self):
+        """
+        Return an overview of the water level data that are available
+        for each observation well of the monitoring network.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A :class:`pandas.DataFrame` containing an overview of
+            the water level data that are available for each observation well
+            of the monitoring network.
+
+            The row indexes of the dataframe must correspond to the
+            observation well IDs, which are unique identifiers used to
+            reference the wells in the database.
+
+            The dataframe can contain any of the following optional columns.
+
+            Optional Columns
+            ~~~~~~~~~~~~~~~~
+            - first_date: datetime
+                The date of the first water level measurements made in each
+                observation well.
+            - last_date: datetime
+                The date of the last water level measurements made in each
+                observation well.
+            - mean_water_level: float
+                The average water level value calculated over the whole
+                monitoring period for each well.
+        """
+        raise NotImplementedError
+
     def get_timeseries_for_obs_well(self, obs_well_id, data_types=None):
         """
         Return a pandas dataframe containing the readings for the given
