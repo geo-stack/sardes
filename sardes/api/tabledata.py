@@ -10,6 +10,7 @@
 # ---- Standard imports
 from __future__ import annotations
 from dataclasses import dataclass, field
+import uuid
 
 # ---- Third party imports
 import pandas as pd
@@ -139,13 +140,13 @@ class AddRows(TableEdit):
 
     Parameters
     ----------
-    index : Index
-        A pandas Index array that contains the indexes of the rows that
-        needs to be added to the parent SardesTableData.
     values: list of dict
         A list of dict containing the values of the rows that needs to be
         added to the parent SardesTableData. The keys of the dict must
         match the parent SardesTableData columns.
+    index : list, optional
+        A list that contains the indexes of the rows that
+        needs to be added to the parent SardesTableData.
 
     Attributes
     ----------
@@ -154,17 +155,23 @@ class AddRows(TableEdit):
         corresponding to the logical indexes of the rows that were added to
         the parent SardesTableData.
     """
-    index: pd.Index
     values: list[dict]
+    index: list = None
     row: pd.Index = field(init=False)
 
     def __post_init__(self):
+        n = len(self.values)
         self.row = pd.Index(
-            [i + len(self.parent._data) for i in range(len(self.index))])
+            [i + len(self.parent._data) for i in range(n)])
+        if self.index is None:
+            self.index = pd.Index(
+                ['{{{}}}'.format(uuid.uuid4()) for i in range(n)])
+        else:
+            self.index = pd.Index(self.index)
 
     def __len__(self):
         """Return the number of rows added by this edit."""
-        return len(self.index)
+        return len(self.values)
 
     def execute(self):
         # We update the table's variable that is used to track new rows.
@@ -275,13 +282,14 @@ class SardesTableData(object):
                 edited_value=value)
             )
 
-    def add_row(self, index: list, values: list[dict] = None) -> TableEdit:
+    def add_row(self, index: list = None,
+                values: list[dict] = None) -> TableEdit:
         """
         Add one or more new rows at the end of the datataframe.
 
         Parameters
         ----------
-        index : list
+        index : list, optional
             A list containing the index of the rows that are to be added
             to the dataframe.
         values: list[dict], optional
@@ -292,7 +300,7 @@ class SardesTableData(object):
         return self.edits_controller.execute(
             AddRows(
                 parent=self,
-                index=pd.Index(index),
+                index=index,
                 values=[{}] if values is None else values)
             )
 

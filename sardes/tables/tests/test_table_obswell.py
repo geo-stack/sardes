@@ -104,7 +104,7 @@ def test_construction_log_tool(tablewidget, constructlog, qtbot, mocker):
     # Check that the number of file attachment is as expected. There is
     # supposed to be 2 files for the first 4 wells of the test database:
     # one construction log and one water quality file.
-    assert (len(tablemodel.libraries['stored_attachments_info']) == 4 * 2)
+    assert (len(tablemodel.libraries['attachments_info']) == 4 * 2)
 
     # Select the last row of the table, which corresponds to well '09000001'.
     # This well does not have any attachment or monitoring data.
@@ -125,7 +125,7 @@ def test_construction_log_tool(tablewidget, constructlog, qtbot, mocker):
     with qtbot.waitSignal(constructlogs_manager.sig_attachment_added):
         constructlogs_manager.attach_action.trigger()
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
-    assert len(tablemodel.libraries['stored_attachments_info']) == 4 * 2 + 1
+    assert len(tablemodel.libraries['attachments_info']) == 4 * 2 + 1
 
     pos = constructlogs_manager.toolbutton.mapToGlobal(QPoint(0, 0))
     constructlogs_manager.toolbutton.menu().popup(pos)
@@ -142,7 +142,7 @@ def test_construction_log_tool(tablewidget, constructlog, qtbot, mocker):
     with qtbot.waitSignal(constructlogs_manager.sig_attachment_removed):
         constructlogs_manager.remove_action.trigger()
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
-    assert len(tablemodel.libraries['stored_attachments_info']) == 4 * 2
+    assert len(tablemodel.libraries['attachments_info']) == 4 * 2
 
     pos = constructlogs_manager.toolbutton.mapToGlobal(QPoint(0, 0))
     constructlogs_manager.toolbutton.menu().popup(pos)
@@ -175,14 +175,14 @@ def test_add_observation_well(tablewidget, qtbot, dbaccessor, mocker):
     """
     tablemodel = tablewidget.model()
     assert tablewidget.visible_row_count() == 5
-    assert len(dbaccessor.get_observation_wells_data()) == 5
+    assert len(dbaccessor.get('observation_wells_data')) == 5
 
     # We add a new row and assert that the UI state is as expected.
     tablewidget.new_row_action.trigger()
     assert tablewidget.visible_row_count() == 6
     assert tablemodel.data_edit_count() == 1
     assert tablewidget.get_data_for_row(5) == [''] * 15
-    assert len(dbaccessor.get_observation_wells_data()) == 5
+    assert len(dbaccessor.get('observation_wells_data')) == 5
 
     assert tablemodel.is_new_row_at(tablewidget.current_index())
     assert not tablewidget.show_data_btn.isEnabled()
@@ -199,7 +199,7 @@ def test_add_observation_well(tablewidget, qtbot, dbaccessor, mocker):
     tablewidget.save_edits_action.trigger()
     assert qmsgbox_patcher.call_count == 1
     assert tablewidget.visible_row_count() == 6
-    assert len(dbaccessor.get_observation_wells_data()) == 5
+    assert len(dbaccessor.get('observation_wells_data')) == 5
 
     # Enter a non null value for the fields 'obs_well_id' and
     # 'is_station_active'.
@@ -220,7 +220,7 @@ def test_add_observation_well(tablewidget, qtbot, dbaccessor, mocker):
     assert qmsgbox_patcher.call_count == 1
     assert tablemodel.data_edit_count() == 0
 
-    obswells = dbaccessor.get_observation_wells_data()
+    obswells = dbaccessor.get('observation_wells_data')
     assert tablewidget.visible_row_count() == 6
     assert len(obswells) == 6
     assert obswells.iloc[5]['obs_well_id'] == 'new_well_id'
@@ -285,7 +285,7 @@ def test_edit_observation_well(tablewidget, qtbot, obswells_data, dbaccessor):
     with qtbot.waitSignal(tableview.model().sig_data_updated):
         tableview._save_data_edits(force=True)
 
-    saved_values = dbaccessor.get_observation_wells_data().iloc[0].to_dict()
+    saved_values = dbaccessor.get('observation_wells_data').iloc[0].to_dict()
     for key in edited_values.keys():
         assert saved_values[key] == edited_values[key]
 
@@ -331,7 +331,7 @@ def test_clear_observation_well(tablewidget, qtbot, dbaccessor, obswells_data):
     with qtbot.waitSignal(tableview.model().sig_data_updated):
         tableview._save_data_edits(force=True)
 
-    saved_values = dbaccessor.get_observation_wells_data().iloc[0].to_dict()
+    saved_values = dbaccessor.get('observation_wells_data').iloc[0].to_dict()
     for attr in clearable_attrs:
         assert pd.isnull(saved_values[attr])
 
@@ -342,7 +342,7 @@ def test_delete_observation_well(tablewidget, qtbot, dbaccessor, mocker,
     Test that deleting observation wells is working as expected.
     """
     assert tablewidget.visible_row_count() == 5
-    assert len(dbaccessor.get_observation_wells_data()) == 5
+    assert len(dbaccessor.get('observation_wells_data')) == 5
 
     # Delete the first row of the table.
     tablewidget.set_current_index(0, 0)
@@ -352,7 +352,7 @@ def test_delete_observation_well(tablewidget, qtbot, dbaccessor, mocker,
     assert len(tablewidget.model().tabledata().deleted_rows()) == 1
     assert tablewidget.model().data_edit_count() == 1
     assert tablewidget.visible_row_count() == 5
-    assert len(dbaccessor.get_observation_wells_data()) == 5
+    assert len(dbaccessor.get('observation_wells_data')) == 5
 
     # Try to save the changes to the database. A foreign constraint error
     # message should appear.
@@ -386,7 +386,7 @@ def test_delete_observation_well(tablewidget, qtbot, dbaccessor, mocker,
     with qtbot.waitSignal(dbconnmanager.sig_run_tasks_finished, timeout=5000):
         dbconnmanager.delete(
             'manual_measurements',
-            dbaccessor.get_manual_measurements().index[:3])
+            dbaccessor.get('manual_measurements').index[:3])
 
     tablewidget.save_edits_action.trigger()
     qtbot.waitUntil(lambda: qmsgbox_patcher.call_count == 3)
@@ -395,7 +395,7 @@ def test_delete_observation_well(tablewidget, qtbot, dbaccessor, mocker,
     with qtbot.waitSignal(dbconnmanager.sig_run_tasks_finished, timeout=5000):
         dbconnmanager.delete(
             'repere_data',
-            dbaccessor.get_repere_data().index[0])
+            dbaccessor.get('repere_data').index[0])
 
     tablewidget.save_edits_action.trigger()
     qtbot.waitUntil(lambda: qmsgbox_patcher.call_count == 4)
@@ -404,17 +404,17 @@ def test_delete_observation_well(tablewidget, qtbot, dbaccessor, mocker,
     with qtbot.waitSignal(dbconnmanager.sig_run_tasks_finished, timeout=5000):
         dbconnmanager.delete(
             'sonde_installations',
-            dbaccessor.get_sonde_installations().index[0])
+            dbaccessor.get('sonde_installations').index[0])
 
     assert tablewidget.visible_row_count() == 5
-    assert len(dbaccessor.get_observation_wells_data()) == 5
+    assert len(dbaccessor.get('observation_wells_data')) == 5
 
     with qtbot.waitSignal(tablewidget.model().sig_data_updated):
         tablewidget.save_edits_action.trigger()
     assert qmsgbox_patcher.call_count == 4
 
     assert tablewidget.visible_row_count() == 4
-    assert len(dbaccessor.get_observation_wells_data()) == 4
+    assert len(dbaccessor.get('observation_wells_data')) == 4
 
 
 def test_unique_constraint(tablewidget, qtbot, mocker, dbaccessor):

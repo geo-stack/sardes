@@ -62,7 +62,7 @@ def test_add_sonde_model(tablewidget, qtbot, dbaccessor, mocker):
     """
     tablemodel = tablewidget.model()
     assert tablewidget.visible_row_count() == 23
-    assert len(dbaccessor.get_sonde_models_lib()) == 23
+    assert len(dbaccessor.get('sonde_models_lib')) == 23
 
     # We add a new row and assert that the UI state is as expected.
     tablewidget.new_row_action.trigger()
@@ -70,7 +70,7 @@ def test_add_sonde_model(tablewidget, qtbot, dbaccessor, mocker):
     assert tablemodel.data_edit_count() == 1
     assert tablewidget.get_data_for_row(23) == [''] * 2
     assert tablemodel.is_new_row_at(tablewidget.current_index())
-    assert len(dbaccessor.get_sonde_models_lib()) == 23
+    assert len(dbaccessor.get('sonde_models_lib')) == 23
 
     # We need to patch the message box that warns the user when
     # a Notnull constraint is violated.
@@ -82,7 +82,7 @@ def test_add_sonde_model(tablewidget, qtbot, dbaccessor, mocker):
     tablewidget.save_edits_action.trigger()
     assert qmsgbox_patcher.call_count == 1
     assert tablewidget.visible_row_count() == 24
-    assert len(dbaccessor.get_sonde_models_lib()) == 23
+    assert len(dbaccessor.get('sonde_models_lib')) == 23
 
     # Enter a non null value for the fields 'sonde_model_id',
     # 'in_repair', 'out_of_order', 'lost', and 'off_network'.
@@ -103,7 +103,7 @@ def test_add_sonde_model(tablewidget, qtbot, dbaccessor, mocker):
     assert qmsgbox_patcher.call_count == 1
     assert tablemodel.data_edit_count() == 0
 
-    sonde_models = dbaccessor.get_sonde_models_lib()
+    sonde_models = dbaccessor.get('sonde_models_lib')
     assert tablewidget.visible_row_count() == 24
     assert len(sonde_models) == 24
     assert sonde_models.iloc[23]['sonde_brand'] == 'new_sonde_brand'
@@ -146,7 +146,7 @@ def test_edit_sonde_model(tablewidget, qtbot, dbaccessor, obswells_data):
     with qtbot.waitSignal(tableview.model().sig_data_updated):
         tableview._save_data_edits(force=True)
 
-    saved_values = dbaccessor.get_sonde_models_lib().iloc[0].to_dict()
+    saved_values = dbaccessor.get('sonde_models_lib').iloc[0].to_dict()
     for key in edited_values.keys():
         assert saved_values[key] == edited_values[key]
 
@@ -169,7 +169,7 @@ def test_delete_sonde_model(tablewidget, qtbot, dbaccessor, mocker,
     Test that deleting repere data is working as expected.
     """
     assert tablewidget.visible_row_count() == 23
-    assert len(dbaccessor.get_sonde_models_lib()) == 23
+    assert len(dbaccessor.get('sonde_models_lib')) == 23
 
     # Select and delete the fourth row of the table.
     tablewidget.set_current_index(3, 0)
@@ -197,14 +197,14 @@ def test_delete_sonde_model(tablewidget, qtbot, dbaccessor, mocker,
         dbconnmanager.run_tasks()
 
     assert tablewidget.visible_row_count() == 23
-    assert len(dbaccessor.get_sonde_models_lib()) == 23
+    assert len(dbaccessor.get('sonde_models_lib')) == 23
 
     with qtbot.waitSignal(tablewidget.model().sig_data_updated):
         tablewidget.save_edits_action.trigger()
 
     assert qmsgbox_patcher.call_count == 1
     assert tablewidget.visible_row_count() == 22
-    assert len(dbaccessor.get_sonde_models_lib()) == 22
+    assert len(dbaccessor.get('sonde_models_lib')) == 22
 
 
 def test_unique_constraint(tablewidget, dbaccessor, qtbot, mocker):

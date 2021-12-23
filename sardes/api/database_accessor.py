@@ -7,7 +7,10 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+from __future__ import annotations
+
 # ---- Standard imports
+from typing import Any
 from abc import ABC, abstractmethod
 
 # ---- Third party imports
@@ -36,91 +39,63 @@ class DatabaseAccessorBase(ABC):
     def __init__(self):
         self._connection = None
         self._connection_error = None
-        self._temp_indexes = {}
 
     # ---- Public API
-    def get(self, name, *args, **kargs):
+    def get(self, name: str, *args, **kargs):
         """
         Get the data related to name from the database.
         """
-        method_to_exec = getattr(self, 'get_' + name)
-        result = method_to_exec(*args, **kargs)
-        try:
-            result.name = name
-        except AttributeError:
-            pass
-        return result
+        return getattr(self, '_get_' + name)(*args, **kargs)
 
-    def set(self, name, *args, **kargs):
+    def set(self, name: str, index: Any,
+            values: dict, auto_commit: bool = True) -> None:
         """
-        Save the data related to name in the database.
+        Set in the database the values related to the specified name
+        and index.
         """
-        getattr(self, 'set_' + name)(*args, **kargs)
+        getattr(self, '_set_' + name)(index, values)
+        if auto_commit:
+            self.commit()
 
-    def add(self, name, primary_key, values=None):
+    def add(self, name: str, values: list[dict] = None,
+            indexes: list[Any] = None, auto_commit: bool = True) -> list:
         """
         Add a new item to the data related to name in the database using
         the given primary_key and values.
         """
-        values = {} if values is None else values
-        getattr(self, 'add_' + name)(primary_key, values)
-        self.del_temp_index(name, primary_key)
+        if values is None:
+            if not is_list_like(indexes):
+                values = {}
+            else:
+                values = [{}] * len(indexes)
+        is_single = isinstance(values, dict)
 
-    def delete(self, name: str, indexes: list):
+        values = [values, ] if is_single else list(values)
+        if indexes is not None:
+            indexes = [indexes, ] if is_single else list(indexes)
+
+        indexes = getattr(self, '_add_' + name)(values, indexes)
+        if auto_commit:
+            self.commit()
+
+        return indexes[0] if is_single else indexes
+
+    def delete(self, name: str, indexes: list[Any],
+               auto_commit: bool = True) -> None:
         """
         Delete from the database the items related to name at the
         specified indexes.
         """
-        if not is_list_like(indexes):
-            indexes = [indexes, ]
-        else:
-            indexes = list(indexes)
-
+        indexes = [indexes, ] if not is_list_like(indexes) else list(indexes)
         getattr(self, '_del_' + name)(indexes)
-        for index in indexes:
-            self.del_temp_index(name, index)
-
-    def create_index(self, name):
-        """
-        Return a new index that can be used subsequently to add a new item
-        related to name in the database.
-        """
-        new_index = self._create_index(name)
-        self.add_temp_index(name, new_index)
-        return new_index
+        if auto_commit:
+            self.commit()
 
     def connect(self):
         """
         Create a new connection object to communicate with the database.
         """
-        self._temp_indexes = {}
         self._connection, self._connection_error = self._connect()
-
-    # ---- Temp indexes
-    def temp_indexes(self, name):
-        """
-        Return a list of temporary indexes that were requested by the manager,
-        but but haven't been commited yet to the database.
-        """
-        return self._temp_indexes.get(name, [])
-
-    def add_temp_index(self, name, index):
-        """
-        Add index to the list of temporary indexes for the data related
-        to name.
-        """
-        self._temp_indexes[name] = self._temp_indexes.get(name, []) + [index]
-
-    def del_temp_index(self, name, index):
-        """
-        Remove index from the list of temporary indexes for the data related
-        to name.
-        """
-        if name in self._temp_indexes:
-            try:
-                self._temp_indexes[name].remove(index)
-            except ValueError:
-                pass
 
 
 class DatabaseAccessor(DatabaseAccessorBase):
@@ -132,6 +107,11 @@ class DatabaseAccessor(DatabaseAccessorBase):
     """
 
     # ---- Database connection
+    @abstractmethod
+    def commit(self):
+        "Commit transaction to the database"
+        pass
+
     @abstractmethod
     def is_connected(self):
         """
@@ -158,24 +138,471 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         pass
 
-    # --- Indexes
-    def _create_index(self, name):
+    # ---- Observation Wells Interface
+    # =========================================================================
+    # Note: The methods in this section should not be called directly. Please
+    #       use instead the public methods "add", "get", "delete", and "set".
+    # =========================================================================
+    def _get_observation_wells_data(self):
         """
-        Return a new index that can be used subsequently to add a new item
-        related to name in the database.
+        Return the information related to the observation wells that are
+        saved in the database.
 
-        Note that you need to take into account temporary indexes that might
-        have been requested by the database manager but haven't been
-        commited yet to the database.
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A pandas dataframe containing information related to the
+            observation wells that are saved in the database.
+
+            The index of the dataframe must contain the indexes or keys that
+            are used to reference the observation wells in the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that the dataframe
+            returned by this method should follow.
         """
         raise NotImplementedError
 
-    # ---- Observation Wells
-    def get_observation_wells_data_overview(self):
+    def _add_observation_wells_data(
+            self, values: list[dict], indexes: list = None) -> list:
         """
-        Return a :class:`pandas.DataFrame` containing an overview of
-        the water level data that are available for each observation well
-        of the monitoring network.
+        Add a list of new observation wells to the database.
+
+        Parameters
+        ----------
+        values: list[dict]
+            A list of dictionaries containing the attribute values for the new
+            observation wells to be added to the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that each
+            dictionary must follow.
+        indexes: list, optional
+            A list of indexes to use when adding the new observation wells
+            to the database.
+
+        Returns
+        -------
+        list
+            The list of indexes that are used to reference the new observation
+            wells that were added to the database.
+        """
+        raise NotImplementedError
+
+    def _set_observation_wells_data(self, index: Any, values: dict):
+        """
+        Set in the database the values of the observation well data
+        corresponding to the specified index.
+
+        Parameters
+        ----------
+        index: Any
+            A unique identifier used to reference the observation well
+            in the database.
+        values: dict
+            A dictionary containing the attribute values of the observation
+            well that needs to be updated in the database for the specified
+            index.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the attributes and data types that the dictionary
+            can contained.
+        """
+        raise NotImplementedError
+
+    def _del_observation_wells_data(self, indexes: list):
+        """
+        Delete the observation wells corresponding to the specified indexes.
+        """
+        raise NotImplementedError
+
+    # ---- Repere Data Interface
+    # =========================================================================
+    # Note: The methods in this section should not be called directly. Please
+    #       use instead the public methods "add", "get", "delete", and "set".
+    # =========================================================================
+    def _get_repere_data(self):
+        """
+        Return the information related to the repere data of the
+        observation wells.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A pandas dataframe containing information related to the
+            observation wells repere data that are saved in the database.
+
+            The index of the dataframe must contain the indexes or keys that
+            are used to reference the repere data in the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that the dataframe
+            returned by this method should follow.
+        """
+        raise NotImplementedError
+
+    def _add_repere_data(
+            self, values: list[dict], indexes: list = None) -> list:
+        """
+        Add a list of repere to the database.
+
+        Parameters
+        ----------
+        values: list[dict]
+            A list of dictionaries containing the attribute values for the new
+            repere to be added to the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that each
+            dictionary must follow.
+        indexes: list, optional
+            A list of indexes to use when adding the new repere
+            to the database.
+
+        Returns
+        -------
+        list
+            The list of indexes that are used to reference the new repere
+            that were added to the database.
+        """
+        raise NotImplementedError
+
+    def _set_repere_data(self, index: Any, values: dict):
+        """
+        Set in the database the values of the repere data
+        corresponding to the specified index.
+
+        Parameters
+        ----------
+        index: Any
+            A unique identifier used to reference the repere data
+            in the database.
+        values: dict
+            A dictionary containing the attribute values of the repere data
+            that needs to be updated in the database for the specified index.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the attributes and data types that the dictionary
+            can contained.
+        """
+        raise NotImplementedError
+
+    def _del_repere_data(self, indexes: list):
+        """
+        Delete the repere data corresponding to the specified indexes.
+        """
+        raise NotImplementedError
+
+    # ---- Sonde Models Interface
+    # =========================================================================
+    # Note: The methods in this section should not be called directly. Please
+    #       use instead the public methods "add", "get", "delete", and "set".
+    # =========================================================================
+    def _get_sonde_models_lib(self):
+        """
+        Return the information related to existing sonde models.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A pandas dataframe containing information related to existing
+            sonde models that are saved in the database.
+
+            The index of the dataframe must contain the indexes or keys that
+            are used to reference the sonde models in the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that the dataframe
+            returned by this method should follow.
+        """
+        raise NotImplementedError
+
+    def _add_sonde_models_lib(
+            self, values: list[dict], indexes: list = None) -> list:
+        """
+        Add a list of sonde models to the database.
+
+        Parameters
+        ----------
+        values: list[dict]
+            A list of dictionaries containing the attribute values for the new
+            sonde models to be added to the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that each
+            dictionary must follow.
+        indexes: list, optional
+            A list of indexes to use when adding the new sonde models
+            to the database.
+
+        Returns
+        -------
+        list
+            The list of indexes that are used to reference the new sonde
+            models that were added to the database.
+        """
+        raise NotImplementedError
+
+    def _set_sonde_models_lib(self, index: Any, values: dict):
+        """
+        Set in the database the values of the sonde model
+        corresponding to the specified index.
+
+        Parameters
+        ----------
+        index: Any
+            A unique identifier used to reference the sonde model
+            in the database.
+        values: dict
+            A dictionary containing the attribute values of the sonde model
+            that needs to be updated in the database for the specified index.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the attributes and data types that the dictionary
+            can contained.
+        """
+        raise NotImplementedError
+
+    def _del_sonde_models_lib(self, indexes: list):
+        """
+        Delete the sonde models corresponding to the specified indexes.
+        """
+        raise NotImplementedError
+
+    # ---- Sondes Inventory Interface
+    def _get_sondes_data(self):
+        """
+        Return the information related to the sondes used to monitor
+        groundwater properties in the wells.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A pandas dataframe containing information related to the
+            sondes used to monitor groundwater properties in the wells.
+
+            The index of the dataframe must contain the indexes or keys that
+            are used to reference the sondes in the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that the dataframe
+            returned by this method should follow.
+        """
+        raise NotImplementedError
+
+    def _add_sondes_data(
+            self, values: list[dict], indexes: list = None) -> list:
+        """
+        Add a list of new sondes to the database.
+
+        Parameters
+        ----------
+        values: list[dict]
+            A list of dictionaries containing the attribute values for the new
+            sondes to be added to the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that each
+            dictionary must follow.
+        indexes: list, optional
+            A list of indexes to use when adding the new sondes
+            to the database.
+
+        Returns
+        -------
+        list
+            The list of indexes that are used to reference the new sondes
+            that were added to the database.
+        """
+        raise NotImplementedError
+
+    def _set_sondes_data(self, index: Any, values: dict):
+        """
+        Set in the database the values of the sondes data
+        corresponding to the specified index.
+
+        Parameters
+        ----------
+        index: Any
+            A unique identifier used to reference the sondes data
+            in the database.
+        values: dict
+            A dictionary containing the attribute values of the sondes data
+            that needs to be updated in the database for the specified index.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the attributes and data types that the dictionary
+            can contained.
+        """
+        raise NotImplementedError
+
+    def _del_sondes_data(self, indexes: list):
+        """
+        Delete the sondes data corresponding to the specified indexes.
+        """
+        raise NotImplementedError
+
+    # ---- Sonde Installations Interface
+    # =========================================================================
+    # Note: The methods in this section should not be called directly. Please
+    #       use instead the public methods "add", "get", "delete", and "set".
+    # =========================================================================
+    def _get_sonde_installations(self):
+        """
+        Return the information related to the installations of the sondes in
+        the wells.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A pandas dataframe containing information related to the
+            installations of the sonde in the wells.
+
+            The index of the dataframe must contain the indexes or keys that
+            are used to reference the sonde installations in the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that the dataframe
+            returned by this method should follow.
+        """
+        raise NotImplementedError
+
+    def _add_sonde_installations(
+            self, values: list[dict], indexes: list = None) -> list:
+        """
+        Add a list of sonde installations to the database.
+
+        Parameters
+        ----------
+        values: list[dict]
+            A list of dictionaries containing the attribute values for the new
+            sonde installations to be added to the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that each
+            dictionary must follow.
+        indexes: list, optional
+            A list of indexes to use when adding the new sonde installations
+            to the database.
+
+        Returns
+        -------
+        list
+            The list of indexes that are used to reference the new sonde
+            installations that were added to the database.
+        """
+        raise NotImplementedError
+
+    def _set_sonde_installations(self, index: Any, values: dict):
+        """
+        Set in the database the values of the sonde installation
+        corresponding to the specified index.
+
+        Parameters
+        ----------
+        index: Any
+            A unique identifier used to reference the sonde installation
+            in the database.
+        values: dict
+            A dictionary containing the attribute values of the sonde
+            installation that needs to be updated in the database for
+            the specified index.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the attributes and data types that the dictionary
+            can contained.
+        """
+        raise NotImplementedError
+
+    def _del_sonde_installations(self, indexes: list):
+        """
+        Delete the sonde installations corresponding to the specified indexes.
+        """
+        raise NotImplementedError
+
+    # ---- Manual Measurements Interface
+    # =========================================================================
+    # Note: The methods in this section should not be called directly. Please
+    #       use instead the public methods "add", "get", "delete", and "set".
+    # =========================================================================
+    def _get_manual_measurements(self):
+        """
+        Return the water level manual measurements that are saved in
+        the database.
+
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            A pandas dataframe containing the manual measurements of the
+            water level that are saved in the database.
+
+            The index of the dataframe must contain the indexes or keys that
+            are used to reference the manual measurements in the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that the dataframe
+            returned by this method should follow.
+        """
+        raise NotImplementedError
+
+    def _add_manual_measurements(
+            self, values: list[dict], indexes: list = None) -> list:
+        """
+        Add a list of manual measurements to the database.
+
+        Parameters
+        ----------
+        values: list[dict]
+            A list of dictionaries containing the attribute values for the new
+            manual measurements to be added to the database.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the content and structure that each
+            dictionary must follow.
+        indexes: list, optional
+            A list of indexes to use when adding the manual measurements
+            to the database.
+
+        Returns
+        -------
+        list
+            The list of indexes that are used to reference the new
+            manual measurements that were added to the database.
+        """
+        raise NotImplementedError
+
+    def _set_manual_measurements(self, index: Any, values: dict):
+        """
+        Set in the database the values of the manual measurement
+        corresponding to the specified index.
+
+        Parameters
+        ----------
+        index: Any
+            A unique identifier used to reference the manual measurement
+            in the database.
+        values: dict
+            A dictionary containing the attribute values of the manual
+            measurement that needs to be updated in the database for
+            the specified index.
+
+            See :data:`DATABASE_CONCEPTUAL_MODEL` for a detailed
+            description of the attributes and data types that the dictionary
+            can contained.
+        """
+        raise NotImplementedError
+
+    def _del_manual_measurements(self, indexes: list):
+        """
+        Delete the manual measurements corresponding to the specified indexes.
+        """
+        raise NotImplementedError
+
+    # ---- Timeseries Interface
+    def _get_observation_wells_data_overview(self):
+        """
+        Return an overview of the water level data that are available
+        for each observation well of the monitoring network.
 
         Returns
         -------
@@ -204,534 +631,6 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
-    def add_observation_wells_data(self, sampling_feature_id,
-                                   attribute_values):
-        """
-        Add a new observation well to the database using the provided
-        sampling feature ID and attribute values.
-
-        Parameters
-        ----------
-        sampling_feature_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the observation well
-            in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values for the new
-            observation well.
-        """
-        raise NotImplementedError
-
-    def set_observation_wells_data(self, sampling_feature_id,
-                                   attribute_values):
-        """
-        Save in the database new attribute values for the observation well
-        corresponding to the specified sampling feature ID.
-
-        Parameters
-        ----------
-        sampling_feature_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the observation well
-            in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values that need to be
-            changed in the database for the corresponding sampling_feature_id.
-        """
-        raise NotImplementedError
-
-    def get_observation_wells_data(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to the observation wells that are saved in the database.
-
-        Returns
-        -------
-        :class:`pandas.DataFrame`
-            A :class:`pandas.DataFrame` containing the information related
-            to the observation wells that are saved in the database.
-
-            The row indexes of the dataframe must correspond to the
-            observation well IDs, which are unique identifiers used to
-            reference the wells in the database.
-
-            The dataframe must contain at least the required columns and any
-            of the optional columns that are listed below.
-
-            Required Columns
-            ~~~~~~~~~~~~~~~~
-            - obs_well_id: str
-                The unique identifier of the observation well.
-            - latitude: float
-                The latitude of the observation well location in decimal
-                degrees.
-            - longitude: float
-                The longitude of the observation well location in decimal
-                degrees.
-
-            Optional Columns
-            ~~~~~~~~~~~~~~~~
-            - common_name: str
-                The human readable name of the well.
-            - municipality: str
-                The municipality where the well is installed.
-            - aquifer_type: str
-                Indicates if the well is open in the bedrock or in the
-                unconsolidated sediment.
-            - confinement: str
-                Indicates if the confinement at the well location is confined,
-                unconfined or semi-confined,
-            - aquifer_code: int
-                A code that represents the combination of aquifer type and
-                confinement for the well.
-            - in_recharge_zone: str
-                Indicates whether the observation well is located in or in
-                the proximity a recharge zone.
-            - is_influenced: str
-                Indicates whether the water levels measured in that well are
-                influenced or not by anthropic phenomenon.
-            - elevation: float
-                The elevation of the ground surface at the observation well
-                location in meters above sea level.
-            - is_station_active: bool
-                Indicates whether the station is still active or not.
-            - obs_well_notes: str
-                Any notes related to the observation well.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def _del_observation_wells_data(self, indexes: list):
-        """
-        Delete the observation wells corresponding to the specified indexes.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete`.
-        """
-        pass
-
-    # ---- Repere
-    def add_repere_data(self, repere_id, attribute_values):
-        """
-        Add a new observation well repere data to the database using the
-        provided repere ID and attribute values.
-
-        Parameters
-        ----------
-        repere_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the repere data in
-            the database.
-        attribute_values: dict
-            A dictionary containing the attribute values for the new
-            repere data.
-        """
-        raise NotImplementedError
-
-    def set_repere_data(self, repere_id, attribute_values):
-        """
-        Save in the database the new attribute values for the repere data
-        corresponding to the specified repere_id.
-
-        Parameters
-        ----------
-        repere_id: object
-            A unique identifier used to reference the repere data for wich
-            attribute values need to be changed in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values that need to be
-            changed in the database for the corresponding repere_id.
-        """
-        raise NotImplementedError
-
-    def get_repere_data(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to observation wells repere data.
-
-        Returns
-        -------
-        :class:`pandas.DataFrame`
-            A :class:`pandas.DataFrame` containing the information related
-            to observation wells repere data.
-
-            The row indexes of the dataframe must correspond to the IDs
-            used to reference the repere data in the database.
-
-            The dataframe can contain any of the columns that are listed below.
-
-            Columns
-            ~~~~~~~~~~~~~~~~
-            - sampling_feature_uuid: int, :class:`uuid.UUID`
-                A unique identifier that is used to reference the observation
-                well for which the repere data are associated.
-            - top_casing_alt: float
-                The altitude values given in meters of the top of the
-                observation wells' casing.
-            - casing_length: str
-                The lenght of the casing above ground level given in meters.
-            - start_date: datetime
-                The date and time after which repere data are valid.
-            - end_date: datetime
-                The date and time before which repere data are valid.
-            - is_alt_geodesic: bool
-                Whether the top_casing_alt value is geodesic.
-            - repere_note: bool
-                Any note related to the repere data.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def _del_repere_data(self, indexes: list):
-        """
-        Delete the repere data corresponding to the specified indexes.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete`.
-        """
-        pass
-
-    # ---- Sonde Brands and Models Library
-    def get_sonde_models_lib(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to sonde brands and models.
-
-        Returns
-        -------
-        :class:`pandas.DataFrame`
-            A :class:`pandas.DataFrame` containing the information related
-            to sonde brands and models.
-
-            The row indexes of the dataframe must correspond to the IDs
-            used to reference the sonde model and brand combination in
-            the database.
-
-            The dataframe can contain any of the columns that are
-            listed below.
-
-            Columns
-            ~~~~~~~~~~~~~~~~
-            - sonde_brand_model: str
-                A sonde brand and model combination.
-            - sonde_brand: str
-                A sonde manufacturer.
-            - sonde_model: str
-                A sonde model.
-        """
-        raise NotImplementedError
-
-    def set_sonde_models_lib(self, sonde_model_id, attribute_values,
-                             auto_commit=True):
-        """
-        Save in the database the new attribute values for the sonde model
-        corresponding to the specified sonde_model_id.
-
-        Parameters
-        ----------
-        sonde_model_id: object
-            A unique identifier used to reference the sonde model for wich
-            attribute values need to be changed in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values that need to be
-            changed in the database for the corresponding sonde_model_id.
-        """
-        raise NotImplementedError
-
-    def add_sonde_models_lib(self, sonde_model_id, attribute_values):
-        """
-        Add a new sonde model to the database using the provided
-        sonde_model_id and attribute_values.
-
-        Parameters
-        ----------
-        sonde_model_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the sonde model in the
-            database.
-        attribute_values: dict
-            A dictionary containing the attribute values for the new
-            sonde model.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def _del_sonde_models_lib(self, indexes: list):
-        """
-        Delete the sonde models corresponding to the specified indexes.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete`.
-        """
-        pass
-
-    # ---- Sondes Inventory
-    def add_sondes_data(self, sonde_id, attribute_values):
-        """
-        Add a new sonde to the database using the provided sonde ID
-        and attribute values.
-
-        Parameters
-        ----------
-        sonde_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the sonde in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values for the new sonde.
-        """
-        raise NotImplementedError
-
-    def get_sondes_data(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to the sondes used to monitor groundwater properties in the wells.
-
-        Returns
-        -------
-        :class:`pandas.DataFrame`
-            A :class:`pandas.DataFrame` containing the information related
-            to the sondes used to monitor groundwater properties in the wells.
-
-            The row indexes of the dataframe must correspond to the
-            sonde IDs, which are unique identifiers used to reference the
-            sondes in the database.
-
-            The dataframe can contain any of the columns that are
-            listed below.
-
-            Required Columns
-            ~~~~~~~~~~~~~~~~
-            - sonde_serial_no: str
-                The serial number of the sonde.
-            - sonde_model_id: int, :class:`uuid.UUID`
-                The ID used to reference the sonde brand and model in the
-                database.
-            - date_reception: datetime
-                The date when the sonde was added to the inventory.
-            - date_withdrawal: datetime
-                The date when the sonde was removed from the inventory.
-            - in_repair: bool
-                Indicate wheter the sonde is currently being repaired.
-            - out_of_order: bool
-                Indicate whether the sonde is out of order.
-                unconsolidated sediment.
-            - lost: bool
-                Indicates whether the sonde has been lost.
-            - off_network: bool
-                Indicate whether the sonde is currently being used outside
-                of the monitoring network.
-            - sonde_notes: str
-                Any notes related to the sonde.
-
-            Optional Columns
-            ~~~~~~~~~~~~~~~~
-            - sonde_brand_model: str
-                The brand and model of the sonde.
-            - sonde_brand: str
-                The brand of the sonde.
-            - sonde_model: str
-                The model of the sonde.
-        """
-        raise NotImplementedError
-
-    def set_sondes_data(self, sonde_id, attribute_values):
-        """
-        Save in the database the new attribute value for the sonde
-        corresponding to the specified sonde_id.
-
-        Parameters
-        ----------
-        sonde_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the sonde in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values that need to be
-            changed in the database for the corresponding sonde_id.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def _del_sondes_data(self, indexes: list):
-        """
-        Delete the sondes data corresponding to the specified indexes.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete`.
-        """
-        pass
-
-    # ---- Sonde installations
-    def add_sonde_installations(self, installation_id, attribute_values):
-        """
-        Add a new sonde installation to the database using the provided
-        installation_id and attribute values.
-
-        Parameters
-        ----------
-        installation_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the sonde installation
-            in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values for the new
-            sonde installation.
-        """
-        raise NotImplementedError
-
-    def set_sonde_installations(self, installation_id, attribute_values):
-        """
-        Save in the database the new attribute values for the sonde
-        installation corresponding to the specified installation_id.
-
-        Parameters
-        ----------
-        installation_id: object
-            A unique identifier used to reference the sonde installation
-            for wich attribute values need to be changed in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values that need to be
-            changed in the database for the corresponding installation_id.
-        """
-        raise NotImplementedError
-
-    def get_sonde_installations(self):
-        """
-        Return a :class:`pandas.DataFrame` containing information related to
-        sonde installations made in the observation wells of the monitoring
-        network.
-
-        Returns
-        -------
-        :class:`pandas.DataFrame`
-            A :class:`pandas.DataFrame` containing information related to
-            sonde installations made in the observation wells of the monitoring
-            network.
-
-            The row indexes of the dataframe must correspond to the
-            IDs used to reference each installation in the database.
-
-            The dataframe must contain the following columns.
-
-            Required Columns
-            ~~~~~~~~~~~~~~~~
-            - sampling_feature_uuid: object
-                A unique identifier that is used to reference the observation
-                well in which the sonde are installed.
-            - sonde_uuid: object
-                A unique identifier used to reference each sonde in the
-                database.
-            - start_date: datetime
-                The date and time at which the sonde was installed in the well.
-            - end_date: datetime
-                The date and time at which the sonde was removed from the well.
-            - install_depth: float
-                The depth at which the sonde was installed in the well.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def _del_sonde_installations(self, indexes: list):
-        """
-        Delete the sonde installations corresponding to the specified indexes.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete`.
-        """
-        pass
-
-    # ---- Manual Measurements
-    def add_manual_measurements(self, measurement_id, attribute_values):
-        """
-        Add a new manual measurement to the database using the provided ID
-        and attribute values.
-
-        Parameters
-        ----------
-        measurement_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the manual measurement
-            in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values for the new
-            manual measurement.
-
-            Required elements
-            ~~~~~~~~~~~~~~~~~
-            - datetime :class:`datetime.Datetime`
-                A datetime object corresponding to the date and time when the
-                manual measurement was made in the well.
-            - value: float
-                The numerical value of the water level that was
-                measured manually in the well.
-            - sampling_feature_uuid: object
-                The unique identifier that is used to reference the observation
-                well in which the manual measurement was made.
-
-            Optional elements
-            ~~~~~~~~~~~~~~~~~
-            - notes: str
-                A note related to the manual measurement.
-        """
-        raise NotImplementedError
-
-    def get_manual_measurements(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the water level manual
-        measurements made in the observation wells for the entire monitoring
-        network.
-
-        Returns
-        -------
-        :class:`pandas.DataFrame`
-            A :class:`pandas.DataFrame` containing the information related
-            to the observation wells that are saved in the database.
-
-            The row indexes of the dataframe must correspond to the
-            IDs used to reference each manual measurement in the database.
-
-            The dataframe must contain the following columns.
-
-            Required Columns
-            ~~~~~~~~~~~~~~~~
-            - sampling_feature_uuid: object
-                A unique identifier that is used to reference the observation
-                well in the database in which the manual measurement was made.
-            - datetime: :class:`datetime.Datetime`
-                A datetime object corresponding to the date and time when the
-                manual measurement was made in the well.
-            - value: float
-                The value of the water level that was measured manually
-                in the well.
-            - notes: str
-                Any notes related to the manual measurement.
-        """
-        raise NotImplementedError
-
-    def set_manual_measurements(self, measurement_id, attribute_values):
-        """
-        Save in the database the new attribute values for the
-        measurement corresponding to the specified measurement_id.
-
-        Parameters
-        ----------
-        measurement_id: int, :class:`uuid.UUID`
-            A unique identifier used to reference the manual measurement
-            in the database.
-        attribute_values: dict
-            A dictionary containing the attribute values that need to be
-            changed in the database for the corresponding measurement_id.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def _del_manual_measurements(self, indexes: list):
-        """
-        Delete the manual measurements corresponding to the specified indexes.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete`.
-        """
-        pass
-
-    # ---- Timeseries
     def get_timeseries_for_obs_well(self, obs_well_id, data_types=None):
         """
         Return a pandas dataframe containing the readings for the given
@@ -812,5 +711,63 @@ class DatabaseAccessor(DatabaseAccessorBase):
             A pandas dataframe that contains the observation IDs, datetime,
             and data_type for which timeseries data need to be deleted
             from the database.
+        """
+        raise NotImplementedError
+
+    # ---- Attachments Interface
+    def _get_attachments_info(self):
+        """
+        Return the list observation well attachments that are stored in the
+        database.
+        """
+        raise NotImplementedError
+
+    def get_attachment(self, index: Any, attachment_type: int):
+        """
+        Return the data of the file attachment corresponding to the specified
+        type and observation well index.
+
+        Parameters
+        ----------
+        index: Any
+            A unique identifier used to reference the observation well
+            in the database.
+        attachment_type: int
+            The type of observation well attachment that is to be stored
+            in the database.
+        """
+        raise NotImplementedError
+
+    def set_attachment(self, index: Any, attachment_type: int, filepath: str):
+        """
+        Attach a file to an observation well in the database.
+
+        Parameters
+        ----------
+        index: Any
+            A unique identifier used to reference the observation well
+            in the database to which a file is to be attached.
+        attachment_type: int
+            The type of observation well attachment that is to be stored
+            in the database.
+        filepath: str
+            The absolute path of the file that is to be stored in the
+            database as an observation well attachment.
+        """
+        raise NotImplementedError
+
+    def del_attachment(self, index: Any, attachment_type: int):
+        """
+        Delete the data of the file of the specified type that is attached
+        to the specified sampling_feature_uuid.
+
+        Parameters
+        ----------
+        index: Any
+            A unique identifier used to reference the observation well
+            in the database.
+        attachment_type: int
+            The type of observation well attachment that is to be stored
+            in the database.
         """
         raise NotImplementedError

@@ -388,8 +388,8 @@ if __name__ == '__main__':
     dbaccessor = DatabaseAccessorSardesLite(
         'D:/Desktop/rsesq_prod_21072020_v1.db')
 
-    obs_wells_data = dbaccessor.get_observation_wells_data()
-    repere_data = dbaccessor.get_repere_data()
+    obs_wells_data = dbaccessor.get('observation_wells_data')
+    repere_data = dbaccessor.get('repere_data')
 
     with PdfPages('D:/hydrographs_example.pdf') as pdf:
         count = 0

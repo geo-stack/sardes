@@ -416,22 +416,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         self._engine.dispose()
         self._connection = None
 
-    # --- Indexes
-    def _create_index(self, name):
-        """
-        Return a new index that can be used subsequently to add a new item
-        related to name in the database.
-
-        Note that you need to take into account temporary indexes that might
-        have been requested by the database manager but haven't been
-        commited yet to the database.
-        """
-        if name in ['observation_wells_data', 'sondes_data',
-                    'manual_measurements', 'sonde_installations']:
-            return uuid.uuid4()
-        else:
-            raise NotImplementedError
-
     # ---- Locations
     def _get_location(self, loc_id):
         """
@@ -516,7 +500,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
             self.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY "
                          "resultats.obs_well_statistics")
 
-    def get_observation_wells_data_overview(self):
+    def _get_observation_wells_data_overview(self):
         """
         Return a :class:`pandas.DataFrame` containing an overview of
         the water level data that are available for each observation well
@@ -631,11 +615,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
-    def get_observation_wells_data(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to the observation wells that are saved in the database.
-        """
+    def _get_observation_wells_data(self):
         query = (
             self._session.query(ObservationWell,
                                 Location.latitude,
@@ -683,18 +663,6 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         return obs_wells
 
     # ---- Repere
-    def _get_repere_data(self, repere_id):
-        """
-        Return the sqlalchemy Repere object corresponding to the
-        given repere ID.
-        """
-        repere = (
-            self._session.query(Repere)
-            .filter(Repere.repere_uuid == repere_id)
-            .one()
-            )
-        return repere
-
     def add_repere_data(self, repere_id, attribute_values):
         """
         Add a new observation well repere data to the database using the
@@ -716,16 +684,17 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         Save in the database the new attribute value for the observation well
         repere data corresponding to the specified ID.
         """
-        repere = self._get_repere_data(repere_id)
+        repere = repere = (
+            self._session.query(Repere)
+            .filter(Repere.repere_uuid == repere_id)
+            .one()
+            )
+
         setattr(repere, attribute_name, attribute_value)
         if auto_commit:
             self._session.commit()
 
-    def get_repere_data(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to observation wells repere data.
-        """
+    def _get_repere_data(self):
         query = (
             self._session.query(Repere)
             ).with_labels()
@@ -743,11 +712,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         return repere
 
     # ---- Sonde Brands and Models Library
-    def get_sonde_models_lib(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to sonde brands and models.
-        """
+    def _get_sonde_models_lib(self):
         query = (
             self._session.query(SondeModels)
             .order_by(SondeModels.sonde_brand,
@@ -804,11 +769,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         self._session.add(sonde)
         self._session.commit()
 
-    def get_sondes_data(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to the sondes used to monitor groundwater properties in the wells.
-        """
+    def _get_sondes_data(self):
         query = (
             self._session.query(Sondes)
             .order_by(Sondes.sonde_model_id,
@@ -938,12 +899,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         if auto_commit:
             self._session.commit()
 
-    def get_sonde_installations(self):
-        """
-        Return a :class:`pandas.DataFrame` containing information related to
-        sonde installations made in the observation wells of the monitoring
-        network.
-        """
+    def _get_sonde_installations(self):
         # Define the query to fetch the data.
         query = (
             self._session.query(
@@ -976,7 +932,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         data['end_date'] = data['end_date'].dt.tz_localize(None)
 
         # Replace sonde serial number with the corresponding sonde uuid.
-        sondes_data = self.get_sondes_data()
+        sondes_data = self.get('sondes_data')
         for index in data.index:
             sonde_serial_no = data.loc[index]['sonde_serial_no']
             if sonde_serial_no is None:
@@ -1332,12 +1288,7 @@ class DatabaseAccessorRSESQ(DatabaseAccessor):
         self._session.add(measurement)
         self._session.commit()
 
-    def get_manual_measurements(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the water level manual
-        measurements made in the observation wells for the entire monitoring
-        network.
-        """
+    def _get_manual_measurements(self):
         # Define a query to fetch the water level manual measurements
         # from the database.
         query = (
@@ -1407,7 +1358,7 @@ def test_duplicate_timeseries_data(accessor):
     varnames = [DataType.WaterLevel, DataType.WaterTemp, DataType.WaterEC]
     duplicate_count = {}
     duplicated_data = {}
-    obs_wells = accessor.get_observation_wells_data()
+    obs_wells = accessor.get('observation_wells_data')
 
     for var in varnames:
         print('Testing', var.name, 'for duplicate data...')
@@ -1435,7 +1386,7 @@ def update_repere_table(filename, accessor):
         Repere.__table__.drop(accessor._engine)
     Base.metadata.create_all(accessor._engine, tables=[Repere.__table__])
 
-    obs_wells = accessor.get_observation_wells_data()
+    obs_wells = accessor.get('observation_wells_data')
     repere_data = pd.read_excel(filename)
     for row in range(len(repere_data)):
         row_data = repere_data.iloc[row]
@@ -1473,8 +1424,8 @@ def update_manual_measurements(filename, accessor):
     """
     Update the manual measurements in the database from an Excel file.
     """
-    manual_measurements = accessor.get_manual_measurements()
-    obs_wells = accessor.get_observation_wells_data()
+    manual_measurements = accessor.get('manual_measurements')
+    obs_wells = accessor.get('observation_wells_data')
 
     # Delete all observations related to water level manual measurements.
     for index in manual_measurements.index:
@@ -1512,8 +1463,8 @@ def update_sondes_data(filename, accessor):
     """
     Update the sondes data in the database from an Excel file.
     """
-    sondes_data = accessor.get_sondes_data()
-    sonde_models_lib = accessor.get_sonde_models_lib()
+    sondes_data = accessor.get('sondes_data')
+    sonde_models_lib = accessor.get('sonde_models_lib')
     xls_sondes_data = pd.read_excel(filename)
 
     for i in range(len(xls_sondes_data)):
@@ -1568,8 +1519,8 @@ def update_sonde_installations(filename, accessor):
     """
     Update the sonde installations in the database from an Excel file.
     """
-    obs_wells = accessor.get_observation_wells_data()
-    sonde_installs = accessor.get_sonde_installations()
+    obs_wells = accessor.get('observation_wells_data')
+    sonde_installs = accessor.get('sonde_installations')
 
     xls_installations = pd.read_excel(filename)
     for row in range(len(xls_installations)):
@@ -1628,13 +1579,13 @@ if __name__ == "__main__":
     accessor = DatabaseAccessorRSESQ(**dbconfig)
     accessor.connect()
 
-    obs_wells = accessor.get_observation_wells_data()
+    obs_wells = accessor.get('observation_wells_data')
     obs_wells_stats = accessor.get_observation_wells_statistics()
-    sondes_data = accessor.get_sondes_data()
-    sonde_models_lib = accessor.get_sonde_models_lib()
-    manual_measurements = accessor.get_manual_measurements()
-    sonde_installations = accessor.get_sonde_installations()
-    repere_data = accessor.get_repere_data()
+    sondes_data = accessor.get('sondes_data')
+    sonde_models_lib = accessor.get('sonde_models_lib')
+    manual_measurements = accessor.get('manual_measurements')
+    sonde_installations = accessor.get('sonde_installations')
+    repere_data = accessor.get('repere_data')
 
     t1 = perf_counter()
     print('Fetching timeseries... ', end='')

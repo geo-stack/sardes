@@ -130,7 +130,8 @@ def test_plot_viewer(mainwindow, qtbot, obswell_uuid, readings_data):
     assert (list(artist.get_ydata()) == [5.23, 4.36, 4.91])
 
     # Assert that the monitoring data were plotted as expected.
-    artist = ax_wlvl._mpl_artist_handles['data'][1]
+    obs_id = table.model().dataf['obs_id'].unique()[0]
+    artist = ax_wlvl._mpl_artist_handles['data'][obs_id]
     assert (list(artist.get_ydata()) ==
             readings_data[DataType.WaterLevel].values.tolist())
 
@@ -185,8 +186,9 @@ def test_plot_viewer_update(mainwindow, qtbot, obswell_uuid):
             tseries_edits, obswell_uuid)
     qtbot.wait(300)
 
+    obs_id = table.model().dataf['obs_id'].unique()[0]
     ax_wlvl = table.plot_viewer.canvas.figure.tseries_axes_list[0]
-    artist_wlvl = ax_wlvl._mpl_artist_handles['data'][1]
+    artist_wlvl = ax_wlvl._mpl_artist_handles['data'][obs_id]
     qtbot.waitUntil(lambda: artist_wlvl.get_ydata()[0] == 103.25)
 
     # We still need to assert that the manual measurements were not cleared

@@ -7,10 +7,13 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+from __future__ import annotations
+
 # ---- Standard imports
 import datetime
 import os
 import os.path as osp
+from typing import Any, Callable
 import urllib
 
 # ---- Third party imports
@@ -21,6 +24,7 @@ from qtpy.QtCore import Signal, Slot
 import simplekml
 
 # ---- Local imports
+from sardes.api.database_model import DATABASE_CONCEPTUAL_MODEL
 from sardes.api.timeseries import DataType
 from sardes.api.taskmanagers import WorkerBase, TaskManagerBase
 from sardes.config.locale import _
@@ -30,20 +34,6 @@ from sardes.database.accessors.accessor_helpers import create_empty_readings
 from sardes.tools.hydrographs import HydrographCanvas
 from sardes.tools.save2excel import _save_reading_data_to_xlsx
 from sardes.utils.data_operations import format_reading_data
-
-DATA_FOREIGN_CONSTRAINTS = {
-    'observation_wells_data': [
-        ('sampling_feature_uuid', 'manual_measurements'),
-        ('sampling_feature_uuid', 'sonde_installations'),
-        ('sampling_feature_uuid', 'repere_data')],
-    'sonde_models_lib': [
-        ('sonde_model_id', 'sondes_data')],
-    'sondes_data': [
-        ('sonde_uuid', 'sonde_installations')],
-    'manual_measurements': [],
-    'repere_data': [],
-    'sonde_installations': []
-    }
 
 
 class DatabaseConnectionWorker(WorkerBase):
@@ -95,14 +85,15 @@ class DatabaseConnectionWorker(WorkerBase):
         print("Connection with database closed.")
         return None,
 
-    # ---- Add, Get, Set data
-    def _add(self, name, *args, **kargs):
+    # ---- Basic database operations
+    def _add(self, name: str, values: list[dict],
+             indexes: list[Any] = None, auto_commit: bool = True):
         """
         Add a new item to the data related to name in the database.
         """
         if name in self._cache:
             del self._cache[name]
-        self.db_accessor.add(name, *args, **kargs)
+        self.db_accessor.add(name, values, indexes, auto_commit)
 
     def _get(self, name, *args, **kargs):
         """
@@ -115,7 +106,8 @@ class DatabaseConnectionWorker(WorkerBase):
         print("Fetching '{}' from the database...".format(name))
         if self.is_connected():
             try:
-                data = self.db_accessor.get(name, *args, **kargs)
+                data = self.db_accessor.get(name)
+                data.attrs['name'] = name
                 print("Successfully fetched '{}' from the database."
                       .format(name))
             except Exception as e:
@@ -125,8 +117,8 @@ class DatabaseConnectionWorker(WorkerBase):
                 print(e)
                 print('-' * 20)
                 data = DataFrame([])
-            else:
                 data.attrs['name'] = name
+            else:
                 self._cache[name] = data
         else:
             print(("Failed to fetch '{}' from the database "
@@ -137,46 +129,49 @@ class DatabaseConnectionWorker(WorkerBase):
 
         return data,
 
-    def _delete(self, name, *args, **kargs):
+    def _delete(self, name: str, indexes: list[Any], auto_commit: bool = True):
         """
-        Delete an item related to name from the database.
+        Delete from the database the items related to name at the
+        specified indexes.
         """
         if name in self._cache:
             del self._cache[name]
-        self.db_accessor.delete(name, *args, **kargs)
+        self.db_accessor.delete(name, indexes, auto_commit)
 
-    def _create_index(self, name):
-        """
-        Return a new index that can be used subsequently to add new item
-        to the data related to name in the database.
-        """
-        return self.db_accessor.create_index(name)
-
-    def _set(self, name, *args, **kargs):
+    def _set(self, name: str, index: Any,
+             values: dict, auto_commit: bool = True):
         """
         Save the data related to name in the database.
         """
         if name in self._cache:
             del self._cache[name]
-        self.db_accessor.set(name, *args, **kargs)
+        self.db_accessor.set(name, index, values, auto_commit)
 
     def _save_table_edits(self, name, deleted_rows, added_rows, edited_values):
         """
         Save the changes made to table 'name' to the database.
         """
         print("Saving edits for table '{}' in the database...".format(name))
+
         # We delete rows from the database.
-        for index in deleted_rows:
-            self._delete(name, index)
+        if not deleted_rows.empty:
+            self._delete(name, deleted_rows, auto_commit=False)
 
         # We add new rows to the database.
-        for index, values in added_rows.iterrows():
-            self._add(name, index, values.dropna().to_dict())
+        if not added_rows.empty:
+            values = [row.dropna().to_dict() for
+                      idx, row in added_rows.iterrows()]
+            self._add(name, values, auto_commit=False)
 
         # We commit edits to existing rows.
         for index, values in edited_values.groupby(level=0):
             values.index = values.index.droplevel(0)
-            self._set(name, index, values['edited_value'].to_dict())
+            self._set(name,
+                      index,
+                      values['edited_value'].to_dict(),
+                      auto_commit=False)
+
+        self.db_accessor.commit()
 
         print("Edits for table '{}' saved successfully in the database..."
               .format(name))
@@ -190,7 +185,8 @@ class DatabaseConnectionWorker(WorkerBase):
         the parent indexes of the data related to data_name against the
         foreign constraints specified in FOREIGN_CONSTRAINTS.
         """
-        foreign_constraints = DATA_FOREIGN_CONSTRAINTS.get(data_name, [])
+        foreign_constraints = (
+            DATABASE_CONCEPTUAL_MODEL[data_name]['foreign_constraints'])
         for foreign_column, foreign_name in foreign_constraints:
             foreign_data = self._get(foreign_name)[0]
             isin_indexes = parent_indexes[
@@ -311,8 +307,8 @@ class DatabaseConnectionWorker(WorkerBase):
         Save and attach the given attachment to the specified
         sampling_feature_uuid in the database.
         """
-        if 'stored_attachments_info' in self._cache:
-            del self._cache['stored_attachments_info']
+        if 'attachments_info' in self._cache:
+            del self._cache['attachments_info']
         self.db_accessor.set_attachment(
             sampling_feature_uuid, attachment_type, filename)
 
@@ -321,8 +317,8 @@ class DatabaseConnectionWorker(WorkerBase):
         Delete from the database the attachment of the specified type that
         is currently attached to the specified sampling_feature_uuid.
         """
-        if 'stored_attachments_info' in self._cache:
-            del self._cache['stored_attachments_info']
+        if 'attachments_info' in self._cache:
+            del self._cache['attachments_info']
         self.db_accessor.del_attachment(
             sampling_feature_uuid, attachment_type)
 
@@ -664,13 +660,6 @@ class DatabaseConnectionManager(TaskManagerBase):
         self._confirm_before_saving_edits = bool(x)
 
     # ---- Public methods
-    def create_index(self, name):
-        """
-        Return a new index that can be used subsequently to add new item
-        to the data related to name in the database.
-        """
-        return self.worker()._create_index(name)
-
     def add(self, *args, callback=None, postpone_exec=False):
         """
         Add a new item to the data related to name in the database.
@@ -688,12 +677,13 @@ class DatabaseConnectionManager(TaskManagerBase):
         if not postpone_exec:
             self.run_tasks()
 
-    def delete(self, *args, callback=None, postpone_exec=False):
+    def delete(self, name: str, indexes: list, callback: Callable = None,
+               postpone_exec: bool = False):
         """
         Delete an item related to name from the database.
         """
-        self._data_changed.add(args[0])
-        self.add_task('delete', callback, *args)
+        self._data_changed.add(name)
+        self.add_task('delete', callback, name, indexes)
         if not postpone_exec:
             self.run_tasks()
 
@@ -854,7 +844,7 @@ class DatabaseConnectionManager(TaskManagerBase):
         Save and attach the given attachment to the specified
         sampling_feature_uuid in the database.
         """
-        self._data_changed.add('stored_attachments_info')
+        self._data_changed.add('attachments_info')
         self.add_task('set_attachment', callback,
                       sampling_feature_uuid, attachment_type, filename)
         if not postpone_exec:
@@ -866,7 +856,7 @@ class DatabaseConnectionManager(TaskManagerBase):
         Delete from the database the attachment of the specified type that
         is currently attached to the specified sampling_feature_uuid.
         """
-        self._data_changed.add('stored_attachments_info')
+        self._data_changed.add('attachments_info')
         self.add_task(
             'del_attachment', callback,
             sampling_feature_uuid, attachment_type)

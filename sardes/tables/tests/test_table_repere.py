@@ -61,14 +61,14 @@ def test_add_repere_data(tablewidget, dbaccessor, qtbot, mocker):
     """
     tablemodel = tablewidget.model()
     assert tablewidget.visible_row_count() == 5
-    assert len(dbaccessor.get_repere_data()) == 5
+    assert len(dbaccessor.get('repere_data')) == 5
 
     # We add a new row and assert that the UI state is as expected.
     tablewidget.new_row_action.trigger()
     assert tablewidget.visible_row_count() == 6
     assert tablemodel.data_edit_count() == 1
     assert tablewidget.get_data_for_row(5) == [''] * 8
-    assert len(dbaccessor.get_repere_data()) == 5
+    assert len(dbaccessor.get('repere_data')) == 5
     assert tablemodel.is_new_row_at(tablewidget.current_index())
 
     # We need to patch the message box that warns the user when
@@ -81,7 +81,7 @@ def test_add_repere_data(tablewidget, dbaccessor, qtbot, mocker):
     tablewidget.save_edits_action.trigger()
     assert qmsgbox_patcher.call_count == 1
     assert tablewidget.visible_row_count() == 6
-    assert len(dbaccessor.get_repere_data()) == 5
+    assert len(dbaccessor.get('repere_data')) == 5
 
     # Enter a non null value for the fields 'sampling_feature_uuid',
     # 'top_casing_alt', 'casing_length', 'start_date' and 'is_alt_geodesic'.
@@ -106,7 +106,7 @@ def test_add_repere_data(tablewidget, dbaccessor, qtbot, mocker):
     assert qmsgbox_patcher.call_count == 1
     assert tablemodel.data_edit_count() == 0
 
-    repere_data = dbaccessor.get_repere_data()
+    repere_data = dbaccessor.get('repere_data')
     assert tablewidget.visible_row_count() == 6
     assert len(repere_data) == 6
     assert repere_data.iloc[5]['sampling_feature_uuid'] == UUID(
@@ -166,7 +166,7 @@ def test_edit_repere_data(tablewidget, qtbot, dbaccessor, obswells_data):
     with qtbot.waitSignal(tableview.model().sig_data_updated):
         tableview._save_data_edits(force=True)
 
-    saved_values = dbaccessor.get_repere_data().iloc[0].to_dict()
+    saved_values = dbaccessor.get('repere_data').iloc[0].to_dict()
     for key in edited_values.keys():
         assert saved_values[key] == edited_values[key]
 
@@ -204,7 +204,7 @@ def test_clear_repere_data(tablewidget, qtbot, dbaccessor):
     with qtbot.waitSignal(tableview.model().sig_data_updated):
         tableview._save_data_edits(force=True)
 
-    saved_values = dbaccessor.get_repere_data().iloc[0].to_dict()
+    saved_values = dbaccessor.get('repere_data').iloc[0].to_dict()
     for attr in clearable_attrs:
         assert pd.isnull(saved_values[attr])
 
@@ -214,7 +214,7 @@ def test_delete_repere_data(tablewidget, qtbot, dbaccessor):
     Test that deleting repere data is working as expected.
     """
     assert tablewidget.visible_row_count() == 5
-    assert len(dbaccessor.get_repere_data()) == 5
+    assert len(dbaccessor.get('repere_data')) == 5
 
     # Select and delete the first two rows of the table.
     tablewidget.set_current_index(0, 0)
@@ -225,13 +225,13 @@ def test_delete_repere_data(tablewidget, qtbot, dbaccessor):
     assert tablewidget.model().data_edit_count() == 1
 
     # Save the changes to the database.
-    repere_data = dbaccessor.get_repere_data()
+    repere_data = dbaccessor.get('repere_data')
     assert len(repere_data) == 5
 
     with qtbot.waitSignal(tablewidget.model().sig_data_updated):
         tablewidget.save_edits_action.trigger()
 
-    repere_data = dbaccessor.get_repere_data()
+    repere_data = dbaccessor.get('repere_data')
     assert len(repere_data) == 3
 
 

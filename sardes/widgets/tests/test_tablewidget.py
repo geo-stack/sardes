@@ -37,7 +37,8 @@ from sardes.widgets.tableviews import (
 from sardes.tables.delegates import (
     NotEditableDelegate, StringEditDelegate,
     IntEditDelegate, NumEditDelegate, BoolEditDelegate)
-from sardes.database.database_manager import DatabaseConnectionManager
+from sardes.database.database_manager import (
+    DatabaseConnectionManager, DATABASE_CONCEPTUAL_MODEL)
 from sardes.api.database_accessor import DatabaseAccessorBase
 from sardes.utils.data_operations import are_values_equal
 
@@ -53,6 +54,19 @@ VALUES = [['str1', True, 1.111, 3, 'not editable', None],
           ['str3', True, 3.333, 29, 'not editable', None]]
 DTYPES = ['str', 'boolean', 'float64', 'Int64', 'str', 'str']
 INDEXES = [uuid.uuid4() for i in range(len(VALUES))]
+
+
+# We need to extend the database conceptual model with our test table.
+DATABASE_CONCEPTUAL_MODEL.data['test_table_dataf_name'] = {
+    'foreign_constraints': (),
+    'unique_constraints': (),
+    'notnull_constraints': (),
+    'columns': {
+        COLUMNS[i]: {'dtype': DTYPES[i],
+                     'desc': ("Description for {}".format(COLUMNS[i]))}
+        for i in range(NCOL)
+    },
+}
 
 
 @pytest.fixture
@@ -81,23 +95,30 @@ def tablemodel(qtbot, TABLE_DATAF):
         def close_connection(self):
             self._connection = None
 
-        def _create_index(self, name):
-            return uuid.uuid4()
+        def commit(self):
+            # This accessor does not support journal logging.
+            pass
 
-        def get_test_table_dataf_name(self, *args, **kargs):
+        def _get_test_table_dataf_name(self, *args, **kargs):
             return TABLE_DATAF.copy()
 
-        def set_test_table_dataf_name(self, index, attribute_values):
+        def _set_test_table_dataf_name(self, index, attribute_values):
             for column, edited_value in attribute_values.items():
                 TABLE_DATAF.loc[index, column] = edited_value
 
-        def _del_test_table_dataf_name(self, index):
-            TABLE_DATAF.drop(index, axis='index', inplace=True)
+        def _del_test_table_dataf_name(self, indexes):
+            TABLE_DATAF.drop(indexes, axis='index', inplace=True)
 
-        def add_test_table_dataf_name(self, index, attribute_values):
-            for column in TABLE_DATAF.columns:
-                TABLE_DATAF.loc[index, column] = (
-                    attribute_values.get(column, None))
+        def _add_test_table_dataf_name(self, values, indexes=None):
+            n = len(values)
+
+            if indexes is None:
+                indexes = [uuid.uuid4() for i in range(n)]
+
+            for i in range(n):
+                for column in TABLE_DATAF.columns:
+                    TABLE_DATAF.loc[indexes[i], column] = (
+                        values[i].get(column, None))
 
     class SardesTableModelMock(StandardSardesTableModel):
         __tabletitle__ = 'Sardes Test Table'

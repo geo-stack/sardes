@@ -51,14 +51,17 @@ def dbaccessor(qtbot, mocker, DATAF):
         def is_connected(self):
             return self._connection is True
 
+        def commit(self):
+            pass
+
         def close_connection(self):
             self._connection = None
 
-        def get_something(self):
+        def _get_something(self):
             sleep(0.5)
             return DATAF.copy()
 
-        def set_something(self, index, value):
+        def _set_something(self, index, value):
             sleep(0.5)
             DATAF.loc[index, 'values'] = value
 

@@ -10,6 +10,7 @@
 """
 Object-Relational Mapping and Accessor implementation of the Sardes database.
 """
+from __future__ import annotations
 
 # ---- Standard imports
 import os.path as osp
@@ -439,6 +440,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Session = sessionmaker(bind=self._engine)
         self._session = Session()
 
+    def commit(self):
+        self._session.commit()
+
     def version(self):
         """Return the current version of the database."""
         return self.execute("PRAGMA user_version").first()[0]
@@ -454,22 +458,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         except ProgrammingError as p:
             print(p)
             raise p
-
-    def _create_index(self, name):
-        """
-        Return a new index that can be used subsequently to add a new item
-        related to name in the database.
-        """
-        if name == 'sonde_models_lib':
-            try:
-                max_commited_id = (
-                    self._session.query(func.max(SondeModel.sonde_model_id))
-                    .one())[0]
-            except TypeError:
-                max_commited_id = 0
-            return max(self.temp_indexes(name) + [max_commited_id]) + 1
-        else:
-            return uuid.uuid4()
 
     # ---- Database setup
     def init_database(self):
@@ -571,150 +559,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._engine.dispose()
         self._connection = None
 
-    # ---- Locations
-    def _get_location(self, loc_id):
-        """
-        Return the sqlalchemy Location object corresponding to the
-        specified location ID.
-        """
-        return (self._session.query(Location)
-                .filter(Location.loc_id == loc_id)
-                .one())
-
-    # ---- Observation Wells
-    def _get_sampling_feature(self, sampling_feature_uuid):
-        """
-        Return the sqlalchemy ObservationWell object corresponding to the
-        specified sampling feature UUID.
-        """
-        return (
-            self._session.query(SamplingFeature)
-            .filter(SamplingFeature.sampling_feature_uuid ==
-                    sampling_feature_uuid)
-            .one())
-
-    def _get_sampling_feature_uuid_from_name(self, sampling_feature_name):
-        """
-        Return the sampling feature UUID corresponding to the given
-        sampling feature name.
-        """
-        return (
-            self._session.query(SamplingFeature.sampling_feature_uuid)
-            .filter(SamplingFeature.sampling_feature_name ==
-                    sampling_feature_name)
-            .one()
-            .sampling_feature_uuid)
-
-    def _refresh_sampling_feature_data_overview(
-            self, sampling_feature_uuid=None, auto_commit=True):
-        """
-        Refresh the content of the table where the overview of the
-        sampling feature monitoring data is cached.
-
-        If a sampling_feature_uuid is provided, only the overview of that
-        sampling feature is updated, else the content of the whole table
-        is updated.
-        """
-        if sampling_feature_uuid is None:
-            # We delete and update the content of the whole table.
-            print("Updating sampling feature data overview...")
-            self._session.query(SamplingFeatureDataOverview).delete()
-
-            sampling_feature_uuids = [
-                item[0] for item in
-                self._session.query(SamplingFeature.sampling_feature_uuid)]
-            for sampling_feature_uuid in sampling_feature_uuids:
-                self._refresh_sampling_feature_data_overview(
-                    sampling_feature_uuid, auto_commit=False)
-            self._session.commit()
-            print("Successfuly updated sampling feature data overview.")
-        else:
-            # We update the data overview only for the specified
-            # sampling feature.
-            select_query = (
-                self._session.query(Observation.sampling_feature_uuid
-                                    .label('sampling_feature_uuid'),
-                                    func.max(TimeSeriesData.datetime)
-                                    .label('last_date'),
-                                    func.min(TimeSeriesData.datetime)
-                                    .label('first_date'),
-                                    func.avg(TimeSeriesData.value)
-                                    .label('mean_water_level'))
-                .filter(Observation.observation_id ==
-                        TimeSeriesChannel.observation_id)
-                .filter(TimeSeriesData.channel_id ==
-                        TimeSeriesChannel.channel_id)
-                .filter(TimeSeriesChannel.obs_property_id == 2)
-                .filter(Observation.sampling_feature_uuid ==
-                        sampling_feature_uuid)
-                .one()
-                )
-
-            try:
-                data_overview = (
-                    self._session.query(SamplingFeatureDataOverview)
-                    .filter(SamplingFeatureDataOverview
-                            .sampling_feature_uuid ==
-                            sampling_feature_uuid)
-                    .one())
-            except NoResultFound:
-                if select_query[0] is None:
-                    # This means either that this sampling feature doesn't
-                    # exist or that there is no monitoring data associated with
-                    # it. Therefore, there is no need to add anything to the
-                    # data overview table.
-                    return
-                else:
-                    data_overview = SamplingFeatureDataOverview(
-                        sampling_feature_uuid=sampling_feature_uuid)
-                    self._session.add(data_overview)
-
-            if select_query[0] is None:
-                # This means either that this sampling feature doesn't
-                # exist or that there is no monitoring data associated with
-                # it anymore. Therefore, we need to remove the corresponding
-                # entry from the data overview table.
-                self._session.delete(data_overview)
-            else:
-                data_overview.last_date = select_query[1]
-                data_overview.first_date = select_query[2]
-                data_overview.mean_water_level = select_query[3]
-
-            if auto_commit:
-                self._session.commit()
-
-    def add_observation_wells_data(self, obswell_id, attribute_values):
-        """
-        Add a new observation well to the database using the provided
-        obswell_id and attribute values.
-        """
-        # We need first to create a new location in table rsesq.localisation.
-        new_location = Location()
-        self._session.add(new_location)
-        self._session.commit()
-
-        # We then add the new observation well.
-        new_obs_well = SamplingFeature(
-            sampling_feature_uuid=obswell_id,
-            sampling_feature_type_id=1,
-            loc_id=new_location.loc_id)
-        self._session.add(new_obs_well)
-
-        # We then create a new metadata object for the new observation well.
-        new_obs_well._metadata = SamplingFeatureMetadata(
-            sampling_feature_uuid=obswell_id)
-
-        # We then set the attribute values provided in argument for this
-        # new observation well if any.
-        self.set_observation_wells_data(
-            obswell_id, attribute_values, auto_commit=False)
-        self._session.commit()
-
-    def get_observation_wells_data(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to the observation wells that are saved in the database.
-        """
+    # ---- Observation Wells Interface
+    def _get_observation_wells_data(self):
         query = (
             self._session.query(
                 SamplingFeature.sampling_feature_uuid,
@@ -744,14 +590,40 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return obs_wells
 
-    def set_observation_wells_data(self, sampling_feature_uuid,
-                                   attribute_values, auto_commit=True):
-        """
-        Save in the database the new attribute value for the observation well
-        corresponding to the specified sampling feature UUID.
-        """
-        obs_well = self._get_sampling_feature(sampling_feature_uuid)
-        for attr_name, attr_value in attribute_values.items():
+    def _add_observation_wells_data(self, values, indexes=None):
+        n = len(values)
+
+        # Generate new indexes if needed.
+        if indexes is None:
+            indexes = [uuid.uuid4() for i in range(n)]
+
+        # Add a location for each new observation well to be added
+        # to the database.
+        new_locations = [Location() for i in range(n)]
+        self._session.add_all(new_locations)
+        self._session.flush()
+
+        # Add the new observation wells to the database.
+        new_obs_wells = [
+            SamplingFeature(
+                sampling_feature_uuid=index,
+                sampling_feature_type_id=1,
+                loc_id=location.loc_id,
+                _metadata=SamplingFeatureMetadata(sampling_feature_uuid=index)
+                ) for index, location in zip(indexes, new_locations)
+            ]
+        self._session.add_all(new_obs_wells)
+        self._session.flush()
+
+        # Set the attribute values of the new observation wells.
+        for i in range(n):
+            self._set_observation_wells_data(indexes[i], values[i])
+
+        return indexes
+
+    def _set_observation_wells_data(self, index, values):
+        obs_well = self._get_sampling_feature(index)
+        for attr_name, attr_value in values.items():
             if attr_name == 'obs_well_id':
                 setattr(obs_well, 'sampling_feature_name', attr_value)
             elif attr_name == 'obs_well_notes':
@@ -765,18 +637,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 location = self._get_location(obs_well.loc_id)
                 setattr(location, attr_name, attr_value)
 
-        # Commit changes to the BD.
-        if auto_commit:
-            self._session.commit()
-
     def _del_observation_wells_data(self, obswell_ids):
-        """
-        Delete the observation wells corresponding to the specified ids.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete` provided by `DatabaseAccessorBase`.
-        """
         # Check for foreign key violation.
         for table in [Observation, Process, Repere]:
             foreign_items_count = (
@@ -812,141 +673,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             Location.__table__.delete().where(
                 Location.loc_id.in_(loc_ids))
             )
+        self._session.flush()
 
-        self._session.commit()
-
-    def get_observation_wells_data_overview(self):
-        """
-        Return a :class:`pandas.DataFrame` containing an overview of
-        the water level data that are available for each observation well
-        of the monitoring network.
-        """
-        # Fetch data from the materialized view.
-        query = self._session.query(SamplingFeatureDataOverview)
-        data = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True,
-            index_col='sampling_feature_uuid')
-
-        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
-        # directly in 'read_sql_query' with the new 'dtype' argument.
-
-        # Make sure first_date and last_date are considered as
-        # datetime and strip the hour portion from it.
-        data['first_date'] = pd.to_datetime(data['first_date']).dt.date
-        data['last_date'] = pd.to_datetime(data['last_date']).dt.date
-
-        # Round mean value.
-        data['mean_water_level'] = data['mean_water_level'].round(decimals=3)
-        return data
-
-    # ---- Attachments
-    def get_stored_attachments_info(self):
-        """
-        Return a pandas dataframe containing a list of sampling_feature_uuid
-        and attachment_type for which a file is attached in the database.
-        """
-        query = (
-            self._session.query(
-                SamplingFeatureAttachment.sampling_feature_uuid,
-                SamplingFeatureAttachment.attachment_type)
-            )
-        result = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
-        return result
-
-    def get_attachment(self, sampling_feature_uuid, attachment_type):
-        """
-        Return the data of the file of the specified type that is
-        attached to the specified station.
-        """
-        try:
-            attachment = (
-                self._session.query(SamplingFeatureAttachment)
-                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
-                        sampling_feature_uuid)
-                .filter(SamplingFeatureAttachment.attachment_type ==
-                        attachment_type)
-                .one())
-        except NoResultFound:
-            return (None, None)
-        else:
-            return (attachment.attachment_data, attachment.attachment_fname)
-
-    def set_attachment(self, sampling_feature_uuid, attachment_type,
-                       filename):
-        """
-        Attach the data of a file to the specified sampling_feature_uuid.
-        """
-        try:
-            # We first check if a file of this type is already attached to
-            # the monitoring station.
-            attachment = (
-                self._session.query(SamplingFeatureAttachment)
-                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
-                        sampling_feature_uuid)
-                .filter(SamplingFeatureAttachment.attachment_type ==
-                        attachment_type)
-                .one())
-        except NoResultFound:
-            # This means we need to add a new attachment to save the file.
-            attachment = SamplingFeatureAttachment(
-                attachment_type=attachment_type,
-                sampling_feature_uuid=sampling_feature_uuid)
-            self._session.add(attachment)
-
-        if osp.exists(filename):
-            with open(filename, 'rb') as f:
-                attachment.attachment_data = memoryview(f.read())
-        attachment.attachment_fname = osp.basename(filename)
-        self._session.commit()
-
-    def del_attachment(self, sampling_feature_uuid, attachment_type):
-        """
-        Delete the data of the file of the specified type that is attached
-        to the specified sampling_feature_uuid.
-        """
-        try:
-            attachment = (
-                self._session.query(SamplingFeatureAttachment)
-                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
-                        sampling_feature_uuid)
-                .filter(SamplingFeatureAttachment.attachment_type ==
-                        attachment_type)
-                .one())
-        except NoResultFound:
-            # This means there is currently no file of this type attached to
-            # the specified sampling_feature_uuid.
-            pass
-        else:
-            self._session.delete(attachment)
-            self._session.commit()
-
-    # ---- Repere
-    def _get_repere_data(self, repere_id):
-        """
-        Return the sqlalchemy Repere object corresponding to the
-        given repere ID.
-        """
-        return (
-            self._session.query(Repere)
-            .filter(Repere.repere_uuid == repere_id)
-            .one())
-
-    def add_repere_data(self, repere_id, attribute_values):
-        """
-        Add a new observation well repere data to the database using the
-        provided repere ID and attribute values.
-        """
-        # We create a new repere item.
-        repere = Repere(repere_uuid=repere_id)
-        self._session.add(repere)
-        self.set_repere_data(repere_id, attribute_values)
-
-    def get_repere_data(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to observation wells repere data.
-        """
+    # ---- Repere Data Interface
+    def _get_repere_data(self):
         query = self._session.query(Repere)
         repere = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True,
@@ -964,41 +694,45 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return repere
 
-    def set_repere_data(self, repere_id, attribute_values, auto_commit=True):
-        """
-        Save in the database the new attribute values for the repere data
-        corresponding to the specified repere_id.
-        """
-        repere = self._get_repere_data(repere_id)
-        for attr_name, attr_value in attribute_values.items():
+    def _add_repere_data(self, values, indexes=None):
+        n = len(values)
+
+        # Generate new indexes if needed.
+        if indexes is None:
+            indexes = [uuid.uuid4() for i in range(n)]
+
+        self._session.add_all([
+            Repere(repere_uuid=index) for index in indexes
+            ])
+        self._session.flush()
+
+        # Set the attribute values of the new repere data.
+        for i in range(n):
+            self._set_repere_data(indexes[i], values[i])
+
+        return indexes
+
+    def _set_repere_data(self, index, values):
+        repere = (
+            self._session.query(Repere)
+            .filter(Repere.repere_uuid == index)
+            .one())
+
+        for attr_name, attr_value in values.items():
             if attr_name in ['start_date', 'end_date']:
                 # We need to make sure pandas NaT are replaced by None
                 # to avoid errors in sqlalchemy.
                 attr_value = None if pd.isnull(attr_value) else attr_value
             setattr(repere, attr_name, attr_value)
-        if auto_commit:
-            self._session.commit()
 
     def _del_repere_data(self, repere_ids):
-        """
-        Delete the repere data corresponding to the specified repere ids.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete` provided by `DatabaseAccessorBase`.
-        """
-        # Delete the Repere items from the database.
         self._session.execute(
             Repere.__table__.delete().where(
                 Repere.repere_uuid.in_(repere_ids)))
-        self._session.commit()
+        self._session.flush()
 
-    # ---- Sondes Models
-    def get_sonde_models_lib(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to sonde brands and models.
-        """
+    # ---- Sondes Models Interface
+    def _get_sonde_models_lib(self):
         query = self._session.query(SondeModel)
         sonde_models = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True,
@@ -1013,39 +747,37 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return sonde_models
 
-    def set_sonde_models_lib(self, sonde_model_id, attribute_values,
-                             auto_commit=True):
-        """
-        Save in the database the new attribute value for the sonde model
-        corresponding to the specified sonde_model_id.
-        """
+    def _set_sonde_models_lib(self, index, values):
         sonde = (self._session.query(SondeModel)
-                 .filter(SondeModel.sonde_model_id == sonde_model_id)
+                 .filter(SondeModel.sonde_model_id == index)
                  .one())
-        for attr_name, attr_value in attribute_values.items():
+        for attr_name, attr_value in values.items():
             setattr(sonde, attr_name, attr_value)
-        if auto_commit:
-            self._session.commit()
 
-    def add_sonde_models_lib(self, sonde_model_id, attribute_values):
-        """
-        Add a new sonde model to the database using the provided
-        sonde_model_id and attribute_values.
-        """
-        self._session.add(SondeModel(
-            sonde_model_id=sonde_model_id,
-            **attribute_values
-            ))
-        self._session.commit()
+    def _add_sonde_models_lib(self, values, indexes=None):
+        n = len(values)
+
+        # Generate new indexes if needed.
+        if indexes is None:
+            try:
+                max_commited_id = (
+                    self._session.query(func.max(SondeModel.sonde_model_id))
+                    .one())[0]
+            except TypeError:
+                max_commited_id = 0
+            indexes = [i + max_commited_id + 1 for i in range(n)]
+
+        self._session.add_all([
+            SondeModel(
+                sonde_model_id=indexes[i],
+                **values[i]
+                ) for i in range(n)
+            ])
+        self._session.flush()
+
+        return indexes
 
     def _del_sonde_models_lib(self, sonde_model_ids):
-        """
-        Delete the sonde model corresponding to the specified sonde_model_ids.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete` provided by `DatabaseAccessorBase`.
-        """
         # Check for foreign key violation.
         foreign_sonde_features_count = (
             self._session.query(SondeFeature)
@@ -1063,40 +795,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.execute(
             SondeModel.__table__.delete().where(
                 SondeModel.sonde_model_id.in_(sonde_model_ids)))
-        self._session.commit()
+        self._session.flush()
 
-    # ---- Sondes Inventory
-    def _get_sonde(self, sonde_uuid):
-        """
-        Return the sqlalchemy Sondes object corresponding to the
-        specified sonde ID.
-        """
-        return (self._session.query(SondeFeature)
-                .filter(SondeFeature.sonde_uuid == sonde_uuid)
-                .one())
-
-    def add_sondes_data(self, sonde_uuid, attribute_values):
-        """
-        Add a new sonde to the database using the provided sonde UUID
-        and attribute values.
-        """
-        # Make sure pandas NaT are replaced by None for datetime fields
-        # to avoid errors in sqlalchemy.
-        for field in ['date_reception', 'date_withdrawal']:
-            if pd.isnull(attribute_values.get(field, None)):
-                attribute_values[field] = None
-
-        self._session.add(SondeFeature(
-            sonde_uuid=sonde_uuid,
-            **attribute_values
-            ))
-        self._session.commit()
-
-    def get_sondes_data(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the information related
-        to the sondes used to monitor groundwater properties in the wells.
-        """
+    # ---- Sondes Inventory Interface
+    def _get_sondes_data(self):
         query = self._session.query(SondeFeature)
         sondes = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True,
@@ -1117,30 +819,46 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return sondes
 
-    def set_sondes_data(self, sonde_uuid, attribute_values, auto_commit=True):
-        """
-        Save in the database the new attribute value for the sonde
-        corresponding to the specified sonde_id.
-        """
-        sonde = self._get_sonde(sonde_uuid)
-        for attr_name, attr_value in attribute_values.items():
+    def _add_sondes_data(self, values, indexes=None):
+        n = len(values)
+
+        # Generate new indexes if needed.
+        if indexes is None:
+            indexes = [uuid.uuid4() for i in range(n)]
+
+        # Make sure pandas NaT are replaced by None for datetime fields
+        # to avoid errors in sqlalchemy.
+        for i in range(n):
+            if pd.isnull(values[i].get('date_reception', True)):
+                values[i]['date_reception'] = None
+            if pd.isnull(values[i].get('date_withdrawal', True)):
+                values[i]['date_withdrawal'] = None
+
+        self._session.add_all([
+            SondeFeature(
+                sonde_uuid=indexes[i],
+                **values[i]
+                ) for i in range(n)
+            ])
+        self._session.flush()
+
+        return indexes
+
+    def _set_sondes_data(self, index, values):
+        sonde = (
+            self._session.query(SondeFeature)
+            .filter(SondeFeature.sonde_uuid == index)
+            .one())
+
+        for attr_name, attr_value in values.items():
             # Make sure pandas NaT are replaced by None for datetime fields
             # to avoid errors in sqlalchemy.
             if attr_name in ['date_reception', 'date_withdrawal']:
                 attr_value = None if pd.isnull(attr_value) else attr_value
 
             setattr(sonde, attr_name, attr_value)
-        if auto_commit:
-            self._session.commit()
 
     def _del_sondes_data(self, sonde_ids):
-        """
-        Delete the sonde data corresponding to the specified ids.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete` provided by `DatabaseAccessorBase`.
-        """
         # Check for foreign key violation.
         foreign_sonde_installation = (
             self._session.query(SondeInstallation)
@@ -1157,52 +875,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.execute(
             SondeFeature.__table__.delete().where(
                 SondeFeature.sonde_uuid.in_(sonde_ids)))
-        self._session.commit()
+        self._session.flush()
 
-    # ---- Sonde installations
-    def _get_sonde_installation(self, install_uuid):
-        """
-        Return the sqlalchemy SondeInstallation object corresponding to the
-        specified sonde ID.
-        """
-        return (
-            self._session.query(SondeInstallation)
-            .filter(SondeInstallation.install_uuid == install_uuid)
-            .one())
-
-    def add_sonde_installations(self, new_install_uuid, attribute_values):
-        """
-        Add a new sonde installation to the database using the provided ID
-        and attribute values.
-        """
-        # Make sure pandas NaT are replaced by None for datetime fields
-        # to avoid errors in sqlalchemy.
-        for field in ['start_date', 'end_date']:
-            if pd.isnull(attribute_values.get(field, None)):
-                attribute_values[field] = None
-
-        # We first create new items in the tables process.
-        new_process = Process(process_type='sonde installation')
-        self._session.add(new_process)
-        self._session.commit()
-
-        # We then create a new sonde installation.
-        sonde_installation = SondeInstallation(
-            install_uuid=new_install_uuid,
-            process_id=new_process.process_id
-            )
-        self._session.add(sonde_installation)
-
-        # We then set the attribute valuesfor this new sonde installation.
-        self.set_sonde_installations(
-            new_install_uuid, attribute_values, auto_commit=True)
-
-    def get_sonde_installations(self):
-        """
-        Return a :class:`pandas.DataFrame` containing information related to
-        sonde installations made in the observation wells of the monitoring
-        network.
-        """
+    # ---- Sonde Installations Interface
+    def _get_sonde_installations(self):
         query = (
             self._session.query(SondeInstallation,
                                 Process.sampling_feature_uuid)
@@ -1221,14 +897,47 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return data
 
-    def set_sonde_installations(self, install_uuid, attribute_values,
-                                auto_commit=True):
-        """
-        Save in the database the new attribute values for the sonde
-        installation corresponding to the specified installation_id.
-        """
-        sonde_installation = self._get_sonde_installation(install_uuid)
-        for attr_name, attr_value in attribute_values.items():
+    def _add_sonde_installations(self, values, indexes=None):
+        n = len(values)
+
+        # Generate new indexes if needed.
+        if indexes is None:
+            indexes = [uuid.uuid4() for i in range(n)]
+
+        # Make sure pandas NaT are replaced by None for datetime fields
+        # to avoid errors in sqlalchemy.
+        for i in range(n):
+            if pd.isnull(values[i].get('start_date', True)):
+                values[i]['start_date'] = None
+            if pd.isnull(values[i].get('end_date', True)):
+                values[i]['end_date'] = None
+
+        # Add new items to the tables process.
+        new_processes = [
+            Process(process_type='sonde installation') for i in range(n)]
+        self._session.add_all(new_processes)
+        self._session.flush()
+
+        # Add the new sonde installations.
+        self._session.add_all([
+            SondeInstallation(
+                install_uuid=indexes[i],
+                process_id=new_processes[i].process_id
+                ) for i in range(n)
+            ])
+        self._session.flush()
+
+        # We then set the attribute valuesfor this new sonde installation.
+        for i in range(n):
+            self._set_sonde_installations(indexes[i], values[i])
+
+    def _set_sonde_installations(self, index, values):
+        sonde_installation = (
+            self._session.query(SondeInstallation)
+            .filter(SondeInstallation.install_uuid == index)
+            .one())
+
+        for attr_name, attr_value in values.items():
             # Make sure pandas NaT are replaced by None for datetime fields
             # to avoid errors in sqlalchemy.
             if attr_name in ['start_date', 'end_date']:
@@ -1240,18 +949,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             else:
                 setattr(sonde_installation, attr_name, attr_value)
 
-        # Commit changes to the BD.
-        if auto_commit:
-            self._session.commit()
-
     def _del_sonde_installations(self, install_ids):
-        """
-        Delete the sonde installations corresponding to the specified ids.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete` provided by `DatabaseAccessorBase`.
-        """
         # We need to update the "observations" and "process" tables to remove
         # any reference to the sonde installations that are going to be
         # removed from the database.
@@ -1275,52 +973,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.execute(
             SondeInstallation.__table__.delete().where(
                 SondeInstallation.install_uuid.in_(install_ids)))
-        self._session.commit()
+        self._session.flush()
 
-    # ---- Manual mesurements
-    def _get_generic_num_value(self, gen_num_value_uuid):
-        """
-        Return the sqlalchemy GenericNumericalData object corresponding
-        to the given ID.
-        """
-        return (
-            self._session.query(GenericNumericalData)
-            .filter(GenericNumericalData.gen_num_value_uuid ==
-                    gen_num_value_uuid)
-            .one())
-
-    def add_manual_measurements(self, gen_num_value_uuid, attribute_values):
-        """
-        Add a new manual measurements to the database using the provided ID
-        and attribute values.
-        """
-        # We need first to create a new observation in table observation.
-        new_observation = Observation(
-            obs_datetime=attribute_values.get('datetime', None),
-            sampling_feature_uuid=attribute_values.get(
-                'sampling_feature_uuid', None),
-            obs_type_id=4
-            )
-        self._session.add(new_observation)
-        self._session.commit()
-
-        # We now create a new measurement in table 'generic_numerial_data'.
-        measurement = GenericNumericalData(
-            gen_num_value_uuid=gen_num_value_uuid,
-            gen_num_value=attribute_values.get('value', None),
-            observation_id=new_observation.observation_id,
-            obs_property_id=2,
-            gen_num_value_notes=attribute_values.get('notes', None)
-            )
-        self._session.add(measurement)
-        self._session.commit()
-
-    def get_manual_measurements(self):
-        """
-        Return a :class:`pandas.DataFrame` containing the water level manual
-        measurements made in the observation wells for the entire monitoring
-        network.
-        """
+    # ---- Manual mesurements Interface
+    def _get_manual_measurements(self):
         query = (
             self._session.query(
                 GenericNumericalData.gen_num_value.label('value'),
@@ -1348,13 +1004,39 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return measurements
 
-    def set_manual_measurements(self, gen_num_value_uuid, attribute_values):
-        """
-        Save in the database the new attribute value for the manual
-        measurement corresponding to the specified id.
-        """
-        measurement = self._get_generic_num_value(gen_num_value_uuid)
-        for attr_name, attr_value in attribute_values.items():
+    def _add_manual_measurements(self, values, indexes=None):
+        n = len(values)
+
+        # Generate new indexes if needed.
+        if indexes is None:
+            indexes = [uuid.uuid4() for i in range(n)]
+
+        # Add new observations in table observation.
+        new_observations = [
+            Observation(
+                obs_datetime=values[i].get('datetime', None),
+                sampling_feature_uuid=values[i].get(
+                    'sampling_feature_uuid', None),
+                obs_type_id=4) for i in range(n)
+            ]
+        self._session.add_all(new_observations)
+        self._session.flush()
+
+        # Add the new measurements in table 'generic_numerial_data'.
+        self._session.add_all([
+            GenericNumericalData(
+                gen_num_value_uuid=indexes[i],
+                gen_num_value=values[i].get('value', None),
+                observation_id=new_observations[i].observation_id,
+                obs_property_id=2,
+                gen_num_value_notes=values[i].get('notes', None)
+                ) for i in range(n)
+            ])
+        self._session.flush()
+
+    def _set_manual_measurements(self, index, values):
+        measurement = self._get_generic_num_value(index)
+        for attr_name, attr_value in values.items():
             if attr_name == 'sampling_feature_uuid':
                 observation = self._get_observation(measurement.observation_id)
                 observation.sampling_feature_uuid = attr_value
@@ -1369,25 +1051,35 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 measurement.gen_num_value = float(attr_value)
             elif attr_name == 'notes':
                 measurement.gen_num_value_notes = attr_value
-        self._session.commit()
 
     def _del_manual_measurements(self, gen_num_value_uuids):
-        """
-        Delete the manual measurements corresponding to the specified
-        gen_num_value_uuids.
-
-        Note:
-            This method should not be called directly. Please use instead the
-            public method `delete` provided by `DatabaseAccessorBase`.
-        """
         for gen_num_value_uuid in gen_num_value_uuids:
             measurement = self._get_generic_num_value(gen_num_value_uuid)
             observation = self._get_observation(measurement.observation_id)
             self._session.delete(observation)
             self._session.delete(measurement)
-        self._session.commit()
+        self._session.flush()
 
-    # ---- Timeseries
+    # ---- Timeseries  Interface
+    def _get_observation_wells_data_overview(self):
+        # Fetch data from the materialized view.
+        query = self._session.query(SamplingFeatureDataOverview)
+        data = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True,
+            index_col='sampling_feature_uuid')
+
+        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
+        # directly in 'read_sql_query' with the new 'dtype' argument.
+
+        # Make sure first_date and last_date are considered as
+        # datetime and strip the hour portion from it.
+        data['first_date'] = pd.to_datetime(data['first_date']).dt.date
+        data['last_date'] = pd.to_datetime(data['last_date']).dt.date
+
+        # Round mean value.
+        data['mean_water_level'] = data['mean_water_level'].round(decimals=3)
+        return data
+
     def _get_timeseriesdata(self, date_time, obs_id, data_type):
         """
         Return the sqlalchemy TimeSeriesData object corresponding to a
@@ -1725,7 +1417,195 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 sampling_feature_uuid, auto_commit=False)
         self._session.commit()
 
-    # ---- Process
+    # ---- Attachments Interface
+    def _get_attachments_info(self):
+        query = (
+            self._session.query(
+                SamplingFeatureAttachment.sampling_feature_uuid,
+                SamplingFeatureAttachment.attachment_type)
+            )
+        result = pd.read_sql_query(
+            query.statement, query.session.bind, coerce_float=True)
+        return result
+
+    def get_attachment(self, sampling_feature_uuid, attachment_type):
+        try:
+            attachment = (
+                self._session.query(SamplingFeatureAttachment)
+                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .filter(SamplingFeatureAttachment.attachment_type ==
+                        attachment_type)
+                .one())
+        except NoResultFound:
+            return (None, None)
+        else:
+            return (attachment.attachment_data, attachment.attachment_fname)
+
+    def set_attachment(self, sampling_feature_uuid, attachment_type,
+                       filename):
+        try:
+            # We first check if a file of this type is already attached to
+            # the monitoring station.
+            attachment = (
+                self._session.query(SamplingFeatureAttachment)
+                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .filter(SamplingFeatureAttachment.attachment_type ==
+                        attachment_type)
+                .one())
+        except NoResultFound:
+            # This means we need to add a new attachment to save the file.
+            attachment = SamplingFeatureAttachment(
+                attachment_type=attachment_type,
+                sampling_feature_uuid=sampling_feature_uuid)
+            self._session.add(attachment)
+
+        if osp.exists(filename):
+            with open(filename, 'rb') as f:
+                attachment.attachment_data = memoryview(f.read())
+        attachment.attachment_fname = osp.basename(filename)
+        self._session.commit()
+
+    def del_attachment(self, sampling_feature_uuid, attachment_type):
+        try:
+            attachment = (
+                self._session.query(SamplingFeatureAttachment)
+                .filter(SamplingFeatureAttachment.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .filter(SamplingFeatureAttachment.attachment_type ==
+                        attachment_type)
+                .one())
+        except NoResultFound:
+            # This means there is currently no file of this type attached to
+            # the specified sampling_feature_uuid.
+            pass
+        else:
+            self._session.delete(attachment)
+            self._session.commit()
+
+    # ---- Private methods
+    def _refresh_sampling_feature_data_overview(
+            self, sampling_feature_uuid=None, auto_commit=True):
+        """
+        Refresh the content of the table where the overview of the
+        sampling feature monitoring data is cached.
+
+        If a sampling_feature_uuid is provided, only the overview of that
+        sampling feature is updated, else the content of the whole table
+        is updated.
+        """
+        if sampling_feature_uuid is None:
+            # We delete and update the content of the whole table.
+            print("Updating sampling feature data overview...")
+            self._session.query(SamplingFeatureDataOverview).delete()
+
+            sampling_feature_uuids = [
+                item[0] for item in
+                self._session.query(SamplingFeature.sampling_feature_uuid)]
+            for sampling_feature_uuid in sampling_feature_uuids:
+                self._refresh_sampling_feature_data_overview(
+                    sampling_feature_uuid, auto_commit=False)
+            self._session.commit()
+            print("Successfuly updated sampling feature data overview.")
+        else:
+            # We update the data overview only for the specified
+            # sampling feature.
+            select_query = (
+                self._session.query(Observation.sampling_feature_uuid
+                                    .label('sampling_feature_uuid'),
+                                    func.max(TimeSeriesData.datetime)
+                                    .label('last_date'),
+                                    func.min(TimeSeriesData.datetime)
+                                    .label('first_date'),
+                                    func.avg(TimeSeriesData.value)
+                                    .label('mean_water_level'))
+                .filter(Observation.observation_id ==
+                        TimeSeriesChannel.observation_id)
+                .filter(TimeSeriesData.channel_id ==
+                        TimeSeriesChannel.channel_id)
+                .filter(TimeSeriesChannel.obs_property_id == 2)
+                .filter(Observation.sampling_feature_uuid ==
+                        sampling_feature_uuid)
+                .one()
+                )
+
+            try:
+                data_overview = (
+                    self._session.query(SamplingFeatureDataOverview)
+                    .filter(SamplingFeatureDataOverview
+                            .sampling_feature_uuid ==
+                            sampling_feature_uuid)
+                    .one())
+            except NoResultFound:
+                if select_query[0] is None:
+                    # This means either that this sampling feature doesn't
+                    # exist or that there is no monitoring data associated with
+                    # it. Therefore, there is no need to add anything to the
+                    # data overview table.
+                    return
+                else:
+                    data_overview = SamplingFeatureDataOverview(
+                        sampling_feature_uuid=sampling_feature_uuid)
+                    self._session.add(data_overview)
+
+            if select_query[0] is None:
+                # This means either that this sampling feature doesn't
+                # exist or that there is no monitoring data associated with
+                # it anymore. Therefore, we need to remove the corresponding
+                # entry from the data overview table.
+                self._session.delete(data_overview)
+            else:
+                data_overview.last_date = select_query[1]
+                data_overview.first_date = select_query[2]
+                data_overview.mean_water_level = select_query[3]
+
+            if auto_commit:
+                self._session.commit()
+
+    def _get_generic_num_value(self, gen_num_value_uuid):
+        """
+        Return the sqlalchemy GenericNumericalData object corresponding
+        to the given ID.
+        """
+        return (
+            self._session.query(GenericNumericalData)
+            .filter(GenericNumericalData.gen_num_value_uuid ==
+                    gen_num_value_uuid)
+            .one())
+
+    def _get_sampling_feature(self, sampling_feature_uuid):
+        """
+        Return the sqlalchemy ObservationWell object corresponding to the
+        specified sampling feature UUID.
+        """
+        return (
+            self._session.query(SamplingFeature)
+            .filter(SamplingFeature.sampling_feature_uuid ==
+                    sampling_feature_uuid)
+            .one())
+
+    def _get_sampling_feature_uuid_from_name(self, sampling_feature_name):
+        """
+        Return the sampling feature UUID corresponding to the given
+        sampling feature name.
+        """
+        return (
+            self._session.query(SamplingFeature.sampling_feature_uuid)
+            .filter(SamplingFeature.sampling_feature_name ==
+                    sampling_feature_name)
+            .one()
+            .sampling_feature_uuid)
+
+    def _get_location(self, loc_id):
+        """
+        Return the sqlalchemy Location object corresponding to the
+        specified location ID.
+        """
+        return (self._session.query(Location)
+                .filter(Location.loc_id == loc_id)
+                .one())
+
     def _get_process_data(self):
         """
         Return a pandas dataframe containing the content of
@@ -1743,7 +1623,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 .filter(Process.process_id == process_id)
                 .one())
 
-    # ---- Observations
     def _get_observation_data(self):
         """
         Return a pandas dataframe containing the content of
@@ -1819,15 +1698,15 @@ if __name__ == "__main__":
     accessor.init_database()
     accessor.connect()
 
-    obs_wells = accessor.get_observation_wells_data()
-    sonde_data = accessor.get_sondes_data()
-    sonde_models_lib = accessor.get_sonde_models_lib()
-    sonde_installations = accessor.get_sonde_installations()
-    repere_data = accessor.get_repere_data()
+    obs_wells = accessor.get('observation_wells_data')
+    sonde_data = accessor.get('sondes_data')
+    sonde_models_lib = accessor.get('sonde_models_lib')
+    sonde_installations = accessor.get('sonde_installations')
+    repere_data = accessor.get('repere_data')
 
-    stored_attachments_info = accessor.get_stored_attachments_info()
+    attachments_info = accessor.get('attachments_info')
 
-    overview = accessor.get_observation_wells_data_overview()
+    overview = accessor.get('observation_wells_data_overview')
     from time import perf_counter
     t1 = perf_counter()
     sampling_feature_uuid = (
