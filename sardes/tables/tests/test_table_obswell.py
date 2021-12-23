@@ -16,6 +16,7 @@ import os
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
+from flaky import flaky
 import numpy as np
 import pandas as pd
 import pytest
@@ -336,6 +337,7 @@ def test_clear_observation_well(tablewidget, qtbot, dbaccessor, obswells_data):
         assert pd.isnull(saved_values[attr])
 
 
+@flaky(max_runs=3)
 def test_delete_observation_well(tablewidget, qtbot, dbaccessor, mocker,
                                  dbconnmanager):
     """
