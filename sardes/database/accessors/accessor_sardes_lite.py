@@ -1396,16 +1396,27 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     # This means there is no timeseries data saved for this
                     # type of data for this observation.
                     continue
+
+                # We need to format pandas datetime64 to strings in order to
+                # delete rows from the database with sqlite3 directly
+                # (without sqlalchemy).
                 date_times = (
                     sub_data[sub_data['data_type'] == data_type]
-                    ['datetime'].dt.to_pydatetime())
-                # TODO: improve by deleting chunks of data at a time.
+                    ['datetime'].dt.strftime(DATE_FORMAT))
+
+                conn = sqlite3.connect(self._database)
+                cur = conn.cursor()
+                sql_statement = (
+                    "DELETE FROM timeseries_data WHERE "
+                    "timeseries_data.datetime = :datetime_1 AND "
+                    "timeseries_data.channel_id = :channel_id_1")
                 for date_time in date_times:
-                    self._session.execute(
-                        TimeSeriesData.__table__.delete().where(and_(
-                            TimeSeriesData.datetime == date_time,
-                            TimeSeriesData.channel_id == channel_id)))
-                self._session.commit()
+                    cur.execute(
+                        sql_statement,
+                        {"datetime_1": date_time,
+                         "channel_id_1": channel_id})
+                conn.commit()
+                conn.close()
 
             # We delete the observation from database if it is empty.
             self._clean_observation_if_null(obs_id)
