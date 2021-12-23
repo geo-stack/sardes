@@ -99,7 +99,7 @@ def tablemodel(qtbot, TABLE_DATAF):
             # This accessor does not support journal logging.
             pass
 
-        def get_test_table_dataf_name(self, *args, **kargs):
+        def _get_test_table_dataf_name(self, *args, **kargs):
             return TABLE_DATAF.copy()
 
         def _set_test_table_dataf_name(self, index, attribute_values):
