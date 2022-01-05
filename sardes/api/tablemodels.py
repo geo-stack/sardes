@@ -140,10 +140,7 @@ class AddRows(TableEdit):
             len(self.parent.tabledata()) + len(self.values) - 1)
 
         if self._tabledataedit is None:
-            index = pd.Index(
-                [self.parent.create_new_row_index() for _ in self.values])
             self._tabledataedit = self.parent.tabledata().add_row(
-                index=index,
                 values=self.values)
         else:
             self.parent.tabledata().redo_edit()
@@ -652,17 +649,6 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         if model_index.isValid() and self.is_data_clearable_at(model_index):
             self.set_data_edit_at(model_index, None)
-
-    def create_new_row_index(self):
-        """
-        Return a new index that can be used to add a new item this
-        model's data table.
-        """
-        index = self.tabledata().index
-        if str(index.dtype) == 'object':
-            return uuid.uuid4()
-        elif str(index.dtype) == 'int64':
-            return index.max() + 1
 
     def add_new_row(self):
         """

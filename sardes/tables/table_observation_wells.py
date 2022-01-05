@@ -91,7 +91,7 @@ class ObsWellsTableModel(StandardSardesTableModel):
 
     __dataname__ = 'observation_wells_data'
     __libnames__ = ['observation_wells_data_overview',
-                    'stored_attachments_info']
+                    'attachments_info']
 
     def _check_foreign_constraint(self, callback):
         """

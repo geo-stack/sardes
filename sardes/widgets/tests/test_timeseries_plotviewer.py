@@ -151,7 +151,7 @@ def test_manual_measurements(tseriesviewer, qtbot, dbaccessor, obs_well_uuid):
     assert len(tseriesviewer.figure.base_axes.get_legend().legendHandles) == 2
 
     # Fetch the manual measurements for a given well from the database.
-    measurements = dbaccessor.get_manual_measurements()
+    measurements = dbaccessor.get('manual_measurements')
     measurements = measurements[
         measurements['sampling_feature_uuid'] == obs_well_uuid]
     assert len(measurements) == 3

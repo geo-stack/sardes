@@ -292,5 +292,84 @@ def test_edit_deleted_row(tabledata):
     assert tabledata.deleted_rows() == pd.Index([1])
 
 
+def test_undo_redo(tabledata):
+    """
+    Test that the undo and redo functionalities are working as expected.
+    """
+    # Add a new row.
+    new_row = {'col0': 'str4', 'col1': True, 'col2': 4.444,
+               'col3': 0, 'col4': 'note_4'}
+    tabledata.add_row(pd.Index(['new_row_index']), [new_row])
+
+    # Delete the second row.
+    tabledata.delete_row(pd.Index([1]))
+
+    # Edit a value on the first row.
+    tabledata.set(0, 0, 'edited_str1')
+
+    expected_values = [
+        ['edited_str1', True, 1.111, 3, None],
+        ['str2', False, 2.222, 1, None],
+        ['str3', True, 3.333, 29, None],
+        ['str4', True, 4.444, 0, 'note_4']
+        ]
+
+    assert tabledata.undo_count() == 3
+    assert tabledata.redo_count() == 0
+    assert tabledata.has_unsaved_edits() is True
+    assert tabledata._deleted_rows == pd.Index([1])
+    assert tabledata.data.values.tolist() == expected_values
+
+    # Undo everything.
+    tabledata.undo_edit()
+    tabledata.undo_edit()
+    tabledata.undo_edit()
+
+    expected_values = [
+        ['str1', True, 1.111, 3, None],
+        ['str2', False, 2.222, 1, None],
+        ['str3', True, 3.333, 29, None],
+        ]
+
+    assert tabledata.undo_count() == 0
+    assert tabledata.redo_count() == 3
+    assert tabledata.has_unsaved_edits() is False
+    assert tabledata._deleted_rows.empty
+    assert tabledata.data.values.tolist() == expected_values
+
+    # Redo everything.
+    tabledata.redo_edit()
+    tabledata.redo_edit()
+    tabledata.redo_edit()
+
+    expected_values = [
+        ['edited_str1', True, 1.111, 3, None],
+        ['str2', False, 2.222, 1, None],
+        ['str3', True, 3.333, 29, None],
+        ['str4', True, 4.444, 0, 'note_4']
+        ]
+
+    assert tabledata.undo_count() == 3
+    assert tabledata.redo_count() == 0
+    assert tabledata.has_unsaved_edits() is True
+    assert tabledata._deleted_rows == pd.Index([1])
+    assert tabledata.data.values.tolist() == expected_values
+
+    # Cancel all edits.
+    tabledata.cancel_edits()
+
+    expected_values = [
+        ['str1', True, 1.111, 3, None],
+        ['str2', False, 2.222, 1, None],
+        ['str3', True, 3.333, 29, None],
+        ]
+
+    assert tabledata.undo_count() == 0
+    assert tabledata.redo_count() == 3
+    assert tabledata.has_unsaved_edits() is False
+    assert tabledata._deleted_rows.empty
+    assert tabledata.data.values.tolist() == expected_values
+
+
 if __name__ == "__main__":
     pytest.main(['-x', __file__, '-v', '-rw'])

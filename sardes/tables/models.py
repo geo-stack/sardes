@@ -188,16 +188,6 @@ class StandardSardesTableModel(SardesTableModel):
                 ))
 
     # ---- SardesTableModel API
-    def create_new_row_index(self):
-        """
-        Extend SardesTableModel method to use the database connection
-        manager to generate the new row index.
-        """
-        try:
-            return self.db_connection_manager.create_index(self.__dataname__)
-        except NotImplementedError:
-            return super().create_new_row_index()
-
     def check_data_edits(self, callback):
         """
         Check that there is no issues with the data edits of this model.

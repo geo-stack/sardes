@@ -62,7 +62,7 @@ def test_add_sonde_installations(tablewidget, dbaccessor, qtbot, mocker):
     """
     tablemodel = tablewidget.model()
     assert tablewidget.visible_row_count() == 6
-    assert len(dbaccessor.get_sonde_installations()) == 6
+    assert len(dbaccessor.get('sonde_installations')) == 6
 
     # We add a new row and assert that the UI state is as expected.
     tablewidget.new_row_action.trigger()
@@ -70,7 +70,7 @@ def test_add_sonde_installations(tablewidget, dbaccessor, qtbot, mocker):
     assert tablemodel.data_edit_count() == 1
     assert tablewidget.get_data_for_row(6) == [''] * 6
     assert tablemodel.is_new_row_at(tablewidget.current_index())
-    assert len(dbaccessor.get_sonde_installations()) == 6
+    assert len(dbaccessor.get('sonde_installations')) == 6
 
     # We need to patch the message box that warns the user when
     # a Notnull constraint is violated.
@@ -82,7 +82,7 @@ def test_add_sonde_installations(tablewidget, dbaccessor, qtbot, mocker):
     tablewidget.save_edits_action.trigger()
     assert qmsgbox_patcher.call_count == 1
     assert tablewidget.visible_row_count() == 7
-    assert len(dbaccessor.get_sonde_installations()) == 6
+    assert len(dbaccessor.get('sonde_installations')) == 6
 
     # Enter a non null value for the fields 'sampling_feature_uuid',
     # 'sonde_uuid', 'start_date', and 'install_depth'.
@@ -106,7 +106,7 @@ def test_add_sonde_installations(tablewidget, dbaccessor, qtbot, mocker):
     assert qmsgbox_patcher.call_count == 1
     assert tablemodel.data_edit_count() == 0
 
-    sonde_installations = dbaccessor.get_sonde_installations()
+    sonde_installations = dbaccessor.get('sonde_installations')
     assert tablewidget.visible_row_count() == 7
     assert len(sonde_installations) == 7
     assert sonde_installations.iloc[6]['sampling_feature_uuid'] == UUID(
@@ -164,7 +164,7 @@ def test_edit_sonde_installations(tablewidget, qtbot, sondes_installation,
     with qtbot.waitSignal(tableview.model().sig_data_updated):
         tableview._save_data_edits(force=True)
 
-    saved_values = dbaccessor.get_sonde_installations().iloc[0].to_dict()
+    saved_values = dbaccessor.get('sonde_installations').iloc[0].to_dict()
     for key in edited_values.keys():
         assert saved_values[key] == edited_values[key], key
 
@@ -202,7 +202,7 @@ def test_clear_sonde_installations(tablewidget, qtbot, dbaccessor):
     with qtbot.waitSignal(tableview.model().sig_data_updated):
         tableview._save_data_edits(force=True)
 
-    saved_values = dbaccessor.get_sonde_installations().iloc[0].to_dict()
+    saved_values = dbaccessor.get('sonde_installations').iloc[0].to_dict()
     for attr in clearable_attrs:
         assert pd.isnull(saved_values[attr])
 
@@ -212,7 +212,7 @@ def test_delete_sonde_installations(tablewidget, qtbot, dbaccessor, mocker):
     Test that deleting sonde installations is working as expected.
     """
     assert tablewidget.visible_row_count() == 6
-    assert len(dbaccessor.get_sonde_installations()) == 6
+    assert len(dbaccessor.get('sonde_installations')) == 6
 
     # We need to patch the message box that appears to warn users about
     # what happens with the associated monitoring data when deleting a
@@ -231,13 +231,13 @@ def test_delete_sonde_installations(tablewidget, qtbot, dbaccessor, mocker):
 
     # Save the changes to the database.
     assert tablewidget.visible_row_count() == 6
-    assert len(dbaccessor.get_sonde_installations()) == 6
+    assert len(dbaccessor.get('sonde_installations')) == 6
 
     with qtbot.waitSignal(tablewidget.model().sig_data_updated):
         tablewidget.save_edits_action.trigger()
 
     assert tablewidget.visible_row_count() == 4
-    assert len(dbaccessor.get_sonde_installations()) == 4
+    assert len(dbaccessor.get('sonde_installations')) == 4
 
 
 if __name__ == "__main__":

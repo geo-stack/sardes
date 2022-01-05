@@ -136,7 +136,7 @@ def test_edit_sonde_model(mainwindow, qtbot, dbaccessor):
     """
     Test editing sonde brand in the sondes inventory table.
     """
-    sonde_models_lib = dbaccessor.get_sonde_models_lib()
+    sonde_models_lib = dbaccessor.get('sonde_models_lib')
     tabwidget = mainwindow.plugin.tabwidget
     tablewidget = mainwindow.plugin._tables['table_sondes_inventory']
     tableview = tablewidget.tableview
