@@ -1537,7 +1537,7 @@ class SardesTableView(QTableView):
                 error.error_message(self),
                 buttons=QMessageBox.Ok,
                 parent=self)
-            msgbox.button(msgbox.Ok).setText(_("Ok"))
+            msgbox.button(msgbox.Ok).setText(_("OK"))
             msgbox.exec_()
 
     def _save_data_edits(self, force=True):

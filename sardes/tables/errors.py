@@ -78,7 +78,7 @@ class UniqueTableEditError(SardesTableEditError):
             colstr += _(", and")
             colstr += " <b>{}</b>".format(column_subset[-1].header)
             return _(
-                "<p>On <b>row {}</b>, the combination of values in"
+                "<p>On <b>row {}</b>, the combination of values in "
                 "columns {} violates unique constraint.</p>"
                 "<p>Please use a combination of values that does not "
                 "already exist.</p>"
