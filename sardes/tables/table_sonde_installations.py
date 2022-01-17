@@ -129,7 +129,7 @@ class SondeInstallationsTableWidget(SardesTableWidget):
             buttons=QMessageBox.Ok,
             parent=self.tableview)
         msgbox.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        msgbox.button(msgbox.Ok).setText(_("Ok"))
+        msgbox.button(msgbox.Ok).setText(_("OK"))
 
         chkbox = QCheckBox(
             _("Do not show this message again during this session."))
