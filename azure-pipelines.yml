@@ -10,7 +10,7 @@ trigger:
 variables:
   AZURE: True
   CODECOV_TOKEN: "9c69b956-574c-4c6c-bfda-ac77db6a5a46"
-  SARDES_OUTPUT_DIRNAME: 'sardes_0.11.3_win_amd64'
+  SARDES_OUTPUT_DIRNAME: 'sardes_0.12.0_win_amd64'
 
 pool:
   vmImage: 'windows-2019'
