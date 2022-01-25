@@ -963,11 +963,12 @@ def test_add_delete_large_timeseries_record(dbaccessor):
     new_tseries_data = pd.DataFrame(
         [], columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
     new_tseries_data['datetime'] = pd.date_range(
-        start='1/1/2000', end='1/1/2020')
+        start='1/1/1960', end='1/1/2020')
     new_tseries_data[DataType.WaterLevel] = np.random.rand(
         len(new_tseries_data))
     new_tseries_data[DataType.WaterTemp] = np.random.rand(
         len(new_tseries_data))
+    assert len(new_tseries_data) == 21916
 
     # Add timeseries data to the database.
     dbaccessor.add_timeseries_data(
@@ -975,11 +976,11 @@ def test_add_delete_large_timeseries_record(dbaccessor):
 
     wlevel_data = dbaccessor.get_timeseries_for_obs_well(
         sampling_feature_uuid, DataType.WaterLevel)
-    assert len(wlevel_data) == 7306
+    assert len(wlevel_data) == 21916
 
     wtemp_data = dbaccessor.get_timeseries_for_obs_well(
         sampling_feature_uuid, DataType.WaterTemp)
-    assert len(wtemp_data) == 7306
+    assert len(wtemp_data) == 21916
 
     # Delete all timeseries data from the database.
     wlevel_data['data_type'] = DataType.WaterLevel
