@@ -481,6 +481,11 @@ class DatabaseConnectionWorker(WorkerBase):
                         .sort_values(by=['end_date'], ascending=[True]))
                 else:
                     station_repere_data = pd.Series([], dtype=object)
+                last_repere_data = station_repere_data.iloc[-1]
+                ground_altitude = (
+                    last_repere_data['top_casing_alt'] -
+                    last_repere_data['casing_length'])
+                is_alt_geodesic = last_repere_data['is_alt_geodesic']
 
                 pnt_desc += '{} = {}<br/>'.format(
                     _('Station'),
@@ -514,11 +519,6 @@ class DatabaseConnectionWorker(WorkerBase):
                                     DataType.WaterEC])
                     formatted_data = format_reading_data(
                         readings, station_repere_data)
-                    last_repere_data = station_repere_data.iloc[-1]
-                    ground_altitude = (
-                        last_repere_data['top_casing_alt'] -
-                        last_repere_data['casing_length'])
-                    is_alt_geodesic = last_repere_data['is_alt_geodesic']
                 if iri_logs is not None:
                     log_data, log_fame = (
                         self.db_accessor.get_attachment(station_uuid, 1))
