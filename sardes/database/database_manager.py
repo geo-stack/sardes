@@ -471,6 +471,7 @@ class DatabaseConnectionWorker(WorkerBase):
             for station_uuid, station_data in loc_stations_data.iterrows():
                 progress += 1
                 station_data = stations_data.loc[station_uuid]
+                is_station_active = station_data['is_station_active']
                 station_repere_data = (
                     repere_data
                     [repere_data['sampling_feature_uuid'] == station_uuid]
