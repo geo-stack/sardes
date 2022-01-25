@@ -537,17 +537,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                         self._database, app_id, APPLICATION_ID))
             elif version < CURRENT_SCHEMA_VERSION:
                 connection = None
-                connection_error = sqlite3.DatabaseError(_(
-                    "The version of this database is {} and is outdated. "
-                    "Please update your database to version {} and try again."
-                    ).format(version, CURRENT_SCHEMA_VERSION))
+                connection_error = DatabaseVersionError(
+                    version, CURRENT_SCHEMA_VERSION)
             elif version > CURRENT_SCHEMA_VERSION:
                 connection = None
-                connection_error = sqlite3.DatabaseError(_(
-                    "Your Sardes application is outdated and does not support "
-                    "databases whose version is higher than {}. Please "
-                    "update Sardes and try again."
-                    ).format(CURRENT_SCHEMA_VERSION))
+                connection_error = SardesVersionError(
+                    CURRENT_SCHEMA_VERSION)
             else:
                 connection = True
                 connection_error = None
