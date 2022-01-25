@@ -514,6 +514,9 @@ class DatabaseConnectionWorker(WorkerBase):
                     pnt_desc += '<br/>{} = {}<br/>'.format(
                         _('Last reading'),
                         last_reading.strftime('%Y-%m-%d'))
+                pnt_desc += '{} = {}<br/>'.format(
+                    _('Statut'),
+                    _('Active') if is_station_active else _('Inactive'))
 
                 # Fetch data from the database.
                 if iri_data is not None or iri_graphs is not None:
