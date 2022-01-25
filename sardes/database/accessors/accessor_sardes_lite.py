@@ -33,10 +33,12 @@ from sqlalchemy_utils import UUIDType
 from sqlalchemy.orm.exc import NoResultFound
 
 # ---- Local imports
-from sardes.database.accessors.accessor_helpers import create_empty_readings
 from sardes.config.locale import _
 from sardes.api.database_accessor import (
     DatabaseAccessor, DatabaseAccessorError)
+from sardes.database.accessors.accessor_errors import (
+    DatabaseVersionError, SardesVersionError)
+from sardes.database.accessors.accessor_helpers import create_empty_readings
 from sardes.database.utils import format_sqlobject_repr
 from sardes.api.timeseries import DataType
 
