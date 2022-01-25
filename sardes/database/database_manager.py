@@ -507,11 +507,11 @@ class DatabaseConnectionWorker(WorkerBase):
                 pnt_desc += '{} = {}<br/>'.format(
                     _('Influenced'),
                     station_data['is_influenced'])
-
+                pnt_desc += '<br/>'
                 if station_uuid in stations_data_overview.index:
                     last_reading = (stations_data_overview
                                     .loc[station_uuid]['last_date'])
-                    pnt_desc += '<br/>{} = {}<br/>'.format(
+                    pnt_desc += '{} = {}<br/>'.format(
                         _('Last reading'),
                         last_reading.strftime('%Y-%m-%d'))
                 pnt_desc += '{} = {}<br/>'.format(
