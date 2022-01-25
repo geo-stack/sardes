@@ -824,7 +824,7 @@ class SardesTableView(QTableView):
         Handle when an edit is made to the data of the table model.
         """
         if data_edit is None:
-            # This means that all tablem model edits were cancelled.
+            # This means that all table model edits were cancelled.
             self._data_edit_cursor_pos.clear()
             self._update_actions_state()
             return
