@@ -135,17 +135,17 @@ def sonde_models():
 @pytest.fixture
 def sondes_data():
     data = [
-        [5, '1016042', date(2006, 3, 30), date(2020, 12, 31),
+        [5, '1016042', datetime(2006, 3, 30), datetime(2020, 12, 31),
          False, False, False, False, 'Note sonde 1016042.'],
-        [5, '1031928', date(2008, 6, 4), pd.NaT,
+        [5, '1031928', datetime(2008, 6, 4), pd.NaT,
          False, False, False, False, None],
-        [5, '1021777', date(2007, 3, 26), pd.NaT,
+        [5, '1021777', datetime(2007, 3, 26), pd.NaT,
          False, False, False, False, None],
-        [1, '1016387', date(2006, 3, 30), date(2020, 12, 31),
+        [1, '1016387', datetime(2006, 3, 30), datetime(2020, 12, 31),
          False, False, False, False, None],
-        [4, '1060487', date(2012, 5, 5), pd.NaT,
+        [4, '1060487', datetime(2012, 5, 5), pd.NaT,
          False, False, False, False, None],
-        [1, '1048409', date(2010, 2, 8), pd.NaT,
+        [1, '1048409', datetime(2010, 2, 8), pd.NaT,
          False, False, False, False, None],
         ]
     df = pd.DataFrame(
