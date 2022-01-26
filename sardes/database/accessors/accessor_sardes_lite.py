@@ -46,10 +46,10 @@ APPLICATION_ID = 1013042054
 
 # The latest version of the database schema.
 CURRENT_SCHEMA_VERSION = 2
-TO_DATETIME_ARGS = {'format': DATE_FORMAT}
+
 # The format that is used to store datetime values in the database.
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
-
+TO_DATETIME_ARGS = {'format': DATE_FORMAT}
 
 # =============================================================================
 # ---- Register Adapters
