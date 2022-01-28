@@ -73,10 +73,12 @@ class ObsWellsTableModel(StandardSardesTableModel):
             ),
         SardesTableColumn(
             'first_date', _('First Date'), 'datetime64[ns]',
-            delegate=NotEditableDelegate, editable=False),
+            delegate=NotEditableDelegate, editable=False,
+            strftime_format='%Y-%m-%d'),
         SardesTableColumn(
             'last_date', _('Last Date'), 'datetime64[ns]',
-            delegate=NotEditableDelegate, editable=False),
+            delegate=NotEditableDelegate, editable=False,
+            strftime_format='%Y-%m-%d'),
         SardesTableColumn(
             'mean_water_level', _('Mean level (m)'), 'float64',
             delegate=NotEditableDelegate, editable=False),
@@ -133,11 +135,13 @@ class ObsWellsTableModel(StandardSardesTableModel):
             for column in ['first_date', 'last_date', 'mean_water_level']:
                 if column in obs_wells_stats.columns:
                     visual_dataf[column] = obs_wells_stats[column]
+                else:
+                    visual_dataf[column] = pd.NaT
         visual_dataf['is_station_active'] = (
             visual_dataf['is_station_active']
             .map({True: _('Yes'), False: _('No')}.get)
             )
-        return visual_dataf
+        return super().logical_to_visual_data(visual_dataf)
 
 
 class ObsWellsTableWidget(SardesTableWidget):
