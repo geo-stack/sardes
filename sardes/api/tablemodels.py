@@ -43,6 +43,14 @@ class SardesTableColumn():
     delegate: object = None
     delegate_options: dict = field(default_factory=dict)
 
+    # SardesTableModel formatting options.
+
+    # The formatting is applied when the method 'logical_to_visual_data'
+    # is called on the original dataframe.
+
+    # An option used to format datetime-like values.
+    strftime_format: str = None
+
 
 # =============================================================================
 # ---- Edits
