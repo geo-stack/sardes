@@ -43,6 +43,14 @@ class SardesTableColumn():
     delegate: object = None
     delegate_options: dict = field(default_factory=dict)
 
+    # SardesTableModel formatting options.
+
+    # The formatting is applied when the method 'logical_to_visual_data'
+    # is called on the original dataframe.
+
+    # An option used to format datetime-like values.
+    strftime_format: str = None
+
 
 # =============================================================================
 # ---- Edits
@@ -721,6 +729,11 @@ class SardesTableModel(SardesTableModelBase):
         visual_dataf[column].replace(
             to_replace={True: 'Yes', False: 'No'}, inplace=True)
         """
+        for column in self.columns():
+            if column.strftime_format is not None:
+                visual_dataf[column.name] = (
+                    visual_dataf[column.name].dt.strftime(
+                        column.strftime_format))
         return visual_dataf
 
     def check_data_edits(self):
