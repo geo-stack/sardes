@@ -14,7 +14,7 @@ from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.models import StandardSardesTableModel
 from sardes.tables.delegates import (
     SondeModelEditDelegate, StringEditDelegate, BoolEditDelegate,
-    TextEditDelegate, DateEditDelegate)
+    TextEditDelegate, DateEditDelegate, DateTimeDelegate)
 
 
 class SondesInventoryTableModel(StandardSardesTableModel):
@@ -35,10 +35,14 @@ class SondesInventoryTableModel(StandardSardesTableModel):
             delegate=StringEditDelegate),
         SardesTableColumn(
             'date_reception', _('Date Reception'), 'datetime64[ns]',
-            delegate=DateEditDelegate),
+            delegate=DateTimeDelegate,
+            delegate_options={'display_format': "yyyy-MM-dd"},
+            strftime_format='%Y-%m-%d'),
         SardesTableColumn(
             'date_withdrawal', _('Date Withdrawal'), 'datetime64[ns]',
-            delegate=DateEditDelegate),
+            delegate=DateTimeDelegate,
+            delegate_options={'display_format': "yyyy-MM-dd"},
+            strftime_format='%Y-%m-%d'),
         SardesTableColumn(
             'in_repair', _('In Repair'), 'boolean', notnull=True,
             delegate=BoolEditDelegate),
@@ -79,7 +83,7 @@ class SondesInventoryTableModel(StandardSardesTableModel):
                 .map({True: _('Yes'), False: _('No')}.get)
                 )
 
-        return visual_dataf
+        return super().logical_to_visual_data(visual_dataf)
 
 
 class SondesInventoryTableWidget(SardesTableWidget):
