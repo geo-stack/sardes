@@ -9,6 +9,7 @@
 
 
 # ---- Third party imports
+import numpy as np
 import pandas as pd
 from qtpy.QtCore import Signal, QUrl
 from qtpy.QtGui import QDesktopServices
@@ -130,17 +131,21 @@ class ObsWellsTableModel(StandardSardesTableModel):
         try:
             obs_wells_stats = self.libraries['observation_wells_data_overview']
         except KeyError:
-            pass
+            for column in ['first_date', 'last_date']:
+                visual_dataf[column] = pd.NaT
         else:
             for column in ['first_date', 'last_date', 'mean_water_level']:
                 if column in obs_wells_stats.columns:
                     visual_dataf[column] = obs_wells_stats[column]
                 else:
-                    visual_dataf[column] = pd.NaT
+                    visual_dataf[column] = (
+                        np.nan if column == 'mean_water_level' else pd.NaT)
+
         visual_dataf['is_station_active'] = (
             visual_dataf['is_station_active']
             .map({True: _('Yes'), False: _('No')}.get)
             )
+
         return super().logical_to_visual_data(visual_dataf)
 
 
