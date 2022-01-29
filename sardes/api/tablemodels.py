@@ -737,11 +737,10 @@ class SardesTableModel(SardesTableModelBase):
                     visual_dataf[column.name].dt.strftime(
                         column.strftime_format))
             except AttributeError as e:
-                raise Warning((
-                    'Failed to format datetime values on column {} of '
-                    'table {} because of the following error :'
-                    ).format(column.name, self.name()))
-                print(e)
+                print((
+                    'WARNING: Failed to format datetime values on column "{}" '
+                    'of table "{}" because of the following error :\n{}'
+                    ).format(column.name, self.name(), e))
 
         return visual_dataf
 
