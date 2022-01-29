@@ -730,10 +730,18 @@ class SardesTableModel(SardesTableModelBase):
             to_replace={True: 'Yes', False: 'No'}, inplace=True)
         """
         for column in self.columns():
-            if column.strftime_format is not None:
+            if column.strftime_format is None:
+                continue
+            try:
                 visual_dataf[column.name] = (
                     visual_dataf[column.name].dt.strftime(
                         column.strftime_format))
+            except AttributeError as e:
+                print((
+                    'WARNING: Failed to format datetime values on column "{}" '
+                    'of table "{}" because of the following error :\n{}'
+                    ).format(column.name, self.name(), e))
+
         return visual_dataf
 
     def check_data_edits(self):

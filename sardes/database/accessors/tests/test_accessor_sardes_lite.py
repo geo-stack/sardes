@@ -357,8 +357,8 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
     sonde_install_id = dbaccessor.get('sonde_installations').index[0]
     old_values = sonde_installs_bd.loc[sonde_install_id].to_dict()
     edited_values = {
-        'start_date': datetime.date(2006, 4, 1),
-        'end_date': datetime.date(2016, 4, 1),
+        'start_date': datetime.datetime(2006, 4, 1),
+        'end_date': datetime.datetime(2016, 4, 1),
         'install_depth': 11.25}
     for attribute_name, attribute_value in edited_values.items():
         assert attribute_value != old_values[attribute_name]
@@ -525,8 +525,8 @@ def test_sonde_feature_interface(dbaccessor, sondes_data, sondes_installation,
     # Assert that the empty repere data dataframe is formatted as expected.
     sondes_data_bd = dbaccessor.get('sondes_data')
     assert sondes_data_bd.empty
-    assert is_object_dtype(sondes_data_bd['date_reception'])
-    assert is_object_dtype(sondes_data_bd['date_withdrawal'])
+    assert is_datetime64_any_dtype(sondes_data_bd['date_reception'])
+    assert is_datetime64_any_dtype(sondes_data_bd['date_withdrawal'])
     for column in ['in_repair', 'out_of_order', 'lost', 'off_network']:
         assert is_bool_dtype(sondes_data_bd[column])
 
@@ -551,8 +551,8 @@ def test_sonde_feature_interface(dbaccessor, sondes_data, sondes_installation,
     edited_values = {
         'sonde_serial_no': '1015973b',
         'sonde_model_id': sonde_models.index[1],
-        'date_reception': datetime.date(2006, 3, 15),
-        'date_withdrawal': datetime.date(2010, 6, 12),
+        'date_reception': datetime.datetime(2006, 3, 15),
+        'date_withdrawal': datetime.datetime(2010, 6, 12),
         'in_repair': True,
         'out_of_order': True,
         'lost': True,
@@ -789,9 +789,9 @@ def test_timeseries_interface(dbaccessor, obswells_data, sondes_data,
     assert len(data_overview) == 1
     assert data_overview.index[0] == obs_well_uuid
     assert (data_overview.at[obs_well_uuid, 'first_date'] ==
-            datetime.date(2018, 9, 27))
+            datetime.datetime(2018, 9, 27))
     assert (data_overview.at[obs_well_uuid, 'last_date'] ==
-            datetime.date(2018, 9, 29))
+            datetime.datetime(2018, 9, 29))
     assert data_overview.at[obs_well_uuid, 'mean_water_level'] == 1.2
 
     # =========================================================================
@@ -846,7 +846,7 @@ def test_timeseries_interface(dbaccessor, obswells_data, sondes_data,
     data_overview = dbaccessor.get('observation_wells_data_overview')
     assert data_overview.at[obs_well_uuid, 'mean_water_level'] == 2.225
     assert (data_overview.at[obs_well_uuid, 'last_date'] ==
-            datetime.date(2018, 9, 28))
+            datetime.datetime(2018, 9, 28))
 
     # Delete the remaining timeseries data.
     for data_type in data_types:
