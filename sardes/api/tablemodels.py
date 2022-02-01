@@ -826,7 +826,8 @@ class SardesSortFilterModel(QSortFilterProxyModel):
         https://stackoverflow.com/a/42039683/4481445
         """
         def sort_key(series):
-            if is_string_dtype(series):
+            column = self.column_at(series.name)
+            if column.dtype == 'str':
                 # Ignore case and accented characters.
                 # https://stackoverflow.com/a/50217892/4481445
                 try:
