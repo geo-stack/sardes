@@ -49,7 +49,7 @@ CURRENT_SCHEMA_VERSION = 2
 
 # The format that is used to store datetime values in the database.
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
-
+TO_DATETIME_ARGS = {'format': DATE_FORMAT}
 
 # =============================================================================
 # ---- Register Adapters
@@ -680,17 +680,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         query = self._session.query(Repere)
         repere = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True,
-            index_col='repere_uuid')
-
-        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
-        # directly in 'read_sql_query' with the new 'dtype' argument.
-
-        # Make sure datetime data is considered as datetime.
-        # See cgq-qgc/sardes#427.
-        for column in ['start_date', 'end_date']:
-            if not is_datetime64_ns_dtype(repere[column]):
-                print('Converting {} data to datetime.'.format(column))
-                repere[column] = pd.to_datetime(repere[column])
+            index_col='repere_uuid',
+            parse_dates={'start_date': TO_DATETIME_ARGS,
+                         'end_date': TO_DATETIME_ARGS}
+            )
 
         return repere
 
@@ -802,20 +795,18 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         query = self._session.query(SondeFeature)
         sondes = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True,
-            index_col='sonde_uuid')
+            index_col='sonde_uuid',
+            dtype={'in_repair': 'boolean',
+                   'out_of_order': 'boolean',
+                   'lost': 'boolean',
+                   'off_network': 'boolean'},
+            parse_dates={'date_reception': TO_DATETIME_ARGS,
+                         'date_withdrawal': TO_DATETIME_ARGS}
+            )
 
-        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
-        # directly in 'read_sql_query' with the new 'dtype' argument.
-
-        # Make sure date_reception and date_withdrawal are considered as
-        # datetime and strip the hour portion since it doesn't make sense here.
-        sondes['date_reception'] = pd.to_datetime(
-            sondes['date_reception']).dt.date
-        sondes['date_withdrawal'] = pd.to_datetime(
-            sondes['date_withdrawal']).dt.date
-
-        for column in ['in_repair', 'out_of_order', 'lost', 'off_network']:
-            sondes[column] = sondes[column].astype('boolean')
+        # Strip the hour portion since it doesn't make sense here.
+        for column in ['date_reception', 'date_withdrawal']:
+            sondes[column] = sondes[column].dt.normalize()
 
         return sondes
 
@@ -886,14 +877,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             )
         data = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True,
-            index_col='install_uuid')
-
-        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
-        # directly in 'read_sql_query' with the new 'dtype' argument.
-
-        # Format the data.
-        data['start_date'] = pd.to_datetime(data['start_date'])
-        data['end_date'] = pd.to_datetime(data['end_date'])
+            index_col='install_uuid',
+            parse_dates={'start_date': TO_DATETIME_ARGS,
+                         'end_date': TO_DATETIME_ARGS}
+            )
 
         return data
 
@@ -990,17 +977,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             )
         measurements = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True,
-            index_col='gen_num_value_uuid')
-
-        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
-        # directly in 'read_sql_query' with the new 'dtype' argument.
-
-        # Make sure datetime data is considered as datetime.
-        # This is required to avoid problems when the manual measurements
-        # table is empty. See cgq-qgc/sardes#427.
-        if not is_datetime64_ns_dtype(measurements['datetime']):
-            print('Converting manual measurements to datetime.')
-            measurements['datetime'] = pd.to_datetime(measurements['datetime'])
+            index_col='gen_num_value_uuid',
+            parse_dates={'datetime': TO_DATETIME_ARGS}
+            )
 
         return measurements
 
@@ -1066,18 +1045,18 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         query = self._session.query(SamplingFeatureDataOverview)
         data = pd.read_sql_query(
             query.statement, query.session.bind, coerce_float=True,
-            index_col='sampling_feature_uuid')
+            index_col='sampling_feature_uuid',
+            parse_dates={'first_date': TO_DATETIME_ARGS,
+                         'last_date': TO_DATETIME_ARGS}
+            )
 
-        # TODO: when using pandas > 1.3.0, it is possible to set the dtype
-        # directly in 'read_sql_query' with the new 'dtype' argument.
-
-        # Make sure first_date and last_date are considered as
-        # datetime and strip the hour portion from it.
-        data['first_date'] = pd.to_datetime(data['first_date']).dt.date
-        data['last_date'] = pd.to_datetime(data['last_date']).dt.date
+        # Normalize the hour portion from the datetime data.
+        for column in ['first_date', 'last_date']:
+            data[column] = data[column].dt.normalize()
 
         # Round mean value.
         data['mean_water_level'] = data['mean_water_level'].round(decimals=3)
+
         return data
 
     def _get_timeseriesdata(self, date_time, obs_id, data_type):
@@ -1171,16 +1150,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                         TimeSeriesChannel.channel_id)
                 )
             tseries_data = pd.read_sql_query(
-                query.statement, query.session.bind, coerce_float=True)
+                query.statement, query.session.bind, coerce_float=True,
+                parse_dates={'datetime': TO_DATETIME_ARGS}
+                )
             if tseries_data.empty:
                 # This means that there is no timeseries data saved in the
                 # database for this data type.
                 continue
 
             # Format the data.
-            if not is_datetime64_ns_dtype(tseries_data['datetime']):
-                tseries_data['datetime'] = pd.to_datetime(
-                    tseries_data['datetime'], format=DATE_FORMAT)
             tseries_data.rename(columns={'value': data_type}, inplace=True)
 
             # Merge the data.
