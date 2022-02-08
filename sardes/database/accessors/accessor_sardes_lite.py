@@ -1227,20 +1227,13 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         else:
             process_id = None
 
-        try:
-            observation_id = (
-                self._session.query(func.max(
-                    Observation.observation_id))
-                .one())[0] + 1
-        except TypeError:
-            observation_id = 1
-
-        self._session.add(Observation(
-            observation_id=observation_id,
+        new_observation = Observation(
             sampling_feature_uuid=sampling_feature_uuid,
             process_id=process_id,
             obs_datetime=min(tseries_data.index),
-            obs_type_id=7))
+            obs_type_id=7)
+        self._session.add(new_observation)
+        self._session.flush()
 
         # Create and add a new channel for each data type in the dataset.
         try:
