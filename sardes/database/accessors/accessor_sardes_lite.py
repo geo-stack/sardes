@@ -1236,26 +1236,17 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.flush()
 
         # Create and add a new channel for each data type in the dataset.
-        try:
-            channel_id = (
-                self._session.query(func.max(
-                    TimeSeriesChannel.channel_id))
-                .one())[0] + 1
-        except TypeError:
-            channel_id = 1
-
-        channel_ids = []
-        for column in tseries_data:
-            channel_ids.append(channel_id)
-            self._session.add(TimeSeriesChannel(
-                channel_id=channel_id,
+        new_channels = [
+            TimeSeriesChannel(
                 obs_property_id=self._get_observed_property_id(column),
-                observation_id=observation_id
-                ))
-            channel_id += 1
-        self._session.commit()
+                observation_id=new_observation.observation_id
+                ) for column in tseries_data
+            ]
+        self._session.add_all(new_channels)
+        self._session.flush()
 
         # Set the channel ids as the column names of the dataset.
+        channel_ids = [channel.channel_id for channel in new_channels]
         tseries_data.columns = channel_ids
         tseries_data.columns.name = 'channel_id'
 
