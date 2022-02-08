@@ -1266,21 +1266,18 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             tseries_data['datetime'].dt.strftime(DATE_FORMAT))
 
         # Save the formatted timeseries data to the database.
-        conn = sqlite3.connect(self._database)
-        cur = conn.cursor()
         columns = ['datetime', 'channel_id', 'value']
         sql_statement = (
-            "INSERT INTO timeseries_data ({}) VALUES (?, ?, ?)"
-            ).format(', '.join(columns))
-        for row in tseries_data[columns].itertuples(index=False, name=None):
-            cur.execute(sql_statement, row)
-        conn.commit()
-        conn.close()
+            "INSERT INTO timeseries_data (datetime, channel_id, value) "
+            "VALUES (:datetime, :channel_id, :value)")
+        self._session.execute(
+            sql_statement,
+            params=tseries_data[columns].to_dict(orient='records'))
 
         # Update the data overview for the given sampling feature.
         self._refresh_sampling_feature_data_overview(
             sampling_feature_uuid, auto_commit=False)
-        self._session.commit()
+        self.commit()
 
     def save_timeseries_data_edits(self, tseries_edits):
         """
