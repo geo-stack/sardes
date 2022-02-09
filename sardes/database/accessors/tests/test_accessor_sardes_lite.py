@@ -890,8 +890,7 @@ def test_delete_non_existing_data(dbaccessor):
         columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
     new_tseries_data['datetime'] = pd.to_datetime(
         new_tseries_data['datetime'], format=DATE_FORMAT)
-    dbaccessor.add_timeseries_data(
-        new_tseries_data, sampling_feature_uuid=None, install_uuid=None)
+    dbaccessor.add_timeseries_data(new_tseries_data, None, None)
 
     # Try deleting a timeseries data when no timeseries exist for the given
     # datatype and observation id.
@@ -931,8 +930,7 @@ def test_edit_non_existing_data(dbaccessor):
         columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
     new_tseries_data['datetime'] = pd.to_datetime(
         new_tseries_data['datetime'], format=DATE_FORMAT)
-    dbaccessor.add_timeseries_data(
-        new_tseries_data, obswell_id, install_uuid=None)
+    dbaccessor.add_timeseries_data(new_tseries_data, obswell_id, None)
 
     # Try editing a timeseries data that doesn't exist in the database for
     # the given datatype, datetime and observation id.
@@ -972,7 +970,7 @@ def test_add_delete_large_timeseries_record(dbaccessor):
 
     # Add timeseries data to the database.
     dbaccessor.add_timeseries_data(
-        new_tseries_data, sampling_feature_uuid, install_uuid=None)
+        new_tseries_data, sampling_feature_uuid, None)
 
     wlevel_data = dbaccessor.get_timeseries_for_obs_well(
         sampling_feature_uuid, DataType.WaterLevel)
