@@ -1282,7 +1282,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                         obs_property_id=obs_property_id,
                         observation_id=obs_id)
                     self._session.add(tseries_channel)
-                    self._session.commit()
+                    self._session.flush()
 
                 # Then we add a new timeseries entry to the database.
                 tseries_data = TimeSeriesData(
@@ -1293,7 +1293,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             # Save the edited value.
             tseries_data.value = tseries_edits.loc[
                 (date_time, obs_id, data_type), 'value']
-        self._session.commit()
+        self._session.flush()
 
         # Update the data overview for the sampling features whose
         # corresponding data were affected by this change.
@@ -1303,7 +1303,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         for sampling_feature_uuid in sampling_feature_uuids:
             self._refresh_sampling_feature_data_overview(
                 sampling_feature_uuid, auto_commit=False)
-        self._session.commit()
+        self.commit()
 
     def delete_timeseries_data(self, tseries_dels):
         """
