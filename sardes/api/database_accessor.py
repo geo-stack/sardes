@@ -98,13 +98,13 @@ class DatabaseAccessorBase(ABC):
         self._connection, self._connection_error = self._connect()
 
     def add_timeseries_data(self, tseries_data: pd.DataFrame,
-                            station_id: Any, installation_id: Any = None,
+                            obswell_id: Any, installation_id: Any = None,
                             auto_commit: bool = True) -> None:
         """
         Save in the database a set of timeseries data associated with the
         given well and sonde installation id.
         """
-        self._add_timeseries_data(tseries_data, station_id, installation_id)
+        self._add_timeseries_data(tseries_data, obswell_id, installation_id)
         if auto_commit:
             self.commit()
 
@@ -709,8 +709,8 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
-    def _add_timeseries_data(self, tseries_data, obs_well_uuid,
-                             sonde_installation_uuid=None):
+    def _add_timeseries_data(self, tseries_data, obswell_id,
+                             installation_id=None):
         """
         Save in the database a set of timeseries data associated with the
         given well and sonde installation id.
@@ -722,10 +722,10 @@ class DatabaseAccessor(DatabaseAccessorBase):
             named 'datetime'. The columns in which the numerical values are
             saved must be a member of :class:`sardes.api.timeseries.DataType`
             enum.
-        obs_well_id: int, :class:`uuid.UUID`
+        obswell_id: Any
             A unique identifier that is used to reference in the database
             the observation well in which the data were measured.
-        installation_id: int, :class:`uuid.UUID`
+        installation_id: Any
             A unique identifier used to reference the sonde installation, if
             any, corresponding to the current set of data.
         """
