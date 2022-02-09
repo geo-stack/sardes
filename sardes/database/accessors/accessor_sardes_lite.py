@@ -1088,30 +1088,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .filter(TimeSeriesData.datetime.in_(date_times))
             )
 
-    def _clean_observation_if_null(self, obs_id):
-        """
-        Delete observation with to the given ID from the database
-        if it is empty.
-        """
-        observation = self._get_observation(obs_id)
-        if observation.obs_type_id == 7:
-            count = (self._session.query(TimeSeriesData)
-                     .filter(TimeSeriesChannel.observation_id == obs_id)
-                     .filter(TimeSeriesData.channel_id ==
-                             TimeSeriesChannel.channel_id)
-                     .count())
-            if count == 0:
-                print("Deleting observation {} because it is now empty."
-                      .format(observation.observation_id))
-                # We need to delete each related timeseries channel along
-                # with the observation.
-                query = (self._session.query(TimeSeriesChannel)
-                         .filter(TimeSeriesChannel.observation_id == obs_id))
-                for tseries_channel in query:
-                    self._session.delete(tseries_channel)
-                self._session.delete(observation)
-                self._session.commit()
-
     def get_timeseries_for_obs_well(self, sampling_feature_uuid,
                                     data_types=None):
         """
@@ -1201,8 +1177,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return readings_data
 
-    def add_timeseries_data(self, tseries_data, sampling_feature_uuid,
-                            install_uuid=None):
+    def _add_timeseries_data(self, tseries_data, sampling_feature_uuid,
+                             install_uuid=None):
         """
         Save in the database a set of timeseries data associated with the
         given well and sonde installation id.
@@ -1227,42 +1203,26 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         else:
             process_id = None
 
-        try:
-            observation_id = (
-                self._session.query(func.max(
-                    Observation.observation_id))
-                .one())[0] + 1
-        except TypeError:
-            observation_id = 1
-
-        self._session.add(Observation(
-            observation_id=observation_id,
+        new_observation = Observation(
             sampling_feature_uuid=sampling_feature_uuid,
             process_id=process_id,
             obs_datetime=min(tseries_data.index),
-            obs_type_id=7))
+            obs_type_id=7)
+        self._session.add(new_observation)
+        self._session.flush()
 
         # Create and add a new channel for each data type in the dataset.
-        try:
-            channel_id = (
-                self._session.query(func.max(
-                    TimeSeriesChannel.channel_id))
-                .one())[0] + 1
-        except TypeError:
-            channel_id = 1
-
-        channel_ids = []
-        for column in tseries_data:
-            channel_ids.append(channel_id)
-            self._session.add(TimeSeriesChannel(
-                channel_id=channel_id,
+        new_channels = [
+            TimeSeriesChannel(
                 obs_property_id=self._get_observed_property_id(column),
-                observation_id=observation_id
-                ))
-            channel_id += 1
-        self._session.commit()
+                observation_id=new_observation.observation_id
+                ) for column in tseries_data
+            ]
+        self._session.add_all(new_channels)
+        self._session.flush()
 
         # Set the channel ids as the column names of the dataset.
+        channel_ids = [channel.channel_id for channel in new_channels]
         tseries_data.columns = channel_ids
         tseries_data.columns.name = 'channel_id'
 
@@ -1282,23 +1242,20 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             tseries_data['datetime'].dt.strftime(DATE_FORMAT))
 
         # Save the formatted timeseries data to the database.
-        conn = sqlite3.connect(self._database)
-        cur = conn.cursor()
         columns = ['datetime', 'channel_id', 'value']
         sql_statement = (
-            "INSERT INTO timeseries_data ({}) VALUES (?, ?, ?)"
-            ).format(', '.join(columns))
-        for row in tseries_data[columns].itertuples(index=False, name=None):
-            cur.execute(sql_statement, row)
-        conn.commit()
-        conn.close()
+            "INSERT INTO timeseries_data (datetime, channel_id, value) "
+            "VALUES (:datetime, :channel_id, :value)")
+        self._session.execute(
+            sql_statement,
+            params=tseries_data[columns].to_dict(orient='records'))
+        self._session.flush()
 
         # Update the data overview for the given sampling feature.
         self._refresh_sampling_feature_data_overview(
             sampling_feature_uuid, auto_commit=False)
-        self._session.commit()
 
-    def save_timeseries_data_edits(self, tseries_edits):
+    def _save_timeseries_data_edits(self, tseries_edits):
         """
         Save in the database a set of edits that were made to to timeseries
         data that were already saved in the database.
@@ -1325,7 +1282,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                         obs_property_id=obs_property_id,
                         observation_id=obs_id)
                     self._session.add(tseries_channel)
-                    self._session.commit()
+                    self._session.flush()
 
                 # Then we add a new timeseries entry to the database.
                 tseries_data = TimeSeriesData(
@@ -1336,7 +1293,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             # Save the edited value.
             tseries_data.value = tseries_edits.loc[
                 (date_time, obs_id, data_type), 'value']
-        self._session.commit()
+        self._session.flush()
 
         # Update the data overview for the sampling features whose
         # corresponding data were affected by this change.
@@ -1346,17 +1303,16 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         for sampling_feature_uuid in sampling_feature_uuids:
             self._refresh_sampling_feature_data_overview(
                 sampling_feature_uuid, auto_commit=False)
-        self._session.commit()
 
-    def delete_timeseries_data(self, tseries_dels):
+    def _delete_timeseries_data(self, tseries_dels):
         """
         Delete data in the database for the observation IDs, datetime and
         data type specified in tseries_dels.
         """
         sampling_feature_uuids = set()
         for obs_id in tseries_dels['obs_id'].unique():
-            sampling_feature_uuids.add(
-                self._get_observation(obs_id).sampling_feature_uuid)
+            observation = self._get_observation(obs_id)
+            sampling_feature_uuids.add(observation.sampling_feature_uuid)
 
             sub_data = tseries_dels[tseries_dels['obs_id'] == obs_id]
             for data_type in sub_data['data_type'].unique():
@@ -1376,35 +1332,46 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     continue
 
                 # We need to format pandas datetime64 to strings in order to
-                # delete rows from the database with sqlite3 directly
-                # (without sqlalchemy).
+                # delete rows from the database directly with a SQL statement.
                 date_times = (
                     sub_data[sub_data['data_type'] == data_type]
                     ['datetime'].dt.strftime(DATE_FORMAT))
 
-                conn = sqlite3.connect(self._database)
-                cur = conn.cursor()
                 sql_statement = (
                     "DELETE FROM timeseries_data WHERE "
-                    "timeseries_data.datetime = :datetime_1 AND "
-                    "timeseries_data.channel_id = :channel_id_1")
-                for date_time in date_times:
-                    cur.execute(
-                        sql_statement,
-                        {"datetime_1": date_time,
-                         "channel_id_1": channel_id})
-                conn.commit()
-                conn.close()
+                    "timeseries_data.datetime = :datetime AND "
+                    "timeseries_data.channel_id = :channel_id")
+                params = [
+                    {'datetime': date_time, 'channel_id': channel_id} for
+                    date_time in date_times]
+                self._session.execute(
+                    sql_statement,
+                    params=params)
+            self._session.flush()
 
-            # We delete the observation from database if it is empty.
-            self._clean_observation_if_null(obs_id)
+            # Delete the Observation from database if it is now empty.
+            count = (self._session.query(TimeSeriesData)
+                     .filter(TimeSeriesChannel.observation_id == obs_id)
+                     .filter(TimeSeriesData.channel_id ==
+                             TimeSeriesChannel.channel_id)
+                     .count())
+            if count == 0:
+                print("Deleting observation {} because it is now empty."
+                      .format(observation.observation_id))
+                # Delete each related timeseries channel along
+                # with the observation.
+                query = (self._session.query(TimeSeriesChannel)
+                         .filter(TimeSeriesChannel.observation_id == obs_id))
+                for tseries_channel in query:
+                    self._session.delete(tseries_channel)
+                self._session.delete(observation)
+                self._session.flush()
 
         # Update the data overview for the sampling features whose
         # corresponding data were affected by this change.
         for sampling_feature_uuid in sampling_feature_uuids:
             self._refresh_sampling_feature_data_overview(
                 sampling_feature_uuid, auto_commit=False)
-        self._session.commit()
 
     # ---- Attachments Interface
     def _get_attachments_info(self):
