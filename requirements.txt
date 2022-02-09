@@ -5,7 +5,7 @@ HydroSensorReader >= 1.7.6
 keyring == 19.2.*
 matplotlib == 3.1.*
 numpy == 1.21.*
-pandas == 1.1.*
+pandas == 1.3.*
 pillow
 psycopg2 == 2.8.*
 pyqt5 == 5.15.*
@@ -14,5 +14,6 @@ qtpy
 simplekml
 sqlalchemy == 1.3.*
 sqlalchemy_utils
-xlrd == 1.*
+xlrd
+openpyxl
 xlsxwriter

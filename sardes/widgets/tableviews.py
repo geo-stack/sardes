@@ -1689,9 +1689,15 @@ class SardesTableWidget(SardesPaneWidget):
             table_model, self, multi_columns_sort, sections_movable,
             sections_hidable, disabled_actions)
         self.tableview.setAutoFillBackground(True)
-        self.tableview.viewport().setStyleSheet(
-            "background-color: rgb(%d, %d, %d);" %
-            getattr(QStyleOption().palette, 'light')().color().getRgb()[:-1])
+
+        r255, b255, g255 = getattr(
+            QStyleOption().palette, 'light')().color().getRgb()[:-1]
+        viewport = self.tableview.viewport()
+        viewport.setObjectName(str(id(viewport)))
+        viewport.setStyleSheet(
+            "#{} {{background-color: rgb({}, {}, {});}}"
+            .format(str(id(viewport)), r255, b255, g255))
+
         self.tableview.sig_current_changed.connect(
             self.on_current_changed)
 

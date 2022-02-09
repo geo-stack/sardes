@@ -16,6 +16,7 @@ import uuid
 # ---- Third party imports
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_string_dtype
 from qtpy.QtCore import (QAbstractTableModel, QModelIndex, Qt, QVariant,
                          Signal, QSortFilterProxyModel)
 from qtpy.QtGui import QColor
@@ -42,6 +43,14 @@ class SardesTableColumn():
     desc: str = None
     delegate: object = None
     delegate_options: dict = field(default_factory=dict)
+
+    # SardesTableModel formatting options.
+
+    # The formatting is applied when the method 'logical_to_visual_data'
+    # is called on the original dataframe.
+
+    # An option used to format datetime-like values.
+    strftime_format: str = None
 
 
 # =============================================================================
@@ -721,6 +730,19 @@ class SardesTableModel(SardesTableModelBase):
         visual_dataf[column].replace(
             to_replace={True: 'Yes', False: 'No'}, inplace=True)
         """
+        for column in self.columns():
+            if column.strftime_format is None:
+                continue
+            try:
+                visual_dataf[column.name] = (
+                    visual_dataf[column.name].dt.strftime(
+                        column.strftime_format))
+            except AttributeError as e:
+                print((
+                    'WARNING: Failed to format datetime values on column "{}" '
+                    'of table "{}" because of the following error :\n{}'
+                    ).format(column.name, self.name(), e))
+
         return visual_dataf
 
     def check_data_edits(self):
@@ -803,6 +825,20 @@ class SardesSortFilterModel(QSortFilterProxyModel):
 
         https://stackoverflow.com/a/42039683/4481445
         """
+        def sort_key(series):
+            column = self.column_at(series.name)
+            if column.dtype == 'str':
+                # Ignore case and accented characters.
+                # https://stackoverflow.com/a/50217892/4481445
+                try:
+                    return series.str.lower().str.normalize('NFKD')
+                except AttributeError:
+                    # This is required to catch errors when trying to
+                    # sort columns containing UUID objects.
+                    return series
+            else:
+                return series
+
         visual_dataf = self.sourceModel().visual_dataf
         if not self._sort_by_columns:
             # Clear sorting.
@@ -814,7 +850,9 @@ class SardesSortFilterModel(QSortFilterProxyModel):
                     self._sort_by_columns],
                 ascending=[not bool(v) for v in self._columns_sort_order],
                 axis=0,
-                inplace=False).index
+                inplace=False,
+                key=sort_key
+                ).index
         self._map_row_to_source = np.array([
             self.sourceModel().visual_dataf.index.get_loc(index) for
             index in self._proxy_dataf_index])
