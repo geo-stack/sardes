@@ -258,7 +258,7 @@ class DatabaseConnectionWorker(WorkerBase):
 
         return readings,
 
-    def _save_timeseries_data_edits(self, tseries_edits):
+    def _save_timeseries_data_edits(self, tseries_edits, auto_commit=True):
         """
         Save in the database a set of edits that were made to to timeseries
         data that were already saved in the database.
@@ -266,11 +266,11 @@ class DatabaseConnectionWorker(WorkerBase):
         print("Saving timeseries data edits...")
         if 'observation_wells_data_overview' in self._cache:
             del self._cache['observation_wells_data_overview']
-        self.db_accessor.save_timeseries_data_edits(tseries_edits)
+        self.db_accessor.save_timeseries_data_edits(tseries_edits, auto_commit)
         print("Timeseries data edits saved sucessfully.")
 
     def _add_timeseries_data(self, tseries_data, obs_well_uuid,
-                             sonde_installation_uuid):
+                             sonde_installation_uuid, auto_commit=True):
         """
         Save in the database a set of timeseries data associated with the
         given well and sonde installation id.
@@ -279,10 +279,10 @@ class DatabaseConnectionWorker(WorkerBase):
         if 'observation_wells_data_overview' in self._cache:
             del self._cache['observation_wells_data_overview']
         self.db_accessor.add_timeseries_data(
-            tseries_data, obs_well_uuid, sonde_installation_uuid)
+            tseries_data, obs_well_uuid, sonde_installation_uuid, auto_commit)
         print("Timeseries data edits added sucessfully.")
 
-    def _delete_timeseries_data(self, tseries_dels):
+    def _delete_timeseries_data(self, tseries_dels, auto_commit=True):
         """
         Delete data in the database for the observation IDs, datetime and
         data type specified in tseries_dels.
@@ -290,7 +290,7 @@ class DatabaseConnectionWorker(WorkerBase):
         print("Deleting timeseries data...")
         if 'observation_wells_data_overview' in self._cache:
             del self._cache['observation_wells_data_overview']
-        self.db_accessor.delete_timeseries_data(tseries_dels)
+        self.db_accessor.delete_timeseries_data(tseries_dels, auto_commit)
         print("Timeseries data deleted sucessfully.")
 
     # ---- Attachments
