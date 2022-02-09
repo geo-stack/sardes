@@ -1177,8 +1177,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return readings_data
 
-    def add_timeseries_data(self, tseries_data, sampling_feature_uuid,
-                            install_uuid=None):
+    def _add_timeseries_data(self, tseries_data, sampling_feature_uuid,
+                             install_uuid=None):
         """
         Save in the database a set of timeseries data associated with the
         given well and sonde installation id.
@@ -1249,13 +1249,13 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.execute(
             sql_statement,
             params=tseries_data[columns].to_dict(orient='records'))
+        self._session.flush()
 
         # Update the data overview for the given sampling feature.
         self._refresh_sampling_feature_data_overview(
             sampling_feature_uuid, auto_commit=False)
-        self.commit()
 
-    def save_timeseries_data_edits(self, tseries_edits):
+    def _save_timeseries_data_edits(self, tseries_edits):
         """
         Save in the database a set of edits that were made to to timeseries
         data that were already saved in the database.
@@ -1303,9 +1303,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         for sampling_feature_uuid in sampling_feature_uuids:
             self._refresh_sampling_feature_data_overview(
                 sampling_feature_uuid, auto_commit=False)
-        self.commit()
 
-    def delete_timeseries_data(self, tseries_dels):
+    def _delete_timeseries_data(self, tseries_dels):
         """
         Delete data in the database for the observation IDs, datetime and
         data type specified in tseries_dels.
