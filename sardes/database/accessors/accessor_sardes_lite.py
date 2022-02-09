@@ -1088,30 +1088,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .filter(TimeSeriesData.datetime.in_(date_times))
             )
 
-    def _clean_observation_if_null(self, obs_id):
-        """
-        Delete observation with to the given ID from the database
-        if it is empty.
-        """
-        observation = self._get_observation(obs_id)
-        if observation.obs_type_id == 7:
-            count = (self._session.query(TimeSeriesData)
-                     .filter(TimeSeriesChannel.observation_id == obs_id)
-                     .filter(TimeSeriesData.channel_id ==
-                             TimeSeriesChannel.channel_id)
-                     .count())
-            if count == 0:
-                print("Deleting observation {} because it is now empty."
-                      .format(observation.observation_id))
-                # We need to delete each related timeseries channel along
-                # with the observation.
-                query = (self._session.query(TimeSeriesChannel)
-                         .filter(TimeSeriesChannel.observation_id == obs_id))
-                for tseries_channel in query:
-                    self._session.delete(tseries_channel)
-                self._session.delete(observation)
-                self._session.commit()
-
     def get_timeseries_for_obs_well(self, sampling_feature_uuid,
                                     data_types=None):
         """
@@ -1336,8 +1312,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         sampling_feature_uuids = set()
         for obs_id in tseries_dels['obs_id'].unique():
-            sampling_feature_uuids.add(
-                self._get_observation(obs_id).sampling_feature_uuid)
+            observation = self._get_observation(obs_id)
+            sampling_feature_uuids.add(observation.sampling_feature_uuid)
 
             sub_data = tseries_dels[tseries_dels['obs_id'] == obs_id]
             for data_type in sub_data['data_type'].unique():
@@ -1357,35 +1333,47 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     continue
 
                 # We need to format pandas datetime64 to strings in order to
-                # delete rows from the database with sqlite3 directly
-                # (without sqlalchemy).
+                # delete rows from the database directly with a SQL statement.
                 date_times = (
                     sub_data[sub_data['data_type'] == data_type]
                     ['datetime'].dt.strftime(DATE_FORMAT))
 
-                conn = sqlite3.connect(self._database)
-                cur = conn.cursor()
                 sql_statement = (
                     "DELETE FROM timeseries_data WHERE "
-                    "timeseries_data.datetime = :datetime_1 AND "
-                    "timeseries_data.channel_id = :channel_id_1")
-                for date_time in date_times:
-                    cur.execute(
-                        sql_statement,
-                        {"datetime_1": date_time,
-                         "channel_id_1": channel_id})
-                conn.commit()
-                conn.close()
+                    "timeseries_data.datetime = :datetime AND "
+                    "timeseries_data.channel_id = :channel_id")
+                params = [
+                    {'datetime': date_time, 'channel_id': channel_id} for
+                    date_time in date_times]
+                self._session.execute(
+                    sql_statement,
+                    params=params)
+            self._session.flush()
 
-            # We delete the observation from database if it is empty.
-            self._clean_observation_if_null(obs_id)
+            # Delete the Observation from database if it is now empty.
+            count = (self._session.query(TimeSeriesData)
+                     .filter(TimeSeriesChannel.observation_id == obs_id)
+                     .filter(TimeSeriesData.channel_id ==
+                             TimeSeriesChannel.channel_id)
+                     .count())
+            if count == 0:
+                print("Deleting observation {} because it is now empty."
+                      .format(observation.observation_id))
+                # Delete each related timeseries channel along
+                # with the observation.
+                query = (self._session.query(TimeSeriesChannel)
+                         .filter(TimeSeriesChannel.observation_id == obs_id))
+                for tseries_channel in query:
+                    self._session.delete(tseries_channel)
+                self._session.delete(observation)
+                self._session.flush()
 
         # Update the data overview for the sampling features whose
         # corresponding data were affected by this change.
         for sampling_feature_uuid in sampling_feature_uuids:
             self._refresh_sampling_feature_data_overview(
                 sampling_feature_uuid, auto_commit=False)
-        self._session.commit()
+        self.commit()
 
     # ---- Attachments Interface
     def _get_attachments_info(self):
