@@ -1372,7 +1372,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         for sampling_feature_uuid in sampling_feature_uuids:
             self._refresh_sampling_feature_data_overview(
                 sampling_feature_uuid, auto_commit=False)
-        self.commit()
 
     # ---- Attachments Interface
     def _get_attachments_info(self):
