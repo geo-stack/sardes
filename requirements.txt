@@ -13,7 +13,7 @@ qtawesome == 1.0.*
 qtpy
 simplekml
 sqlalchemy == 1.4.*
-sqlalchemy_utils
+sqlalchemy_utils >= 0.38.1
 xlrd
 openpyxl
 xlsxwriter
