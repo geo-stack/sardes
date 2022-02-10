@@ -21,7 +21,7 @@ import uuid
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_list_like, is_datetime64_ns_dtype
-from sqlalchemy import create_engine, extract, func, and_
+from sqlalchemy import create_engine, extract, func, and_, inspect
 from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
                         UniqueConstraint, Index)
 from sqlalchemy.exc import DBAPIError, ProgrammingError, OperationalError
@@ -472,9 +472,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                   ObservationType, Observation, ObservedProperty,
                   GenericNumericalData, TimeSeriesChannel,
                   TimeSeriesData, SamplingFeatureAttachment]
-        dialect = self._engine.dialect
         for table in tables:
-            if dialect.has_table(self._session, table.__tablename__):
+            if inspect(self._engine).has_table(table.__tablename__):
                 continue
             Base.metadata.create_all(self._engine, tables=[table.__table__])
             for item_attrs in table.initial_attrs():
@@ -488,7 +487,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
     # ---- Database connection
     def _create_engine(self):
         """Create a SQL Alchemy engine."""
-        database_url = URL('sqlite', database=self._database)
+        database_url = URL.create('sqlite', database=self._database)
         return create_engine(database_url, echo=False,
                              connect_args={'check_same_thread': False})
 
