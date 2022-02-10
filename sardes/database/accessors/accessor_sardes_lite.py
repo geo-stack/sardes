@@ -601,7 +601,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     SamplingFeature.sampling_feature_uuid)
             )
         obs_wells = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True,
+            query.statement, self._session.connection(), coerce_float=True,
             index_col='sampling_feature_uuid'
             )
 
@@ -687,7 +687,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .filter(SamplingFeature.sampling_feature_uuid.in_(obswell_ids))
             )
         loc_ids = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True
+            query.statement, self._session.connection(), coerce_float=True
             )['loc_id'].values.tolist()
         self._session.execute(
             Location.__table__.delete().where(
@@ -699,7 +699,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
     def _get_repere_data(self):
         query = self._session.query(Repere)
         repere = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True,
+            query.statement, self._session.connection(), coerce_float=True,
             index_col='repere_uuid',
             parse_dates={'start_date': TO_DATETIME_ARGS,
                          'end_date': TO_DATETIME_ARGS}
@@ -748,7 +748,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
     def _get_sonde_models_lib(self):
         query = self._session.query(SondeModel)
         sonde_models = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True,
+            query.statement, self._session.connection(), coerce_float=True,
             index_col='sonde_model_id')
 
         # Combine the brand and model into a same field.
@@ -814,7 +814,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
     def _get_sondes_data(self):
         query = self._session.query(SondeFeature)
         sondes = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True,
+            query.statement, self._session.connection(), coerce_float=True,
             index_col='sonde_uuid',
             dtype={'in_repair': 'boolean',
                    'out_of_order': 'boolean',
@@ -896,7 +896,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .filter(SondeInstallation.process_id == Process.process_id)
             )
         data = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True,
+            query.statement, self._session.connection(), coerce_float=True,
             index_col='install_uuid',
             parse_dates={'start_date': TO_DATETIME_ARGS,
                          'end_date': TO_DATETIME_ARGS}
@@ -996,7 +996,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     Observation.observation_id)
             )
         measurements = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True,
+            query.statement, self._session.connection(), coerce_float=True,
             index_col='gen_num_value_uuid',
             parse_dates={'datetime': TO_DATETIME_ARGS}
             )
@@ -1064,7 +1064,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # Fetch data from the materialized view.
         query = self._session.query(SamplingFeatureDataOverview)
         data = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True,
+            query.statement, self._session.connection(), coerce_float=True,
             index_col='sampling_feature_uuid',
             parse_dates={'first_date': TO_DATETIME_ARGS,
                          'last_date': TO_DATETIME_ARGS}
@@ -1146,7 +1146,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                         TimeSeriesChannel.channel_id)
                 )
             tseries_data = pd.read_sql_query(
-                query.statement, query.session.bind, coerce_float=True,
+                query.statement, self._session.connection(), coerce_float=True,
                 parse_dates={'datetime': TO_DATETIME_ARGS}
                 )
             if tseries_data.empty:
@@ -1401,7 +1401,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 SamplingFeatureAttachment.attachment_type)
             )
         result = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
+            query.statement, self._session.connection(), coerce_float=True)
         return result
 
     def get_attachment(self, sampling_feature_uuid, attachment_type):
@@ -1589,7 +1589,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         query = self._session.query(Process)
         process = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
+            query.statement, self._session.connection(), coerce_float=True)
         process.set_index('process_id', inplace=True, drop=True)
         return process
 
@@ -1606,7 +1606,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         query = self._session.query(Observation)
         observations = pd.read_sql_query(
-            query.statement, query.session.bind, coerce_float=True)
+            query.statement, self._session.connection(), coerce_float=True)
         observations.set_index('observation_id', inplace=True, drop=True)
         return observations
 
