@@ -144,6 +144,11 @@ class DatabaseAccessor(DatabaseAccessorBase):
         pass
 
     @abstractmethod
+    def begin_transaction(self, exclusive=True):
+        """Begin a new transaction with the database."""
+        pass
+
+    @abstractmethod
     def is_connected(self):
         """
         Return whether a connection to the database is currently active or not.
