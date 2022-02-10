@@ -16,6 +16,7 @@ from __future__ import annotations
 import os.path as osp
 import sqlite3
 import uuid
+from time import perf_counter, sleep
 
 # ---- Third party imports
 import numpy as np
@@ -439,6 +440,26 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # create a session.
         Session = sessionmaker(bind=self._engine)
         self._session = Session()
+
+    def begin_transaction(self, exclusive=True):
+        """Begin a new transaction with the database."""
+        ts = perf_counter()
+        i = 0
+        while True:
+            i += 1
+            try:
+                self._session.execute("BEGIN EXCLUSIVE")
+            except OperationalError as e:
+                if e.orig == "database is locked":
+                    print(('Failed to begin a new transaction after '
+                           '{:0.1f} sec because database is locked by '
+                           'another user (Try #{}).'
+                           ).format(perf_counter() - ts, i))
+                    sleep(3)
+                else:
+                    raise e
+            else:
+                break
 
     def commit(self):
         self._session.commit()
