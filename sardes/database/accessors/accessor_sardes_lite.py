@@ -443,6 +443,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
     def begin_transaction(self, exclusive=True):
         """Begin a new transaction with the database."""
+        if self._session.in_transaction():
+            return
+
         ts = perf_counter()
         i = 0
         while True:
