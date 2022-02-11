@@ -317,7 +317,7 @@ def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
         f.write("")
     assert osp.exists(osp.join(loaded_dirname, osp.basename(filename)))
 
-    # We load the data.
+    # We load the data in the database.
     patcher_msgbox_exec_ = mocker.patch.object(
         QMessageBox, 'exec_', return_value=msgbox_answer)
     assert data_import_wizard._data_saved_in_database is False
@@ -327,10 +327,12 @@ def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
 
     assert osp.exists(filename) is (msgbox_answer == QMessageBox.No)
     assert patcher_msgbox_exec_.call_count == 1
+
     assert_tseries_len(
         data_import_wizard, DataType.WaterLevel, len(readings_data) + 365)
     assert_tseries_len(
         data_import_wizard, DataType.WaterTemp, len(readings_data) + 365)
+
     qtbot.wait(1000)
 
 
