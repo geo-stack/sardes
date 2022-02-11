@@ -229,19 +229,21 @@ class DatabaseConnectionWorker(WorkerBase):
                 DataType.WaterTemp,
                 DataType.WaterEC]
 
+        obs_well_id = obs_well_data['obs_well_id']
         print("Fetching readings data for observation well {}..."
-              .format(obs_well_data['obs_well_id']))
+              .format(obs_well_id))
         try:
             readings = self.db_accessor.get_timeseries_for_obs_well(
                 sampling_feature_uuid, data_types)
         except Exception as error:
-            print()
+            print(("Failed to fetch readings data for observation well {} "
+                   "because of the following error:").format(obs_well_id))
             print(type(error).__name__, end=': ')
             print(error)
             readings = create_empty_readings(data_types)
         else:
             print("Successfully fetched readings data for observation well {}."
-                  .format(obs_well_data['obs_well_id']))
+                  .format(obs_well_id))
 
         # Add metadata to the dataframe.
         readings._metadata = ['sampling_feature_data']
