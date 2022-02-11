@@ -579,6 +579,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         Close the current connection with the database.
         """
+        self._session.rollback()
         self._engine.dispose()
         self._connection = None
 
