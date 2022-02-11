@@ -388,7 +388,6 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
     dbaccessor.add_timeseries_data(
         readings_data, obswells_data.index[0], sonde_installs_bd.index[0])
     readings = dbaccessor.get_timeseries_for_obs_well(obswells_data.index[0])
-    print(readings)
     assert (readings['sonde_id'] == '1016042').all()
     assert (readings['install_depth'] == 11.25).all()
 
