@@ -45,7 +45,10 @@ class DatabaseAccessorBase(ABC):
         """
         Get the data related to name from the database.
         """
-        return getattr(self, '_get_' + name)(*args, **kargs)
+        self.begin_transaction()
+        results = getattr(self, '_get_' + name)(*args, **kargs)
+        self.commit()
+        return results
 
     def set(self, name: str, index: Any,
             values: dict, auto_commit: bool = True) -> None:
@@ -53,6 +56,7 @@ class DatabaseAccessorBase(ABC):
         Set in the database the values related to the specified name
         and index.
         """
+        self.begin_transaction()
         getattr(self, '_set_' + name)(index, values)
         if auto_commit:
             self.commit()
@@ -63,6 +67,7 @@ class DatabaseAccessorBase(ABC):
         Add a new item to the data related to name in the database using
         the given primary_key and values.
         """
+        self.begin_transaction()
         if values is None:
             if not is_list_like(indexes):
                 values = {}
@@ -86,6 +91,7 @@ class DatabaseAccessorBase(ABC):
         Delete from the database the items related to name at the
         specified indexes.
         """
+        self.begin_transaction()
         indexes = [indexes, ] if not is_list_like(indexes) else list(indexes)
         getattr(self, '_del_' + name)(indexes)
         if auto_commit:
@@ -97,6 +103,16 @@ class DatabaseAccessorBase(ABC):
         """
         self._connection, self._connection_error = self._connect()
 
+    def get_timeseries_for_obs_well(self, obs_well_id, data_types=None):
+        """
+        Return a pandas dataframe containing the readings for the given
+        data types and monitoring station.
+        """
+        self.begin_transaction()
+        results = self._get_timeseries_for_obs_well(obs_well_id, data_types)
+        self.commit()
+        return results
+
     def add_timeseries_data(self, tseries_data: pd.DataFrame,
                             obswell_id: Any, installation_id: Any = None,
                             auto_commit: bool = True) -> None:
@@ -104,6 +120,7 @@ class DatabaseAccessorBase(ABC):
         Save in the database a set of timeseries data associated with the
         given well and sonde installation id.
         """
+        self.begin_transaction()
         self._add_timeseries_data(tseries_data, obswell_id, installation_id)
         if auto_commit:
             self.commit()
@@ -114,6 +131,7 @@ class DatabaseAccessorBase(ABC):
         Delete data in the database for the observation IDs, datetime and
         data type specified in tseries_dels.
         """
+        self.begin_transaction()
         self._delete_timeseries_data(tseries_dels)
         if auto_commit:
             self.commit()
@@ -124,6 +142,7 @@ class DatabaseAccessorBase(ABC):
         Save in the database a set of edits that were made to to timeseries
         data that were already saved in the database.
         """
+        self.begin_transaction()
         self._save_timeseries_data_edits(tseries_edits)
         if auto_commit:
             self.commit()
@@ -674,7 +693,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
-    def get_timeseries_for_obs_well(self, obs_well_id, data_types=None):
+    def _get_timeseries_for_obs_well(self, obs_well_id, data_types=None):
         """
         Return a pandas dataframe containing the readings for the given
         data types and monitoring station.

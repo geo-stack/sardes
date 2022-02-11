@@ -1111,8 +1111,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .filter(TimeSeriesData.datetime.in_(date_times))
             )
 
-    def get_timeseries_for_obs_well(self, sampling_feature_uuid,
-                                    data_types=None):
+    def _get_timeseries_for_obs_well(self, sampling_feature_uuid,
+                                     data_types=None):
         """
         Return a pandas dataframe containing the readings for the given
         data types and monitoring station.
