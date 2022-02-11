@@ -161,6 +161,13 @@ class DatabaseAccessor(DatabaseAccessorBase):
         pass
 
     @abstractmethod
+    def init_database(self):
+        """
+        Initialize the tables and attributes of a new database.
+        """
+        pass
+
+    @abstractmethod
     def _connect(self):
         """
         Create a new connection object to communicate with the database.
