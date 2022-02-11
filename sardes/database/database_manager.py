@@ -238,8 +238,7 @@ class DatabaseConnectionWorker(WorkerBase):
             print()
             print(type(error).__name__, end=': ')
             print(error)
-            readings = create_empty_readings(
-                )
+            readings = create_empty_readings(data_types)
         else:
             print("Successfully fetched readings data for observation well {}."
                   .format(obs_well_data['obs_well_id']))
@@ -280,7 +279,7 @@ class DatabaseConnectionWorker(WorkerBase):
             del self._cache['observation_wells_data_overview']
         self.db_accessor.add_timeseries_data(
             tseries_data, obs_well_uuid, sonde_installation_uuid, auto_commit)
-        print("Timeseries data edits added sucessfully.")
+        print("Timeseries data added sucessfully.")
 
     def _delete_timeseries_data(self, tseries_dels, auto_commit=True):
         """
