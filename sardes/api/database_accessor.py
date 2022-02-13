@@ -68,7 +68,7 @@ class DatabaseAccessorBase(ABC):
         try:
             results = func(self, *args, **kwargs)
             if mode == 'read' or kwargs.get('auto_commit', True):
-                self.commit()
+                self.commit_transaction()
         finally:
             self._is_busy = False
 
@@ -175,7 +175,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
     # ---- Database connection
     @abstractmethod
-    def commit(self):
+    def commit_transaction(self):
         "Commit transaction to the database"
         pass
 

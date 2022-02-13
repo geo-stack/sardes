@@ -464,7 +464,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             else:
                 break
 
-    def commit(self):
+    def commit_transaction(self):
         self._session.commit()
 
     def version(self):

@@ -95,11 +95,11 @@ def tablemodel(qtbot, TABLE_DATAF):
         def close_connection(self):
             self._connection = None
 
-        def begin_transaction(self, exclusive=True):
-            # This accessor does not support transactions.
+        def commit_transaction(self):
+            # This accessor does not support journal logging.
             pass
 
-        def commit(self):
+        def begin_transaction(self, exclusive=True):
             # This accessor does not support journal logging.
             pass
 

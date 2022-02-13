@@ -171,7 +171,7 @@ class DatabaseConnectionWorker(WorkerBase):
                       values['edited_value'].to_dict(),
                       auto_commit=False)
 
-        self.db_accessor.commit()
+        self.db_accessor.commit_transaction()
 
         print("Edits for table '{}' saved successfully in the database..."
               .format(name))
@@ -204,7 +204,7 @@ class DatabaseConnectionWorker(WorkerBase):
         """
         self._save_timeseries_data_edits(tseries_edits, auto_commit=False)
         self._delete_timeseries_data(tseries_dels, auto_commit=False)
-        self.db_accessor.commit()
+        self.db_accessor.commit_transaction()
         return self._get_timeseries_for_obs_well(station_id)[0],
 
     def _get_timeseries_for_obs_well(self, sampling_feature_uuid,
