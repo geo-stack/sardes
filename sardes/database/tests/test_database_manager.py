@@ -51,10 +51,12 @@ def dbaccessor(qtbot, mocker, DATAF):
         def is_connected(self):
             return self._connection is True
 
-        def commit(self):
+        def commit_transaction(self):
+            # This accessor does not support journal logging.
             pass
 
         def begin_transaction(self):
+            # This accessor does not support journal logging.
             pass
 
         def close_connection(self):
