@@ -24,7 +24,6 @@ class WorkerBase(QObject):
 
     def __init__(self):
         super().__init__()
-        self.project_accessor = None
         self._tasks = OrderedDict()
 
     def add_task(self, task_uuid4, task, *args, **kargs):
