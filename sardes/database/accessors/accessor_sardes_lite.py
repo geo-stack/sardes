@@ -435,7 +435,11 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._database = database
 
         # create a SQL Alchemy engine.
-        self._engine = self._create_engine()
+        database_url = URL.create('sqlite', database=self._database)
+        self._engine = create_engine(
+            database_url,
+            echo=False,
+            connect_args={'check_same_thread': False})
 
         # create a session.
         Session = sessionmaker(bind=self._engine)
@@ -507,12 +511,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self.execute("PRAGMA user_version = {}".format(CURRENT_SCHEMA_VERSION))
 
     # ---- Database connection
-    def _create_engine(self):
-        """Create a SQL Alchemy engine."""
-        database_url = URL.create('sqlite', database=self._database)
-        return create_engine(database_url, echo=False,
-                             connect_args={'check_same_thread': False})
-
     def is_connected(self):
         """Return whether a connection to a database is currently active."""
         return self._connection is not None
