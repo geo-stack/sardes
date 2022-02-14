@@ -171,7 +171,7 @@ class DatabaseConnectionWorker(WorkerBase):
                       values['edited_value'].to_dict(),
                       auto_commit=False)
 
-        self.db_accessor.commit()
+        self.db_accessor.commit_transaction()
 
         print("Edits for table '{}' saved successfully in the database..."
               .format(name))
@@ -204,7 +204,7 @@ class DatabaseConnectionWorker(WorkerBase):
         """
         self._save_timeseries_data_edits(tseries_edits, auto_commit=False)
         self._delete_timeseries_data(tseries_dels, auto_commit=False)
-        self.db_accessor.commit()
+        self.db_accessor.commit_transaction()
         return self._get_timeseries_for_obs_well(station_id)[0],
 
     def _get_timeseries_for_obs_well(self, sampling_feature_uuid,
@@ -229,20 +229,21 @@ class DatabaseConnectionWorker(WorkerBase):
                 DataType.WaterTemp,
                 DataType.WaterEC]
 
+        obs_well_id = obs_well_data['obs_well_id']
         print("Fetching readings data for observation well {}..."
-              .format(obs_well_data['obs_well_id']))
+              .format(obs_well_id))
         try:
             readings = self.db_accessor.get_timeseries_for_obs_well(
                 sampling_feature_uuid, data_types)
         except Exception as error:
-            print()
+            print(("Failed to fetch readings data for observation well {} "
+                   "because of the following error:").format(obs_well_id))
             print(type(error).__name__, end=': ')
             print(error)
-            readings = create_empty_readings(
-                )
+            readings = create_empty_readings(data_types)
         else:
             print("Successfully fetched readings data for observation well {}."
-                  .format(obs_well_data['obs_well_id']))
+                  .format(obs_well_id))
 
         # Add metadata to the dataframe.
         readings._metadata = ['sampling_feature_data']
@@ -280,7 +281,7 @@ class DatabaseConnectionWorker(WorkerBase):
             del self._cache['observation_wells_data_overview']
         self.db_accessor.add_timeseries_data(
             tseries_data, obs_well_uuid, sonde_installation_uuid, auto_commit)
-        print("Timeseries data edits added sucessfully.")
+        print("Timeseries data added sucessfully.")
 
     def _delete_timeseries_data(self, tseries_dels, auto_commit=True):
         """
