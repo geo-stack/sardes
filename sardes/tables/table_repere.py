@@ -50,11 +50,13 @@ class RepereTableModel(StandardSardesTableModel):
         SardesTableColumn(
             'start_date', _('Date From'), 'datetime64[ns]', notnull=True,
             delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
+            strftime_format='%Y-%m-%d %H:%M'),
         SardesTableColumn(
             'end_date', _('Date To'), 'datetime64[ns]',
             delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
+            strftime_format='%Y-%m-%d %H:%M'),
         SardesTableColumn(
             'is_alt_geodesic', _('Geodesic'), 'boolean', notnull=True,
             delegate=BoolEditDelegate),
@@ -82,17 +84,11 @@ class RepereTableModel(StandardSardesTableModel):
 
         visual_dataf['ground_altitude'] = (
             visual_dataf['top_casing_alt'] - visual_dataf['casing_length'])
-        visual_dataf['start_date'] = (
-            pd.to_datetime(visual_dataf['start_date'], format="%Y-%m-%d %H:%M")
-            .dt.strftime('%Y-%m-%d %H:%M'))
-        visual_dataf['end_date'] = (
-            pd.to_datetime(visual_dataf['end_date'], format="%Y-%m-%d %H:%M")
-            .dt.strftime('%Y-%m-%d %H:%M'))
         visual_dataf['is_alt_geodesic'] = (
             visual_dataf['is_alt_geodesic']
             .map({True: _('Yes'), False: _('No')}.get)
             )
-        return visual_dataf
+        return super().logical_to_visual_data(visual_dataf)
 
 
 class RepereTableWidget(SardesTableWidget):
