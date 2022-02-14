@@ -499,7 +499,7 @@ class DatabaseConnectionWorker(WorkerBase):
                 pnt_desc += '{} = {:0.4f}<br/>'.format(
                     _('Latitude'),
                     station_data['latitude'])
-                pnt_desc = '{} = {:0.2f} m MSL ({})<br/>'.format(
+                pnt_desc += '{} = {:0.2f} m MSL ({})<br/>'.format(
                     _('Ground altitude'),
                     ground_altitude,
                     _('Geodesic') if is_alt_geodesic else _('Approximate'))
