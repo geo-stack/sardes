@@ -429,6 +429,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
     """
     Manage the connection and requests to a RSESQ database.
     """
+    _begin_transaction_try_count = 0
 
     def __init__(self, database, *args, **kargs):
         super().__init__()
@@ -451,9 +452,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             return
 
         ts = perf_counter()
-        i = 0
+        self._begin_transaction_try_count = 0
         while True:
-            i += 1
+            self._begin_transaction_try_count += 1
             try:
                 self._session.execute("BEGIN EXCLUSIVE")
             except OperationalError as e:
@@ -461,8 +462,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                     print(('Failed to begin a new transaction after '
                            '{:0.1f} sec because database is locked by '
                            'another user (Try #{}).'
-                           ).format(perf_counter() - ts, i))
-                    sleep(3)
+                           ).format(perf_counter() - ts,
+                                    self._begin_transaction_try_count))
+                    sleep(1)
                 else:
                     raise e
             else:

@@ -21,12 +21,14 @@ import os
 import os.path as osp
 import uuid
 from uuid import UUID
+from time import sleep
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import numpy as np
 import pytest
 import pandas as pd
+from qtpy.QtCore import QTimer, QCoreApplication
 from pandas.api.types import (
     is_datetime64_any_dtype, is_object_dtype, is_bool_dtype)
 from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -34,6 +36,7 @@ from matplotlib.figure import Figure
 
 # ---- Local imports
 from sardes.utils.data_operations import are_values_equal
+from sardes.api.taskmanagers import TaskManagerBase, WorkerBase
 from sardes.api.timeseries import DataType
 from sardes.api.database_accessor import DatabaseAccessorError
 from sardes.database.accessors.accessor_sardes_lite import (
@@ -81,8 +84,26 @@ def dbaccessor(tmp_path):
     assert not dbaccessor.is_connected()
 
 
+@pytest.fixture()
+def dblocker(dbaccessor):
+    class WorkerTest(WorkerBase):
+        def __init__(self, database):
+            super().__init__()
+            self.dbaccessor = DatabaseAccessorSardesLite(database)
+
+        def _lock_database(self):
+            self.dbaccessor.begin_transaction()
+            sleep(10)
+            self.dbaccessor.commit_transaction()
+
+    dblocker = TaskManagerBase()
+    dblocker.set_worker(WorkerTest(dbaccessor._database))
+
+    return dblocker
+
+
 # =============================================================================
-# ---- Independent Tests
+# ---- Tests
 # =============================================================================
 def test_connection(dbaccessor):
     """
@@ -995,6 +1016,47 @@ def test_add_delete_large_timeseries_record(dbaccessor):
     wtemp_data = dbaccessor.get_timeseries_for_obs_well(
         sampling_feature_uuid, DataType.WaterTemp)
     assert len(wtemp_data) == 0
+
+
+def test_concurrent_read_write_access(qtbot, dblocker, dbaccessor,
+                                      obswells_data):
+    """
+    Test that multiple users can access the database at the same time.
+
+    See cgq-qgc/sardes#534.
+    """
+    name = obswells_data.attrs['name']
+    data = dbaccessor.get(name)
+    assert len(data) == 0
+
+    dblocker.add_task('lock_database', callback=None)
+    dblocker.run_tasks()
+    qtbot.wait(100)
+
+    # Test a writing method.
+    assert dbaccessor._begin_transaction_try_count == 1
+    _dict = obswells_data.to_dict('index')
+    indexes = dbaccessor.add(
+        name=name,
+        values=_dict.values(),
+        indexes=_dict.keys()
+        )
+    assert dbaccessor._begin_transaction_try_count == 2
+
+    data = dbaccessor.get(name)
+    assert len(indexes) == 5
+    assert len(data) == 5
+
+    # Test a reading method.
+    dblocker.add_task('lock_database', callback=None)
+    dblocker.run_tasks()
+    qtbot.wait(100)
+
+    assert dbaccessor._begin_transaction_try_count == 1
+    data = dbaccessor.get(name)
+    assert dbaccessor._begin_transaction_try_count == 2
+
+    assert len(data) == 5
 
 
 if __name__ == "__main__":
