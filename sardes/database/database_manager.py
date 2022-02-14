@@ -518,7 +518,7 @@ class DatabaseConnectionWorker(WorkerBase):
                         _('Last reading'),
                         last_reading.strftime('%Y-%m-%d'))
                 pnt_desc += '{} = {}<br/>'.format(
-                    _('Statut'),
+                    _('Status'),
                     _('Active') if is_station_active else _('Inactive'))
 
                 # Fetch data from the database.
