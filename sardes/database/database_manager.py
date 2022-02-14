@@ -500,7 +500,7 @@ class DatabaseConnectionWorker(WorkerBase):
                     _('Latitude'),
                     station_data['latitude'])
                 pnt_desc += '{} = {:0.2f} {} ({})<br/>'.format(
-                    _('Ground Altitude'),
+                    _('Ground Alt.'),
                     ground_altitude,
                     _('m MSL'),
                     _('Geodesic') if is_alt_geodesic else _('Approximate'))
