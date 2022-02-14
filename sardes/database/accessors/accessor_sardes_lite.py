@@ -457,7 +457,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             try:
                 self._session.execute("BEGIN EXCLUSIVE")
             except OperationalError as e:
-                if e.orig == "database is locked":
+                if "database is locked" in str(e.orig).lower():
                     print(('Failed to begin a new transaction after '
                            '{:0.1f} sec because database is locked by '
                            'another user (Try #{}).'
