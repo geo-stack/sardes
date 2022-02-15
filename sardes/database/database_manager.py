@@ -432,13 +432,23 @@ class DatabaseConnectionWorker(WorkerBase):
         fol = simplekml.Folder()
         kml.document = fol
 
-        # Define the style for the placemarks.
-        pnt_style = simplekml.Style()
-        pnt_style.iconstyle.icon.href = (
+        # Define the styles for the placemarks.
+        pnt_styles = {}
+
+        pnt_styles['active'] = simplekml.Style()
+        pnt_styles['active'].iconstyle.icon.href = (
             'http://maps.google.com/mapfiles/kml/paddle/blu-circle.png')
-        pnt_style.iconstyle.scale = 0.8
-        pnt_style.labelstyle.color = 'bfffffff'
-        pnt_style.labelstyle.scale = 0.8
+        pnt_styles['active'].iconstyle.scale = 0.8
+        pnt_styles['active'].labelstyle.color = 'bfffffff'
+        pnt_styles['active'].labelstyle.scale = 0.8
+
+        pnt_styles['inactive'] = simplekml.Style()
+        pnt_styles['inactive'] = simplekml.Style()
+        pnt_styles['inactive'].iconstyle.icon.href = (
+            'http://maps.google.com/mapfiles/kml/paddle/red-circle.png')
+        pnt_styles['inactive'].iconstyle.scale = 0.8
+        pnt_styles['inactive'].labelstyle.color = 'bfffffff'
+        pnt_styles['inactive'].labelstyle.scale = 0.8
 
         repere_data, = self._get('repere_data')
         stations_data_overview, = self._get('observation_wells_data_overview')
@@ -460,7 +470,6 @@ class DatabaseConnectionWorker(WorkerBase):
                 return False,
 
             pnt = fol.newpoint(coords=[loc])
-            pnt.style = pnt_style
 
             loc_stations_data = (
                 stations_data[stations_data['locations'] == loc]
@@ -469,11 +478,22 @@ class DatabaseConnectionWorker(WorkerBase):
             municipality = loc_stations_data['municipality'].values[0]
             pnt.name = municipality
 
+            # Track whether at least one well is active when multiple
+            # groudwater wells are nested toghether.
+            nested_well_status = False
+
             pnt_desc = '<![CDATA['
             for station_uuid, station_data in loc_stations_data.iterrows():
                 progress += 1
                 station_data = stations_data.loc[station_uuid]
+
                 is_station_active = station_data['is_station_active']
+                nested_well_status = is_station_active or nested_well_status
+                if nested_well_status is True:
+                    pnt.style = pnt_styles['active']
+                else:
+                    pnt.style = pnt_styles['inactive']
+
                 station_repere_data = (
                     repere_data
                     [repere_data['sampling_feature_uuid'] == station_uuid]
