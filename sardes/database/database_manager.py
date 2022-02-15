@@ -473,6 +473,7 @@ class DatabaseConnectionWorker(WorkerBase):
             for station_uuid, station_data in loc_stations_data.iterrows():
                 progress += 1
                 station_data = stations_data.loc[station_uuid]
+                is_station_active = station_data['is_station_active']
                 station_repere_data = (
                     repere_data
                     [repere_data['sampling_feature_uuid'] == station_uuid]
@@ -483,6 +484,11 @@ class DatabaseConnectionWorker(WorkerBase):
                         .sort_values(by=['end_date'], ascending=[True]))
                 else:
                     station_repere_data = pd.Series([], dtype=object)
+                last_repere_data = station_repere_data.iloc[-1]
+                ground_altitude = (
+                    last_repere_data['top_casing_alt'] -
+                    last_repere_data['casing_length'])
+                is_alt_geodesic = last_repere_data['is_alt_geodesic']
 
                 pnt_desc += '{} = {}<br/>'.format(
                     _('Station'),
@@ -493,19 +499,27 @@ class DatabaseConnectionWorker(WorkerBase):
                 pnt_desc += '{} = {:0.4f}<br/>'.format(
                     _('Latitude'),
                     station_data['latitude'])
+                pnt_desc += '{} = {:0.2f} {} ({})<br/>'.format(
+                    _('Ground Alt.'),
+                    ground_altitude,
+                    _('m MSL'),
+                    _('Geodesic') if is_alt_geodesic else _('Approximate'))
                 pnt_desc += '{} = {}<br/>'.format(
                     _('Water-table'),
                     station_data['confinement'])
                 pnt_desc += '{} = {}<br/>'.format(
                     _('Influenced'),
                     station_data['is_influenced'])
-
+                pnt_desc += '<br/>'
                 if station_uuid in stations_data_overview.index:
                     last_reading = (stations_data_overview
                                     .loc[station_uuid]['last_date'])
-                    pnt_desc += '<br/>{} = {}<br/>'.format(
+                    pnt_desc += '{} = {}<br/>'.format(
                         _('Last reading'),
                         last_reading.strftime('%Y-%m-%d'))
+                pnt_desc += '{} = {}<br/>'.format(
+                    _('Status'),
+                    _('Active') if is_station_active else _('Inactive'))
 
                 # Fetch data from the database.
                 if iri_data is not None or iri_graphs is not None:
@@ -516,11 +530,6 @@ class DatabaseConnectionWorker(WorkerBase):
                                     DataType.WaterEC])
                     formatted_data = format_reading_data(
                         readings, station_repere_data)
-                    last_repere_data = station_repere_data.iloc[-1]
-                    ground_altitude = (
-                        last_repere_data['top_casing_alt'] -
-                        last_repere_data['casing_length'])
-                    is_alt_geodesic = last_repere_data['is_alt_geodesic']
                 if iri_logs is not None:
                     log_data, log_fame = (
                         self.db_accessor.get_attachment(station_uuid, 1))
