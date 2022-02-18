@@ -10,8 +10,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1.0\n"
-"POT-Creation-Date: 2022-02-14 17:13-0500\n"
-"PO-Revision-Date: 2022-02-14 17:14-0500\n"
+"POT-Creation-Date: 2022-02-18 17:30-0500\n"
+"PO-Revision-Date: 2022-02-18 17:32-0500\n"
 "Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs."
 "ca.com>\n"
 "Language-Team: Python\n"
@@ -50,10 +50,8 @@ msgid "image.png"
 msgstr "image.png"
 
 #: ..\sardes\api\figures.py:132
-#, fuzzy
-#| msgid "Save File"
 msgid "Save Figure"
-msgstr "Enregistrer le fichier"
+msgstr "Enregistrer la figure"
 
 #: ..\sardes\api\figures.py:164 ..\sardes\tools\hydrographs.py:117
 #: ..\sardes\tools\save2excel.py:112 ..\sardes\widgets\console.py:124
@@ -1193,10 +1191,10 @@ msgid "Depth (m)"
 msgstr "Profondeur (m)"
 
 #: ..\sardes\tables\table_sonde_installations.py:119
-#, fuzzy
-#| msgid "Sonde Installations"
-msgid "Delete sonde installations warning"
-msgstr "Sonde installations"
+#: ..\sardes\widgets\tableviews.py:65 ..\sardes\widgets\tableviews.py:74
+#: ..\sardes\widgets\tableviews.py:144
+msgid "Warning"
+msgstr "Avertissement"
 
 #: ..\sardes\tables\table_sonde_installations.py:120
 msgid ""
@@ -1540,11 +1538,6 @@ msgstr "Importer depuis le presse-papiers"
 msgid "Add the Clipboard contents to this table."
 msgstr "Ajouter le contenu du presse-papiers à ce tableau."
 
-#: ..\sardes\widgets\tableviews.py:65 ..\sardes\widgets\tableviews.py:74
-#: ..\sardes\widgets\tableviews.py:144
-msgid "Import from Clipboard warning"
-msgstr "Avertissement"
-
 #: ..\sardes\widgets\tableviews.py:66
 msgid "Nothing was added to the table because the Clipboard was empty."
 msgstr "Rien n'a été ajouté à la table car le presse-papiers est vide."
@@ -1737,10 +1730,8 @@ msgid "This function cannot be used with multiple selections."
 msgstr "Cette fonction ne fonctionne pas sur plusieurs sélections."
 
 #: ..\sardes\widgets\tableviews.py:1536
-#, fuzzy
-#| msgid "Save edits"
-msgid "Save edits error"
-msgstr "Enregistrer les modifications"
+msgid "Error"
+msgstr "Erreur"
 
 #: ..\sardes\widgets\tableviews.py:1551
 msgid "Save changes"
@@ -1922,60 +1913,3 @@ msgid ""
 msgstr ""
 "Entrez une valeur comprise entre 0 et 99 points pour modifier la taille des "
 "marqueurs du tracé de la série chronologique actuellement sélectionnée."
-
-#~ msgid "Ok"
-#~ msgstr "Ok"
-
-#~ msgid "Well"
-#~ msgstr "Puits"
-
-#~ msgid "Brand Model Serial"
-#~ msgstr "Sonde"
-
-#~ msgid ""
-#~ "<b>Duplicate key value violates unique constraint.</b><br><br>The {} <i>{}"
-#~ "</i> already exists. Please use another value."
-#~ msgstr ""
-#~ "<b>La valeur de la clé enfreint la contrainte d'unicité.</b><br><br>La "
-#~ "valeur {} existe déjà pour le champ <i>{}</i>. Veuillez utiliser une "
-#~ "autre valeur."
-
-#~ msgid "Edits error"
-#~ msgstr "Erreur de modification"
-
-#~ msgid "Readings Data"
-#~ msgstr "Données"
-
-#~ msgid "Importing standard Python modules..."
-#~ msgstr "Importation des modules standards de Python en cours..."
-
-#~ msgid "Importing third party Python modules..."
-#~ msgstr "Importation des modules tiers de Python en cours..."
-
-#~ msgid "Importing local Python modules..."
-#~ msgstr "Importation des modules maisons de Python en cours..."
-
-#~ msgid ""
-#~ "This is a demo mode to test Sardes without needing to connect to a "
-#~ "database. Note that any changes made in demo mode will be lost when "
-#~ "Sardes is restarted.\n"
-#~ "\n"
-#~ "Click 'Connect' to start testing Sardes in demo mode."
-#~ msgstr ""
-#~ "Il s'agit d'un mode démo pour tester Sardes sans avoir besoin de se "
-#~ "connecter à une base de données. Notez que toutes les modifications "
-#~ "apportées en mode démo seront perdues au redémarrage de Sardes.\n"
-#~ "\n"
-#~ "Cliquez sur 'Connecter' pour commencer à tester Sardes en mode démo."
-
-#~ msgid "Coordinates (dd):"
-#~ msgstr "Coordonnées (dd) :"
-
-#~ msgid "© {} Government of Quebec"
-#~ msgstr "© {} Gouvernement du Québec"
-
-#~ msgid "Clear All"
-#~ msgstr "Effacer tout"
-
-#~ msgid "Water level altitude (m)"
-#~ msgstr "Altitude du niveau d'eau (m)"

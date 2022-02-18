@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2022-02-14 17:13-0500\n"
+"POT-Creation-Date: 2022-02-18 17:30-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1031,7 +1031,9 @@ msgid "Depth (m)"
 msgstr ""
 
 #: ..\sardes\tables\table_sonde_installations.py:119
-msgid "Delete sonde installations warning"
+#: ..\sardes\widgets\tableviews.py:65 ..\sardes\widgets\tableviews.py:74
+#: ..\sardes\widgets\tableviews.py:144
+msgid "Warning"
 msgstr ""
 
 #: ..\sardes\tables\table_sonde_installations.py:120
@@ -1338,11 +1340,6 @@ msgstr ""
 msgid "Add the Clipboard contents to this table."
 msgstr ""
 
-#: ..\sardes\widgets\tableviews.py:65 ..\sardes\widgets\tableviews.py:74
-#: ..\sardes\widgets\tableviews.py:144
-msgid "Import from Clipboard warning"
-msgstr ""
-
 #: ..\sardes\widgets\tableviews.py:66
 msgid "Nothing was added to the table because the Clipboard was empty."
 msgstr ""
@@ -1496,7 +1493,7 @@ msgid "This function cannot be used with multiple selections."
 msgstr ""
 
 #: ..\sardes\widgets\tableviews.py:1536
-msgid "Save edits error"
+msgid "Error"
 msgstr ""
 
 #: ..\sardes\widgets\tableviews.py:1551
