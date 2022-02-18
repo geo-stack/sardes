@@ -443,7 +443,6 @@ class DatabaseConnectionWorker(WorkerBase):
         pnt_styles['active'].labelstyle.scale = 0.8
 
         pnt_styles['inactive'] = simplekml.Style()
-        pnt_styles['inactive'] = simplekml.Style()
         pnt_styles['inactive'].iconstyle.icon.href = (
             'http://maps.google.com/mapfiles/kml/paddle/red-circle.png')
         pnt_styles['inactive'].iconstyle.scale = 0.8
@@ -487,7 +486,7 @@ class DatabaseConnectionWorker(WorkerBase):
                 progress += 1
                 station_data = stations_data.loc[station_uuid]
 
-                is_station_active = station_data['is_station_active']
+                is_station_active = bool(station_data['is_station_active'])
                 nested_well_status = is_station_active or nested_well_status
                 if nested_well_status is True:
                     pnt.style = pnt_styles['active']
