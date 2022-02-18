@@ -1533,7 +1533,7 @@ class SardesTableView(QTableView):
 
             msgbox = QMessageBox(
                 QMessageBox.Warning,
-                _('Save edits error'),
+                _('Error'),
                 error.error_message(self),
                 buttons=QMessageBox.Ok,
                 parent=self)
