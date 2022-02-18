@@ -62,7 +62,7 @@ class ImportFromClipboardTool(SardesTool):
         new_data = pd.read_clipboard(sep='\t', dtype='str', header=None)
         if new_data.empty:
             self.parent.show_message(
-                title=_("Import from Clipboard warning"),
+                title=_("Warning"),
                 message=_("Nothing was added to the table because the "
                           "Clipboard was empty."),
                 func='warning')
@@ -71,7 +71,7 @@ class ImportFromClipboardTool(SardesTool):
         table_visible_columns = self.parent.tableview.visible_columns()
         if len(new_data.columns) > len(table_visible_columns):
             self.parent.show_message(
-                title=_("Import from Clipboard warning"),
+                title=_("Warning"),
                 message=_("The Clipboard contents cannot be added to "
                           "the table because the number of columns of the "
                           "copied data is too large."),
@@ -141,7 +141,7 @@ class ImportFromClipboardTool(SardesTool):
                         ';</li><li>'.join(warning_messages)))
         if formatted_message is not None:
             self.parent.show_message(
-                title=_("Import from Clipboard warning"),
+                title=_("Warning"),
                 message=formatted_message,
                 func='warning')
 
