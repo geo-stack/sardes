@@ -116,7 +116,7 @@ class SondeInstallationsTableWidget(SardesTableWidget):
 
         msgbox = QMessageBox(
             QMessageBox.Information,
-            _('Delete sonde installations warning'),
+            _('Warning'),
             _("<p>Note that readings data associated with a sonde "
               "installation that is being deleted are always kept in "
               "the database.</p>"
