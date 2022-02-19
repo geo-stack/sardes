@@ -10,7 +10,7 @@ trigger:
 variables:
   AZURE: True
   CODECOV_TOKEN: "9c69b956-574c-4c6c-bfda-ac77db6a5a46"
-  SARDES_OUTPUT_DIRNAME: 'sardes_0.12.0_win_amd64'
+  SARDES_OUTPUT_DIRNAME: 'sardes_0.12.1_win_amd64'
 
 pool:
   vmImage: 'windows-2019'
@@ -44,7 +44,7 @@ steps:
   displayName: 'Run codecov'
 
 - script: |
-    python -m pip install pyinstaller==4.2 pywin32 tornado
+    python -m pip install pyinstaller==4.9 tornado
     set PYTHONPATH=$(Build.SourcesDirectory);%PYTHONPATH%
     cd ./releases
     pyinstaller.exe sardes.spec
