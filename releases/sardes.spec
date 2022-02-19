@@ -20,7 +20,8 @@ a = Analysis(['../sardes/app/mainwindow.py'],
                  'win32timezone', 'sqlalchemy.ext.baked', 'PIL.BmpImagePlugin',
                  'PIL.Jpeg2KImagePlugin', 'PIL.JpegImagePlugin',
                  'PIL.PngImagePlugin', 'PIL.TiffImagePlugin',
-                 'PIL.WmfImagePlugin', 'pkg_resources.py2_warn'
+                 'PIL.WmfImagePlugin', 'pkg_resources.py2_warn',
+                 'sqlalchemy.sql.default_comparator'
                  ],
              hookspath=[],
              runtime_hooks=[],
