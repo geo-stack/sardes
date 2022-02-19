@@ -44,7 +44,7 @@ steps:
   displayName: 'Run codecov'
 
 - script: |
-    python -m pip install pyinstaller==4.2 pywin32 tornado
+    python -m pip install pyinstaller==4.9 tornado
     set PYTHONPATH=$(Build.SourcesDirectory);%PYTHONPATH%
     cd ./releases
     pyinstaller.exe sardes.spec
