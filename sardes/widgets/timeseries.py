@@ -720,7 +720,10 @@ class TimeSeriesFigure(MplFigure):
             # See cgq-qgc/sardes#313.
             renderer = self.canvas.get_renderer()
         except AttributeError:
-            self.canvas.draw()
+            # With more recent version of matplotlib we need to use 'draw_idle'
+            # instead of 'draw'.
+            # see cgq-qgc/sardes#553.
+            self.canvas.draw_idle()
             return
 
         fheight = self.get_figheight()
