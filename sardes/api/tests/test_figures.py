@@ -15,10 +15,11 @@ Tests for the figures.py module.
 import os.path as osp
 
 # ---- Third party imports
-import matplotlib.pyplot as plt
 import pytest
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QApplication
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.figure import Figure
 
 # ---- Local imports
 from sardes.api.figures import (
@@ -30,7 +31,9 @@ from sardes.api.figures import (
 # =============================================================================
 @pytest.fixture
 def figwidget(qtbot):
-    figure, ax = plt.subplots(1, 1)
+    figure = Figure()
+    canvas = FigureCanvasAgg(figure)
+    ax = figure.add_axes([0.1, 0.1, 0.8, 0.8], frameon=True)
     ax.plot([1, 2, 3], [1, 2, 3], '.')
 
     figcanvas = SardesFigureCanvas(figure)

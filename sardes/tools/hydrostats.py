@@ -527,7 +527,10 @@ class SatisticalHydrographFigure(Figure):
             # pdf and svg.
             renderer = self.canvas.get_renderer()
         except AttributeError:
-            self.canvas.draw()
+            # With more recent version of matplotlib we need to use 'draw_idle'
+            # instead of 'draw'.
+            # see cgq-qgc/sardes#553.
+            self.canvas.draw_idle()
             return
 
         figborderpad = 15

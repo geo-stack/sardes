@@ -12,7 +12,7 @@ Tests for the Sondes Inventory table.
 """
 
 # ---- Standard imports
-from datetime import date
+from datetime import datetime
 import os
 os.environ['SARDES_PYTEST'] = 'True'
 
@@ -129,8 +129,8 @@ def test_edit_sondes_data(tablewidget, qtbot, dbaccessor):
     edited_values = {
         'sonde_model_id': 1,
         'sonde_serial_no': 'edited_sonde_serial_no',
-        'date_reception': date(2010, 3, 3),
-        'date_withdrawal': date(2010, 3, 30),
+        'date_reception': datetime(2010, 3, 3),
+        'date_withdrawal': datetime(2010, 3, 30),
         'in_repair': True,
         'out_of_order': True,
         'lost': True,

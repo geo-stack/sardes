@@ -62,7 +62,7 @@ class ImportFromClipboardTool(SardesTool):
         new_data = pd.read_clipboard(sep='\t', dtype='str', header=None)
         if new_data.empty:
             self.parent.show_message(
-                title=_("Import from Clipboard warning"),
+                title=_("Warning"),
                 message=_("Nothing was added to the table because the "
                           "Clipboard was empty."),
                 func='warning')
@@ -71,7 +71,7 @@ class ImportFromClipboardTool(SardesTool):
         table_visible_columns = self.parent.tableview.visible_columns()
         if len(new_data.columns) > len(table_visible_columns):
             self.parent.show_message(
-                title=_("Import from Clipboard warning"),
+                title=_("Warning"),
                 message=_("The Clipboard contents cannot be added to "
                           "the table because the number of columns of the "
                           "copied data is too large."),
@@ -141,7 +141,7 @@ class ImportFromClipboardTool(SardesTool):
                         ';</li><li>'.join(warning_messages)))
         if formatted_message is not None:
             self.parent.show_message(
-                title=_("Import from Clipboard warning"),
+                title=_("Warning"),
                 message=formatted_message,
                 func='warning')
 
@@ -824,7 +824,7 @@ class SardesTableView(QTableView):
         Handle when an edit is made to the data of the table model.
         """
         if data_edit is None:
-            # This means that all tablem model edits were cancelled.
+            # This means that all table model edits were cancelled.
             self._data_edit_cursor_pos.clear()
             self._update_actions_state()
             return
@@ -1533,11 +1533,11 @@ class SardesTableView(QTableView):
 
             msgbox = QMessageBox(
                 QMessageBox.Warning,
-                _('Save edits error'),
+                _('Error'),
                 error.error_message(self),
                 buttons=QMessageBox.Ok,
                 parent=self)
-            msgbox.button(msgbox.Ok).setText(_("Ok"))
+            msgbox.button(msgbox.Ok).setText(_("OK"))
             msgbox.exec_()
 
     def _save_data_edits(self, force=True):
@@ -1689,9 +1689,15 @@ class SardesTableWidget(SardesPaneWidget):
             table_model, self, multi_columns_sort, sections_movable,
             sections_hidable, disabled_actions)
         self.tableview.setAutoFillBackground(True)
-        self.tableview.viewport().setStyleSheet(
-            "background-color: rgb(%d, %d, %d);" %
-            getattr(QStyleOption().palette, 'light')().color().getRgb()[:-1])
+
+        r255, b255, g255 = getattr(
+            QStyleOption().palette, 'light')().color().getRgb()[:-1]
+        viewport = self.tableview.viewport()
+        viewport.setObjectName(str(id(viewport)))
+        viewport.setStyleSheet(
+            "#{} {{background-color: rgb({}, {}, {});}}"
+            .format(str(id(viewport)), r255, b255, g255))
+
         self.tableview.sig_current_changed.connect(
             self.on_current_changed)
 

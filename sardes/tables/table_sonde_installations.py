@@ -39,11 +39,13 @@ class SondeInstallationsTableModel(StandardSardesTableModel):
         SardesTableColumn(
             'start_date', _('Date From'), 'datetime64[ns]', notnull=True,
             delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
+            strftime_format='%Y-%m-%d %H:%M'),
         SardesTableColumn(
             'end_date', _('Date To'), 'datetime64[ns]',
             delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
+            strftime_format='%Y-%m-%d %H:%M'),
         SardesTableColumn(
             'install_depth', _('Depth (m)'), 'float64', notnull=True,
             delegate=NumEditDelegate,
@@ -95,12 +97,7 @@ class SondeInstallationsTableModel(StandardSardesTableModel):
         except KeyError:
             pass
 
-        visual_dataf['start_date'] = (visual_dataf['start_date']
-                                      .dt.strftime('%Y-%m-%d %H:%M'))
-        visual_dataf['end_date'] = (visual_dataf['end_date']
-                                    .dt.strftime('%Y-%m-%d %H:%M'))
-
-        return visual_dataf
+        return super().logical_to_visual_data(visual_dataf)
 
 
 class SondeInstallationsTableWidget(SardesTableWidget):
@@ -119,7 +116,7 @@ class SondeInstallationsTableWidget(SardesTableWidget):
 
         msgbox = QMessageBox(
             QMessageBox.Information,
-            _('Delete sonde installations warning'),
+            _('Warning'),
             _("<p>Note that readings data associated with a sonde "
               "installation that is being deleted are always kept in "
               "the database.</p>"
@@ -129,7 +126,7 @@ class SondeInstallationsTableWidget(SardesTableWidget):
             buttons=QMessageBox.Ok,
             parent=self.tableview)
         msgbox.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        msgbox.button(msgbox.Ok).setText(_("Ok"))
+        msgbox.button(msgbox.Ok).setText(_("OK"))
 
         chkbox = QCheckBox(
             _("Do not show this message again during this session."))

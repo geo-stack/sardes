@@ -21,12 +21,14 @@ import os
 import os.path as osp
 import uuid
 from uuid import UUID
+from time import sleep
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
 import numpy as np
 import pytest
 import pandas as pd
+from qtpy.QtCore import QTimer, QCoreApplication
 from pandas.api.types import (
     is_datetime64_any_dtype, is_object_dtype, is_bool_dtype)
 from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -34,6 +36,7 @@ from matplotlib.figure import Figure
 
 # ---- Local imports
 from sardes.utils.data_operations import are_values_equal
+from sardes.api.taskmanagers import TaskManagerBase, WorkerBase
 from sardes.api.timeseries import DataType
 from sardes.api.database_accessor import DatabaseAccessorError
 from sardes.database.accessors.accessor_sardes_lite import (
@@ -81,8 +84,26 @@ def dbaccessor(tmp_path):
     assert not dbaccessor.is_connected()
 
 
+@pytest.fixture()
+def dblocker(dbaccessor):
+    class WorkerTest(WorkerBase):
+        def __init__(self, database):
+            super().__init__()
+            self.dbaccessor = DatabaseAccessorSardesLite(database)
+
+        def _lock_database(self):
+            self.dbaccessor.begin_transaction()
+            sleep(10)
+            self.dbaccessor.commit_transaction()
+
+    dblocker = TaskManagerBase()
+    dblocker.set_worker(WorkerTest(dbaccessor._database))
+
+    return dblocker
+
+
 # =============================================================================
-# ---- Independent Tests
+# ---- Tests
 # =============================================================================
 def test_connection(dbaccessor):
     """
@@ -357,8 +378,8 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
     sonde_install_id = dbaccessor.get('sonde_installations').index[0]
     old_values = sonde_installs_bd.loc[sonde_install_id].to_dict()
     edited_values = {
-        'start_date': datetime.date(2006, 4, 1),
-        'end_date': datetime.date(2016, 4, 1),
+        'start_date': datetime.datetime(2006, 4, 1),
+        'end_date': datetime.datetime(2016, 4, 1),
         'install_depth': 11.25}
     for attribute_name, attribute_value in edited_values.items():
         assert attribute_value != old_values[attribute_name]
@@ -388,7 +409,6 @@ def test_sonde_installations_interface(dbaccessor, obswells_data, sondes_data,
     dbaccessor.add_timeseries_data(
         readings_data, obswells_data.index[0], sonde_installs_bd.index[0])
     readings = dbaccessor.get_timeseries_for_obs_well(obswells_data.index[0])
-    print(readings)
     assert (readings['sonde_id'] == '1016042').all()
     assert (readings['install_depth'] == 11.25).all()
 
@@ -525,8 +545,8 @@ def test_sonde_feature_interface(dbaccessor, sondes_data, sondes_installation,
     # Assert that the empty repere data dataframe is formatted as expected.
     sondes_data_bd = dbaccessor.get('sondes_data')
     assert sondes_data_bd.empty
-    assert is_object_dtype(sondes_data_bd['date_reception'])
-    assert is_object_dtype(sondes_data_bd['date_withdrawal'])
+    assert is_datetime64_any_dtype(sondes_data_bd['date_reception'])
+    assert is_datetime64_any_dtype(sondes_data_bd['date_withdrawal'])
     for column in ['in_repair', 'out_of_order', 'lost', 'off_network']:
         assert is_bool_dtype(sondes_data_bd[column])
 
@@ -551,8 +571,8 @@ def test_sonde_feature_interface(dbaccessor, sondes_data, sondes_installation,
     edited_values = {
         'sonde_serial_no': '1015973b',
         'sonde_model_id': sonde_models.index[1],
-        'date_reception': datetime.date(2006, 3, 15),
-        'date_withdrawal': datetime.date(2010, 6, 12),
+        'date_reception': datetime.datetime(2006, 3, 15),
+        'date_withdrawal': datetime.datetime(2010, 6, 12),
         'in_repair': True,
         'out_of_order': True,
         'lost': True,
@@ -789,9 +809,9 @@ def test_timeseries_interface(dbaccessor, obswells_data, sondes_data,
     assert len(data_overview) == 1
     assert data_overview.index[0] == obs_well_uuid
     assert (data_overview.at[obs_well_uuid, 'first_date'] ==
-            datetime.date(2018, 9, 27))
+            datetime.datetime(2018, 9, 27))
     assert (data_overview.at[obs_well_uuid, 'last_date'] ==
-            datetime.date(2018, 9, 29))
+            datetime.datetime(2018, 9, 29))
     assert data_overview.at[obs_well_uuid, 'mean_water_level'] == 1.2
 
     # =========================================================================
@@ -846,7 +866,7 @@ def test_timeseries_interface(dbaccessor, obswells_data, sondes_data,
     data_overview = dbaccessor.get('observation_wells_data_overview')
     assert data_overview.at[obs_well_uuid, 'mean_water_level'] == 2.225
     assert (data_overview.at[obs_well_uuid, 'last_date'] ==
-            datetime.date(2018, 9, 28))
+            datetime.datetime(2018, 9, 28))
 
     # Delete the remaining timeseries data.
     for data_type in data_types:
@@ -890,8 +910,7 @@ def test_delete_non_existing_data(dbaccessor):
         columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
     new_tseries_data['datetime'] = pd.to_datetime(
         new_tseries_data['datetime'], format=DATE_FORMAT)
-    dbaccessor.add_timeseries_data(
-        new_tseries_data, sampling_feature_uuid=None, install_uuid=None)
+    dbaccessor.add_timeseries_data(new_tseries_data, None, None)
 
     # Try deleting a timeseries data when no timeseries exist for the given
     # datatype and observation id.
@@ -931,8 +950,7 @@ def test_edit_non_existing_data(dbaccessor):
         columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
     new_tseries_data['datetime'] = pd.to_datetime(
         new_tseries_data['datetime'], format=DATE_FORMAT)
-    dbaccessor.add_timeseries_data(
-        new_tseries_data, obswell_id, install_uuid=None)
+    dbaccessor.add_timeseries_data(new_tseries_data, obswell_id, None)
 
     # Try editing a timeseries data that doesn't exist in the database for
     # the given datatype, datetime and observation id.
@@ -963,23 +981,24 @@ def test_add_delete_large_timeseries_record(dbaccessor):
     new_tseries_data = pd.DataFrame(
         [], columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
     new_tseries_data['datetime'] = pd.date_range(
-        start='1/1/2000', end='1/1/2020')
+        start='1/1/1960', end='1/1/2020')
     new_tseries_data[DataType.WaterLevel] = np.random.rand(
         len(new_tseries_data))
     new_tseries_data[DataType.WaterTemp] = np.random.rand(
         len(new_tseries_data))
+    assert len(new_tseries_data) == 21916
 
     # Add timeseries data to the database.
     dbaccessor.add_timeseries_data(
-        new_tseries_data, sampling_feature_uuid, install_uuid=None)
+        new_tseries_data, sampling_feature_uuid, None)
 
     wlevel_data = dbaccessor.get_timeseries_for_obs_well(
         sampling_feature_uuid, DataType.WaterLevel)
-    assert len(wlevel_data) == 7306
+    assert len(wlevel_data) == 21916
 
     wtemp_data = dbaccessor.get_timeseries_for_obs_well(
         sampling_feature_uuid, DataType.WaterTemp)
-    assert len(wtemp_data) == 7306
+    assert len(wtemp_data) == 21916
 
     # Delete all timeseries data from the database.
     wlevel_data['data_type'] = DataType.WaterLevel
@@ -997,6 +1016,47 @@ def test_add_delete_large_timeseries_record(dbaccessor):
     wtemp_data = dbaccessor.get_timeseries_for_obs_well(
         sampling_feature_uuid, DataType.WaterTemp)
     assert len(wtemp_data) == 0
+
+
+def test_concurrent_read_write_access(qtbot, dblocker, dbaccessor,
+                                      obswells_data):
+    """
+    Test that multiple users can access the database at the same time.
+
+    See cgq-qgc/sardes#534.
+    """
+    name = obswells_data.attrs['name']
+    data = dbaccessor.get(name)
+    assert len(data) == 0
+
+    dblocker.add_task('lock_database', callback=None)
+    dblocker.run_tasks()
+    qtbot.wait(100)
+
+    # Test a writing method.
+    assert dbaccessor._begin_transaction_try_count == 1
+    _dict = obswells_data.to_dict('index')
+    indexes = dbaccessor.add(
+        name=name,
+        values=_dict.values(),
+        indexes=_dict.keys()
+        )
+    assert dbaccessor._begin_transaction_try_count == 2
+
+    data = dbaccessor.get(name)
+    assert len(indexes) == 5
+    assert len(data) == 5
+
+    # Test a reading method.
+    dblocker.add_task('lock_database', callback=None)
+    dblocker.run_tasks()
+    qtbot.wait(100)
+
+    assert dbaccessor._begin_transaction_try_count == 1
+    data = dbaccessor.get(name)
+    assert dbaccessor._begin_transaction_try_count == 2
+
+    assert len(data) == 5
 
 
 if __name__ == "__main__":

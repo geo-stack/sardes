@@ -95,7 +95,11 @@ def tablemodel(qtbot, TABLE_DATAF):
         def close_connection(self):
             self._connection = None
 
-        def commit(self):
+        def commit_transaction(self):
+            # This accessor does not support journal logging.
+            pass
+
+        def begin_transaction(self, exclusive=True):
             # This accessor does not support journal logging.
             pass
 
@@ -1220,6 +1224,48 @@ def test_column_sorting(tablewidget, qtbot):
     assert horiz_header.sort_indicator_sections() == []
     assert selection_model.currentIndex().data() == '1'
     assert get_selected_data(tablewidget) == ['2.222', '29', '1']
+
+
+def test_sorting_lettercase_and_accents(tablewidget, qtbot):
+    """
+    Test that sorting columns containing strings with capital letters and
+    accented characters is working as expected.
+
+    See cgq-qgc/sardes#543.
+    """
+    # Append new rows that contains strings with uppercase letters and
+    # accented characters.
+    new_values = [
+        {'col0': 'à_new_string'},
+        {'col0': 'e_new_string'},
+        {'col0': 'É_new_string'},
+        {'col0': 'E_new_string'},
+        {'col0': 'A_new_string'},
+        {'col0': 'é_new_string'},
+        {'col0': 'a_new_string'},
+        {'col0': 'À_new_string'}
+        ]
+
+    # Append 2 new row to the table.
+    tablewidget.tableview._append_row(new_values)
+    assert get_values_for_column(tablewidget.model().index(0, 0)) == [
+        'str1', 'str2', 'str3',
+        'à_new_string', 'e_new_string', 'É_new_string', 'E_new_string',
+        'A_new_string', 'é_new_string', 'a_new_string', 'À_new_string']
+
+    # Sort in ASCENDING order according to the first column.
+    tablewidget.sort_by_column(0, 0)
+    assert get_values_for_column(tablewidget.model().index(0, 0)) == [
+        'A_new_string', 'a_new_string', 'à_new_string', 'À_new_string',
+        'e_new_string', 'E_new_string', 'É_new_string', 'é_new_string',
+        'str1', 'str2', 'str3']
+
+    # Sort in DESCENDING order according to the first column.
+    tablewidget.sort_by_column(0, 1)
+    assert get_values_for_column(tablewidget.model().index(0, 0)) == [
+        'str3', 'str2', 'str1',
+        'É_new_string', 'é_new_string', 'e_new_string', 'E_new_string',
+        'à_new_string', 'À_new_string', 'A_new_string', 'a_new_string']
 
 
 def test_single_column_sorting(tablewidget, qtbot):
