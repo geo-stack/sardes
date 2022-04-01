@@ -35,7 +35,7 @@ from sardes.api.tools import SardesTool
 
 class HydrographTool(SardesTool):
     """
-    A tool to produce hydrograph figures for publishing from reading data.
+    A tool to produce hydrograph figures for publishing reading data.
     """
     NAMEFILTERS = ';;'.join(['Portable Document Format (*.pdf)',
                              'Scalable Vector Graphics (*.svg)',
