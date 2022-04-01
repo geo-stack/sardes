@@ -403,6 +403,8 @@ def test_duplicate_readings(qtbot, mocker, data_import_wizard, testfiles,
     qtbot.waitUntil(lambda: data_import_wizard._is_updating is False,
                     timeout=3000)
 
+    # Patch the message box that appears to warn ask the user to confirm
+    # adding duplicate data to the database.
     patcher_msgbox_exec_ = mocker.patch.object(
         QMessageBox, 'exec_', return_value=QMessageBox.Yes)
     data_import_wizard.pathbox_widget.checkbox.setChecked(False)
