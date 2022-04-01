@@ -246,10 +246,7 @@ class HydrographCanvas(FigureCanvasAgg):
 
         # Set the tick labels font properties.
         self.draw()
-        ax.set_xticklabels(
-            ax.get_xticklabels(), fontname=fontname, fontsize=16)
-        ax.set_yticklabels(
-            ax.get_yticklabels(), fontname=fontname, fontsize=16)
+        ax.tick_params(axis='both', fontname=fontname, fontsize=16)
 
         # Setup the left and right margins.
         self.draw()
