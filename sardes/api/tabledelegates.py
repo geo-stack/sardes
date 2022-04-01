@@ -214,12 +214,15 @@ class SardesItemDelegate(SardesItemDelegateBase):
             if not pd.isnull(value):
                 self.editor.setValue(value)
         elif isinstance(self.editor, QComboBox):
-            for i in range(self.editor.count()):
-                if self.editor.itemData(i) == value:
-                    self.editor.setCurrentIndex(i)
-                    break
+            if pd.isnull(value):
+                self.editor.setCurrentIndex(-1)
             else:
-                self.editor.setCurrentIndex(0)
+                for i in range(self.editor.count()):
+                    if self.editor.itemData(i) == value:
+                        self.editor.setCurrentIndex(i)
+                        break
+                else:
+                    self.editor.setCurrentIndex(0)
         elif isinstance(self.editor, (QDateEdit, QDateTimeEdit)):
             value = (datetime.today() if (pd.isna(value) or value is None)
                      else value)
