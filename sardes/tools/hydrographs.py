@@ -243,10 +243,19 @@ class HydrographCanvas(FigureCanvasAgg):
             xmax = datetime.datetime(5 * ceil(year_max / 5), 1, 1)
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
         ax.axis(ymax=ymax, ymin=ymin, xmin=xmin, xmax=xmax)
+        self.draw()
 
         # Set the tick labels font properties.
-        self.draw()
-        ax.tick_params(axis='both', fontname=fontname, fontsize=16)
+
+        # Note that 'ticklabels' cannot be set without setting 'ticks' first
+        # or else a warning is shown every time. See cgq-qgc/sardes#556.
+        ax.set_xticks(ax.get_xticks())
+        ax.set_xticklabels(
+            ax.get_xticklabels(), fontname=fontname, fontsize=16)
+
+        ax.set_yticks(ax.get_yticks())
+        ax.set_yticklabels(
+            ax.get_yticklabels(), fontname=fontname, fontsize=16)
 
         # Setup the left and right margins.
         self.draw()
