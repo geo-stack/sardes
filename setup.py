@@ -11,7 +11,7 @@
 
 import setuptools
 from setuptools import setup
-from sardes import __version__
+from sardes import __version__, __project_url__
 import csv
 
 
@@ -46,6 +46,7 @@ setup(name='sardes',
       license='MIT',
       author='Jean-Sébastien Gosselin',
       author_email='jean-sebastien.gosselin@outlook.ca',
+      url=__project_url__,
       ext_modules=[],
       packages=setuptools.find_packages(),
       package_data=PACKAGE_DATA,
@@ -53,6 +54,6 @@ setup(name='sardes',
       install_requires=INSTALL_REQUIRES,
       extras_require=EXTRAS_REQUIRE,
       classifiers=["Programming Language :: Python :: 3",
-                   "License :: MIT",
+                   "License :: OSI Approved :: MIT License",
                    "Operating System :: OS Independent"],
       )
