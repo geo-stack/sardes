@@ -476,6 +476,8 @@ class SatisticalHydrographFigure(Figure):
         # Setup the axes to hold the legend.
         ax2 = self.add_axes([0, 0, 1, 1], facecolor=None)
         ax2.axis('off')
+        ax2.set_xticks([])
+        ax2.set_yticks([])
         for spine in ax2.spines.values():
             spine.set_visible(False)
 
