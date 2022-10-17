@@ -533,7 +533,7 @@ class SatisticalHydrographFigure(Figure):
             self.canvas.draw_idle()
             return
 
-        figborderpad = 15
+        figborderpad = 15 / 72 * self.dpi
         figbbox = self.bbox
         ax = self.axes[0]
         axbbox = ax.bbox
