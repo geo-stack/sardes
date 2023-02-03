@@ -23,7 +23,7 @@ import numpy as np
 import pytest
 import pandas as pd
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QToolBar, QFileDialog
+from qtpy.QtWidgets import QToolBar, QFileDialog, QMessageBox
 
 
 # ---- Local imports
@@ -326,6 +326,27 @@ def test_move_forward(qtbot, hydrostats_tool):
     assert toolwidget.move_forward_btn.isEnabled() is False
 
 
+def test_save_stat_hydrograph(hydrostats_tool, mocker, tmp_path, qtbot):
+    """
+    Test that saving plots to different file formats is working as
+    expected.
+    """
+    hydrostats_tool.trigger()
+    qtbot.waitExposed(hydrostats_tool._toolwidget)
+
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'critical', return_value=QMessageBox.Ok)
+    for fext in ['.png', '.jpg', '.svg', '.pdf', '.ps', '.eps']:
+        fpath = osp.join(tmp_path, 'test_hydrostat' + fext)
+        mocker.patch('matplotlib.backends.qt_compat._getSaveFileName',
+                     return_value=(fpath, fext))
+        qtbot.mouseClick(
+            hydrostats_tool.toolwidget().save_figure_btn,
+            Qt.LeftButton)
+        assert osp.exists(fpath)
+    assert qmsgbox_patcher.call_count == 0
+
+
 def test_multipage_pdf_creation(qtbot, hydrostats_tool, mocker, tmp_path):
     """
     Test that creating a multipage pdf file containing the statistical
@@ -334,7 +355,6 @@ def test_multipage_pdf_creation(qtbot, hydrostats_tool, mocker, tmp_path):
     """
     hydrostats_tool.trigger()
     qtbot.waitExposed(hydrostats_tool._toolwidget)
-    assert hydrostats_tool.toolwidget().isVisible()
 
     selectedfilename = osp.join(tmp_path, 'test_multipage_hydrograph.pdf')
     selectedfilter = 'Portable Document Format (*.pdf)'

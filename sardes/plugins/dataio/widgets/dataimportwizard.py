@@ -422,17 +422,16 @@ class DataImportWizard(SardesPaneWidget):
 
     def goto_closest_duplicate(self, direction):
         """
-        Go to the next duplicate reding in the table when direction is 'next'
+        Go to the next duplicate reading in the table when direction is 'next'
         and go to the previous one when it is 'previous'.
         """
         tableview = self.table_widget.tableview
         tableview.setFocus()
         current_index = tableview.currentIndex()
 
-        sorted_duplicated = pd.Series(self._is_duplicated[
-            tableview.model()._map_row_from_source].flatten())
-        duplicated_rows = sorted_duplicated[sorted_duplicated.values].index
-
+        sorted_duplicated = pd.Series(self._is_duplicated.values[
+            tableview.model()._map_row_from_source])
+        duplicated_rows = sorted_duplicated.index[sorted_duplicated.values]
         if direction == 'next':
             try:
                 goto_row = duplicated_rows[

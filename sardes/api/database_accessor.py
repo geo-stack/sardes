@@ -8,6 +8,8 @@
 # -----------------------------------------------------------------------------
 
 from __future__ import annotations
+import functools
+from time import sleep
 
 # ---- Standard imports
 from typing import Any
@@ -39,14 +41,48 @@ class DatabaseAccessorBase(ABC):
     def __init__(self):
         self._connection = None
         self._connection_error = None
+        self._is_busy = False
+
+    # ---- Decorators
+    def readmethod(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            return self._transaction_wrapper(func, 'read', *args, **kwargs)
+        return wrapper
+
+    def writemethod(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            return self._transaction_wrapper(func, 'write', *args, **kwargs)
+        return wrapper
+
+    def _transaction_wrapper(self, func, mode, *args, **kwargs):
+        while self._is_busy:
+            # This can happend when the database accessor is
+            # used in multiple threads.
+            print('Waiting for database accessor because it is busy...')
+            sleep(1)
+
+        self._is_busy = True
+        self.begin_transaction()
+        try:
+            results = func(self, *args, **kwargs)
+            if mode == 'read' or kwargs.get('auto_commit', True):
+                self.commit_transaction()
+        finally:
+            self._is_busy = False
+
+        return results
 
     # ---- Public API
-    def get(self, name: str, *args, **kargs):
+    @readmethod
+    def get(self, name: str, *args, **kwargs):
         """
         Get the data related to name from the database.
         """
-        return getattr(self, '_get_' + name)(*args, **kargs)
+        return getattr(self, '_get_' + name)(*args, **kwargs)
 
+    @writemethod
     def set(self, name: str, index: Any,
             values: dict, auto_commit: bool = True) -> None:
         """
@@ -54,9 +90,8 @@ class DatabaseAccessorBase(ABC):
         and index.
         """
         getattr(self, '_set_' + name)(index, values)
-        if auto_commit:
-            self.commit()
 
+    @writemethod
     def add(self, name: str, values: list[dict] = None,
             indexes: list[Any] = None, auto_commit: bool = True) -> list:
         """
@@ -75,11 +110,9 @@ class DatabaseAccessorBase(ABC):
             indexes = [indexes, ] if is_single else list(indexes)
 
         indexes = getattr(self, '_add_' + name)(values, indexes)
-        if auto_commit:
-            self.commit()
-
         return indexes[0] if is_single else indexes
 
+    @writemethod
     def delete(self, name: str, indexes: list[Any],
                auto_commit: bool = True) -> None:
         """
@@ -88,8 +121,6 @@ class DatabaseAccessorBase(ABC):
         """
         indexes = [indexes, ] if not is_list_like(indexes) else list(indexes)
         getattr(self, '_del_' + name)(indexes)
-        if auto_commit:
-            self.commit()
 
     def connect(self):
         """
@@ -97,6 +128,15 @@ class DatabaseAccessorBase(ABC):
         """
         self._connection, self._connection_error = self._connect()
 
+    @readmethod
+    def get_timeseries_for_obs_well(self, obs_well_id, data_types=None):
+        """
+        Return a pandas dataframe containing the readings for the given
+        data types and monitoring station.
+        """
+        return self._get_timeseries_for_obs_well(obs_well_id, data_types)
+
+    @writemethod
     def add_timeseries_data(self, tseries_data: pd.DataFrame,
                             obswell_id: Any, installation_id: Any = None,
                             auto_commit: bool = True) -> None:
@@ -105,9 +145,8 @@ class DatabaseAccessorBase(ABC):
         given well and sonde installation id.
         """
         self._add_timeseries_data(tseries_data, obswell_id, installation_id)
-        if auto_commit:
-            self.commit()
 
+    @writemethod
     def delete_timeseries_data(self, tseries_dels: pd.DataFrame,
                                auto_commit: bool = True) -> None:
         """
@@ -115,9 +154,8 @@ class DatabaseAccessorBase(ABC):
         data type specified in tseries_dels.
         """
         self._delete_timeseries_data(tseries_dels)
-        if auto_commit:
-            self.commit()
 
+    @writemethod
     def save_timeseries_data_edits(self, tseries_edits: pd.DataFrame,
                                    auto_commit: bool = True) -> None:
         """
@@ -125,8 +163,6 @@ class DatabaseAccessorBase(ABC):
         data that were already saved in the database.
         """
         self._save_timeseries_data_edits(tseries_edits)
-        if auto_commit:
-            self.commit()
 
 
 class DatabaseAccessor(DatabaseAccessorBase):
@@ -139,8 +175,13 @@ class DatabaseAccessor(DatabaseAccessorBase):
 
     # ---- Database connection
     @abstractmethod
-    def commit(self):
+    def commit_transaction(self):
         "Commit transaction to the database"
+        pass
+
+    @abstractmethod
+    def begin_transaction(self, exclusive=True):
+        """Begin a new transaction with the database."""
         pass
 
     @abstractmethod
@@ -152,6 +193,13 @@ class DatabaseAccessor(DatabaseAccessorBase):
         -------
         bool
             Whether a connection to the database is currently active or not.
+        """
+        pass
+
+    @abstractmethod
+    def init_database(self):
+        """
+        Initialize the tables and attributes of a new database.
         """
         pass
 
@@ -662,7 +710,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
         """
         raise NotImplementedError
 
-    def get_timeseries_for_obs_well(self, obs_well_id, data_types=None):
+    def _get_timeseries_for_obs_well(self, obs_well_id, data_types=None):
         """
         Return a pandas dataframe containing the readings for the given
         data types and monitoring station.

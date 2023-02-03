@@ -85,7 +85,7 @@ def test_add_sondes_data(tablewidget, dbaccessor, qtbot, mocker):
     tablewidget.save_edits_action.trigger()
     assert qmsgbox_patcher.call_count == 1
     assert tablewidget.visible_row_count() == 7
-    assert len(dbaccessor.get('sonde_installations')) == 6
+    assert len(dbaccessor.get('sondes_data')) == 6
 
     # Enter a non null value for the fields 'sonde_model_id',
     # 'in_repair', 'out_of_order', 'lost', and 'off_network'.

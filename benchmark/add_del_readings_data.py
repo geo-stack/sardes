@@ -40,7 +40,7 @@ assert len(new_tseries_data) == 21916
 # Add timeseries data to the database.
 ts = perf_counter()
 dbaccessor.add_timeseries_data(
-    new_tseries_data, sampling_feature_uuid, install_uuid=None)
+    new_tseries_data, sampling_feature_uuid, None)
 
 wlevel_data = dbaccessor.get_timeseries_for_obs_well(
     sampling_feature_uuid, DataType.WaterLevel)

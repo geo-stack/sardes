@@ -720,7 +720,10 @@ class TimeSeriesFigure(MplFigure):
             # See cgq-qgc/sardes#313.
             renderer = self.canvas.get_renderer()
         except AttributeError:
-            self.canvas.draw()
+            # With more recent version of matplotlib we need to use 'draw_idle'
+            # instead of 'draw'.
+            # see cgq-qgc/sardes#553.
+            self.canvas.draw_idle()
             return
 
         fheight = self.get_figheight()
@@ -881,19 +884,19 @@ class TimeSeriesCanvas(FigureCanvasQTAgg):
     def zoom_to_rect(self, toggle):
         """Toggle zooming in the canvas."""
         if toggle is True:
-            if self.toolbar._active != 'ZOOM':
+            if self.toolbar.mode.name != 'ZOOM':
                 self.toolbar.zoom()
         else:
-            if self.toolbar._active == 'ZOOM':
+            if self.toolbar.mode.name == 'ZOOM':
                 self.toolbar.zoom()
 
     def pan_axes(self, toggle):
         """Toggle axe panning in the canvas."""
         if toggle is True:
-            if self.toolbar._active != 'PAN':
+            if self.toolbar.mode.name != 'PAN':
                 self.toolbar.pan()
         else:
-            if self.toolbar._active == 'PAN':
+            if self.toolbar.mode.name == 'PAN':
                 self.toolbar.pan()
 
     def drag_select_data(self, toggle):

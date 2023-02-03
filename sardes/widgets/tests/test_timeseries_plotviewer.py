@@ -15,10 +15,9 @@ Tests for the TimeSeriesPlotViewer.
 import os.path as osp
 
 # ---- Third party imports
-from matplotlib.backends.backend_qt5 import QtWidgets
 import pytest
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication, QMessageBox
 
 # ---- Local imports
 from sardes.widgets.timeseries import TimeSeriesPlotViewer
@@ -221,15 +220,15 @@ def test_save_tseries_plot(tseriesviewer, mocker, tmp_path, qtbot):
     Test that saving plots to different file formats is working as
     expected.
     """
-    mocker.patch.object(QtWidgets.QMessageBox, 'critical',
-                        return_value=QtWidgets.QMessageBox.Ok)
-
-    for fext in ['.png', '.jpg', '.png', '.png', '.ps', '.eps']:
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'critical', return_value=QMessageBox.Ok)
+    for fext in ['.png', '.jpg', '.svg', '.pdf', '.ps', '.eps']:
         fpath = osp.join(tmp_path, 'test_figure' + fext)
-        mocker.patch('matplotlib.backends.backend_qt5._getSaveFileName',
+        mocker.patch('matplotlib.backends.qt_compat._getSaveFileName',
                      return_value=(fpath, fext))
         qtbot.mouseClick(tseriesviewer.save_figure_button, Qt.LeftButton)
-    assert osp.exists(fpath)
+        assert osp.exists(fpath)
+    assert qmsgbox_patcher.call_count == 0
 
 
 def test_copy_tseries_plot_to_clipboard(tseriesviewer, mocker, qtbot):

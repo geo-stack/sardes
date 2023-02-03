@@ -317,7 +317,7 @@ def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
         f.write("")
     assert osp.exists(osp.join(loaded_dirname, osp.basename(filename)))
 
-    # We load the data.
+    # We load the data in the database.
     patcher_msgbox_exec_ = mocker.patch.object(
         QMessageBox, 'exec_', return_value=msgbox_answer)
     assert data_import_wizard._data_saved_in_database is False
@@ -327,10 +327,12 @@ def test_move_input_file_if_exist(qtbot, mocker, data_import_wizard,
 
     assert osp.exists(filename) is (msgbox_answer == QMessageBox.No)
     assert patcher_msgbox_exec_.call_count == 1
+
     assert_tseries_len(
         data_import_wizard, DataType.WaterLevel, len(readings_data) + 365)
     assert_tseries_len(
         data_import_wizard, DataType.WaterTemp, len(readings_data) + 365)
+
     qtbot.wait(1000)
 
 
@@ -395,12 +397,14 @@ def test_duplicate_readings(qtbot, mocker, data_import_wizard, testfiles,
     """
     Test that duplicate readings are handled as expected by the wizard.
     """
-    # Load the data from an inut data file.
+    # Load the data from an input data file.
     data_import_wizard._queued_filenames = testfiles.copy()
     data_import_wizard._load_next_queued_data_file()
     qtbot.waitUntil(lambda: data_import_wizard._is_updating is False,
                     timeout=3000)
 
+    # Patch the message box that appears to warn ask the user to confirm
+    # adding duplicate data to the database.
     patcher_msgbox_exec_ = mocker.patch.object(
         QMessageBox, 'exec_', return_value=QMessageBox.Yes)
     data_import_wizard.pathbox_widget.checkbox.setChecked(False)
@@ -425,6 +429,23 @@ def test_duplicate_readings(qtbot, mocker, data_import_wizard, testfiles,
     assert not data_import_wizard.duplicates_msgbox.isVisible()
     assert not data_import_wizard.save_btn.isEnabled()
 
+    # Assert that the "Previous" and "Next" button are working as
+    # expected in the "duplicates_msgbox".
+    assert (data_import_wizard.table_widget.current_data() ==
+            '2019-01-01 00:00:00')
+
+    # Go to "Next" duplicate value.
+    qtbot.mouseClick(
+        data_import_wizard.duplicates_msgbox.buttons[1], Qt.LeftButton)
+    assert (data_import_wizard.table_widget.current_data() ==
+            '2019-01-02 00:00:00')
+
+    # Go to "Previous" duplicate value.
+    qtbot.mouseClick(
+        data_import_wizard.duplicates_msgbox.buttons[0], Qt.LeftButton)
+    assert (data_import_wizard.table_widget.current_data() ==
+            '2019-01-01 00:00:00')
+
     # Close the "Data saved sucessfully" message box.
     data_import_wizard.datasaved_msgbox.close()
     assert not data_import_wizard.datasaved_msgbox.isVisible()
@@ -432,8 +453,7 @@ def test_duplicate_readings(qtbot, mocker, data_import_wizard, testfiles,
     assert not data_import_wizard.save_btn.isEnabled()
     assert data_import_wizard._data_saved_in_database is True
 
-    # Load the data from the save file again and save the data again
-    # to the database.
+    # Load the data from the save file a second time.
     data_import_wizard._queued_filenames = testfiles.copy()
     data_import_wizard._load_next_queued_data_file()
     qtbot.waitUntil(lambda: data_import_wizard._is_updating is False)
@@ -444,6 +464,7 @@ def test_duplicate_readings(qtbot, mocker, data_import_wizard, testfiles,
     assert data_import_wizard.save_btn.isEnabled()
     assert np.sum(data_import_wizard._is_duplicated) == 365
 
+    # Save the data again to the database.
     with qtbot.waitSignal(
             data_import_wizard.db_connection_manager.sig_tseries_data_changed,
             timeout=3000):

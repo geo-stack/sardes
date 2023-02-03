@@ -76,7 +76,8 @@ def TABLE_DATAF():
         index=INDEXES,
         columns=COLUMNS
         )
-    dataf['col3'] = dataf['col3'].astype(pd.Int64Dtype())
+    dataf['col1'] = dataf['col1'].astype('boolean')
+    dataf['col3'] = dataf['col3'].astype('Int64')
     return dataf
 
 
@@ -95,7 +96,11 @@ def tablemodel(qtbot, TABLE_DATAF):
         def close_connection(self):
             self._connection = None
 
-        def commit(self):
+        def commit_transaction(self):
+            # This accessor does not support journal logging.
+            pass
+
+        def begin_transaction(self, exclusive=True):
             # This accessor does not support journal logging.
             pass
 
@@ -529,6 +534,50 @@ def test_edit_integer(tablewidget, qtbot, mocker):
     qtbot.keyPress(item_delegate.editor, Qt.Key_Enter)
     assert model_index.data() == '24'
     assert tableview.model().get_value_at(model_index) == 24
+
+
+def test_edit_bool(tablewidget, qtbot, mocker):
+    """
+    Test editing the content of an cell containing an boolean.
+
+    Regression test for cgq-qgc/sardes#557
+    """
+    tableview = tablewidget.tableview
+    model_index = tableview.model().index(2, 1)
+
+    # Select cell at model_index.
+    qtbot.mouseClick(
+        tableview.viewport(),
+        Qt.LeftButton,
+        pos=tableview.visualRect(model_index).center())
+    assert model_index.data() == 'Yes'
+    assert tableview.model().get_value_at(model_index) == True
+
+    # Clear the value in the current cell.
+    qtbot.keyPress(tableview, Qt.Key_Delete)
+    assert model_index.data() == ''
+    assert pd.isnull(tableview.model().get_value_at(model_index))
+
+    # Save edits.
+    mocker.patch.object(QMessageBox, 'exec_', return_value=QMessageBox.Cancel)
+    qtbot.keyPress(tablewidget, Qt.Key_Enter, modifier=Qt.ControlModifier)
+    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
+
+    # Select back cell at model_index.
+    qtbot.mouseClick(
+        tableview.viewport(),
+        Qt.LeftButton,
+        pos=tableview.visualRect(model_index).center())
+    assert model_index.data() == ''
+    assert pd.isnull(tableview.model().get_value_at(model_index))
+
+    # Edit the value in the current cell.
+    item_delegate = tableview.itemDelegate(model_index)
+    qtbot.keyPress(tableview, Qt.Key_Enter)
+    item_delegate.editor.setCurrentIndex(1)
+    qtbot.keyPress(item_delegate.editor, Qt.Key_Enter)
+    assert model_index.data() == 'No'
+    assert tableview.model().get_value_at(model_index) == False
 
 
 def test_clearing_required_cell(tablewidget, qtbot):
