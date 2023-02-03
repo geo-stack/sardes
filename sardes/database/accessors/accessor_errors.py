@@ -7,15 +7,13 @@
 # Licensed under the terms of the MIT License.
 # -----------------------------------------------------------------------------
 
-# ---- Third party imports
-
 # ---- Local imports
 from sardes.config.locale import _
 
 
 class SardesVersionError(Exception):
     """
-    Exception raised when the version of Sardes is outdated
+    Exception that should be raised when the version of Sardes is outdated
     compared to the version of the database.
 
     Parameters
@@ -36,8 +34,8 @@ class SardesVersionError(Exception):
 
 class DatabaseVersionError(Exception):
     """
-    Exception raised when the version of the database is outdated
-    compared to the version of Sardes.
+    Exception that should be raised when the version of the database is
+    outdated compared to the version of Sardes.
 
     Parameters
     ----------
