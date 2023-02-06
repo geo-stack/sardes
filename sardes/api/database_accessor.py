@@ -204,6 +204,13 @@ class DatabaseAccessor(DatabaseAccessorBase):
         pass
 
     @abstractmethod
+    def update_database(self):
+        """
+        Update database schema to the latest version.
+        """
+        pass
+
+    @abstractmethod
     def _connect(self):
         """
         Create a new connection object to communicate with the database.
