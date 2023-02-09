@@ -71,7 +71,8 @@ def test_add_sondes_data(tablewidget, dbaccessor, qtbot, mocker):
     tablewidget.new_row_action.trigger()
     assert tablewidget.visible_row_count() == 7
     assert tablemodel.data_edit_count() == 1
-    assert tablewidget.get_data_for_row(6) == [''] * 9
+    assert tablewidget.get_data_for_row(6) == [
+        '', '', '', '', 'No', 'No', 'No', 'No', '']
     assert tablemodel.is_new_row_at(tablewidget.current_index())
     assert len(dbaccessor.get('sondes_data')) == 6
 
@@ -91,17 +92,17 @@ def test_add_sondes_data(tablewidget, dbaccessor, qtbot, mocker):
     # 'in_repair', 'out_of_order', 'lost', and 'off_network'.
     edited_values = {
         'sonde_model_id': 2,
-        'in_repair': False,
+        'in_repair': True,
         'out_of_order': True,
         'lost': True,
-        'off_network': False}
+        'off_network': True}
     for colname, edited_value in edited_values.items():
         col = tablemodel.column_names().index(colname)
         model_index = tablemodel.index(6, col)
         tablewidget.model().set_data_edit_at(model_index, edited_value)
     assert tablewidget.get_data_for_row(6) == [
         'Solinst Barologger M1.5 Gold', '', '', '',
-        'No', 'Yes', 'Yes', 'No', '']
+        'Yes', 'Yes', 'Yes', 'Yes', '']
     assert tablemodel.data_edit_count() == 6
 
     # Save the changes to the database.
@@ -114,10 +115,10 @@ def test_add_sondes_data(tablewidget, dbaccessor, qtbot, mocker):
     assert tablewidget.visible_row_count() == 7
     assert len(sondes_data) == 7
     assert sondes_data.iloc[6]['sonde_model_id'] == 2
-    assert sondes_data.iloc[6]['in_repair'] == False
+    assert sondes_data.iloc[6]['in_repair'] == True
     assert sondes_data.iloc[6]['out_of_order'] == True
     assert sondes_data.iloc[6]['lost'] == True
-    assert sondes_data.iloc[6]['off_network'] == False
+    assert sondes_data.iloc[6]['off_network'] == True
 
 
 def test_edit_sondes_data(tablewidget, qtbot, dbaccessor):

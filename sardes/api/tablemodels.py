@@ -52,6 +52,9 @@ class SardesTableColumn():
     # An option used to format datetime-like values.
     strftime_format: str = None
 
+    # If not None, default value used when adding a new row.
+    default: object = None
+
 
 # =============================================================================
 # ---- Edits
@@ -663,7 +666,10 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         Add a new empty at the end of the table.
         """
-        self.append_row(values=[{}])
+        self.append_row(
+            values=[{col.name: col.default for col in self.columns() if
+                     col.default is not None}]
+            )
 
     def append_row(self, values):
         """
