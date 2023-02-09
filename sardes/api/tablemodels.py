@@ -52,6 +52,9 @@ class SardesTableColumn():
     # An option used to format datetime-like values.
     strftime_format: str = None
 
+    # If not None, default value used when adding a new row.
+    default: object = None
+
 
 # =============================================================================
 # ---- Edits
