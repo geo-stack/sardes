@@ -492,6 +492,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             raise p
 
     # ---- Database setup
+    def _create_table(self, table):
+        """
+        Add a new table to the database.
+        """
+        Base.metadata.create_all(self._engine, tables=[table.__table__])
+        for item_attrs in table.initial_attrs():
+            self._session.add(table(**item_attrs))
+        self._session.commit()
+
     def init_database(self):
         """
         Initialize the tables and attributes of a new database.
@@ -505,10 +514,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         for table in tables:
             if inspect(self._engine).has_table(table.__tablename__):
                 continue
-            Base.metadata.create_all(self._engine, tables=[table.__table__])
-            for item_attrs in table.initial_attrs():
-                self._session.add(table(**item_attrs))
-            self._session.commit()
+            self._create_table(table)
         self._session.commit()
 
         self.execute("PRAGMA application_id = {}".format(APPLICATION_ID))
