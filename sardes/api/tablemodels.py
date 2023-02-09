@@ -666,7 +666,10 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         Add a new empty at the end of the table.
         """
-        self.append_row(values=[{}])
+        self.append_row(
+            values=[{col.name: col.default for col in self.columns() if
+                     col.default is not None}]
+            )
 
     def append_row(self, values):
         """
