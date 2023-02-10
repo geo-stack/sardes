@@ -475,6 +475,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
     def commit_transaction(self):
         self._session.commit()
 
+    def req_version(self):
+        """Return the required version of the database."""
+        return CURRENT_SCHEMA_VERSION
+
     def version(self):
         """Return the current version of the database."""
         return self.execute("PRAGMA user_version").first()[0]
