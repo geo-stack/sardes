@@ -20,7 +20,7 @@ import qtawesome as qta
 
 # ---- Local imports
 from sardes import __rootdir__
-from sardes.config.gui import ICON_COLOR, GREEN, RED, YELLOW
+from sardes.config.gui import ICON_COLOR, GREEN, RED, YELLOW, BLUE
 
 DIRNAME = os.path.join(__rootdir__, 'ressources', 'icons')
 LOCAL_ICONS = {
@@ -277,6 +277,9 @@ FA_ICONS = {
     'undo': [
         ('mdi.undo-variant',),
         {'color': ICON_COLOR}],
+    'update_blue': [
+        ('mdi.update',),
+        {'color': BLUE, 'scale_factor': 1.3}],
     'vspan_select': [
         ('mdi.arrow-expand-vertical',),
         {'color': ICON_COLOR, 'scale_factor': 1.1,
