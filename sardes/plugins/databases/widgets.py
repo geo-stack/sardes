@@ -16,12 +16,14 @@ from qtpy.QtCore import Qt, Slot
 from qtpy.QtWidgets import (
     QApplication, QAbstractButton, QCheckBox, QComboBox, QDialog,
     QDialogButtonBox, QHBoxLayout, QLabel, QPushButton, QStackedWidget,
-    QVBoxLayout)
+    QVBoxLayout, QWidget, QGridLayout)
 
 # ---- Local imports
-from sardes.config.gui import RED
+from sardes.database.accessors.accessor_errors import DatabaseVersionError
+from sardes.config.gui import RED, BLUE
 from sardes.config.locale import _
 from sardes.widgets.statusbar import ProcessStatusBar
+from sardes.utils.qthelpers import format_tooltip
 
 
 class DatabaseConnectionWidget(QDialog):
@@ -96,6 +98,19 @@ class DatabaseConnectionWidget(QDialog):
         self.close_button.setAutoDefault(False)
         self.close_button.clicked.connect(lambda: self.close())
 
+        self.cancel_button = QPushButton(_('Cancel'))
+        self.cancel_button.setDefault(False)
+        self.cancel_button.setAutoDefault(False)
+        self.cancel_button.clicked.connect(
+            lambda: self._handle_button_cancel_isclicked())
+        self.cancel_button.setVisible(False)
+
+        self.update_button = QPushButton(_('Update'))
+        self.update_button.setDefault(False)
+        self.update_button.setAutoDefault(False)
+        self.update_button.clicked.connect(
+            lambda: self._handle_button_update_isclicked())
+        self.update_button.setVisible(False)
 
         # Setup the auto connect to database checkbox.
         self.auto_connect_to_database_checkbox = QCheckBox(_('Auto connect'))
@@ -111,6 +126,8 @@ class DatabaseConnectionWidget(QDialog):
         button_box.layout().addStretch(1)
         button_box.layout().addWidget(self.close_button)
         button_box.layout().addWidget(self.connect_button)
+        button_box.layout().addWidget(self.cancel_button)
+        button_box.layout().addWidget(self.update_button)
 
         # Setup the main layout.
         main_layout = QGridLayout(self)
@@ -216,18 +233,38 @@ class DatabaseConnectionWidget(QDialog):
         self.db_connection_manager.connect_to_db(
             self.get_current_database_accessor())
 
+    def update(self):
+        """
+        Update the database.
+        """
+        self.db_connection_manager.update_database(
+            self.get_current_database_accessor(),
+            self._handle_database_udpdated
+            )
+
     # ---- GUI update.
-    def _update_gui(self, is_connecting, is_connected):
+    def _update_gui(self, is_connecting, is_connected,
+                    is_outdated, is_updating):
         """
         Update the visibility and state of the gui based on the connection
         status with the database.
         """
-        self.stacked_dialogs.setEnabled(not is_connected and not is_connecting)
-        self.dbtype_combobox.setEnabled(not is_connected and not is_connecting)
-        self.close_button.setEnabled(not is_connecting)
-        self.connect_button.setEnabled(not is_connecting)
+        for widget in [self.stacked_dialogs, self.dbtype_combobox]:
+            widget.setEnabled(
+                not is_connected and
+                not is_connecting and
+                not is_outdated and
+                not is_updating)
+
+        self.connect_button.setEnabled(not is_connecting and not is_updating)
         self.connect_button.setText(
             _('Disconnect') if is_connected else _('Connect'))
+
+        self.connect_button.setVisible(not is_outdated)
+        self.close_button.setVisible(not is_outdated)
+
+        self.cancel_button.setVisible(is_outdated)
+        self.update_button.setVisible(is_outdated)
 
     # ---- Signal handlers
     @Slot(QAbstractButton)
@@ -243,16 +280,30 @@ class DatabaseConnectionWidget(QDialog):
     @Slot(object, object)
     def _handle_database_connected(self, db_connection, db_connect_error):
         """
-        Handle when the database connection worker sucessfully or failed to
+        Handle when the database manager sucessfully or failed to
         create a new connection with the database.
         """
         if db_connection is None:
-            if db_connect_error:
+            QApplication.beep()
+            if type(db_connect_error) == DatabaseVersionError:
+                message = (
+                    '<font color="{}">{}:</font> {}'
+                    '<br><br>'
+                    '<b>Do you want to update your database '
+                    'to version&nbsp;{}?</b>'
+                    ).format(BLUE,
+                             type(db_connect_error).__name__,
+                             db_connect_error,
+                             db_connect_error.req_version,
+                             )
+                self.status_bar.show_update_icon(message)
+            elif db_connect_error is not None:
                 message = ('<font color="{}">{}:</font> {}'.format(
                     RED, type(db_connect_error).__name__, db_connect_error))
+                self.status_bar.show_fail_icon(message)
             else:
                 message = _("The connection to the database failed.")
-            self.status_bar.show_fail_icon(message)
+                self.status_bar.show_fail_icon(message)
             self.show()
             self.activateWindow()
             self.raise_()
@@ -260,23 +311,68 @@ class DatabaseConnectionWidget(QDialog):
             message = _("Connected to the database.")
             self.status_bar.show_sucess_icon(message)
             self.close()
-        self._update_gui(is_connecting=False,
-                         is_connected=db_connection is not None)
+        self._update_gui(
+            is_connecting=False,
+            is_connected=db_connection is not None,
+            is_outdated=type(db_connect_error) == DatabaseVersionError,
+            is_updating=False
+            )
 
     def _handle_database_disconnected(self):
         """
         Handle when the connection to the database was sucessfully closed.
         """
         self.status_bar.hide()
-        self._update_gui(is_connecting=False, is_connected=False)
+        self._update_gui(is_connecting=False, is_connected=False,
+                         is_outdated=False, is_updating=False)
 
     def _handle_database_is_connecting(self):
         """
         Handle when the connection to the database is in progress.
         """
-        self._update_gui(is_connecting=True, is_connected=False)
+        self._update_gui(is_connecting=True, is_connected=False,
+                         is_outdated=False, is_updating=False)
         self.status_bar.show()
         self.status_bar.set_label(_("Connecting to database..."))
+
+    def _handle_button_cancel_isclicked(self):
+        """
+        Handle when button to cancel database update is clicked.
+        """
+        self.status_bar.hide()
+        self._update_gui(is_connecting=False, is_connected=False,
+                         is_outdated=False, is_updating=False)
+
+    def _handle_button_update_isclicked(self):
+        """
+        Handle when the button to update the database is clicked.
+        """
+        self._update_gui(is_connecting=False, is_connected=False,
+                         is_outdated=False, is_updating=True)
+        self.status_bar.show()
+        self.status_bar.set_label(_("Updating database..."))
+        self.update()
+
+    def _handle_database_udpdated(self, from_version, to_version,
+                                  db_update_error):
+        """
+        Handle when the database manager sucessfully or failed to
+        update the database.
+        """
+        if db_update_error is None:
+            message = _("Database updated successfully to version {}.")
+            self.status_bar.show_sucess_icon(message.format(to_version))
+        else:
+            message = ('<font color="{}">{}:</font> {}'.format(
+                RED, type(db_update_error).__name__, db_update_error))
+            self.status_bar.show_fail_icon(
+                message.format(from_version, to_version))
+        self._update_gui(
+            is_connecting=False,
+            is_connected=False,
+            is_outdated=False,
+            is_updating=False
+            )
 
 
 if __name__ == '__main__':
