@@ -24,6 +24,7 @@ class SardesVersionError(Exception):
     """
 
     def __init__(self, req_version: int):
+        self.req_version = req_version
         self.message = _(
             "Your Sardes application is outdated and does not support "
             "databases whose version is higher than {}. Please "
