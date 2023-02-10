@@ -110,6 +110,7 @@ class ProcessStatusBar(QWidget):
     def __init__(self, parent=None, iconsize=24, ndots=11,
                  orientation=Qt.Horizontal, spacing=None, margin=0,
                  hsize_policy='minimum'):
+                 text_valign='center', icon_valign='center'):
         """
         A process status bar including an icon and a label.
 
@@ -132,15 +133,28 @@ class ProcessStatusBar(QWidget):
         hsize_policy : str, optional
             An attribute describing horizontal resizing policy. Valid
             values are 'minimum' or expanding.
+        text_valign : str, optional
+            The vertical alignment of the text. De default is 'center'.
+            Valid values are 'top', 'bottom', or 'center'.
+        icon_valign : str, optional
+            The vertical alignment of the icon. De default is 'center'.
+            Valid values are 'top', 'bottom', or 'center'.
         """
         super().__init__(parent)
         self._status = self.HIDDEN
 
+        VALIGN_DICT = {
+            'center': Qt.AlignVCenter,
+            'top': Qt.AlignTop,
+            'bottom': Qt.AlignBottom
+            }
+
+        text_valign = VALIGN_DICT[text_valign]
         self._label = QLabel()
         if orientation == Qt.Horizontal:
-            self._label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            self._label.setAlignment(Qt.AlignLeft | text_valign)
         else:
-            self._label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+            self._label.setAlignment(Qt.AlignCenter | text_valign)
         self._label.setWordWrap(True)
         self._label.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
@@ -159,10 +173,11 @@ class ProcessStatusBar(QWidget):
         layout = QGridLayout(self)
         layout.setContentsMargins(margin, margin, margin, margin)
 
+        icon_valign = VALIGN_DICT[icon_valign]
         if orientation == Qt.Horizontal:
-            alignment = Qt.AlignLeft | Qt.AlignVCenter
+            alignment = Qt.AlignLeft | icon_valign
         else:
-            alignment = Qt.AlignCenter | Qt.AlignVCenter
+            alignment = Qt.AlignCenter | icon_valign
         layout.addWidget(self._spinner, 1, 1, alignment)
         layout.addWidget(self._failed_icon, 1, 1, alignment)
         layout.addWidget(self._success_icon, 1, 1, alignment)
