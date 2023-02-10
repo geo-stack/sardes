@@ -173,7 +173,16 @@ class DatabaseAccessor(DatabaseAccessorBase):
     its interface.
     """
 
-    # ---- Database connection
+    @abstractmethod
+    def req_version(self):
+        """Return the required version of the database."""
+        pass
+
+    @abstractmethod
+    def version(self):
+        """Return the current version of the database."""
+        pass
+
     @abstractmethod
     def commit_transaction(self):
         "Commit transaction to the database"
