@@ -110,6 +110,29 @@ class ProcessStatusBar(QWidget):
     def __init__(self, parent=None, iconsize=24, ndots=11,
                  orientation=Qt.Horizontal, spacing=None, margin=0,
                  hsize_policy='minimum'):
+        """
+        A process status bar including an icon and a label.
+
+        Parameters
+        ----------
+        parent : QWidget, optional
+            The parent of the progress status bar. The default is None.
+        iconsize : int, optional
+            The size of the icon. The default is 24.
+        ndots : int, optional
+            Number of dots to use for the spinner icon . The default is 11.
+        orientation : int, optional
+            Orientation of the progress status bar. The default is
+            Qt.Horizontal.
+        spacing : in, optional
+            Spacing between the icon and the label. Default to 0 if
+            orientation is horizontal and to 5 if vertical.
+        margin : int, optional
+            The contents margin size of the progress bar. The default is 0.
+        hsize_policy : str, optional
+            An attribute describing horizontal resizing policy. Valid
+            values are 'minimum' or expanding.
+        """
         super().__init__(parent)
         self._status = self.HIDDEN
 
