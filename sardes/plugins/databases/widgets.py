@@ -88,9 +88,14 @@ class DatabaseConnectionWidget(QDialog):
         # Setup the dialog button box.
         self.connect_button = QPushButton(_('Connect'))
         self.connect_button.setDefault(True)
+        self.connect_button.clicked.connect(
+            lambda: self._handle_button_connect_isclicked())
+
         self.close_button = QPushButton(_('Close'))
         self.close_button.setDefault(False)
         self.close_button.setAutoDefault(False)
+        self.close_button.clicked.connect(lambda: self.close())
+
 
         # Setup the auto connect to database checkbox.
         self.auto_connect_to_database_checkbox = QCheckBox(_('Auto connect'))
@@ -103,10 +108,9 @@ class DatabaseConnectionWidget(QDialog):
             )
 
         button_box = QDialogButtonBox()
-        button_box.addButton(self.connect_button, button_box.ApplyRole)
-        button_box.addButton(self.close_button, button_box.RejectRole)
-        button_box.layout().insertSpacing(1, 100)
-        button_box.clicked.connect(self._handle_button_click_event)
+        button_box.layout().addStretch(1)
+        button_box.layout().addWidget(self.close_button)
+        button_box.layout().addWidget(self.connect_button)
 
         # Setup the main layout.
         main_layout = QGridLayout(self)
@@ -227,17 +231,14 @@ class DatabaseConnectionWidget(QDialog):
 
     # ---- Signal handlers
     @Slot(QAbstractButton)
-    def _handle_button_click_event(self, button):
+    def _handle_button_connect_isclicked(self):
         """
-        Handle when a button is clicked on the dialog button box.
+        Handle when a the button to connect to the database is clicked.
         """
-        if button == self.close_button:
-            self.close()
-        elif button == self.connect_button:
-            if not self.db_connection_manager.is_connected():
-                self.connect()
-            else:
-                self.disconnect()
+        if not self.db_connection_manager.is_connected():
+            self.connect()
+        else:
+            self.disconnect()
 
     @Slot(object, object)
     def _handle_database_connected(self, db_connection, db_connect_error):
@@ -262,7 +263,6 @@ class DatabaseConnectionWidget(QDialog):
         self._update_gui(is_connecting=False,
                          is_connected=db_connection is not None)
 
-    @Slot()
     def _handle_database_disconnected(self):
         """
         Handle when the connection to the database was sucessfully closed.
@@ -270,7 +270,6 @@ class DatabaseConnectionWidget(QDialog):
         self.status_bar.hide()
         self._update_gui(is_connecting=False, is_connected=False)
 
-    @Slot()
     def _handle_database_is_connecting(self):
         """
         Handle when the connection to the database is in progress.
