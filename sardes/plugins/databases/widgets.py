@@ -90,8 +90,14 @@ class DatabaseConnectionWidget(QDialog):
         self.close_button.setAutoDefault(False)
 
         # Setup the auto connect to database checkbox.
-        self.auto_connect_to_database_checkbox = QCheckBox(
-            _('Connect automatically to database when starting Sardes'))
+        self.auto_connect_to_database_checkbox = QCheckBox(_('Auto connect'))
+        self.auto_connect_to_database_checkbox.setToolTip(
+            format_tooltip(
+                text=_('Auto connect'),
+                tip=_('Connect automatically to the '
+                      'database when starting Sardes.'),
+                shortcuts=None)
+            )
 
         button_box = QDialogButtonBox()
         button_box.addButton(self.connect_button, button_box.ApplyRole)
@@ -100,13 +106,15 @@ class DatabaseConnectionWidget(QDialog):
         button_box.clicked.connect(self._handle_button_click_event)
 
         # Setup the main layout.
-        main_layout = QVBoxLayout(self)
-        main_layout.addLayout(dbtype_layout)
-        main_layout.addWidget(self.stacked_dialogs)
-        main_layout.addWidget(self.auto_connect_to_database_checkbox)
-        main_layout.addWidget(self.status_bar)
-        main_layout.addWidget(button_box)
-        main_layout.setStretch(0, 1)
+        main_layout = QGridLayout(self)
+        main_layout.addWidget(self.auto_connect_to_database_checkbox, 0, 1)
+        main_layout.setRowMinimumHeight(1, 20)
+        main_layout.addLayout(dbtype_layout, 2, 0, 1, 2)
+        main_layout.addWidget(self.stacked_dialogs, 3, 0, 1, 2)
+        main_layout.addWidget(self.status_bar, 4, 0, 1, 2)
+        main_layout.addWidget(button_box, 5, 0, 1, 2)
+        main_layout.setRowStretch(3, 1)
+        main_layout.setColumnStretch(0, 1)
         main_layout.setSizeConstraint(main_layout.SetFixedSize)
 
     # ---- Options
