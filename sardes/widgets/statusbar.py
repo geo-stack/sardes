@@ -106,6 +106,7 @@ class ProcessStatusBar(QWidget):
     IN_PROGRESS = 1
     PROCESS_SUCCEEDED = 2
     PROCESS_FAILED = 3
+    NEED_UPDATE = 4
 
     def __init__(self, parent=None, iconsize=24, ndots=11,
                  orientation=Qt.Horizontal, spacing=None,
@@ -175,6 +176,17 @@ class ProcessStatusBar(QWidget):
             get_icon('succes').pixmap(QSize(iconsize, iconsize)))
         self._success_icon.hide()
 
+        self._update_icon = QLabel()
+        self._update_icon.setPixmap(
+            get_icon('update_blue').pixmap(QSize(iconsize, iconsize)))
+        self._update_icon.hide()
+
+        self._icons = {
+            'failed': self._failed_icon,
+            'success': self._success_icon,
+            'update': self._update_icon
+            }
+
         layout = QGridLayout(self)
         if contents_margin is None:
             contents_margin = [0, 0, 0, 0]
@@ -188,6 +200,7 @@ class ProcessStatusBar(QWidget):
         layout.addWidget(self._spinner, 1, 1, alignment)
         layout.addWidget(self._failed_icon, 1, 1, alignment)
         layout.addWidget(self._success_icon, 1, 1, alignment)
+        layout.addWidget(self._update_icon, 1, 1, alignment)
         if orientation == Qt.Horizontal:
             layout.setColumnMinimumWidth(2, 5)
             layout.addWidget(self._label, 1, 3)
@@ -215,6 +228,21 @@ class ProcessStatusBar(QWidget):
                 layout.setColumnStretch(1, 100)
             layout.setSpacing(spacing or 5)
 
+    def show_icon(self, icon_name):
+        """Show icon named 'icon_name' and hide all other icons."""
+        self._spinner.hide()
+        self._spinner.stop()
+        for name, icon in self._icons.items():
+            if name == icon_name:
+                icon.show()
+            else:
+                icon.hide()
+
+    def hide_icons(self):
+        """Hide all icons."""
+        for icon in self._icons.values():
+            icon.hide()
+
     @property
     def status(self):
         return self._status
@@ -223,23 +251,24 @@ class ProcessStatusBar(QWidget):
         """Set the text that is displayed next to the spinner."""
         self._label.setText(text)
 
+    def show_update_icon(self, message=None):
+        """Stop and hide the spinner and show an update icon instead."""
+        self._status = self.NEED_UPDATE
+        self.show_icon('update')
+        if message is not None:
+            self.set_label(message)
+
     def show_fail_icon(self, message=None):
         """Stop and hide the spinner and show a failed icon instead."""
         self._status = self.PROCESS_FAILED
-        self._spinner.hide()
-        self._spinner.stop()
-        self._success_icon.hide()
-        self._failed_icon.show()
+        self.show_icon('fail')
         if message is not None:
             self.set_label(message)
 
     def show_sucess_icon(self, message=None):
         """Stop and hide the spinner and show a success icon instead."""
         self._status = self.PROCESS_SUCCEEDED
-        self._spinner.hide()
-        self._spinner.stop()
-        self._failed_icon.hide()
-        self._success_icon.show()
+        self.show_icon('success')
         if message is not None:
             self.set_label(message)
 
@@ -247,8 +276,7 @@ class ProcessStatusBar(QWidget):
         """Extend Qt method to start the waiting spinner."""
         self._status = self.IN_PROGRESS
         self._spinner.show()
-        self._failed_icon.hide()
-        self._success_icon.hide()
+        self.hide_icons()
         super().show()
         self._spinner.start()
         if message is not None:
