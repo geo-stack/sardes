@@ -135,7 +135,10 @@ class ProcessStatusBar(QWidget):
         layout = QGridLayout(self)
         layout.setContentsMargins(margin, margin, margin, margin)
 
-        alignment = Qt.AlignLeft | Qt.AlignVCenter
+        if orientation == Qt.Horizontal:
+            alignment = Qt.AlignLeft | Qt.AlignVCenter
+        else:
+            alignment = Qt.AlignCenter | Qt.AlignVCenter
         layout.addWidget(self._spinner, 1, 1, alignment)
         layout.addWidget(self._failed_icon, 1, 1, alignment)
         layout.addWidget(self._success_icon, 1, 1, alignment)
