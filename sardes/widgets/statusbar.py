@@ -108,7 +108,8 @@ class ProcessStatusBar(QWidget):
     PROCESS_FAILED = 3
 
     def __init__(self, parent=None, iconsize=24, ndots=11,
-                 orientation=Qt.Horizontal, spacing=None, margin=0,
+                 orientation=Qt.Horizontal, spacing=None,
+                 contents_margin: list = None,
                  hsize_policy='minimum', vsize_policy='minimum',
                  text_valign='center', icon_valign='center'):
         """
@@ -128,8 +129,9 @@ class ProcessStatusBar(QWidget):
         spacing : in, optional
             Spacing between the icon and the label. Default to 0 if
             orientation is horizontal and to 5 if vertical.
-        margin : int, optional
-            The contents margin size of the progress bar. The default is 0.
+        contents_margin : list[int], optional
+            A list of four integers corresponding to the left, top, right, and
+            bottom contents margin. The default is 0 on all sides.
         hsize_policy : str, optional
             An attribute describing horizontal resizing policy. Valid
             values are 'minimum' or expanding.
@@ -174,7 +176,9 @@ class ProcessStatusBar(QWidget):
         self._success_icon.hide()
 
         layout = QGridLayout(self)
-        layout.setContentsMargins(margin, margin, margin, margin)
+        if contents_margin is None:
+            contents_margin = [0, 0, 0, 0]
+        layout.setContentsMargins(*contents_margin)
 
         icon_valign = VALIGN_DICT[icon_valign]
         if orientation == Qt.Horizontal:
