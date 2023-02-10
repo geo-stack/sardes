@@ -47,8 +47,11 @@ class DatabaseVersionError(Exception):
     """
 
     def __init__(self, cur_version: int, req_version: int):
+        self.cur_version = cur_version
+        self.req_version = req_version
         self.message = _(
             "The version of this database is {} and is outdated. "
-            "Please update your database to version {} and try again."
+            "Please update your database to version&nbsp;{} and try "
+            "to connect again."
             ).format(cur_version, req_version)
         super().__init__(self.message)
