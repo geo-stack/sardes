@@ -108,7 +108,8 @@ class ProcessStatusBar(QWidget):
     PROCESS_FAILED = 3
 
     def __init__(self, parent=None, iconsize=24, ndots=11,
-                 orientation=Qt.Horizontal, spacing=None, margin=0):
+                 orientation=Qt.Horizontal, spacing=None, margin=0,
+                 hsize_policy='minimum'):
         super().__init__(parent)
         self._status = self.HIDDEN
 
@@ -147,14 +148,20 @@ class ProcessStatusBar(QWidget):
             layout.addWidget(self._label, 1, 3)
             layout.setRowStretch(0, 100)
             layout.setRowStretch(3, 100)
-            layout.setColumnStretch(3, 100)
+            if hsize_policy == 'minimum':
+                layout.setColumnStretch(3, 100)
+            if hsize_policy == 'expanding':
+                layout.setColumnStretch(4, 100)
             layout.setSpacing(spacing or 0)
         else:
             layout.addWidget(self._label, 2, 1)
             layout.setRowStretch(0, 100)
             layout.setRowStretch(4, 100)
-            layout.setColumnStretch(0, 100)
-            layout.setColumnStretch(2, 100)
+            if hsize_policy == 'minimum':
+                layout.setColumnStretch(0, 100)
+                layout.setColumnStretch(2, 100)
+            if hsize_policy == 'expanding':
+                layout.setColumnStretch(1, 100)
             layout.setSpacing(spacing or 5)
 
     @property
