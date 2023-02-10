@@ -109,7 +109,7 @@ class ProcessStatusBar(QWidget):
 
     def __init__(self, parent=None, iconsize=24, ndots=11,
                  orientation=Qt.Horizontal, spacing=None, margin=0,
-                 hsize_policy='minimum'):
+                 hsize_policy='minimum', vsize_policy='minimum',
                  text_valign='center', icon_valign='center'):
         """
         A process status bar including an icon and a label.
@@ -132,6 +132,9 @@ class ProcessStatusBar(QWidget):
             The contents margin size of the progress bar. The default is 0.
         hsize_policy : str, optional
             An attribute describing horizontal resizing policy. Valid
+            values are 'minimum' or expanding.
+        vsize_policy : str, optional
+            An attribute describing vertical resizing policy. Valid
             values are 'minimum' or expanding.
         text_valign : str, optional
             The vertical alignment of the text. De default is 'center'.
@@ -184,8 +187,11 @@ class ProcessStatusBar(QWidget):
         if orientation == Qt.Horizontal:
             layout.setColumnMinimumWidth(2, 5)
             layout.addWidget(self._label, 1, 3)
-            layout.setRowStretch(0, 100)
-            layout.setRowStretch(3, 100)
+            if vsize_policy == 'minimum':
+                layout.setRowStretch(0, 100)
+                layout.setRowStretch(3, 100)
+            elif vsize_policy == 'expanding':
+                layout.setRowStretch(1, 100)
             if hsize_policy == 'minimum':
                 layout.setColumnStretch(3, 100)
             if hsize_policy == 'expanding':
@@ -193,8 +199,11 @@ class ProcessStatusBar(QWidget):
             layout.setSpacing(spacing or 0)
         else:
             layout.addWidget(self._label, 2, 1)
-            layout.setRowStretch(0, 100)
-            layout.setRowStretch(4, 100)
+            if vsize_policy == 'minimum':
+                layout.setRowStretch(0, 100)
+                layout.setRowStretch(4, 100)
+            elif vsize_policy == 'expanding':
+                layout.setRowStretch(2, 100)
             if hsize_policy == 'minimum':
                 layout.setColumnStretch(0, 100)
                 layout.setColumnStretch(2, 100)
