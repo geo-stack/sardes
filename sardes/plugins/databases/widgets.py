@@ -74,7 +74,10 @@ class DatabaseConnectionWidget(QDialog):
         dbtype_layout.setStretchFactor(self.dbtype_combobox, 1)
 
         # Setup the status bar.
-        self.status_bar = ProcessStatusBar()
+        self.status_bar = ProcessStatusBar(
+            spacing=5,
+            icon_valign='top',
+            contents_margin=[0, 5, 0, 5])
         self.status_bar.hide()
 
         # Setup the stacked dialogs widget.
