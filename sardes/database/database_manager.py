@@ -63,6 +63,14 @@ class DatabaseConnectionWorker(WorkerBase):
         return self.db_accessor is not None and self.db_accessor.is_connected()
 
     # ---- Task definition
+    def _update_database(self, db_accessor):
+        """Try to update the database schema to the latest version."""
+        cur_version = db_accessor.version()
+        req_version = db_accessor.req_version()
+        print("Updating database to version {} from {}...".format(
+            req_version, cur_version))
+        return db_accessor.update_database()
+
     def _connect_to_db(self, db_accessor):
         """Try to create a new connection with the database"""
         self.db_accessor = db_accessor
@@ -727,6 +735,10 @@ class DatabaseConnectionManager(TaskManagerBase):
     def close(self, callback=None):
         """Close the database connection manager."""
         self.add_task('disconnect_from_db', callback)
+        self.run_tasks()
+
+    def update_database(self, db_accessor, callback=None):
+        self.add_task('update_database', callback, db_accessor)
         self.run_tasks()
 
     # ---- Utilities
