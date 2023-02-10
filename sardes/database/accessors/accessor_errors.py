@@ -55,3 +55,28 @@ class DatabaseVersionError(Exception):
             "to connect again."
             ).format(cur_version, req_version)
         super().__init__(self.message)
+
+
+class DatabaseUpdateError(Exception):
+    """
+    Exception that should be raised when a database update failed.
+
+    Parameters
+    ----------
+    from_version : int
+        The version from which the database was updated.
+    to_version : int
+        The version of the database at which the update failed.
+    exception: Exeption:
+        The original exception that was catched when updating the database.
+    """
+
+    def __init__(self, from_version: int, to_version: int,
+                 exception: Exception):
+        self.from_version = from_version
+        self.to_version = to_version
+        self.exception = exception
+        self.message = _(
+            "Failed to update the database from version {} to {} : {}"
+            ).format(from_version, to_version, exception)
+        super().__init__(self.message)
