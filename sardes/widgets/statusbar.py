@@ -108,7 +108,7 @@ class ProcessStatusBar(QWidget):
     PROCESS_FAILED = 3
 
     def __init__(self, parent=None, iconsize=24, ndots=11,
-                 orientation=Qt.Horizontal):
+                 orientation=Qt.Horizontal, spacing=None, margin=0):
         super().__init__(parent)
         self._status = self.HIDDEN
 
@@ -133,7 +133,7 @@ class ProcessStatusBar(QWidget):
         self._success_icon.hide()
 
         layout = QGridLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(margin, margin, margin, margin)
 
         alignment = Qt.AlignLeft | Qt.AlignVCenter
         layout.addWidget(self._spinner, 1, 1, alignment)
@@ -145,14 +145,14 @@ class ProcessStatusBar(QWidget):
             layout.setRowStretch(0, 100)
             layout.setRowStretch(3, 100)
             layout.setColumnStretch(3, 100)
-            layout.setSpacing(0)
+            layout.setSpacing(spacing or 0)
         else:
             layout.addWidget(self._label, 2, 1)
             layout.setRowStretch(0, 100)
             layout.setRowStretch(4, 100)
             layout.setColumnStretch(0, 100)
             layout.setColumnStretch(2, 100)
-            layout.setSpacing(5)
+            layout.setSpacing(spacing or 5)
 
     @property
     def status(self):
