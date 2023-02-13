@@ -249,22 +249,26 @@ class DatabaseConnectionWidget(QDialog):
         Update the visibility and state of the gui based on the connection
         status with the database.
         """
+        # Setup enabled status.
         for widget in [self.stacked_dialogs, self.dbtype_combobox]:
             widget.setEnabled(
                 not is_connected and
                 not is_connecting and
                 not is_outdated and
                 not is_updating)
+        for btn in [self.close_button, self.connect_button,
+                    self.update_button, self.cancel_button]:
+            btn.setEnabled(not is_connecting and not is_updating)
 
-        self.connect_button.setEnabled(not is_connecting and not is_updating)
-        self.connect_button.setText(
-            _('Disconnect') if is_connected else _('Connect'))
-
+        # Setup visible status.
         self.connect_button.setVisible(not is_outdated)
         self.close_button.setVisible(not is_outdated)
-
         self.cancel_button.setVisible(is_outdated)
         self.update_button.setVisible(is_outdated)
+
+        # Setup button labels.
+        self.connect_button.setText(
+            _('Disconnect') if is_connected else _('Connect'))
 
     # ---- Signal handlers
     @Slot(QAbstractButton)
