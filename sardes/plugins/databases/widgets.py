@@ -61,6 +61,10 @@ class DatabaseConnectionWidget(QDialog):
             self._handle_database_disconnected)
         db_connection_manager.sig_database_is_connecting.connect(
             self._handle_database_is_connecting)
+        db_connection_manager.sig_database_is_updating.connect(
+            self._handle_database_is_connecting)
+        db_connection_manager.sig_database_updated.connect(
+            self._handle_database_udpdated)
 
     def _setup(self):
         """
@@ -101,14 +105,13 @@ class DatabaseConnectionWidget(QDialog):
         self.cancel_button.setDefault(False)
         self.cancel_button.setAutoDefault(False)
         self.cancel_button.clicked.connect(
-            lambda: self._handle_button_cancel_isclicked())
+            lambda: self._handle_button_cancel_update_isclicked())
         self.cancel_button.setVisible(False)
 
         self.update_button = QPushButton(_('Update'))
         self.update_button.setDefault(False)
         self.update_button.setAutoDefault(False)
-        self.update_button.clicked.connect(
-            lambda: self._handle_button_update_isclicked())
+        self.update_button.clicked.connect(lambda: self.update())
         self.update_button.setVisible(False)
 
         # Setup the auto connect to database checkbox.
@@ -336,7 +339,7 @@ class DatabaseConnectionWidget(QDialog):
         self.status_bar.show()
         self.status_bar.set_label(_("Connecting to database..."))
 
-    def _handle_button_cancel_isclicked(self):
+    def _handle_button_cancel_update_isclicked(self):
         """
         Handle when button to cancel database update is clicked.
         """
@@ -344,15 +347,11 @@ class DatabaseConnectionWidget(QDialog):
         self._update_gui(is_connecting=False, is_connected=False,
                          is_outdated=False, is_updating=False)
 
-    def _handle_button_update_isclicked(self):
-        """
-        Handle when the button to update the database is clicked.
-        """
+    def _handle_database_is_updating(self):
         self._update_gui(is_connecting=False, is_connected=False,
                          is_outdated=False, is_updating=True)
         self.status_bar.show()
         self.status_bar.set_label(_("Updating database..."))
-        self.update()
 
     def _handle_database_udpdated(self, from_version, to_version,
                                   db_update_error):
