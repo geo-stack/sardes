@@ -48,7 +48,7 @@ from sardes.api.timeseries import DataType
 APPLICATION_ID = 1013042054
 
 # The latest version of the database schema.
-CURRENT_SCHEMA_VERSION = 3
+CURRENT_SCHEMA_VERSION = 2
 
 # The format that is used to store datetime values in the database.
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
@@ -134,41 +134,6 @@ class Repere(BaseMixin, Base):
     sampling_feature_uuid = Column(
         UUIDType(binary=False),
         ForeignKey('sampling_feature.sampling_feature_uuid'))
-
-
-class Remark(BaseMixin, Base):
-    """
-    An object used to map the 'remarks' table, which contains all remarks
-    pertaining to the monitoring data.
-    """
-    __tablename__ = 'remark'
-
-    remarks_uuid = Column(UUIDType(binary=False), primary_key=True)
-    sampling_feature_uuid = Column(
-        UUIDType(binary=False),
-        ForeignKey('sampling_feature.sampling_feature_uuid'))
-    remark_type_id = Column(
-        Integer,
-        ForeignKey('remark_type.remark_type_id'))
-    period_start = Column(DateTime)
-    period_end = Column(DateTime)
-    remark_text = Column(String)
-    remark_author = Column(String(250))
-    remark_date = Column(DateTime)
-
-
-class RemarkType(BaseMixin, Base):
-    """
-    An object used to map the 'remark_type' table, which is a library of the
-    type of remarks that the 'remark' table can hold.
-    """
-    __tablename__ = 'remark_type'
-    __table_args__ = {'sqlite_autoincrement': True}
-
-    remark_type_id = Column(Integer, primary_key=True)
-    remark_type_code = Column(String(250))
-    remark_type_name = Column(String(250))
-    remark_type_desc = Column(String)
 
 
 class SamplingFeature(BaseMixin, Base):
@@ -568,19 +533,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         from_version = self.version()
         if from_version == CURRENT_SCHEMA_VERSION:
             return from_version, CURRENT_SCHEMA_VERSION, None
-
-        try:
-            if self.version() <= 2:
-                # Add the 'remark' and 'remark_type' tables, which were added
-                # in Sardes v0.13.0.
-                for table in [Remark, RemarkType]:
-                    if inspect(self._engine).has_table(table.__tablename__):
-                        continue
-                    self._create_table(table)
-                self.execute("PRAGMA user_version = 3")
-                self._session.commit()
-        except Exception as error:
-            return from_version, 3, DatabaseUpdateError(from_version, 3, error)
 
         return from_version, CURRENT_SCHEMA_VERSION, None
 
