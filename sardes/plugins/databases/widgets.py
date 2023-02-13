@@ -62,7 +62,7 @@ class DatabaseConnectionWidget(QDialog):
         db_connection_manager.sig_database_is_connecting.connect(
             self._handle_database_is_connecting)
         db_connection_manager.sig_database_is_updating.connect(
-            self._handle_database_is_connecting)
+            self._handle_database_is_updating)
         db_connection_manager.sig_database_updated.connect(
             self._handle_database_udpdated)
 
@@ -241,7 +241,6 @@ class DatabaseConnectionWidget(QDialog):
         """
         self.db_connection_manager.update_database(
             self.get_current_database_accessor(),
-            self._handle_database_udpdated
             )
 
     # ---- GUI update.
@@ -349,7 +348,7 @@ class DatabaseConnectionWidget(QDialog):
 
     def _handle_database_is_updating(self):
         self._update_gui(is_connecting=False, is_connected=False,
-                         is_outdated=False, is_updating=True)
+                         is_outdated=True, is_updating=True)
         self.status_bar.show()
         self.status_bar.set_label(_("Updating database..."))
 
