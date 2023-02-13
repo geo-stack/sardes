@@ -12,11 +12,10 @@
 import sys
 
 # ---- Third party imports
-from qtpy.QtCore import Qt, Slot
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
-    QApplication, QAbstractButton, QCheckBox, QComboBox, QDialog,
-    QDialogButtonBox, QHBoxLayout, QLabel, QPushButton, QStackedWidget,
-    QVBoxLayout, QWidget, QGridLayout)
+    QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QHBoxLayout,
+    QLabel, QPushButton, QStackedWidget, QGridLayout)
 
 # ---- Local imports
 from sardes.database.accessors.accessor_errors import DatabaseVersionError
@@ -271,7 +270,6 @@ class DatabaseConnectionWidget(QDialog):
             _('Disconnect') if is_connected else _('Connect'))
 
     # ---- Signal handlers
-    @Slot(QAbstractButton)
     def _handle_button_connect_isclicked(self):
         """
         Handle when a the button to connect to the database is clicked.
@@ -281,7 +279,6 @@ class DatabaseConnectionWidget(QDialog):
         else:
             self.disconnect()
 
-    @Slot(object, object)
     def _handle_database_connected(self, db_connection, db_connect_error):
         """
         Handle when the database manager sucessfully or failed to
