@@ -63,6 +63,16 @@ class DatabaseConnectionWorker(WorkerBase):
         return self.db_accessor is not None and self.db_accessor.is_connected()
 
     # ---- Task definition
+    def _update_database(self, db_accessor):
+        """Try to update the database schema to the latest version."""
+        cur_version = db_accessor.version()
+        req_version = db_accessor.req_version()
+        print("Updating database to version {} from {}...".format(
+            req_version, cur_version))
+
+        from_version, to_version, error = db_accessor.update_database()
+        return from_version, to_version, error
+
     def _connect_to_db(self, db_accessor):
         """Try to create a new connection with the database"""
         self.db_accessor = db_accessor
@@ -630,6 +640,9 @@ class DatabaseConnectionManager(TaskManagerBase):
     sig_database_disconnected = Signal()
     sig_database_is_connecting = Signal()
     sig_database_connection_changed = Signal(bool)
+    sig_database_is_updating = Signal()
+    sig_database_updated = Signal(int, int, object)
+
     sig_database_data_changed = Signal(list)
     sig_tseries_data_changed = Signal(list)
     sig_publish_progress = Signal(float)
@@ -637,6 +650,7 @@ class DatabaseConnectionManager(TaskManagerBase):
     def __init__(self):
         super().__init__()
         self._is_connecting = False
+        self._is_updating = False
         self._data_changed = set()
         self._tseries_data_changed = set()
         self._confirm_before_saving_edits = True
@@ -655,6 +669,12 @@ class DatabaseConnectionManager(TaskManagerBase):
         Return whether a connection to a database is currently being created.
         """
         return self._is_connecting
+
+    def is_updating(self):
+        """
+        Return whether the database is being updated.
+        """
+        return self._is_updating
 
     def confirm_before_saving_edits(self):
         """
@@ -712,12 +732,13 @@ class DatabaseConnectionManager(TaskManagerBase):
         Try to create a new connection with the database using the
         provided database accessor.
         """
-        if db_accessor is not None:
-            self._is_connecting = True
-            self.sig_database_is_connecting.emit()
-            self.add_task(
-                'connect_to_db', self._handle_connect_to_db, db_accessor)
-            self.run_tasks()
+        if db_accessor is None:
+            return
+        self._is_connecting = True
+        self.sig_database_is_connecting.emit()
+        self.add_task(
+            'connect_to_db', self._handle_connect_to_db, db_accessor)
+        self.run_tasks()
 
     def disconnect_from_db(self):
         """Close the connection with the database"""
@@ -727,6 +748,15 @@ class DatabaseConnectionManager(TaskManagerBase):
     def close(self, callback=None):
         """Close the database connection manager."""
         self.add_task('disconnect_from_db', callback)
+        self.run_tasks()
+
+    def update_database(self, db_accessor):
+        self._is_updating = True
+        self.sig_database_is_updating.emit()
+        self._add_task(
+            'update_database',
+            lambda *args: self._handle_database_updated(*args),
+            db_accessor)
         self.run_tasks()
 
     # ---- Utilities
@@ -875,7 +905,13 @@ class DatabaseConnectionManager(TaskManagerBase):
             self.run_tasks()
 
     # ---- Handlers
-    @Slot(object, object)
+    def _handle_database_updated(self, from_version, to_version, error):
+        """
+        Handle when the database was updated successfully or not.
+        """
+        self._is_updating = False
+        self.sig_database_updated.emit(from_version, to_version, error)
+
     def _handle_connect_to_db(self, connection, connection_error):
         """
         Handle when a connection to the database was created successfully
@@ -885,7 +921,6 @@ class DatabaseConnectionManager(TaskManagerBase):
         self.sig_database_connected.emit(connection, connection_error)
         self.sig_database_connection_changed.emit(self.is_connected())
 
-    @Slot()
     def _handle_disconnect_from_db(self, *args, **kargs):
         """
         Handle when the connection to the database was closed successfully.

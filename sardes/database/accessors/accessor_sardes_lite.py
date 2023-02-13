@@ -34,10 +34,12 @@ from sqlalchemy_utils import UUIDType
 from sqlalchemy.orm.exc import NoResultFound
 
 # ---- Local imports
-from sardes.database.accessors.accessor_helpers import create_empty_readings
 from sardes.config.locale import _
 from sardes.api.database_accessor import (
     DatabaseAccessor, DatabaseAccessorError)
+from sardes.database.accessors.accessor_errors import (
+    DatabaseVersionError, SardesVersionError, DatabaseUpdateError)
+from sardes.database.accessors.accessor_helpers import create_empty_readings
 from sardes.database.utils import format_sqlobject_repr
 from sardes.api.timeseries import DataType
 
@@ -473,6 +475,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
     def commit_transaction(self):
         self._session.commit()
 
+    def req_version(self):
+        """Return the required version of the database."""
+        return CURRENT_SCHEMA_VERSION
+
     def version(self):
         """Return the current version of the database."""
         return self.execute("PRAGMA user_version").first()[0]
@@ -490,6 +496,15 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             raise p
 
     # ---- Database setup
+    def _create_table(self, table):
+        """
+        Add a new table to the database.
+        """
+        Base.metadata.create_all(self._engine, tables=[table.__table__])
+        for item_attrs in table.initial_attrs():
+            self._session.add(table(**item_attrs))
+        self._session.commit()
+
     def init_database(self):
         """
         Initialize the tables and attributes of a new database.
@@ -503,14 +518,23 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         for table in tables:
             if inspect(self._engine).has_table(table.__tablename__):
                 continue
-            Base.metadata.create_all(self._engine, tables=[table.__table__])
-            for item_attrs in table.initial_attrs():
-                self._session.add(table(**item_attrs))
-            self._session.commit()
+            self._create_table(table)
         self._session.commit()
 
         self.execute("PRAGMA application_id = {}".format(APPLICATION_ID))
-        self.execute("PRAGMA user_version = {}".format(CURRENT_SCHEMA_VERSION))
+        self.execute("PRAGMA user_version = 2")
+
+        self.update_database()
+
+    def update_database(self):
+        """
+        Update database to the latest schema version.
+        """
+        from_version = self.version()
+        if from_version == CURRENT_SCHEMA_VERSION:
+            return from_version, CURRENT_SCHEMA_VERSION, None
+
+        return from_version, CURRENT_SCHEMA_VERSION, None
 
     # ---- Database connection
     def is_connected(self):
@@ -558,17 +582,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                         self._database, app_id, APPLICATION_ID))
             elif version < CURRENT_SCHEMA_VERSION:
                 connection = None
-                connection_error = sqlite3.DatabaseError(_(
-                    "The version of this database is {} and is outdated. "
-                    "Please update your database to version {} and try again."
-                    ).format(version, CURRENT_SCHEMA_VERSION))
+                connection_error = DatabaseVersionError(
+                    version, CURRENT_SCHEMA_VERSION)
             elif version > CURRENT_SCHEMA_VERSION:
                 connection = None
-                connection_error = sqlite3.DatabaseError(_(
-                    "Your Sardes application is outdated and does not support "
-                    "databases whose version is higher than {}. Please "
-                    "update Sardes and try again."
-                    ).format(CURRENT_SCHEMA_VERSION))
+                connection_error = SardesVersionError(
+                    CURRENT_SCHEMA_VERSION)
             else:
                 connection = True
                 connection_error = None
