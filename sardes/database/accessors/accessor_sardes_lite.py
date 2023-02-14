@@ -136,6 +136,27 @@ class Repere(BaseMixin, Base):
         ForeignKey('sampling_feature.sampling_feature_uuid'))
 
 
+class Remark(BaseMixin, Base):
+    """
+    An object used to map the 'remarks' table, which contains all remarks
+    pertaining to the monitoring data.
+    """
+    __tablename__ = 'remark'
+
+    remarks_uuid = Column(UUIDType(binary=False), primary_key=True)
+    sampling_feature_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('sampling_feature.sampling_feature_uuid'))
+    remark_type_id = Column(
+        Integer,
+        ForeignKey('remark_type.remark_type_id'))
+    period_start = Column(DateTime)
+    period_end = Column(DateTime)
+    remark_text = Column(String)
+    remark_author = Column(String(250))
+    remark_date = Column(DateTime)
+
+
 class SamplingFeature(BaseMixin, Base):
     """
     An object used to map the 'sampling_feature' table.
