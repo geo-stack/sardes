@@ -157,6 +157,20 @@ class Remark(BaseMixin, Base):
     remark_date = Column(DateTime)
 
 
+class RemarkType(BaseMixin, Base):
+    """
+    An object used to map the 'remark_type' table, which is a library of the
+    type of remarks that the 'remark' table can hold.
+    """
+    __tablename__ = 'remark_type'
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    remark_type_id = Column(Integer, primary_key=True)
+    remark_type_code = Column(String(250))
+    remark_type_name = Column(String(250))
+    remark_type_desc = Column(String)
+
+
 class SamplingFeature(BaseMixin, Base):
     """
     An object used to map the 'sampling_feature' table.
