@@ -48,7 +48,7 @@ from sardes.api.timeseries import DataType
 APPLICATION_ID = 1013042054
 
 # The latest version of the database schema.
-CURRENT_SCHEMA_VERSION = 2
+CURRENT_SCHEMA_VERSION = 3
 
 # The format that is used to store datetime values in the database.
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
