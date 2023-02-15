@@ -678,7 +678,8 @@ def test_observation_well_interface(dbaccessor, database_filler,
     obs_wells_id = UUID('3c6d0e15-6775-4304-964a-5db89e463c55')
     assert len(dbaccessor.get('observation_wells_data')) == 5
 
-    # Try to delete a station with readings, repere and sonde installations.
+    # Try to delete a station with readings, repere, sonde installations,
+    # and remark.
     with pytest.raises(DatabaseAccessorError):
         dbaccessor.delete('observation_wells_data', obs_wells_id)
     assert len(dbaccessor.get('observation_wells_data')) == 5
@@ -712,6 +713,13 @@ def test_observation_well_interface(dbaccessor, database_filler,
     # We delete the repere data and try again.
     dbaccessor.delete(
         'repere_data', dbaccessor.get('repere_data').index)
+
+    with pytest.raises(DatabaseAccessorError):
+        dbaccessor.delete('observation_wells_data', obs_wells_id)
+    assert len(dbaccessor.get('observation_wells_data')) == 5
+
+    # We delete all remarks and try again.
+    dbaccessor.delete('remarks', dbaccessor.get('remarks').index)
 
     with pytest.raises(DatabaseAccessorError):
         dbaccessor.delete('observation_wells_data', obs_wells_id)
