@@ -16,7 +16,7 @@ from sardes.tables.delegates import TextEditDelegate
 from sardes.widgets.tableviews import SardesTableWidget
 
 
-class SondeRemarkTypesTableModel(StandardSardesTableModel):
+class RemarkTypesTableModel(StandardSardesTableModel):
     """
     A table model to display a list of remark types that
     are available to use in the Remarks table.
@@ -43,7 +43,7 @@ class SondeRemarkTypesTableModel(StandardSardesTableModel):
         return TextEditDelegate(view, is_required=True)
 
 
-class SondeRemarkTypesTableWidget(SardesTableWidget):
+class RemarkTypesTableWidget(SardesTableWidget):
     def __init__(self, *args, **kargs):
-        table_model = SondeRemarkTypesTableModel()
+        table_model = RemarkTypesTableModel()
         super().__init__(table_model, *args, **kargs)
