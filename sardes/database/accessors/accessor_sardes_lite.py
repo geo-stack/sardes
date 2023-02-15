@@ -164,7 +164,6 @@ class RemarkType(BaseMixin, Base):
     type of remarks that the 'remark' table can hold.
     """
     __tablename__ = 'remark_type'
-    __table_args__ = {'sqlite_autoincrement': True}
 
     remark_type_id = Column(Integer, primary_key=True)
     remark_type_code = Column(String(250))
@@ -847,10 +846,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             try:
                 max_commited_id = (
                     self._session.query(func.max(SondeModel.sonde_model_id))
-                    .one())[0]
+                    .one())[0] + 1
             except TypeError:
-                max_commited_id = 0
-            indexes = [i + max_commited_id + 1 for i in range(n)]
+                max_commited_id = 1
+            indexes = [i + max_commited_id for i in range(n)]
 
         self._session.add_all([
             SondeModel(
@@ -1612,10 +1611,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             try:
                 max_commited_id = (
                     self._session.query(func.max(RemarkType.remark_type_id))
-                    .one())[0]
+                    .one())[0] + 1
             except TypeError:
-                max_commited_id = 0
-            indexes = [i + max_commited_id + 1 for i in range(n)]
+                max_commited_id = 1
+            indexes = [i + max_commited_id for i in range(n)]
 
         self._session.add_all([
             RemarkType(
