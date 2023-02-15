@@ -196,7 +196,7 @@ class DatabaseConnectionWorker(WorkerBase):
         foreign constraints specified in FOREIGN_CONSTRAINTS.
         """
         foreign_constraints = (
-            DATABASE_CONCEPTUAL_MODEL[data_name]['foreign_constraints'])
+            DATABASE_CONCEPTUAL_MODEL[data_name].foreign_constraints)
         for foreign_column, foreign_name in foreign_constraints:
             foreign_data = self._get(foreign_name)[0]
             isin_indexes = parent_indexes[
