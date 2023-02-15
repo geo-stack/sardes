@@ -75,6 +75,14 @@ class RemarksTableModel(StandardSardesTableModel):
                 )
         except KeyError:
             pass
+        try:
+            remark_types = self.libraries['remark_types']
+            visual_dataf['remark_type_id'] = (
+                visual_dataf['remark_type_id']
+                .map(remark_types['remark_type_name'].to_dict().get)
+                )
+        except KeyError:
+            pass
         return super().logical_to_visual_data(visual_dataf)
 
 
