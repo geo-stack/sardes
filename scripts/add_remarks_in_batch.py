@@ -20,6 +20,7 @@ remarks_data = pd.read_excel(
 
 database = "D:/Desktop/rsesq_prod_02-04-2021.db"
 dbaccessor = DatabaseAccessorSardesLite(database)
+dbaccessor.update_database()
 dbaccessor.connect()
 
 # Populate the 'remark_types' table.
