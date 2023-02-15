@@ -804,17 +804,11 @@ def test_remark_types_interface(dbaccessor, database_filler):
     assert len(model_remark_types) == 2
 
 
-def test_remarks_interface(dbaccessor, remarks, obswells_data):
+def test_remarks_interface(dbaccessor, database_filler, obswells_data):
     """
     Test that adding, editing and retrieving remarks is working as expected.
     """
-    # Add some remarks to the database.
-    _dict = remarks.to_dict('index')
-    dbaccessor.add(
-        name=remarks.attrs['name'],
-        values=_dict.values(),
-        indexes=_dict.keys()
-        )
+    database_filler(dbaccessor)
 
     # =========================================================================
     # Add
