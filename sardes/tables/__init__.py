@@ -20,4 +20,4 @@ from .table_repere import (
 from .table_sonde_models import (
     SondeModelsTableModel, SondeModelsTableWidget)
 from .table_remark_types import (
-    SondeRemarkTypesTableModel, SondeRemarkTypesTableWidget)
+    RemarkTypesTableModel, RemarkTypesTableWidget)
