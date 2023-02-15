@@ -741,6 +741,82 @@ def test_observation_well_interface(dbaccessor, database_filler,
             ) == 0
 
 
+def test_remark_types_interface(dbaccessor, remark_types, remarks):
+    """
+    Test that adding, editing and retrieving remark types is working as
+    expected.
+    """
+    # Add some remarks to the database.
+    _dict = remarks.to_dict('index')
+    dbaccessor.add(
+        name=remarks.attrs['name'],
+        values=_dict.values(),
+        indexes=_dict.keys()
+        )
+
+    # Add some remark types to the database.
+    _dict = remark_types.to_dict('index')
+    dbaccessor.add(
+        name=remark_types.attrs['name'],
+        values=_dict.values(),
+        )
+
+    # =========================================================================
+    # Add
+    # =========================================================================
+
+    model_remark_types = dbaccessor.get('remark_types')
+    assert len(model_remark_types) == 2
+
+    # Add a new remark type.
+    new_remark_data = {
+        'remark_type_code': 'R3',
+        'remark_type_name': 'remark type 3',
+        'remark_type_desc': 'desc remark type 3'}
+    new_remark_type_id = dbaccessor.add('remark_types', new_remark_data)
+    assert new_remark_type_id == 3
+
+    # Assert that the remark type was added as expected.
+    model_remark_types = dbaccessor.get('remark_types')
+    assert len(model_remark_types) == 3
+    for field, value in new_remark_data.items():
+        assert model_remark_types.at[new_remark_type_id, field] == value
+
+    # =========================================================================
+    # Edit
+    # =========================================================================
+
+    edited_remark_data = {
+        'remark_type_code': 'R3ed',
+        'remark_type_name': 'remark type 3ed',
+        'remark_type_desc': 'desc remark type 3ed'}
+
+    # Edit the newly added remark type.
+    dbaccessor.set('remark_types', new_remark_type_id, edited_remark_data)
+
+    # Assert that edits were saved as expected.
+    model_remark_types = dbaccessor.get('remark_types')
+    for field, value in edited_remark_data.items():
+        assert model_remark_types.at[new_remark_type_id, field] == value
+
+    # =========================================================================
+    # Delete
+    # =========================================================================
+
+    # Try to delete a sonde model that is used in table 'remarks'.
+    with pytest.raises(DatabaseAccessorError):
+        dbaccessor.delete('remark_types', 1)
+
+    model_remark_types = dbaccessor.get('remark_types')
+    assert len(model_remark_types) == 3
+
+    # Try to delete the newly added remark type.
+    dbaccessor.delete('remark_types', new_remark_type_id)
+
+    model_remark_types = dbaccessor.get('remark_types')
+    assert len(model_remark_types) == 2
+
+
 # =============================================================================
 # ---- Tests timeseries
 # =============================================================================
