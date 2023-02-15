@@ -62,12 +62,6 @@ class RemarksTableModel(StandardSardesTableModel):
     __dataname__ = 'remarks'
     __libnames__ = ['remark_types', 'observation_wells_data']
 
-
-class RemarksTableWidget(SardesTableWidget):
-    def __init__(self, *args, **kargs):
-        table_model = RemarksTableModel()
-        super().__init__(table_model, *args, **kargs)
-
     # ---- Visual Data
     def logical_to_visual_data(self, visual_dataf):
         """
@@ -81,3 +75,10 @@ class RemarksTableWidget(SardesTableWidget):
                 )
         except KeyError:
             pass
+        return super().logical_to_visual_data(visual_dataf)
+
+
+class RemarksTableWidget(SardesTableWidget):
+    def __init__(self, *args, **kargs):
+        table_model = RemarksTableModel()
+        super().__init__(table_model, *args, **kargs)
