@@ -13,7 +13,7 @@ from sardes.config.locale import _
 from sardes.tables.models import StandardSardesTableModel
 from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.delegates import (
-    ObsWellIdEditDelegate, TextEditDelegate,
+    ObsWellIdEditDelegate, TextEditDelegate, StringEditDelegate,
     DateTimeDelegate, RemarkTypeEditDelegate)
 
 
@@ -50,6 +50,7 @@ class RemarksTableModel(StandardSardesTableModel):
             ),
         SardesTableColumn(
             'remark_author', _('Auteur'), 'str',
+            delegate=StringEditDelegate
             ),
         SardesTableColumn(
             'remark_date', _('Date'), 'datetime64[ns]',
