@@ -741,25 +741,12 @@ def test_observation_well_interface(dbaccessor, database_filler,
             ) == 0
 
 
-def test_remark_types_interface(dbaccessor, remark_types, remarks):
+def test_remark_types_interface(dbaccessor, database_filler):
     """
     Test that adding, editing and retrieving remark types is working as
     expected.
     """
-    # Add some remarks to the database.
-    _dict = remarks.to_dict('index')
-    dbaccessor.add(
-        name=remarks.attrs['name'],
-        values=_dict.values(),
-        indexes=_dict.keys()
-        )
-
-    # Add some remark types to the database.
-    _dict = remark_types.to_dict('index')
-    dbaccessor.add(
-        name=remark_types.attrs['name'],
-        values=_dict.values(),
-        )
+    database_filler(dbaccessor)
 
     # =========================================================================
     # Add
