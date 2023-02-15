@@ -1537,7 +1537,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         query = self._session.query(Remark)
         remarks = pd.read_sql_query(
             query.statement, self._session.connection(), coerce_float=True,
-            index_col='remark_id')
+            index_col='remark_id',
+            parse_dates={'period_start': TO_DATETIME_ARGS,
+                         'period_end': TO_DATETIME_ARGS,
+                         'remark_date': TO_DATETIME_ARGS})
         return remarks
 
     def _set_remarks(self, index, values):
@@ -1545,7 +1548,13 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._session.query(Remark)
             .filter(Remark.remark_id == index)
             .one())
+
         for attr_name, attr_value in values.items():
+            # Make sure pandas NaT are replaced by None for datetime fields
+            # to avoid errors in sqlalchemy.
+            if attr_name in ['period_start', 'period_end', 'remark_date']:
+                attr_value = None if pd.isnull(attr_value) else attr_value
+
             setattr(remark, attr_name, attr_value)
 
     def _add_remarks(self, values, indexes=None):
@@ -1554,6 +1563,13 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # Generate new indexes if needed.
         if indexes is None:
             indexes = [uuid.uuid4() for i in range(n)]
+
+        # Make sure pandas NaT are replaced by None for datetime fields
+        # to avoid errors in sqlalchemy.
+        for i in range(n):
+            for field in ['period_start', 'period_end', 'remark_date']:
+                if pd.isnull(values[i].get(field, True)):
+                    values[i][field] = None
 
         self._session.add_all([
             Remark(
