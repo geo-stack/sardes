@@ -55,6 +55,10 @@ class SardesTableColumn():
     # If not None, default value used when adding a new row.
     default: object = None
 
+    def __post_init__(self):
+        if self.default is None and self.dtype == 'datetime64[ns]':
+            self.default = pd.NaT
+
 
 # =============================================================================
 # ---- Edits
@@ -748,6 +752,7 @@ class SardesTableModel(SardesTableModelBase):
                     'WARNING: Failed to format datetime values on column "{}" '
                     'of table "{}" because of the following error :\n{}'
                     ).format(column.name, self.name(), e))
+                print(column.name, visual_dataf[column.name].dtype)
 
         return visual_dataf
 
