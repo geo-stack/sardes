@@ -37,8 +37,9 @@ from sardes.widgets.tableviews import (
 from sardes.tables.delegates import (
     NotEditableDelegate, StringEditDelegate,
     IntEditDelegate, NumEditDelegate, BoolEditDelegate)
-from sardes.database.database_manager import (
-    DatabaseConnectionManager, DATABASE_CONCEPTUAL_MODEL)
+from sardes.api.database_model import (
+    DATABASE_CONCEPTUAL_MODEL, Table, Column)
+from sardes.database.database_manager import DatabaseConnectionManager
 from sardes.api.database_accessor import DatabaseAccessorBase
 from sardes.utils.data_operations import are_values_equal
 
@@ -57,16 +58,14 @@ INDEXES = [uuid.uuid4() for i in range(len(VALUES))]
 
 
 # We need to extend the database conceptual model with our test table.
-DATABASE_CONCEPTUAL_MODEL.data['test_table_dataf_name'] = {
-    'foreign_constraints': (),
-    'unique_constraints': (),
-    'notnull_constraints': (),
-    'columns': {
-        COLUMNS[i]: {'dtype': DTYPES[i],
-                     'desc': ("Description for {}".format(COLUMNS[i]))}
-        for i in range(NCOL)
-    },
-}
+DATABASE_CONCEPTUAL_MODEL.data['test_table_dataf_name'] = Table(
+    columns=(
+        Column(name=COLUMNS[i],
+               dtype=DTYPES[i],
+               desc="Description for {}".format(COLUMNS[i])
+               ) for i in range(NCOL)
+    )
+)
 
 
 @pytest.fixture
