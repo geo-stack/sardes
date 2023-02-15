@@ -1537,9 +1537,11 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         remarks = pd.read_sql_query(
             query.statement, self._session.connection(), coerce_float=True,
             index_col='remark_id',
+            dtype={'remark_type_id': 'Int64'},
             parse_dates={'period_start': TO_DATETIME_ARGS,
                          'period_end': TO_DATETIME_ARGS,
-                         'remark_date': TO_DATETIME_ARGS})
+                         'remark_date': TO_DATETIME_ARGS}
+            )
         return remarks
 
     def _set_remarks(self, index, values):

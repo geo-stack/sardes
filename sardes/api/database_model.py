@@ -336,7 +336,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
             ),
             Column(
                 name='remark_type_id',
-                dtype='int',
+                dtype='Int64',
                 desc="The ID of the type of the remark."
             ),
             Column(
