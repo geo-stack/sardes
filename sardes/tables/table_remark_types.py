@@ -12,8 +12,8 @@
 from sardes.api.tablemodels import SardesTableColumn
 from sardes.config.locale import _
 from sardes.tables.models import StandardSardesTableModel
-from sardes.tables.delegates import TextEditDelegate
 from sardes.widgets.tableviews import SardesTableWidget
+from sardes.tables.delegates import TextEditDelegate, StringEditDelegate
 
 
 class RemarkTypesTableModel(StandardSardesTableModel):
@@ -25,22 +25,20 @@ class RemarkTypesTableModel(StandardSardesTableModel):
     __tabletitle__ = _('Remark Types')
     __tablecolumns__ = [
         SardesTableColumn(
-            'remark_type_code', _('Code'), 'str', notnull=True,
-            unique=True),
+            'remark_type_code', _('Code'), 'str',
+            notnull=True, unique=True,
+            delegate=StringEditDelegate),
         SardesTableColumn(
-            'remark_type_name', _('Name'), 'str', notnull=True,
-            unique=True),
+            'remark_type_name', _('Name'), 'str',
+            notnull=True, unique=True,
+            delegate=StringEditDelegate),
         SardesTableColumn(
-            'remark_type_desc', _('Description'), 'str', notnull=False,
-            unique=False),
+            'remark_type_desc', _('Description'), 'str',
+            delegate=TextEditDelegate),
         ]
 
     __dataname__ = 'remark_types'
     __libnames__ = []
-
-    # ---- SardesTableModel Public API
-    def create_delegate_for_column(self, view, column):
-        return TextEditDelegate(view, is_required=True)
 
 
 class RemarkTypesTableWidget(SardesTableWidget):
