@@ -144,7 +144,7 @@ class Remark(BaseMixin, Base):
     """
     __tablename__ = 'remark'
 
-    remarks_uuid = Column(UUIDType(binary=False), primary_key=True)
+    remark_id = Column(UUIDType(binary=False), primary_key=True)
     sampling_feature_uuid = Column(
         UUIDType(binary=False),
         ForeignKey('sampling_feature.sampling_feature_uuid'))
@@ -731,7 +731,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
     def _del_observation_wells_data(self, obswell_ids):
         # Check for foreign key violation.
-        for table in [Observation, Process, Repere]:
+        for table in [Observation, Process, Repere, Remark]:
             foreign_items_count = (
                 self._session.query(table)
                 .filter(table.sampling_feature_uuid.in_(obswell_ids))
@@ -1531,6 +1531,45 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         else:
             self._session.delete(attachment)
             self._session.commit()
+
+    # ---- Remarks interface
+    def _get_remarks(self):
+        query = self._session.query(Remark)
+        remarks = pd.read_sql_query(
+            query.statement, self._session.connection(), coerce_float=True,
+            index_col='remark_id')
+        return remarks
+
+    def _set_remarks(self, index, values):
+        remark = (
+            self._session.query(Remark)
+            .filter(Remark.remark_id == index)
+            .one())
+        for attr_name, attr_value in values.items():
+            setattr(remark, attr_name, attr_value)
+
+    def _add_remarks(self, values, indexes=None):
+        n = len(values)
+
+        # Generate new indexes if needed.
+        if indexes is None:
+            indexes = [uuid.uuid4() for i in range(n)]
+
+        self._session.add_all([
+            Remark(
+                remark_id=indexes[i],
+                **values[i]
+                ) for i in range(n)
+            ])
+        self._session.flush()
+
+        return indexes
+
+    def _del_remarks(self, remark_ids):
+        self._session.execute(
+            Remark.__table__.delete().where(
+                Remark.remark_id.in_(remark_ids)))
+        self._session.flush()
 
     # ---- Remark Types interface
     def _get_remark_types(self):
