@@ -11,16 +11,13 @@
 from __future__ import annotations
 from collections import OrderedDict
 from dataclasses import dataclass, field
-import uuid
 
 # ---- Third party imports
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_string_dtype
 from qtpy.QtCore import (QAbstractTableModel, QModelIndex, Qt, QVariant,
                          Signal, QSortFilterProxyModel)
 from qtpy.QtGui import QColor
-from qtpy.QtWidgets import QStyleOption
 
 # ---- Local imports
 from sardes.api.tableedits import TableEdit, TableEditsController
