@@ -21,3 +21,5 @@ from .table_sonde_models import (
     SondeModelsTableModel, SondeModelsTableWidget)
 from .table_remark_types import (
     RemarkTypesTableModel, RemarkTypesTableWidget)
+from .table_remarks import (
+    RemarksTableModel, RemarksTableWidget)
