@@ -6,7 +6,11 @@
 # This file is part of SARDES.
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
-
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from sardes.widgets.tableviews import SardesTableView
+    from sardes.api.tablemodels import SardesTableColumn
 
 # ---- Standard imports
 from datetime import datetime
@@ -34,9 +38,10 @@ class SardesItemDelegateBase(QStyledItemDelegate):
     know what you are doing.
     """
 
-    def __init__(self, model_view):
+    def __init__(self, model_view: SardesTableView, column: SardesTableColumn):
         super() .__init__(parent=model_view)
         self.model_view = model_view
+        self.column = column
         self._model_index = None
         self.editor = None
         self._widget = QListView()

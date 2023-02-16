@@ -27,8 +27,8 @@ class NotEditableDelegate(SardesItemDelegate):
     column are not editable.
     """
 
-    def __init__(self, model_view):
-        super().__init__(model_view)
+    def __init__(self, model_view, column):
+        super().__init__(model_view, column)
 
     def createEditor(self, *args, **kargs):
         return None
@@ -68,8 +68,8 @@ class DateTimeDelegate(SardesItemDelegate):
     A delegate to edit a datetime.
     """
 
-    def __init__(self, model_view, display_format=None):
-        super() .__init__(model_view)
+    def __init__(self, model_view, column, display_format=None):
+        super() .__init__(model_view, column)
         self.display_format = ("yyyy-MM-dd hh:mm:ss" if display_format is None
                                else display_format)
 
@@ -120,8 +120,8 @@ class IntEditDelegate(SardesItemDelegate):
     A delegate to edit an integer value in a spin box.
     """
 
-    def __init__(self, model_view, minimum=None, maximum=None, **kargs):
-        super() .__init__(model_view, **kargs)
+    def __init__(self, model_view, column, minimum=None, maximum=None):
+        super() .__init__(model_view, column)
         self._minimum = minimum
         self._maximum = maximum
 
@@ -155,9 +155,9 @@ class NumEditDelegate(SardesItemDelegate):
     A delegate to edit a float or a float value in a spin box.
     """
 
-    def __init__(self, model_view, decimals=0, minimum=None, maximum=None,
-                 **kargs):
-        super() .__init__(model_view, **kargs)
+    def __init__(self, model_view, column, decimals=0, minimum=None,
+                 maximum=None):
+        super() .__init__(model_view, column)
         self._minimum = minimum
         self._maximum = maximum
         self._decimals = decimals
