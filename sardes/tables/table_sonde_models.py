@@ -9,7 +9,7 @@
 
 
 # ---- Local imports
-from sardes.api.tablemodels import SardesTableColumn
+from sardes.api.tablemodels import sardes_table_column_factory
 from sardes.config.locale import _
 from sardes.tables.models import StandardSardesTableModel
 from sardes.tables.delegates import TextEditDelegate
@@ -24,12 +24,10 @@ class SondeModelsTableModel(StandardSardesTableModel):
     __tablename__ = 'sonde_brand_models'
     __tabletitle__ = _('Sonde Models')
     __tablecolumns__ = [
-        SardesTableColumn(
-            'sonde_brand', _('Brand'), 'str', notnull=True,
-            unique=True, unique_subset=['sonde_model']),
-        SardesTableColumn(
-            'sonde_model', _('Model'), 'str', notnull=True,
-            unique=True, unique_subset=['sonde_brand'])
+        sardes_table_column_factory(
+            'sonde_models_lib', 'sonde_brand', _('Brand')),
+        sardes_table_column_factory(
+            'sonde_models_lib', 'sonde_model', _('Model'))
         ]
 
     __dataname__ = 'sonde_models_lib'
