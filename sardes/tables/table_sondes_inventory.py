@@ -8,14 +8,13 @@
 # -----------------------------------------------------------------------------
 
 # ---- Local imports
-from sardes.api.tablemodels import (
-    SardesTableColumn, sardes_table_column_factory)
+from sardes.api.tablemodels import sardes_table_column_factory
 from sardes.config.locale import _
 from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.models import StandardSardesTableModel
 from sardes.tables.delegates import (
     SondeModelEditDelegate, StringEditDelegate, BoolEditDelegate,
-    TextEditDelegate, DateEditDelegate, DateTimeDelegate)
+    TextEditDelegate, DateTimeDelegate)
 
 
 class SondesInventoryTableModel(StandardSardesTableModel):
