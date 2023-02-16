@@ -44,7 +44,9 @@ def tablewidget(mainwindow, qtbot, dbaccessor):
     qtbot.waitUntil(lambda: tablewidget.visible_row_count() > 0)
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
 
-    return tablewidget
+    yield tablewidget
+    # The 'tablewidget' is part of the 'mainwindow' and will get
+    # destroyed in the 'mainwindow' fixture.
 
 
 # =============================================================================

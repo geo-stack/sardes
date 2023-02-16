@@ -9,7 +9,7 @@
 
 
 # ---- Local imports
-from sardes.api.tablemodels import SardesTableColumn
+from sardes.api.tablemodels import sardes_table_column_factory
 from sardes.config.locale import _
 from sardes.tables.models import StandardSardesTableModel
 from sardes.widgets.tableviews import SardesTableWidget
@@ -24,16 +24,14 @@ class RemarkTypesTableModel(StandardSardesTableModel):
     __tablename__ = 'table_remark_types'
     __tabletitle__ = _('Remark Types')
     __tablecolumns__ = [
-        SardesTableColumn(
-            'remark_type_code', _('Code'), 'str',
-            notnull=True, unique=True,
+        sardes_table_column_factory(
+            'remark_types', 'remark_type_code', _('Code'),
             delegate=StringEditDelegate),
-        SardesTableColumn(
-            'remark_type_name', _('Name'), 'str',
-            notnull=True, unique=True,
+        sardes_table_column_factory(
+            'remark_types', 'remark_type_name', _('Name'),
             delegate=StringEditDelegate),
-        SardesTableColumn(
-            'remark_type_desc', _('Description'), 'str',
+        sardes_table_column_factory(
+            'remark_types', 'remark_type_desc', _('Description'),
             delegate=TextEditDelegate),
         ]
 

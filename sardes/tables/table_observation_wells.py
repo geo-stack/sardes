@@ -15,7 +15,8 @@ from qtpy.QtCore import Signal, QUrl
 from qtpy.QtGui import QDesktopServices
 
 # ---- Local imports
-from sardes.api.tablemodels import SardesTableColumn
+from sardes.api.tablemodels import (
+    SardesTableColumn, sardes_table_column_factory)
 from sardes.config.gui import get_iconsize
 from sardes.config.locale import _
 from sardes.utils.qthelpers import create_toolbutton
@@ -36,39 +37,39 @@ class ObsWellsTableModel(StandardSardesTableModel):
     __tablename__ = 'table_observation_wells'
     __tabletitle__ = _('Observation Wells')
     __tablecolumns__ = [
-        SardesTableColumn(
-            'obs_well_id', _('Well ID'), 'str', notnull=True, unique=True,
+        sardes_table_column_factory(
+            'observation_wells_data', 'obs_well_id', _('Well ID'),
             delegate=StringEditDelegate),
-        SardesTableColumn(
-            'common_name', _('Common Name'), 'str',
+        sardes_table_column_factory(
+            'observation_wells_data', 'common_name', _('Common Name'),
             delegate=StringEditDelegate),
-        SardesTableColumn(
-            'municipality', _('Municipality'), 'str',
+        sardes_table_column_factory(
+            'observation_wells_data', 'municipality', _('Municipality'),
             delegate=StringEditDelegate),
-        SardesTableColumn(
-            'aquifer_type', _('Aquifer'), 'str',
+        sardes_table_column_factory(
+            'observation_wells_data', 'aquifer_type', _('Aquifer'),
             delegate=StringEditDelegate),
-        SardesTableColumn(
-            'aquifer_code', _('Aquifer Code'), 'Int64',
+        sardes_table_column_factory(
+            'observation_wells_data', 'aquifer_code', _('Aquifer Code'),
             delegate=NumEditDelegate,
             delegate_options={
                 'decimals': 0, 'minimum': 0, 'maximum': 999}),
-        SardesTableColumn(
-            'confinement', _('Confinement'), 'str',
+        sardes_table_column_factory(
+            'observation_wells_data', 'confinement', _('Confinement'),
             delegate=StringEditDelegate),
-        SardesTableColumn(
-            'in_recharge_zone', _('Recharge Zone'), 'str',
+        sardes_table_column_factory(
+            'observation_wells_data', 'in_recharge_zone', _('Recharge Zone'),
             delegate=StringEditDelegate),
-        SardesTableColumn(
-            'is_influenced', _('Influenced'), 'str',
+        sardes_table_column_factory(
+            'observation_wells_data', 'is_influenced', _('Influenced'),
             delegate=StringEditDelegate),
-        SardesTableColumn(
-            'latitude', _('Latitude'), 'float64',
+        sardes_table_column_factory(
+            'observation_wells_data', 'latitude', _('Latitude'),
             delegate=NumEditDelegate,
             delegate_options={'decimals': 16, 'minimum': -180, 'maximum': 180},
             ),
-        SardesTableColumn(
-            'longitude', _('Longitude'), 'float64',
+        sardes_table_column_factory(
+            'observation_wells_data', 'longitude', _('Longitude'),
             delegate=NumEditDelegate,
             delegate_options={'decimals': 16, 'minimum': -180, 'maximum': 180},
             ),
@@ -83,11 +84,11 @@ class ObsWellsTableModel(StandardSardesTableModel):
         SardesTableColumn(
             'mean_water_level', _('Mean level (m)'), 'float64',
             delegate=NotEditableDelegate, editable=False),
-        SardesTableColumn(
-            'is_station_active', _('Active'), 'boolean', notnull=True,
+        sardes_table_column_factory(
+            'observation_wells_data', 'is_station_active', _('Active'),
             delegate=BoolEditDelegate),
-        SardesTableColumn(
-            'obs_well_notes', _('Notes'), dtype='str',
+        sardes_table_column_factory(
+            'observation_wells_data', 'obs_well_notes', _('Notes'),
             delegate=TextEditDelegate)
         ]
 

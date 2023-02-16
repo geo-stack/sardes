@@ -12,7 +12,8 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QMessageBox, QCheckBox
 
 # ---- Local imports
-from sardes.api.tablemodels import SardesTableColumn
+from sardes.api.tablemodels import (
+    SardesTableColumn, sardes_table_column_factory)
 from sardes.config.locale import _
 from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.models import StandardSardesTableModel
@@ -30,29 +31,29 @@ class SondeInstallationsTableModel(StandardSardesTableModel):
     __tablename__ = 'table_sonde_installations'
     __tabletitle__ = _('Sonde Installations')
     __tablecolumns__ = [
-        SardesTableColumn(
-            'sampling_feature_uuid', _('Well ID'), 'str', notnull=True,
+        sardes_table_column_factory(
+            'sonde_installations', 'sampling_feature_uuid', _('Well ID'),
             delegate=ObsWellIdEditDelegate),
-        SardesTableColumn(
-            'sonde_uuid', _('Serial - Brand Model'), 'str', notnull=True,
+        sardes_table_column_factory(
+            'sonde_installations', 'sonde_uuid', _('Serial - Brand Model'),
             delegate=SondesSelectionDelegate),
-        SardesTableColumn(
-            'start_date', _('Date From'), 'datetime64[ns]', notnull=True,
+        sardes_table_column_factory(
+            'sonde_installations', 'start_date', _('Date From'),
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
             strftime_format='%Y-%m-%d %H:%M'),
-        SardesTableColumn(
-            'end_date', _('Date To'), 'datetime64[ns]',
+        sardes_table_column_factory(
+            'sonde_installations', 'end_date', _('Date To'),
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
             strftime_format='%Y-%m-%d %H:%M'),
-        SardesTableColumn(
-            'install_depth', _('Depth (m)'), 'float64', notnull=True,
+        sardes_table_column_factory(
+            'sonde_installations', 'install_depth', _('Depth (m)'),
             delegate=NumEditDelegate,
             delegate_options={
                 'decimals': 3, 'minimum': -99999, 'maximum': 99999}),
-        SardesTableColumn(
-            'install_note', _('Notes'), 'str',
+        sardes_table_column_factory(
+            'sonde_installations', 'install_note', _('Notes'),
             delegate=TextEditDelegate)
         ]
 

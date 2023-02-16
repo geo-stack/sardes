@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Local imports
-from sardes.api.tablemodels import SardesTableColumn
+from sardes.api.tablemodels import sardes_table_column_factory
 from sardes.config.locale import _
 from sardes.tables.models import StandardSardesTableModel
 from sardes.widgets.tableviews import SardesTableWidget
@@ -25,35 +25,35 @@ class RemarksTableModel(StandardSardesTableModel):
     __tablename__ = 'table_remarks'
     __tabletitle__ = _('Remarks')
     __tablecolumns__ = [
-        SardesTableColumn(
-            'sampling_feature_uuid', _('Well ID'), 'str', notnull=True,
+        sardes_table_column_factory(
+            'remarks', 'sampling_feature_uuid', _('Well ID'),
             delegate=ObsWellIdEditDelegate),
-        SardesTableColumn(
-            'remark_type_id', _('Type'), 'str',
+        sardes_table_column_factory(
+            'remarks', 'remark_type_id', _('Type'),
             delegate=RemarkTypeEditDelegate
             ),
-        SardesTableColumn(
-            'period_start', _('Date From'), 'datetime64[ns]',
+        sardes_table_column_factory(
+            'remarks', 'period_start', _('Date From'),
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
             strftime_format='%Y-%m-%d %H:%M'
             ),
-        SardesTableColumn(
-            'period_end', _('Date To'), 'datetime64[ns]',
+        sardes_table_column_factory(
+            'remarks', 'period_end', _('Date To'),
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
             strftime_format='%Y-%m-%d %H:%M'
             ),
-        SardesTableColumn(
-            'remark_text', _('Remark'), 'str',
+        sardes_table_column_factory(
+            'remarks', 'remark_text', _('Remark'),
             delegate=TextEditDelegate
             ),
-        SardesTableColumn(
-            'remark_author', _('Auteur'), 'str',
+        sardes_table_column_factory(
+            'remarks', 'remark_author', _('Auteur'),
             delegate=StringEditDelegate
             ),
-        SardesTableColumn(
-            'remark_date', _('Date'), 'datetime64[ns]',
+        sardes_table_column_factory(
+            'remarks', 'remark_date', _('Date'),
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd"},
             strftime_format='%Y-%m-%d'

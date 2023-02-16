@@ -11,13 +11,14 @@
 import pandas as pd
 
 # ---- Local imports
-from sardes.api.tablemodels import SardesTableColumn
+from sardes.api.tablemodels import (
+    SardesTableColumn, sardes_table_column_factory)
 from sardes.config.locale import _
 from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.models import StandardSardesTableModel
 from sardes.tables.delegates import (
-    ObsWellIdEditDelegate, BoolEditDelegate, NotEditableDelegate,
-    TextEditDelegate, DateTimeDelegate, NumEditDelegate)
+    ObsWellIdEditDelegate, BoolEditDelegate, TextEditDelegate,
+    DateTimeDelegate, NumEditDelegate)
 
 
 class RepereTableModel(StandardSardesTableModel):
@@ -28,17 +29,16 @@ class RepereTableModel(StandardSardesTableModel):
     __tablename__ = 'table_repere'
     __tabletitle__ = _('Repere')
     __tablecolumns__ = [
-        SardesTableColumn(
-            'sampling_feature_uuid', _('Well ID'), 'str', notnull=True,
+        sardes_table_column_factory(
+            'repere_data', 'sampling_feature_uuid', _('Well ID'),
             delegate=ObsWellIdEditDelegate),
-        SardesTableColumn(
-            'top_casing_alt', _('Top Casing Alt. (m)'), 'float64',
-            notnull=True,
+        sardes_table_column_factory(
+            'repere_data', 'top_casing_alt', _('Top Casing Alt. (m)'),
             delegate=NumEditDelegate,
             delegate_options={
                 'decimals': 3, 'minimum': -99999, 'maximum': 99999}),
-        SardesTableColumn(
-            'casing_length', _('Length Casing (m)'), 'float64', notnull=True,
+        sardes_table_column_factory(
+            'repere_data', 'casing_length', _('Length Casing (m)'),
             delegate=NumEditDelegate,
             delegate_options={
                 'decimals': 3, 'minimum': -99999, 'maximum': 99999}),
@@ -47,21 +47,21 @@ class RepereTableModel(StandardSardesTableModel):
             delegate=NumEditDelegate,
             delegate_options={
                 'decimals': 3, 'minimum': -99999, 'maximum': 99999}),
-        SardesTableColumn(
-            'start_date', _('Date From'), 'datetime64[ns]', notnull=True,
+        sardes_table_column_factory(
+            'repere_data', 'start_date', _('Date From'),
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
             strftime_format='%Y-%m-%d %H:%M'),
-        SardesTableColumn(
-            'end_date', _('Date To'), 'datetime64[ns]',
+        sardes_table_column_factory(
+            'repere_data', 'end_date', _('Date To'),
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
             strftime_format='%Y-%m-%d %H:%M'),
-        SardesTableColumn(
-            'is_alt_geodesic', _('Geodesic'), 'boolean', notnull=True,
+        sardes_table_column_factory(
+            'repere_data', 'is_alt_geodesic', _('Geodesic'),
             delegate=BoolEditDelegate),
-        SardesTableColumn(
-            'repere_note', _('Notes'), 'str',
+        sardes_table_column_factory(
+            'repere_data', 'repere_note', _('Notes'),
             delegate=TextEditDelegate)
         ]
 
