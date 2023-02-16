@@ -8,7 +8,8 @@
 # -----------------------------------------------------------------------------
 
 # ---- Local imports
-from sardes.api.tablemodels import SardesTableColumn
+from sardes.api.tablemodels import (
+    SardesTableColumn, sardes_table_column_factory)
 from sardes.config.locale import _
 from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.models import StandardSardesTableModel
@@ -25,38 +26,36 @@ class SondesInventoryTableModel(StandardSardesTableModel):
     __tablename__ = 'table_sondes_inventory'
     __tabletitle__ = _('Sondes Inventory')
     __tablecolumns__ = [
-        SardesTableColumn(
-            'sonde_model_id', _('Model'), 'str',
-            notnull=True, unique=True, unique_subset=['sonde_serial_no'],
+        sardes_table_column_factory(
+            'sondes_data', 'sonde_model_id', _('Model'),
             delegate=SondeModelEditDelegate),
-        SardesTableColumn(
-            'sonde_serial_no', _('Serial Number'), 'str',
-            unique=True, unique_subset=['sonde_model_id'],
+        sardes_table_column_factory(
+            'sondes_data', 'sonde_serial_no', _('Serial Number'),
             delegate=StringEditDelegate),
-        SardesTableColumn(
-            'date_reception', _('Date Reception'), 'datetime64[ns]',
+        sardes_table_column_factory(
+            'sondes_data', 'date_reception', _('Date Reception'),
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd"},
             strftime_format='%Y-%m-%d'),
-        SardesTableColumn(
-            'date_withdrawal', _('Date Withdrawal'), 'datetime64[ns]',
+        sardes_table_column_factory(
+            'sondes_data', 'date_withdrawal', _('Date Withdrawal'),
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd"},
             strftime_format='%Y-%m-%d'),
-        SardesTableColumn(
-            'in_repair', _('In Repair'), 'boolean', notnull=True,
+        sardes_table_column_factory(
+            'sondes_data', 'in_repair', _('In Repair'),
             delegate=BoolEditDelegate, default=False),
-        SardesTableColumn(
-            'out_of_order', _('Out of order'), 'boolean', notnull=True,
+        sardes_table_column_factory(
+            'sondes_data', 'out_of_order', _('Out of order'),
             delegate=BoolEditDelegate, default=False),
-        SardesTableColumn(
-            'lost', _('Lost'), 'boolean', notnull=True,
+        sardes_table_column_factory(
+            'sondes_data', 'lost', _('Lost'),
             delegate=BoolEditDelegate, default=False),
-        SardesTableColumn(
-            'off_network', _('Off Network'), 'boolean', notnull=True,
+        sardes_table_column_factory(
+            'sondes_data', 'off_network', _('Off Network'),
             delegate=BoolEditDelegate, default=False),
-        SardesTableColumn(
-            'sonde_notes', _('Notes'), 'boolean',
+        sardes_table_column_factory(
+            'sondes_data', 'sonde_notes', _('Notes'),
             delegate=TextEditDelegate)
         ]
 
