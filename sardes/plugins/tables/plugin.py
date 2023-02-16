@@ -14,7 +14,8 @@ from sardes.config.locale import _
 from sardes.widgets.tableviews import SardesStackedTableWidget
 from sardes.tables import (
     ObsWellsTableWidget, RepereTableWidget, SondesInventoryTableWidget,
-    SondeInstallationsTableWidget, ManualMeasurementsTableWidget)
+    SondeInstallationsTableWidget, ManualMeasurementsTableWidget,
+    RemarksTableWidget)
 
 
 """Tables plugin"""
@@ -115,6 +116,7 @@ class Tables(SardesPlugin):
         self._create_and_register_table(ManualMeasurementsTableWidget)
         self._create_and_register_table(SondeInstallationsTableWidget)
         self._create_and_register_table(RepereTableWidget)
+        self._create_and_register_table(RemarksTableWidget)
 
         # Setup the current active tab from the value saved in the configs.
         self.tabwidget.setCurrentIndex(

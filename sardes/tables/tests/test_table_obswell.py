@@ -29,7 +29,7 @@ from sardes.tables import ObsWellsTableWidget
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 from sardes.database.accessors.accessor_helpers import init_tseries_dels
 from sardes.tables import (ManualMeasurementsTableModel, RepereTableModel,
-                           SondeInstallationsTableModel)
+                           SondeInstallationsTableModel, RemarksTableModel)
 
 
 # =============================================================================
@@ -49,6 +49,7 @@ def tablewidget(tablesmanager, qtbot, dbaccessor, obswells_data):
     tablesmanager.register_table_model(ManualMeasurementsTableModel())
     tablesmanager.register_table_model(RepereTableModel())
     tablesmanager.register_table_model(SondeInstallationsTableModel())
+    tablesmanager.register_table_model(RemarksTableModel())
 
     # Set the database connection manager of the file managers. This is
     # usually done on the plugin side.
@@ -400,6 +401,15 @@ def test_delete_observation_well(tablewidget, qtbot, dbaccessor, mocker,
     tablewidget.save_edits_action.trigger()
     qtbot.waitUntil(lambda: qmsgbox_patcher.call_count == 4)
 
+    # Delete the remark data and try again.
+    with qtbot.waitSignal(dbconnmanager.sig_run_tasks_finished, timeout=5000):
+        dbconnmanager.delete(
+            'remarks',
+            dbaccessor.get('remarks').index[0])
+
+    tablewidget.save_edits_action.trigger()
+    qtbot.waitUntil(lambda: qmsgbox_patcher.call_count == 5)
+
     # Delete the sonde installations and try again (now it should work).
     with qtbot.waitSignal(dbconnmanager.sig_run_tasks_finished, timeout=5000):
         dbconnmanager.delete(
@@ -411,7 +421,7 @@ def test_delete_observation_well(tablewidget, qtbot, dbaccessor, mocker,
 
     with qtbot.waitSignal(tablewidget.model().sig_data_updated):
         tablewidget.save_edits_action.trigger()
-    assert qmsgbox_patcher.call_count == 4
+    assert qmsgbox_patcher.call_count == 5
 
     assert tablewidget.visible_row_count() == 4
     assert len(dbaccessor.get('observation_wells_data')) == 4

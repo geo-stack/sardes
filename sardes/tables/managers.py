@@ -6,7 +6,10 @@
 # This file is part of SARDES.
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
-
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from sardes.database.database_manager import DatabaseConnectionManager
 
 # ---- Standard imports
 import os
@@ -31,7 +34,7 @@ class SardesTableModelsManager(QObject):
     """
     sig_models_data_changed = Signal()
 
-    def __init__(self, db_manager):
+    def __init__(self, db_manager: DatabaseConnectionManager):
         super().__init__()
         # A dictionary containing the table models registered to this manager
         # using as key the name of the models.

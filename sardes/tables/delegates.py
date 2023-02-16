@@ -280,6 +280,23 @@ class SondeModelEditDelegate(SardesItemDelegate):
         return editor
 
 
+class RemarkTypeEditDelegate(SardesItemDelegate):
+    """
+    A delegate to select the type of remark.
+    """
+
+    def create_editor(self, parent):
+        editor = QComboBox(parent)
+
+        # Populate the combobox with the available brand in the library.
+        remark_types = self.model().libraries['remark_types']
+        remark_types = remark_types.sort_values(
+            'remark_type_name', axis=0, ascending=True)
+        for index, values in remark_types.iterrows():
+            editor.addItem(values['remark_type_name'], userData=index)
+        return editor
+
+
 class SondesSelectionDelegate(SardesItemDelegate):
     """
     A delegate to select a level or baro logger from the inventory.

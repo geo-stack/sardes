@@ -216,6 +216,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
             ('sampling_feature_uuid', 'manual_measurements'),
             ('sampling_feature_uuid', 'sonde_installations'),
             ('sampling_feature_uuid', 'repere_data'),
+            ('sampling_feature_uuid', 'remarks'),
         ),
         unique_constraints=(
             ['obs_well_id']
@@ -322,6 +323,72 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 name='sonde_model',
                 dtype='str',
                 desc=("A sonde model.")
+            ),
+        )
+    ),
+    'remarks': Table(
+        columns=(
+            Column(
+                name='sampling_feature_uuid',
+                dtype='object',
+                desc=("The unique identifier of the observation well to which "
+                      "the remark refers.")
+            ),
+            Column(
+                name='remark_type_id',
+                dtype='Int64',
+                desc="The ID of the type of the remark."
+            ),
+            Column(
+                name='period_start',
+                dtype='datetime64[ns]',
+                desc=("The start date of the period for which the remark "
+                      "is valid.")
+            ),
+            Column(
+                name='period_end',
+                dtype='datetime64[ns]',
+                desc=("The end date of the period for which the remark "
+                      "is valid.")
+            ),
+            Column(
+                name='remark_text',
+                dtype='str',
+                desc="The text of the remark."
+            ),
+            Column(
+                name='remark_author',
+                dtype='str',
+                desc="The author of the remark."
+            ),
+            Column(
+                name='remark_date',
+                dtype='str',
+                desc="The date the remark was made."
+            ),
+        ),
+    ),
+    'remark_types': Table(
+        foreign_constraints=(
+            ('remark_type_id', 'remarks'),
+        ),
+        unique_constraints=('remark_type_code'),
+        notnull_constraints=('remark_type_code', 'remark_type_name'),
+        columns=(
+            Column(
+                name='remark_type_code',
+                dtype='str',
+                desc=("The unique code of the remark type.")
+            ),
+            Column(
+                name='remark_type_name',
+                dtype='str',
+                desc=("The name of the remark type.")
+            ),
+            Column(
+                name='remark_type_desc',
+                dtype='str',
+                desc=("The description of the remark type.")
             ),
         )
     ),

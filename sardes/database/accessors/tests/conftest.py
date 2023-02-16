@@ -198,6 +198,40 @@ def sondes_installation(obswells_data, sondes_data):
 
 
 @pytest.fixture
+def remark_types():
+    df = pd.DataFrame(
+        [['C', 'Correction', 'Correction made on the monitoring data.'],
+         ['U', 'Uncertainty', 'Uncertainty of the monitoring data.']],
+        columns=['remark_type_code', 'remark_type_name', 'remark_type_desc']
+        )
+    df.attrs['name'] = 'remark_types'
+    return df
+
+
+@pytest.fixture
+def remarks(obswells_data):
+    data = [
+        [obswells_data.index[0], 1,
+         datetime(2011, 8, 24, 18), datetime(2012, 2, 5, 6, 15),
+         "text_remark_1", "author_remark_1", datetime(2022, 6, 23, 6, 15)],
+        [obswells_data.index[2], 2,
+         datetime(2014, 3, 12), datetime(2014, 6, 6),
+         "text_remark_2", "author_remark_2", datetime(2021, 9, 2)],
+        ]
+    df = pd.DataFrame(
+        data,
+        index=[
+            UUID('131d7297-e116-463e-80e4-abd47c39c46f'),
+            UUID('69e7ef88-6449-4c0e-a898-0e2e6d1626d3')],
+        columns=['sampling_feature_uuid', 'remark_type_id',
+                 'period_start', 'period_end',
+                 'remark_text', 'remark_author', 'remark_date']
+        )
+    df.attrs['name'] = 'remarks'
+    return df
+
+
+@pytest.fixture
 def readings_data():
     readings_data = pd.DataFrame(
         [], columns=['datetime', DataType.WaterLevel, DataType.WaterTemp])
@@ -237,19 +271,25 @@ def waterquality(tmp_path):
 def database_filler(
         obswells_data, constructlog, readings_data,
         repere_data, manual_measurements, sondes_data,
-        sondes_installation, waterquality):
+        sondes_installation, waterquality, remark_types, remarks):
 
     def fill_database(dbaccessor):
         # Add the observation wells, repere, sondes, sonde installations,
         # and manual measurements to the database.
         for df in [obswells_data, repere_data, sondes_data,
-                   sondes_installation, manual_measurements]:
+                   sondes_installation, manual_measurements, remarks]:
             _dict = df.to_dict('index')
             dbaccessor.add(
                 name=df.attrs['name'],
                 values=_dict.values(),
                 indexes=_dict.keys()
                 )
+        # Add the remark_types to the database.
+        _dict = remark_types.to_dict('index')
+        dbaccessor.add(
+            name=remark_types.attrs['name'],
+            values=_dict.values(),
+            )
 
         # Add attachments and monitoring data.
         for obs_well_uuid, obs_well_data in obswells_data.iterrows():

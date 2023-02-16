@@ -11,16 +11,13 @@
 from __future__ import annotations
 from collections import OrderedDict
 from dataclasses import dataclass, field
-import uuid
 
 # ---- Third party imports
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_string_dtype
 from qtpy.QtCore import (QAbstractTableModel, QModelIndex, Qt, QVariant,
                          Signal, QSortFilterProxyModel)
 from qtpy.QtGui import QColor
-from qtpy.QtWidgets import QStyleOption
 
 # ---- Local imports
 from sardes.api.tableedits import TableEdit, TableEditsController
@@ -54,6 +51,10 @@ class SardesTableColumn():
 
     # If not None, default value used when adding a new row.
     default: object = None
+
+    def __post_init__(self):
+        if self.default is None and self.dtype == 'datetime64[ns]':
+            self.default = pd.NaT
 
 
 # =============================================================================
@@ -748,6 +749,7 @@ class SardesTableModel(SardesTableModelBase):
                     'WARNING: Failed to format datetime values on column "{}" '
                     'of table "{}" because of the following error :\n{}'
                     ).format(column.name, self.name(), e))
+                print(column.name, visual_dataf[column.name].dtype)
 
         return visual_dataf
 

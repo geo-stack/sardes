@@ -48,11 +48,12 @@ from sardes.api.timeseries import DataType
 APPLICATION_ID = 1013042054
 
 # The latest version of the database schema.
-CURRENT_SCHEMA_VERSION = 2
+CURRENT_SCHEMA_VERSION = 3
 
 # The format that is used to store datetime values in the database.
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
 TO_DATETIME_ARGS = {'format': DATE_FORMAT}
+
 
 # =============================================================================
 # ---- Register Adapters
@@ -134,6 +135,40 @@ class Repere(BaseMixin, Base):
     sampling_feature_uuid = Column(
         UUIDType(binary=False),
         ForeignKey('sampling_feature.sampling_feature_uuid'))
+
+
+class Remark(BaseMixin, Base):
+    """
+    An object used to map the 'remarks' table, which contains all remarks
+    pertaining to the monitoring data.
+    """
+    __tablename__ = 'remark'
+
+    remark_id = Column(UUIDType(binary=False), primary_key=True)
+    sampling_feature_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('sampling_feature.sampling_feature_uuid'))
+    remark_type_id = Column(
+        Integer,
+        ForeignKey('remark_type.remark_type_id'))
+    period_start = Column(DateTime)
+    period_end = Column(DateTime)
+    remark_text = Column(String)
+    remark_author = Column(String(250))
+    remark_date = Column(DateTime)
+
+
+class RemarkType(BaseMixin, Base):
+    """
+    An object used to map the 'remark_type' table, which is a library of the
+    type of remarks that the 'remark' table can hold.
+    """
+    __tablename__ = 'remark_type'
+
+    remark_type_id = Column(Integer, primary_key=True)
+    remark_type_code = Column(String(250))
+    remark_type_name = Column(String(250))
+    remark_type_desc = Column(String)
 
 
 class SamplingFeature(BaseMixin, Base):
@@ -534,6 +569,19 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if from_version == CURRENT_SCHEMA_VERSION:
             return from_version, CURRENT_SCHEMA_VERSION, None
 
+        try:
+            if self.version() <= 2:
+                # Add the 'remark' and 'remark_type' tables, which were added
+                # in Sardes v0.13.0.
+                for table in [Remark, RemarkType]:
+                    if inspect(self._engine).has_table(table.__tablename__):
+                        continue
+                    self._create_table(table)
+                self.execute("PRAGMA user_version = 3")
+                self._session.commit()
+        except Exception as error:
+            return from_version, 3, DatabaseUpdateError(from_version, 3, error)
+
         return from_version, CURRENT_SCHEMA_VERSION, None
 
     # ---- Database connection
@@ -682,7 +730,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
     def _del_observation_wells_data(self, obswell_ids):
         # Check for foreign key violation.
-        for table in [Observation, Process, Repere]:
+        for table in [Observation, Process, Repere, Remark]:
             foreign_items_count = (
                 self._session.query(table)
                 .filter(table.sampling_feature_uuid.in_(obswell_ids))
@@ -798,10 +846,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             try:
                 max_commited_id = (
                     self._session.query(func.max(SondeModel.sonde_model_id))
-                    .one())[0]
+                    .one())[0] + 1
             except TypeError:
-                max_commited_id = 0
-            indexes = [i + max_commited_id + 1 for i in range(n)]
+                max_commited_id = 1
+            indexes = [i + max_commited_id for i in range(n)]
 
         self._session.add_all([
             SondeModel(
@@ -1482,6 +1530,123 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         else:
             self._session.delete(attachment)
             self._session.commit()
+
+    # ---- Remarks interface
+    def _get_remarks(self):
+        query = self._session.query(Remark)
+        remarks = pd.read_sql_query(
+            query.statement, self._session.connection(), coerce_float=True,
+            index_col='remark_id',
+            dtype={'remark_type_id': 'Int64'},
+            parse_dates={'period_start': TO_DATETIME_ARGS,
+                         'period_end': TO_DATETIME_ARGS,
+                         'remark_date': TO_DATETIME_ARGS}
+            )
+        return remarks
+
+    def _set_remarks(self, index, values):
+        remark = (
+            self._session.query(Remark)
+            .filter(Remark.remark_id == index)
+            .one())
+
+        for attr_name, attr_value in values.items():
+            # Make sure pandas NaT are replaced by None for datetime fields
+            # to avoid errors in sqlalchemy.
+            if attr_name in ['period_start', 'period_end', 'remark_date']:
+                attr_value = None if pd.isnull(attr_value) else attr_value
+
+            setattr(remark, attr_name, attr_value)
+
+    def _add_remarks(self, values, indexes=None):
+        n = len(values)
+
+        # Generate new indexes if needed.
+        if indexes is None:
+            indexes = [uuid.uuid4() for i in range(n)]
+
+        # Make sure pandas NaT are replaced by None for datetime fields
+        # to avoid errors in sqlalchemy.
+        for i in range(n):
+            for field in ['period_start', 'period_end', 'remark_date']:
+                if pd.isnull(values[i].get(field, True)):
+                    values[i][field] = None
+
+        self._session.add_all([
+            Remark(
+                remark_id=indexes[i],
+                **values[i]
+                ) for i in range(n)
+            ])
+        self._session.flush()
+
+        return indexes
+
+    def _del_remarks(self, remark_ids):
+        self._session.execute(
+            Remark.__table__.delete().where(
+                Remark.remark_id.in_(remark_ids)))
+        self._session.flush()
+
+    # ---- Remark Types interface
+    def _get_remark_types(self):
+        query = self._session.query(RemarkType)
+        remark_types = pd.read_sql_query(
+            query.statement, self._session.connection(), coerce_float=True,
+            index_col='remark_type_id')
+
+        return remark_types
+
+    def _set_remark_types(self, index, values):
+        remark_type = (
+            self._session.query(RemarkType)
+            .filter(RemarkType.remark_type_id == index)
+            .one())
+        for attr_name, attr_value in values.items():
+            setattr(remark_type, attr_name, attr_value)
+
+    def _add_remark_types(self, values, indexes=None):
+        n = len(values)
+
+        # Generate new indexes if needed.
+        if indexes is None:
+            try:
+                max_commited_id = (
+                    self._session.query(func.max(RemarkType.remark_type_id))
+                    .one())[0] + 1
+            except TypeError:
+                max_commited_id = 1
+            indexes = [i + max_commited_id for i in range(n)]
+
+        self._session.add_all([
+            RemarkType(
+                remark_type_id=indexes[i],
+                **values[i]
+                ) for i in range(n)
+            ])
+        self._session.flush()
+
+        return indexes
+
+    def _del_remark_types(self, remark_type_ids):
+        # Check for foreign key violation.
+        foreign_remarks_count = (
+            self._session.query(Remark)
+            .filter(Remark.remark_type_id.in_(remark_type_ids))
+            .count()
+            )
+        if foreign_remarks_count > 0:
+            raise DatabaseAccessorError(
+                self,
+                "deleting RemarkType items violate foreign key "
+                "contraint on Remark.remark_type_id."
+                )
+
+        # Delete the RemarkType items from the database.
+        self._session.execute(
+            RemarkType.__table__.delete().where(
+                RemarkType.remark_type_id.in_(remark_type_ids)))
+        self._session.flush()
 
     # ---- Private methods
     def _refresh_sampling_feature_data_overview(
