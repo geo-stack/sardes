@@ -330,6 +330,9 @@ class SardesTableModelBase(QAbstractTableModel):
         # required by this table to display its data correctly.
         self.libraries = {}
 
+        # A dictionary containing the column delegates.
+        self._column_delegates = {}
+
         # Setup the data.
         self.set_model_data(pd.DataFrame([]))
 
@@ -418,7 +421,9 @@ class SardesTableModelBase(QAbstractTableModel):
         else:
             delegate = column.delegate(
                 table_view,
+                column,
                 **column.delegate_options)
+        self._column_delegates[column.name] = delegate
         return delegate
 
     # ---- Table data
