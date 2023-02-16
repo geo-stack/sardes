@@ -29,17 +29,12 @@ def tablewidget(mainwindow, qtbot, dbaccessor):
     mainwindow.librairies_plugin.tabwidget.setCurrentIndex(1)
     tablewidget = mainwindow.librairies_plugin.current_table()
 
-    assert tablewidget.model().name() == 'remark_types'
+    assert tablewidget.model().name() == 'table_remark_types'
 
     # Wait until data are actually charged in the table.
     qtbot.waitUntil(lambda: tablewidget.visible_row_count() > 0)
 
     return tablewidget
-
-
-@pytest.fixture
-def dbconnmanager(mainwindow):
-    return mainwindow.db_connection_manager
 
 
 # =============================================================================
