@@ -6,6 +6,12 @@
 # This file is part of SARDES.
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from sardes.widgets.tableviews import SardesTableView
+    from sardes.api.tablemodels import SardesTableColumn
+
 
 # ---- Standard imports
 import sys
@@ -52,8 +58,9 @@ class ImportDataTableModel(SardesTableModel):
             dtype, dtype.label, 'float64') for dtype in DataType]
         )
 
-    def create_delegate_for_column(self, view, column):
-        return NotEditableDelegate(self)
+    def create_delegate_for_column(self, table_view: SardesTableView,
+                                   table_column: SardesTableColumn):
+        return NotEditableDelegate(table_view, table_column)
 
     def set_duplicated(self, is_duplicated):
         self.is_duplicated = is_duplicated

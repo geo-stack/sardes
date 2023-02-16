@@ -6,6 +6,12 @@
 # This file is part of SARDES.
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from sardes.widgets.tableviews import SardesTableView
+    from sardes.api.tablemodels import SardesTableColumn
+
 
 # ---- Standard imports
 from __future__ import annotations
@@ -410,20 +416,20 @@ class SardesTableModelBase(QAbstractTableModel):
                 return self.__tablecolumns__[section].header
         return QVariant()
 
-    def create_delegate_for_column(self, table_view, column_name):
+    def create_delegate_for_column(self, table_view: SardesTableView,
+                                   table_column: SardesTableColumn):
         """
         Create the item delegate that the view need to use when displaying and
         editing the data of this model for the specified column.
         """
-        column = self.column_at(column_name)
-        if column.delegate is None:
+        if table_column.delegate is None:
             delegate = None
         else:
-            delegate = column.delegate(
+            delegate = table_column.delegate(
                 table_view,
-                column,
-                **column.delegate_options)
-        self._column_delegates[column.name] = delegate
+                table_column,
+                **table_column.delegate_options)
+        self._column_delegates[table_column.name] = delegate
         return delegate
 
     # ---- Table data

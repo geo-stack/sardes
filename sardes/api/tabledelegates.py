@@ -38,10 +38,11 @@ class SardesItemDelegateBase(QStyledItemDelegate):
     know what you are doing.
     """
 
-    def __init__(self, model_view: SardesTableView, column: SardesTableColumn):
+    def __init__(self, model_view: SardesTableView,
+                 table_column: SardesTableColumn):
         super() .__init__(parent=model_view)
         self.model_view = model_view
-        self.column = column
+        self.table_column = table_column
         self._model_index = None
         self.editor = None
         self._widget = QListView()
