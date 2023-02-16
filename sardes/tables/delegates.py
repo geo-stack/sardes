@@ -29,7 +29,6 @@ class NotEditableDelegate(SardesItemDelegate):
 
     def __init__(self, model_view):
         super().__init__(model_view)
-        self.is_editable = False
 
     def createEditor(self, *args, **kargs):
         return None

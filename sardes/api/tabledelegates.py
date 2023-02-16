@@ -40,7 +40,6 @@ class SardesItemDelegateBase(QStyledItemDelegate):
         self._model_index = None
         self.editor = None
         self.unique_constraint = unique_constraint
-        self.is_editable = True
         self._widget = QListView()
 
     # ---- Qt methods override
