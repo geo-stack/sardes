@@ -23,6 +23,7 @@ from qtpy.QtWidgets import QMessageBox
 
 # ---- Local imports
 from sardes.utils.data_operations import are_values_equal
+from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 
 
 # =============================================================================
@@ -38,6 +39,7 @@ def tablewidget(mainwindow, qtbot, dbaccessor):
 
     # Wait until data are actually charged in the table.
     qtbot.waitUntil(lambda: tablewidget.visible_row_count() > 0)
+    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
 
     return tablewidget
 
