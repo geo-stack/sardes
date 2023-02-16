@@ -27,9 +27,8 @@ class NotEditableDelegate(SardesItemDelegate):
     column are not editable.
     """
 
-    def __init__(self, model_view, is_required=True):
-        super().__init__(model_view, is_required=True)
-        self.is_editable = False
+    def __init__(self, model_view):
+        super().__init__(model_view)
 
     def createEditor(self, *args, **kargs):
         return None
@@ -69,8 +68,8 @@ class DateTimeDelegate(SardesItemDelegate):
     A delegate to edit a datetime.
     """
 
-    def __init__(self, model_view, display_format=None, is_required=False):
-        super() .__init__(model_view, is_required=is_required)
+    def __init__(self, model_view, display_format=None):
+        super() .__init__(model_view)
         self.display_format = ("yyyy-MM-dd hh:mm:ss" if display_format is None
                                else display_format)
 

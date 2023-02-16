@@ -414,12 +414,12 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         column = self.column_at(column_name)
         if column.delegate is None:
-            return None
+            delegate = None
         else:
-            return column.delegate(
+            delegate = column.delegate(
                 table_view,
-                is_required=column.notnull,
                 **column.delegate_options)
+        return delegate
 
     # ---- Table data
     def tabledata(self):
@@ -578,6 +578,13 @@ class SardesTableModelBase(QAbstractTableModel):
         self.visual_dataf = self.logical_to_visual_data(self.visual_dataf)
 
     # ---- Data edits
+    def is_data_required_at(self, model_index):
+        """
+        Return whether a non null value is required for the item at the
+        specified model index.
+        """
+        return self.columns()[model_index.column()].notnull
+
     def is_data_clearable_at(self, model_index):
         """
         Return whether the value of the cell at the specified model index
@@ -1039,6 +1046,10 @@ class SardesSortFilterModel(QSortFilterProxyModel):
 
     def get_value_at(self, proxy_index):
         return self.sourceModel().get_value_at(
+            self.mapToSource(proxy_index))
+
+    def is_data_required_at(self, proxy_index):
+        return self.sourceModel().is_data_required_at(
             self.mapToSource(proxy_index))
 
     def is_data_editable_at(self, proxy_index):
