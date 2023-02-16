@@ -306,6 +306,16 @@ class RemarkTypeEditDelegate(SardesItemDelegate):
             editor.addItem(values['remark_type_name'], userData=index)
         return editor
 
+    def logical_to_visual_data(self, visual_dataf):
+        try:
+            remark_types = self.model().libraries['remark_types']
+            visual_dataf[self.table_column.name] = (
+                visual_dataf[self.table_column.name]
+                .map(remark_types['remark_type_name'].to_dict().get)
+                )
+        except KeyError:
+            pass
+
 
 class SondesSelectionDelegate(SardesItemDelegate):
     """
