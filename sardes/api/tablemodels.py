@@ -414,12 +414,12 @@ class SardesTableModelBase(QAbstractTableModel):
         """
         column = self.column_at(column_name)
         if column.delegate is None:
-            return None
+            delegate = None
         else:
-            return column.delegate(
+            delegate = column.delegate(
                 table_view,
-                is_required=column.notnull,
                 **column.delegate_options)
+        return delegate
 
     # ---- Table data
     def tabledata(self):

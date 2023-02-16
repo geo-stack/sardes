@@ -35,7 +35,7 @@ class SondeModelsTableModel(StandardSardesTableModel):
 
     # ---- SardesTableModel Public API
     def create_delegate_for_column(self, view, column):
-        return TextEditDelegate(view, is_required=True)
+        return TextEditDelegate(view)
 
 
 class SondeModelsTableWidget(SardesTableWidget):
