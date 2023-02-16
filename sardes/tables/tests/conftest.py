@@ -87,3 +87,5 @@ def mainwindow(qtbot, dbaccessor):
 @pytest.fixture
 def dbconnmanager(mainwindow):
     yield mainwindow.db_connection_manager
+    # We use 'yield' instead of 'return' here sinde the 'db_connection_manager'
+    # will be destroyed in the 'mainwindow' fixture.
