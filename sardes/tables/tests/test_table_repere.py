@@ -31,23 +31,16 @@ from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def tablewidget(tablesmanager, qtbot, dbaccessor, repere_data):
-    tablewidget = RepereTableWidget()
-    qtbot.addWidget(tablewidget)
-    tablewidget.show()
+def tablewidget(mainwindow, qtbot, dbaccessor):
+    mainwindow.tables_plugin.switch_to_plugin()
+    mainwindow.tables_plugin.tabwidget.setCurrentIndex(4)
+    tablewidget = mainwindow.tables_plugin.current_table()
 
-    tablemodel = tablewidget.model()
-    tablesmanager.register_table_model(tablemodel)
+    assert tablewidget.model().name() == 'table_repere'
 
-    # This connection is usually made by the plugin, but we need to make it
-    # here manually for testing purposes.
-    tablesmanager.sig_models_data_changed.connect(tablemodel.update_data)
-
-    with qtbot.waitSignal(tablemodel.sig_data_updated):
-        tablemodel.update_data()
+    # Wait until data are actually charged in the table.
+    qtbot.waitUntil(lambda: tablewidget.visible_row_count() > 0)
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
-
-    assert tablewidget.tableview.visible_row_count() == len(repere_data)
 
     return tablewidget
 

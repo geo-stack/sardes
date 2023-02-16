@@ -22,8 +22,6 @@ import pytest
 from qtpy.QtWidgets import QMessageBox
 
 # ---- Local imports
-from sardes.tables import (
-    SondesInventoryTableWidget, SondeInstallationsTableModel)
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 
 
@@ -31,27 +29,16 @@ from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def tablewidget(tablesmanager, qtbot, dbaccessor, sondes_data):
-    tablewidget = SondesInventoryTableWidget()
-    qtbot.addWidget(tablewidget)
-    tablewidget.show()
+def tablewidget(mainwindow, qtbot, dbaccessor):
+    mainwindow.tables_plugin.switch_to_plugin()
+    mainwindow.tables_plugin.tabwidget.setCurrentIndex(1)
+    tablewidget = mainwindow.tables_plugin.current_table()
 
-    tablemodel = tablewidget.model()
-    tablesmanager.register_table_model(tablemodel)
+    assert tablewidget.model().name() == 'table_sondes_inventory'
 
-    # We also need to register table models that have foreign relation
-    # with the table Sonde Models.
-    tablesmanager.register_table_model(SondeInstallationsTableModel())
-
-    # This connection is usually made by the plugin, but we need to make it
-    # here manually for testing purposes.
-    tablesmanager.sig_models_data_changed.connect(tablemodel.update_data)
-
-    with qtbot.waitSignal(tablemodel.sig_data_updated):
-        tablemodel.update_data()
+    # Wait until data are actually charged in the table.
+    qtbot.waitUntil(lambda: tablewidget.visible_row_count() > 0)
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
-
-    assert tablewidget.tableview.visible_row_count() == len(sondes_data)
 
     return tablewidget
 
