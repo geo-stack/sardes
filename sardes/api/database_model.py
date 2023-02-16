@@ -9,6 +9,7 @@
 
 from collections import UserDict
 from collections import namedtuple
+import pandas as pd
 
 
 class ReadOnlyDict(UserDict):
@@ -31,8 +32,9 @@ Table = namedtuple(
 
 Column = namedtuple(
     "Column",
-    ('name', 'dtype', 'desc', 'notnull', 'unique', 'unique_subset'),
-    defaults=[False, False, ()]
+    ('name', 'dtype', 'desc', 'notnull', 'unique', 'unique_subset',
+     'editable', 'default'),
+    defaults=[False, False, (), True, None]
     )
 
 DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
@@ -203,6 +205,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 desc=("Indicate wheter the sonde is currently being "
                       "repaired."),
                 notnull=True,
+                default=False
             ),
             Column(
                 name='out_of_order',
@@ -210,12 +213,14 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 desc=("Indicate whether the sonde is out of order. "
                       "unconsolidated sediment."),
                 notnull=True,
+                default=False
             ),
             Column(
                 name='lost',
                 dtype='bool',
                 desc=("Indicates whether the sonde has been lost."),
                 notnull=True,
+                default=False
             ),
             Column(
                 name='off_network',
@@ -223,6 +228,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 desc=("Indicate whether the sonde is currently being used "
                       "outside of the monitoring network."),
                 notnull=True,
+                default=False
             ),
             Column(
                 name='sonde_notes',

@@ -28,12 +28,11 @@ from sardes.api.database_model import DATABASE_CONCEPTUAL_MODEL
 # =============================================================================
 # ---- Columns
 # =============================================================================
-def sardes_table_column_factory(table_name: str, column_name: str,
-                                header: str, editable: bool = True,
+def sardes_table_column_factory(table_name: str, column_name: str, header: str,
                                 delegate: object = None,
                                 delegate_options: dict = None,
-                                strftime_format: str = None,
-                                default: object = None):
+                                strftime_format: str = None
+                                ) -> SardesTableColumn:
     """
     A factory to create a SardesTableColumn from the conceptual
     database model.
@@ -54,12 +53,12 @@ def sardes_table_column_factory(table_name: str, column_name: str,
         notnull=concept_col.notnull,
         unique=concept_col.unique,
         unique_subset=concept_col.unique_subset,
-        editable=editable,
+        editable=concept_col.editable,
         desc=concept_col.desc,
         delegate=delegate,
         delegate_options={} if delegate_options is None else delegate_options,
         strftime_format=strftime_format,
-        default=default
+        default=concept_col.default
         )
 
 

@@ -44,16 +44,16 @@ class SondesInventoryTableModel(StandardSardesTableModel):
             strftime_format='%Y-%m-%d'),
         sardes_table_column_factory(
             'sondes_data', 'in_repair', _('In Repair'),
-            delegate=BoolEditDelegate, default=False),
+            delegate=BoolEditDelegate),
         sardes_table_column_factory(
             'sondes_data', 'out_of_order', _('Out of order'),
-            delegate=BoolEditDelegate, default=False),
+            delegate=BoolEditDelegate),
         sardes_table_column_factory(
             'sondes_data', 'lost', _('Lost'),
-            delegate=BoolEditDelegate, default=False),
+            delegate=BoolEditDelegate),
         sardes_table_column_factory(
             'sondes_data', 'off_network', _('Off Network'),
-            delegate=BoolEditDelegate, default=False),
+            delegate=BoolEditDelegate),
         sardes_table_column_factory(
             'sondes_data', 'sonde_notes', _('Notes'),
             delegate=TextEditDelegate)
