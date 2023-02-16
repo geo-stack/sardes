@@ -34,12 +34,11 @@ class SardesItemDelegateBase(QStyledItemDelegate):
     know what you are doing.
     """
 
-    def __init__(self, model_view, unique_constraint=False):
+    def __init__(self, model_view):
         super() .__init__(parent=model_view)
         self.model_view = model_view
         self._model_index = None
         self.editor = None
-        self.unique_constraint = unique_constraint
         self._widget = QListView()
 
     # ---- Qt methods override
