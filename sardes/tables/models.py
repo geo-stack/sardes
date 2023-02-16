@@ -103,7 +103,7 @@ class StandardSardesTableModel(SardesTableModel):
         # Check for unique constraint violation.
         for column in unique_columns:
             column_data = (
-                table_data[[column.name] + column.unique_subset]
+                table_data[[column.name] + list(column.unique_subset)]
                 .dropna(how='all'))
             column_record = pd.Series(
                 data=column_data.to_records(index=False).tolist(),
@@ -116,7 +116,7 @@ class StandardSardesTableModel(SardesTableModel):
 
             # Check if any duplicated value is in an added row.
             column_added_rows = (
-                added_rows[[column.name] + column.unique_subset]
+                added_rows[[column.name] + list(column.unique_subset)]
                 .dropna(how='all'))
             column_added_record = pd.Series(
                 data=column_added_rows.to_records(index=False).tolist(),
@@ -139,7 +139,7 @@ class StandardSardesTableModel(SardesTableModel):
             else:
                 column_edited_data = (
                     table_data.loc[column_edited_indexes]
-                    [[column.name] + column.unique_subset]
+                    [[column.name] + list(column.unique_subset)]
                     .dropna(how='all'))
                 column_edited_record = pd.Series(
                     data=column_edited_data.to_records(index=False).tolist(),
