@@ -86,4 +86,4 @@ def mainwindow(qtbot, dbaccessor):
 
 @pytest.fixture
 def dbconnmanager(mainwindow):
-    return mainwindow.db_connection_manager
+    yield mainwindow.db_connection_manager

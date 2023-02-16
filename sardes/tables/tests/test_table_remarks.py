@@ -141,7 +141,7 @@ def test_clear_remark(tablewidget, qtbot, dbaccessor):
         pd.NA, pd.NaT, pd.NaT, None, None, pd.NaT]
 
 
-def test_delete_remarks(tablewidget, qtbot, dbaccessor, mocker, dbconnmanager):
+def test_delete_remarks(tablewidget, qtbot, dbaccessor, mocker):
     """
     Test that deleting a remark is working as expected.
     """
