@@ -261,6 +261,17 @@ class ObsWellIdEditDelegate(SardesItemDelegate):
                 warning_message = None
         return formatted_data, warning_message
 
+    def logical_to_visual_data(self, visual_dataf):
+        try:
+            obs_wells_data = self.model().libraries['observation_wells_data']
+            visual_dataf[self.table_column.name] = (
+                visual_dataf[self.table_column.name]
+                .map(obs_wells_data['obs_well_id'].to_dict().get)
+                )
+        except KeyError as e:
+            print(e)
+            pass
+
 
 class SondeModelEditDelegate(SardesItemDelegate):
     """
