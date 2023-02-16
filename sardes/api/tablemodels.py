@@ -22,11 +22,47 @@ from qtpy.QtGui import QColor
 # ---- Local imports
 from sardes.api.tableedits import TableEdit, TableEditsController
 from sardes.api.tabledata import SardesTableData
+from sardes.api.database_model import DATABASE_CONCEPTUAL_MODEL
 
 
 # =============================================================================
 # ---- Columns
 # =============================================================================
+def sardes_table_column_factory(table_name: str, column_name: str,
+                                header: str, editable: bool = True,
+                                delegate: object = None,
+                                delegate_options: dict = None,
+                                strftime_format: str = None,
+                                default: object = None):
+    """
+    A factory to create a SardesTableColumn from the conceptual
+    database model.
+    """
+    concept_table = DATABASE_CONCEPTUAL_MODEL[table_name]
+    for concept_col in concept_table.columns:
+        if concept_col.name == column_name:
+            break
+    else:
+        raise ValueError(
+            f"There is no column named '{column_name}' in the "
+            f"conceptual table '{table_name}'.")
+
+    return SardesTableColumn(
+        name=column_name,
+        header=header,
+        dtype=concept_col.dtype,
+        notnull=concept_col.notnull,
+        unique=concept_col.unique,
+        unique_subset=concept_col.unique_subset,
+        editable=editable,
+        desc=concept_col.desc,
+        delegate=delegate,
+        delegate_options={} if delegate_options is None else delegate_options,
+        strftime_format=strftime_format,
+        default=default
+        )
+
+
 @dataclass
 class SardesTableColumn():
     """A class for reprensenting a column in a Sardes table."""
