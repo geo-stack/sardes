@@ -34,18 +34,14 @@ Table = namedtuple(
 
 Column = namedtuple(
     "Column",
-    ('name', 'dtype', 'desc')
+    ('name', 'dtype', 'desc', 'notnull'),
+    defaults=[False]
     )
 
 DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
     'manual_measurements': Table(
         unique_constraints=(
             ('datetime', 'sampling_feature_uuid')
-        ),
-        notnull_constraints=(
-            'sampling_feature_uuid',
-            'datetime',
-            'value'
         ),
         columns=(
             Column(
@@ -54,19 +50,22 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 desc=("A unique identifier that is used to reference the "
                       "observation well in the database in which the "
                       "manual measurement was made."),
+                notnull=True
             ),
             Column(
                 name='datetime',
                 dtype='datetime64[ns]',
                 desc=("A datetime object corresponding to the date and "
                       "time when the manual measurement was made in the "
-                      "well.")
+                      "well."),
+                notnull=True
             ),
             Column(
                 name='value',
                 dtype='float64',
                 desc=("The value of the water level that was measured "
-                      "manually in the well.")
+                      "manually in the well."),
+                notnull=True
             ),
             Column(
                 name='notes',
@@ -221,15 +220,12 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
         unique_constraints=(
             ['obs_well_id']
         ),
-        notnull_constraints=(
-            'obs_well_id',
-            'is_station_active'
-        ),
         columns=(
             Column(
                 name='obs_well_id',
                 dtype='str',
-                desc=("The unique identifier of the observation well.")
+                desc=("The unique identifier of the observation well."),
+                notnull=True
             ),
             Column(
                 name='latitude',
@@ -295,7 +291,8 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 name='is_station_active',
                 dtype='bool',
                 desc=("Indicates whether the station is still "
-                      "active or not.")
+                      "active or not."),
+                notnull=True
             ),
             Column(
                 name='obs_well_notes',
@@ -373,17 +370,18 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
             ('remark_type_id', 'remarks'),
         ),
         unique_constraints=('remark_type_code'),
-        notnull_constraints=('remark_type_code', 'remark_type_name'),
         columns=(
             Column(
                 name='remark_type_code',
                 dtype='str',
-                desc=("The unique code of the remark type.")
+                desc=("The unique code of the remark type."),
+                notnull=True
             ),
             Column(
                 name='remark_type_name',
                 dtype='str',
-                desc=("The name of the remark type.")
+                desc=("The name of the remark type."),
+                notnull=True
             ),
             Column(
                 name='remark_type_desc',
