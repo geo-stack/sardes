@@ -434,7 +434,7 @@ def test_edit_non_editable_cell(tablewidget, qtbot):
     assert tableview.state() != tableview.EditingState
 
     # Try to clear the content of the selected cell.
-    assert item_delegate.is_required
+    assert tableview.model().is_data_required_at(model_index)
     assert model_index.data() == 'not editable'
     assert tableview.model().get_value_at(model_index) == 'not editable'
     qtbot.keyPress(tableview, Qt.Key_Delete, modifier=Qt.ControlModifier)
@@ -585,7 +585,7 @@ def test_clearing_required_cell(tablewidget, qtbot):
     """
     tableview = tablewidget.tableview
     model_index = tableview.model().index(0, 0)
-    assert tableview.itemDelegate(model_index).is_required
+    assert tableview.model().is_data_required_at(model_index)
     assert model_index.data() == 'str1'
     assert tableview.model().get_value_at(model_index) == 'str1'
 
@@ -609,7 +609,7 @@ def test_clearing_non_required_cell(tablewidget, qtbot):
     """
     tableview = tablewidget.tableview
     model_index = tableview.model().index(0, 2)
-    assert not tableview.itemDelegate(model_index).is_required
+    assert not tableview.model().is_data_required_at(model_index)
     assert model_index.data() == '1.111'
     assert tableview.model().get_value_at(model_index) == 1.111
 
