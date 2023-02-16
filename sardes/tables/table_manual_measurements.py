@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 # ---- Local imports
-from sardes.api.tablemodels import SardesTableColumn
+from sardes.api.tablemodels import sardes_table_column_factory
 from sardes.config.locale import _
 from sardes.tables.models import StandardSardesTableModel
 from sardes.tables.delegates import (
@@ -25,22 +25,20 @@ class ManualMeasurementsTableModel(StandardSardesTableModel):
     __tablename__ = 'table_manual_measurements'
     __tabletitle__ = _('Manual Measurements')
     __tablecolumns__ = [
-        SardesTableColumn(
-            'sampling_feature_uuid', _('Well ID'), 'str',
-            notnull=True, unique=True, unique_subset=['datetime'],
+        sardes_table_column_factory(
+            'manual_measurements', 'sampling_feature_uuid', _('Well ID'),
             delegate=ObsWellIdEditDelegate),
-        SardesTableColumn(
-            'datetime', _('Date/Time'), 'datetime64[ns]', notnull=True,
-            unique=True, unique_subset=['sampling_feature_uuid'],
+        sardes_table_column_factory(
+            'manual_measurements', 'datetime', _('Date'),
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd hh:mm:ss"}),
-        SardesTableColumn(
-            'value', _('Water Level'), 'float64', notnull=True,
+        sardes_table_column_factory(
+            'manual_measurements', 'value', _('Water Level'),
             delegate=NumEditDelegate,
             delegate_options={
                 'decimals': 3, 'minimum': -99999, 'maximum': 99999}),
-        SardesTableColumn(
-            'notes', _('Notes'), 'str',
+        sardes_table_column_factory(
+            'manual_measurements', 'notes', _('Notes'),
             delegate=TextEditDelegate)
         ]
 
