@@ -22,7 +22,7 @@ class RemarksTableModel(StandardSardesTableModel):
     A table model to display a list of remarks related to monitoring
     data over a given period.
     """
-    __tablename__ = 'remarks'
+    __tablename__ = 'table_remarks'
     __tabletitle__ = _('Remarks')
     __tablecolumns__ = [
         sardes_table_column_factory(

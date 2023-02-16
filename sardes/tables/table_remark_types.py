@@ -21,7 +21,7 @@ class RemarkTypesTableModel(StandardSardesTableModel):
     A table model to display a list of remark types that
     are available to use in the Remarks table.
     """
-    __tablename__ = 'remark_types'
+    __tablename__ = 'table_remark_types'
     __tabletitle__ = _('Remark Types')
     __tablecolumns__ = [
         sardes_table_column_factory(

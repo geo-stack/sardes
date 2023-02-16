@@ -19,54 +19,30 @@ os.environ['SARDES_PYTEST'] = 'True'
 import numpy as np
 import pandas as pd
 import pytest
-from qtpy.QtCore import Qt, QUrl, QPoint
+from qtpy.QtCore import QUrl, QPoint
 from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import QFileDialog, QMessageBox
 
 # ---- Local imports
 from sardes.api.timeseries import DataType
-from sardes.tables import ObsWellsTableWidget
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
 from sardes.database.accessors.accessor_helpers import init_tseries_dels
-from sardes.tables import (ManualMeasurementsTableModel, RepereTableModel,
-                           SondeInstallationsTableModel, RemarksTableModel)
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture
-def tablewidget(tablesmanager, qtbot, dbaccessor, obswells_data):
-    tablewidget = ObsWellsTableWidget()
-    qtbot.addWidget(tablewidget)
-    tablewidget.show()
+def tablewidget(mainwindow, qtbot, dbaccessor):
+    mainwindow.tables_plugin.switch_to_plugin()
+    mainwindow.tables_plugin.tabwidget.setCurrentIndex(0)
+    tablewidget = mainwindow.tables_plugin.current_table()
 
-    tablemodel = tablewidget.model()
-    tablesmanager.register_table_model(tablemodel)
+    assert tablewidget.model().name() == 'table_observation_wells'
 
-    # We also need to register table models that have foreign relation
-    # with the table observation wells.
-    tablesmanager.register_table_model(ManualMeasurementsTableModel())
-    tablesmanager.register_table_model(RepereTableModel())
-    tablesmanager.register_table_model(SondeInstallationsTableModel())
-    tablesmanager.register_table_model(RemarksTableModel())
-
-    # Set the database connection manager of the file managers. This is
-    # usually done on the plugin side.
-    tablewidget.construction_logs_manager.set_dbmanager(
-        tablesmanager.db_manager)
-    tablewidget.water_quality_reports.set_dbmanager(
-        tablesmanager.db_manager)
-
-    # This connection is usually made by the plugin, but we need to make it
-    # here manually for testing purposes.
-    tablesmanager.sig_models_data_changed.connect(tablemodel.update_data)
-
-    with qtbot.waitSignal(tablemodel.sig_data_updated):
-        tablemodel.update_data()
+    # Wait until data are actually charged in the table.
+    qtbot.waitUntil(lambda: tablewidget.visible_row_count() > 0)
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
-
-    assert tablewidget.tableview.visible_row_count() == len(obswells_data)
 
     return tablewidget
 
