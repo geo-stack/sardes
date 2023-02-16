@@ -231,6 +231,15 @@ class SardesItemDelegate(SardesItemDelegateBase):
         else:
             raise NotImplementedError
 
+    def logical_to_visual_data(self, visual_dataf):
+        """
+        Transform logical data to visual data.
+
+        By default, this method does nothing and needs to be reimplemented for
+        delegates that require specific data formatting.
+        """
+        pass
+
     def format_data(self, data):
         """
         Format data according to the format prescribed by this delegate so that
