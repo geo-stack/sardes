@@ -1431,7 +1431,7 @@ class SardesTableView(QTableView):
         Return whether a non null value is required for the item at the
         specified model index.
         """
-        return self.itemDelegate(model_index).is_required
+        return self.model().is_data_required_at(model_index)
 
     def is_data_clearable_at(self, model_index):
         """
