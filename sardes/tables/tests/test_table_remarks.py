@@ -22,6 +22,9 @@ import pytest
 import pandas as pd
 from qtpy.QtWidgets import QMessageBox
 
+# ---- Local imports
+from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
+
 
 # =============================================================================
 # ---- Fixtures
@@ -36,6 +39,7 @@ def tablewidget(mainwindow, qtbot, dbaccessor):
 
     # Wait until data are actually charged in the table.
     qtbot.waitUntil(lambda: tablewidget.visible_row_count() > 0)
+    qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
 
     return tablewidget
 
