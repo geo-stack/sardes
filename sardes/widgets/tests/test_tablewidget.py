@@ -434,7 +434,7 @@ def test_edit_non_editable_cell(tablewidget, qtbot):
     assert tableview.state() != tableview.EditingState
 
     # Try to clear the content of the selected cell.
-    assert tableview.model().is_data_required_at(model_index)
+    assert not tableview.model().is_data_clearable_at(model_index)
     assert model_index.data() == 'not editable'
     assert tableview.model().get_value_at(model_index) == 'not editable'
     qtbot.keyPress(tableview, Qt.Key_Delete, modifier=Qt.ControlModifier)
