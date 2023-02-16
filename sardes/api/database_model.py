@@ -401,7 +401,6 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
         foreign_constraints=(
             ('remark_type_id', 'remarks'),
         ),
-        unique_constraints=('remark_type_code'),
         columns=(
             Column(
                 name='remark_type_code',

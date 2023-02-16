@@ -61,7 +61,7 @@ class RepereTableModel(StandardSardesTableModel):
             'repere_data', 'is_alt_geodesic', _('Geodesic'),
             delegate=BoolEditDelegate),
         sardes_table_column_factory(
-            'repere_data', 'repere_note', _('Notes'), 'str',
+            'repere_data', 'repere_note', _('Notes'),
             delegate=TextEditDelegate)
         ]
 

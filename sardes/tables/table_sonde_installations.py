@@ -53,7 +53,7 @@ class SondeInstallationsTableModel(StandardSardesTableModel):
             delegate_options={
                 'decimals': 3, 'minimum': -99999, 'maximum': 99999}),
         sardes_table_column_factory(
-            'sonde_installations', 'install_note', _('Notes'), 'str',
+            'sonde_installations', 'install_note', _('Notes'),
             delegate=TextEditDelegate)
         ]
 
