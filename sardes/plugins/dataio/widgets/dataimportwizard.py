@@ -60,7 +60,9 @@ class ImportDataTableModel(SardesTableModel):
 
     def create_delegate_for_column(self, table_view: SardesTableView,
                                    table_column: SardesTableColumn):
-        return NotEditableDelegate(table_view, table_column)
+        delegate = NotEditableDelegate(table_view, table_column)
+        self._column_delegates[table_column.name] = delegate
+        return delegate
 
     def set_duplicated(self, is_duplicated):
         self.is_duplicated = is_duplicated

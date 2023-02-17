@@ -41,7 +41,9 @@ class SondeModelsTableModel(StandardSardesTableModel):
     # ---- SardesTableModel Public API
     def create_delegate_for_column(self, table_view: SardesTableView,
                                    table_column: SardesTableColumn):
-        return TextEditDelegate(table_view, table_column)
+        delegate = TextEditDelegate(table_view, table_column)
+        self._column_delegates[table_column.name] = delegate
+        return delegate
 
 
 class SondeModelsTableWidget(SardesTableWidget):
