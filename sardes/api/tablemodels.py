@@ -10,7 +10,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from sardes.widgets.tableviews import SardesTableView
-    from sardes.api.tablemodels import SardesTableColumn
 
 
 # ---- Standard imports
@@ -36,7 +35,6 @@ from sardes.api.database_model import DATABASE_CONCEPTUAL_MODEL
 def sardes_table_column_factory(table_name: str, column_name: str, header: str,
                                 delegate: object = None,
                                 delegate_options: dict = None,
-                                strftime_format: str = None
                                 ) -> SardesTableColumn:
     """
     A factory to create a SardesTableColumn from the conceptual
@@ -62,7 +60,6 @@ def sardes_table_column_factory(table_name: str, column_name: str, header: str,
         desc=concept_col.desc,
         delegate=delegate,
         delegate_options={} if delegate_options is None else delegate_options,
-        strftime_format=strftime_format,
         default=concept_col.default
         )
 
@@ -85,9 +82,6 @@ class SardesTableColumn():
 
     # The formatting is applied when the method 'logical_to_visual_data'
     # is called on the original dataframe.
-
-    # An option used to format datetime-like values.
-    strftime_format: str = None
 
     # If not None, default value used when adding a new row.
     default: object = None
@@ -793,20 +787,6 @@ class SardesTableModel(SardesTableModelBase):
             column_delegate = self._column_delegates[column.name]
             if column_delegate is not None:
                 column_delegate.logical_to_visual_data(visual_dataf)
-
-            if column.strftime_format is not None:
-                try:
-                    visual_dataf[column.name] = (
-                        visual_dataf[column.name].dt.strftime(
-                            column.strftime_format))
-                except AttributeError as e:
-                    print((
-                        'WARNING: Failed to format datetime values on '
-                        'column "{}" of table "{}" because of the following '
-                        'error :\n{}'
-                        ).format(column.name, self.name(), e))
-                    print(column.name, visual_dataf[column.name].dtype)
-
         return visual_dataf
 
     def check_data_edits(self):

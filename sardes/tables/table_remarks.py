@@ -27,7 +27,8 @@ class RemarksTableModel(StandardSardesTableModel):
     __tablecolumns__ = [
         sardes_table_column_factory(
             'remarks', 'sampling_feature_uuid', _('Well ID'),
-            delegate=ObsWellIdEditDelegate),
+            delegate=ObsWellIdEditDelegate
+            ),
         sardes_table_column_factory(
             'remarks', 'remark_type_id', _('Type'),
             delegate=RemarkTypeEditDelegate
@@ -36,13 +37,11 @@ class RemarksTableModel(StandardSardesTableModel):
             'remarks', 'period_start', _('Date From'),
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
-            strftime_format='%Y-%m-%d %H:%M'
             ),
         sardes_table_column_factory(
             'remarks', 'period_end', _('Date To'),
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
-            strftime_format='%Y-%m-%d %H:%M'
             ),
         sardes_table_column_factory(
             'remarks', 'remark_text', _('Remark'),
@@ -56,7 +55,6 @@ class RemarksTableModel(StandardSardesTableModel):
             'remarks', 'remark_date', _('Date'),
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd"},
-            strftime_format='%Y-%m-%d'
             )
         ]
 

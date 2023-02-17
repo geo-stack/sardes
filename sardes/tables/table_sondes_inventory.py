@@ -34,13 +34,11 @@ class SondesInventoryTableModel(StandardSardesTableModel):
         sardes_table_column_factory(
             'sondes_data', 'date_reception', _('Date Reception'),
             delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd"},
-            strftime_format='%Y-%m-%d'),
+            delegate_options={'display_format': "yyyy-MM-dd"}),
         sardes_table_column_factory(
             'sondes_data', 'date_withdrawal', _('Date Withdrawal'),
             delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd"},
-            strftime_format='%Y-%m-%d'),
+            delegate_options={'display_format': "yyyy-MM-dd"}),
         sardes_table_column_factory(
             'sondes_data', 'in_repair', _('In Repair'),
             delegate=BoolEditDelegate),

@@ -50,13 +50,11 @@ class RepereTableModel(StandardSardesTableModel):
         sardes_table_column_factory(
             'repere_data', 'start_date', _('Date From'),
             delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
-            strftime_format='%Y-%m-%d %H:%M'),
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
         sardes_table_column_factory(
             'repere_data', 'end_date', _('Date To'),
             delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
-            strftime_format='%Y-%m-%d %H:%M'),
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
         sardes_table_column_factory(
             'repere_data', 'is_alt_geodesic', _('Geodesic'),
             delegate=BoolEditDelegate),

@@ -68,10 +68,19 @@ class DateTimeDelegate(SardesItemDelegate):
     A delegate to edit a datetime.
     """
 
-    def __init__(self, model_view, table_column, display_format=None):
+    def __init__(self, model_view, table_column, display_format: str = None):
         super() .__init__(model_view, table_column)
         self.display_format = ("yyyy-MM-dd hh:mm:ss" if display_format is None
                                else display_format)
+        self.strftime_format = (
+            self.display_format
+            .replace('yyyy', '%Y')
+            .replace('MM', '%m')
+            .replace('dd', '%d')
+            .replace('hh', '%H')
+            .replace('mm', '%M')
+            .replace('ss', '%S')
+            )
 
     # ---- SardesItemDelegate API
     def create_editor(self, parent):
@@ -92,6 +101,19 @@ class DateTimeDelegate(SardesItemDelegate):
                 "<i>yyyy-mm-dd hh:mm:ss</i> format"
                 ).format(self.model().column_header_at(data.name))
         return formatted_data, warning_message
+
+    def logical_to_visual_data(self, visual_dataf):
+        if self.strftime_format is not None:
+            try:
+                visual_dataf[self.table_column.name] = (
+                    visual_dataf[self.table_column.name].dt.strftime(
+                        self.strftime_format))
+            except AttributeError as e:
+                print((
+                    'WARNING: Failed to format datetime values on '
+                    'column "{}" of table "{}" because of the following '
+                    'error :\n{}'
+                    ).format(self.table_column, self.model().name(), e))
 
 
 class TextEditDelegate(SardesItemDelegate):
@@ -370,8 +392,8 @@ class SondesSelectionDelegate(SardesItemDelegate):
         Transform logical data to visual data.
         """
         try:
-            sondes_data = self.libraries['sondes_data']
-            sonde_models_lib = self.libraries['sonde_models_lib']
+            sondes_data = self.model().libraries['sondes_data']
+            sonde_models_lib = self.model().libraries['sonde_models_lib']
 
             sondes_data['sonde_brand_model'] = sonde_models_lib.loc[
                 sondes_data['sonde_model_id']]['sonde_brand_model'].values

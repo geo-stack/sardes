@@ -40,13 +40,11 @@ class SondeInstallationsTableModel(StandardSardesTableModel):
         sardes_table_column_factory(
             'sonde_installations', 'start_date', _('Date From'),
             delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
-            strftime_format='%Y-%m-%d %H:%M'),
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
         sardes_table_column_factory(
             'sonde_installations', 'end_date', _('Date To'),
             delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
-            strftime_format='%Y-%m-%d %H:%M'),
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
         sardes_table_column_factory(
             'sonde_installations', 'install_depth', _('Depth (m)'),
             delegate=NumEditDelegate,
