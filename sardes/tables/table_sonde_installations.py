@@ -62,44 +62,6 @@ class SondeInstallationsTableModel(StandardSardesTableModel):
                     'sondes_data',
                     'sonde_models_lib']
 
-    # ---- Visual Data
-    def logical_to_visual_data(self, visual_dataf):
-        """
-        Transform logical data to visual data.
-        """
-        try:
-            obs_wells_data = self.libraries['observation_wells_data']
-            visual_dataf['sampling_feature_uuid'] = (
-                visual_dataf['sampling_feature_uuid']
-                .map(obs_wells_data['obs_well_id'].to_dict().get)
-                )
-        except KeyError:
-            pass
-
-        try:
-            sondes_data = self.libraries['sondes_data']
-            sonde_models_lib = self.libraries['sonde_models_lib']
-
-            sondes_data['sonde_brand_model'] = sonde_models_lib.loc[
-                sondes_data['sonde_model_id']]['sonde_brand_model'].values
-
-            mask = sondes_data['sonde_serial_no'].notnull()
-            sondes_data['sonde_brand_model_serial'] = sondes_data[
-                'sonde_brand_model']
-            sondes_data.loc[mask, 'sonde_brand_model_serial'] = (
-                sondes_data['sonde_serial_no'] +
-                ' - ' +
-                sondes_data['sonde_brand_model'])
-
-            visual_dataf['sonde_uuid'] = (
-                visual_dataf['sonde_uuid']
-                .map(sondes_data['sonde_brand_model_serial'].to_dict().get)
-                )
-        except KeyError:
-            pass
-
-        return super().logical_to_visual_data(visual_dataf)
-
 
 class SondeInstallationsTableWidget(SardesTableWidget):
     def __init__(self, *args, **kargs):
