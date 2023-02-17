@@ -288,6 +288,16 @@ class SondeModelEditDelegate(SardesItemDelegate):
             editor.addItem(values['sonde_brand_model'], userData=index)
         return editor
 
+    def logical_to_visual_data(self, visual_dataf):
+        try:
+            sonde_models_lib = self.model().libraries['sonde_models_lib']
+            visual_dataf[self.table_column.name] = (
+                visual_dataf[self.table_column.name]
+                .map(sonde_models_lib['sonde_brand_model'].to_dict().get)
+                )
+        except KeyError:
+            pass
+
 
 class RemarkTypeEditDelegate(SardesItemDelegate):
     """
