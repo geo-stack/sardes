@@ -73,15 +73,6 @@ class RepereTableModel(StandardSardesTableModel):
         """
         Transform logical data to visual data.
         """
-        try:
-            obs_wells_data = self.libraries['observation_wells_data']
-            visual_dataf['sampling_feature_uuid'] = (
-                visual_dataf['sampling_feature_uuid']
-                .map(obs_wells_data['obs_well_id'].to_dict().get)
-                )
-        except KeyError:
-            pass
-
         visual_dataf['ground_altitude'] = (
             visual_dataf['top_casing_alt'] - visual_dataf['casing_length'])
         visual_dataf['is_alt_geodesic'] = (
