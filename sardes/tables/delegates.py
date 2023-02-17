@@ -214,6 +214,12 @@ class BoolEditDelegate(SardesItemDelegate):
             warning_message = None
         return formatted_data, warning_message
 
+    def logical_to_visual_data(self, visual_dataf):
+        visual_dataf[self.table_column.name] = (
+            visual_dataf[self.table_column.name]
+            .map({True: _('Yes'), False: _('No')}.get)
+            )
+
 
 # =============================================================================
 # ---- Complex Delegates
