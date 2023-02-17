@@ -63,29 +63,6 @@ class RemarksTableModel(StandardSardesTableModel):
     __dataname__ = 'remarks'
     __libnames__ = ['remark_types', 'observation_wells_data']
 
-    # ---- Visual Data
-    def logical_to_visual_data(self, visual_dataf):
-        """
-        Transform logical data to visual data.
-        """
-        try:
-            obs_wells_data = self.libraries['observation_wells_data']
-            visual_dataf['sampling_feature_uuid'] = (
-                visual_dataf['sampling_feature_uuid']
-                .map(obs_wells_data['obs_well_id'].to_dict().get)
-                )
-        except KeyError:
-            pass
-        try:
-            remark_types = self.libraries['remark_types']
-            visual_dataf['remark_type_id'] = (
-                visual_dataf['remark_type_id']
-                .map(remark_types['remark_type_name'].to_dict().get)
-                )
-        except KeyError:
-            pass
-        return super().logical_to_visual_data(visual_dataf)
-
 
 class RemarksTableWidget(SardesTableWidget):
     def __init__(self, *args, **kargs):
