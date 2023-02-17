@@ -157,7 +157,7 @@ def tablemodel(qtbot, TABLE_DATAF):
         def logical_to_visual_data(self, visual_dataf):
             visual_dataf['col1'].replace(
                 to_replace={True: _('Yes'), False: _('No')}, inplace=True)
-            return visual_dataf
+            return super().logical_to_visual_data(visual_dataf)
 
     # Setup table and database connection manager.
     tablemodel = SardesTableModelMock()
