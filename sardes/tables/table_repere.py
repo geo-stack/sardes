@@ -75,10 +75,6 @@ class RepereTableModel(StandardSardesTableModel):
         """
         visual_dataf['ground_altitude'] = (
             visual_dataf['top_casing_alt'] - visual_dataf['casing_length'])
-        visual_dataf['is_alt_geodesic'] = (
-            visual_dataf['is_alt_geodesic']
-            .map({True: _('Yes'), False: _('No')}.get)
-            )
         return super().logical_to_visual_data(visual_dataf)
 
 
