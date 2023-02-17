@@ -34,13 +34,11 @@ class SondesInventoryTableModel(StandardSardesTableModel):
         sardes_table_column_factory(
             'sondes_data', 'date_reception', _('Date Reception'),
             delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd"},
-            strftime_format='%Y-%m-%d'),
+            delegate_options={'display_format': "yyyy-MM-dd"}),
         sardes_table_column_factory(
             'sondes_data', 'date_withdrawal', _('Date Withdrawal'),
             delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd"},
-            strftime_format='%Y-%m-%d'),
+            delegate_options={'display_format': "yyyy-MM-dd"}),
         sardes_table_column_factory(
             'sondes_data', 'in_repair', _('In Repair'),
             delegate=BoolEditDelegate),
@@ -60,28 +58,6 @@ class SondesInventoryTableModel(StandardSardesTableModel):
 
     __dataname__ = 'sondes_data'
     __libnames__ = ['sonde_models_lib']
-
-    # ---- Visual Data
-    def logical_to_visual_data(self, visual_dataf):
-        """
-        Transform logical data to visual data.
-        """
-        try:
-            sonde_models_lib = self.libraries['sonde_models_lib']
-            visual_dataf['sonde_model_id'] = (
-                visual_dataf['sonde_model_id']
-                .map(sonde_models_lib['sonde_brand_model'].to_dict().get)
-                )
-        except KeyError:
-            pass
-
-        for column in ['out_of_order', 'in_repair', 'lost', 'off_network']:
-            visual_dataf[column] = (
-                visual_dataf[column]
-                .map({True: _('Yes'), False: _('No')}.get)
-                )
-
-        return super().logical_to_visual_data(visual_dataf)
 
 
 class SondesInventoryTableWidget(SardesTableWidget):

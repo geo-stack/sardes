@@ -6,6 +6,11 @@
 # This file is part of SARDES.
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from sardes.widgets.tableviews import SardesTableView
+    from sardes.api.tablemodels import SardesTableColumn
 
 
 # ---- Local imports
@@ -34,8 +39,11 @@ class SondeModelsTableModel(StandardSardesTableModel):
     __libnames__ = []
 
     # ---- SardesTableModel Public API
-    def create_delegate_for_column(self, view, column):
-        return TextEditDelegate(view)
+    def create_delegate_for_column(self, table_view: SardesTableView,
+                                   table_column: SardesTableColumn):
+        delegate = TextEditDelegate(table_view, table_column)
+        self._column_delegates[table_column.name] = delegate
+        return delegate
 
 
 class SondeModelsTableWidget(SardesTableWidget):

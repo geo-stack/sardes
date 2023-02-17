@@ -24,7 +24,7 @@ from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.models import StandardSardesTableModel
 from sardes.tables.managers import FileAttachmentManager
 from sardes.tables.delegates import (
-    StringEditDelegate, BoolEditDelegate,
+    StringEditDelegate, BoolEditDelegate, DateTimeDelegate,
     NumEditDelegate, NotEditableDelegate, TextEditDelegate)
 from sardes.tables.errors import ForeignReadingsConstraintError
 
@@ -39,30 +39,38 @@ class ObsWellsTableModel(StandardSardesTableModel):
     __tablecolumns__ = [
         sardes_table_column_factory(
             'observation_wells_data', 'obs_well_id', _('Well ID'),
-            delegate=StringEditDelegate),
+            delegate=StringEditDelegate
+            ),
         sardes_table_column_factory(
             'observation_wells_data', 'common_name', _('Common Name'),
-            delegate=StringEditDelegate),
+            delegate=StringEditDelegate
+            ),
         sardes_table_column_factory(
             'observation_wells_data', 'municipality', _('Municipality'),
-            delegate=StringEditDelegate),
+            delegate=StringEditDelegate
+            ),
         sardes_table_column_factory(
             'observation_wells_data', 'aquifer_type', _('Aquifer'),
-            delegate=StringEditDelegate),
+            delegate=StringEditDelegate
+            ),
         sardes_table_column_factory(
             'observation_wells_data', 'aquifer_code', _('Aquifer Code'),
             delegate=NumEditDelegate,
             delegate_options={
-                'decimals': 0, 'minimum': 0, 'maximum': 999}),
+                'decimals': 0, 'minimum': 0, 'maximum': 999}
+            ),
         sardes_table_column_factory(
             'observation_wells_data', 'confinement', _('Confinement'),
-            delegate=StringEditDelegate),
+            delegate=StringEditDelegate
+            ),
         sardes_table_column_factory(
             'observation_wells_data', 'in_recharge_zone', _('Recharge Zone'),
-            delegate=StringEditDelegate),
+            delegate=StringEditDelegate
+            ),
         sardes_table_column_factory(
             'observation_wells_data', 'is_influenced', _('Influenced'),
-            delegate=StringEditDelegate),
+            delegate=StringEditDelegate
+            ),
         sardes_table_column_factory(
             'observation_wells_data', 'latitude', _('Latitude'),
             delegate=NumEditDelegate,
@@ -75,21 +83,29 @@ class ObsWellsTableModel(StandardSardesTableModel):
             ),
         SardesTableColumn(
             'first_date', _('First Date'), 'datetime64[ns]',
-            delegate=NotEditableDelegate, editable=False,
-            strftime_format='%Y-%m-%d'),
+            editable=False,
+            delegate=DateTimeDelegate,
+            delegate_options={'display_format': "yyyy-MM-dd"},
+            ),
         SardesTableColumn(
             'last_date', _('Last Date'), 'datetime64[ns]',
-            delegate=NotEditableDelegate, editable=False,
-            strftime_format='%Y-%m-%d'),
+            editable=False,
+            delegate=DateTimeDelegate,
+            delegate_options={'display_format': "yyyy-MM-dd"},
+            ),
         SardesTableColumn(
             'mean_water_level', _('Mean level (m)'), 'float64',
-            delegate=NotEditableDelegate, editable=False),
+            editable=False,
+            delegate=NotEditableDelegate
+            ),
         sardes_table_column_factory(
             'observation_wells_data', 'is_station_active', _('Active'),
-            delegate=BoolEditDelegate),
+            delegate=BoolEditDelegate
+            ),
         sardes_table_column_factory(
             'observation_wells_data', 'obs_well_notes', _('Notes'),
-            delegate=TextEditDelegate)
+            delegate=TextEditDelegate
+            )
         ]
 
     __dataname__ = 'observation_wells_data'
@@ -141,12 +157,6 @@ class ObsWellsTableModel(StandardSardesTableModel):
                 else:
                     visual_dataf[column] = (
                         np.nan if column == 'mean_water_level' else pd.NaT)
-
-        visual_dataf['is_station_active'] = (
-            visual_dataf['is_station_active']
-            .map({True: _('Yes'), False: _('No')}.get)
-            )
-
         return super().logical_to_visual_data(visual_dataf)
 
 

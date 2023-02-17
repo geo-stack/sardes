@@ -27,8 +27,8 @@ class NotEditableDelegate(SardesItemDelegate):
     column are not editable.
     """
 
-    def __init__(self, model_view):
-        super().__init__(model_view)
+    def __init__(self, model_view, table_column):
+        super().__init__(model_view, table_column)
 
     def createEditor(self, *args, **kargs):
         return None
@@ -51,27 +51,24 @@ class NotEditableDelegate(SardesItemDelegate):
         return data, None
 
 
-class DateEditDelegate(SardesItemDelegate):
-    """
-    A delegate to edit a date.
-    """
-
-    def create_editor(self, parent):
-        editor = QDateEdit(parent)
-        editor.setCalendarPopup(True)
-        editor.setDisplayFormat("yyyy-MM-dd")
-        return editor
-
-
 class DateTimeDelegate(SardesItemDelegate):
     """
     A delegate to edit a datetime.
     """
 
-    def __init__(self, model_view, display_format=None):
-        super() .__init__(model_view)
+    def __init__(self, model_view, table_column, display_format: str = None):
+        super() .__init__(model_view, table_column)
         self.display_format = ("yyyy-MM-dd hh:mm:ss" if display_format is None
                                else display_format)
+        self.strftime_format = (
+            self.display_format
+            .replace('yyyy', '%Y')
+            .replace('MM', '%m')
+            .replace('dd', '%d')
+            .replace('hh', '%H')
+            .replace('mm', '%M')
+            .replace('ss', '%S')
+            )
 
     # ---- SardesItemDelegate API
     def create_editor(self, parent):
@@ -92,6 +89,19 @@ class DateTimeDelegate(SardesItemDelegate):
                 "<i>yyyy-mm-dd hh:mm:ss</i> format"
                 ).format(self.model().column_header_at(data.name))
         return formatted_data, warning_message
+
+    def logical_to_visual_data(self, visual_dataf):
+        if self.strftime_format is not None:
+            try:
+                visual_dataf[self.table_column.name] = (
+                    visual_dataf[self.table_column.name].dt.strftime(
+                        self.strftime_format))
+            except AttributeError as e:
+                print((
+                    'WARNING: Failed to format datetime values on '
+                    'column "{}" of table "{}" because of the following '
+                    'error :\n{}'
+                    ).format(self.table_column, self.model().name(), e))
 
 
 class TextEditDelegate(SardesItemDelegate):
@@ -120,8 +130,8 @@ class IntEditDelegate(SardesItemDelegate):
     A delegate to edit an integer value in a spin box.
     """
 
-    def __init__(self, model_view, minimum=None, maximum=None, **kargs):
-        super() .__init__(model_view, **kargs)
+    def __init__(self, model_view, table_column, minimum=None, maximum=None):
+        super() .__init__(model_view, table_column)
         self._minimum = minimum
         self._maximum = maximum
 
@@ -155,9 +165,9 @@ class NumEditDelegate(SardesItemDelegate):
     A delegate to edit a float or a float value in a spin box.
     """
 
-    def __init__(self, model_view, decimals=0, minimum=None, maximum=None,
-                 **kargs):
-        super() .__init__(model_view, **kargs)
+    def __init__(self, model_view, table_column, decimals=0, minimum=None,
+                 maximum=None):
+        super() .__init__(model_view, table_column)
         self._minimum = minimum
         self._maximum = maximum
         self._decimals = decimals
@@ -214,6 +224,12 @@ class BoolEditDelegate(SardesItemDelegate):
             warning_message = None
         return formatted_data, warning_message
 
+    def logical_to_visual_data(self, visual_dataf):
+        visual_dataf[self.table_column.name] = (
+            visual_dataf[self.table_column.name]
+            .map({True: _('Yes'), False: _('No')}.get)
+            )
+
 
 # =============================================================================
 # ---- Complex Delegates
@@ -261,6 +277,16 @@ class ObsWellIdEditDelegate(SardesItemDelegate):
                 warning_message = None
         return formatted_data, warning_message
 
+    def logical_to_visual_data(self, visual_dataf):
+        try:
+            obs_wells_data = self.model().libraries['observation_wells_data']
+            visual_dataf[self.table_column.name] = (
+                visual_dataf[self.table_column.name]
+                .map(obs_wells_data['obs_well_id'].to_dict().get)
+                )
+        except KeyError:
+            pass
+
 
 class SondeModelEditDelegate(SardesItemDelegate):
     """
@@ -278,6 +304,16 @@ class SondeModelEditDelegate(SardesItemDelegate):
             editor.addItem(values['sonde_brand_model'], userData=index)
         return editor
 
+    def logical_to_visual_data(self, visual_dataf):
+        try:
+            sonde_models_lib = self.model().libraries['sonde_models_lib']
+            visual_dataf[self.table_column.name] = (
+                visual_dataf[self.table_column.name]
+                .map(sonde_models_lib['sonde_brand_model'].to_dict().get)
+                )
+        except KeyError:
+            pass
+
 
 class RemarkTypeEditDelegate(SardesItemDelegate):
     """
@@ -294,6 +330,16 @@ class RemarkTypeEditDelegate(SardesItemDelegate):
         for index, values in remark_types.iterrows():
             editor.addItem(values['remark_type_name'], userData=index)
         return editor
+
+    def logical_to_visual_data(self, visual_dataf):
+        try:
+            remark_types = self.model().libraries['remark_types']
+            visual_dataf[self.table_column.name] = (
+                visual_dataf[self.table_column.name]
+                .map(remark_types['remark_type_name'].to_dict().get)
+                )
+        except KeyError:
+            pass
 
 
 class SondesSelectionDelegate(SardesItemDelegate):
@@ -328,3 +374,29 @@ class SondesSelectionDelegate(SardesItemDelegate):
                 editor.addItem(
                     values['sonde_brand_model_serial'], userData=index)
         return editor
+
+    def logical_to_visual_data(self, visual_dataf):
+        """
+        Transform logical data to visual data.
+        """
+        try:
+            sondes_data = self.model().libraries['sondes_data']
+            sonde_models_lib = self.model().libraries['sonde_models_lib']
+
+            sondes_data['sonde_brand_model'] = sonde_models_lib.loc[
+                sondes_data['sonde_model_id']]['sonde_brand_model'].values
+
+            mask = sondes_data['sonde_serial_no'].notnull()
+            sondes_data['sonde_brand_model_serial'] = sondes_data[
+                'sonde_brand_model']
+            sondes_data.loc[mask, 'sonde_brand_model_serial'] = (
+                sondes_data['sonde_serial_no'] +
+                ' - ' +
+                sondes_data['sonde_brand_model'])
+
+            visual_dataf['sonde_uuid'] = (
+                visual_dataf['sonde_uuid']
+                .map(sondes_data['sonde_brand_model_serial'].to_dict().get)
+                )
+        except KeyError:
+            pass

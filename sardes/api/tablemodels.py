@@ -6,9 +6,13 @@
 # This file is part of SARDES.
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from sardes.widgets.tableviews import SardesTableView
+
 
 # ---- Standard imports
-from __future__ import annotations
 from collections import OrderedDict
 from dataclasses import dataclass, field
 
@@ -31,7 +35,6 @@ from sardes.api.database_model import DATABASE_CONCEPTUAL_MODEL
 def sardes_table_column_factory(table_name: str, column_name: str, header: str,
                                 delegate: object = None,
                                 delegate_options: dict = None,
-                                strftime_format: str = None
                                 ) -> SardesTableColumn:
     """
     A factory to create a SardesTableColumn from the conceptual
@@ -57,7 +60,6 @@ def sardes_table_column_factory(table_name: str, column_name: str, header: str,
         desc=concept_col.desc,
         delegate=delegate,
         delegate_options={} if delegate_options is None else delegate_options,
-        strftime_format=strftime_format,
         default=concept_col.default
         )
 
@@ -80,9 +82,6 @@ class SardesTableColumn():
 
     # The formatting is applied when the method 'logical_to_visual_data'
     # is called on the original dataframe.
-
-    # An option used to format datetime-like values.
-    strftime_format: str = None
 
     # If not None, default value used when adding a new row.
     default: object = None
@@ -330,6 +329,9 @@ class SardesTableModelBase(QAbstractTableModel):
         # required by this table to display its data correctly.
         self.libraries = {}
 
+        # A dictionary containing the column delegates.
+        self._column_delegates = {}
+
         # Setup the data.
         self.set_model_data(pd.DataFrame([]))
 
@@ -359,6 +361,7 @@ class SardesTableModelBase(QAbstractTableModel):
         self.__tablecolumns__ = columns
         self.__tablecolumns_loc__ = OrderedDict(
             [(column.name, column) for column in self.__tablecolumns__])
+        self._column_delegates = {}
 
     def column_at(self, name):
         """Return the sardes table column corresponding to the given name."""
@@ -407,18 +410,20 @@ class SardesTableModelBase(QAbstractTableModel):
                 return self.__tablecolumns__[section].header
         return QVariant()
 
-    def create_delegate_for_column(self, table_view, column_name):
+    def create_delegate_for_column(self, table_view: SardesTableView,
+                                   table_column: SardesTableColumn):
         """
         Create the item delegate that the view need to use when displaying and
         editing the data of this model for the specified column.
         """
-        column = self.column_at(column_name)
-        if column.delegate is None:
+        if table_column.delegate is None:
             delegate = None
         else:
-            delegate = column.delegate(
+            delegate = table_column.delegate(
                 table_view,
-                **column.delegate_options)
+                table_column,
+                **table_column.delegate_options)
+        self._column_delegates[table_column.name] = delegate
         return delegate
 
     # ---- Table data
@@ -460,6 +465,9 @@ class SardesTableModelBase(QAbstractTableModel):
 
         if columns is not None:
             self.set_columns(columns)
+            # Emit a signal to tell the table view to setup the items
+            # delegate on the columns.
+            self.sig_columns_mapper_changed.emit()
 
         # Add missing columns to the dataframe and reorder columns to
         # mirror the column logical indexes of the table model so that we
@@ -480,10 +488,8 @@ class SardesTableModelBase(QAbstractTableModel):
             self.index(0, 0),
             self.index(self.rowCount() - 1, self.columnCount() - 1)
             )
-        self.modelReset.emit()
 
-        if columns is not None:
-            self.sig_columns_mapper_changed.emit()
+        self.modelReset.emit()
 
     def set_model_library(self, dataf, name):
         """
@@ -780,19 +786,9 @@ class SardesTableModel(SardesTableModelBase):
             to_replace={True: 'Yes', False: 'No'}, inplace=True)
         """
         for column in self.columns():
-            if column.strftime_format is None:
-                continue
-            try:
-                visual_dataf[column.name] = (
-                    visual_dataf[column.name].dt.strftime(
-                        column.strftime_format))
-            except AttributeError as e:
-                print((
-                    'WARNING: Failed to format datetime values on column "{}" '
-                    'of table "{}" because of the following error :\n{}'
-                    ).format(column.name, self.name(), e))
-                print(column.name, visual_dataf[column.name].dtype)
-
+            column_delegate = self._column_delegates[column.name]
+            if column_delegate is not None:
+                column_delegate.logical_to_visual_data(visual_dataf)
         return visual_dataf
 
     def check_data_edits(self):

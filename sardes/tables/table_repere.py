@@ -50,13 +50,11 @@ class RepereTableModel(StandardSardesTableModel):
         sardes_table_column_factory(
             'repere_data', 'start_date', _('Date From'),
             delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
-            strftime_format='%Y-%m-%d %H:%M'),
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
         sardes_table_column_factory(
             'repere_data', 'end_date', _('Date To'),
             delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
-            strftime_format='%Y-%m-%d %H:%M'),
+            delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
         sardes_table_column_factory(
             'repere_data', 'is_alt_geodesic', _('Geodesic'),
             delegate=BoolEditDelegate),
@@ -73,21 +71,8 @@ class RepereTableModel(StandardSardesTableModel):
         """
         Transform logical data to visual data.
         """
-        try:
-            obs_wells_data = self.libraries['observation_wells_data']
-            visual_dataf['sampling_feature_uuid'] = (
-                visual_dataf['sampling_feature_uuid']
-                .map(obs_wells_data['obs_well_id'].to_dict().get)
-                )
-        except KeyError:
-            pass
-
         visual_dataf['ground_altitude'] = (
             visual_dataf['top_casing_alt'] - visual_dataf['casing_length'])
-        visual_dataf['is_alt_geodesic'] = (
-            visual_dataf['is_alt_geodesic']
-            .map({True: _('Yes'), False: _('No')}.get)
-            )
         return super().logical_to_visual_data(visual_dataf)
 
 

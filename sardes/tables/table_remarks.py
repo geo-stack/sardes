@@ -27,7 +27,8 @@ class RemarksTableModel(StandardSardesTableModel):
     __tablecolumns__ = [
         sardes_table_column_factory(
             'remarks', 'sampling_feature_uuid', _('Well ID'),
-            delegate=ObsWellIdEditDelegate),
+            delegate=ObsWellIdEditDelegate
+            ),
         sardes_table_column_factory(
             'remarks', 'remark_type_id', _('Type'),
             delegate=RemarkTypeEditDelegate
@@ -36,13 +37,11 @@ class RemarksTableModel(StandardSardesTableModel):
             'remarks', 'period_start', _('Date From'),
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
-            strftime_format='%Y-%m-%d %H:%M'
             ),
         sardes_table_column_factory(
             'remarks', 'period_end', _('Date To'),
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd hh:mm"},
-            strftime_format='%Y-%m-%d %H:%M'
             ),
         sardes_table_column_factory(
             'remarks', 'remark_text', _('Remark'),
@@ -56,35 +55,11 @@ class RemarksTableModel(StandardSardesTableModel):
             'remarks', 'remark_date', _('Date'),
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd"},
-            strftime_format='%Y-%m-%d'
             )
         ]
 
     __dataname__ = 'remarks'
     __libnames__ = ['remark_types', 'observation_wells_data']
-
-    # ---- Visual Data
-    def logical_to_visual_data(self, visual_dataf):
-        """
-        Transform logical data to visual data.
-        """
-        try:
-            obs_wells_data = self.libraries['observation_wells_data']
-            visual_dataf['sampling_feature_uuid'] = (
-                visual_dataf['sampling_feature_uuid']
-                .map(obs_wells_data['obs_well_id'].to_dict().get)
-                )
-        except KeyError:
-            pass
-        try:
-            remark_types = self.libraries['remark_types']
-            visual_dataf['remark_type_id'] = (
-                visual_dataf['remark_type_id']
-                .map(remark_types['remark_type_name'].to_dict().get)
-                )
-        except KeyError:
-            pass
-        return super().logical_to_visual_data(visual_dataf)
 
 
 class RemarksTableWidget(SardesTableWidget):

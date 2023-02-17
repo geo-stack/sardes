@@ -6,7 +6,11 @@
 # This file is part of SARDES.
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
-
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from sardes.widgets.tableviews import SardesTableView
+    from sardes.api.tablemodels import SardesTableColumn
 
 # ---- Standard imports
 from datetime import datetime
@@ -34,9 +38,11 @@ class SardesItemDelegateBase(QStyledItemDelegate):
     know what you are doing.
     """
 
-    def __init__(self, model_view):
+    def __init__(self, model_view: SardesTableView,
+                 table_column: SardesTableColumn):
         super() .__init__(parent=model_view)
         self.model_view = model_view
+        self.table_column = table_column
         self._model_index = None
         self.editor = None
         self._widget = QListView()
@@ -225,6 +231,15 @@ class SardesItemDelegate(SardesItemDelegateBase):
             self.editor.setDateTime(qdatetime_from_datetime(value))
         else:
             raise NotImplementedError
+
+    def logical_to_visual_data(self, visual_dataf):
+        """
+        Transform logical data to visual data.
+
+        By default, this method does nothing and needs to be reimplemented for
+        delegates that require specific data formatting.
+        """
+        pass
 
     def format_data(self, data):
         """

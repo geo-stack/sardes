@@ -584,7 +584,7 @@ class SardesTableView(QTableView):
         """
         for i, column in enumerate(self.model().columns()):
             item_delegate = self.model().create_delegate_for_column(
-                self, column.name)
+                self, column)
             self.setItemDelegateForColumn(i, item_delegate)
 
     def _setup_column_visibility_actions(self):

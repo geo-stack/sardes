@@ -45,22 +45,6 @@ class ManualMeasurementsTableModel(StandardSardesTableModel):
     __dataname__ = 'manual_measurements'
     __libnames__ = ['observation_wells_data']
 
-    # ---- Visual Data
-    def logical_to_visual_data(self, visual_dataf):
-        """
-        Transform logical data to visual data.
-        """
-        try:
-            obs_wells_data = self.libraries['observation_wells_data']
-            visual_dataf['sampling_feature_uuid'] = (
-                visual_dataf['sampling_feature_uuid']
-                .map(obs_wells_data['obs_well_id'].to_dict().get)
-                )
-        except KeyError:
-            pass
-
-        return visual_dataf
-
 
 class ManualMeasurementsTableWidget(SardesTableWidget):
     def __init__(self, *args, **kargs):
