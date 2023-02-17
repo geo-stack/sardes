@@ -790,22 +790,22 @@ class SardesTableModel(SardesTableModelBase):
             to_replace={True: 'Yes', False: 'No'}, inplace=True)
         """
         for column in self.columns():
-            if column.strftime_format is None:
-                continue
-            try:
-                visual_dataf[column.name] = (
-                    visual_dataf[column.name].dt.strftime(
-                        column.strftime_format))
-            except AttributeError as e:
-                print((
-                    'WARNING: Failed to format datetime values on column "{}" '
-                    'of table "{}" because of the following error :\n{}'
-                    ).format(column.name, self.name(), e))
-                print(column.name, visual_dataf[column.name].dtype)
-
             column_delegate = self._column_delegates[column.name]
             if column_delegate is not None:
                 column_delegate.logical_to_visual_data(visual_dataf)
+
+            if column.strftime_format is not None:
+                try:
+                    visual_dataf[column.name] = (
+                        visual_dataf[column.name].dt.strftime(
+                            column.strftime_format))
+                except AttributeError as e:
+                    print((
+                        'WARNING: Failed to format datetime values on '
+                        'column "{}" of table "{}" because of the following '
+                        'error :\n{}'
+                        ).format(column.name, self.name(), e))
+                    print(column.name, visual_dataf[column.name].dtype)
 
         return visual_dataf
 
