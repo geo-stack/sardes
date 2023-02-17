@@ -268,8 +268,7 @@ class ObsWellIdEditDelegate(SardesItemDelegate):
                 visual_dataf[self.table_column.name]
                 .map(obs_wells_data['obs_well_id'].to_dict().get)
                 )
-        except KeyError as e:
-            print(e)
+        except KeyError:
             pass
 
 
