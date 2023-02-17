@@ -141,12 +141,6 @@ class ObsWellsTableModel(StandardSardesTableModel):
                 else:
                     visual_dataf[column] = (
                         np.nan if column == 'mean_water_level' else pd.NaT)
-
-        visual_dataf['is_station_active'] = (
-            visual_dataf['is_station_active']
-            .map({True: _('Yes'), False: _('No')}.get)
-            )
-
         return super().logical_to_visual_data(visual_dataf)
 
 
