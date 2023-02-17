@@ -61,19 +61,6 @@ class SondesInventoryTableModel(StandardSardesTableModel):
     __dataname__ = 'sondes_data'
     __libnames__ = ['sonde_models_lib']
 
-    # ---- Visual Data
-    def logical_to_visual_data(self, visual_dataf):
-        """
-        Transform logical data to visual data.
-        """
-        for column in ['out_of_order', 'in_repair', 'lost', 'off_network']:
-            visual_dataf[column] = (
-                visual_dataf[column]
-                .map({True: _('Yes'), False: _('No')}.get)
-                )
-
-        return super().logical_to_visual_data(visual_dataf)
-
 
 class SondesInventoryTableWidget(SardesTableWidget):
     def __init__(self, *args, **kargs):
