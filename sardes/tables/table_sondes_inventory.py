@@ -66,15 +66,6 @@ class SondesInventoryTableModel(StandardSardesTableModel):
         """
         Transform logical data to visual data.
         """
-        try:
-            sonde_models_lib = self.libraries['sonde_models_lib']
-            visual_dataf['sonde_model_id'] = (
-                visual_dataf['sonde_model_id']
-                .map(sonde_models_lib['sonde_brand_model'].to_dict().get)
-                )
-        except KeyError:
-            pass
-
         for column in ['out_of_order', 'in_repair', 'lost', 'off_network']:
             visual_dataf[column] = (
                 visual_dataf[column]
