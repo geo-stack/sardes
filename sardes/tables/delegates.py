@@ -51,18 +51,6 @@ class NotEditableDelegate(SardesItemDelegate):
         return data, None
 
 
-class DateEditDelegate(SardesItemDelegate):
-    """
-    A delegate to edit a date.
-    """
-
-    def create_editor(self, parent):
-        editor = QDateEdit(parent)
-        editor.setCalendarPopup(True)
-        editor.setDisplayFormat("yyyy-MM-dd")
-        return editor
-
-
 class DateTimeDelegate(SardesItemDelegate):
     """
     A delegate to edit a datetime.
