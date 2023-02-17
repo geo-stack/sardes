@@ -361,6 +361,7 @@ class SardesTableModelBase(QAbstractTableModel):
         self.__tablecolumns__ = columns
         self.__tablecolumns_loc__ = OrderedDict(
             [(column.name, column) for column in self.__tablecolumns__])
+        self._column_delegates = {}
 
     def column_at(self, name):
         """Return the sardes table column corresponding to the given name."""
@@ -464,6 +465,9 @@ class SardesTableModelBase(QAbstractTableModel):
 
         if columns is not None:
             self.set_columns(columns)
+            # Emit a signal to tell the table view to setup the items
+            # delegate on the columns.
+            self.sig_columns_mapper_changed.emit()
 
         # Add missing columns to the dataframe and reorder columns to
         # mirror the column logical indexes of the table model so that we
@@ -484,10 +488,8 @@ class SardesTableModelBase(QAbstractTableModel):
             self.index(0, 0),
             self.index(self.rowCount() - 1, self.columnCount() - 1)
             )
-        self.modelReset.emit()
 
-        if columns is not None:
-            self.sig_columns_mapper_changed.emit()
+        self.modelReset.emit()
 
     def set_model_library(self, dataf, name):
         """
