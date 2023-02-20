@@ -172,7 +172,7 @@ class Remark(BaseMixin, Base):
     """
     __tablename__ = 'remark'
 
-    remark_id = Column(UUIDType(binary=False), primary_key=True)
+    remark_id = Column(Integer, primary_key=True)
     sampling_feature_uuid = Column(
         UUIDType(binary=False),
         ForeignKey('sampling_feature.sampling_feature_uuid'))
