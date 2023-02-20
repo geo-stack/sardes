@@ -220,9 +220,6 @@ def remarks(obswells_data):
         ]
     df = pd.DataFrame(
         data,
-        index=[
-            UUID('131d7297-e116-463e-80e4-abd47c39c46f'),
-            UUID('69e7ef88-6449-4c0e-a898-0e2e6d1626d3')],
         columns=['sampling_feature_uuid', 'remark_type_id',
                  'period_start', 'period_end',
                  'remark_text', 'remark_author', 'remark_date']
@@ -274,22 +271,22 @@ def database_filler(
         sondes_installation, waterquality, remark_types, remarks):
 
     def fill_database(dbaccessor):
-        # Add the observation wells, repere, sondes, sonde installations,
-        # and manual measurements to the database.
+        # Add tables with 'uuid' indexes to the database.
         for df in [obswells_data, repere_data, sondes_data,
-                   sondes_installation, manual_measurements, remarks]:
+                   sondes_installation, manual_measurements]:
             _dict = df.to_dict('index')
             dbaccessor.add(
                 name=df.attrs['name'],
                 values=_dict.values(),
                 indexes=_dict.keys()
                 )
-        # Add the remark_types to the database.
-        _dict = remark_types.to_dict('index')
-        dbaccessor.add(
-            name=remark_types.attrs['name'],
-            values=_dict.values(),
-            )
+        # Add table with 'int' indexes to the database.
+        for df in [remarks, remark_types]:
+            _dict = df.to_dict('index')
+            dbaccessor.add(
+                name=df.attrs['name'],
+                values=_dict.values(),
+                )
 
         # Add attachments and monitoring data.
         for obs_well_uuid, obs_well_data in obswells_data.iterrows():
