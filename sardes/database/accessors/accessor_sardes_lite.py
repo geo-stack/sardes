@@ -105,6 +105,34 @@ class BaseMixin(object):
         """
         return []
 
+    @classmethod
+    def gen_new_ids(cls, session, n):
+        """
+        Generate a list of new primary key ids to use for new objects.
+        """
+        mapper = inspect(cls)
+        primary_columns = []
+        for column in mapper.columns:
+            if column.primary_key:
+                primary_columns.append(column)
+        if len(primary_columns) == 0:
+            raise ValueError('No primary key found.')
+        elif len(primary_columns) > 1:
+            raise ValueError('More than one primary key found.')
+
+        primary_column = primary_columns[0]
+        if isinstance(primary_column.type, UUIDType):
+            return [uuid.uuid4() for i in range(n)]
+        elif isinstance(primary_column.type, Integer):
+            try:
+                max_commited_id = (
+                    session.query(func.max(getattr(cls, primary_column.name)))
+                    .one()
+                    )[0] + 1
+            except TypeError:
+                max_commited_id = 1
+            return [i + max_commited_id for i in range(n)]
+
 
 class Location(BaseMixin, Base):
     """
