@@ -105,6 +105,34 @@ class BaseMixin(object):
         """
         return []
 
+    @classmethod
+    def gen_new_ids(cls, session, n):
+        """
+        Generate a list of new primary key ids to use for new objects.
+        """
+        mapper = inspect(cls)
+        primary_columns = []
+        for column in mapper.columns:
+            if column.primary_key:
+                primary_columns.append(column)
+        if len(primary_columns) == 0:
+            raise ValueError('No primary key found.')
+        elif len(primary_columns) > 1:
+            raise ValueError('More than one primary key found.')
+
+        primary_column = primary_columns[0]
+        if isinstance(primary_column.type, UUIDType):
+            return [uuid.uuid4() for i in range(n)]
+        elif isinstance(primary_column.type, Integer):
+            try:
+                max_commited_id = (
+                    session.query(func.max(getattr(cls, primary_column.name)))
+                    .one()
+                    )[0] + 1
+            except TypeError:
+                max_commited_id = 1
+            return [i + max_commited_id for i in range(n)]
+
 
 class Location(BaseMixin, Base):
     """
@@ -687,7 +715,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Generate new indexes if needed.
         if indexes is None:
-            indexes = [uuid.uuid4() for i in range(n)]
+            indexes = SamplingFeature.gen_new_ids(self._session, n)
 
         # Add a location for each new observation well to be added
         # to the database.
@@ -784,7 +812,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Generate new indexes if needed.
         if indexes is None:
-            indexes = [uuid.uuid4() for i in range(n)]
+            indexes = Repere.gen_new_ids(self._session, n)
 
         self._session.add_all([
             Repere(repere_uuid=index) for index in indexes
@@ -844,13 +872,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Generate new indexes if needed.
         if indexes is None:
-            try:
-                max_commited_id = (
-                    self._session.query(func.max(SondeModel.sonde_model_id))
-                    .one())[0] + 1
-            except TypeError:
-                max_commited_id = 1
-            indexes = [i + max_commited_id for i in range(n)]
+            indexes = SondeModel.gen_new_ids(self._session, n)
 
         self._session.add_all([
             SondeModel(
@@ -907,7 +929,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Generate new indexes if needed.
         if indexes is None:
-            indexes = [uuid.uuid4() for i in range(n)]
+            indexes = SondeFeature.gen_new_ids(self._session, n)
 
         # Make sure pandas NaT are replaced by None for datetime fields
         # to avoid errors in sqlalchemy.
@@ -981,7 +1003,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Generate new indexes if needed.
         if indexes is None:
-            indexes = [uuid.uuid4() for i in range(n)]
+            indexes = SondeInstallation.gen_new_ids(self._session, n)
 
         # Make sure pandas NaT are replaced by None for datetime fields
         # to avoid errors in sqlalchemy.
@@ -1080,7 +1102,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Generate new indexes if needed.
         if indexes is None:
-            indexes = [uuid.uuid4() for i in range(n)]
+            indexes = GenericNumericalData.gen_new_ids(self._session, n)
 
         # Add new observations in table observation.
         new_observations = [
@@ -1564,7 +1586,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Generate new indexes if needed.
         if indexes is None:
-            indexes = [uuid.uuid4() for i in range(n)]
+            indexes = Remark.gen_new_ids(self._session, n)
 
         # Make sure pandas NaT are replaced by None for datetime fields
         # to avoid errors in sqlalchemy.
@@ -1611,13 +1633,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Generate new indexes if needed.
         if indexes is None:
-            try:
-                max_commited_id = (
-                    self._session.query(func.max(RemarkType.remark_type_id))
-                    .one())[0] + 1
-            except TypeError:
-                max_commited_id = 1
-            indexes = [i + max_commited_id for i in range(n)]
+            indexes = RemarkType.gen_new_ids(self._session, n)
 
         self._session.add_all([
             RemarkType(
