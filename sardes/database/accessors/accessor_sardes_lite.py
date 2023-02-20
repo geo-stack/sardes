@@ -715,7 +715,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Generate new indexes if needed.
         if indexes is None:
-            indexes = [uuid.uuid4() for i in range(n)]
+            indexes = SamplingFeature.gen_new_ids(self._session, n)
 
         # Add a location for each new observation well to be added
         # to the database.
@@ -812,7 +812,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Generate new indexes if needed.
         if indexes is None:
-            indexes = [uuid.uuid4() for i in range(n)]
+            indexes = Repere.gen_new_ids(self._session, n)
 
         self._session.add_all([
             Repere(repere_uuid=index) for index in indexes
@@ -872,13 +872,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Generate new indexes if needed.
         if indexes is None:
-            try:
-                max_commited_id = (
-                    self._session.query(func.max(SondeModel.sonde_model_id))
-                    .one())[0] + 1
-            except TypeError:
-                max_commited_id = 1
-            indexes = [i + max_commited_id for i in range(n)]
+            indexes = SondeModel.gen_new_ids(self._session, n)
 
         self._session.add_all([
             SondeModel(
@@ -935,7 +929,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Generate new indexes if needed.
         if indexes is None:
-            indexes = [uuid.uuid4() for i in range(n)]
+            indexes = SondeFeature.gen_new_ids(self._session, n)
 
         # Make sure pandas NaT are replaced by None for datetime fields
         # to avoid errors in sqlalchemy.
@@ -1009,7 +1003,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Generate new indexes if needed.
         if indexes is None:
-            indexes = [uuid.uuid4() for i in range(n)]
+            indexes = SondeInstallation.gen_new_ids(self._session, n)
 
         # Make sure pandas NaT are replaced by None for datetime fields
         # to avoid errors in sqlalchemy.
@@ -1108,7 +1102,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Generate new indexes if needed.
         if indexes is None:
-            indexes = [uuid.uuid4() for i in range(n)]
+            indexes = GenericNumericalData.gen_new_ids(self._session, n)
 
         # Add new observations in table observation.
         new_observations = [
@@ -1592,7 +1586,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Generate new indexes if needed.
         if indexes is None:
-            indexes = [uuid.uuid4() for i in range(n)]
+            indexes = Remark.gen_new_ids(self._session, n)
 
         # Make sure pandas NaT are replaced by None for datetime fields
         # to avoid errors in sqlalchemy.
@@ -1639,13 +1633,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Generate new indexes if needed.
         if indexes is None:
-            try:
-                max_commited_id = (
-                    self._session.query(func.max(RemarkType.remark_type_id))
-                    .one())[0] + 1
-            except TypeError:
-                max_commited_id = 1
-            indexes = [i + max_commited_id for i in range(n)]
+            indexes = RemarkType.gen_new_ids(self._session, n)
 
         self._session.add_all([
             RemarkType(
