@@ -673,7 +673,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             )
         obs_wells = pd.read_sql_query(
             query.statement, self._session.connection(), coerce_float=True,
-            index_col='sampling_feature_uuid'
+            index_col='sampling_feature_uuid',
+            dtype={'aquifer_code': 'Int64'}
             )
 
         # Replace nan by None.
