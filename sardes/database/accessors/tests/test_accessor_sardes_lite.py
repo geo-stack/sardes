@@ -836,7 +836,7 @@ def test_remarks_interface(dbaccessor, database_filler, obswells_data):
         'remark_date': datetime.datetime(2022, 2, 2, 2),
         }
     new_remark_id = dbaccessor.add('remarks', new_remark_data)
-    assert isinstance(new_remark_id, UUID)
+    assert new_remark_id == 3
 
     # Assert that the remark type was added as expected.
     model_remarks = dbaccessor.get('remarks')
