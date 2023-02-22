@@ -458,19 +458,8 @@ class PumpType(BaseMixin, Base):
     pump_type_desc = Column(String)
 
 
-class PumpInstallation(BaseMixin, Base):
     """
-    An object used to map the 'pump_installation' table.
     """
-    __tablename__ = 'pump_installation'
-    install_uuid = Column(UUIDType(binary=False), primary_key=True)
-    pump_type_id = Column(Integer, ForeignKey('pump_type.pump_type_id'))
-    start_date = Column(DateTime)
-    end_date = Column(DateTime)
-    install_depth = Column(Float)
-    operator = Column(String)
-    install_note = Column(String)
-    process_id = Column(Integer, ForeignKey('process.process_id'))
 
 
 # ---- Processes
