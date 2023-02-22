@@ -526,6 +526,25 @@ class HGFieldMeasurement(BaseMixin, Base):
     lim_quantification = Column(Float)
 
 
+class HGLabResults(BaseMixin, Base):
+    """
+    An object used to map the 'hg_lab_result' library.
+    """
+    __tablename__ = 'hg_lab_result'
+
+    hg_lab_result_id = Column(Integer, primary_key=True)
+    lab_sample_id = Column(
+        String,
+        ForeignKey('hg_survey.lab_sample_id'))
+    hg_param_id = Column(
+        Integer,
+        ForeignKey('hg_param.hg_param_id'))
+    hg_param_value = Column(String)
+    lim_detection = Column(Float)
+    lim_quantification = Column(Float)
+    code_analysis_method = Column(String)
+
+
 
 
 # ---- Processes
