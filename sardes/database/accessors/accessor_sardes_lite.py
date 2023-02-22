@@ -23,11 +23,10 @@ import numpy as np
 import pandas as pd
 from pandas.api.types import is_list_like, is_datetime64_ns_dtype
 from sqlalchemy import create_engine, extract, func, and_, inspect
-from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
-                        UniqueConstraint, Index)
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.exc import DBAPIError, ProgrammingError, OperationalError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.types import TEXT, VARCHAR, Boolean, BLOB
+from sqlalchemy.types import Boolean, BLOB
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.engine.url import URL
 from sqlalchemy_utils import UUIDType
@@ -42,6 +41,7 @@ from sardes.database.accessors.accessor_errors import (
 from sardes.database.accessors.accessor_helpers import create_empty_readings
 from sardes.database.utils import format_sqlobject_repr
 from sardes.api.timeseries import DataType
+
 
 # An application ID to help recognize that database files are
 # specific to the current accessor.
@@ -435,6 +435,7 @@ class SondeInstallation(BaseMixin, Base):
     An object used to map the 'sonde_installation' table.
     """
     __tablename__ = 'sonde_installation'
+
     install_uuid = Column(UUIDType(binary=False), primary_key=True)
     sonde_uuid = Column(
         UUIDType(binary=False), ForeignKey('sonde_feature.sonde_uuid'))
