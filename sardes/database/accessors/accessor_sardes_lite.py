@@ -448,6 +448,7 @@ class SondeInstallation(BaseMixin, Base):
 
 
 # ---- Pompes
+# ---- Hydrogeochemistry
 class PumpType(BaseMixin, Base):
     """
     An object used to map the 'pump_type' library.
@@ -458,6 +459,17 @@ class PumpType(BaseMixin, Base):
     pump_type_code = Column(String)
     pump_type_name = Column(String)
 
+
+class HGSamplingMethod(BaseMixin, Base):
+    """
+    An object used to map the 'hg_sampling_method' library.
+    """
+    __tablename__ = 'hg_sampling_method'
+
+    hg_sampling_method_id = Column(Integer, primary_key=True)
+    hg_sampling_method_code = Column(String)
+    hg_sampling_method_name = Column(String)
+    hg_sampling_method_desc = Column(String)
 
 
     """
