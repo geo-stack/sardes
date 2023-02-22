@@ -508,8 +508,24 @@ class HGSurvey(BaseMixin, Base):
     survey_note = Column(String)
 
 
+class HGFieldMeasurement(BaseMixin, Base):
     """
+    An object used to map the 'hg_field_measurement' library.
     """
+    __tablename__ = 'hg_field_measurement'
+
+    hg_field_measurement_id = Column(Integer, primary_key=True)
+    hg_survey_id = Column(
+        Integer,
+        ForeignKey('hg_survey.hg_survey_id'))
+    hg_param_id = Column(
+        Integer,
+        ForeignKey('hg_param.hg_param_id'))
+    hg_param_value = Column(String)
+    lim_detection = Column(Float)
+    lim_quantification = Column(Float)
+
+
 
 
 # ---- Processes
