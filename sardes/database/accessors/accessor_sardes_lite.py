@@ -485,6 +485,29 @@ class HGParam(BaseMixin, Base):
     cas_registry_number = Column(String)
     measurement_units = Column(String)
 
+
+class HGSurvey(BaseMixin, Base):
+    """
+    An object used to map the 'hg_survey' library.
+    """
+    __tablename__ = 'hg_survey'
+
+    hg_survey_id = Column(Integer, primary_key=True)
+    sampling_feature_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('sampling_feature.sampling_feature_uuid'))
+    hg_survey_datetime = Column(DateTime)
+    hg_survey_depth = Column(Float)
+    hg_survey_operator = Column(String)
+    hg_sampling_method_id = Column(
+        Integer,
+        ForeignKey('hg_sampling_method.hg_sampling_method_id'))
+    lab_sample_id = Column(String)
+    lab_report_date = Column(DateTime)
+    sample_filtered = Column(Boolean)
+    survey_note = Column(String)
+
+
     """
     """
 
