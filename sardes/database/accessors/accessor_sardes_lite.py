@@ -472,6 +472,19 @@ class HGSamplingMethod(BaseMixin, Base):
     hg_sampling_method_desc = Column(String)
 
 
+class HGParam(BaseMixin, Base):
+    """
+    An object used to map the 'hg_param' library.
+    """
+    __tablename__ = 'hg_param'
+
+    hg_param_id = Column(Integer, primary_key=True)
+    hg_param_code = Column(String)
+    hg_param_name = Column(String)
+    hg_param_alt_name = Column(String)
+    cas_registry_number = Column(String)
+    measurement_units = Column(String)
+
     """
     """
 
