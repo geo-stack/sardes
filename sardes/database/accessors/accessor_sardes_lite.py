@@ -453,9 +453,11 @@ class PumpType(BaseMixin, Base):
     An object used to map the 'pump_type' library.
     """
     __tablename__ = 'pump_type'
+
     pump_type_id = Column(Integer, primary_key=True)
-    pump_type_abb = Column(String)
-    pump_type_desc = Column(String)
+    pump_type_code = Column(String)
+    pump_type_name = Column(String)
+
 
 
     """
