@@ -545,6 +545,25 @@ class HGLabResults(BaseMixin, Base):
     code_analysis_method = Column(String)
 
 
+class Purge(BaseMixin, Base):
+    """
+    An object used to map the 'purge' library.
+    """
+    __tablename__ = 'purge'
+
+    purge_id = Column(Integer, primary_key=True)
+    hg_survey_id = Column(
+        Integer,
+        ForeignKey('hg_survey.hg_survey_id'))
+    purge_sequence_no = Column(Integer)
+    purge_seq_start = Column(DateTime)
+    purge_seq_end = Column(DateTime)
+    purge_outflow = Column(Float)
+    pump_type_id = Column(
+        Integer,
+        ForeignKey('pump_type.pump_type_id'))
+    pumping_depth = Column(Float)
+    static_water_level = Column(Float)
 
 
 # ---- Processes
