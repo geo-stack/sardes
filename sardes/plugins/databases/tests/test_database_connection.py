@@ -44,7 +44,7 @@ class DatabaseAccessorMock(DatabaseAccessorBase):
     def req_version(self):
         return 3
 
-    def update_database(self):
+    def _update_database(self):
         pass
 
     def _connect(self):
