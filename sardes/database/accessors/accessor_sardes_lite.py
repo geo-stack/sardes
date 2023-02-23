@@ -559,7 +559,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             raise p
 
     # ---- Database setup
-    def _create_table(self, table):
+    def _add_table(self, table):
         """
         Add a new table to the database.
         """
@@ -584,6 +584,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._create_table(table)
         self._session.commit()
 
+            self._add_table(table)
         self.execute("PRAGMA application_id = {}".format(APPLICATION_ID))
         self.execute("PRAGMA user_version = 2")
 
