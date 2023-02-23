@@ -577,18 +577,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                   SondeFeature, SondeModel, SondeInstallation, Process, Repere,
                   ObservationType, Observation, ObservedProperty,
                   GenericNumericalData, TimeSeriesChannel,
-                  TimeSeriesData, SamplingFeatureAttachment]
+                  TimeSeriesData, SamplingFeatureAttachment,
+                  Remark, RemarkType]
         for table in tables:
             if inspect(self._engine).has_table(table.__tablename__):
                 continue
-            self._create_table(table)
-        self._session.commit()
-
             self._add_table(table)
         self.execute("PRAGMA application_id = {}".format(APPLICATION_ID))
         self.execute("PRAGMA user_version = 2")
-
-        self.update_database()
 
     def update_database(self):
         """
