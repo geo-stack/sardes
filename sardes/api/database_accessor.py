@@ -128,6 +128,13 @@ class DatabaseAccessorBase(ABC):
         """
         self._connection, self._connection_error = self._connect()
 
+    @writemethod
+    def update_database(self, auto_commit=True):
+        """
+        Update database schema to the latest version.
+        """
+        return self._update_database()
+
     @readmethod
     def get_timeseries_for_obs_well(self, obs_well_id, data_types=None):
         """
@@ -213,7 +220,7 @@ class DatabaseAccessor(DatabaseAccessorBase):
         pass
 
     @abstractmethod
-    def update_database(self):
+    def _update_database(self):
         """
         Update database schema to the latest version.
         """

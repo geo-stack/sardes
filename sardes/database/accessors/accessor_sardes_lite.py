@@ -590,7 +590,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self.execute("PRAGMA user_version = 2")
         self.commit_transaction()
 
-    def update_database(self):
+    def _update_database(self):
         """
         Update database to the latest schema version.
         """
