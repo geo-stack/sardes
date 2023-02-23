@@ -572,6 +572,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         Initialize the tables and attributes of a new database.
         """
+        self.begin_transaction()
         tables = [Location, SamplingFeatureType, SamplingFeature,
                   SamplingFeatureMetadata, SamplingFeatureDataOverview,
                   SondeFeature, SondeModel, SondeInstallation, Process, Repere,
@@ -585,6 +586,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._add_table(table)
         self.execute("PRAGMA application_id = {}".format(APPLICATION_ID))
         self.execute("PRAGMA user_version = 2")
+        self.commit_transaction()
 
     def update_database(self):
         """
