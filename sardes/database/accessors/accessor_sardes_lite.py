@@ -553,7 +553,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
     def execute(self, sql_request, **kwargs):
         """Execute a SQL statement construct and return a ResultProxy."""
         try:
-            return self._engine.execute(sql_request, **kwargs)
+            return self._session.execute(sql_request, **kwargs)
         except ProgrammingError as p:
             print(p)
             raise p
