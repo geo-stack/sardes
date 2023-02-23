@@ -553,7 +553,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
     def execute(self, sql_request, **kwargs):
         """Execute a SQL statement construct and return a ResultProxy."""
         try:
-            return self._engine.execute(sql_request, **kwargs)
+            return self._session.execute(sql_request, **kwargs)
         except ProgrammingError as p:
             print(p)
             raise p
@@ -647,8 +647,11 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             connection = None
             connection_error = e
         else:
-            app_id = self.application_id()
-            version = self.version()
+            # We use the engine to fetch the 'application_id' and
+            # 'user_version' to avoid beginning a new transaction in
+            # the session.
+            app_id = self._engine.execute("PRAGMA application_id").first()[0]
+            version = self._engine.execute("PRAGMA user_version").first()[0]
             if app_id != APPLICATION_ID:
                 connection = None
                 connection_error = sqlite3.DatabaseError(_(

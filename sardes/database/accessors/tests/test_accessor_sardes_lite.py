@@ -66,13 +66,17 @@ def assert_dataframe_equals(df1, df2, ignore_index=False):
 # ---- Fixtures
 # =============================================================================
 @pytest.fixture()
-def dbaccessor(tmp_path):
+def database(tmp_path):
+    return osp.join(tmp_path, 'sqlite_database_test.db')
+
+
+@pytest.fixture()
+def dbaccessor(database):
     """
     A Database SQlite accessor connected to an empty database that is
     reinitialized after each test.
     """
-    dbaccessor = DatabaseAccessorSardesLite(
-        osp.join(tmp_path, 'sqlite_database_test.db'))
+    dbaccessor = DatabaseAccessorSardesLite(database)
     dbaccessor.init_database()
 
     dbaccessor.connect()
@@ -85,7 +89,7 @@ def dbaccessor(tmp_path):
 
 
 @pytest.fixture()
-def dblocker(dbaccessor):
+def dblocker(database):
     class WorkerTest(WorkerBase):
         def __init__(self, database):
             super().__init__()
@@ -97,7 +101,8 @@ def dblocker(dbaccessor):
             self.dbaccessor.commit_transaction()
 
     dblocker = TaskManagerBase()
-    dblocker.set_worker(WorkerTest(dbaccessor._database))
+    dblocker.set_worker(WorkerTest(database))
+    dblocker.dbaccessor = dblocker._worker.dbaccessor
 
     return dblocker
 
@@ -1161,39 +1166,50 @@ def test_concurrent_read_write_access(qtbot, dblocker, dbaccessor,
 
     See cgq-qgc/sardes#534.
     """
+    assert not dbaccessor._session.in_transaction()
     name = obswells_data.attrs['name']
     data = dbaccessor.get(name)
     assert len(data) == 0
+    assert not dbaccessor._session.in_transaction()
 
+    assert not dblocker.dbaccessor._session.in_transaction()
     dblocker.add_task('lock_database', callback=None)
     dblocker.run_tasks()
     qtbot.wait(100)
+    assert dblocker.dbaccessor._session.in_transaction()
 
     # Test a writing method.
-    assert dbaccessor._begin_transaction_try_count == 1
+    assert not dbaccessor._session.in_transaction()
     _dict = obswells_data.to_dict('index')
     indexes = dbaccessor.add(
         name=name,
         values=_dict.values(),
         indexes=_dict.keys()
         )
+    assert not dbaccessor._session.in_transaction()
+
+    # Assert that it took more than one try for the dbaccessor to complete
+    # the transaction.
     assert dbaccessor._begin_transaction_try_count == 2
 
-    data = dbaccessor.get(name)
-    assert len(indexes) == 5
-    assert len(data) == 5
-
     # Test a reading method.
+    assert not dblocker.dbaccessor._session.in_transaction()
     dblocker.add_task('lock_database', callback=None)
     dblocker.run_tasks()
     qtbot.wait(100)
+    assert dblocker.dbaccessor._session.in_transaction()
 
-    assert dbaccessor._begin_transaction_try_count == 1
+    assert not dbaccessor._session.in_transaction()
     data = dbaccessor.get(name)
-    assert dbaccessor._begin_transaction_try_count == 2
-
+    assert len(indexes) == 5
     assert len(data) == 5
+    assert not dbaccessor._session.in_transaction()
+
+    # Assert that it took more than one try for the dbaccessor to complete
+    # the transaction.
+    assert dbaccessor._begin_transaction_try_count == 2
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', __file__, '-v', '-rw'])
+    pytest.main(['-x', __file__, '-v', '-rw',
+                 '-k', 'test_concurrent_read_write_access'])
