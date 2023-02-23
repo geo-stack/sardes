@@ -566,7 +566,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Base.metadata.create_all(self._engine, tables=[table.__table__])
         for item_attrs in table.initial_attrs():
             self._session.add(table(**item_attrs))
-        self._session.commit()
+        self._session.flush()
 
     def init_database(self):
         """
