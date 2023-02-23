@@ -603,7 +603,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 for table in [Remark, RemarkType]:
                     if inspect(self._engine).has_table(table.__tablename__):
                         continue
-                    self._create_table(table)
+                    self._add_table(table)
                 self.execute("PRAGMA user_version = 3")
                 self._session.commit()
         except Exception as error:
