@@ -19,6 +19,7 @@ import datetime
 import itertools
 import os
 import os.path as osp
+import shutil
 import uuid
 from uuid import UUID
 from time import sleep
@@ -1210,6 +1211,32 @@ def test_concurrent_read_write_access(qtbot, dblocker, dbaccessor,
     # Assert that it took more than one try for the dbaccessor to complete
     # the transaction.
     assert dbaccessor._begin_transaction_try_count == 2
+
+
+def test_update_database(tmp_path):
+    """
+    Test that updating the database from schema version 2 is
+    working as expected.
+    """
+    src_database = osp.join(osp.dirname(__file__), 'rsesq_prod_v2_sample.db')
+    dst_database = osp.join(tmp_path, 'rsesq_prod_v2_sample.db')
+    shutil.copy(src_database, dst_database)
+
+    dbaccessor = DatabaseAccessorSardesLite(dst_database)
+
+    # Update the database to the latest version.
+    assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 2
+    assert not dbaccessor._session.in_transaction()
+    dbaccessor.update_database()
+    assert not dbaccessor._session.in_transaction()
+    assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 3
+
+    # Try updating the database again to make sure this doesn't cause any bug.
+    assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 3
+    assert not dbaccessor._session.in_transaction()
+    dbaccessor.update_database()
+    assert not dbaccessor._session.in_transaction()
+    assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 3
 
 
 if __name__ == "__main__":
