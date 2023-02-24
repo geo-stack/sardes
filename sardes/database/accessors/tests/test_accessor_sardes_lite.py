@@ -78,9 +78,11 @@ def dbaccessor(database):
     """
     dbaccessor = DatabaseAccessorSardesLite(database)
     dbaccessor.init_database()
+    assert not dbaccessor._session.in_transaction()
 
     dbaccessor.connect()
     assert dbaccessor.is_connected()
+    assert not dbaccessor._session.in_transaction()
 
     yield dbaccessor
 
@@ -1211,5 +1213,4 @@ def test_concurrent_read_write_access(qtbot, dblocker, dbaccessor,
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', __file__, '-v', '-rw',
-                 '-k', 'test_concurrent_read_write_access'])
+    pytest.main(['-x', __file__, '-v', '-rw'])
