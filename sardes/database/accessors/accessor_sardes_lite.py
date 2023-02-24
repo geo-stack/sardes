@@ -565,7 +565,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         Add a new table to the database.
         """
-        Base.metadata.create_all(self._engine, tables=[table.__table__])
+        table.__table__.create(self._session.connection())
         for item_attrs in table.initial_attrs():
             self._session.add(table(**item_attrs))
         self._session.flush()
@@ -575,6 +575,11 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Initialize the tables and attributes of a new database.
         """
         self.begin_transaction()
+
+        existing_table_names = inspect(
+            self._session.connection()
+            ).get_table_names()
+
         tables = [Location, SamplingFeatureType, SamplingFeature,
                   SamplingFeatureMetadata, SamplingFeatureDataOverview,
                   SondeFeature, SondeModel, SondeInstallation, Process, Repere,
@@ -583,11 +588,13 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                   TimeSeriesData, SamplingFeatureAttachment,
                   Remark, RemarkType]
         for table in tables:
-            if inspect(self._engine).has_table(table.__tablename__):
+            if table.__tablename__ in existing_table_names:
                 continue
             self._add_table(table)
-        self.execute("PRAGMA application_id = {}".format(APPLICATION_ID))
-        self.execute("PRAGMA user_version = 2")
+
+        self.execute(f"PRAGMA application_id = {APPLICATION_ID}")
+        self.execute(f"PRAGMA user_version = {CURRENT_SCHEMA_VERSION}")
+
         self.commit_transaction()
 
     def update_database(self):
