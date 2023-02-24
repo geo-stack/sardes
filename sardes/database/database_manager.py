@@ -67,8 +67,8 @@ class DatabaseConnectionWorker(WorkerBase):
         """Try to update the database schema to the latest version."""
         cur_version = db_accessor.version()
         req_version = db_accessor.req_version()
-        print("Updating database to version {} from {}...".format(
-            req_version, cur_version))
+        print("Updating database from version {} to {}...".format(
+            cur_version, req_version))
 
         from_version, to_version, error = db_accessor.update_database()
         return from_version, to_version, error
