@@ -447,7 +447,6 @@ class SondeInstallation(BaseMixin, Base):
     process_id = Column(Integer, ForeignKey('process.process_id'))
 
 
-# ---- Pompes
 # ---- Hydrogeochemistry
 class PumpType(BaseMixin, Base):
     """
@@ -680,7 +679,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                   ObservationType, Observation, ObservedProperty,
                   GenericNumericalData, TimeSeriesChannel,
                   TimeSeriesData, SamplingFeatureAttachment,
-                  Remark, RemarkType]
+                  Remark, RemarkType,
+                  PumpType, HGSamplingMethod, HGParam, Purge,
+                  HGSurvey, HGFieldMeasurement, HGLabResults
+                  ]
         for table in tables:
             if table.__tablename__ in existing_table_names:
                 continue
@@ -719,7 +721,31 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 self._session.rollback()
                 return (from_version,
                         to_version,
-                        DatabaseUpdateError(from_version, 3, error))
+                        DatabaseUpdateError(from_version, to_version, error))
+            else:
+                self.commit_transaction()
+
+        to_version = 4
+        if self.version() < to_version:
+            self.begin_transaction()
+            try:
+                # Remove the old tables 'pump_type' and 'pump_installation'.
+                for table_name in ['pump_type', 'pump_installation']:
+                    if table_name in existing_table_names:
+                        self.execute(f'DROP TABLE {table_name}')
+                        self._session.flush()
+                # Add the new tables which were added in Sardes v0.13.0 for
+                # the hydrogeochemistry.
+                for table in [PumpType, HGSamplingMethod, HGParam, Purge,
+                              HGSurvey, HGFieldMeasurement, HGLabResults]:
+                    if table.__tablename__ not in existing_table_names:
+                        self._add_table(table)
+                self.execute(f"PRAGMA user_version = {to_version}")
+            except Exception as error:
+                self._session.rollback()
+                return (from_version,
+                        to_version,
+                        DatabaseUpdateError(from_version, to_version, error))
             else:
                 self.commit_transaction()
 
