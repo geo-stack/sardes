@@ -608,6 +608,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
     def begin_transaction(self, exclusive=True):
         """Begin a new transaction with the database."""
         if self._session.in_transaction():
+            # The session is already in transaction with the database, so
+            # there is no need to begin a new transaction.
             return
 
         ts = perf_counter()
@@ -647,62 +649,79 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
     def execute(self, sql_request, **kwargs):
         """Execute a SQL statement construct and return a ResultProxy."""
         try:
-            return self._engine.execute(sql_request, **kwargs)
+            return self._session.execute(sql_request, **kwargs)
         except ProgrammingError as p:
             print(p)
             raise p
 
     # ---- Database setup
-    def _create_table(self, table):
+    def _add_table(self, table):
         """
         Add a new table to the database.
         """
-        Base.metadata.create_all(self._engine, tables=[table.__table__])
+        table.__table__.create(self._session.connection())
         for item_attrs in table.initial_attrs():
             self._session.add(table(**item_attrs))
-        self._session.commit()
+        self._session.flush()
 
     def init_database(self):
         """
         Initialize the tables and attributes of a new database.
         """
+        self.begin_transaction()
+
+        existing_table_names = inspect(
+            self._session.connection()
+            ).get_table_names()
+
         tables = [Location, SamplingFeatureType, SamplingFeature,
                   SamplingFeatureMetadata, SamplingFeatureDataOverview,
                   SondeFeature, SondeModel, SondeInstallation, Process, Repere,
                   ObservationType, Observation, ObservedProperty,
                   GenericNumericalData, TimeSeriesChannel,
-                  TimeSeriesData, SamplingFeatureAttachment]
+                  TimeSeriesData, SamplingFeatureAttachment,
+                  Remark, RemarkType]
         for table in tables:
-            if inspect(self._engine).has_table(table.__tablename__):
+            if table.__tablename__ in existing_table_names:
                 continue
-            self._create_table(table)
-        self._session.commit()
+            self._add_table(table)
 
-        self.execute("PRAGMA application_id = {}".format(APPLICATION_ID))
-        self.execute("PRAGMA user_version = 2")
+        self.execute(f"PRAGMA application_id = {APPLICATION_ID}")
+        self.execute(f"PRAGMA user_version = {CURRENT_SCHEMA_VERSION}")
 
-        self.update_database()
+        self.commit_transaction()
 
     def update_database(self):
         """
         Update database to the latest schema version.
         """
+        self.begin_transaction()
+        existing_table_names = inspect(
+            self._session.connection()
+            ).get_table_names()
         from_version = self.version()
+        self.commit_transaction()
+
         if from_version == CURRENT_SCHEMA_VERSION:
             return from_version, CURRENT_SCHEMA_VERSION, None
 
-        try:
-            if self.version() <= 2:
-                # Add the 'remark' and 'remark_type' tables, which were added
-                # in Sardes v0.13.0.
+        to_version = 3
+        if self.version() < to_version:
+            self.begin_transaction()
+            try:
+                # Add the 'remark' and 'remark_type' tables, which were
+                # added in Sardes v0.13.0.
                 for table in [Remark, RemarkType]:
-                    if inspect(self._engine).has_table(table.__tablename__):
-                        continue
-                    self._create_table(table)
-                self.execute("PRAGMA user_version = 3")
-                self._session.commit()
-        except Exception as error:
-            return from_version, 3, DatabaseUpdateError(from_version, 3, error)
+                    if table.__tablename__ not in existing_table_names:
+                        self._add_table(table)
+                self.execute(f"PRAGMA user_version = {to_version}")
+            except Exception as error:
+                self._session.rollback()
+                return (from_version,
+                        to_version,
+                        DatabaseUpdateError(from_version, 3, error))
+            else:
+                self.commit_transaction()
 
         return from_version, CURRENT_SCHEMA_VERSION, None
 
@@ -736,11 +755,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # See https://stackoverflow.com/questions/48218065
         # See https://docs.python.org/3/library/sqlite3.html
         try:
-            conn = self._engine.connect()
+            self.begin_transaction()
         except DBAPIError as e:
             connection = None
             connection_error = e
         else:
+            # We use the engine to fetch the 'application_id' and
+            # 'user_version' to avoid beginning a new transaction in
+            # the session.
             app_id = self.application_id()
             version = self.version()
             if app_id != APPLICATION_ID:
@@ -761,7 +783,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             else:
                 connection = True
                 connection_error = None
-            conn.close()
+            self.commit_transaction()
         return connection, connection_error
 
     def close_connection(self):

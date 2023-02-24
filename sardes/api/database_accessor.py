@@ -21,6 +21,40 @@ from pandas import Series, DataFrame
 from pandas.api.types import is_list_like
 
 
+# ---- Decorators
+def readmethod(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        return _transaction_wrapper(self, func, 'read', *args, **kwargs)
+    return wrapper
+
+
+def writemethod(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        return _transaction_wrapper(self, func, 'write', *args, **kwargs)
+    return wrapper
+
+
+def _transaction_wrapper(self, func, mode, *args, **kwargs):
+    while self._is_busy:
+        # This can happend when the database accessor is
+        # used in multiple threads.
+        print('Waiting for database accessor because it is busy...')
+        sleep(1)
+
+    self._is_busy = True
+    self.begin_transaction()
+    try:
+        results = func(self, *args, **kwargs)
+        if mode == 'read' or kwargs.get('auto_commit', True):
+            self.commit_transaction()
+    finally:
+        self._is_busy = False
+
+    return results
+
+
 class DatabaseAccessorError(Exception):
     """The basic Exception class for Sardes database accessor."""
 
@@ -42,37 +76,6 @@ class DatabaseAccessorBase(ABC):
         self._connection = None
         self._connection_error = None
         self._is_busy = False
-
-    # ---- Decorators
-    def readmethod(func):
-        @functools.wraps(func)
-        def wrapper(self, *args, **kwargs):
-            return self._transaction_wrapper(func, 'read', *args, **kwargs)
-        return wrapper
-
-    def writemethod(func):
-        @functools.wraps(func)
-        def wrapper(self, *args, **kwargs):
-            return self._transaction_wrapper(func, 'write', *args, **kwargs)
-        return wrapper
-
-    def _transaction_wrapper(self, func, mode, *args, **kwargs):
-        while self._is_busy:
-            # This can happend when the database accessor is
-            # used in multiple threads.
-            print('Waiting for database accessor because it is busy...')
-            sleep(1)
-
-        self._is_busy = True
-        self.begin_transaction()
-        try:
-            results = func(self, *args, **kwargs)
-            if mode == 'read' or kwargs.get('auto_commit', True):
-                self.commit_transaction()
-        finally:
-            self._is_busy = False
-
-        return results
 
     # ---- Public API
     @readmethod
