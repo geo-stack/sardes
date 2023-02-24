@@ -650,7 +650,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         # See https://stackoverflow.com/questions/48218065
         # See https://docs.python.org/3/library/sqlite3.html
         try:
-            conn = self._engine.connect()
+            self.begin_transaction()
         except DBAPIError as e:
             connection = None
             connection_error = e
@@ -658,8 +658,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             # We use the engine to fetch the 'application_id' and
             # 'user_version' to avoid beginning a new transaction in
             # the session.
-            app_id = self._engine.execute("PRAGMA application_id").first()[0]
-            version = self._engine.execute("PRAGMA user_version").first()[0]
+            app_id = self.application_id()
+            version = self.version()
             if app_id != APPLICATION_ID:
                 connection = None
                 connection_error = sqlite3.DatabaseError(_(
@@ -678,7 +678,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             else:
                 connection = True
                 connection_error = None
-            conn.close()
+            self.commit_transaction()
         return connection, connection_error
 
     def close_connection(self):
