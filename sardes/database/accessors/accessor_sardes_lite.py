@@ -601,22 +601,33 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         """
         Update database to the latest schema version.
         """
+        self.begin_transaction()
+        existing_table_names = inspect(
+            self._session.connection()
+            ).get_table_names()
         from_version = self.version()
+        self.commit_transaction()
+
         if from_version == CURRENT_SCHEMA_VERSION:
             return from_version, CURRENT_SCHEMA_VERSION, None
 
-        try:
-            if self.version() <= 2:
-                # Add the 'remark' and 'remark_type' tables, which were added
-                # in Sardes v0.13.0.
+        to_version = 3
+        if self.version() < to_version:
+            self.begin_transaction()
+            try:
+                # Add the 'remark' and 'remark_type' tables, which were
+                # added in Sardes v0.13.0.
                 for table in [Remark, RemarkType]:
-                    if inspect(self._engine).has_table(table.__tablename__):
-                        continue
-                    self._add_table(table)
-                self.execute("PRAGMA user_version = 3")
-                self._session.commit()
-        except Exception as error:
-            return from_version, 3, DatabaseUpdateError(from_version, 3, error)
+                    if table.__tablename__ not in existing_table_names:
+                        self._add_table(table)
+                self.execute(f"PRAGMA user_version = {to_version}")
+            except Exception as error:
+                self._session.rollback()
+                return (from_version,
+                        to_version,
+                        DatabaseUpdateError(from_version, 3, error))
+            else:
+                self.commit_transaction()
 
         return from_version, CURRENT_SCHEMA_VERSION, None
 
