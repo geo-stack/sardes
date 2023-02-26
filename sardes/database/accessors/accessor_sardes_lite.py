@@ -455,8 +455,8 @@ class PumpType(BaseMixin, Base):
     __tablename__ = 'pump_type'
 
     pump_type_id = Column(Integer, primary_key=True)
-    pump_type_code = Column(String)
     pump_type_name = Column(String)
+    pump_type_desc = Column(String)
 
 
 class HGSamplingMethod(BaseMixin, Base):
