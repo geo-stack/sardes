@@ -820,52 +820,26 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
     # ---- Repere Data Interface
     def _get_repere_data(self):
-        query = self._session.query(Repere)
-        repere = pd.read_sql_query(
-            query.statement, self._session.connection(), coerce_float=True,
-            index_col='repere_uuid',
+        return self._get_table_data(
+            Repere,
             parse_dates={'start_date': TO_DATETIME_ARGS,
                          'end_date': TO_DATETIME_ARGS}
             )
 
-        return repere
-
     def _add_repere_data(self, values, indexes=None):
-        n = len(values)
-
-        # Generate new indexes if needed.
-        if indexes is None:
-            indexes = Repere.gen_new_ids(self._session, n)
-
-        self._session.add_all([
-            Repere(repere_uuid=index) for index in indexes
-            ])
-        self._session.flush()
-
-        # Set the attribute values of the new repere data.
-        for i in range(n):
-            self._set_repere_data(indexes[i], values[i])
-
-        return indexes
+        return self._add_table_data(
+            Repere, values, indexes,
+            datetime_fields=['start_date', 'end_date']
+            )
 
     def _set_repere_data(self, index, values):
-        repere = (
-            self._session.query(Repere)
-            .filter(Repere.repere_uuid == index)
-            .one())
-
-        for attr_name, attr_value in values.items():
-            if attr_name in ['start_date', 'end_date']:
-                # We need to make sure pandas NaT are replaced by None
-                # to avoid errors in sqlalchemy.
-                attr_value = None if pd.isnull(attr_value) else attr_value
-            setattr(repere, attr_name, attr_value)
+        return self._set_table_data(
+            Repere, index, values,
+            datetime_fields=['start_date', 'end_date']
+            )
 
     def _del_repere_data(self, repere_ids):
-        self._session.execute(
-            Repere.__table__.delete().where(
-                Repere.repere_uuid.in_(repere_ids)))
-        self._session.flush()
+        return self._del_table_data(Repere, repere_ids)
 
     # ---- Sondes Models Interface
     def _get_sonde_models_lib(self):
