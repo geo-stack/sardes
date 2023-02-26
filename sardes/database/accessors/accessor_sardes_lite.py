@@ -1635,37 +1635,13 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
     # ---- Remark Types interface
     def _get_remark_types(self):
-        query = self._session.query(RemarkType)
-        remark_types = pd.read_sql_query(
-            query.statement, self._session.connection(), coerce_float=True,
-            index_col='remark_type_id')
-
-        return remark_types
+        return self._get_table_data(RemarkType)
 
     def _set_remark_types(self, index, values):
-        remark_type = (
-            self._session.query(RemarkType)
-            .filter(RemarkType.remark_type_id == index)
-            .one())
-        for attr_name, attr_value in values.items():
-            setattr(remark_type, attr_name, attr_value)
+        self._set_table_data(RemarkType, index, values)
 
     def _add_remark_types(self, values, indexes=None):
-        n = len(values)
-
-        # Generate new indexes if needed.
-        if indexes is None:
-            indexes = RemarkType.gen_new_ids(self._session, n)
-
-        self._session.add_all([
-            RemarkType(
-                remark_type_id=indexes[i],
-                **values[i]
-                ) for i in range(n)
-            ])
-        self._session.flush()
-
-        return indexes
+        return self._add_table_data(RemarkType, values, indexes)
 
     def _del_remark_types(self, remark_type_ids):
         # Check for foreign key violation.
