@@ -104,17 +104,18 @@ class BaseMixin(object):
         default values after creation.
         """
         return []
+    
+    @classmethod
+    def get_primary_colnames(cls):
+        mapper = inspect(cls)
+        return [col for col in mapper.columns if col.primary_key]
 
     @classmethod
     def gen_new_ids(cls, session, n):
         """
         Generate a list of new primary key ids to use for new objects.
         """
-        mapper = inspect(cls)
-        primary_columns = []
-        for column in mapper.columns:
-            if column.primary_key:
-                primary_columns.append(column)
+        primary_columns = cls.get_primary_colnames()
         if len(primary_columns) == 0:
             raise ValueError('No primary key found.')
         elif len(primary_columns) > 1:
