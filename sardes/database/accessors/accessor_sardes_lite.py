@@ -662,6 +662,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         for item_attrs in table.initial_attrs():
             self._session.add(table(**item_attrs))
         self._session.flush()
+        
+    def _get_table_names(self):
+        return inspect(self._session.connection()).get_table_names()
 
     def init_database(self):
         """
@@ -698,9 +701,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Update database to the latest schema version.
         """
         self.begin_transaction()
-        existing_table_names = inspect(
-            self._session.connection()
-            ).get_table_names()
         from_version = self.version()
         self.commit_transaction()
 
@@ -712,13 +712,17 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self.begin_transaction()
             try:
                 # Remove the old tables 'pump_type' and 'pump_installation'.
+                existing_table_names = self._get_table_names()
                 for table_name in ['pump_type', 'pump_installation']:
                     if table_name in existing_table_names:
                         self.execute(f'DROP TABLE {table_name}')
                         self._session.flush()
                 # Add the new tables that were  added in Sardes v0.13.0 for
-                # the remarks.
-                for table in [Remark, RemarkType]:
+                # the remarks and hydrogeochemistry.
+                existing_table_names = self._get_table_names()
+                for table in [Remark, RemarkType, PumpType, HGParam,
+                              HGSamplingMethod, Purge, HGSurvey,
+                              HGFieldMeasurement, HGLabResults]:
                     if table.__tablename__ not in existing_table_names:
                         self._add_table(table)
                 # Add the new tables that were added in Sardes v0.13.0 for
