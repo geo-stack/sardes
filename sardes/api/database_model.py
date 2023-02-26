@@ -354,6 +354,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
             ),
         )
     ),
+    # ---- Remarks
     'remarks': Table(
         columns=(
             Column(
@@ -420,6 +421,26 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 name='remark_type_desc',
                 dtype='str',
                 desc=("The description of the remark type.")
+            ),
+        )
+    ),
+    # ---- Hydrogeochemistry
+    'pump_types': Table(
+        foreign_constraints=(
+            ('pump_type_id', 'purge'),
+        ),
+        columns=(
+            Column(
+                name='pump_type_name',
+                dtype='str',
+                desc=("A unique name to identify the pump type."),
+                notnull=True,
+                unique=True,
+            ),
+            Column(
+                name='pump_type_desc',
+                dtype='str',
+                desc=("The description of the pump type."),
             ),
         )
     ),
