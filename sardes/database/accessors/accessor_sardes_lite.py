@@ -869,10 +869,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
     # ---- Sondes Models Interface
     def _get_sonde_models_lib(self):
-        query = self._session.query(SondeModel)
-        sonde_models = pd.read_sql_query(
-            query.statement, self._session.connection(), coerce_float=True,
-            index_col='sonde_model_id')
+        sonde_models = self._get_table_data(SondeModel)
 
         # Combine the brand and model into a same field.
         sonde_models['sonde_brand_model'] = (
@@ -884,48 +881,20 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return sonde_models
 
     def _set_sonde_models_lib(self, index, values):
-        sonde = (self._session.query(SondeModel)
-                 .filter(SondeModel.sonde_model_id == index)
-                 .one())
-        for attr_name, attr_value in values.items():
-            setattr(sonde, attr_name, attr_value)
+        return self._set_table_data(SondeModel, index, values)
 
     def _add_sonde_models_lib(self, values, indexes=None):
-        n = len(values)
-
-        # Generate new indexes if needed.
-        if indexes is None:
-            indexes = SondeModel.gen_new_ids(self._session, n)
-
-        self._session.add_all([
-            SondeModel(
-                sonde_model_id=indexes[i],
-                **values[i]
-                ) for i in range(n)
-            ])
-        self._session.flush()
-
-        return indexes
+        return self._add_table_data(
+            SondeModel, values, indexes,
+            datetime_fields=['period_start', 'period_end', 'remark_date']
+            )
 
     def _del_sonde_models_lib(self, sonde_model_ids):
-        # Check for foreign key violation.
-        foreign_sonde_features_count = (
-            self._session.query(SondeFeature)
-            .filter(SondeFeature.sonde_model_id.in_(sonde_model_ids))
-            .count()
+        return self._del_table_data(
+            SondeModel,
+            sonde_model_ids,
+            foreign_constraints=[(SondeFeature, 'sonde_model_id')]
             )
-        if foreign_sonde_features_count > 0:
-            raise DatabaseAccessorError(
-                self,
-                "deleting SondeModel items violate foreign key "
-                "contraint on SondeFeature.sonde_model_id."
-                )
-
-        # Delete the SondeModel items from the database.
-        self._session.execute(
-            SondeModel.__table__.delete().where(
-                SondeModel.sonde_model_id.in_(sonde_model_ids)))
-        self._session.flush()
 
     # ---- Sondes Inventory Interface
     def _get_sondes_data(self):
