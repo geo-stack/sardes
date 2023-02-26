@@ -1673,7 +1673,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         elif len(primary_column) > 1:
             raise ValueError('More than one primary key found.')
         return primary_column[0].name
-        
+
     def _get_table_data(self, Table):
         primary_key = self._get_table_primary_key(Table)
         query = self._session.query(Table)
@@ -1681,7 +1681,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             query.statement, self._session.connection(), coerce_float=True,
             index_col=primary_key)
         return data
-    
+
     def _set_table_data(self, Table, index, values):
         primary_key = self._get_table_primary_key(Table)
         table_item = (
@@ -1690,7 +1690,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             .one())
         for attr_name, attr_value in values.items():
             setattr(table_item, attr_name, attr_value)
-            
+
     def _add_table_data(self, Table, values, indexes=None):
         n = len(values)
 
