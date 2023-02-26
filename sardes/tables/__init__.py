@@ -23,3 +23,5 @@ from .table_remark_types import (
     RemarkTypesTableModel, RemarkTypesTableWidget)
 from .table_remarks import (
     RemarksTableModel, RemarksTableWidget)
+from .table_pump_types import (
+    PumpTypesTableModel, PumpTypesTableWidget)
