@@ -1740,11 +1740,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Return a pandas dataframe containing the content of
         the 'observation' table.
         """
-        query = self._session.query(Observation)
-        observations = pd.read_sql_query(
-            query.statement, self._session.connection(), coerce_float=True)
-        observations.set_index('observation_id', inplace=True, drop=True)
-        return observations
+        return self._get_table_data(Observation)
 
     def _get_observation(self, observation_id):
         """
