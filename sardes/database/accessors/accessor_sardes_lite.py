@@ -1709,6 +1709,28 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return indexes
 
+    def _del_table_data(self, Table, del_indexes, foreign_constraints=()):
+        # Check for foreign key violation.
+        for ForeignTable, foreign_key in foreign_constraints:
+            foreign_items_count = (
+                self._session.query(ForeignTable)
+                .filter(getattr(ForeignTable, foreign_key).in_(del_indexes))
+                .count()
+                )
+            if foreign_items_count > 0:
+                raise DatabaseAccessorError(
+                    self,
+                    f"Deleting {Table.__name__} items violate foreign key"
+                    f"contraint on {ForeignTable.__name__}.{foreign_key}."
+                    )
+
+        # Delete the table items from the database.
+        primary_key = self._get_table_primary_key(Table)
+        self._session.execute(
+            Table.__table__.delete().where(
+                getattr(Table, primary_key).in_(del_indexes)))
+        self._session.flush()
+
     # ---- Private methods
     def _refresh_sampling_feature_data_overview(
             self, sampling_feature_uuid=None, auto_commit=True):
