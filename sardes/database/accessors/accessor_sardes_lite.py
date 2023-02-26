@@ -872,10 +872,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
     # ---- Sondes Inventory Interface
     def _get_sondes_data(self):
-        query = self._session.query(SondeFeature)
-        sondes = pd.read_sql_query(
-            query.statement, self._session.connection(), coerce_float=True,
-            index_col='sonde_uuid',
+        sondes_data = self._get_table_data(
+            SondeFeature,
             dtype={'in_repair': 'boolean',
                    'out_of_order': 'boolean',
                    'lost': 'boolean',
@@ -886,67 +884,27 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Strip the hour portion since it doesn't make sense here.
         for column in ['date_reception', 'date_withdrawal']:
-            sondes[column] = sondes[column].dt.normalize()
+            sondes_data[column] = sondes_data[column].dt.normalize()
 
-        return sondes
+        return sondes_data
 
     def _add_sondes_data(self, values, indexes=None):
-        n = len(values)
-
-        # Generate new indexes if needed.
-        if indexes is None:
-            indexes = SondeFeature.gen_new_ids(self._session, n)
-
-        # Make sure pandas NaT are replaced by None for datetime fields
-        # to avoid errors in sqlalchemy.
-        for i in range(n):
-            if pd.isnull(values[i].get('date_reception', True)):
-                values[i]['date_reception'] = None
-            if pd.isnull(values[i].get('date_withdrawal', True)):
-                values[i]['date_withdrawal'] = None
-
-        self._session.add_all([
-            SondeFeature(
-                sonde_uuid=indexes[i],
-                **values[i]
-                ) for i in range(n)
-            ])
-        self._session.flush()
-
-        return indexes
+        return self._add_table_data(
+            SondeFeature, values, indexes,
+            datetime_fields=['date_reception', 'date_withdrawal']
+            )
 
     def _set_sondes_data(self, index, values):
-        sonde = (
-            self._session.query(SondeFeature)
-            .filter(SondeFeature.sonde_uuid == index)
-            .one())
-
-        for attr_name, attr_value in values.items():
-            # Make sure pandas NaT are replaced by None for datetime fields
-            # to avoid errors in sqlalchemy.
-            if attr_name in ['date_reception', 'date_withdrawal']:
-                attr_value = None if pd.isnull(attr_value) else attr_value
-
-            setattr(sonde, attr_name, attr_value)
+        return self._set_table_data(
+            SondeFeature, index, values,
+            datetime_fields=['date_reception', 'date_withdrawal']
+            )
 
     def _del_sondes_data(self, sonde_ids):
-        # Check for foreign key violation.
-        foreign_sonde_installation = (
-            self._session.query(SondeInstallation)
-            .filter(SondeInstallation.sonde_uuid.in_(sonde_ids))
+        return self._del_table_data(
+            SondeFeature, sonde_ids,
+            foreign_constraints=[(SondeInstallation, 'sonde_uuid')]
             )
-        if foreign_sonde_installation.count() > 0:
-            raise DatabaseAccessorError(
-                self,
-                "deleting SondeFeature items violate foreign key "
-                "constraint on SondeInstallation.sonde_uuid."
-                )
-
-        # Delete the SondeFeature items from the database.
-        self._session.execute(
-            SondeFeature.__table__.delete().where(
-                SondeFeature.sonde_uuid.in_(sonde_ids)))
-        self._session.flush()
 
     # ---- Sonde Installations Interface
     def _get_sonde_installations(self):
