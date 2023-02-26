@@ -1645,24 +1645,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return self._add_table_data(RemarkType, values, indexes)
 
     def _del_remark_types(self, remark_type_ids):
-        # Check for foreign key violation.
-        foreign_remarks_count = (
-            self._session.query(Remark)
-            .filter(Remark.remark_type_id.in_(remark_type_ids))
-            .count()
+        self._del_table_data(
+            RemarkType,
+            remark_type_ids,
+            foreign_constraints=[(Remark, 'remark_type_id')]
             )
-        if foreign_remarks_count > 0:
-            raise DatabaseAccessorError(
-                self,
-                "deleting RemarkType items violate foreign key "
-                "contraint on Remark.remark_type_id."
-                )
 
-        # Delete the RemarkType items from the database.
-        self._session.execute(
-            RemarkType.__table__.delete().where(
-                RemarkType.remark_type_id.in_(remark_type_ids)))
-        self._session.flush()
 
         
     # ---- Generic methods
