@@ -1579,60 +1579,28 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
     # ---- Remarks interface
     def _get_remarks(self):
-        query = self._session.query(Remark)
-        remarks = pd.read_sql_query(
-            query.statement, self._session.connection(), coerce_float=True,
-            index_col='remark_id',
+        return self._get_table_data(
+            Remark,
             dtype={'remark_type_id': 'Int64'},
             parse_dates={'period_start': TO_DATETIME_ARGS,
                          'period_end': TO_DATETIME_ARGS,
                          'remark_date': TO_DATETIME_ARGS}
             )
-        return remarks
 
     def _set_remarks(self, index, values):
-        remark = (
-            self._session.query(Remark)
-            .filter(Remark.remark_id == index)
-            .one())
-
-        for attr_name, attr_value in values.items():
-            # Make sure pandas NaT are replaced by None for datetime fields
-            # to avoid errors in sqlalchemy.
-            if attr_name in ['period_start', 'period_end', 'remark_date']:
-                attr_value = None if pd.isnull(attr_value) else attr_value
-
-            setattr(remark, attr_name, attr_value)
+        return self._set_table_data(
+            Remark, index, values,
+            datetime_fields=('period_start', 'period_end', 'remark_date')
+            )
 
     def _add_remarks(self, values, indexes=None):
-        n = len(values)
-
-        # Generate new indexes if needed.
-        if indexes is None:
-            indexes = Remark.gen_new_ids(self._session, n)
-
-        # Make sure pandas NaT are replaced by None for datetime fields
-        # to avoid errors in sqlalchemy.
-        for i in range(n):
-            for field in ['period_start', 'period_end', 'remark_date']:
-                if pd.isnull(values[i].get(field, True)):
-                    values[i][field] = None
-
-        self._session.add_all([
-            Remark(
-                remark_id=indexes[i],
-                **values[i]
-                ) for i in range(n)
-            ])
-        self._session.flush()
-
-        return indexes
+        return self._add_table_data(
+            Remark, values, indexes,
+            datetime_fields=['period_start', 'period_end', 'remark_date']
+            )
 
     def _del_remarks(self, remark_ids):
-        self._session.execute(
-            Remark.__table__.delete().where(
-                Remark.remark_id.in_(remark_ids)))
-        self._session.flush()
+        return self._del_table_data(Remark, remark_ids)
 
     # ---- Remark Types interface
     def _get_remark_types(self):
