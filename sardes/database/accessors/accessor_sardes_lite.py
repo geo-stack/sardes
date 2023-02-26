@@ -1652,7 +1652,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             )
 
 
-        
     # ---- Generic methods
     def _get_table_primary_key(self, Table):
         primary_column = Table.get_primary_colnames()
@@ -1662,12 +1661,13 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             raise ValueError('More than one primary key found.')
         return primary_column[0].name
 
-    def _get_table_data(self, Table):
+    def _get_table_data(self, Table, **kwargs):
         primary_key = self._get_table_primary_key(Table)
         query = self._session.query(Table)
         data = pd.read_sql_query(
             query.statement, self._session.connection(), coerce_float=True,
-            index_col=primary_key)
+            index_col=primary_key,
+            **kwargs)
         return data
 
     def _set_table_data(self, Table, index, values, datetime_fields=()):
