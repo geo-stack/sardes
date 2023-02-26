@@ -104,17 +104,18 @@ class BaseMixin(object):
         default values after creation.
         """
         return []
+    
+    @classmethod
+    def get_primary_colnames(cls):
+        mapper = inspect(cls)
+        return [col for col in mapper.columns if col.primary_key]
 
     @classmethod
     def gen_new_ids(cls, session, n):
         """
         Generate a list of new primary key ids to use for new objects.
         """
-        mapper = inspect(cls)
-        primary_columns = []
-        for column in mapper.columns:
-            if column.primary_key:
-                primary_columns.append(column)
+        primary_columns = cls.get_primary_colnames()
         if len(primary_columns) == 0:
             raise ValueError('No primary key found.')
         elif len(primary_columns) > 1:
@@ -930,59 +931,30 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
     # ---- Repere Data Interface
     def _get_repere_data(self):
-        query = self._session.query(Repere)
-        repere = pd.read_sql_query(
-            query.statement, self._session.connection(), coerce_float=True,
-            index_col='repere_uuid',
+        return self._get_table_data(
+            Repere,
             parse_dates={'start_date': TO_DATETIME_ARGS,
                          'end_date': TO_DATETIME_ARGS}
             )
 
-        return repere
-
     def _add_repere_data(self, values, indexes=None):
-        n = len(values)
-
-        # Generate new indexes if needed.
-        if indexes is None:
-            indexes = Repere.gen_new_ids(self._session, n)
-
-        self._session.add_all([
-            Repere(repere_uuid=index) for index in indexes
-            ])
-        self._session.flush()
-
-        # Set the attribute values of the new repere data.
-        for i in range(n):
-            self._set_repere_data(indexes[i], values[i])
-
-        return indexes
+        return self._add_table_data(
+            Repere, values, indexes,
+            datetime_fields=['start_date', 'end_date']
+            )
 
     def _set_repere_data(self, index, values):
-        repere = (
-            self._session.query(Repere)
-            .filter(Repere.repere_uuid == index)
-            .one())
-
-        for attr_name, attr_value in values.items():
-            if attr_name in ['start_date', 'end_date']:
-                # We need to make sure pandas NaT are replaced by None
-                # to avoid errors in sqlalchemy.
-                attr_value = None if pd.isnull(attr_value) else attr_value
-            setattr(repere, attr_name, attr_value)
+        return self._set_table_data(
+            Repere, index, values,
+            datetime_fields=['start_date', 'end_date']
+            )
 
     def _del_repere_data(self, repere_ids):
-        self._session.execute(
-            Repere.__table__.delete().where(
-                Repere.repere_uuid.in_(repere_ids)))
-        self._session.flush()
+        return self._del_table_data(Repere, repere_ids)
 
     # ---- Sondes Models Interface
     def _get_sonde_models_lib(self):
-        query = self._session.query(SondeModel)
-        sonde_models = pd.read_sql_query(
-            query.statement, self._session.connection(), coerce_float=True,
-            index_col='sonde_model_id')
+        sonde_models = self._get_table_data(SondeModel)
 
         # Combine the brand and model into a same field.
         sonde_models['sonde_brand_model'] = (
@@ -994,55 +966,25 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return sonde_models
 
     def _set_sonde_models_lib(self, index, values):
-        sonde = (self._session.query(SondeModel)
-                 .filter(SondeModel.sonde_model_id == index)
-                 .one())
-        for attr_name, attr_value in values.items():
-            setattr(sonde, attr_name, attr_value)
+        return self._set_table_data(SondeModel, index, values)
 
     def _add_sonde_models_lib(self, values, indexes=None):
-        n = len(values)
-
-        # Generate new indexes if needed.
-        if indexes is None:
-            indexes = SondeModel.gen_new_ids(self._session, n)
-
-        self._session.add_all([
-            SondeModel(
-                sonde_model_id=indexes[i],
-                **values[i]
-                ) for i in range(n)
-            ])
-        self._session.flush()
-
-        return indexes
+        return self._add_table_data(
+            SondeModel, values, indexes,
+            datetime_fields=['period_start', 'period_end', 'remark_date']
+            )
 
     def _del_sonde_models_lib(self, sonde_model_ids):
-        # Check for foreign key violation.
-        foreign_sonde_features_count = (
-            self._session.query(SondeFeature)
-            .filter(SondeFeature.sonde_model_id.in_(sonde_model_ids))
-            .count()
+        return self._del_table_data(
+            SondeModel,
+            sonde_model_ids,
+            foreign_constraints=[(SondeFeature, 'sonde_model_id')]
             )
-        if foreign_sonde_features_count > 0:
-            raise DatabaseAccessorError(
-                self,
-                "deleting SondeModel items violate foreign key "
-                "contraint on SondeFeature.sonde_model_id."
-                )
-
-        # Delete the SondeModel items from the database.
-        self._session.execute(
-            SondeModel.__table__.delete().where(
-                SondeModel.sonde_model_id.in_(sonde_model_ids)))
-        self._session.flush()
 
     # ---- Sondes Inventory Interface
     def _get_sondes_data(self):
-        query = self._session.query(SondeFeature)
-        sondes = pd.read_sql_query(
-            query.statement, self._session.connection(), coerce_float=True,
-            index_col='sonde_uuid',
+        sondes_data = self._get_table_data(
+            SondeFeature,
             dtype={'in_repair': 'boolean',
                    'out_of_order': 'boolean',
                    'lost': 'boolean',
@@ -1053,67 +995,27 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         # Strip the hour portion since it doesn't make sense here.
         for column in ['date_reception', 'date_withdrawal']:
-            sondes[column] = sondes[column].dt.normalize()
+            sondes_data[column] = sondes_data[column].dt.normalize()
 
-        return sondes
+        return sondes_data
 
     def _add_sondes_data(self, values, indexes=None):
-        n = len(values)
-
-        # Generate new indexes if needed.
-        if indexes is None:
-            indexes = SondeFeature.gen_new_ids(self._session, n)
-
-        # Make sure pandas NaT are replaced by None for datetime fields
-        # to avoid errors in sqlalchemy.
-        for i in range(n):
-            if pd.isnull(values[i].get('date_reception', True)):
-                values[i]['date_reception'] = None
-            if pd.isnull(values[i].get('date_withdrawal', True)):
-                values[i]['date_withdrawal'] = None
-
-        self._session.add_all([
-            SondeFeature(
-                sonde_uuid=indexes[i],
-                **values[i]
-                ) for i in range(n)
-            ])
-        self._session.flush()
-
-        return indexes
+        return self._add_table_data(
+            SondeFeature, values, indexes,
+            datetime_fields=['date_reception', 'date_withdrawal']
+            )
 
     def _set_sondes_data(self, index, values):
-        sonde = (
-            self._session.query(SondeFeature)
-            .filter(SondeFeature.sonde_uuid == index)
-            .one())
-
-        for attr_name, attr_value in values.items():
-            # Make sure pandas NaT are replaced by None for datetime fields
-            # to avoid errors in sqlalchemy.
-            if attr_name in ['date_reception', 'date_withdrawal']:
-                attr_value = None if pd.isnull(attr_value) else attr_value
-
-            setattr(sonde, attr_name, attr_value)
+        return self._set_table_data(
+            SondeFeature, index, values,
+            datetime_fields=['date_reception', 'date_withdrawal']
+            )
 
     def _del_sondes_data(self, sonde_ids):
-        # Check for foreign key violation.
-        foreign_sonde_installation = (
-            self._session.query(SondeInstallation)
-            .filter(SondeInstallation.sonde_uuid.in_(sonde_ids))
+        return self._del_table_data(
+            SondeFeature, sonde_ids,
+            foreign_constraints=[(SondeInstallation, 'sonde_uuid')]
             )
-        if foreign_sonde_installation.count() > 0:
-            raise DatabaseAccessorError(
-                self,
-                "deleting SondeFeature items violate foreign key "
-                "constraint on SondeInstallation.sonde_uuid."
-                )
-
-        # Delete the SondeFeature items from the database.
-        self._session.execute(
-            SondeFeature.__table__.delete().where(
-                SondeFeature.sonde_uuid.in_(sonde_ids)))
-        self._session.flush()
 
     # ---- Sonde Installations Interface
     def _get_sonde_installations(self):
@@ -1689,48 +1591,97 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
     # ---- Remarks interface
     def _get_remarks(self):
-        query = self._session.query(Remark)
-        remarks = pd.read_sql_query(
-            query.statement, self._session.connection(), coerce_float=True,
-            index_col='remark_id',
+        return self._get_table_data(
+            Remark,
             dtype={'remark_type_id': 'Int64'},
             parse_dates={'period_start': TO_DATETIME_ARGS,
                          'period_end': TO_DATETIME_ARGS,
                          'remark_date': TO_DATETIME_ARGS}
             )
-        return remarks
 
     def _set_remarks(self, index, values):
-        remark = (
-            self._session.query(Remark)
-            .filter(Remark.remark_id == index)
-            .one())
+        return self._set_table_data(
+            Remark, index, values,
+            datetime_fields=('period_start', 'period_end', 'remark_date')
+            )
 
+    def _add_remarks(self, values, indexes=None):
+        return self._add_table_data(
+            Remark, values, indexes,
+            datetime_fields=['period_start', 'period_end', 'remark_date']
+            )
+
+    def _del_remarks(self, remark_ids):
+        return self._del_table_data(Remark, remark_ids)
+
+    # ---- Remark Types interface
+    def _get_remark_types(self):
+        return self._get_table_data(RemarkType)
+
+    def _set_remark_types(self, index, values):
+        return self._set_table_data(RemarkType, index, values)
+
+    def _add_remark_types(self, values, indexes=None):
+        return self._add_table_data(RemarkType, values, indexes)
+
+    def _del_remark_types(self, remark_type_ids):
+        return self._del_table_data(
+            RemarkType,
+            remark_type_ids,
+            foreign_constraints=[(Remark, 'remark_type_id')]
+            )
+
+
+    # ---- Generic methods
+    def _get_table_primary_key(self, Table):
+        primary_column = Table.get_primary_colnames()
+        if len(primary_column) == 0:
+            raise ValueError('No primary key found.')
+        elif len(primary_column) > 1:
+            raise ValueError('More than one primary key found.')
+        return primary_column[0].name
+
+    def _get_table_data(self, Table, **kwargs):
+        primary_key = self._get_table_primary_key(Table)
+        query = self._session.query(Table)
+        data = pd.read_sql_query(
+            query.statement, self._session.connection(), coerce_float=True,
+            index_col=primary_key,
+            **kwargs)
+        return data
+
+    def _set_table_data(self, Table, index, values, datetime_fields=()):
+        primary_key = self._get_table_primary_key(Table)
+        table_item = (
+            self._session.query(Table)
+            .filter(getattr(Table, primary_key) == index)
+            .one())
         for attr_name, attr_value in values.items():
             # Make sure pandas NaT are replaced by None for datetime fields
             # to avoid errors in sqlalchemy.
-            if attr_name in ['period_start', 'period_end', 'remark_date']:
+            if attr_name in datetime_fields:
                 attr_value = None if pd.isnull(attr_value) else attr_value
 
-            setattr(remark, attr_name, attr_value)
+            setattr(table_item, attr_name, attr_value)
 
-    def _add_remarks(self, values, indexes=None):
+    def _add_table_data(self, Table, values, indexes=None, datetime_fields=()):
         n = len(values)
 
         # Generate new indexes if needed.
         if indexes is None:
-            indexes = Remark.gen_new_ids(self._session, n)
+            indexes = Table.gen_new_ids(self._session, n)
 
         # Make sure pandas NaT are replaced by None for datetime fields
         # to avoid errors in sqlalchemy.
         for i in range(n):
-            for field in ['period_start', 'period_end', 'remark_date']:
+            for field in datetime_fields:
                 if pd.isnull(values[i].get(field, True)):
                     values[i][field] = None
 
+        primary_key = self._get_table_primary_key(Table)
         self._session.add_all([
-            Remark(
-                remark_id=indexes[i],
+            Table(
+                **{primary_key: indexes[i]},
                 **values[i]
                 ) for i in range(n)
             ])
@@ -1738,64 +1689,26 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
         return indexes
 
-    def _del_remarks(self, remark_ids):
-        self._session.execute(
-            Remark.__table__.delete().where(
-                Remark.remark_id.in_(remark_ids)))
-        self._session.flush()
-
-    # ---- Remark Types interface
-    def _get_remark_types(self):
-        query = self._session.query(RemarkType)
-        remark_types = pd.read_sql_query(
-            query.statement, self._session.connection(), coerce_float=True,
-            index_col='remark_type_id')
-
-        return remark_types
-
-    def _set_remark_types(self, index, values):
-        remark_type = (
-            self._session.query(RemarkType)
-            .filter(RemarkType.remark_type_id == index)
-            .one())
-        for attr_name, attr_value in values.items():
-            setattr(remark_type, attr_name, attr_value)
-
-    def _add_remark_types(self, values, indexes=None):
-        n = len(values)
-
-        # Generate new indexes if needed.
-        if indexes is None:
-            indexes = RemarkType.gen_new_ids(self._session, n)
-
-        self._session.add_all([
-            RemarkType(
-                remark_type_id=indexes[i],
-                **values[i]
-                ) for i in range(n)
-            ])
-        self._session.flush()
-
-        return indexes
-
-    def _del_remark_types(self, remark_type_ids):
+    def _del_table_data(self, Table, del_indexes, foreign_constraints=()):
         # Check for foreign key violation.
-        foreign_remarks_count = (
-            self._session.query(Remark)
-            .filter(Remark.remark_type_id.in_(remark_type_ids))
-            .count()
-            )
-        if foreign_remarks_count > 0:
-            raise DatabaseAccessorError(
-                self,
-                "deleting RemarkType items violate foreign key "
-                "contraint on Remark.remark_type_id."
+        for ForeignTable, foreign_key in foreign_constraints:
+            foreign_items_count = (
+                self._session.query(ForeignTable)
+                .filter(getattr(ForeignTable, foreign_key).in_(del_indexes))
+                .count()
                 )
+            if foreign_items_count > 0:
+                raise DatabaseAccessorError(
+                    self,
+                    f"Deleting {Table.__name__} items violate foreign key"
+                    f"contraint on {ForeignTable.__name__}.{foreign_key}."
+                    )
 
-        # Delete the RemarkType items from the database.
+        # Delete the table items from the database.
+        primary_key = self._get_table_primary_key(Table)
         self._session.execute(
-            RemarkType.__table__.delete().where(
-                RemarkType.remark_type_id.in_(remark_type_ids)))
+            Table.__table__.delete().where(
+                getattr(Table, primary_key).in_(del_indexes)))
         self._session.flush()
 
     # ---- Private methods
@@ -1925,11 +1838,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Return a pandas dataframe containing the content of
         the 'process' table.
         """
-        query = self._session.query(Process)
-        process = pd.read_sql_query(
-            query.statement, self._session.connection(), coerce_float=True)
-        process.set_index('process_id', inplace=True, drop=True)
-        return process
+        return self._get_table_data(Process)
 
     def _get_process(self, process_id):
         """Return the process related to the given process_id."""
@@ -1942,11 +1851,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Return a pandas dataframe containing the content of
         the 'observation' table.
         """
-        query = self._session.query(Observation)
-        observations = pd.read_sql_query(
-            query.statement, self._session.connection(), coerce_float=True)
-        observations.set_index('observation_id', inplace=True, drop=True)
-        return observations
+        return self._get_table_data(Observation)
 
     def _get_observation(self, observation_id):
         """
