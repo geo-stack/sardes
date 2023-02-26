@@ -1631,6 +1631,22 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             foreign_constraints=[(Remark, 'remark_type_id')]
             )
 
+    # ---- Hydrogeochemistry
+    def _get_pump_types(self):
+        return self._get_table_data(PumpType)
+
+    def _set_pump_types(self, index, values):
+        self._set_table_data(PumpType, index, values)
+
+    def _add_pump_types(self, values, indexes=None):
+        return self._add_table_data(PumpType, values, indexes)
+
+    def _del_pump_types(self, pump_type_ids):
+        return self._del_table_data(
+            PumpType,
+            pump_type_ids,
+            foreign_constraints=[(Purge, 'pump_type_id')]
+            )
 
     # ---- Generic methods
     def _get_table_primary_key(self, Table):
