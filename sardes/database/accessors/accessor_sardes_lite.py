@@ -1639,13 +1639,13 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return self._get_table_data(RemarkType)
 
     def _set_remark_types(self, index, values):
-        self._set_table_data(RemarkType, index, values)
+        return self._set_table_data(RemarkType, index, values)
 
     def _add_remark_types(self, values, indexes=None):
         return self._add_table_data(RemarkType, values, indexes)
 
     def _del_remark_types(self, remark_type_ids):
-        self._del_table_data(
+        return self._del_table_data(
             RemarkType,
             remark_type_ids,
             foreign_constraints=[(Remark, 'remark_type_id')]
