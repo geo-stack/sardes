@@ -1687,6 +1687,51 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 RemarkType.remark_type_id.in_(remark_type_ids)))
         self._session.flush()
 
+        
+    # ---- Generic methods
+    def _get_table_primary_key(self, Table):
+        primary_column = Table.get_primary_colnames()
+        if len(primary_column) == 0:
+            raise ValueError('No primary key found.')
+        elif len(primary_column) > 1:
+            raise ValueError('More than one primary key found.')
+        return primary_column[0].name
+        
+    def _get_table_data(self, Table):
+        primary_key = self._get_table_primary_key(Table)
+        query = self._session.query(Table)
+        data = pd.read_sql_query(
+            query.statement, self._session.connection(), coerce_float=True,
+            index_col=primary_key)
+        return data
+    
+    def _set_table_data(self, Table, index, values):
+        primary_key = self._get_table_primary_key(Table)
+        table_item = (
+            self._session.query(Table)
+            .filter(getattr(Table, primary_key) == index)
+            .one())
+        for attr_name, attr_value in values.items():
+            setattr(table_item, attr_name, attr_value)
+            
+    def _add_table_data(self, Table, values, indexes=None):
+        n = len(values)
+
+        # Generate new indexes if needed.
+        if indexes is None:
+            indexes = Table.gen_new_ids(self._session, n)
+
+        primary_key = self._get_table_primary_key(Table)
+        self._session.add_all([
+            Table(
+                **{primary_key: indexes[i]},
+                **values[i]
+                ) for i in range(n)
+            ])
+        self._session.flush()
+
+        return indexes
+
     # ---- Private methods
     def _refresh_sampling_feature_data_overview(
             self, sampling_feature_uuid=None, auto_commit=True):
