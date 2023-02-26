@@ -1727,11 +1727,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Return a pandas dataframe containing the content of
         the 'process' table.
         """
-        query = self._session.query(Process)
-        process = pd.read_sql_query(
-            query.statement, self._session.connection(), coerce_float=True)
-        process.set_index('process_id', inplace=True, drop=True)
-        return process
+        return self._get_table_data(Process)
 
     def _get_process(self, process_id):
         """Return the process related to the given process_id."""
