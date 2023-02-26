@@ -1670,21 +1670,33 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             index_col=primary_key)
         return data
 
-    def _set_table_data(self, Table, index, values):
+    def _set_table_data(self, Table, index, values, datetime_fields=()):
         primary_key = self._get_table_primary_key(Table)
         table_item = (
             self._session.query(Table)
             .filter(getattr(Table, primary_key) == index)
             .one())
         for attr_name, attr_value in values.items():
+            # Make sure pandas NaT are replaced by None for datetime fields
+            # to avoid errors in sqlalchemy.
+            if attr_name in datetime_fields:
+                attr_value = None if pd.isnull(attr_value) else attr_value
+
             setattr(table_item, attr_name, attr_value)
 
-    def _add_table_data(self, Table, values, indexes=None):
+    def _add_table_data(self, Table, values, indexes=None, datetime_fields=()):
         n = len(values)
 
         # Generate new indexes if needed.
         if indexes is None:
             indexes = Table.gen_new_ids(self._session, n)
+
+        # Make sure pandas NaT are replaced by None for datetime fields
+        # to avoid errors in sqlalchemy.
+        for i in range(n):
+            for field in datetime_fields:
+                if pd.isnull(values[i].get(field, True)):
+                    values[i][field] = None
 
         primary_key = self._get_table_primary_key(Table)
         self._session.add_all([
