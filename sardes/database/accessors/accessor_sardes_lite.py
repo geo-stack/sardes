@@ -725,12 +725,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                               HGFieldMeasurement, HGLabResults]:
                     if table.__tablename__ not in existing_table_names:
                         self._add_table(table)
-                # Add the new tables that were added in Sardes v0.13.0 for
-                # the hydrogeochemistry.
-                for table in [PumpType, HGSamplingMethod, HGParam, Purge,
-                              HGSurvey, HGFieldMeasurement, HGLabResults]:
-                    if table.__tablename__ not in existing_table_names:
-                        self._add_table(table)
                 self.execute(f"PRAGMA user_version = {to_version}")
             except Exception as error:
                 self._session.rollback()
