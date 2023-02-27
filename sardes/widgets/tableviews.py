@@ -1350,8 +1350,8 @@ class SardesTableView(QTableView):
     # ---- Column options
     def visible_columns(self):
         """
-        Return the list of data columns that are currently visible ordered
-        according to their visual index.
+        Returns the list of data column names that are currently visible,
+        ordered according to their visual index.
         """
         visible_columns = []
         for i in range(self.column_count()):
