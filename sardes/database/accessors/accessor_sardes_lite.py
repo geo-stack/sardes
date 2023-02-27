@@ -1631,12 +1631,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             foreign_constraints=[(Remark, 'remark_type_id')]
             )
 
-    # ---- Hydrogeochemistry
+    # ---- Pump Types interface
     def _get_pump_types(self):
         return self._get_table_data(PumpType)
 
     def _set_pump_types(self, index, values):
-        self._set_table_data(PumpType, index, values)
+        return self._set_table_data(PumpType, index, values)
 
     def _add_pump_types(self, values, indexes=None):
         return self._add_table_data(PumpType, values, indexes)
@@ -1648,6 +1648,22 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             foreign_constraints=[(Purge, 'pump_type_id')]
             )
 
+    # ---- HG Sampling Methods interface
+    def _get_hg_sampling_methods(self):
+        return self._get_table_data(HGSamplingMethod)
+
+    def _set_hg_sampling_methods(self, index, values):
+        return self._set_table_data(HGSamplingMethod, index, values)
+
+    def _add_hg_sampling_methods(self, values, indexes=None):
+        return self._add_table_data(HGSamplingMethod, values, indexes)
+
+    def _del_hg_sampling_methods(self, indexes):
+        return self._del_table_data(
+            HGSamplingMethod,
+            indexes,
+            foreign_constraints=[(HGSurvey, 'hg_sampling_method_id')]
+            )
 
     # ---- HG Params interface
     def _get_hg_params(self):
