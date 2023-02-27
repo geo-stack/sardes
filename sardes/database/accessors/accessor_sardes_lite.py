@@ -1648,6 +1648,26 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             foreign_constraints=[(Purge, 'pump_type_id')]
             )
 
+
+    # ---- HG Params interface
+    def _get_hg_params(self):
+        return self._get_table_data(HGParam)
+
+    def _set_hg_params(self, index, values):
+        return self._set_table_data(HGParam, index, values)
+
+    def _add_hg_params(self, values, indexes=None):
+        return self._add_table_data(HGParam, values, indexes)
+
+    def _del_hg_params(self, indexes):
+        return self._del_table_data(
+            HGParam,
+            indexes,
+            foreign_constraints=[
+                (HGFieldMeasurement, 'hg_param_id'),
+                (HGLabResults, 'hg_param_id')]
+            )
+
     # ---- Generic methods
     def _get_table_primary_key(self, Table):
         primary_column = Table.get_primary_colnames()
