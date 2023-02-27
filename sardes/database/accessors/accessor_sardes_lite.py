@@ -1683,6 +1683,32 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 (HGLabResults, 'hg_param_id')]
             )
 
+    # ---- Purges interface
+    def _get_purges(self):
+        return self._get_table_data(
+            Purge,
+            dtype={'hg_survey_id': 'Int64',
+                   'purge_sequence_no': 'Int64',
+                   'pump_type_id': 'Int64'},
+            parse_dates={'purge_seq_start': TO_DATETIME_ARGS,
+                         'purge_seq_end': TO_DATETIME_ARGS}
+            )
+
+    def _set_purges(self, index, values):
+        return self._set_table_data(
+            Purge, index, values,
+            datetime_fields=['purge_seq_start', 'purge_seq_end']
+            )
+
+    def _add_purges(self, values, indexes=None):
+        return self._add_table_data(
+            Purge, values, indexes,
+            datetime_fields=['purge_seq_start', 'purge_seq_end']
+            )
+
+    def _del_purges(self, indexes):
+        return self._del_table_data(Purge, indexes)
+
     # ---- Generic methods
     def _get_table_primary_key(self, Table):
         primary_column = Table.get_primary_colnames()
