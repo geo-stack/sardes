@@ -29,3 +29,5 @@ from .table_hg_sampling_methods import (
     HGSamplingMethodsTableModel, HGSamplingMethodsTableWidget)
 from .table_hg_params import (
     HGParamsTableModel, HGParamsTableWidget)
+from .table_purges import (
+    PurgesTableModel, PurgesTableWidget)
