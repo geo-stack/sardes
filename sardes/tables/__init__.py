@@ -25,3 +25,7 @@ from .table_remarks import (
     RemarksTableModel, RemarksTableWidget)
 from .table_pump_types import (
     PumpTypesTableModel, PumpTypesTableWidget)
+from .table_hg_sampling_methods import (
+    HGSamplingMethodsTableModel, HGSamplingMethodsTableWidget)
+from .table_hg_params import (
+    HGParamsTableModel, HGParamsTableWidget)
