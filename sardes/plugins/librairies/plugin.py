@@ -13,7 +13,8 @@ from sardes.api.plugins import SardesPlugin
 from sardes.config.locale import _
 from sardes.widgets.tableviews import SardesStackedTableWidget
 from sardes.tables import (
-    SondeModelsTableWidget, RemarkTypesTableWidget, PumpTypesTableWidget)
+    SondeModelsTableWidget, RemarkTypesTableWidget, PumpTypesTableWidget,
+    HGSamplingMethodsTableWidget, HGParamsTableWidget)
 
 
 """Tables plugin"""
@@ -111,6 +112,8 @@ class Librairies(SardesPlugin):
         self._create_and_register_table(SondeModelsTableWidget)
         self._create_and_register_table(RemarkTypesTableWidget)
         self._create_and_register_table(PumpTypesTableWidget)
+        self._create_and_register_table(HGSamplingMethodsTableWidget)
+        self._create_and_register_table(HGParamsTableWidget)
 
         # Setup the current active tab from the value saved in the configs.
         self.tabwidget.setCurrentIndex(self.get_option('last_focused_tab', 0))
