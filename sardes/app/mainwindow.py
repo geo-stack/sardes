@@ -484,6 +484,7 @@ class MainWindow(MainWindowBase):
         # Make sure all plugins are docked and visible.
         self.tables_plugin.dockwindow.dock()
         self.librairies_plugin.dockwindow.dock()
+        self.hydrogeochemistry_plugin.dockwindow.dock()
         self.data_import_plugin.dockwindow.dock()
         self.readings_plugin.dockwindow.dock()
 
@@ -501,10 +502,16 @@ class MainWindow(MainWindowBase):
         # Tabify dockwidget.
         self.tabifyDockWidget(
             self.tables_plugin.dockwidget(),
-            self.readings_plugin.dockwidget())
+            self.readings_plugin.dockwidget()
+            )
         self.tabifyDockWidget(
             self.readings_plugin.dockwidget(),
-            self.librairies_plugin.dockwidget())
+            self.librairies_plugin.dockwidget()
+            )
+        self.tabifyDockWidget(
+            self.librairies_plugin.dockwidget(),
+            self.hydrogeochemistry_plugin.dockwidget()
+            )
 
         # Resize dockwidgets.
         wf2 = int(500 / self.width() * 100)
@@ -541,6 +548,16 @@ class MainWindow(MainWindowBase):
         self.librairies_plugin = SARDES_PLUGIN_CLASS(self)
         self.librairies_plugin.register_plugin()
         self.internal_plugins.append(self.librairies_plugin)
+        print("Plugin '{}' loaded successfully".format(plugin_title))
+
+        # Hydrogeochemistry plugin.
+        from sardes.plugins.hydrogeochemistry import SARDES_PLUGIN_CLASS
+        plugin_title = SARDES_PLUGIN_CLASS.get_plugin_title()
+        print("Loading plugin '{}'...".format(plugin_title))
+        self.set_splash(_("Loading the {} plugin...").format(plugin_title))
+        self.hydrogeochemistry_plugin = SARDES_PLUGIN_CLASS(self)
+        self.hydrogeochemistry_plugin.register_plugin()
+        self.internal_plugins.append(self.hydrogeochemistry_plugin)
         print("Plugin '{}' loaded successfully".format(plugin_title))
 
         # Database plugin.
