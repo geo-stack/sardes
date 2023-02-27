@@ -467,7 +467,6 @@ class HGSamplingMethod(BaseMixin, Base):
     __tablename__ = 'hg_sampling_method'
 
     hg_sampling_method_id = Column(Integer, primary_key=True)
-    hg_sampling_method_code = Column(String)
     hg_sampling_method_name = Column(String)
     hg_sampling_method_desc = Column(String)
 
