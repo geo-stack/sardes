@@ -31,3 +31,5 @@ from .table_hg_params import (
     HGParamsTableModel, HGParamsTableWidget)
 from .table_purges import (
     PurgesTableModel, PurgesTableWidget)
+from .table_hg_surveys import (
+    HGSurveysTableModel, HGSurveysTableWidget)
