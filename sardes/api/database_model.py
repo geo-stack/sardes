@@ -9,7 +9,6 @@
 
 from collections import UserDict
 from collections import namedtuple
-import pandas as pd
 
 
 class ReadOnlyDict(UserDict):
@@ -520,7 +519,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
             ),
             Column(
                 name='hg_survey_datetime',
-                dtype='datetime',
+                dtype='datetime64[ns]',
                 desc=("The date and time when the survey was made."),
                 notnull=True,
             ),
@@ -546,7 +545,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
             ),
             Column(
                 name='lab_report_date',
-                dtype='datetime',
+                dtype='datetime64[ns]',
                 desc=("The date of the sample lab report."),
             ),
             Column(
@@ -653,13 +652,13 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
             ),
             Column(
                 name='purge_seq_start',
-                dtype='datetime',
+                dtype='datetime64[ns]',
                 desc=("The start date and time of the purge sequence."),
                 notnull=True,
             ),
             Column(
                 name='purge_seq_end',
-                dtype='datetime',
+                dtype='datetime64[ns]',
                 desc=("The end date and time of the purge sequence."),
                 notnull=True,
             ),
