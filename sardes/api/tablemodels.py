@@ -89,6 +89,8 @@ class SardesTableColumn():
     def __post_init__(self):
         if self.default is None and self.dtype == 'datetime64[ns]':
             self.default = pd.NaT
+        if self.default is None and self.dtype == 'Int64':
+            self.default = pd.NA
 
 
 # =============================================================================
