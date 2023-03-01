@@ -662,7 +662,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         for item_attrs in table.initial_attrs():
             self._session.add(table(**item_attrs))
         self._session.flush()
-        
+
     def _get_table_names(self):
         return inspect(self._session.connection()).get_table_names()
 
@@ -1675,6 +1675,37 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             foreign_constraints=[
                 (HGFieldMeasurement, 'hg_param_id'),
                 (HGLabResults, 'hg_param_id')]
+            )
+
+    # ---- HG Surveys
+    def _get_hg_surveys(self):
+        return self._get_table_data(
+            HGSurvey,
+            dtype={'hg_sampling_method_id': 'Int64',
+                   'sample_filtered': 'boolean'},
+            parse_dates={'hg_survey_datetime': TO_DATETIME_ARGS,
+                         'lab_report_date': TO_DATETIME_ARGS}
+            )
+
+    def _set_hg_surveys(self, index, values):
+        return self._set_table_data(
+            HGSurvey, index, values,
+            datetime_fields=['hg_survey_datetime', 'lab_report_date']
+            )
+
+    def _add_hg_surveys(self, values, indexes=None):
+        return self._add_table_data(
+            HGSurvey, values, indexes,
+            datetime_fields=['hg_survey_datetime', 'lab_report_date']
+            )
+
+    def _del_hg_surveys(self, indexes):
+        return self._del_table_data(
+            HGSurvey, indexes,
+            foreign_constraints=[
+                (HGFieldMeasurement, 'hg_survey_id'),
+                (HGLabResults, 'lab_sample_id'),
+                (Purge, 'hg_survey_id')]
             )
 
     # ---- Purges interface
