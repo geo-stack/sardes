@@ -107,8 +107,8 @@ class Hydrogeochemistry(SardesPlugin):
 
     # ---- Private methods
     def _setup_tables(self):
-        self._create_and_register_table(PurgesTableWidget)
         self._create_and_register_table(HGSurveysTableWidget)
+        self._create_and_register_table(PurgesTableWidget)
 
         # Setup the current active tab from the value saved in the configs.
         self.tabwidget.setCurrentIndex(self.get_option('last_focused_tab', 0))
