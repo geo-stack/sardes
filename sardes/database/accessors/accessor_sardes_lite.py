@@ -104,7 +104,7 @@ class BaseMixin(object):
         default values after creation.
         """
         return []
-    
+
     @classmethod
     def get_primary_colnames(cls):
         mapper = inspect(cls)
@@ -522,7 +522,6 @@ class HGFieldMeasurement(BaseMixin, Base):
         ForeignKey('hg_param.hg_param_id'))
     hg_param_value = Column(String)
     lim_detection = Column(Float)
-    lim_quantification = Column(Float)
 
 
 class HGLabResults(BaseMixin, Base):
@@ -540,7 +539,6 @@ class HGLabResults(BaseMixin, Base):
         ForeignKey('hg_param.hg_param_id'))
     hg_param_value = Column(String)
     lim_detection = Column(Float)
-    lim_quantification = Column(Float)
     code_analysis_method = Column(String)
 
 

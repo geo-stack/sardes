@@ -588,12 +588,6 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 desc=("The limit of detection of the method used to "
                       "take the field measurement."),
             ),
-            Column(
-                name='lim_quantification',
-                dtype='float64',
-                desc=("The limit of quantification of the method used to "
-                      "take the field measurement."),
-            ),
         )
     ),
     'hg_lab_results': Table(
@@ -621,12 +615,6 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 name='lim_detection',
                 dtype='float64',
                 desc=("The limit of detection of the method used to "
-                      "analyse the result."),
-            ),
-            Column(
-                name='lim_quantification',
-                dtype='float64',
-                desc=("The limit of quantification of the method used to "
                       "analyse the result."),
             ),
             Column(
