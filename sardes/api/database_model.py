@@ -594,7 +594,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
         columns=(
             Column(
                 name='lab_sample_id',
-                dtype='Int64',
+                dtype='str',
                 desc=("The ID given to the sample by the lab."),
                 notnull=True,
             ),
