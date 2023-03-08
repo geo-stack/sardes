@@ -1731,6 +1731,32 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             HGFieldMeasurement, indexes
             )
 
+    # ---- HG Lab Results
+    def _get_hg_lab_results(self):
+        return self._get_table_data(
+            HGLabResults,
+            dtype={'lab_sample_id': 'str',
+                   'hg_param_id': 'Int64',
+                   'hg_param_value': 'str',
+                   'lim_detection': 'float64',
+                   'code_analysis_method': 'str'}
+            )
+
+    def _set_hg_lab_results(self, index, values):
+        return self._set_table_data(
+            HGLabResults, index, values
+            )
+
+    def _add_hg_lab_results(self, values, indexes=None):
+        return self._add_table_data(
+            HGLabResults, values, indexes,
+            )
+
+    def _del_hg_lab_results(self, indexes):
+        return self._del_table_data(
+            HGLabResults, indexes
+            )
+
     # ---- Purges interface
     def _get_purges(self):
         return self._get_table_data(
