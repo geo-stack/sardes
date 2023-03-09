@@ -337,8 +337,8 @@ class MeasurementUnits(BaseMixin, Base):
     __tablename__ = 'measurement_units'
 
     meas_units_id = Column(Integer, primary_key=True)
-    meas_units_abb = Column(str)
-    meas_units_desc = Column(str)
+    meas_units_abb = Column(String)
+    meas_units_desc = Column(String)
 
 
 # ---- Numerical Data
