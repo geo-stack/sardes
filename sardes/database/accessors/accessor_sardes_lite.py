@@ -480,7 +480,7 @@ class HGParam(BaseMixin, Base):
     hg_param_id = Column(Integer, primary_key=True)
     hg_param_code = Column(String)
     hg_param_name = Column(String)
-    hg_param_alt_name = Column(String)
+    hg_param_regex = Column(String)
     cas_registry_number = Column(String)
     measurement_units = Column(String)
 

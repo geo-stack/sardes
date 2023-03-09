@@ -483,12 +483,10 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                       "Used when importing results from a lab report."),
             ),
             Column(
-                name='hg_param_alt_name',
+                name='hg_param_regex',
                 dtype='str',
-                desc=("Alternate names of the hydrogeochemical parameter."
-                      "Each alternate names must be separated by a "
-                      "semicolon. Used when importing data from a lab "
-                      "report."),
+                desc=("The regular expression to use when importing "
+                      "hydrogeochemical data from a lab report."),
             ),
             Column(
                 name='cas_registry_number',

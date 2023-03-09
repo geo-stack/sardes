@@ -31,7 +31,7 @@ class HGParamsTableModel(StandardSardesTableModel):
             'hg_params', 'hg_param_name', _('Name'),
             delegate=StringEditDelegate),
         sardes_table_column_factory(
-            'hg_params', 'hg_param_alt_name', _('Alt Names'),
+            'hg_params', 'hg_param_regex', _('Regex'),
             delegate=StringEditDelegate),
         sardes_table_column_factory(
             'hg_params', 'cas_registry_number', _('CAS RN'),
