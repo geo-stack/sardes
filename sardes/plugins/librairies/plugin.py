@@ -14,7 +14,8 @@ from sardes.config.locale import _
 from sardes.widgets.tableviews import SardesStackedTableWidget
 from sardes.tables import (
     SondeModelsTableWidget, RemarkTypesTableWidget, PumpTypesTableWidget,
-    HGSamplingMethodsTableWidget, HGParamsTableWidget)
+    HGSamplingMethodsTableWidget, HGParamsTableWidget,
+    MeasurementUnitsTableWidget)
 
 
 """Tables plugin"""
@@ -111,6 +112,7 @@ class Librairies(SardesPlugin):
     def _setup_tables(self):
         self._create_and_register_table(SondeModelsTableWidget)
         self._create_and_register_table(RemarkTypesTableWidget)
+        self._create_and_register_table(MeasurementUnitsTableWidget)
         self._create_and_register_table(PumpTypesTableWidget)
         self._create_and_register_table(HGSamplingMethodsTableWidget)
         self._create_and_register_table(HGParamsTableWidget)

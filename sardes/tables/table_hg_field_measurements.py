@@ -42,11 +42,15 @@ class HGFieldMeasurementsTableModel(StandardSardesTableModel):
             'hg_field_measurements', 'lim_detection', _('Lim. Detection'),
             delegate=NumEditDelegate,
             delegate_options={
-                'decimals': 3, 'minimum': 0, 'maximum': 99999})
+                'decimals': 3, 'minimum': 0, 'maximum': 99999}),
+        sardes_table_column_factory(
+            'hg_field_measurements', 'meas_units_id', _('Units'),
+            delegate=IntEditDelegate
+            ),
         ]
 
     __dataname__ = 'hg_field_measurements'
-    __libnames__ = ['hg_params', 'hg_surveys']
+    __libnames__ = ['measurement_units', 'hg_params', 'hg_surveys']
 
 
 class HGFieldMeasurementsTableWidget(SardesTableWidget):

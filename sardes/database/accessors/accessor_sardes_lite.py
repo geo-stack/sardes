@@ -330,6 +330,17 @@ class ObservedProperty(BaseMixin, Base):
     obs_property_units = Column('unit', String)
 
 
+class MeasurementUnits(BaseMixin, Base):
+    """
+    An object used to map the 'measurement_units' library.
+    """
+    __tablename__ = 'measurement_units'
+
+    meas_units_id = Column(Integer, primary_key=True)
+    meas_units_abb = Column(str)
+    meas_units_desc = Column(str)
+
+
 # ---- Numerical Data
 class TimeSeriesChannel(BaseMixin, Base):
     """
@@ -520,6 +531,9 @@ class HGFieldMeasurement(BaseMixin, Base):
     hg_param_id = Column(
         Integer,
         ForeignKey('hg_param.hg_param_id'))
+    meas_units_id = Column(
+        Integer,
+        ForeignKey('measurement_units.meas_units_id'))
     hg_param_value = Column(String)
     lim_detection = Column(Float)
 
@@ -537,6 +551,9 @@ class HGLabResults(BaseMixin, Base):
     hg_param_id = Column(
         Integer,
         ForeignKey('hg_param.hg_param_id'))
+    meas_units_id = Column(
+        Integer,
+        ForeignKey('measurement_units.meas_units_id'))
     hg_param_value = Column(String)
     lim_detection = Column(Float)
     code_analysis_method = Column(String)
@@ -682,7 +699,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                   TimeSeriesData, SamplingFeatureAttachment,
                   Remark, RemarkType,
                   PumpType, HGSamplingMethod, HGParam, Purge,
-                  HGSurvey, HGFieldMeasurement, HGLabResults
+                  HGSurvey, HGFieldMeasurement, HGLabResults,
+                  MeasurementUnits
                   ]
         for table in tables:
             if table.__tablename__ in existing_table_names:
@@ -720,7 +738,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 existing_table_names = self._get_table_names()
                 for table in [Remark, RemarkType, PumpType, HGParam,
                               HGSamplingMethod, Purge, HGSurvey,
-                              HGFieldMeasurement, HGLabResults]:
+                              HGFieldMeasurement, HGLabResults,
+                              MeasurementUnits]:
                     if table.__tablename__ not in existing_table_names:
                         self._add_table(table)
                 self.execute(f"PRAGMA user_version = {to_version}")
@@ -802,6 +821,25 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.rollback()
         self._engine.dispose()
         self._connection = None
+
+    # ---- Measurement Units Interface
+    def _get_measurement_units(self):
+        return self._get_table_data(MeasurementUnits)
+
+    def _set_measurement_units(self, index, values):
+        return self._set_table_data(MeasurementUnits, index, values)
+
+    def _add_measurement_units(self, values, indexes=None):
+        return self._add_table_data(MeasurementUnits, values, indexes)
+
+    def _del_measurement_units(self, meas_units_ids):
+        return self._del_table_data(
+            MeasurementUnits,
+            meas_units_ids,
+            foreign_constraints=[
+                (HGFieldMeasurement, 'meas_units_id'),
+                (HGLabResults, 'meas_units_id')]
+            )
 
     # ---- Observation Wells Interface
     def _get_observation_wells_data(self):

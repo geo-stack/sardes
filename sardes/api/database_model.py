@@ -353,6 +353,26 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
             ),
         )
     ),
+    'measurement_units': Table(
+        foreign_constraints=(
+            ('meas_units_id', 'hg_field_measurements'),
+            ('meas_units_id', 'hg_lab_results'),
+        ),
+        columns=(
+            Column(
+                name='meas_units_abb',
+                dtype='str',
+                desc=("The abbreviated symbols of the measurement units."),
+                notnull=True,
+                unique=True,
+            ),
+            Column(
+                name='meas_units_desc',
+                dtype='str',
+                desc=("A description of the measurement units."),
+            ),
+        )
+    ),
     # ---- Remarks
     'remarks': Table(
         columns=(
@@ -586,6 +606,11 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 desc=("The limit of detection of the method used to "
                       "take the field measurement."),
             ),
+            Column(
+                name='meas_units_id',
+                dtype='Int64',
+                desc=("The ID of the measurement units."),
+            ),
         )
     ),
     'hg_lab_results': Table(
@@ -614,6 +639,11 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 dtype='float64',
                 desc=("The limit of detection of the method used to "
                       "analyse the result."),
+            ),
+            Column(
+                name='meas_units_id',
+                dtype='Int64',
+                desc=("The ID of the measurement units."),
             ),
             Column(
                 name='code_analysis_method',

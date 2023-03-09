@@ -37,3 +37,5 @@ from .table_hg_field_measurements import (
     HGFieldMeasurementsTableModel, HGFieldMeasurementsTableWidget)
 from .table_hg_lab_results import (
     HGLabResultsTableModel, HGLabResultsTableWidget)
+from .table_measurement_units import (
+    MeasurementUnitsTableModel, MeasurementUnitsTableWidget)

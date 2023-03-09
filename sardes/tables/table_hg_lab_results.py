@@ -39,12 +39,16 @@ class HGLabResultsTableModel(StandardSardesTableModel):
             delegate_options={
                 'decimals': 3, 'minimum': 0, 'maximum': 99999}),
         sardes_table_column_factory(
+            'hg_lab_results', 'meas_units_id', _('Units'),
+            delegate=IntEditDelegate
+            ),
+        sardes_table_column_factory(
             'hg_lab_results', 'code_analysis_method', _('Method'),
             delegate=StringEditDelegate),
         ]
 
     __dataname__ = 'hg_lab_results'
-    __libnames__ = []
+    __libnames__ = ['measurement_units', 'hg_params', 'hg_surveys']
 
 
 class HGLabResultsTableWidget(SardesTableWidget):
