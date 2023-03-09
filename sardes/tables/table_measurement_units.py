@@ -33,6 +33,7 @@ class MeasurementUnitsTableModel(StandardSardesTableModel):
         ]
 
     __dataname__ = 'measurement_units'
+    __libnames__ = []
 
 
 class MeasurementUnitsTableWidget(SardesTableWidget):
