@@ -9,7 +9,8 @@
 
 
 # ---- Local imports
-from sardes.api.tablemodels import sardes_table_column_factory
+from sardes.api.tablemodels import (
+    SardesTableColumn, sardes_table_column_factory)
 from sardes.config.locale import _
 from sardes.tables.models import StandardSardesTableModel
 from sardes.widgets.tableviews import SardesTableWidget
@@ -24,8 +25,12 @@ class HGFieldMeasurementsTableModel(StandardSardesTableModel):
     __tablename__ = 'table_hg_field_measurements'
     __tabletitle__ = _('HG Field Measurements')
     __tablecolumns__ = [
+        SardesTableColumn(
+            'survey_well_id', _('Well ID'), 'str',
+            delegate=StringEditDelegate),
         sardes_table_column_factory(
-            'hg_field_measurements', 'hg_survey_id', _('Survey'),
+            'hg_field_measurements', 'hg_survey_id',
+            _('Survey Date/Time'),
             delegate=StringEditDelegate),
         sardes_table_column_factory(
             'hg_field_measurements', 'hg_param_id', _('Parameter'),
