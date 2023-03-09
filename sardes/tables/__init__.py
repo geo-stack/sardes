@@ -33,9 +33,7 @@ from .table_purges import (
     PurgesTableModel, PurgesTableWidget)
 from .table_hg_surveys import (
     HGSurveysTableModel, HGSurveysTableWidget)
-from .table_hg_field_measurements import (
-    HGFieldMeasurementsTableModel, HGFieldMeasurementsTableWidget)
-from .table_hg_lab_results import (
-    HGLabResultsTableModel, HGLabResultsTableWidget)
+from .table_hg_param_values import (
+    HGParamValuesTableModel, HGParamValuesTableWidget)
 from .table_measurement_units import (
     MeasurementUnitsTableModel, MeasurementUnitsTableWidget)

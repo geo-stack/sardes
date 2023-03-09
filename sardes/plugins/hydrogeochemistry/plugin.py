@@ -13,8 +13,7 @@ from sardes.api.plugins import SardesPlugin
 from sardes.config.locale import _
 from sardes.widgets.tableviews import SardesStackedTableWidget
 from sardes.tables import (
-    PurgesTableWidget, HGSurveysTableWidget, HGFieldMeasurementsTableWidget,
-    HGLabResultsTableWidget)
+    PurgesTableWidget, HGSurveysTableWidget, HGParamValuesTableWidget)
 
 
 """Hydrogeochemistry plugin"""
@@ -111,8 +110,7 @@ class Hydrogeochemistry(SardesPlugin):
     def _setup_tables(self):
         self._create_and_register_table(HGSurveysTableWidget)
         self._create_and_register_table(PurgesTableWidget)
-        self._create_and_register_table(HGFieldMeasurementsTableWidget)
-        self._create_and_register_table(HGLabResultsTableWidget)
+        self._create_and_register_table(HGParamValuesTableWidget)
 
         # Setup the current active tab from the value saved in the configs.
         self.tabwidget.setCurrentIndex(self.get_option('last_focused_tab', 0))

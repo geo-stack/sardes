@@ -512,51 +512,33 @@ class HGSurvey(BaseMixin, Base):
     hg_sampling_method_id = Column(
         Integer,
         ForeignKey('hg_sampling_method.hg_sampling_method_id'))
-    lab_sample_id = Column(String)
-    lab_report_date = Column(DateTime)
     sample_filtered = Column(Boolean)
     survey_note = Column(String)
 
 
-class HGFieldMeasurement(BaseMixin, Base):
+class HGParamValues(BaseMixin, Base):
     """
-    An object used to map the 'hg_field_measurement' library.
+    An object used to map the 'hg_param_values' table.
     """
-    __tablename__ = 'hg_field_measurement'
+    __tablename__ = 'hg_param_values'
 
-    hg_field_measurement_id = Column(Integer, primary_key=True)
+    hg_param_value_id = Column(Integer, primary_key=True)
     hg_survey_id = Column(
         Integer,
         ForeignKey('hg_survey.hg_survey_id'))
     hg_param_id = Column(
         Integer,
         ForeignKey('hg_param.hg_param_id'))
+    hg_param_value = Column(String)
+    lim_detection = Column(Float)
     meas_units_id = Column(
         Integer,
         ForeignKey('measurement_units.meas_units_id'))
-    hg_param_value = Column(String)
-    lim_detection = Column(Float)
-
-
-class HGLabResults(BaseMixin, Base):
-    """
-    An object used to map the 'hg_lab_result' library.
-    """
-    __tablename__ = 'hg_lab_result'
-
-    hg_lab_result_id = Column(Integer, primary_key=True)
-    lab_sample_id = Column(
-        String,
-        ForeignKey('hg_survey.lab_sample_id'))
-    hg_param_id = Column(
-        Integer,
-        ForeignKey('hg_param.hg_param_id'))
-    meas_units_id = Column(
-        Integer,
-        ForeignKey('measurement_units.meas_units_id'))
-    hg_param_value = Column(String)
-    lim_detection = Column(Float)
-    code_analysis_method = Column(String)
+    lab_sample_id = Column(String)
+    lab_name = Column(String)
+    lab_report_date = Column(DateTime)
+    method = Column(String)
+    notes = Column(String)
 
 
 class Purge(BaseMixin, Base):
@@ -699,8 +681,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                   TimeSeriesData, SamplingFeatureAttachment,
                   Remark, RemarkType,
                   PumpType, HGSamplingMethod, HGParam, Purge,
-                  HGSurvey, HGFieldMeasurement, HGLabResults,
-                  MeasurementUnits
+                  HGSurvey, HGParamValues, MeasurementUnits
                   ]
         for table in tables:
             if table.__tablename__ in existing_table_names:
@@ -738,8 +719,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 existing_table_names = self._get_table_names()
                 for table in [Remark, RemarkType, PumpType, HGParam,
                               HGSamplingMethod, Purge, HGSurvey,
-                              HGFieldMeasurement, HGLabResults,
-                              MeasurementUnits]:
+                              HGParamValues, MeasurementUnits]:
                     if table.__tablename__ not in existing_table_names:
                         self._add_table(table)
                 self.execute(f"PRAGMA user_version = {to_version}")
@@ -836,9 +816,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return self._del_table_data(
             MeasurementUnits,
             meas_units_ids,
-            foreign_constraints=[
-                (HGFieldMeasurement, 'meas_units_id'),
-                (HGLabResults, 'meas_units_id')]
+            foreign_constraints=[(HGParamValues, 'meas_units_id')]
             )
 
     # ---- Observation Wells Interface
@@ -1708,9 +1686,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return self._del_table_data(
             HGParam,
             indexes,
-            foreign_constraints=[
-                (HGFieldMeasurement, 'hg_param_id'),
-                (HGLabResults, 'hg_param_id')]
+            foreign_constraints=[(HGParamValues, 'hg_param_id')]
             )
 
     # ---- HG Surveys
@@ -1739,61 +1715,39 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return self._del_table_data(
             HGSurvey, indexes,
             foreign_constraints=[
-                (HGFieldMeasurement, 'hg_survey_id'),
-                (HGLabResults, 'lab_sample_id'),
+                (HGParamValues, 'hg_survey_id'),
                 (Purge, 'hg_survey_id')]
             )
 
-    # ---- HG Field Measurements
-    def _get_hg_field_measurements(self):
+    # ---- HG Parameter Values Interface
+    def _get_hg_param_values(self):
         return self._get_table_data(
-            HGFieldMeasurement,
+            HGParamValues,
             dtype={'hg_survey_id': 'Int64',
                    'hg_param_id': 'Int64',
                    'hg_param_value': 'str',
-                   'lim_detection': 'float64'}
-            )
-
-    def _set_hg_field_measurements(self, index, values):
-        return self._set_table_data(
-            HGFieldMeasurement, index, values
-            )
-
-    def _add_hg_field_measurements(self, values, indexes=None):
-        return self._add_table_data(
-            HGFieldMeasurement, values, indexes,
-            )
-
-    def _del_hg_field_measurements(self, indexes):
-        return self._del_table_data(
-            HGFieldMeasurement, indexes
-            )
-
-    # ---- HG Lab Results
-    def _get_hg_lab_results(self):
-        return self._get_table_data(
-            HGLabResults,
-            dtype={'lab_sample_id': 'str',
-                   'hg_param_id': 'Int64',
-                   'hg_param_value': 'str',
                    'lim_detection': 'float64',
-                   'code_analysis_method': 'str'}
+                   'meas_units_id': 'Int64',
+                   'method': 'str',
+                   'lab_name': 'str',
+                   'lab_sample_id': 'str'},
+            parse_dates={'lab_report_date': TO_DATETIME_ARGS}
             )
 
-    def _set_hg_lab_results(self, index, values):
+    def _set_hg_param_values(self, index, values):
         return self._set_table_data(
-            HGLabResults, index, values
+            HGParamValues, index, values,
+            datetime_fields=['lab_report_date']
             )
 
-    def _add_hg_lab_results(self, values, indexes=None):
+    def _add_hg_param_values(self, values, indexes=None):
         return self._add_table_data(
-            HGLabResults, values, indexes,
+            HGParamValues, values, indexes,
+            datetime_fields=['lab_report_date']
             )
 
-    def _del_hg_lab_results(self, indexes):
-        return self._del_table_data(
-            HGLabResults, indexes
-            )
+    def _del_hg_param_values(self, indexes):
+        return self._del_table_data(HGParamValues, indexes)
 
     # ---- Purges interface
     def _get_purges(self):

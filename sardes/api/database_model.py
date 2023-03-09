@@ -525,7 +525,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
         foreign_constraints=(
             ('hg_survey_id', 'hg_field_measurements'),
             ('hg_survey_id', 'purges'),
-            ('lab_sample_id', 'hg_lab_results'),
+            ('hg_survey_id', 'hg_lab_results'),
         ),
         columns=(
             Column(
@@ -557,19 +557,11 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 desc=("The ID of the method type used to do the survey."),
             ),
             Column(
-                name='lab_sample_id',
-                dtype='str',
-                desc=("The ID given to the sample by the lab."),
-            ),
-            Column(
-                name='lab_report_date',
-                dtype='datetime64[ns]',
-                desc=("The date of the sample lab report."),
-            ),
-            Column(
                 name='sample_filtered',
                 dtype='bool',
-                desc=("Whether the sample was filtered or not."),
+                desc=("Whether the sample was filtered or not."
+                      "Should be a null value if hg_sampling_method_id "
+                      " is also null."),
             ),
             Column(
                 name='survey_note',
@@ -578,77 +570,64 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
             ),
         )
     ),
-    'hg_field_measurements': Table(
+    'hg_param_values': Table(
         columns=(
             Column(
                 name='hg_survey_id',
                 dtype='Int64',
                 desc=("The ID of the survey during which "
-                      "the field measurement was made."),
+                      "the measurement was made or sample was taken."),
                 notnull=True,
             ),
             Column(
                 name='hg_param_id',
                 dtype='Int64',
-                desc=("The ID of the parameter corresponding to the "
-                      "field measurement."),
+                desc=("The ID of the type of parameter measured."),
                 notnull=True,
             ),
             Column(
                 name='hg_param_value',
                 dtype='str',
-                desc=("The value of the field measurement."),
+                desc=("The value of the parameter."),
                 notnull=True,
             ),
             Column(
                 name='lim_detection',
                 dtype='float64',
                 desc=("The limit of detection of the method used to "
-                      "take the field measurement."),
+                      "measure the parameter."),
             ),
             Column(
                 name='meas_units_id',
                 dtype='Int64',
                 desc=("The ID of the measurement units."),
             ),
-        )
-    ),
-    'hg_lab_results': Table(
-        columns=(
             Column(
                 name='lab_sample_id',
                 dtype='str',
-                desc=("The ID given to the sample by the lab."),
-                notnull=True,
+                desc=("The ID given to the sample by the lab "
+                      "when applicable."),
             ),
             Column(
-                name='hg_param_id',
-                dtype='Int64',
-                desc=("The ID of the parameter corresponding to the "
-                      "lab result."),
-                notnull=True,
+                name='lab_report_date',
+                dtype='datetime64[ns]',
+                desc=("The date of the lab report when applicable."),
             ),
             Column(
-                name='hg_param_value',
+                name='lab_name',
                 dtype='str',
-                desc=("The value of the lab result."),
-                notnull=True,
+                desc=("The name of the lab that analysed the sample "
+                      "when applicable."),
             ),
             Column(
-                name='lim_detection',
-                dtype='float64',
-                desc=("The limit of detection of the method used to "
-                      "analyse the result."),
-            ),
-            Column(
-                name='meas_units_id',
-                dtype='Int64',
-                desc=("The ID of the measurement units."),
-            ),
-            Column(
-                name='code_analysis_method',
+                name='method',
                 dtype='str',
-                desc=("The code of the method used to analyse the result."),
+                desc=("The method used to measure or analyse the result."),
+            ),
+            Column(
+                name='notes',
+                dtype='str',
+                desc=("Any notes related to the hg parameter value."),
             ),
         )
     ),
