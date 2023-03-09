@@ -9,12 +9,13 @@
 
 
 # ---- Local imports
-from sardes.api.tablemodels import sardes_table_column_factory
+from sardes.api.tablemodels import (
+    SardesTableColumn, sardes_table_column_factory)
 from sardes.config.locale import _
 from sardes.tables.models import StandardSardesTableModel
 from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.delegates import (
-    IntEditDelegate, DateTimeDelegate, NumEditDelegate)
+    IntEditDelegate, DateTimeDelegate, NumEditDelegate, StringEditDelegate)
 
 
 class PurgesTableModel(StandardSardesTableModel):
@@ -25,8 +26,11 @@ class PurgesTableModel(StandardSardesTableModel):
     __tablename__ = 'table_purges'
     __tabletitle__ = _('Purges')
     __tablecolumns__ = [
+        SardesTableColumn(
+            'survey_well_id', _('Well ID'), 'str',
+            delegate=StringEditDelegate),
         sardes_table_column_factory(
-            'purges', 'hg_survey_id', _('Survey'),
+            'purges', 'hg_survey_id', _('Survey Date/Time'),
             delegate=IntEditDelegate),
         sardes_table_column_factory(
             'purges', 'purge_sequence_no', _('Sequence No.'),
