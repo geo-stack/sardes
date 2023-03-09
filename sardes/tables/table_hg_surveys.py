@@ -45,13 +45,6 @@ class HGSurveysTableModel(StandardSardesTableModel):
             'hg_surveys', 'hg_sampling_method_id', _('Sampling Method'),
             delegate=IntEditDelegate),
         sardes_table_column_factory(
-            'hg_surveys', 'lab_sample_id', _('Lab Sample ID'),
-            delegate=StringEditDelegate),
-        sardes_table_column_factory(
-            'hg_surveys', 'lab_report_date', _('Lab Report Date'),
-            delegate=DateTimeDelegate,
-            delegate_options={'display_format': "yyyy-MM-dd"}),
-        sardes_table_column_factory(
             'hg_surveys', 'sample_filtered', _('Sample Filtered'),
             delegate=BoolEditDelegate),
         sardes_table_column_factory(
