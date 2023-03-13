@@ -484,9 +484,9 @@ class HGSamplingMethod(BaseMixin, Base):
 
 class HGParam(BaseMixin, Base):
     """
-    An object used to map the 'hg_param' library.
+    An object used to map the 'hg_params' library.
     """
-    __tablename__ = 'hg_param'
+    __tablename__ = 'hg_params'
 
     hg_param_id = Column(Integer, primary_key=True)
     hg_param_code = Column(String)
