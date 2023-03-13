@@ -473,9 +473,9 @@ class PumpType(BaseMixin, Base):
 
 class HGSamplingMethod(BaseMixin, Base):
     """
-    An object used to map the 'hg_sampling_method' library.
+    An object used to map the 'hg_sampling_methods' library.
     """
-    __tablename__ = 'hg_sampling_method'
+    __tablename__ = 'hg_sampling_methods'
 
     hg_sampling_method_id = Column(Integer, primary_key=True)
     hg_sampling_method_name = Column(String)
