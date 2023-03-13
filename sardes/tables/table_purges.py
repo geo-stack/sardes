@@ -52,7 +52,7 @@ class PurgesTableModel(StandardSardesTableModel):
             'purges', 'pump_type_id', _('Pump Type'),
             delegate=IntEditDelegate),
         sardes_table_column_factory(
-            'purges', 'pumping_depth', _('Pumping Depth (mbgs)'),
+            'purges', 'pumping_depth', _('Pumping Depth (m)'),
             delegate=NumEditDelegate,
             delegate_options={
                 'decimals': 3, 'minimum': 0, 'maximum': 99999}),
