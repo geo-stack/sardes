@@ -462,9 +462,9 @@ class SondeInstallation(BaseMixin, Base):
 # ---- Hydrogeochemistry
 class PumpType(BaseMixin, Base):
     """
-    An object used to map the 'pump_type' library.
+    An object used to map the 'pump_types' library.
     """
-    __tablename__ = 'pump_type'
+    __tablename__ = 'pump_types'
 
     pump_type_id = Column(Integer, primary_key=True)
     pump_type_name = Column(String)
