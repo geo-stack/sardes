@@ -516,7 +516,7 @@ class HGSurvey(BaseMixin, Base):
     survey_note = Column(String)
 
 
-class HGParamValues(BaseMixin, Base):
+class HGParamValue(BaseMixin, Base):
     """
     An object used to map the 'hg_param_values' table.
     """
@@ -681,7 +681,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                   TimeSeriesData, SamplingFeatureAttachment,
                   Remark, RemarkType,
                   PumpType, HGSamplingMethod, HGParam, Purge,
-                  HGSurvey, HGParamValues, MeasurementUnits
+                  HGSurvey, HGParamValue, MeasurementUnits
                   ]
         for table in tables:
             if table.__tablename__ in existing_table_names:
@@ -719,7 +719,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 existing_table_names = self._get_table_names()
                 for table in [Remark, RemarkType, PumpType, HGParam,
                               HGSamplingMethod, Purge, HGSurvey,
-                              HGParamValues, MeasurementUnits]:
+                              HGParamValue, MeasurementUnits]:
                     if table.__tablename__ not in existing_table_names:
                         self._add_table(table)
                 self.execute(f"PRAGMA user_version = {to_version}")
@@ -816,7 +816,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return self._del_table_data(
             MeasurementUnits,
             meas_units_ids,
-            foreign_constraints=[(HGParamValues, 'meas_units_id')]
+            foreign_constraints=[(HGParamValue, 'meas_units_id')]
             )
 
     # ---- Observation Wells Interface
@@ -1686,7 +1686,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return self._del_table_data(
             HGParam,
             indexes,
-            foreign_constraints=[(HGParamValues, 'hg_param_id')]
+            foreign_constraints=[(HGParamValue, 'hg_param_id')]
             )
 
     # ---- HG Surveys
@@ -1715,14 +1715,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return self._del_table_data(
             HGSurvey, indexes,
             foreign_constraints=[
-                (HGParamValues, 'hg_survey_id'),
+                (HGParamValue, 'hg_survey_id'),
                 (Purge, 'hg_survey_id')]
             )
 
     # ---- HG Parameter Values Interface
     def _get_hg_param_values(self):
         return self._get_table_data(
-            HGParamValues,
+            HGParamValue,
             dtype={'hg_survey_id': 'Int64',
                    'hg_param_id': 'Int64',
                    'hg_param_value': 'str',
@@ -1736,18 +1736,18 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
     def _set_hg_param_values(self, index, values):
         return self._set_table_data(
-            HGParamValues, index, values,
+            HGParamValue, index, values,
             datetime_fields=['lab_report_date']
             )
 
     def _add_hg_param_values(self, values, indexes=None):
         return self._add_table_data(
-            HGParamValues, values, indexes,
+            HGParamValue, values, indexes,
             datetime_fields=['lab_report_date']
             )
 
     def _del_hg_param_values(self, indexes):
-        return self._del_table_data(HGParamValues, indexes)
+        return self._del_table_data(HGParamValue, indexes)
 
     # ---- Purges interface
     def _get_purges(self):
