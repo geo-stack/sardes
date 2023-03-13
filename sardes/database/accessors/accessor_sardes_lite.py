@@ -498,9 +498,9 @@ class HGParam(BaseMixin, Base):
 
 class HGSurvey(BaseMixin, Base):
     """
-    An object used to map the 'hg_survey' library.
+    An object used to map the 'hg_surveys' library.
     """
-    __tablename__ = 'hg_survey'
+    __tablename__ = 'hg_surveys'
 
     hg_survey_id = Column(Integer, primary_key=True)
     sampling_feature_uuid = Column(
