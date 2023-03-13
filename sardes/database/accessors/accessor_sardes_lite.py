@@ -494,7 +494,6 @@ class HGParam(BaseMixin, Base):
     hg_param_name = Column(String)
     hg_param_regex = Column(String)
     cas_registry_number = Column(String)
-    measurement_units = Column(String)
 
 
 class HGSurvey(BaseMixin, Base):
@@ -512,7 +511,7 @@ class HGSurvey(BaseMixin, Base):
     hg_survey_operator = Column(String)
     hg_sampling_method_id = Column(
         Integer,
-        ForeignKey('hg_sampling_method.hg_sampling_method_id'))
+        ForeignKey('hg_sampling_methods.hg_sampling_method_id'))
     sample_filtered = Column(Boolean)
     survey_note = Column(String)
 
@@ -526,10 +525,10 @@ class HGParamValue(BaseMixin, Base):
     hg_param_value_id = Column(Integer, primary_key=True)
     hg_survey_id = Column(
         Integer,
-        ForeignKey('hg_survey.hg_survey_id'))
+        ForeignKey('hg_surveys.hg_survey_id'))
     hg_param_id = Column(
         Integer,
-        ForeignKey('hg_param.hg_param_id'))
+        ForeignKey('hg_params.hg_param_id'))
     hg_param_value = Column(String)
     lim_detection = Column(Float)
     meas_units_id = Column(
@@ -551,14 +550,14 @@ class Purge(BaseMixin, Base):
     purge_id = Column(Integer, primary_key=True)
     hg_survey_id = Column(
         Integer,
-        ForeignKey('hg_survey.hg_survey_id'))
+        ForeignKey('hg_surveys.hg_survey_id'))
     purge_sequence_no = Column(Integer)
     purge_seq_start = Column(DateTime)
     purge_seq_end = Column(DateTime)
     purge_outflow = Column(Float)
     pump_type_id = Column(
         Integer,
-        ForeignKey('pump_type.pump_type_id'))
+        ForeignKey('pump_types.pump_type_id'))
     pumping_depth = Column(Float)
     static_water_level = Column(Float)
 
