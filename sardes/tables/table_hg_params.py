@@ -36,9 +36,6 @@ class HGParamsTableModel(StandardSardesTableModel):
         sardes_table_column_factory(
             'hg_params', 'cas_registry_number', _('CAS RN'),
             delegate=StringEditDelegate),
-        sardes_table_column_factory(
-            'hg_params', 'measurement_units', _('Units'),
-            delegate=StringEditDelegate),
         ]
 
     __dataname__ = 'hg_params'

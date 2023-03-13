@@ -488,8 +488,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
     ),
     'hg_params': Table(
         foreign_constraints=(
-            ('hg_param_id', 'hg_field_measurements'),
-            ('hg_param_id', 'hg_lab_results'),
+            ('hg_param_id', 'hg_param_values'),
         ),
         columns=(
             Column(
@@ -517,19 +516,12 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 dtype='str',
                 desc=("The CAS Registry number of the parameter."),
             ),
-            Column(
-                name='measurement_units',
-                dtype='str',
-                desc=("The measurement units used to store the values of "
-                      "the parameter."),
-            ),
         )
     ),
     'hg_surveys': Table(
         foreign_constraints=(
-            ('hg_survey_id', 'hg_field_measurements'),
+            ('hg_survey_id', 'hg_param_values'),
             ('hg_survey_id', 'purges'),
-            ('hg_survey_id', 'hg_lab_results'),
         ),
         columns=(
             Column(
