@@ -355,8 +355,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
     ),
     'measurement_units': Table(
         foreign_constraints=(
-            ('meas_units_id', 'hg_field_measurements'),
-            ('meas_units_id', 'hg_lab_results'),
+            ('meas_units_id', 'hg_param_values'),
         ),
         columns=(
             Column(
@@ -365,6 +364,11 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 desc=("The abbreviated symbols of the measurement units."),
                 notnull=True,
                 unique=True,
+            ),
+            Column(
+                name='meas_units_name',
+                dtype='str',
+                desc=("Long name of the measurement units."),
             ),
             Column(
                 name='meas_units_desc',
