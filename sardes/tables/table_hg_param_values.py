@@ -25,7 +25,7 @@ class HGParamValuesTableModel(StandardSardesTableModel):
     hydrogeochemical parameters.
     """
     __tablename__ = 'table_hg_param_values'
-    __tabletitle__ = _('HG Parameter Values')
+    __tabletitle__ = _('HG Values')
     __tablecolumns__ = [
         SardesTableColumn(
             'survey_well_id', _('Well ID'), 'str',
