@@ -75,6 +75,7 @@ pump_types = type_pompe_xlsx[['Desc_type_pomp']].copy()
 pump_types.columns = ['pump_type_name']
 
 dbaccessor.add(name='pump_types', values=pump_types.to_dict('index').values())
+pump_types = dbaccessor.get(name='pump_types')
 
 # %%
 print("Adding sampling methods...")
@@ -93,6 +94,7 @@ sampling_methods.columns = ['hg_sampling_method_name']
 dbaccessor.add(
     name='hg_sampling_methods',
     values=sampling_methods.to_dict('index').values())
+hg_sampling_methods = dbaccessor.get(name='hg_sampling_methods')
 
 # %%
 print("Adding measurement units...")
@@ -181,6 +183,7 @@ measurement_units = measurement_units.reset_index()
 dbaccessor.add(
     name='measurement_units',
     values=measurement_units.to_dict('index').values())
+measurement_units = dbaccessor.get(name='measurement_units')
 
 
 # %% Add HG Params.
@@ -210,6 +213,8 @@ mask = hg_params['hg_param_code'].isin(used_param_codes)
 hg_params = hg_params[mask]
 
 dbaccessor.add(name='hg_params', values=hg_params.to_dict('index').values())
+hg_params = dbaccessor.get(name='hg_params')
+
 
 # %% Add HG Surveys
 print("Adding HG surveys...")
@@ -248,6 +253,7 @@ for index, row in hg_surveys.iterrows():
         physico_chimie_xlsx.loc[index, 'MODE_ECHANT'])
 
 dbaccessor.add(name='hg_surveys', values=hg_surveys.to_dict('index').values())
+hg_surveys = dbaccessor.get(name='hg_surveys')
 
 
 # %%
@@ -285,12 +291,13 @@ hg_param_values['method'] = val_param_xlsx['No_Meth_Analyse']
 
 meas_units = dbaccessor.get(name='measurement_units')
 hg_params = dbaccessor.get(name='hg_params')
-for index, row in hg_param_values.iterrows():
+hg_surveys = dbaccessor.get(name='hg_surveys')
+for index, row in val_param_xlsx.iterrows():
 
     # Set 'hg_survey_id'.
-    sta_name = val_param_xlsx.loc[index, 'No_Piézomètre']
+    sta_name = row['No_Piézomètre']
     sta_uuid = obs_wells[obs_wells.obs_well_id == sta_name].index[0]
-    hg_survey_datetime = val_param_xlsx.loc[index, 'DATE_HRE_RELV_HG']
+    hg_survey_datetime = row['DATE_HRE_RELV_HG']
     hg_survey_id = hg_surveys[
         (hg_surveys.sampling_feature_uuid == sta_uuid) &
         (hg_surveys.hg_survey_datetime == hg_survey_datetime)
@@ -298,7 +305,7 @@ for index, row in hg_param_values.iterrows():
     hg_param_values.loc[index, 'hg_survey_id'] = hg_survey_id
 
     # Set 'hg_param_id'.
-    CODE_PARAM_PHYS_CHIM = val_param_xlsx.loc[index, 'CODE_PARAM_PHYS_CHIM']
+    CODE_PARAM_PHYS_CHIM = row['CODE_PARAM_PHYS_CHIM']
     hg_param_id = hg_params[
         hg_params.hg_param_code == CODE_PARAM_PHYS_CHIM
         ].index[0]
@@ -321,20 +328,18 @@ for index, row in hg_param_values.iterrows():
 
     # Set 'meas_units_id'.
     val_units = hg_units_xlsx[
-        hg_units_xlsx.CODE_UNITE_MESURE ==
-        val_param_xlsx.loc[index, 'CODE_UNITE_MESURE']
+        hg_units_xlsx.CODE_UNITE_MESURE == row['CODE_UNITE_MESURE']
         ]['NOM_UNITE_MESURE'].values[0]
     meas_units_id = meas_units[
         meas_units.meas_units_abb == val_units
         ].index[0]
     hg_param_values.loc[index, 'meas_units_id'] = meas_units_id
 
-    DATE_LIM_DETECTION = val_param_xlsx.loc[index, 'DATE_LIM_DETECTION']
     lim_detect_param = lim_detect_xlsx[
         lim_detect_xlsx.CODE_PARAM_PHYS_CHIM == CODE_PARAM_PHYS_CHIM
         ]
     lim_detect_param = lim_detect_param[
-        lim_detect_param.DATE_LIM_DETECTION <= DATE_LIM_DETECTION
+        lim_detect_param.DATE_LIM_DETECTION <= row['DATE_LIM_DETECTION']
         ]
     try:
         lim_detect = lim_detect_param.iloc[-1]['LIM_DETECTION']
@@ -351,7 +356,7 @@ dbaccessor.add(
     name='hg_param_values',
     values=hg_param_values.to_dict('index').values()
     )
-
+hg_param_values = dbaccessor.get(name='hg_param_values')
 
 # %%
 print("Add purge data...")
@@ -403,3 +408,4 @@ for index, row in purge_xlsx.iterrows():
     purges.loc[index, 'hg_survey_id'] = hg_survey_id
 
 dbaccessor.add(name='purges', values=purges.to_dict('index').values())
+purges = dbaccessor.get(name='purges')
