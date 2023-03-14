@@ -46,7 +46,7 @@ class HGSurveysTableModel(StandardSardesTableModel):
             delegate=IntEditDelegate),
         sardes_table_column_factory(
             'hg_surveys', 'sample_filtered', _('Sample Filtered'),
-            delegate=BoolEditDelegate),
+            delegate=IntEditDelegate),
         sardes_table_column_factory(
             'hg_surveys', 'survey_note', _('Notes'),
             delegate=TextEditDelegate),

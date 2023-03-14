@@ -554,10 +554,8 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
             ),
             Column(
                 name='sample_filtered',
-                dtype='bool',
-                desc=("Whether the sample was filtered or not."
-                      "Should be a null value if hg_sampling_method_id "
-                      " is also null."),
+                dtype='Int64',
+                desc=("Whether the sample was filtered or not."),
             ),
             Column(
                 name='survey_note',

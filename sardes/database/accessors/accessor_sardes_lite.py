@@ -512,7 +512,7 @@ class HGSurvey(BaseMixin, Base):
     hg_sampling_method_id = Column(
         Integer,
         ForeignKey('hg_sampling_methods.hg_sampling_method_id'))
-    sample_filtered = Column(Boolean)
+    sample_filtered = Column(Integer)
     survey_note = Column(String)
 
 
@@ -1694,7 +1694,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         return self._get_table_data(
             HGSurvey,
             dtype={'hg_sampling_method_id': 'Int64',
-                   'sample_filtered': 'boolean'},
+                   'sample_filtered': 'Int64'},
             parse_dates={'hg_survey_datetime': TO_DATETIME_ARGS,
                          'lab_report_date': TO_DATETIME_ARGS}
             )

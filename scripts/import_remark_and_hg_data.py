@@ -239,7 +239,8 @@ hg_surveys = pd.DataFrame(
 hg_surveys['hg_survey_datetime'] = physico_chimie_xlsx['DATE_HRE_RELV']
 hg_surveys['hg_survey_depth'] = physico_chimie_xlsx['PROFOND_RELV_HG']
 hg_surveys['hg_survey_operator'] = physico_chimie_xlsx['PRELEVE_PAR']
-hg_surveys['sample_filtered'] = physico_chimie_xlsx['Échant_Filtré']
+hg_surveys['sample_filtered'] = (
+    physico_chimie_xlsx['Échant_Filtré'].astype('Int64'))
 hg_surveys['survey_note'] = physico_chimie_xlsx['Note_terrain']
 
 obs_wells = dbaccessor.get(name='observation_wells_data')
