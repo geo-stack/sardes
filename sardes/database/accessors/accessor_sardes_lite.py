@@ -1725,12 +1725,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             HGParamValue,
             dtype={'hg_survey_id': 'Int64',
                    'hg_param_id': 'Int64',
-                   'hg_param_value': 'str',
+                   'hg_param_value': 'object',
                    'lim_detection': 'float64',
                    'meas_units_id': 'Int64',
-                   'method': 'str',
-                   'lab_name': 'str',
-                   'lab_sample_id': 'str'},
+                   'method': 'object',
+                   'lab_name': 'object',
+                   'lab_sample_id': 'object'},
             parse_dates={'lab_report_date': TO_DATETIME_ARGS}
             )
 
