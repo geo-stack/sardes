@@ -24,7 +24,7 @@ class HGSurveysTableModel(StandardSardesTableModel):
     are available to use in the Surveys table.
     """
     __tablename__ = 'table_hg_surveys'
-    __tabletitle__ = _('Surveys')
+    __tabletitle__ = _('HG Surveys')
     __tablecolumns__ = [
         sardes_table_column_factory(
             'hg_surveys', 'sampling_feature_uuid', _('Well ID'),
@@ -34,7 +34,7 @@ class HGSurveysTableModel(StandardSardesTableModel):
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd hh:mm"}),
         sardes_table_column_factory(
-            'hg_surveys', 'hg_survey_depth', _('Depth'),
+            'hg_surveys', 'hg_survey_depth', _('Depth (m)'),
             delegate=NumEditDelegate,
             delegate_options={
                 'decimals': 3, 'minimum': 0, 'maximum': 99999}),
