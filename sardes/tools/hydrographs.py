@@ -71,14 +71,14 @@ class HydrographTool(SardesTool):
             The absolute path of the default filename that will be set in
             the file dialog.
         """
-        obs_well_id = self.parent.model()._obs_well_data['obs_well_id']
+        obs_well_id = self.table.model()._obs_well_data['obs_well_id']
         if filename is None:
             filename = osp.join(
                 get_select_file_dialog_dir(),
                 _('graph_{}.pdf').format(obs_well_id))
 
         filename, filefilter = QFileDialog.getSaveFileName(
-            self.parent, _("Save Hydrograph"), filename, self.NAMEFILTERS)
+            self.table, _("Save Hydrograph"), filename, self.NAMEFILTERS)
         if filename:
             fext = filefilter[-5:-1]
             if not filename.endswith(fext):
@@ -95,7 +95,7 @@ class HydrographTool(SardesTool):
         QApplication.setOverrideCursor(Qt.WaitCursor)
         QApplication.processEvents()
         last_repere_data = (
-            self.parent.model()._repere_data
+            self.table.model()._repere_data
             .sort_values(by=['end_date'], ascending=[True])
             .iloc[-1])
         ground_altitude = (
@@ -103,8 +103,8 @@ class HydrographTool(SardesTool):
             last_repere_data['casing_length'])
         is_alt_geodesic = last_repere_data['is_alt_geodesic']
         hydrograph = HydrographCanvas(
-            self.parent.get_formatted_data(),
-            self.parent.model()._obs_well_data,
+            self.table.get_formatted_data(),
+            self.table.model()._obs_well_data,
             ground_altitude, is_alt_geodesic,
             fontname=CONF.get('documents_settings', 'graph_font'))
         try:
@@ -113,7 +113,7 @@ class HydrographTool(SardesTool):
             QApplication.restoreOverrideCursor()
             QApplication.processEvents()
             QMessageBox.warning(
-                self.parent,
+                self.table,
                 _('File in Use'),
                 _("The save file operation cannot be completed because the "
                   "file is in use by another application or user."),
