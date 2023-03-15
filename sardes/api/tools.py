@@ -114,6 +114,12 @@ class SardesToolBase(QAction):
         self.update()
         self._show_toolwidget()
 
+    def on_current_changed(self, current_index: QModelIndex):
+        """
+        Called by the parent table widget when its current index is changed.
+        """
+        self.__on_current_changed__(current_index)
+
     # ---- Private API
     def eventFilter(self, widget, event):
         """
@@ -144,6 +150,15 @@ class SardesTool(SardesToolBase):
     A Sardes tool is a QAction that can be used to perform an action directly
     when triggered or to show a widget window to do more complex operations.
     """
+
+    def __on_current_changed__(self, current_index: QModelIndex):
+        """
+        Called when the current index of the parent table widget changed.
+
+        All tools that need to perform specific actions when the index of its
+        parent table widget changed *must* reimplement this method.
+        """
+        pass
 
     def __create_toolwidget__(self):
         """
