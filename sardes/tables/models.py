@@ -6,6 +6,12 @@
 # This file is part of SARDES.
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from sardes.tables.managers import SardesTableModelsManager
+    
+
 
 import pandas as pd
 
@@ -43,8 +49,9 @@ class StandardSardesTableModel(SardesTableModel):
         """Return Sardes database connection manager."""
         return self.table_models_manager.db_manager
 
-    def set_table_models_manager(self, table_models_manager):
-        """Set namespace for the table models manager."""
+    def set_table_models_manager(
+            self, table_models_manager: SardesTableModelsManager):
+        """Set the table models manager."""
         self.table_models_manager = table_models_manager
 
     def update_data(self):

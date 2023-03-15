@@ -23,3 +23,17 @@ from .table_remark_types import (
     RemarkTypesTableModel, RemarkTypesTableWidget)
 from .table_remarks import (
     RemarksTableModel, RemarksTableWidget)
+from .table_pump_types import (
+    PumpTypesTableModel, PumpTypesTableWidget)
+from .table_hg_sampling_methods import (
+    HGSamplingMethodsTableModel, HGSamplingMethodsTableWidget)
+from .table_hg_params import (
+    HGParamsTableModel, HGParamsTableWidget)
+from .table_purges import (
+    PurgesTableModel, PurgesTableWidget)
+from .table_hg_surveys import (
+    HGSurveysTableModel, HGSurveysTableWidget)
+from .table_hg_param_values import (
+    HGParamValuesTableModel, HGParamValuesTableWidget)
+from .table_measurement_units import (
+    MeasurementUnitsTableModel, MeasurementUnitsTableWidget)

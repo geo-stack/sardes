@@ -13,17 +13,15 @@ from sardes.api.plugins import SardesPlugin
 from sardes.config.locale import _
 from sardes.widgets.tableviews import SardesStackedTableWidget
 from sardes.tables import (
-    SondeModelsTableWidget, RemarkTypesTableWidget, PumpTypesTableWidget,
-    HGSamplingMethodsTableWidget, HGParamsTableWidget,
-    MeasurementUnitsTableWidget)
+    PurgesTableWidget, HGSurveysTableWidget, HGParamValuesTableWidget)
 
 
-"""Tables plugin"""
+"""Hydrogeochemistry plugin"""
 
 
-class Librairies(SardesPlugin):
+class Hydrogeochemistry(SardesPlugin):
 
-    CONF_SECTION = 'librairies'
+    CONF_SECTION = 'hydrogeochemistry'
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -46,7 +44,7 @@ class Librairies(SardesPlugin):
     @classmethod
     def get_plugin_title(cls):
         """Return widget title"""
-        return _('Librairies')
+        return _('Hydrogeochemistry')
 
     def create_pane_widget(self):
         """
@@ -110,12 +108,9 @@ class Librairies(SardesPlugin):
 
     # ---- Private methods
     def _setup_tables(self):
-        self._create_and_register_table(SondeModelsTableWidget)
-        self._create_and_register_table(RemarkTypesTableWidget)
-        self._create_and_register_table(MeasurementUnitsTableWidget)
-        self._create_and_register_table(PumpTypesTableWidget)
-        self._create_and_register_table(HGSamplingMethodsTableWidget)
-        self._create_and_register_table(HGParamsTableWidget)
+        self._create_and_register_table(HGSurveysTableWidget)
+        self._create_and_register_table(PurgesTableWidget)
+        self._create_and_register_table(HGParamValuesTableWidget)
 
         # Setup the current active tab from the value saved in the configs.
         self.tabwidget.setCurrentIndex(self.get_option('last_focused_tab', 0))

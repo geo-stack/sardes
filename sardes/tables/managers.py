@@ -94,7 +94,7 @@ class SardesTableModelsManager(QObject):
             [table_model.__dataname__] + table_model.__libnames__)
         self._running_model_updates[table_model.name()] = []
 
-    def update_table_model(self, table_name):
+    def update_table_model(self, table_name: str):
         """
         Update the given sardes table model.
         """
@@ -115,7 +115,7 @@ class SardesTableModelsManager(QObject):
             self._queued_model_updates[table_name] = []
             self.db_manager.run_tasks()
 
-    def save_table_model_edits(self, table_name):
+    def save_table_model_edits(self, table_name: str):
         """
         Save the changes made to table 'table_name' in the database.
         """

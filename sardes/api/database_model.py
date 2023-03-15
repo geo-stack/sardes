@@ -9,7 +9,6 @@
 
 from collections import UserDict
 from collections import namedtuple
-import pandas as pd
 
 
 class ReadOnlyDict(UserDict):
@@ -354,6 +353,31 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
             ),
         )
     ),
+    'measurement_units': Table(
+        foreign_constraints=(
+            ('meas_units_id', 'hg_param_values'),
+        ),
+        columns=(
+            Column(
+                name='meas_units_abb',
+                dtype='str',
+                desc=("The abbreviated symbols of the measurement units."),
+                notnull=True,
+                unique=True,
+            ),
+            Column(
+                name='meas_units_name',
+                dtype='str',
+                desc=("Long name of the measurement units."),
+            ),
+            Column(
+                name='meas_units_desc',
+                dtype='str',
+                desc=("A description of the measurement units."),
+            ),
+        )
+    ),
+    # ---- Remarks
     'remarks': Table(
         columns=(
             Column(
@@ -420,6 +444,236 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 name='remark_type_desc',
                 dtype='str',
                 desc=("The description of the remark type.")
+            ),
+        )
+    ),
+    # ---- Hydrogeochemistry
+    'pump_types': Table(
+        foreign_constraints=(
+            ('pump_type_id', 'purges'),
+        ),
+        columns=(
+            Column(
+                name='pump_type_name',
+                dtype='str',
+                desc=("A unique name to identify the pump type."),
+                notnull=True,
+                unique=True,
+            ),
+            Column(
+                name='pump_type_desc',
+                dtype='str',
+                desc=("The description of the pump type."),
+            ),
+        )
+    ),
+    'hg_sampling_methods': Table(
+        foreign_constraints=(
+            ('hg_sampling_method_id', 'hg_surveys'),
+        ),
+        columns=(
+            Column(
+                name='hg_sampling_method_name',
+                dtype='str',
+                desc=("A unique name to identify the sampling method type."),
+                notnull=True,
+                unique=True,
+            ),
+            Column(
+                name='hg_sampling_method_desc',
+                dtype='str',
+                desc=("The description of the sampling method type."),
+            ),
+        )
+    ),
+    'hg_params': Table(
+        foreign_constraints=(
+            ('hg_param_id', 'hg_param_values'),
+        ),
+        columns=(
+            Column(
+                name='hg_param_code',
+                dtype='str',
+                desc=("A unique code to identify the hydrogeochemical "
+                      "parameter."),
+                notnull=True,
+                unique=True,
+            ),
+            Column(
+                name='hg_param_name',
+                dtype='str',
+                desc=("The name of the hydrogeochemical parameter."
+                      "Used when importing results from a lab report."),
+            ),
+            Column(
+                name='hg_param_regex',
+                dtype='str',
+                desc=("The regular expression to use when importing "
+                      "hydrogeochemical data from a lab report."),
+            ),
+            Column(
+                name='cas_registry_number',
+                dtype='str',
+                desc=("The CAS Registry number of the parameter."),
+            ),
+        )
+    ),
+    'hg_surveys': Table(
+        foreign_constraints=(
+            ('hg_survey_id', 'hg_param_values'),
+            ('hg_survey_id', 'purges'),
+        ),
+        columns=(
+            Column(
+                name='sampling_feature_uuid',
+                dtype='object',
+                desc=("The unique identifier of the observation well in which "
+                      "the survey was made."),
+                notnull=True,
+            ),
+            Column(
+                name='hg_survey_datetime',
+                dtype='datetime64[ns]',
+                desc=("The date and time when the survey was made."),
+                notnull=True,
+            ),
+            Column(
+                name='hg_survey_depth',
+                dtype='float64',
+                desc=("The depth in the well at which the survey was made."),
+            ),
+            Column(
+                name='hg_survey_operator',
+                dtype='str',
+                desc=("The name of the person that made the survey."),
+            ),
+            Column(
+                name='hg_sampling_method_id',
+                dtype='Int64',
+                desc=("The ID of the method type used to do the survey."),
+            ),
+            Column(
+                name='sample_filtered',
+                dtype='Int64',
+                desc=("Whether the sample was filtered or not."),
+            ),
+            Column(
+                name='survey_note',
+                dtype='str',
+                desc=("Notes related to the survey."),
+            ),
+        )
+    ),
+    'hg_param_values': Table(
+        columns=(
+            Column(
+                name='hg_survey_id',
+                dtype='Int64',
+                desc=("The ID of the survey during which "
+                      "the measurement was made or sample was taken."),
+                notnull=True,
+            ),
+            Column(
+                name='hg_param_id',
+                dtype='Int64',
+                desc=("The ID of the type of parameter measured."),
+                notnull=True,
+            ),
+            Column(
+                name='hg_param_value',
+                dtype='str',
+                desc=("The value of the parameter."),
+                notnull=True,
+            ),
+            Column(
+                name='lim_detection',
+                dtype='float64',
+                desc=("The limit of detection of the method used to "
+                      "measure the parameter."),
+            ),
+            Column(
+                name='meas_units_id',
+                dtype='Int64',
+                desc=("The ID of the measurement units."),
+            ),
+            Column(
+                name='lab_sample_id',
+                dtype='str',
+                desc=("The ID given to the sample by the lab "
+                      "when applicable."),
+            ),
+            Column(
+                name='lab_report_date',
+                dtype='datetime64[ns]',
+                desc=("The date of the lab report when applicable."),
+            ),
+            Column(
+                name='lab_name',
+                dtype='str',
+                desc=("The name of the lab that analysed the sample "
+                      "when applicable."),
+            ),
+            Column(
+                name='method',
+                dtype='str',
+                desc=("The method used to measure or analyse the result."),
+            ),
+            Column(
+                name='notes',
+                dtype='str',
+                desc=("Any notes related to the hg parameter value."),
+            ),
+        )
+    ),
+    'purges': Table(
+        columns=(
+            Column(
+                name='hg_survey_id',
+                dtype='Int64',
+                desc=("The ID of the survey when the purge was made."),
+                notnull=True,
+            ),
+            Column(
+                name='purge_sequence_no',
+                dtype='Int64',
+                desc=("The number of the purge sequence."),
+                notnull=True,
+            ),
+            Column(
+                name='purge_seq_start',
+                dtype='datetime64[ns]',
+                desc=("The start date and time of the purge sequence."),
+                notnull=True,
+            ),
+            Column(
+                name='purge_seq_end',
+                dtype='datetime64[ns]',
+                desc=("The end date and time of the purge sequence."),
+                notnull=True,
+            ),
+            Column(
+                name='purge_outflow',
+                dtype='float64',
+                desc=("The purge outflow in L/min."),
+                notnull=True,
+            ),
+            Column(
+                name='pump_type_id',
+                dtype='Int64',
+                desc=("The ID of the pump type used to do the purge."),
+                notnull=True,
+            ),
+            Column(
+                name='pumping_depth',
+                dtype='float64',
+                desc=("The pumping depth."),
+                notnull=True,
+            ),
+            Column(
+                name='static_water_level',
+                dtype='float64',
+                desc=("The static water level."),
+                notnull=True,
             ),
         )
     ),

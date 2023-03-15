@@ -1223,19 +1223,26 @@ def test_update_database(tmp_path):
     shutil.copy(src_database, dst_database)
 
     dbaccessor = DatabaseAccessorSardesLite(dst_database)
+    assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 2
 
     # Update the database to the latest version.
-    assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 2
     assert not dbaccessor._session.in_transaction()
-    dbaccessor.update_database()
+    from_version, to_version, error = dbaccessor.update_database()
     assert not dbaccessor._session.in_transaction()
+
+    assert from_version == 2
+    assert to_version == 3
+    assert error is None
     assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 3
 
     # Try updating the database again to make sure this doesn't cause any bug.
-    assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 3
     assert not dbaccessor._session.in_transaction()
-    dbaccessor.update_database()
+    from_version, to_version, error = dbaccessor.update_database()
     assert not dbaccessor._session.in_transaction()
+
+    assert from_version == 3
+    assert to_version == 3
+    assert error is None
     assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 3
 
 

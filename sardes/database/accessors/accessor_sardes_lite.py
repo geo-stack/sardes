@@ -23,11 +23,10 @@ import numpy as np
 import pandas as pd
 from pandas.api.types import is_list_like, is_datetime64_ns_dtype
 from sqlalchemy import create_engine, extract, func, and_, inspect
-from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
-                        UniqueConstraint, Index)
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.exc import DBAPIError, ProgrammingError, OperationalError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.types import TEXT, VARCHAR, Boolean, BLOB
+from sqlalchemy.types import Boolean, BLOB
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.engine.url import URL
 from sqlalchemy_utils import UUIDType
@@ -42,6 +41,7 @@ from sardes.database.accessors.accessor_errors import (
 from sardes.database.accessors.accessor_helpers import create_empty_readings
 from sardes.database.utils import format_sqlobject_repr
 from sardes.api.timeseries import DataType
+
 
 # An application ID to help recognize that database files are
 # specific to the current accessor.
@@ -104,7 +104,7 @@ class BaseMixin(object):
         default values after creation.
         """
         return []
-    
+
     @classmethod
     def get_primary_colnames(cls):
         mapper = inspect(cls)
@@ -330,6 +330,18 @@ class ObservedProperty(BaseMixin, Base):
     obs_property_units = Column('unit', String)
 
 
+class MeasurementUnits(BaseMixin, Base):
+    """
+    An object used to map the 'measurement_units' library.
+    """
+    __tablename__ = 'measurement_units'
+
+    meas_units_id = Column(Integer, primary_key=True)
+    meas_units_abb = Column(String)
+    meas_units_name = Column(String)
+    meas_units_desc = Column(String)
+
+
 # ---- Numerical Data
 class TimeSeriesChannel(BaseMixin, Base):
     """
@@ -436,6 +448,7 @@ class SondeInstallation(BaseMixin, Base):
     An object used to map the 'sonde_installation' table.
     """
     __tablename__ = 'sonde_installation'
+
     install_uuid = Column(UUIDType(binary=False), primary_key=True)
     sonde_uuid = Column(
         UUIDType(binary=False), ForeignKey('sonde_feature.sonde_uuid'))
@@ -447,30 +460,106 @@ class SondeInstallation(BaseMixin, Base):
     process_id = Column(Integer, ForeignKey('process.process_id'))
 
 
-# ---- Pompes
+# ---- Hydrogeochemistry
 class PumpType(BaseMixin, Base):
     """
-    An object used to map the 'pump_type' library.
+    An object used to map the 'pump_types' library.
     """
-    __tablename__ = 'pump_type'
+    __tablename__ = 'pump_types'
+
     pump_type_id = Column(Integer, primary_key=True)
-    pump_type_abb = Column(String)
+    pump_type_name = Column(String)
     pump_type_desc = Column(String)
 
 
-class PumpInstallation(BaseMixin, Base):
+class HGSamplingMethod(BaseMixin, Base):
     """
-    An object used to map the 'pump_installation' table.
+    An object used to map the 'hg_sampling_methods' library.
     """
-    __tablename__ = 'pump_installation'
-    install_uuid = Column(UUIDType(binary=False), primary_key=True)
-    pump_type_id = Column(Integer, ForeignKey('pump_type.pump_type_id'))
-    start_date = Column(DateTime)
-    end_date = Column(DateTime)
-    install_depth = Column(Float)
-    operator = Column(String)
-    install_note = Column(String)
-    process_id = Column(Integer, ForeignKey('process.process_id'))
+    __tablename__ = 'hg_sampling_methods'
+
+    hg_sampling_method_id = Column(Integer, primary_key=True)
+    hg_sampling_method_name = Column(String)
+    hg_sampling_method_desc = Column(String)
+
+
+class HGParam(BaseMixin, Base):
+    """
+    An object used to map the 'hg_params' library.
+    """
+    __tablename__ = 'hg_params'
+
+    hg_param_id = Column(Integer, primary_key=True)
+    hg_param_code = Column(String)
+    hg_param_name = Column(String)
+    hg_param_regex = Column(String)
+    cas_registry_number = Column(String)
+
+
+class HGSurvey(BaseMixin, Base):
+    """
+    An object used to map the 'hg_surveys' library.
+    """
+    __tablename__ = 'hg_surveys'
+
+    hg_survey_id = Column(Integer, primary_key=True)
+    sampling_feature_uuid = Column(
+        UUIDType(binary=False),
+        ForeignKey('sampling_feature.sampling_feature_uuid'))
+    hg_survey_datetime = Column(DateTime)
+    hg_survey_depth = Column(Float)
+    hg_survey_operator = Column(String)
+    hg_sampling_method_id = Column(
+        Integer,
+        ForeignKey('hg_sampling_methods.hg_sampling_method_id'))
+    sample_filtered = Column(Integer)
+    survey_note = Column(String)
+
+
+class HGParamValue(BaseMixin, Base):
+    """
+    An object used to map the 'hg_param_values' table.
+    """
+    __tablename__ = 'hg_param_values'
+
+    hg_param_value_id = Column(Integer, primary_key=True)
+    hg_survey_id = Column(
+        Integer,
+        ForeignKey('hg_surveys.hg_survey_id'))
+    hg_param_id = Column(
+        Integer,
+        ForeignKey('hg_params.hg_param_id'))
+    hg_param_value = Column(String)
+    lim_detection = Column(Float)
+    meas_units_id = Column(
+        Integer,
+        ForeignKey('measurement_units.meas_units_id'))
+    lab_sample_id = Column(String)
+    lab_name = Column(String)
+    lab_report_date = Column(DateTime)
+    method = Column(String)
+    notes = Column(String)
+
+
+class Purge(BaseMixin, Base):
+    """
+    An object used to map the 'purge' library.
+    """
+    __tablename__ = 'purge'
+
+    purge_id = Column(Integer, primary_key=True)
+    hg_survey_id = Column(
+        Integer,
+        ForeignKey('hg_surveys.hg_survey_id'))
+    purge_sequence_no = Column(Integer)
+    purge_seq_start = Column(DateTime)
+    purge_seq_end = Column(DateTime)
+    purge_outflow = Column(Float)
+    pump_type_id = Column(
+        Integer,
+        ForeignKey('pump_types.pump_type_id'))
+    pumping_depth = Column(Float)
+    static_water_level = Column(Float)
 
 
 # ---- Processes
@@ -571,6 +660,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self._session.add(table(**item_attrs))
         self._session.flush()
 
+    def _get_table_names(self):
+        return inspect(self._session.connection()).get_table_names()
+
     def init_database(self):
         """
         Initialize the tables and attributes of a new database.
@@ -587,7 +679,10 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                   ObservationType, Observation, ObservedProperty,
                   GenericNumericalData, TimeSeriesChannel,
                   TimeSeriesData, SamplingFeatureAttachment,
-                  Remark, RemarkType]
+                  Remark, RemarkType,
+                  PumpType, HGSamplingMethod, HGParam, Purge,
+                  HGSurvey, HGParamValue, MeasurementUnits
+                  ]
         for table in tables:
             if table.__tablename__ in existing_table_names:
                 continue
@@ -603,9 +698,6 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         Update database to the latest schema version.
         """
         self.begin_transaction()
-        existing_table_names = inspect(
-            self._session.connection()
-            ).get_table_names()
         from_version = self.version()
         self.commit_transaction()
 
@@ -616,9 +708,18 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if self.version() < to_version:
             self.begin_transaction()
             try:
-                # Add the 'remark' and 'remark_type' tables, which were
-                # added in Sardes v0.13.0.
-                for table in [Remark, RemarkType]:
+                # Remove the old tables 'pump_type' and 'pump_installation'.
+                existing_table_names = self._get_table_names()
+                for table_name in ['pump_type', 'pump_installation']:
+                    if table_name in existing_table_names:
+                        self.execute(f'DROP TABLE {table_name}')
+                        self._session.flush()
+                # Add the new tables that were  added in Sardes v0.13.0 for
+                # the remarks and hydrogeochemistry.
+                existing_table_names = self._get_table_names()
+                for table in [Remark, RemarkType, PumpType, HGParam,
+                              HGSamplingMethod, Purge, HGSurvey,
+                              HGParamValue, MeasurementUnits]:
                     if table.__tablename__ not in existing_table_names:
                         self._add_table(table)
                 self.execute(f"PRAGMA user_version = {to_version}")
@@ -626,7 +727,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                 self._session.rollback()
                 return (from_version,
                         to_version,
-                        DatabaseUpdateError(from_version, 3, error))
+                        DatabaseUpdateError(from_version, to_version, error))
             else:
                 self.commit_transaction()
 
@@ -700,6 +801,23 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         self._session.rollback()
         self._engine.dispose()
         self._connection = None
+
+    # ---- Measurement Units Interface
+    def _get_measurement_units(self):
+        return self._get_table_data(MeasurementUnits)
+
+    def _set_measurement_units(self, index, values):
+        return self._set_table_data(MeasurementUnits, index, values)
+
+    def _add_measurement_units(self, values, indexes=None):
+        return self._add_table_data(MeasurementUnits, values, indexes)
+
+    def _del_measurement_units(self, meas_units_ids):
+        return self._del_table_data(
+            MeasurementUnits,
+            meas_units_ids,
+            foreign_constraints=[(HGParamValue, 'meas_units_id')]
+            )
 
     # ---- Observation Wells Interface
     def _get_observation_wells_data(self):
@@ -1520,6 +1638,142 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             foreign_constraints=[(Remark, 'remark_type_id')]
             )
 
+    # ---- Pump Types interface
+    def _get_pump_types(self):
+        return self._get_table_data(PumpType)
+
+    def _set_pump_types(self, index, values):
+        return self._set_table_data(PumpType, index, values)
+
+    def _add_pump_types(self, values, indexes=None):
+        return self._add_table_data(PumpType, values, indexes)
+
+    def _del_pump_types(self, pump_type_ids):
+        return self._del_table_data(
+            PumpType,
+            pump_type_ids,
+            foreign_constraints=[(Purge, 'pump_type_id')]
+            )
+
+    # ---- HG Sampling Methods interface
+    def _get_hg_sampling_methods(self):
+        return self._get_table_data(HGSamplingMethod)
+
+    def _set_hg_sampling_methods(self, index, values):
+        return self._set_table_data(HGSamplingMethod, index, values)
+
+    def _add_hg_sampling_methods(self, values, indexes=None):
+        return self._add_table_data(HGSamplingMethod, values, indexes)
+
+    def _del_hg_sampling_methods(self, indexes):
+        return self._del_table_data(
+            HGSamplingMethod,
+            indexes,
+            foreign_constraints=[(HGSurvey, 'hg_sampling_method_id')]
+            )
+
+    # ---- HG Params interface
+    def _get_hg_params(self):
+        return self._get_table_data(HGParam)
+
+    def _set_hg_params(self, index, values):
+        return self._set_table_data(HGParam, index, values)
+
+    def _add_hg_params(self, values, indexes=None):
+        return self._add_table_data(HGParam, values, indexes)
+
+    def _del_hg_params(self, indexes):
+        return self._del_table_data(
+            HGParam,
+            indexes,
+            foreign_constraints=[(HGParamValue, 'hg_param_id')]
+            )
+
+    # ---- HG Surveys
+    def _get_hg_surveys(self):
+        return self._get_table_data(
+            HGSurvey,
+            dtype={'hg_sampling_method_id': 'Int64',
+                   'sample_filtered': 'Int64'},
+            parse_dates={'hg_survey_datetime': TO_DATETIME_ARGS,
+                         'lab_report_date': TO_DATETIME_ARGS}
+            )
+
+    def _set_hg_surveys(self, index, values):
+        return self._set_table_data(
+            HGSurvey, index, values,
+            datetime_fields=['hg_survey_datetime', 'lab_report_date']
+            )
+
+    def _add_hg_surveys(self, values, indexes=None):
+        return self._add_table_data(
+            HGSurvey, values, indexes,
+            datetime_fields=['hg_survey_datetime', 'lab_report_date']
+            )
+
+    def _del_hg_surveys(self, indexes):
+        return self._del_table_data(
+            HGSurvey, indexes,
+            foreign_constraints=[
+                (HGParamValue, 'hg_survey_id'),
+                (Purge, 'hg_survey_id')]
+            )
+
+    # ---- HG Parameter Values Interface
+    def _get_hg_param_values(self):
+        return self._get_table_data(
+            HGParamValue,
+            dtype={'hg_survey_id': 'Int64',
+                   'hg_param_id': 'Int64',
+                   'hg_param_value': 'object',
+                   'lim_detection': 'float64',
+                   'meas_units_id': 'Int64',
+                   'method': 'object',
+                   'lab_name': 'object',
+                   'lab_sample_id': 'object'},
+            parse_dates={'lab_report_date': TO_DATETIME_ARGS}
+            )
+
+    def _set_hg_param_values(self, index, values):
+        return self._set_table_data(
+            HGParamValue, index, values,
+            datetime_fields=['lab_report_date']
+            )
+
+    def _add_hg_param_values(self, values, indexes=None):
+        return self._add_table_data(
+            HGParamValue, values, indexes,
+            datetime_fields=['lab_report_date']
+            )
+
+    def _del_hg_param_values(self, indexes):
+        return self._del_table_data(HGParamValue, indexes)
+
+    # ---- Purges interface
+    def _get_purges(self):
+        return self._get_table_data(
+            Purge,
+            dtype={'hg_survey_id': 'Int64',
+                   'purge_sequence_no': 'Int64',
+                   'pump_type_id': 'Int64'},
+            parse_dates={'purge_seq_start': TO_DATETIME_ARGS,
+                         'purge_seq_end': TO_DATETIME_ARGS}
+            )
+
+    def _set_purges(self, index, values):
+        return self._set_table_data(
+            Purge, index, values,
+            datetime_fields=['purge_seq_start', 'purge_seq_end']
+            )
+
+    def _add_purges(self, values, indexes=None):
+        return self._add_table_data(
+            Purge, values, indexes,
+            datetime_fields=['purge_seq_start', 'purge_seq_end']
+            )
+
+    def _del_purges(self, indexes):
+        return self._del_table_data(Purge, indexes)
 
     # ---- Generic methods
     def _get_table_primary_key(self, Table):
