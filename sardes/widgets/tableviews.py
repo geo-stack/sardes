@@ -1682,7 +1682,9 @@ class SardesTableWidget(SardesPaneWidget):
         """
         super().__init__(parent)
         self.setAutoFillBackground(True)
+        # A dictionary containing the sardes tool installed in the table.
         self._tools = {}
+        # A dictionary containing the actions registered to the table.
         self._actions = {}
 
         self.tableview = SardesTableView(
@@ -1770,7 +1772,7 @@ class SardesTableWidget(SardesPaneWidget):
         return message_box
 
     # ---- Public methods
-    def on_current_changed(self, current_index):
+    def on_current_changed(self, current_index: QModelIndex):
         """
         Called when the current index in the table view changed.
 
