@@ -1780,7 +1780,8 @@ class SardesTableWidget(SardesPaneWidget):
         this method to change the state of its UI when the current index
         of the table view changes.
         """
-        pass
+        for tool in self.tools():
+            tool.on_current_changed(current_index)
 
     def clear_model_data(self):
         """
