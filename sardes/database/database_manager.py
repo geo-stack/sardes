@@ -197,12 +197,15 @@ class DatabaseConnectionWorker(WorkerBase):
         """
         foreign_constraints = (
             DATABASE_CONCEPTUAL_MODEL[data_name].foreign_constraints)
-        for foreign_column, foreign_name in foreign_constraints:
-            foreign_data = self._get(foreign_name)[0]
+        for foreign_constraint in foreign_constraints:
+            foreign_table = foreign_constraint.foreign_table
+            foreign_column = foreign_constraint.foreign_column
+            foreign_data = self._get(foreign_table)[0]
+
             isin_indexes = parent_indexes[
                 parent_indexes.isin(foreign_data[foreign_column].array)]
             if not isin_indexes.empty:
-                return (isin_indexes[0], foreign_column, foreign_name),
+                return (isin_indexes[0], foreign_column, foreign_table),
         else:
             return None,
 

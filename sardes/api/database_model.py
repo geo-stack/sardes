@@ -36,6 +36,12 @@ Column = namedtuple(
     defaults=[False, False, (), True, None]
     )
 
+ForeignConstraint = namedtuple(
+    "ForeignConstraint",
+    ('foreign_column', 'foreign_table'),
+    )
+
+
 DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
     'manual_measurements': Table(
         columns=(
@@ -168,7 +174,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
     ),
     'sondes_data': Table(
         foreign_constraints=(
-            ('sonde_uuid', 'sonde_installations'),
+            ForeignConstraint('sonde_uuid', 'sonde_installations'),
         ),
         columns=(
             Column(
@@ -238,10 +244,10 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
     ),
     'observation_wells_data': Table(
         foreign_constraints=(
-            ('sampling_feature_uuid', 'manual_measurements'),
-            ('sampling_feature_uuid', 'sonde_installations'),
-            ('sampling_feature_uuid', 'repere_data'),
-            ('sampling_feature_uuid', 'remarks'),
+            ForeignConstraint('sampling_feature_uuid', 'manual_measurements'),
+            ForeignConstraint('sampling_feature_uuid', 'sonde_installations'),
+            ForeignConstraint('sampling_feature_uuid', 'repere_data'),
+            ForeignConstraint('sampling_feature_uuid', 'remarks'),
         ),
         columns=(
             Column(
@@ -327,7 +333,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
     ),
     'sonde_models_lib': Table(
         foreign_constraints=(
-            ('sonde_model_id', 'sondes_data'),
+            ForeignConstraint('sonde_model_id', 'sondes_data'),
         ),
         columns=(
             Column(
@@ -355,7 +361,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
     ),
     'measurement_units': Table(
         foreign_constraints=(
-            ('meas_units_id', 'hg_param_values'),
+            ForeignConstraint('meas_units_id', 'hg_param_values'),
         ),
         columns=(
             Column(
@@ -423,7 +429,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
     ),
     'remark_types': Table(
         foreign_constraints=(
-            ('remark_type_id', 'remarks'),
+            ForeignConstraint('remark_type_id', 'remarks'),
         ),
         columns=(
             Column(
@@ -450,7 +456,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
     # ---- Hydrogeochemistry
     'pump_types': Table(
         foreign_constraints=(
-            ('pump_type_id', 'purges'),
+            ForeignConstraint('pump_type_id', 'purges'),
         ),
         columns=(
             Column(
@@ -469,7 +475,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
     ),
     'hg_sampling_methods': Table(
         foreign_constraints=(
-            ('hg_sampling_method_id', 'hg_surveys'),
+            ForeignConstraint('hg_sampling_method_id', 'hg_surveys'),
         ),
         columns=(
             Column(
@@ -488,7 +494,7 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
     ),
     'hg_params': Table(
         foreign_constraints=(
-            ('hg_param_id', 'hg_param_values'),
+            ForeignConstraint('hg_param_id', 'hg_param_values'),
         ),
         columns=(
             Column(
@@ -520,8 +526,8 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
     ),
     'hg_surveys': Table(
         foreign_constraints=(
-            ('hg_survey_id', 'hg_param_values'),
-            ('hg_survey_id', 'purges'),
+            ForeignConstraint('hg_survey_id', 'hg_param_values'),
+            ForeignConstraint('hg_survey_id', 'purges'),
         ),
         columns=(
             Column(
