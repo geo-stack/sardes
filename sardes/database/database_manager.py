@@ -338,6 +338,54 @@ class DatabaseConnectionWorker(WorkerBase):
             sampling_feature_uuid, attachment_type)
 
     # ---- Utilities
+    def _get_water_quality_data(self, station_id):
+        """
+        Return the formatted hydrogeochemical data for the specified
+        monitoring station ID.
+        """
+        if not self.is_connected():
+            return None,
+
+        hg_surveys = self._get('hg_surveys')[0]
+        hg_params = self._get('hg_params')[0]
+        measurement_units = self._get('measurement_units')[0]
+        hg_param_values = self._get('hg_param_values')[0]
+
+        sta_hg_surveys = hg_surveys[
+            hg_surveys['sampling_feature_uuid'] == station_id
+            ]
+
+        water_quality_data = None
+        for hg_survey_id, hg_survey_data in sta_hg_surveys.iterrows():
+            hg_survey_date = hg_survey_data['hg_survey_datetime']
+
+            _to_merge = hg_param_values.loc[
+                hg_param_values['hg_survey_id'] == hg_survey_id
+                ]
+            _to_merge = _to_merge[
+                ['hg_param_id', 'hg_param_value', 'meas_units_id']
+                ].copy()
+            _to_merge['hg_param_id'] = (
+                _to_merge['hg_param_id']
+                .map(hg_params['hg_param_name'].to_dict().get)
+                )
+            _to_merge['meas_units_id'] = (
+                _to_merge['meas_units_id']
+                .map(measurement_units['meas_units_abb'].to_dict().get)
+                )
+            _to_merge = _to_merge.set_index('hg_param_id')
+            _to_merge.columns = pd.MultiIndex.from_tuples(
+                [(hg_survey_date, col) for col in _to_merge.columns]
+                )
+
+            if water_quality_data is None:
+                water_quality_data = _to_merge
+            else:
+                water_quality_data = water_quality_data.merge(
+                    _to_merge, how='outer', left_index=True, right_index=True)
+
+        return water_quality_data,
+
     def _get_sonde_installation_info(self, sonde_serial_no, date_time):
         """
         Fetch and return from the database the installation infos related to
@@ -763,6 +811,16 @@ class DatabaseConnectionManager(TaskManagerBase):
         self.run_tasks()
 
     # ---- Utilities
+    def get_water_quality_data(self, station_id, callback=None,
+                               postpone_exec=False):
+        """
+        Fetch and return from the database the water quality data
+        related to the given monitoring station.
+        """
+        self.add_task('get_water_quality_data', callback, station_id)
+        if not postpone_exec:
+            self.run_tasks()
+
     def get_sonde_installation_info(self, sonde_serial_no, date_time,
                                     callback=None, postpone_exec=False):
         """
