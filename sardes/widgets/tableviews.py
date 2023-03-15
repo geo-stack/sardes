@@ -1836,8 +1836,6 @@ class SardesTableWidget(SardesPaneWidget):
                 continue
             for action in actions:
                 toolbar.addAction(action)
-                tool = toolbar.widgetForAction(action)
-                self._tools[action.objectName()] = tool
                 self._actions[action.objectName()] = action
             if section != sections[-1]:
                 toolbar.addSeparator()
@@ -1941,12 +1939,19 @@ class SardesTableWidget(SardesPaneWidget):
         if tool.objectName() in self._tools:
             raise Warning(
                 "Cannot add tool '{}' to table '{}' because there is already "
-                "one installed with this name in this table."
+                "a tool installed with this name."
                 ).format(tool.name, self.model().table_id)
-        else:
-            self._actions[tool.objectName()] = self.add_toolbar_widget(
-                tool.toolbutton(), 'upper', before, after)
-            self._tools[tool.objectName()] = tool
+            return
+        if tool.objectName() in self._actions:
+            raise Warning(
+                "Cannot add tool '{}' to table '{}' because there is already "
+                "an action with this name."
+                ).format(tool.name, self.model().table_id)
+            return
+
+        self._actions[tool.objectName()] = self.add_toolbar_widget(
+            tool.toolbutton(), 'upper', before, after)
+        self._tools[tool.objectName()] = tool
 
     # ---- Table view header state
     def get_table_horiz_header_state(self):
