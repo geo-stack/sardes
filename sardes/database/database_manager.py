@@ -351,9 +351,14 @@ class DatabaseConnectionWorker(WorkerBase):
         measurement_units = self._get('measurement_units')[0]
         hg_param_values = self._get('hg_param_values')[0]
 
+        station_data = self._get('observation_wells_data')[0].loc[station_id]
         sta_hg_surveys = hg_surveys[
             hg_surveys['sampling_feature_uuid'] == station_id
             ]
+        if sta_hg_surveys.empty:
+            water_quality_data = pd.DataFrame()
+            water_quality_data.attrs['station_id'] = station_id
+            return water_quality_data,
 
         water_quality_data = None
         for hg_survey_id, hg_survey_data in sta_hg_surveys.iterrows():
