@@ -360,6 +360,12 @@ class DatabaseConnectionWorker(WorkerBase):
             water_quality_data.attrs['station_id'] = station_id
             return water_quality_data,
 
+        repere_data = self._get('repere_data')[0]
+        station_repere_data = (
+            repere_data
+            [repere_data['sampling_feature_uuid'] == station_id]
+            .copy())
+
         water_quality_data = None
         for hg_survey_id, hg_survey_data in sta_hg_surveys.iterrows():
             hg_survey_date = hg_survey_data['hg_survey_datetime']
@@ -388,6 +394,8 @@ class DatabaseConnectionWorker(WorkerBase):
             else:
                 water_quality_data = water_quality_data.merge(
                     _to_merge, how='outer', left_index=True, right_index=True)
+        water_quality_data.attrs['station_data'] = station_data
+        water_quality_data.attrs['station_repere_data'] = station_repere_data
 
         return water_quality_data,
 
