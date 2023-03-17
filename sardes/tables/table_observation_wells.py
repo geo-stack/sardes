@@ -160,29 +160,29 @@ class ObsWellsTableWidget(SardesTableWidget):
         for button in self._create_extra_toolbuttons():
             self.add_toolbar_widget(button)
 
+        self.water_quality_report_tool = WaterQualityReportTool(self)
+        self.install_tool(self.water_quality_report_tool)
+
     # ---- SardesPaneWidget public API
     def register_to_plugin(self, plugin):
         """Register this table with the given plugin."""
         self.sig_view_data.connect(plugin.main.view_timeseries_data)
         self.construction_logs_manager.set_dbmanager(
             plugin.main.db_connection_manager)
-        self.water_quality_reports.set_dbmanager(
-            plugin.main.db_connection_manager)
 
     # ---- SardesTableWidget public API
     def on_current_changed(self, current_index):
         """
-        Implemement on_current_changed SardesTableWidget method.
+        Extend base SardesTableWidget method.
         """
         if current_index.isValid():
             is_new_row = self.model().is_new_row_at(current_index)
             self.show_data_btn.setEnabled(not is_new_row)
             self.construction_logs_manager.setEnabled(not is_new_row)
-            self.water_quality_reports.setEnabled(not is_new_row)
         else:
             self.show_data_btn.setEnabled(False)
             self.construction_logs_manager.setEnabled(False)
-            self.water_quality_reports.setEnabled(False)
+        super().on_current_changed(current_index)
 
     # ---- Timeseries
     def get_current_obs_well_data(self):
@@ -245,36 +245,8 @@ class ObsWellsTableWidget(SardesTableWidget):
                 "selected station.")
             )
 
-        # Setup water quality reports manager.
-        self.water_quality_reports = FileAttachmentManager(
-            self, icon='water_quality', attachment_type=2,
-            qfiledialog_namefilters=(
-                _('Water Quality Report') +
-                ' (*.xls ; *.xlsx ; *.csv, ; *.txt)'),
-            qfiledialog_title=_(
-                'Select a water quality report for Station {}'),
-            text=_("Water Quality Report"),
-            tooltip=_(
-                "Open the menu to add a water quality report to the currently "
-                "selected station or to view or delete an existing "
-                "report."),
-            attach_text=_("Attach Water Quality Report..."),
-            attach_tooltip=_(
-                "Attach a water quality report to the currently "
-                "selected station."),
-            show_text=_("Show Water Quality Report..."),
-            show_tooltip=_(
-                "Show the water quality report attached to the "
-                "currently selected station."),
-            remove_text=_("Remove Water Quality Report"),
-            remove_tooltip=_(
-                "Remove the water quality report attached to the "
-                "currently selected station.")
-            )
-
         return [self.show_data_btn, self.show_gmap_btn,
-                self.construction_logs_manager.toolbutton,
-                self.water_quality_reports.toolbutton]
+                self.construction_logs_manager.toolbutton]
 
     def _view_current_timeseries_data(self):
         """
