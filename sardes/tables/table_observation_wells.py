@@ -28,6 +28,8 @@ from sardes.tables.delegates import (
     NumEditDelegate, NotEditableDelegate, TextEditDelegate)
 from sardes.tables.errors import ForeignReadingsConstraintError
 
+from sardes.tools.waterquality import WaterQualityReportTool
+
 
 class ObsWellsTableModel(StandardSardesTableModel):
     """
@@ -109,8 +111,8 @@ class ObsWellsTableModel(StandardSardesTableModel):
         ]
 
     __dataname__ = 'observation_wells_data'
-    __libnames__ = ['observation_wells_data_overview',
-                    'attachments_info']
+    __libnames__ = ['observation_wells_data_overview', 'attachments_info',
+                    'hg_surveys']
 
     def _check_foreign_constraint(self, callback):
         """
