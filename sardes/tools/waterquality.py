@@ -118,6 +118,14 @@ class WaterQualityReportTool(SardesTool):
         if water_quality_data.empty:
             return
 
+        # Sort data by their index.
+        water_quality_data = water_quality_data.sort_index(
+            ascending=True,
+            axis=0,
+            inplace=False,
+            key=lambda index: index.str.lower().str.normalize('NFKD')
+            )
+
         station_name = water_quality_data.attrs['station_data']['obs_well_id']
         temp_path = tempfile.mkdtemp(dir=TEMP_DIR)
         temp_filename = osp.join(
