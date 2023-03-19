@@ -2048,26 +2048,32 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
 
 
 if __name__ == "__main__":
-    database = "D:/Desktop/rsesq_prod_02-02-2021.db"
-    accessor = DatabaseAccessorSardesLite(database)
-    accessor.init_database()
-    accessor.connect()
+    database = "D:/Desktop/rsesq_prod_28-12-2022_jsg.db"
 
-    obs_wells = accessor.get('observation_wells_data')
-    sonde_data = accessor.get('sondes_data')
-    sonde_models_lib = accessor.get('sonde_models_lib')
-    sonde_installations = accessor.get('sonde_installations')
-    repere_data = accessor.get('repere_data')
+    # import logging
+    # engine_logger = logging.getLogger('sqlalchemy.engine')
+    # file_handler = logging.FileHandler('D:/Desktop/sqlalchemy_v2.log')
+    # engine_logger.addHandler(file_handler)
+    # engine_logger.setLevel(logging.INFO)
 
-    attachments_info = accessor.get('attachments_info')
+    dbaccessor = DatabaseAccessorSardesLite(database)
+    dbaccessor.update_database()
 
-    overview = accessor.get('observation_wells_data_overview')
-    from time import perf_counter
+    dbaccessor.connect()
+
+    sonde_data = dbaccessor.get('sondes_data')
+    sonde_models_lib = dbaccessor.get('sonde_models_lib')
+    sonde_installations = dbaccessor.get('sonde_installations')
+    repere_data = dbaccessor.get('repere_data')
+
+    attachments_info = dbaccessor.get('attachments_info')
+
+    overview = dbaccessor.get('observation_wells_data_overview')
     t1 = perf_counter()
     sampling_feature_uuid = (
-        accessor._get_sampling_feature_uuid_from_name('01070001'))
-    readings = accessor.get_timeseries_for_obs_well(
+        dbaccessor._get_sampling_feature_uuid_from_name('01070001'))
+    readings = dbaccessor.get_timeseries_for_obs_well(
         sampling_feature_uuid, [DataType.WaterLevel])
     print(perf_counter() - t1)
 
-    accessor.close_connection()
+    dbaccessor.close_connection()
