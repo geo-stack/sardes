@@ -20,7 +20,7 @@ import urllib
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
-from qtpy.QtCore import Signal, Slot
+from qtpy.QtCore import Signal
 import simplekml
 
 # ---- Local imports
@@ -33,6 +33,7 @@ from sardes.config.main import CONF
 from sardes.database.accessors.accessor_helpers import create_empty_readings
 from sardes.tools.hydrographs import HydrographCanvas
 from sardes.tools.save2excel import _save_reading_data_to_xlsx
+from sardes.tools.waterquality import _save_hg_data_to_xlsx
 from sardes.utils.data_operations import format_reading_data
 
 
@@ -608,8 +609,7 @@ class DatabaseConnectionWorker(WorkerBase):
                     log_data, log_fame = (
                         self.db_accessor.get_attachment(station_uuid, 1))
                 if iri_quality is not None:
-                    quality_data, quality_fame = (
-                        self.db_accessor.get_attachment(station_uuid, 2))
+                    quality_data, = self._get_water_quality_data(station_uuid)
 
                 # Generate the attached files and add the urls.
                 files_urls = ''
@@ -671,15 +671,24 @@ class DatabaseConnectionWorker(WorkerBase):
                         iri_graphs + '/' + graph_filename, safe='/:')
                     files_urls += '<a href="{}">{}</a><br/>'.format(
                         url, _("Graph"))
-                if iri_quality is not None and quality_data is not None:
-                    root, ext = osp.splitext(quality_fame)
-                    quality_filename = _('water_quality_{}{}').format(
-                        station_data['obs_well_id'], ext)
+                if iri_quality is not None and not quality_data.empty:
+                    quality_filename = _(
+                        "water_quality_{}.xlsx"
+                        ).format(station_data['obs_well_id'])
                     quality_savepath = osp.join(
                         quality_dirname, quality_filename)
                     try:
-                        with open(quality_savepath, 'wb') as f:
-                            f.write(quality_data)
+                        _save_hg_data_to_xlsx(
+                            quality_savepath,
+                            _('Water Quality'),
+                            quality_data,
+                            quality_data.attrs['station_data'],
+                            ground_altitude,
+                            is_alt_geodesic,
+                            logo_filename=get_documents_logo_filename(),
+                            font_name=CONF.get(
+                                'documents_settings', 'xlsx_font')
+                            )
                     except PermissionError as e:
                         print(e)
 
@@ -1030,7 +1039,6 @@ class DatabaseConnectionManager(TaskManagerBase):
 
 if __name__ == '__main__':
     from sardes.database.accessors import DatabaseAccessorSardesLite
-    from sardes.api.timeseries import DataType
 
     db_accessor = DatabaseAccessorSardesLite(
         'D:/Desktop/rsesq_prod_21072020_v1.db')
