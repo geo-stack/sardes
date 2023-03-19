@@ -1247,4 +1247,4 @@ def test_update_database(tmp_path):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', __file__, '-v', '-rw'])
+    pytest.main(['-x', __file__, '-v', '-rw', '-k', 'test_update_database'])
