@@ -129,7 +129,8 @@ class WaterQualityReportTool(SardesTool):
         station_name = water_quality_data.attrs['station_data']['obs_well_id']
         temp_path = tempfile.mkdtemp(dir=TEMP_DIR)
         temp_filename = osp.join(
-            temp_path, _(f"water_quality_{station_name}.xlsx"))
+            temp_path, _("water_quality_{}.xlsx".format(station_name))
+            )
 
         last_repere_data = (
             water_quality_data.attrs['station_repere_data']
