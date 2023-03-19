@@ -40,7 +40,7 @@ from sardes.utils.data_operations import are_values_equal
 from sardes.api.taskmanagers import TaskManagerBase, WorkerBase
 from sardes.api.timeseries import DataType
 from sardes.api.database_accessor import DatabaseAccessorError
-from sardes.database.accessors.accessor_sardes_lite import (
+from sardes.database.accessors.accessor_sardes_lite.accessor import (
     DatabaseAccessorSardesLite, CURRENT_SCHEMA_VERSION, DATE_FORMAT,
     SamplingFeature, Location, SamplingFeatureMetadata,
     SamplingFeatureDataOverview, SamplingFeatureAttachment)
@@ -1247,4 +1247,4 @@ def test_update_database(tmp_path):
 
 
 if __name__ == "__main__":
-    pytest.main(['-x', __file__, '-v', '-rw'])
+    pytest.main(['-x', __file__, '-v', '-rw', '-k', 'test_update_database'])
