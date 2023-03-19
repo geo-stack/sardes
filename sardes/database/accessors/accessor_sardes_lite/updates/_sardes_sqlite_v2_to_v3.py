@@ -160,4 +160,12 @@ def _update_v2_to_v3(accessor):
             """
         )
         accessor._session.flush()
+    # Delete all water quality reports saved as attachment from the database.
+    accessor.execute(
+        """
+        DELETE FROM sampling_feature_attachment WHERE attachment_type = 2
+        """
+    )
+    accessor._session.flush()
+    accessor.execute("vacuum")
     accessor.execute("PRAGMA user_version = 3")
