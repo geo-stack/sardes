@@ -167,5 +167,4 @@ def _update_v2_to_v3(accessor):
         """
     )
     accessor._session.flush()
-    accessor.execute("vacuum")
     accessor.execute("PRAGMA user_version = 3")

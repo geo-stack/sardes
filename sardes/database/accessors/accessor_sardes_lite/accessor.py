@@ -10,6 +10,7 @@
 """
 Sarde Lite Object-Relational Mapping and Database Accessor.
 """
+
 from __future__ import annotations
 
 # ---- Standard imports
@@ -719,7 +720,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                         DatabaseUpdateError(from_version, to_version, error))
             else:
                 self.commit_transaction()
-
+        self.execute("vacuum")
         return from_version, CURRENT_SCHEMA_VERSION, None
 
     # ---- Database connection
