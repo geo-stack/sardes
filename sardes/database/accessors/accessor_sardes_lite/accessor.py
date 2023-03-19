@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 """
-Object-Relational Mapping and Accessor implementation of the Sardes database.
+Sarde Lite Object-Relational Mapping and Database Accessor.
 """
 from __future__ import annotations
 
@@ -704,25 +704,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         if from_version == CURRENT_SCHEMA_VERSION:
             return from_version, CURRENT_SCHEMA_VERSION, None
 
+        from sardes.database.accessors.accessor_sardes_lite import (
+            updates as db_updates)
+
         to_version = 3
         if self.version() < to_version:
             self.begin_transaction()
             try:
-                # Remove the old tables 'pump_type' and 'pump_installation'.
-                existing_table_names = self._get_table_names()
-                for table_name in ['pump_type', 'pump_installation']:
-                    if table_name in existing_table_names:
-                        self.execute(f'DROP TABLE {table_name}')
-                        self._session.flush()
-                # Add the new tables that were  added in Sardes v0.13.0 for
-                # the remarks and hydrogeochemistry.
-                existing_table_names = self._get_table_names()
-                for table in [Remark, RemarkType, PumpType, HGParam,
-                              HGSamplingMethod, Purge, HGSurvey,
-                              HGParamValue, MeasurementUnits]:
-                    if table.__tablename__ not in existing_table_names:
-                        self._add_table(table)
-                self.execute(f"PRAGMA user_version = {to_version}")
+                db_updates._update_v2_to_v3(self)
             except Exception as error:
                 self._session.rollback()
                 return (from_version,
