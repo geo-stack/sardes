@@ -23,7 +23,7 @@ import numpy as np
 import pytest
 import pandas as pd
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QToolBar, QFileDialog, QMessageBox
+from qtpy.QtWidgets import QToolBar, QFileDialog, QMessageBox, QWidget
 
 
 # ---- Local imports
@@ -62,7 +62,7 @@ def dataset():
 @pytest.fixture
 def hydrostats_tool(dataset, repere_data, obswells_data):
 
-    class ParentToolbar(QToolBar):
+    class ParentTableMock(QToolBar):
         formatted_dataset = dataset
 
         def model(self):
@@ -75,14 +75,14 @@ def hydrostats_tool(dataset, repere_data, obswells_data):
         def get_formatted_data(self):
             return self.formatted_dataset
 
-    toolbar = ParentToolbar()
-    tool = SatisticalHydrographTool(toolbar)
+    table = ParentTableMock()
+    tool = SatisticalHydrographTool(table)
 
-    toolbar.addAction(tool)
-    toolbar.show()
+    table.addAction(tool)
+    table.show()
     yield tool
 
-    toolbar.close()
+    table.close()
     assert not tool.toolwidget().isVisible()
 
 
@@ -150,7 +150,7 @@ def test_plot_statistical_hydrograph_if_empy(qtbot, hydrostats_tool):
         [],
         columns=['datetime', DataType.WaterLevel])
     dataset['datetime'] = pd.to_datetime(dataset['datetime'])
-    hydrostats_tool.parent.formatted_dataset = dataset
+    hydrostats_tool.table.formatted_dataset = dataset
 
     # Show the statistical hydrograph toolwidget.
     hydrostats_tool.trigger()
