@@ -50,9 +50,9 @@ class SatisticalHydrographTool(SardesTool):
     A tool to produce statistical hydrograph from piezometric timeseries.
     """
 
-    def __init__(self, parent):
+    def __init__(self, table):
         super().__init__(
-            parent,
+            table,
             name='statistical_hydrograph_tool',
             text=_("Statistical Hydrograph"),
             icon='show_barplot',
