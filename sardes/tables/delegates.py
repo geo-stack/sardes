@@ -320,33 +320,6 @@ class ObsWellIdEditDelegate(SardesItemDelegate):
             pass
 
 
-class SondeModelEditDelegate(SardesItemDelegate):
-    """
-    A delegate to select the brand of a sonde from a predefined list.
-    """
-
-    def create_editor(self, parent):
-        editor = QComboBox(parent)
-
-        # Populate the combobox with the available brand in the library.
-        sonde_models_lib = self.model().libraries['sonde_models_lib']
-        sonde_models_lib = sonde_models_lib.sort_values(
-            'sonde_brand_model', axis=0, ascending=True)
-        for index, values in sonde_models_lib.iterrows():
-            editor.addItem(values['sonde_brand_model'], userData=index)
-        return editor
-
-    def logical_to_visual_data(self, visual_dataf):
-        try:
-            sonde_models_lib = self.model().libraries['sonde_models_lib']
-            visual_dataf[self.table_column.name] = (
-                visual_dataf[self.table_column.name]
-                .map(sonde_models_lib['sonde_brand_model'].to_dict().get)
-                )
-        except KeyError:
-            pass
-
-
 class RemarkTypeEditDelegate(SardesItemDelegate):
     """
     A delegate to select the type of remark.
