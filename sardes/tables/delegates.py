@@ -234,6 +234,38 @@ class BoolEditDelegate(SardesItemDelegate):
 # =============================================================================
 # ---- Complex Delegates
 # =============================================================================
+class GenericLibSelectDelegate(SardesItemDelegate):
+    """
+    A generic delegate to select an item from a library.
+    """
+
+    def __init__(self, model_view, table_column,
+                 lib_name: str, lib_column_name: str):
+        super() .__init__(model_view, table_column)
+        self.lib_name = lib_name
+        self.lib_column_name = lib_column_name
+
+    def create_editor(self, parent):
+        editor = QComboBox(parent)
+
+        # Populate the combobox with the available brand in the library.
+        lib = self.model().libraries[self.lib_name]
+        lib = lib.sort_values(self.lib_column_name, axis=0, ascending=True)
+        for index, values in lib.iterrows():
+            editor.addItem(values[self.lib_column_name], userData=index)
+        return editor
+
+    def logical_to_visual_data(self, visual_dataf):
+        try:
+            lib = self.model().libraries[self.lib_name]
+            visual_dataf[self.table_column.name] = (
+                visual_dataf[self.table_column.name]
+                .map(lib[self.lib_column_name].to_dict().get)
+                )
+        except KeyError:
+            pass
+
+
 class ObsWellIdEditDelegate(SardesItemDelegate):
     """
     A delegate to select an observation well from the list of existing well
