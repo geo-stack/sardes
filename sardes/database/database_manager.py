@@ -344,8 +344,10 @@ class DatabaseConnectionWorker(WorkerBase):
         Return the formatted hydrogeochemical data for the specified
         monitoring station ID.
         """
+        water_quality_data = pd.DataFrame()
+        water_quality_data.attrs['station_id'] = station_id
         if not self.is_connected():
-            return None,
+            return water_quality_data,
 
         hg_surveys = self._get('hg_surveys')[0]
         hg_params = self._get('hg_params')[0]
@@ -357,8 +359,6 @@ class DatabaseConnectionWorker(WorkerBase):
             hg_surveys['sampling_feature_uuid'] == station_id
             ]
         if sta_hg_surveys.empty:
-            water_quality_data = pd.DataFrame()
-            water_quality_data.attrs['station_id'] = station_id
             return water_quality_data,
 
         repere_data = self._get('repere_data')[0]
@@ -367,13 +367,15 @@ class DatabaseConnectionWorker(WorkerBase):
             [repere_data['sampling_feature_uuid'] == station_id]
             .copy())
 
-        water_quality_data = None
         for hg_survey_id, hg_survey_data in sta_hg_surveys.iterrows():
             hg_survey_date = hg_survey_data['hg_survey_datetime']
 
             _to_merge = hg_param_values.loc[
                 hg_param_values['hg_survey_id'] == hg_survey_id
                 ]
+            if _to_merge.empty:
+                continue
+
             _to_merge = _to_merge[
                 ['hg_param_id', 'hg_param_value', 'meas_units_id']
                 ].copy()
@@ -390,7 +392,7 @@ class DatabaseConnectionWorker(WorkerBase):
                 [(hg_survey_date, col) for col in _to_merge.columns]
                 )
 
-            if water_quality_data is None:
+            if water_quality_data.empty:
                 water_quality_data = _to_merge
             else:
                 water_quality_data = water_quality_data.merge(
