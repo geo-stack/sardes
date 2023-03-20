@@ -8,7 +8,7 @@
 # -----------------------------------------------------------------------------
 
 """
-Tests for the Readings plugin.
+Tests for the Publish plugin.
 """
 
 # ---- Standard imports
@@ -168,7 +168,7 @@ def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path):
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'graphs')))
     assert len(files) == 4
     path, dirs, files = next(os.walk(osp.join(files_dirname, 'quality')))
-    assert len(files) == 4
+    assert len(files) == 1
 
     # Check the content of the kml file.
     with open(selectedfilename) as f:
@@ -182,7 +182,7 @@ def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path):
     assert len(re.findall(">Data</a>", content)) == 4
     assert len(re.findall(">Diagram</a>", content)) == 4
     assert len(re.findall(">Graph</a>", content)) == 4
-    assert len(re.findall(">Water Quality</a>", content)) == 4
+    assert len(re.findall(">Water Quality</a>", content)) == 1
 
 
 if __name__ == "__main__":
