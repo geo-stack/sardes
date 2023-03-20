@@ -27,7 +27,6 @@ from sardes.tables.delegates import (
     StringEditDelegate, BoolEditDelegate, DateTimeDelegate,
     NumEditDelegate, NotEditableDelegate, TextEditDelegate)
 from sardes.tables.errors import ForeignReadingsConstraintError
-
 from sardes.tools.waterquality import WaterQualityReportTool
 
 
