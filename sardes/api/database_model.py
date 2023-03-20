@@ -368,7 +368,6 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 name='meas_units_abb',
                 dtype='str',
                 desc=("The abbreviated symbols of the measurement units."),
-                notnull=True,
                 unique=True,
             ),
             Column(
