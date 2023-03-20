@@ -15,7 +15,8 @@ from sardes.config.locale import _
 from sardes.tables.models import StandardSardesTableModel
 from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.delegates import (
-    IntEditDelegate, DateTimeDelegate, NumEditDelegate, StringEditDelegate)
+    IntEditDelegate, DateTimeDelegate, NumEditDelegate, StringEditDelegate,
+    GenericLibSelectDelegate)
 
 
 class PurgesTableModel(StandardSardesTableModel):
@@ -50,7 +51,10 @@ class PurgesTableModel(StandardSardesTableModel):
                 'decimals': 3, 'minimum': 0, 'maximum': 99999}),
         sardes_table_column_factory(
             'purges', 'pump_type_id', _('Pump Type'),
-            delegate=IntEditDelegate),
+            delegate=GenericLibSelectDelegate,
+            delegate_options={
+                'lib_name': 'pump_types',
+                'lib_column_name': 'pump_type_name'}),
         sardes_table_column_factory(
             'purges', 'pumping_depth', _('Pumping Depth (m)'),
             delegate=NumEditDelegate,
