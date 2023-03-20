@@ -10,10 +10,13 @@ from sardes.database.accessors.accessor_sardes_lite import (
 import shutil
 
 # %% Update the database.
-database = "D:/Desktop/rsesq_prod_28-12-2022_jsg.db"
-shutil.copy("D:/Desktop/rsesq_prod_28-12-2022.db", database)
+print('Copying database...')
+database = "D:/Desktop/rsesq_prod_2023_03_07_jsg.db"
+shutil.copy("D:/Desktop/rsesq_prod_2023_03_07.db", database)
 
 dbaccessor = DatabaseAccessorSardesLite(database)
+
+print('Updating database...')
 dbaccessor.update_database()
 
 # %%
@@ -129,6 +132,10 @@ measurement_units = pd.DataFrame(
     )
 measurement_units.index.name = 'meas_units_abb'
 
+measurement_units.loc['UNITÉ', 'meas_units_name'] = (
+    "adimensionnelle")
+measurement_units.loc['UNITÉ', 'meas_units_desc'] = (
+    "Permet d'exprimer une quantité sans dimension.")
 measurement_units.loc['AU', 'meas_units_name'] = (
     "unité de turbidité absorbante")
 measurement_units.loc['AU', 'meas_units_desc'] = (
