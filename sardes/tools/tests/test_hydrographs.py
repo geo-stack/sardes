@@ -163,7 +163,7 @@ def test_save_hydrograph_if_empty(tmp_path, hydrograph_tool, mocker):
     as expected when there is no data saved for the station.
     """
     # Set an empty dataframe for the data of the tool's parent model.
-    hydrograph_tool.parent.model().dataf = (
+    hydrograph_tool.table.model().dataf = (
         create_empty_readings([DataType.WaterLevel, DataType.WaterTemp]))
 
     # Create and save the hydrograph.
