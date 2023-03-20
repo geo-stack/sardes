@@ -6,6 +6,11 @@
 # This file is part of SARDES.
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from sardes.widgets.tableviews import SardesTableWidget
+    from qtpy.QtCore import QModelIndex
 
 # ---- Third party imports
 from qtpy.QtCore import Qt, QEvent, QSize
@@ -26,13 +31,14 @@ class SardesToolBase(QAction):
     know what you are doing.
     """
 
-    def __init__(self, parent, name, text, icon, tip=None, iconsize=None,
-                 shortcut=None, context=Qt.WindowShortcut):
+    def __init__(self, table: SardesTableWidget, name: str, text: str,
+                 icon, tip: str = None, iconsize=None,
+                 shortcut: str = None, context=Qt.WindowShortcut):
         """
         Parameters
         ----------
-        parent : object
-            The parent Qt object where this tool is installed.
+        table : SardesTableWidget
+            The SardesTableWidget in which this tool is installed.
         name : str
             The name that will be used to reference this tool in the code.
         text: str
@@ -47,7 +53,7 @@ class SardesToolBase(QAction):
             A string corresponding to the keyboard shortcut to use for
             triggering this tool.
         """
-        super().__init__(text, parent)
+        super().__init__(text, parent=table)
         self.setObjectName(name)
         self._text = text
         self.setToolTip(format_tooltip(text, tip, shortcut))
@@ -66,8 +72,8 @@ class SardesToolBase(QAction):
         self._toolbutton = None
         self._toolwidget = None
 
-        self.parent = parent
-        parent.installEventFilter(self)
+        self.table = table
+        table.installEventFilter(self)
 
     # ---- Public API
     def update(self):
@@ -108,6 +114,12 @@ class SardesToolBase(QAction):
         self.update()
         self._show_toolwidget()
 
+    def on_current_changed(self, current_index: QModelIndex):
+        """
+        Called by the parent table widget when its current index is changed.
+        """
+        self.__on_current_changed__(current_index)
+
     # ---- Private API
     def eventFilter(self, widget, event):
         """
@@ -138,6 +150,15 @@ class SardesTool(SardesToolBase):
     A Sardes tool is a QAction that can be used to perform an action directly
     when triggered or to show a widget window to do more complex operations.
     """
+
+    def __on_current_changed__(self, current_index: QModelIndex):
+        """
+        Called when the current index of the parent table widget changed.
+
+        All tools that need to perform specific actions when the index of its
+        parent table widget changed *must* reimplement this method.
+        """
+        pass
 
     def __create_toolwidget__(self):
         """

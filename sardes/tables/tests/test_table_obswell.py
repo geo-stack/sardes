@@ -83,7 +83,7 @@ def test_construction_log_tool(tablewidget, constructlog, qtbot, mocker):
     # Check that the number of file attachment is as expected. There is
     # supposed to be 2 files for the first 4 wells of the test database:
     # one construction log and one water quality file.
-    assert (len(tablemodel.libraries['attachments_info']) == 4 * 2)
+    assert len(tablemodel.libraries['attachments_info']) == 4
 
     # Select the last row of the table, which corresponds to well '09000001'.
     # This well does not have any attachment or monitoring data.
@@ -104,7 +104,7 @@ def test_construction_log_tool(tablewidget, constructlog, qtbot, mocker):
     with qtbot.waitSignal(constructlogs_manager.sig_attachment_added):
         constructlogs_manager.attach_action.trigger()
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
-    assert len(tablemodel.libraries['attachments_info']) == 4 * 2 + 1
+    assert len(tablemodel.libraries['attachments_info']) == 4 + 1
 
     pos = constructlogs_manager.toolbutton.mapToGlobal(QPoint(0, 0))
     constructlogs_manager.toolbutton.menu().popup(pos)
@@ -121,7 +121,7 @@ def test_construction_log_tool(tablewidget, constructlog, qtbot, mocker):
     with qtbot.waitSignal(constructlogs_manager.sig_attachment_removed):
         constructlogs_manager.remove_action.trigger()
     qtbot.wait(MSEC_MIN_PROGRESS_DISPLAY + 100)
-    assert len(tablemodel.libraries['attachments_info']) == 4 * 2
+    assert len(tablemodel.libraries['attachments_info']) == 4
 
     pos = constructlogs_manager.toolbutton.mapToGlobal(QPoint(0, 0))
     constructlogs_manager.toolbutton.menu().popup(pos)
@@ -137,7 +137,7 @@ def test_select_observation_well(tablewidget, qtbot):
     """
     tableview = tablewidget.tableview
 
-    # We select the first well in the table and we assert that
+    # We select the first monitoring station in the table and we assert that
     # the UI state is as expected.
     tableview.set_current_index(0, 0)
 
@@ -145,7 +145,15 @@ def test_select_observation_well(tablewidget, qtbot):
     assert tablewidget.show_data_btn.isEnabled()
     assert tablewidget.show_gmap_btn.isEnabled()
     assert tablewidget.construction_logs_manager.isEnabled()
-    assert tablewidget.water_quality_reports.isEnabled()
+    assert tablewidget.water_quality_report_tool.isEnabled()
+
+    # We select other monitoring stations and we assert that
+    # the UI state is as expected.
+    tableview.set_current_index(1, 0)
+    assert not tablewidget.water_quality_report_tool.isEnabled()
+
+    tableview.set_current_index(2, 0)
+    assert tablewidget.water_quality_report_tool.isEnabled()
 
 
 def test_add_observation_well(tablewidget, qtbot, dbaccessor, mocker):
@@ -166,7 +174,7 @@ def test_add_observation_well(tablewidget, qtbot, dbaccessor, mocker):
     assert tablemodel.is_new_row_at(tablewidget.current_index())
     assert not tablewidget.show_data_btn.isEnabled()
     assert not tablewidget.construction_logs_manager.isEnabled()
-    assert not tablewidget.water_quality_reports.isEnabled()
+    assert not tablewidget.water_quality_report_tool.isEnabled()
 
     # We need to patch the message box that warns the user when
     # a Notnull constraint is violated.

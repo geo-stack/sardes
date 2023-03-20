@@ -7,6 +7,10 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+"""
+A tool to export piezometric monitoring data in Excel format.
+"""
+
 
 # ---- Standard library imports
 import os
@@ -64,14 +68,14 @@ class SaveReadingsToExcelTool(SardesTool):
             The absolute path of the default filename that will be set in
             the file dialog.
         """
-        obs_well_id = self.parent.model()._obs_well_data['obs_well_id']
+        obs_well_id = self.table.model()._obs_well_data['obs_well_id']
         if filename is None:
             filename = osp.join(
                 get_select_file_dialog_dir(),
                 _('readings_{}.xlsx').format(obs_well_id))
 
         filename, filefilter = QFileDialog.getSaveFileName(
-            self.parent, _("Save File"), filename, self.NAMEFILTERS)
+            self.table, _("Save File"), filename, self.NAMEFILTERS)
         if filename:
             filename = osp.abspath(filename)
             set_select_file_dialog_dir(osp.dirname(filename))
@@ -88,7 +92,7 @@ class SaveReadingsToExcelTool(SardesTool):
         QApplication.processEvents()
         try:
             last_repere_data = (
-                self.parent.model()._repere_data
+                self.table.model()._repere_data
                 .sort_values(by=['end_date'], ascending=[True])
                 .iloc[-1])
             ground_altitude = (
@@ -97,8 +101,8 @@ class SaveReadingsToExcelTool(SardesTool):
             is_alt_geodesic = last_repere_data['is_alt_geodesic']
             _save_reading_data_to_xlsx(
                 filename, _('Piezometry'),
-                self.parent.get_formatted_data(),
-                self.parent.model()._obs_well_data,
+                self.table.get_formatted_data(),
+                self.table.model()._obs_well_data,
                 ground_altitude,
                 is_alt_geodesic,
                 logo_filename=get_documents_logo_filename(),
@@ -108,7 +112,7 @@ class SaveReadingsToExcelTool(SardesTool):
             QApplication.restoreOverrideCursor()
             QApplication.processEvents()
             QMessageBox.warning(
-                self.parent,
+                self.table,
                 _('File in Use'),
                 _("The save file operation cannot be completed because the "
                   "file is in use by another application or user."),

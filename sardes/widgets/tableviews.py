@@ -1682,7 +1682,9 @@ class SardesTableWidget(SardesPaneWidget):
         """
         super().__init__(parent)
         self.setAutoFillBackground(True)
+        # A dictionary containing the sardes tool installed in the table.
         self._tools = {}
+        # A dictionary containing the actions registered to the table.
         self._actions = {}
 
         self.tableview = SardesTableView(
@@ -1770,7 +1772,7 @@ class SardesTableWidget(SardesPaneWidget):
         return message_box
 
     # ---- Public methods
-    def on_current_changed(self, current_index):
+    def on_current_changed(self, current_index: QModelIndex):
         """
         Called when the current index in the table view changed.
 
@@ -1778,7 +1780,8 @@ class SardesTableWidget(SardesPaneWidget):
         this method to change the state of its UI when the current index
         of the table view changes.
         """
-        pass
+        for tool in self.tools():
+            tool.on_current_changed(current_index)
 
     def clear_model_data(self):
         """
@@ -1833,8 +1836,6 @@ class SardesTableWidget(SardesPaneWidget):
                 continue
             for action in actions:
                 toolbar.addAction(action)
-                tool = toolbar.widgetForAction(action)
-                self._tools[action.objectName()] = tool
                 self._actions[action.objectName()] = action
             if section != sections[-1]:
                 toolbar.addSeparator()
@@ -1938,12 +1939,19 @@ class SardesTableWidget(SardesPaneWidget):
         if tool.objectName() in self._tools:
             raise Warning(
                 "Cannot add tool '{}' to table '{}' because there is already "
-                "one installed with this name in this table."
+                "a tool installed with this name."
                 ).format(tool.name, self.model().table_id)
-        else:
-            self._actions[tool.objectName()] = self.add_toolbar_widget(
-                tool.toolbutton(), 'upper', before, after)
-            self._tools[tool.objectName()] = tool
+            return
+        if tool.objectName() in self._actions:
+            raise Warning(
+                "Cannot add tool '{}' to table '{}' because there is already "
+                "an action with this name."
+                ).format(tool.name, self.model().table_id)
+            return
+
+        self._actions[tool.objectName()] = self.add_toolbar_widget(
+            tool.toolbutton(), 'upper', before, after)
+        self._tools[tool.objectName()] = tool
 
     # ---- Table view header state
     def get_table_horiz_header_state(self):

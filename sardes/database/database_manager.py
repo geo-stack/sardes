@@ -20,7 +20,7 @@ import urllib
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
-from qtpy.QtCore import Signal, Slot
+from qtpy.QtCore import Signal
 import simplekml
 
 # ---- Local imports
@@ -33,6 +33,7 @@ from sardes.config.main import CONF
 from sardes.database.accessors.accessor_helpers import create_empty_readings
 from sardes.tools.hydrographs import HydrographCanvas
 from sardes.tools.save2excel import _save_reading_data_to_xlsx
+from sardes.tools.waterquality import _save_hg_data_to_xlsx
 from sardes.utils.data_operations import format_reading_data
 
 
@@ -338,6 +339,69 @@ class DatabaseConnectionWorker(WorkerBase):
             sampling_feature_uuid, attachment_type)
 
     # ---- Utilities
+    def _get_water_quality_data(self, station_id):
+        """
+        Return the formatted hydrogeochemical data for the specified
+        monitoring station ID.
+        """
+        water_quality_data = pd.DataFrame()
+        water_quality_data.attrs['station_id'] = station_id
+        if not self.is_connected():
+            return water_quality_data,
+
+        hg_surveys = self._get('hg_surveys')[0]
+        hg_params = self._get('hg_params')[0]
+        measurement_units = self._get('measurement_units')[0]
+        hg_param_values = self._get('hg_param_values')[0]
+
+        station_data = self._get('observation_wells_data')[0].loc[station_id]
+        sta_hg_surveys = hg_surveys[
+            hg_surveys['sampling_feature_uuid'] == station_id
+            ]
+        if sta_hg_surveys.empty:
+            return water_quality_data,
+
+        repere_data = self._get('repere_data')[0]
+        station_repere_data = (
+            repere_data
+            [repere_data['sampling_feature_uuid'] == station_id]
+            .copy())
+
+        for hg_survey_id, hg_survey_data in sta_hg_surveys.iterrows():
+            hg_survey_date = hg_survey_data['hg_survey_datetime']
+
+            _to_merge = hg_param_values.loc[
+                hg_param_values['hg_survey_id'] == hg_survey_id
+                ]
+            if _to_merge.empty:
+                continue
+
+            _to_merge = _to_merge[
+                ['hg_param_id', 'hg_param_value', 'meas_units_id']
+                ].copy()
+            _to_merge['hg_param_id'] = (
+                _to_merge['hg_param_id']
+                .map(hg_params['hg_param_name'].to_dict().get)
+                )
+            _to_merge['meas_units_id'] = (
+                _to_merge['meas_units_id']
+                .map(measurement_units['meas_units_abb'].to_dict().get)
+                )
+            _to_merge = _to_merge.set_index('hg_param_id')
+            _to_merge.columns = pd.MultiIndex.from_tuples(
+                [(hg_survey_date, col) for col in _to_merge.columns]
+                )
+
+            if water_quality_data.empty:
+                water_quality_data = _to_merge
+            else:
+                water_quality_data = water_quality_data.merge(
+                    _to_merge, how='outer', left_index=True, right_index=True)
+        water_quality_data.attrs['station_data'] = station_data
+        water_quality_data.attrs['station_repere_data'] = station_repere_data
+
+        return water_quality_data,
+
     def _get_sonde_installation_info(self, sonde_serial_no, date_time):
         """
         Fetch and return from the database the installation infos related to
@@ -547,8 +611,7 @@ class DatabaseConnectionWorker(WorkerBase):
                     log_data, log_fame = (
                         self.db_accessor.get_attachment(station_uuid, 1))
                 if iri_quality is not None:
-                    quality_data, quality_fame = (
-                        self.db_accessor.get_attachment(station_uuid, 2))
+                    quality_data, = self._get_water_quality_data(station_uuid)
 
                 # Generate the attached files and add the urls.
                 files_urls = ''
@@ -610,15 +673,24 @@ class DatabaseConnectionWorker(WorkerBase):
                         iri_graphs + '/' + graph_filename, safe='/:')
                     files_urls += '<a href="{}">{}</a><br/>'.format(
                         url, _("Graph"))
-                if iri_quality is not None and quality_data is not None:
-                    root, ext = osp.splitext(quality_fame)
-                    quality_filename = _('water_quality_{}{}').format(
-                        station_data['obs_well_id'], ext)
+                if iri_quality is not None and not quality_data.empty:
+                    quality_filename = _(
+                        "water_quality_{}.xlsx"
+                        ).format(station_data['obs_well_id'])
                     quality_savepath = osp.join(
                         quality_dirname, quality_filename)
                     try:
-                        with open(quality_savepath, 'wb') as f:
-                            f.write(quality_data)
+                        _save_hg_data_to_xlsx(
+                            quality_savepath,
+                            _('Water Quality'),
+                            quality_data,
+                            quality_data.attrs['station_data'],
+                            ground_altitude,
+                            is_alt_geodesic,
+                            logo_filename=get_documents_logo_filename(),
+                            font_name=CONF.get(
+                                'documents_settings', 'xlsx_font')
+                            )
                     except PermissionError as e:
                         print(e)
 
@@ -763,6 +835,16 @@ class DatabaseConnectionManager(TaskManagerBase):
         self.run_tasks()
 
     # ---- Utilities
+    def get_water_quality_data(self, station_id, callback=None,
+                               postpone_exec=False):
+        """
+        Fetch and return from the database the water quality data
+        related to the given monitoring station.
+        """
+        self.add_task('get_water_quality_data', callback, station_id)
+        if not postpone_exec:
+            self.run_tasks()
+
     def get_sonde_installation_info(self, sonde_serial_no, date_time,
                                     callback=None, postpone_exec=False):
         """
@@ -959,7 +1041,6 @@ class DatabaseConnectionManager(TaskManagerBase):
 
 if __name__ == '__main__':
     from sardes.database.accessors import DatabaseAccessorSardesLite
-    from sardes.api.timeseries import DataType
 
     db_accessor = DatabaseAccessorSardesLite(
         'D:/Desktop/rsesq_prod_21072020_v1.db')
