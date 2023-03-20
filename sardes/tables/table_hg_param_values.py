@@ -16,7 +16,7 @@ from sardes.tables.models import StandardSardesTableModel
 from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.delegates import (
     StringEditDelegate, IntEditDelegate, NumEditDelegate, DateTimeDelegate,
-    TextEditDelegate)
+    TextEditDelegate, GenericLibSelectDelegate)
 
 
 class HGParamValuesTableModel(StandardSardesTableModel):
@@ -36,7 +36,10 @@ class HGParamValuesTableModel(StandardSardesTableModel):
             delegate=IntEditDelegate),
         sardes_table_column_factory(
             'hg_param_values', 'hg_param_id', _('Parameter'),
-            delegate=IntEditDelegate),
+            delegate=GenericLibSelectDelegate,
+            delegate_options={
+                'lib_name': 'hg_params',
+                'lib_column_name': 'hg_param_code'}),
         sardes_table_column_factory(
             'hg_param_values', 'hg_param_value', _('Value'),
             delegate=StringEditDelegate),
@@ -47,7 +50,10 @@ class HGParamValuesTableModel(StandardSardesTableModel):
                 'decimals': 3, 'minimum': 0, 'maximum': 99999}),
         sardes_table_column_factory(
             'hg_param_values', 'meas_units_id', _('Units'),
-            delegate=IntEditDelegate),
+            delegate=GenericLibSelectDelegate,
+            delegate_options={
+                'lib_name': 'measurement_units',
+                'lib_column_name': 'meas_units_abb'}),
         sardes_table_column_factory(
             'hg_param_values', 'lab_sample_id', _('Sample ID'),
             delegate=StringEditDelegate),
