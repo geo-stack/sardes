@@ -255,20 +255,131 @@ def constructlog(tmp_path):
 
 
 @pytest.fixture
-def waterquality(tmp_path):
-    filename = osp.join(tmp_path, 'waterquality_testfile.xlsx')
-    workbook = xlsxwriter.Workbook(filename)
-    worksheet = workbook.add_worksheet()
-    workbook.close()
+def measurement_units():
+    df = pd.DataFrame(
+        data=[['µg/L', 'units name #1', 'desc units #1'],
+              ['µmhos/cm', 'units name #2', 'desc units #2'],
+              ['‰', 'units name #2', 'desc units #3']],
+        index=[1, 2, 3],
+        columns=['meas_units_abb', 'meas_units_name', 'meas_units_desc']
+        )
+    df.attrs['name'] = 'measurement_units'
+    return df
 
-    return filename
+
+@pytest.fixture
+def pump_types():
+    df = pd.DataFrame(
+        data=[['PUMP#1', 'Pump type #1 desc'],
+              ['PUMP#2', 'Pump type #2 desc'],
+              ['PUMP#3', 'Pump type #3 desc'],
+              ['PUMP#4', 'Pump type #4 desc'],
+              ['PUMP#5', 'Pump type #5 desc']],
+        index=[1, 2, 3, 4, 5],
+        columns=['pump_type_name', 'pump_type_desc']
+        )
+    df.attrs['name'] = 'pump_types'
+    return df
+
+
+@pytest.fixture
+def hg_params():
+    df = pd.DataFrame(
+        data=[['PARAM#1', 'Name param #1', 'PARAM#1 Regex', '111-0-11'],
+              ['PARAM#2', 'Name param #2', 'PARAM#2 Regex', '22-0-23'],
+              ['PARAM#3', 'Name param #3', 'PARAM#3 Regex', '34-5-12'],
+              ['PARAM#4', 'Name param #4', 'PARAM#4 Regex', '73-2-9']],
+        index=[1, 2, 3, 4],
+        columns=['hg_param_code', 'hg_param_name', 'hg_param_regex',
+                 'cas_registry_number']
+        )
+    df.attrs['name'] = 'hg_params'
+    return df
+
+
+@pytest.fixture
+def hg_sampling_methods():
+    df = pd.DataFrame(
+        data=[['Method #1', 'Desc. Methode #1.'],
+              ['Method #2', 'Desc. Methode #2.'],
+              ['Method #3', 'Desc. Methode #3.']],
+        index=[1, 2, 3],
+        columns=['hg_sampling_method_name', 'hg_sampling_method_desc']
+        )
+    df.attrs['name'] = 'hg_sampling_methods'
+    return df
+
+
+@pytest.fixture
+def hg_surveys(obswells_data):
+    df = pd.DataFrame(
+        data=[[obswells_data.index[0], datetime(2011, 8, 2, 15, 20), 10.23,
+               'Operator survey #1', 2, 1, 'Note survey #1'],
+              [obswells_data.index[0], datetime(2015, 5, 3, 12, 45), 5.14,
+               'Operator survey #2', 3, 0, 'Note survey #2'],
+              [obswells_data.index[0], datetime(2017, 6, 1), None,
+               None, None, 2, 'Note survey #3'],
+              [obswells_data.index[2], datetime(2019, 9, 9), None,
+               'Operator survey #4', None, None, None]
+              ],
+        index=[1, 2, 3, 4],
+        columns=['sampling_feature_uuid', 'hg_survey_datetime',
+                 'hg_survey_depth', 'hg_survey_operator',
+                 'hg_sampling_method_id', 'sample_filtered',
+                 'survey_note']
+        )
+    df.attrs['name'] = 'hg_surveys'
+    return df
+
+
+@pytest.fixture
+def hg_param_values():
+    df = pd.DataFrame(
+        data=[[1, 3, '> 0.345', 0.345, 1, 'Sample#1', 'Lab#1',
+               datetime(2017, 11, 15, 4, 15), 'Method #1', 'Note #1'],
+              [1, 1, '0.867', 0.123, None, 'Sample#1', 'Lab#1',
+               datetime(2017, 11, 15, 4, 15), 'Method #2', 'Note #2'],
+              [1, 4, '-0.54', 0.25, 2, 'Sample#1', 'Lab#1',
+               datetime(2017, 11, 15, 4, 15), 'Method #3', 'Note #3'],
+              [2, 1, '1.345', 1.25, 3, None, None,
+               None, None, None],
+              ],
+        index=[1, 2, 3, 4],
+        columns=['hg_survey_id', 'hg_param_id', 'hg_param_value',
+                 'lim_detection', 'meas_units_id', 'lab_sample_id',
+                 'lab_name', 'lab_report_date', 'method', 'notes']
+        )
+    df.attrs['name'] = 'hg_param_values'
+    return df
+
+
+@pytest.fixture
+def purges():
+    df = pd.DataFrame(
+        data=[[1, 1,
+               datetime(2011, 8, 2, 14, 7), datetime(2011, 8, 2, 14, 25),
+               8.5, 2, 7.86, 4.57],
+              [1, 2,
+               datetime(2011, 8, 2, 14, 25), datetime(2011, 8, 2, 15, 20),
+               8.0, 2, 7.86, 4.57],
+              [4, 1,
+               datetime(2011, 8, 2, 14, 25), datetime(2011, 8, 2, 15, 20),
+               8.0, 5, None, None]],
+        index=[1, 2, 3],
+        columns=['hg_survey_id', 'purge_sequence_no', 'purge_seq_start',
+                 'purge_seq_end', 'purge_outflow', 'pump_type_id',
+                 'pumping_depth', 'static_water_level']
+        )
+    df.attrs['name'] = 'purges'
+    return df
 
 
 @pytest.fixture
 def database_filler(
-        obswells_data, constructlog, readings_data,
-        repere_data, manual_measurements, sondes_data,
-        sondes_installation, waterquality, remark_types, remarks):
+        obswells_data, constructlog, readings_data, repere_data,
+        manual_measurements, sondes_data, sondes_installation, remark_types,
+        remarks, measurement_units, hg_params, hg_sampling_methods, hg_surveys,
+        hg_param_values, pump_types, purges):
 
     def fill_database(dbaccessor):
         # Add tables with 'uuid' indexes to the database.
@@ -281,7 +392,9 @@ def database_filler(
                 indexes=_dict.keys()
                 )
         # Add table with 'int' indexes to the database.
-        for df in [remarks, remark_types]:
+        for df in [remarks, remark_types, measurement_units, hg_params,
+                   hg_sampling_methods, hg_surveys, hg_param_values,
+                   pump_types, purges]:
             _dict = df.to_dict('index')
             dbaccessor.add(
                 name=df.attrs['name'],
@@ -297,9 +410,6 @@ def database_filler(
 
             # Add a construction log.
             dbaccessor.set_attachment(obs_well_uuid, 1, constructlog)
-
-            # Add a water quality report.
-            dbaccessor.set_attachment(obs_well_uuid, 2, waterquality)
 
             # Add timeseries data.
             if obs_well_uuid == obswells_data.index[0]:
