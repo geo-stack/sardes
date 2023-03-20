@@ -15,8 +15,7 @@ from sardes.tables.models import StandardSardesTableModel
 from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.delegates import (
     IntEditDelegate, DateTimeDelegate, NumEditDelegate, ObsWellIdEditDelegate,
-    StringEditDelegate, BoolEditDelegate, TextEditDelegate,
-    GenericLibSelectDelegate)
+    StringEditDelegate, TextEditDelegate, GenericLibSelectDelegate)
 
 
 class HGSurveysTableModel(StandardSardesTableModel):
