@@ -208,7 +208,7 @@ def test_readings_to_xlsx_if_empty(tmp_path, save_to_excel_tool, mocker):
     expected even when there is no data saved for the station.
     """
     # Set an empty dataframe for the data of the tool's parent model.
-    save_to_excel_tool.parent.model().dataf = (
+    save_to_excel_tool.table.model().dataf = (
         create_empty_readings([DataType.WaterLevel]))
 
     # Create and save the XLSX file.
