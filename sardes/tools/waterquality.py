@@ -12,7 +12,6 @@ A tool to export hydrogeochemical data in Excel format.
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
 
 # ---- Standard library imports
 import os
@@ -21,22 +20,17 @@ from io import BytesIO
 import tempfile
 
 # ---- Third party imports
-import numpy as np
 import pandas as pd
 from PIL import Image
-from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import QApplication, QFileDialog, QMessageBox
+from qtpy.QtCore import Signal
 from xlsxwriter.exceptions import FileCreateError
 import xlsxwriter
 
 # ---- Local imports
 from sardes.config.main import TEMP_DIR
-from sardes.api.timeseries import DataType
 from sardes.config.locale import _
 from sardes.config.main import CONF
-from sardes.config.ospath import (
-    get_select_file_dialog_dir, set_select_file_dialog_dir,
-    get_documents_logo_filename)
+from sardes.config.ospath import get_documents_logo_filename
 from sardes.api.tools import SardesTool
 
 
@@ -129,7 +123,7 @@ class WaterQualityReportTool(SardesTool):
         station_name = water_quality_data.attrs['station_data']['obs_well_id']
         temp_path = tempfile.mkdtemp(dir=TEMP_DIR)
         temp_filename = osp.join(
-            temp_path, _("water_quality_{}.xlsx".format(station_name))
+            temp_path, _("water_quality_{}.xlsx").format(station_name)
             )
 
         last_repere_data = (

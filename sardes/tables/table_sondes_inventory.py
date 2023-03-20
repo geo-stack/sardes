@@ -13,8 +13,8 @@ from sardes.config.locale import _
 from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.models import StandardSardesTableModel
 from sardes.tables.delegates import (
-    SondeModelEditDelegate, StringEditDelegate, BoolEditDelegate,
-    TextEditDelegate, DateTimeDelegate)
+    StringEditDelegate, BoolEditDelegate,
+    TextEditDelegate, DateTimeDelegate, GenericLibSelectDelegate)
 
 
 class SondesInventoryTableModel(StandardSardesTableModel):
@@ -27,7 +27,10 @@ class SondesInventoryTableModel(StandardSardesTableModel):
     __tablecolumns__ = [
         sardes_table_column_factory(
             'sondes_data', 'sonde_model_id', _('Model'),
-            delegate=SondeModelEditDelegate),
+            delegate=GenericLibSelectDelegate,
+            delegate_options={
+                'lib_name': 'sonde_models_lib',
+                'lib_column_name': 'sonde_brand_model'}),
         sardes_table_column_factory(
             'sondes_data', 'sonde_serial_no', _('Serial Number'),
             delegate=StringEditDelegate),

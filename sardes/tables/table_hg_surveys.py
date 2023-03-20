@@ -15,7 +15,8 @@ from sardes.tables.models import StandardSardesTableModel
 from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.delegates import (
     IntEditDelegate, DateTimeDelegate, NumEditDelegate, ObsWellIdEditDelegate,
-    StringEditDelegate, BoolEditDelegate, TextEditDelegate)
+    StringEditDelegate, TextEditDelegate, GenericLibSelectDelegate,
+    TriStateEditDelegate)
 
 
 class HGSurveysTableModel(StandardSardesTableModel):
@@ -43,10 +44,13 @@ class HGSurveysTableModel(StandardSardesTableModel):
             delegate=StringEditDelegate),
         sardes_table_column_factory(
             'hg_surveys', 'hg_sampling_method_id', _('Sampling Method'),
-            delegate=IntEditDelegate),
+            delegate=GenericLibSelectDelegate,
+            delegate_options={
+                'lib_name': 'hg_sampling_methods',
+                'lib_column_name': 'hg_sampling_method_name'}),
         sardes_table_column_factory(
             'hg_surveys', 'sample_filtered', _('Sample Filtered'),
-            delegate=IntEditDelegate),
+            delegate=TriStateEditDelegate),
         sardes_table_column_factory(
             'hg_surveys', 'survey_note', _('Notes'),
             delegate=TextEditDelegate),

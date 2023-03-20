@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2023-03-20 07:23-0400\n"
+"POT-Creation-Date: 2023-03-20 15:59-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -278,6 +278,7 @@ msgid "Graph"
 msgstr ""
 
 #: ..\sardes\database\database_manager.py:677
+#: ..\sardes\tools\waterquality.py:132
 msgid "water_quality_{}.xlsx"
 msgstr ""
 
@@ -822,12 +823,14 @@ msgid "Some {} data could not be converted to numerical value"
 msgstr ""
 
 #: ..\sardes\tables\delegates.py:208 ..\sardes\tables\delegates.py:215
-#: ..\sardes\tables\delegates.py:230
+#: ..\sardes\tables\delegates.py:230 ..\sardes\tables\delegates.py:242
+#: ..\sardes\tables\delegates.py:249
 msgid "Yes"
 msgstr ""
 
 #: ..\sardes\tables\delegates.py:209 ..\sardes\tables\delegates.py:216
-#: ..\sardes\tables\delegates.py:230
+#: ..\sardes\tables\delegates.py:230 ..\sardes\tables\delegates.py:241
+#: ..\sardes\tables\delegates.py:249
 msgid "No"
 msgstr ""
 
@@ -835,7 +838,11 @@ msgstr ""
 msgid "Some {} data could notbe converted to boolean value."
 msgstr ""
 
-#: ..\sardes\tables\delegates.py:273
+#: ..\sardes\tables\delegates.py:243 ..\sardes\tables\delegates.py:249
+msgid "NA"
+msgstr ""
+
+#: ..\sardes\tables\delegates.py:324
 msgid "Some {} data did not match any well in the database"
 msgstr ""
 
@@ -867,67 +874,57 @@ msgstr ""
 msgid "<p>Station <b>{station_name}</b> on <b>row {row}</b> cannot be deleted because there is still readings data related to that station in the database.</p><p>Please first delete all readings data related to station <b>{station_name}</b>."
 msgstr ""
 
-#: ..\sardes\tables\table_hg_param_values.py:28
+#: ..\sardes\tables\table_hg_param_values.py:27
 msgid "HG Values"
 msgstr ""
 
-#: ..\sardes\tables\table_hg_param_values.py:31
-#: ..\sardes\tables\table_hg_surveys.py:30
-#: ..\sardes\tables\table_manual_measurements.py:29
-#: ..\sardes\tables\table_observation_wells.py:42
-#: ..\sardes\tables\table_purges.py:30 ..\sardes\tables\table_remarks.py:29
-#: ..\sardes\tables\table_repere.py:33
-#: ..\sardes\tables\table_sonde_installations.py:35
-msgid "Well ID"
+#: ..\sardes\tables\table_hg_param_values.py:30
+#: ..\sardes\tables\table_purges.py:31
+msgid "Survey Well ID - Date/Time"
 msgstr ""
 
-#: ..\sardes\tables\table_hg_param_values.py:35
-#: ..\sardes\tables\table_hg_surveys.py:33 ..\sardes\tables\table_purges.py:33
-msgid "Survey Date/Time"
-msgstr ""
-
-#: ..\sardes\tables\table_hg_param_values.py:38
+#: ..\sardes\tables\table_hg_param_values.py:33
 #: ..\sardes\tools\waterquality.py:240
 msgid "Parameter"
 msgstr ""
 
-#: ..\sardes\tables\table_hg_param_values.py:41
+#: ..\sardes\tables\table_hg_param_values.py:39
 #: ..\sardes\tools\waterquality.py:258
 msgid "Value"
 msgstr ""
 
-#: ..\sardes\tables\table_hg_param_values.py:44
+#: ..\sardes\tables\table_hg_param_values.py:42
 msgid "Lim. Detection"
 msgstr ""
 
-#: ..\sardes\tables\table_hg_param_values.py:49
+#: ..\sardes\tables\table_hg_param_values.py:47
 #: ..\sardes\tools\waterquality.py:267
 msgid "Units"
 msgstr ""
 
-#: ..\sardes\tables\table_hg_param_values.py:52
+#: ..\sardes\tables\table_hg_param_values.py:53
 msgid "Sample ID"
 msgstr ""
 
-#: ..\sardes\tables\table_hg_param_values.py:55
+#: ..\sardes\tables\table_hg_param_values.py:56
 msgid "Lab Report Date"
 msgstr ""
 
-#: ..\sardes\tables\table_hg_param_values.py:59
+#: ..\sardes\tables\table_hg_param_values.py:60
 msgid "Lab Name"
 msgstr ""
 
-#: ..\sardes\tables\table_hg_param_values.py:62
+#: ..\sardes\tables\table_hg_param_values.py:63
 msgid "Method"
 msgstr ""
 
-#: ..\sardes\tables\table_hg_param_values.py:65
-#: ..\sardes\tables\table_hg_surveys.py:51
+#: ..\sardes\tables\table_hg_param_values.py:66
+#: ..\sardes\tables\table_hg_surveys.py:55
 #: ..\sardes\tables\table_manual_measurements.py:41
 #: ..\sardes\tables\table_observation_wells.py:107
 #: ..\sardes\tables\table_repere.py:62
 #: ..\sardes\tables\table_sonde_installations.py:54
-#: ..\sardes\tables\table_sondes_inventory.py:55
+#: ..\sardes\tables\table_sondes_inventory.py:58
 msgid "Notes"
 msgstr ""
 
@@ -967,24 +964,36 @@ msgstr ""
 msgid "Description"
 msgstr ""
 
-#: ..\sardes\tables\table_hg_surveys.py:27
+#: ..\sardes\tables\table_hg_surveys.py:28
 msgid "HG Surveys"
 msgstr ""
 
-#: ..\sardes\tables\table_hg_surveys.py:37
+#: ..\sardes\tables\table_hg_surveys.py:31
+#: ..\sardes\tables\table_manual_measurements.py:29
+#: ..\sardes\tables\table_observation_wells.py:42
+#: ..\sardes\tables\table_remarks.py:29 ..\sardes\tables\table_repere.py:33
+#: ..\sardes\tables\table_sonde_installations.py:35
+msgid "Well ID"
+msgstr ""
+
+#: ..\sardes\tables\table_hg_surveys.py:34
+msgid "Survey Date/Time"
+msgstr ""
+
+#: ..\sardes\tables\table_hg_surveys.py:38
 #: ..\sardes\tables\table_sonde_installations.py:49
 msgid "Depth (m)"
 msgstr ""
 
-#: ..\sardes\tables\table_hg_surveys.py:42
+#: ..\sardes\tables\table_hg_surveys.py:43
 msgid "Operator"
 msgstr ""
 
-#: ..\sardes\tables\table_hg_surveys.py:45
+#: ..\sardes\tables\table_hg_surveys.py:46
 msgid "Sampling Method"
 msgstr ""
 
-#: ..\sardes\tables\table_hg_surveys.py:48
+#: ..\sardes\tables\table_hg_surveys.py:52
 msgid "Sample Filtered"
 msgstr ""
 
@@ -993,7 +1002,7 @@ msgid "Manual Measurements"
 msgstr ""
 
 #: ..\sardes\tables\table_manual_measurements.py:32
-#: ..\sardes\tables\table_remarks.py:55
+#: ..\sardes\tables\table_remarks.py:58
 msgid "Date"
 msgstr ""
 
@@ -1097,35 +1106,35 @@ msgstr ""
 msgid "Pump Types"
 msgstr ""
 
-#: ..\sardes\tables\table_purges.py:27
+#: ..\sardes\tables\table_purges.py:28
 msgid "Purges"
 msgstr ""
 
-#: ..\sardes\tables\table_purges.py:36
+#: ..\sardes\tables\table_purges.py:34
 msgid "Sequence No."
 msgstr ""
 
-#: ..\sardes\tables\table_purges.py:39
+#: ..\sardes\tables\table_purges.py:37
 msgid "Date/Time Start"
 msgstr ""
 
-#: ..\sardes\tables\table_purges.py:43
+#: ..\sardes\tables\table_purges.py:41
 msgid "Date/Time End"
 msgstr ""
 
-#: ..\sardes\tables\table_purges.py:47
+#: ..\sardes\tables\table_purges.py:45
 msgid "Outflow (L/min)"
 msgstr ""
 
-#: ..\sardes\tables\table_purges.py:52
+#: ..\sardes\tables\table_purges.py:50
 msgid "Pump Type"
 msgstr ""
 
-#: ..\sardes\tables\table_purges.py:55
+#: ..\sardes\tables\table_purges.py:56
 msgid "Pumping Depth (m)"
 msgstr ""
 
-#: ..\sardes\tables\table_purges.py:60
+#: ..\sardes\tables\table_purges.py:61
 msgid "Static Water Level (mbgs)"
 msgstr ""
 
@@ -1141,21 +1150,21 @@ msgstr ""
 msgid "Type"
 msgstr ""
 
-#: ..\sardes\tables\table_remarks.py:37 ..\sardes\tables\table_repere.py:51
+#: ..\sardes\tables\table_remarks.py:40 ..\sardes\tables\table_repere.py:51
 #: ..\sardes\tables\table_sonde_installations.py:41
 msgid "Date From"
 msgstr ""
 
-#: ..\sardes\tables\table_remarks.py:42 ..\sardes\tables\table_repere.py:55
+#: ..\sardes\tables\table_remarks.py:45 ..\sardes\tables\table_repere.py:55
 #: ..\sardes\tables\table_sonde_installations.py:45
 msgid "Date To"
 msgstr ""
 
-#: ..\sardes\tables\table_remarks.py:47
+#: ..\sardes\tables\table_remarks.py:50
 msgid "Remark"
 msgstr ""
 
-#: ..\sardes\tables\table_remarks.py:51
+#: ..\sardes\tables\table_remarks.py:54
 msgid "Auteur"
 msgstr ""
 
@@ -1210,31 +1219,31 @@ msgstr ""
 msgid "Sondes Inventory"
 msgstr ""
 
-#: ..\sardes\tables\table_sondes_inventory.py:32
+#: ..\sardes\tables\table_sondes_inventory.py:35
 msgid "Serial Number"
 msgstr ""
 
-#: ..\sardes\tables\table_sondes_inventory.py:35
+#: ..\sardes\tables\table_sondes_inventory.py:38
 msgid "Date Reception"
 msgstr ""
 
-#: ..\sardes\tables\table_sondes_inventory.py:39
+#: ..\sardes\tables\table_sondes_inventory.py:42
 msgid "Date Withdrawal"
 msgstr ""
 
-#: ..\sardes\tables\table_sondes_inventory.py:43
+#: ..\sardes\tables\table_sondes_inventory.py:46
 msgid "In Repair"
 msgstr ""
 
-#: ..\sardes\tables\table_sondes_inventory.py:46
+#: ..\sardes\tables\table_sondes_inventory.py:49
 msgid "Out of order"
 msgstr ""
 
-#: ..\sardes\tables\table_sondes_inventory.py:49
+#: ..\sardes\tables\table_sondes_inventory.py:52
 msgid "Lost"
 msgstr ""
 
-#: ..\sardes\tables\table_sondes_inventory.py:52
+#: ..\sardes\tables\table_sondes_inventory.py:55
 msgid "Off Network"
 msgstr ""
 

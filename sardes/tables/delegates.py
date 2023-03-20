@@ -231,9 +231,60 @@ class BoolEditDelegate(SardesItemDelegate):
             )
 
 
+class TriStateEditDelegate(SardesItemDelegate):
+    """
+    A delegate where you can chose between three states: No, Yes, and NA.
+    """
+
+    def create_editor(self, parent):
+        editor = QComboBox(parent)
+        editor.addItem(_('No'), userData=0)
+        editor.addItem(_('Yes'), userData=1)
+        editor.addItem(_('NA'), userData=2)
+        return editor
+
+    def logical_to_visual_data(self, visual_dataf):
+        visual_dataf[self.table_column.name] = (
+            visual_dataf[self.table_column.name]
+            .map({1: _('Yes'), 0: _('No'), 2: _('NA')}.get)
+            )
+
+
 # =============================================================================
 # ---- Complex Delegates
 # =============================================================================
+class GenericLibSelectDelegate(SardesItemDelegate):
+    """
+    A generic delegate to select an item from a library.
+    """
+
+    def __init__(self, model_view, table_column,
+                 lib_name: str, lib_column_name: str):
+        super() .__init__(model_view, table_column)
+        self.lib_name = lib_name
+        self.lib_column_name = lib_column_name
+
+    def create_editor(self, parent):
+        editor = QComboBox(parent)
+
+        # Populate the combobox with the available brand in the library.
+        lib = self.model().libraries[self.lib_name]
+        lib = lib.sort_values(self.lib_column_name, axis=0, ascending=True)
+        for index, values in lib.iterrows():
+            editor.addItem(values[self.lib_column_name], userData=index)
+        return editor
+
+    def logical_to_visual_data(self, visual_dataf):
+        try:
+            lib = self.model().libraries[self.lib_name]
+            visual_dataf[self.table_column.name] = (
+                visual_dataf[self.table_column.name]
+                .map(lib[self.lib_column_name].to_dict().get)
+                )
+        except KeyError:
+            pass
+
+
 class ObsWellIdEditDelegate(SardesItemDelegate):
     """
     A delegate to select an observation well from the list of existing well
@@ -283,60 +334,6 @@ class ObsWellIdEditDelegate(SardesItemDelegate):
             visual_dataf[self.table_column.name] = (
                 visual_dataf[self.table_column.name]
                 .map(obs_wells_data['obs_well_id'].to_dict().get)
-                )
-        except KeyError:
-            pass
-
-
-class SondeModelEditDelegate(SardesItemDelegate):
-    """
-    A delegate to select the brand of a sonde from a predefined list.
-    """
-
-    def create_editor(self, parent):
-        editor = QComboBox(parent)
-
-        # Populate the combobox with the available brand in the library.
-        sonde_models_lib = self.model().libraries['sonde_models_lib']
-        sonde_models_lib = sonde_models_lib.sort_values(
-            'sonde_brand_model', axis=0, ascending=True)
-        for index, values in sonde_models_lib.iterrows():
-            editor.addItem(values['sonde_brand_model'], userData=index)
-        return editor
-
-    def logical_to_visual_data(self, visual_dataf):
-        try:
-            sonde_models_lib = self.model().libraries['sonde_models_lib']
-            visual_dataf[self.table_column.name] = (
-                visual_dataf[self.table_column.name]
-                .map(sonde_models_lib['sonde_brand_model'].to_dict().get)
-                )
-        except KeyError:
-            pass
-
-
-class RemarkTypeEditDelegate(SardesItemDelegate):
-    """
-    A delegate to select the type of remark.
-    """
-
-    def create_editor(self, parent):
-        editor = QComboBox(parent)
-
-        # Populate the combobox with the available brand in the library.
-        remark_types = self.model().libraries['remark_types']
-        remark_types = remark_types.sort_values(
-            'remark_type_name', axis=0, ascending=True)
-        for index, values in remark_types.iterrows():
-            editor.addItem(values['remark_type_name'], userData=index)
-        return editor
-
-    def logical_to_visual_data(self, visual_dataf):
-        try:
-            remark_types = self.model().libraries['remark_types']
-            visual_dataf[self.table_column.name] = (
-                visual_dataf[self.table_column.name]
-                .map(remark_types['remark_type_name'].to_dict().get)
                 )
         except KeyError:
             pass
@@ -397,6 +394,56 @@ class SondesSelectionDelegate(SardesItemDelegate):
             visual_dataf['sonde_uuid'] = (
                 visual_dataf['sonde_uuid']
                 .map(sondes_data['sonde_brand_model_serial'].to_dict().get)
+                )
+        except KeyError:
+            pass
+
+
+class HGSurveyEditDelegate(SardesItemDelegate):
+    """
+    A delegate to select an hydrogeochemical survey.
+    """
+
+    def create_editor(self, parent):
+        editor = QComboBox(parent)
+
+        try:
+            hg_surveys = self.model().libraries['hg_surveys']
+            obswell_data = self.model().libraries['observation_wells_data']
+        except KeyError:
+            pass
+        else:
+            hg_surveys['obs_well_id'] = obswell_data.loc[
+                hg_surveys['sampling_feature_uuid']
+                ]['obs_well_id'].values
+            hg_surveys['survey_well_datetime'] = (
+                hg_surveys['obs_well_id'] +
+                ' - ' +
+                hg_surveys['hg_survey_datetime'].dt.strftime("%Y-%m-%d %H:%M")
+                )
+            hg_surveys = hg_surveys.sort_values(
+                'survey_well_datetime', axis=0, ascending=True)
+            for index, values in hg_surveys.iterrows():
+                editor.addItem(values['survey_well_datetime'], userData=index)
+        return editor
+
+    def logical_to_visual_data(self, visual_dataf):
+        try:
+            hg_surveys = self.model().libraries['hg_surveys']
+            obswell_data = self.model().libraries['observation_wells_data']
+
+            hg_surveys['obs_well_id'] = obswell_data.loc[
+                hg_surveys['sampling_feature_uuid']
+                ]['obs_well_id'].values
+            hg_surveys['survey_well_datetime'] = (
+                hg_surveys['obs_well_id'] +
+                ' - ' +
+                hg_surveys['hg_survey_datetime'].dt.strftime("%Y-%m-%d %H:%M")
+                )
+
+            visual_dataf['hg_survey_id'] = (
+                visual_dataf['hg_survey_id']
+                .map(hg_surveys['survey_well_datetime'].to_dict().get)
                 )
         except KeyError:
             pass
