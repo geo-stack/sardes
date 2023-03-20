@@ -397,3 +397,53 @@ class SondesSelectionDelegate(SardesItemDelegate):
                 )
         except KeyError:
             pass
+
+
+class HGSurveyEditDelegate(SardesItemDelegate):
+    """
+    A delegate to select an hydrogeochemical survey.
+    """
+
+    def create_editor(self, parent):
+        editor = QComboBox(parent)
+
+        try:
+            hg_surveys = self.model().libraries['hg_surveys']
+            obswell_data = self.model().libraries['observation_wells_data']
+        except KeyError:
+            pass
+        else:
+            hg_surveys['obs_well_id'] = obswell_data.loc[
+                hg_surveys['sampling_feature_uuid']
+                ]['obs_well_id'].values
+            hg_surveys['survey_well_datetime'] = (
+                hg_surveys['obs_well_id'] +
+                ' - ' +
+                hg_surveys['hg_survey_datetime'].dt.strftime("%Y-%m-%d %H:%M")
+                )
+            hg_surveys = hg_surveys.sort_values(
+                'survey_well_datetime', axis=0, ascending=True)
+            for index, values in hg_surveys.iterrows():
+                editor.addItem(values['survey_well_datetime'], userData=index)
+        return editor
+
+    def logical_to_visual_data(self, visual_dataf):
+        try:
+            hg_surveys = self.model().libraries['hg_surveys']
+            obswell_data = self.model().libraries['observation_wells_data']
+
+            hg_surveys['obs_well_id'] = obswell_data.loc[
+                hg_surveys['sampling_feature_uuid']
+                ]['obs_well_id'].values
+            hg_surveys['survey_well_datetime'] = (
+                hg_surveys['obs_well_id'] +
+                ' - ' +
+                hg_surveys['hg_survey_datetime'].dt.strftime("%Y-%m-%d %H:%M")
+                )
+
+            visual_dataf['hg_survey_id'] = (
+                visual_dataf['hg_survey_id']
+                .map(hg_surveys['survey_well_datetime'].to_dict().get)
+                )
+        except KeyError:
+            pass

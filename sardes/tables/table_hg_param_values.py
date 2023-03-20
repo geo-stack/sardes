@@ -9,14 +9,13 @@
 
 
 # ---- Local imports
-from sardes.api.tablemodels import (
-    SardesTableColumn, sardes_table_column_factory)
+from sardes.api.tablemodels import sardes_table_column_factory
 from sardes.config.locale import _
 from sardes.tables.models import StandardSardesTableModel
 from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.delegates import (
-    StringEditDelegate, IntEditDelegate, NumEditDelegate, DateTimeDelegate,
-    TextEditDelegate, GenericLibSelectDelegate)
+    StringEditDelegate, NumEditDelegate, DateTimeDelegate,
+    TextEditDelegate, GenericLibSelectDelegate, HGSurveyEditDelegate)
 
 
 class HGParamValuesTableModel(StandardSardesTableModel):
@@ -27,13 +26,9 @@ class HGParamValuesTableModel(StandardSardesTableModel):
     __tablename__ = 'table_hg_param_values'
     __tabletitle__ = _('HG Values')
     __tablecolumns__ = [
-        SardesTableColumn(
-            'survey_well_id', _('Well ID'), 'str',
-            delegate=StringEditDelegate),
         sardes_table_column_factory(
-            'hg_param_values', 'hg_survey_id',
-            _('Survey Date/Time'),
-            delegate=IntEditDelegate),
+            'hg_param_values', 'hg_survey_id', _('Survey Well ID - Date/Time'),
+            delegate=HGSurveyEditDelegate),
         sardes_table_column_factory(
             'hg_param_values', 'hg_param_id', _('Parameter'),
             delegate=GenericLibSelectDelegate,
@@ -73,7 +68,8 @@ class HGParamValuesTableModel(StandardSardesTableModel):
         ]
 
     __dataname__ = 'hg_param_values'
-    __libnames__ = ['measurement_units', 'hg_params', 'hg_surveys']
+    __libnames__ = ['measurement_units', 'hg_params', 'hg_surveys',
+                    'observation_wells_data']
 
 
 class HGParamValuesTableWidget(SardesTableWidget):

@@ -16,7 +16,7 @@ from sardes.tables.models import StandardSardesTableModel
 from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.delegates import (
     IntEditDelegate, DateTimeDelegate, NumEditDelegate, StringEditDelegate,
-    GenericLibSelectDelegate)
+    GenericLibSelectDelegate, HGSurveyEditDelegate)
 
 
 class PurgesTableModel(StandardSardesTableModel):
@@ -27,12 +27,9 @@ class PurgesTableModel(StandardSardesTableModel):
     __tablename__ = 'table_purges'
     __tabletitle__ = _('Purges')
     __tablecolumns__ = [
-        SardesTableColumn(
-            'survey_well_id', _('Well ID'), 'str',
-            delegate=StringEditDelegate),
         sardes_table_column_factory(
-            'purges', 'hg_survey_id', _('Survey Date/Time'),
-            delegate=IntEditDelegate),
+            'purges', 'hg_survey_id', _('Survey Well ID - Date/Time'),
+            delegate=HGSurveyEditDelegate),
         sardes_table_column_factory(
             'purges', 'purge_sequence_no', _('Sequence No.'),
             delegate=IntEditDelegate),
@@ -68,7 +65,7 @@ class PurgesTableModel(StandardSardesTableModel):
         ]
 
     __dataname__ = 'purges'
-    __libnames__ = ['pump_types', 'hg_surveys']
+    __libnames__ = ['pump_types', 'hg_surveys', 'observation_wells_data']
 
 
 class PurgesTableWidget(SardesTableWidget):
