@@ -231,6 +231,25 @@ class BoolEditDelegate(SardesItemDelegate):
             )
 
 
+class TriStateEditDelegate(SardesItemDelegate):
+    """
+    A delegate where you can chose between three states: No, Yes, and NA.
+    """
+
+    def create_editor(self, parent):
+        editor = QComboBox(parent)
+        editor.addItem(_('No'), userData=0)
+        editor.addItem(_('Yes'), userData=1)
+        editor.addItem(_('NA'), userData=2)
+        return editor
+
+    def logical_to_visual_data(self, visual_dataf):
+        visual_dataf[self.table_column.name] = (
+            visual_dataf[self.table_column.name]
+            .map({1: _('Yes'), 0: _('No'), 2: _('NA')}.get)
+            )
+
+
 # =============================================================================
 # ---- Complex Delegates
 # =============================================================================
