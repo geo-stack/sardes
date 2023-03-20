@@ -14,7 +14,7 @@ from sardes.tables.models import StandardSardesTableModel
 from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.delegates import (
     ObsWellIdEditDelegate, TextEditDelegate, StringEditDelegate,
-    DateTimeDelegate, RemarkTypeEditDelegate)
+    DateTimeDelegate, GenericLibSelectDelegate)
 
 
 class RemarksTableModel(StandardSardesTableModel):
@@ -31,7 +31,10 @@ class RemarksTableModel(StandardSardesTableModel):
             ),
         sardes_table_column_factory(
             'remarks', 'remark_type_id', _('Type'),
-            delegate=RemarkTypeEditDelegate
+            delegate=GenericLibSelectDelegate,
+            delegate_options={
+                'lib_name': 'remark_types',
+                'lib_column_name': 'remark_type_name'}
             ),
         sardes_table_column_factory(
             'remarks', 'period_start', _('Date From'),
