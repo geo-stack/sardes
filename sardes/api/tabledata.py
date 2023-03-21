@@ -302,6 +302,19 @@ class SardesTableData(object):
                 edited_value=value)
             )
 
+    def set_multiple(self, rows: list, cols: list, values: list) -> TableEdit:
+        """Set a single value by integer position."""
+        edits = [
+            EditValue(parent=self,
+                      index=self._data.index[row],
+                      column=self._data.columns[col],
+                      edited_value=value
+                      ) for row, col, value in zip(rows, cols, values)
+            ]
+        return self.edits_controller.execute(
+            EditValues(edits)
+            )
+
     def add_row(self, index: list = None,
                 values: list[dict] = None) -> TableEdit:
         """
