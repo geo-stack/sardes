@@ -299,16 +299,18 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
             ),
             Column(
                 name='in_recharge_zone',
-                dtype='str',
+                dtype='Int64',
                 desc=("Indicates whether the observation well is located "
-                      "in or in the proximity a recharge zone.")
+                      "in or in the proximity a recharge zone. A value of "
+                      "0 meanse False, 1 means True and 2 means NA.")
             ),
             Column(
                 name='is_influenced',
-                dtype='str',
+                dtype='Int64',
                 desc=("Indicates whether the water levels measured in "
                       "that well are influenced or not by anthropic "
-                      "phenomenon.")
+                      "phenomenon. A value of 0 meanse False, 1 means True "
+                      "and 2 means NA.")
             ),
             Column(
                 name='elevation',

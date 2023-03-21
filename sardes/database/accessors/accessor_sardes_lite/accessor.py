@@ -257,13 +257,13 @@ class SamplingFeatureMetadata(BaseMixin, Base):
         UUIDType(binary=False),
         ForeignKey('sampling_feature.sampling_feature_uuid'),
         primary_key=True)
-    in_recharge_zone = Column(String)
+    in_recharge_zone = Column(Integer)
     aquifer_type = Column(String)
     confinement = Column(String)
     common_name = Column(String)
     aquifer_code = Column(Integer)
     is_station_active = Column(Boolean)
-    is_influenced = Column(String)
+    is_influenced = Column(Integer)
 
     sampling_feature = relationship(
         "SamplingFeature", uselist=False, back_populates="_metadata")
