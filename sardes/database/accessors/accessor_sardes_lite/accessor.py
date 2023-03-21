@@ -708,6 +708,8 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         from sardes.database.accessors.accessor_sardes_lite import (
             updates as db_updates)
 
+        vacuum_needed = False
+
         to_version = 3
         if self.version() < to_version:
             self.begin_transaction()
@@ -721,10 +723,12 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                         DatabaseUpdateError(from_version, to_version, error))
             else:
                 self.commit_transaction()
-        # We cannot do a vacuum from within a transaction.
-        # TODO: implement a new vacuum method that handle the case
-        # when the database is locked.
-        self._engine.execute("vacuum")
+                vacuum_needed = True
+        if vacuum_needed is True:
+            # We cannot do a vacuum from within a transaction.
+            # TODO: implement a new vacuum method that handle the case
+            # when the database is locked.
+            self._engine.execute("vacuum")
         return from_version, CURRENT_SCHEMA_VERSION, None
 
     # ---- Database connection
