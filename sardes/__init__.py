@@ -25,11 +25,11 @@ import os
 import sys
 
 
-version_info = (0, 12, 2)
+version_info = (0, 13, 0)
 __version__ = '.'.join(map(str, version_info))
 __appname__ = 'Sardes'
 __namever__ = __appname__ + " " + __version__
-__date__ = '20/06/2022'
+__date__ = '21/03/2023'
 __project_url__ = "https://github.com/cgq-qgc/sardes"
 __releases_url__ = __project_url__ + "/releases"
 __issues_url__ = __project_url__ + "/issues"
