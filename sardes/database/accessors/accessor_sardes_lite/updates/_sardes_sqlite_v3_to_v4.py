@@ -22,7 +22,7 @@ def _update_v3_to_v4(accessor: DatabaseAccessorSardesLite):
     Update Sardes SQLite database schema to version 4 from version 3.
 
     The objective is to save 'in_recharge_zone' and 'is_influenced' data as
-    integers instead of string in the database.
+    integers instead of strings in the database.
     """
     # Fetch data from the database.
     select_statement = (
@@ -52,16 +52,8 @@ def _update_v3_to_v4(accessor: DatabaseAccessorSardesLite):
 
     # Transform 'in_recharge_zone' and 'is_influenced' data from str to Int64.
     int_map_dict = {'Oui': 1, 'oui': 1, 'Non': 0, 'non': 0, 'ND': 3, 'nd': 3}
-    data['in_recharge_zone'] = (
-        data['in_recharge_zone']
-        .map(int_map_dict.get)
-        .astype('Int64')
-        )
-    data['is_influenced'] = (
-        data['is_influenced']
-        .map(int_map_dict.get)
-        .astype('Int64')
-        )
+    for column in ['in_recharge_zone', 'is_influenced']:
+        data[column] = data[column].map(int_map_dict.get).astype('Int64')
 
     # Save the transformed data back in the database.
     for index, row in data.iterrows():
