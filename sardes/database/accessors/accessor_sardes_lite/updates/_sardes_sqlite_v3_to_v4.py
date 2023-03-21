@@ -51,7 +51,7 @@ def _update_v3_to_v4(accessor: DatabaseAccessorSardesLite):
     )
 
     # Transform 'in_recharge_zone' and 'is_influenced' data from str to Int64.
-    int_map_dict = {'Oui': 1, 'oui': 1, 'Non': 0, 'non': 0, 'ND': 3, 'nd': 3}
+    int_map_dict = {'Oui': 1, 'oui': 1, 'Non': 0, 'non': 0, 'ND': 2, 'nd': 2}
     for column in ['in_recharge_zone', 'is_influenced']:
         data[column] = data[column].map(int_map_dict.get).astype('Int64')
 
@@ -63,7 +63,7 @@ def _update_v3_to_v4(accessor: DatabaseAccessorSardesLite):
             SET in_recharge_zone = :is_rechg, is_influenced = :is_inf
             WHERE sampling_feature_uuid = :uuid;
             """,
-            {'is_rechg': row['in_recharge_zone'],
-             'is_inf': row['is_influenced'],
-             'uuid': index}
+            params={'is_rechg': row['in_recharge_zone'],
+                    'is_inf': row['is_influenced'],
+                    'uuid': index}
         )
