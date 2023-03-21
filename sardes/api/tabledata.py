@@ -21,6 +21,26 @@ from sardes.utils.data_operations import are_values_equal
 
 
 @dataclass
+class EditValues(TableEdit):
+    """
+    An edit command to change the value in multiple locations in a Sardes
+    table dataframe.
+    """
+    edits: list[EditValue]
+
+    def execute(self):
+        for edit in self.edits:
+            edit.execute()
+
+    def undo(self):
+        for edit in self.edits:
+            edit.undo()
+
+    def redo(self):
+        self.execute()
+
+
+@dataclass
 class EditValue(TableEdit):
     """
     An edit command to change the value at a given location in a Sardes
