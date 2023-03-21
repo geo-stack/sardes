@@ -171,6 +171,3 @@ def _update_v2_to_v3(accessor: DatabaseAccessorSardesLite):
         """
     )
     accessor._session.flush()
-
-    # Update the database schema version.
-    accessor.execute("PRAGMA user_version = 3")

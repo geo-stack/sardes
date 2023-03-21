@@ -713,6 +713,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             self.begin_transaction()
             try:
                 db_updates._update_v2_to_v3(self)
+                self.execute(f"PRAGMA user_version = {to_version}")
             except Exception as error:
                 self._session.rollback()
                 return (from_version,
