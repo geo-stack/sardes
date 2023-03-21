@@ -49,7 +49,7 @@ from sardes.api.timeseries import DataType
 APPLICATION_ID = 1013042054
 
 # The latest version of the database schema.
-CURRENT_SCHEMA_VERSION = 3
+CURRENT_SCHEMA_VERSION = 4
 
 # The format that is used to store datetime values in the database.
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
@@ -724,6 +724,19 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             else:
                 self.commit_transaction()
                 vacuum_needed = True
+        to_version = 4
+        if self.version() < to_version:
+            self.begin_transaction()
+            try:
+                db_updates._update_v3_to_v4(self)
+                self.execute(f"PRAGMA user_version = {to_version}")
+            except Exception as error:
+                self._session.rollback()
+                return (from_version,
+                        to_version,
+                        DatabaseUpdateError(from_version, to_version, error))
+            else:
+                self.commit_transaction()
         if vacuum_needed is True:
             # We cannot do a vacuum from within a transaction.
             # TODO: implement a new vacuum method that handle the case
