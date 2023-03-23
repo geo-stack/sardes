@@ -666,11 +666,12 @@ def test_observation_well_interface(dbaccessor, database_filler,
         'aquifer_type': 'well_123A2456_aquifer_type_edited',
         'confinement': 'well_123A2456_confinement_edited',
         'aquifer_code': 555,
-        'in_recharge_zone': 'Yes_edited',
-        'is_influenced': 'No_edited',
+        'in_recharge_zone': 2,
+        'is_influenced': 2,
         'is_station_active': False,
         'obs_well_notes': 'well_123A2456_notes_edited'
         }
+
     dbaccessor.set(
         'observation_wells_data',
         sampling_feature_uuid,
@@ -683,7 +684,7 @@ def test_observation_well_interface(dbaccessor, database_filler,
     # =========================================================================
     # Delete
     # =========================================================================
-    obs_wells_id = UUID('3c6d0e15-6775-4304-964a-5db89e463c55')
+    obs_wells_id = obs_wells_bd.index[0]
     assert len(dbaccessor.get('observation_wells_data')) == 5
 
     # Try to delete a station with readings, repere, sonde installations,
