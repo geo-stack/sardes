@@ -1245,6 +1245,12 @@ def test_update_database(tmp_path):
     assert error is None
     assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 4
 
+    station_data = dbaccessor.get('observation_wells_data')
+    assert station_data['in_recharge_zone'].dtype == 'Int64'
+    assert station_data['is_influenced'].dtype == 'Int64'
+    assert list(station_data['in_recharge_zone'].values) == [1, 0, 0, 2]
+    assert list(station_data['is_influenced'].values) == [2, 0, 1, 0]
+
 
 if __name__ == "__main__":
     pytest.main(['-x', __file__, '-v', '-rw'])
