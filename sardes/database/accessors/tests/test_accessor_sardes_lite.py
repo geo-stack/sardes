@@ -666,11 +666,12 @@ def test_observation_well_interface(dbaccessor, database_filler,
         'aquifer_type': 'well_123A2456_aquifer_type_edited',
         'confinement': 'well_123A2456_confinement_edited',
         'aquifer_code': 555,
-        'in_recharge_zone': 'Yes_edited',
-        'is_influenced': 'No_edited',
+        'in_recharge_zone': 2,
+        'is_influenced': 2,
         'is_station_active': False,
         'obs_well_notes': 'well_123A2456_notes_edited'
         }
+
     dbaccessor.set(
         'observation_wells_data',
         sampling_feature_uuid,
@@ -683,7 +684,7 @@ def test_observation_well_interface(dbaccessor, database_filler,
     # =========================================================================
     # Delete
     # =========================================================================
-    obs_wells_id = UUID('3c6d0e15-6775-4304-964a-5db89e463c55')
+    obs_wells_id = obs_wells_bd.index[0]
     assert len(dbaccessor.get('observation_wells_data')) == 5
 
     # Try to delete a station with readings, repere, sonde installations,
@@ -1231,19 +1232,32 @@ def test_update_database(tmp_path):
     assert not dbaccessor._session.in_transaction()
 
     assert from_version == 2
-    assert to_version == 3
+    assert to_version == 4
     assert error is None
-    assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 3
+    assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 4
 
     # Try updating the database again to make sure this doesn't cause any bug.
     assert not dbaccessor._session.in_transaction()
     from_version, to_version, error = dbaccessor.update_database()
     assert not dbaccessor._session.in_transaction()
 
-    assert from_version == 3
-    assert to_version == 3
+    assert from_version == 4
+    assert to_version == 4
     assert error is None
-    assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 3
+    assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 4
+
+    # (V3) Assert that the water quality reports were removed from the
+    # database as expected.
+    attachments_info = dbaccessor.get('attachments_info')
+    assert len(attachments_info) == 4
+
+    # (V4) Assert that 'in_recharge_zone' and 'is_influenced' data were
+    # correctly converted from strings to integers i.
+    station_data = dbaccessor.get('observation_wells_data')
+    assert station_data['in_recharge_zone'].dtype == 'Int64'
+    assert station_data['is_influenced'].dtype == 'Int64'
+    assert list(station_data['in_recharge_zone'].values) == [1, 0, 0, 2]
+    assert list(station_data['is_influenced'].values) == [2, 0, 1, 0]
 
 
 if __name__ == "__main__":

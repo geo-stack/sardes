@@ -25,7 +25,8 @@ from sardes.tables.models import StandardSardesTableModel
 from sardes.tables.managers import FileAttachmentManager
 from sardes.tables.delegates import (
     StringEditDelegate, BoolEditDelegate, DateTimeDelegate,
-    NumEditDelegate, NotEditableDelegate, TextEditDelegate)
+    NumEditDelegate, NotEditableDelegate, TextEditDelegate,
+    TriStateEditDelegate)
 from sardes.tables.errors import ForeignReadingsConstraintError
 from sardes.tools.waterquality import WaterQualityReportTool
 
@@ -66,11 +67,11 @@ class ObsWellsTableModel(StandardSardesTableModel):
             ),
         sardes_table_column_factory(
             'observation_wells_data', 'in_recharge_zone', _('Recharge Zone'),
-            delegate=StringEditDelegate
+            delegate=TriStateEditDelegate
             ),
         sardes_table_column_factory(
             'observation_wells_data', 'is_influenced', _('Influenced'),
-            delegate=StringEditDelegate
+            delegate=TriStateEditDelegate
             ),
         sardes_table_column_factory(
             'observation_wells_data', 'latitude', _('Latitude'),

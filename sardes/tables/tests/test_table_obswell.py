@@ -229,8 +229,8 @@ def test_edit_observation_well(tablewidget, qtbot, obswells_data, dbaccessor):
         'aquifer_type': 'edited_aquifer_type',
         'confinement': 'edited_confinement',
         'aquifer_code': 999,
-        'in_recharge_zone': 'edited_in_recharge_zone',
-        'is_influenced': 'edited_is_influenced',
+        'in_recharge_zone': 2,
+        'is_influenced': 2,
         'is_station_active': False,
         'obs_well_notes': 'edited_obs_well_notes'
         }
@@ -264,8 +264,7 @@ def test_edit_observation_well(tablewidget, qtbot, obswells_data, dbaccessor):
     assert tableview.get_data_for_row(0) == [
         'edited_obs_well_id', 'edited_common_name', 'edited_municipality',
         'edited_aquifer_type', '999', 'edited_confinement',
-        'edited_in_recharge_zone', 'edited_is_influenced',
-        '42.424242', '-65.656565', '2015-01-01', '2020-12-31',
+        'NA', 'NA', '42.424242', '-65.656565', '2015-01-01', '2020-12-31',
         str(np.round(np.mean(wlvl), 3)), 'No', 'edited_obs_well_notes']
 
     # Save the changes to the database.

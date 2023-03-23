@@ -49,7 +49,7 @@ from sardes.api.timeseries import DataType
 APPLICATION_ID = 1013042054
 
 # The latest version of the database schema.
-CURRENT_SCHEMA_VERSION = 3
+CURRENT_SCHEMA_VERSION = 4
 
 # The format that is used to store datetime values in the database.
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
@@ -257,13 +257,13 @@ class SamplingFeatureMetadata(BaseMixin, Base):
         UUIDType(binary=False),
         ForeignKey('sampling_feature.sampling_feature_uuid'),
         primary_key=True)
-    in_recharge_zone = Column(String)
+    in_recharge_zone = Column(Integer)
     aquifer_type = Column(String)
     confinement = Column(String)
     common_name = Column(String)
     aquifer_code = Column(Integer)
     is_station_active = Column(Boolean)
-    is_influenced = Column(String)
+    is_influenced = Column(Integer)
 
     sampling_feature = relationship(
         "SamplingFeature", uselist=False, back_populates="_metadata")
@@ -708,11 +708,14 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         from sardes.database.accessors.accessor_sardes_lite import (
             updates as db_updates)
 
+        vacuum_needed = False
+
         to_version = 3
         if self.version() < to_version:
             self.begin_transaction()
             try:
                 db_updates._update_v2_to_v3(self)
+                self.execute(f"PRAGMA user_version = {to_version}")
             except Exception as error:
                 self._session.rollback()
                 return (from_version,
@@ -720,10 +723,25 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                         DatabaseUpdateError(from_version, to_version, error))
             else:
                 self.commit_transaction()
-        # We cannot do a vacuum from within a transaction.
-        # TODO: implement a new vacuum method that handle the case
-        # when the database is locked.
-        self._engine.execute("vacuum")
+                vacuum_needed = True
+        to_version = 4
+        if self.version() < to_version:
+            self.begin_transaction()
+            try:
+                db_updates._update_v3_to_v4(self)
+                self.execute(f"PRAGMA user_version = {to_version}")
+            except Exception as error:
+                self._session.rollback()
+                return (from_version,
+                        to_version,
+                        DatabaseUpdateError(from_version, to_version, error))
+            else:
+                self.commit_transaction()
+        if vacuum_needed is True:
+            # We cannot do a vacuum from within a transaction.
+            # TODO: implement a new vacuum method that handle the case
+            # when the database is locked.
+            self._engine.execute("vacuum")
         return from_version, CURRENT_SCHEMA_VERSION, None
 
     # ---- Database connection
@@ -836,7 +854,9 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
         obs_wells = pd.read_sql_query(
             query.statement, self._session.connection(), coerce_float=True,
             index_col='sampling_feature_uuid',
-            dtype={'aquifer_code': 'Int64'}
+            dtype={'aquifer_code': 'Int64',
+                   'in_recharge_zone': 'Int64',
+                   'is_influenced': 'Int64'}
             )
 
         # Replace nan by None.

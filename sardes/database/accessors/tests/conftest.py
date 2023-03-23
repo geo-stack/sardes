@@ -33,19 +33,19 @@ from sardes.api.timeseries import DataType
 def obswells_data():
     data = [
         ['03037041', "St-Paul-d'Abbotsford", "Saint-Paul-d'Abbotsford",
-         'MT', 'Confined', 3, 'No', 'No',
+         'MT', 'Confined', 3, 0, 0,
          45.445178, -72.828773, True, 'Note for well 03037041'],
         ['02200001', "Réserve de Duchénier", "Saint-Narcisse-de-Rimouski",
-         'ROC', 'Unconfined', 2, 'Yes', 'No',
+         'ROC', 'Unconfined', 2, 1, 0,
          48.20282, -68.52795, True, None],
         ['02167001', 'Matane', 'Matane',
-         'MT', 'Captive', 3, 'No', 'Yes',
+         'MT', 'Captive', 3, 2, 2,
          48.81151, -67.53562, True, None],
         ['03040002', 'PO-01', 'Calixa-Lavallée',
-         'ROC', 'Confined', 1, 'No', 'No',
+         'ROC', 'Confined', 1, 0, 0,
          45.74581, -73.28024, True, None],
         ['09000001', 'Site 1', 'Umiujaq',
-         'MT', 'Libre', 4, 'Yes', 'No',
+         'MT', 'Libre', 4, 1, 0,
          56.56248, -76.47886, False, None]
         ]
     df = pd.DataFrame(
