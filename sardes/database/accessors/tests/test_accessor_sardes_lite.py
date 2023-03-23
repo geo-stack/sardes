@@ -1245,6 +1245,13 @@ def test_update_database(tmp_path):
     assert error is None
     assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 4
 
+    # (V3) Assert that the water quality reports were removed from the
+    # database as expected.
+    attachments_info = dbaccessor.get('attachments_info')
+    assert len(attachments_info) == 4
+
+    # (V4) Assert that 'in_recharge_zone' and 'is_influenced' data were
+    # correctly converted from strings to integers i.
     station_data = dbaccessor.get('observation_wells_data')
     assert station_data['in_recharge_zone'].dtype == 'Int64'
     assert station_data['is_influenced'].dtype == 'Int64'
