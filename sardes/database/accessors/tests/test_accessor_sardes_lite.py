@@ -1231,19 +1231,19 @@ def test_update_database(tmp_path):
     assert not dbaccessor._session.in_transaction()
 
     assert from_version == 2
-    assert to_version == 3
+    assert to_version == 4
     assert error is None
-    assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 3
+    assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 4
 
     # Try updating the database again to make sure this doesn't cause any bug.
     assert not dbaccessor._session.in_transaction()
     from_version, to_version, error = dbaccessor.update_database()
     assert not dbaccessor._session.in_transaction()
 
-    assert from_version == 3
-    assert to_version == 3
+    assert from_version == 4
+    assert to_version == 4
     assert error is None
-    assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 3
+    assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 4
 
 
 if __name__ == "__main__":
