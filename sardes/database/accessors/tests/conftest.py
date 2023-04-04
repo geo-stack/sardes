@@ -333,13 +333,26 @@ def hg_surveys(obswells_data):
 
 
 @pytest.fixture
+def hg_labs():
+    df = pd.DataFrame(
+        data=[['lab#1', 'lab_num_one', 'contacts#1'],
+              ['lab#2', 'lab_num_two', 'contacts#2'],
+              ],
+        index=[1, 2],
+        columns=['lab_code', 'lab_name', 'lab_contacts']
+        )
+    df.attrs['name'] = 'hg_labs'
+    return df
+
+
+@pytest.fixture
 def hg_param_values():
     df = pd.DataFrame(
-        data=[[1, 3, '> 0.345', 0.345, 1, 'Sample#1', 'Lab#1',
+        data=[[1, 3, '> 0.345', 0.345, 1, 'Sample#1', 1,
                datetime(2017, 11, 15, 4, 15), 'Method #1', 'Note #1'],
-              [1, 1, '0.867', 0.123, None, 'Sample#1', 'Lab#1',
+              [1, 1, '0.867', 0.123, None, 'Sample#1', 1,
                datetime(2017, 11, 15, 4, 15), 'Method #2', 'Note #2'],
-              [1, 4, '-0.54', 0.25, 2, 'Sample#1', 'Lab#1',
+              [1, 4, '-0.54', 0.25, 2, 'Sample#1', 2,
                datetime(2017, 11, 15, 4, 15), 'Method #3', 'Note #3'],
               [2, 1, '1.345', 1.25, 3, None, None,
                None, None, None],
@@ -347,7 +360,7 @@ def hg_param_values():
         index=[1, 2, 3, 4],
         columns=['hg_survey_id', 'hg_param_id', 'hg_param_value',
                  'lim_detection', 'meas_units_id', 'lab_sample_id',
-                 'lab_name', 'lab_report_date', 'method', 'notes']
+                 'lab_id', 'lab_report_date', 'method', 'notes']
         )
     df.attrs['name'] = 'hg_param_values'
     return df
@@ -379,7 +392,7 @@ def database_filler(
         obswells_data, constructlog, readings_data, repere_data,
         manual_measurements, sondes_data, sondes_installation, remark_types,
         remarks, measurement_units, hg_params, hg_sampling_methods, hg_surveys,
-        hg_param_values, pump_types, purges):
+        hg_param_values, pump_types, purges, hg_labs):
 
     def fill_database(dbaccessor):
         # Add tables with 'uuid' indexes to the database.
@@ -394,7 +407,7 @@ def database_filler(
         # Add table with 'int' indexes to the database.
         for df in [remarks, remark_types, measurement_units, hg_params,
                    hg_sampling_methods, hg_surveys, hg_param_values,
-                   pump_types, purges]:
+                   pump_types, purges, hg_labs]:
             _dict = df.to_dict('index')
             dbaccessor.add(
                 name=df.attrs['name'],

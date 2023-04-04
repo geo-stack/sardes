@@ -48,10 +48,10 @@ def _update_v2_to_v3(accessor: DatabaseAccessorSardesLite):
     accessor.execute(
         """
         CREATE TABLE remark_type (
-            remark_type_id INTEGER NOT NULL, 
-            remark_type_code VARCHAR(250), 
-            remark_type_name VARCHAR(250), 
-            remark_type_desc VARCHAR, 
+            remark_type_id INTEGER NOT NULL,
+            remark_type_code VARCHAR(250),
+            remark_type_name VARCHAR(250),
+            remark_type_desc VARCHAR,
             PRIMARY KEY (remark_type_id)
             )
         """

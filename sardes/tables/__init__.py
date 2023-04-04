@@ -37,3 +37,5 @@ from .table_hg_param_values import (
     HGParamValuesTableModel, HGParamValuesTableWidget)
 from .table_measurement_units import (
     MeasurementUnitsTableModel, MeasurementUnitsTableWidget)
+from .table_hg_labs import (
+    HGLabsTableModel, HGLabsTableWidget)
