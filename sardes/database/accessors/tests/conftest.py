@@ -336,7 +336,7 @@ def hg_surveys(obswells_data):
 def hg_labs():
     df = pd.DataFrame(
         data=[['lab#1', 'lab_num_one', 'contacts#1'],
-              ['lab#1', 'lab_num_one', 'contacts#1'],
+              ['lab#2', 'lab_num_two', 'contacts#2'],
               ],
         index=[1, 2],
         columns=['lab_code', 'lab_name', 'lab_contacts']
