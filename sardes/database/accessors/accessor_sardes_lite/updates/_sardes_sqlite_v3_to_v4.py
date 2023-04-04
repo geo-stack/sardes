@@ -157,19 +157,25 @@ def _update_v3_to_v4(accessor: DatabaseAccessorSardesLite):
         )
 
     lab_names_map = {}
-    for i, lab_name in enumerate(lab_names.lab_name.unique()):
-        lab_names_map[lab_name] = i + 1
+    i = 0
+    for lab_name in lab_names.lab_name.unique():
+        if pd.isnull(lab_name):
+            continue
+        i += 1
+        lab_names_map[lab_name] = i
         accessor.execute(
             """
             INSERT INTO hg_labs (lab_id, lab_code) VALUES (:lab_id, :lab_code);
             """,
-            params={'lab_id': i + 1, 'lab_code': lab_name}
+            params={'lab_id': i, 'lab_code': lab_name}
         )
 
     # Populate the column 'lab_id' of table 'hg_param_values' and
     # drop the column 'lab_name'.
     for index, row in lab_names.iterrows():
         lab_name = row['lab_name']
+        if lab_name not in lab_names_map:
+            continue
         lab_id = lab_names_map[lab_name]
         accessor.execute(
             """
