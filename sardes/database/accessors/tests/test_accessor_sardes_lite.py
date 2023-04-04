@@ -1273,18 +1273,52 @@ def test_update_database_from_v2(tmp_path):
         assert dataf.empty
 
 
+def test_update_database_from_v3(tmp_path):
+    """
+    Test that updating the database from schema version 3 is
+    working as expected.
+    """
+    src_database = osp.join(
+        osp.dirname(__file__), 'sqlite_database_v3_sardes0.13.0.db')
+    dst_database = osp.join(
+        tmp_path, 'sqlite_database_v3_sardes0.13.0.db')
+    shutil.copy(src_database, dst_database)
+
+    dbaccessor = DatabaseAccessorSardesLite(dst_database)
+    assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 3
+
+    # Update the database to the latest version.
+    assert not dbaccessor._session.in_transaction()
+    from_version, to_version, error = dbaccessor.update_database()
+    assert not dbaccessor._session.in_transaction()
+
+    assert from_version == 3
+    assert to_version == 4
+    assert error is None
+    assert dbaccessor._engine.execute("PRAGMA user_version").first()[0] == 4
+
     # (V4) Assert that 'in_recharge_zone' and 'is_influenced' data were
-    # correctly converted from strings to integers i.
+    # correctly converted from strings to integers.
     station_data = dbaccessor.get('observation_wells_data')
     assert station_data['in_recharge_zone'].dtype == 'Int64'
     assert station_data['is_influenced'].dtype == 'Int64'
-    assert list(station_data['in_recharge_zone'].values) == [1, 0, 0, 2]
-    assert list(station_data['is_influenced'].values) == [2, 0, 1, 0]
+    assert list(station_data['in_recharge_zone'].values) == [0, 1, 2, 0, 1]
+    assert list(station_data['is_influenced'].values) == [0, 0, 2, 0, 0]
 
     # (V4) Assert that field 'static_water_level' of table 'purge' was
     # correctly changed to 'water_level_drawdown'.
     purges = dbaccessor.get('purges')
     assert 'water_level_drawdown' in purges.columns
+
+    # (V4) Assert that 'hg_labs' table was created and populated as expected.
+    hg_labs = dbaccessor.get('hg_labs')
+    assert len(hg_labs) == 2
+    assert list(hg_labs.lab_code) == ['Lab#1', 'Lab#2']
+
+    # (V4) Assert that values in column 'lab_name' were converted and copied
+    # into column 'lab_id' of table 'hg_param_values' as expected.
+    hg_values = dbaccessor.get('hg_param_values')
+    assert list(hg_values.lab_id) == [1, 1, 2, pd.NA]
 
 
 if __name__ == "__main__":
