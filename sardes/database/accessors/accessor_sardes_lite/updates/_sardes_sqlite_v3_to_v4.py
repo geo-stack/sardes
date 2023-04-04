@@ -26,7 +26,17 @@ def _update_v3_to_v4(accessor: DatabaseAccessorSardesLite):
     integers instead of strings.
     - Renamed the field 'static_water_level' of table 'purge' to
     'water_level_drawdown'.
+    - Add a new table named 'hg_labs' to hold the list of labs that can
+    analyze groundwater samples and replace column 'lab_name' by 'lab_id'
+    in tables 'hg_param_values' with a foreign constaint to the
+    new 'hg_labs' table.
     """
+
+    # =========================================================================
+    # Change data type of fields 'in_recharge_zone' and 'is_influenced'
+    # from strings to integers.
+    # =========================================================================
+
     # Fetch data from the database.
     select_statement = (
         """
@@ -71,9 +81,104 @@ def _update_v3_to_v4(accessor: DatabaseAccessorSardesLite):
                     'uuid': index}
         )
 
-    # Rename column 'static_water_level' of table 'purge' to
-    # 'water_level_drawdown'
+    # =========================================================================
+    # Rename column 'static_water_level' of table 'purge'
+    # to 'water_level_drawdown'
+    # =========================================================================
+
     accessor.execute(
         "ALTER TABLE purge RENAME COLUMN static_water_level TO "
         "water_level_drawdown;"
+    )
+
+    # =========================================================================
+    # Add new table 'hg_labs'.
+    # =========================================================================
+
+    accessor.execute("DROP TABLE IF EXISTS hg_labs")
+    accessor.execute(
+        """
+        CREATE TABLE hg_labs (
+            lab_id INTEGER NOT NULL,
+            lab_code VARCHAR,
+            lab_name VARCHAR,
+            lab_contacts VARCHAR,
+            PRIMARY KEY (lab_id)
+            )
+        """
+    )
+
+    # We cannot add a foreign key to table 'hg_labs' directly in the
+    # existing table 'hg_param_values'. We need to create a completely new
+    # table in order to do that.
+    accessor.execute(
+        """
+        CREATE TABLE hg_param_values_new (
+            hg_param_value_id INTEGER NOT NULL,
+            hg_survey_id INTEGER,
+            hg_param_id INTEGER,
+            hg_param_value VARCHAR,
+            lim_detection FLOAT,
+            meas_units_id INTEGER,
+            lab_sample_id VARCHAR,
+            lab_name VARCHAR,
+            lab_id INTEGER,
+            lab_report_date DATETIME,
+            method VARCHAR,
+            notes VARCHAR,
+            PRIMARY KEY (hg_param_value_id),
+            FOREIGN KEY(hg_survey_id) REFERENCES hg_surveys (hg_survey_id),
+            FOREIGN KEY(hg_param_id) REFERENCES hg_params (hg_param_id),
+            FOREIGN KEY(meas_units_id) REFERENCES measurement_units (meas_units_id)
+            FOREIGN KEY(lab_id) REFERENCES hg_labs (lab_id)
+            )
+        """
+    )
+    accessor.execute(
+        "ALTER TABLE hg_param_values ADD lab_id INTEGER;"
+    )
+    accessor.execute(
+        "INSERT INTO hg_param_values_new SELECT * FROM hg_param_values;"
+    )
+    accessor.execute(
+        "DROP TABLE hg_param_values;"
+    )
+    accessor.execute(
+        "ALTER TABLE hg_param_values_new RENAME TO hg_param_values;"
+    )
+
+    # Fetch the lab_names from table 'hg_param_values' and use it
+    # to populate the 'hg_labs' table.
+    lab_names = pd.read_sql_query(
+        "SELECT hg_param_value_id, lab_name FROM hg_param_values;",
+        accessor._session.connection(),
+        index_col='hg_param_value_id'
+        )
+
+    lab_names_map = {}
+    for i, lab_name in enumerate(lab_names.lab_name.unique()):
+        lab_names_map[lab_name] = i + 1
+        accessor.execute(
+            """
+            INSERT INTO table (lab_id, lab_code) VALUES (:lab_id, :lab_code);
+            """,
+            params={'lab_id': i + 1, 'lab_code': lab_name}
+        )
+
+    # Populate the column 'lab_id' of table 'hg_param_values' and
+    # drop the column 'lab_name'.
+    for index, row in lab_names.iterrows():
+        lab_name = row['lab_name']
+        lab_id = lab_names_map[lab_name]
+        accessor.execute(
+            """
+            UPDATE hg_param_values
+            SET lab_id = :lab_id
+            WHERE hg_param_value_id = :value_id;
+            """,
+            params={'lab_id': lab_id, 'value_id': index}
+        )
+
+    accessor.execute(
+        "ALTER TABLE hg_param_values DROP lab_name;"
     )
