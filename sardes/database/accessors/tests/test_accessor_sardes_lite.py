@@ -1259,6 +1259,11 @@ def test_update_database(tmp_path):
     assert list(station_data['in_recharge_zone'].values) == [1, 0, 0, 2]
     assert list(station_data['is_influenced'].values) == [2, 0, 1, 0]
 
+    # (V4) Assert that field 'static_water_level' of table 'purge' was
+    # correctly changed to 'water_level_drawdown'.
+    purges = dbaccessor.get('purges')
+    assert 'water_level_drawdown' in purges.columns
+
 
 if __name__ == "__main__":
     pytest.main(['-x', __file__, '-v', '-rw'])

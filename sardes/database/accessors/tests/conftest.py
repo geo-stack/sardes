@@ -368,7 +368,7 @@ def purges():
         index=[1, 2, 3],
         columns=['hg_survey_id', 'purge_sequence_no', 'purge_seq_start',
                  'purge_seq_end', 'purge_outflow', 'pump_type_id',
-                 'pumping_depth', 'static_water_level']
+                 'pumping_depth', 'water_level_drawdown']
         )
     df.attrs['name'] = 'purges'
     return df

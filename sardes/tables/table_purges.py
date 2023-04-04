@@ -9,13 +9,12 @@
 
 
 # ---- Local imports
-from sardes.api.tablemodels import (
-    SardesTableColumn, sardes_table_column_factory)
+from sardes.api.tablemodels import sardes_table_column_factory
 from sardes.config.locale import _
 from sardes.tables.models import StandardSardesTableModel
 from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.delegates import (
-    IntEditDelegate, DateTimeDelegate, NumEditDelegate, StringEditDelegate,
+    IntEditDelegate, DateTimeDelegate, NumEditDelegate,
     GenericLibSelectDelegate, HGSurveyEditDelegate)
 
 
@@ -58,7 +57,7 @@ class PurgesTableModel(StandardSardesTableModel):
             delegate_options={
                 'decimals': 3, 'minimum': 0, 'maximum': 99999}),
         sardes_table_column_factory(
-            'purges', 'static_water_level', _('Static Water Level (mbgs)'),
+            'purges', 'water_level_drawdown', _('Drawdown (m)'),
             delegate=NumEditDelegate,
             delegate_options={
                 'decimals': 3, 'minimum': 0, 'maximum': 99999}),

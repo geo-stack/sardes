@@ -21,8 +21,11 @@ def _update_v3_to_v4(accessor: DatabaseAccessorSardesLite):
     """
     Update Sardes SQLite database schema to version 4 from version 3.
 
-    The objective is to save 'in_recharge_zone' and 'is_influenced' data as
-    integers instead of strings in the database.
+    Changelog:
+    - Data in fields 'in_recharge_zone' and 'is_influenced' are now stored as
+    integers instead of strings.
+    - Renamed the field 'static_water_level' of table 'purge' to
+    'water_level_drawdown'.
     """
     # Fetch data from the database.
     select_statement = (
@@ -67,3 +70,10 @@ def _update_v3_to_v4(accessor: DatabaseAccessorSardesLite):
                     'is_inf': row['is_influenced'],
                     'uuid': index}
         )
+
+    # Rename column 'static_water_level' of table 'purge' to
+    # 'water_level_drawdown'
+    accessor.execute(
+        "ALTER TABLE purge RENAME COLUMN static_water_level TO "
+        "water_level_drawdown;"
+    )
