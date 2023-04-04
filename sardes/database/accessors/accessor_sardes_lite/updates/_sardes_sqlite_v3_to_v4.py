@@ -64,8 +64,9 @@ def _update_v3_to_v4(accessor: DatabaseAccessorSardesLite):
     )
 
     # Transform 'in_recharge_zone' and 'is_influenced' data from str to Int64.
-    int_map_dict = {'Oui': 1, 'oui': 1, 'Non': 0, 'non': 0, 'ND': 2, 'nd': 2}
+    int_map_dict = {'oui': 1, 'yes': 1, 'non': 0, 'no': 0, 'nd': 2}
     for column in ['in_recharge_zone', 'is_influenced']:
+        data[column] = data[column].str.lower()
         data[column] = data[column].map(int_map_dict.get).astype('Int64')
 
     # Save the transformed data back in the database.
