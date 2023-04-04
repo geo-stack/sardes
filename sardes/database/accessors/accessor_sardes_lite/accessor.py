@@ -1773,7 +1773,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                    'lim_detection': 'float64',
                    'meas_units_id': 'Int64',
                    'method': 'object',
-                   'lab_name': 'object',
+                   'lab_id': 'Int64',
                    'lab_sample_id': 'object'},
             parse_dates={'lab_report_date': TO_DATETIME_ARGS}
             )
