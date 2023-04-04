@@ -1221,7 +1221,7 @@ def test_concurrent_read_write_access(qtbot, dblocker, dbaccessor,
     assert dbaccessor._begin_transaction_try_count == 2
 
 
-def test_update_database(tmp_path):
+def test_update_database_from_v2(tmp_path):
     """
     Test that updating the database from schema version 2 is
     working as expected.
@@ -1257,6 +1257,21 @@ def test_update_database(tmp_path):
     # database as expected.
     attachments_info = dbaccessor.get('attachments_info')
     assert len(attachments_info) == 4
+
+    # (V3) Assert that the 'remarks' and 'remark_types' tables were created as
+    # expected.
+    for data_name in ['remarks', 'remark_types']:
+        dataf = dbaccessor.get(data_name)
+        assert dataf.empty
+
+    # (V3) Assert that the hydrogeochemical tables were created as
+    # expected.
+    for data_name in ['hg_param_values', 'hg_surveys', 'hg_params',
+                      'hg_sampling_methods', 'pump_types', 'purges',
+                      'measurement_units']:
+        dataf = dbaccessor.get(data_name)
+        assert dataf.empty
+
 
     # (V4) Assert that 'in_recharge_zone' and 'is_influenced' data were
     # correctly converted from strings to integers i.
