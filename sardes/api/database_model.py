@@ -677,9 +677,10 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 notnull=True,
             ),
             Column(
-                name='static_water_level',
+                name='water_level_drawdown',
                 dtype='float64',
-                desc=("The static water level."),
+                desc=("The water level drawdown, in meters below the static "
+                      "water level."),
                 notnull=True,
             ),
         )
