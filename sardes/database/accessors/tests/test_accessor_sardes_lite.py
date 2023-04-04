@@ -113,6 +113,13 @@ def dblocker(database):
 # =============================================================================
 # ---- Tests
 # =============================================================================
+def test_fill_database(dbaccessor, database_filler):
+    """
+    Test that filling the test database is working as expected.
+    """
+    database_filler(dbaccessor)
+
+
 def test_connection(dbaccessor):
     """
     Test that connecting to the BD fails and succeed as expected.
