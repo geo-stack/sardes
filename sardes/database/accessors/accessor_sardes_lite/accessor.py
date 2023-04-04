@@ -560,7 +560,7 @@ class Purge(BaseMixin, Base):
         Integer,
         ForeignKey('pump_types.pump_type_id'))
     pumping_depth = Column(Float)
-    static_water_level = Column(Float)
+    water_level_drawdown = Column(Float)
 
 
 # ---- Processes
