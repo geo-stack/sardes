@@ -462,6 +462,18 @@ class SondeInstallation(BaseMixin, Base):
 
 
 # ---- Hydrogeochemistry
+class HGLab(BaseMixin, Base):
+    """
+    An object used to map the 'hg_labs' library.
+    """
+    __tablename__ = 'hg_labs'
+
+    lab_id = Column(Integer, primary_key=True)
+    lab_code = Column(String)
+    lab_name = Column(String)
+    lab_contacts = Column(String)
+
+
 class PumpType(BaseMixin, Base):
     """
     An object used to map the 'pump_types' library.
@@ -536,7 +548,9 @@ class HGParamValue(BaseMixin, Base):
         Integer,
         ForeignKey('measurement_units.meas_units_id'))
     lab_sample_id = Column(String)
-    lab_name = Column(String)
+    lab_id = Column(
+        Integer,
+        ForeignKey('hg_labs.lab_id'))
     lab_report_date = Column(DateTime)
     method = Column(String)
     notes = Column(String)
@@ -682,7 +696,7 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
                   TimeSeriesData, SamplingFeatureAttachment,
                   Remark, RemarkType,
                   PumpType, HGSamplingMethod, HGParam, Purge,
-                  HGSurvey, HGParamValue, MeasurementUnits
+                  HGSurvey, HGParamValue, MeasurementUnits, HGLab
                   ]
         for table in tables:
             if table.__tablename__ in existing_table_names:
@@ -1649,6 +1663,23 @@ class DatabaseAccessorSardesLite(DatabaseAccessor):
             RemarkType,
             remark_type_ids,
             foreign_constraints=[(Remark, 'remark_type_id')]
+            )
+
+    # ---- HG Labs interface
+    def _get_hg_labs(self):
+        return self._get_table_data(HGLab)
+
+    def _set_hg_labs(self, index, values):
+        return self._set_table_data(HGLab, index, values)
+
+    def _add_hg_labs(self, values, indexes=None):
+        return self._add_table_data(HGLab, values, indexes)
+
+    def _del_hg_labs(self, indexes):
+        return self._del_table_data(
+            HGLab,
+            indexes,
+            foreign_constraints=[(HGParamValue, 'lab_id')]
             )
 
     # ---- Pump Types interface
