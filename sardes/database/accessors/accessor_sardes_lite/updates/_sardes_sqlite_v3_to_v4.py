@@ -161,7 +161,7 @@ def _update_v3_to_v4(accessor: DatabaseAccessorSardesLite):
         lab_names_map[lab_name] = i + 1
         accessor.execute(
             """
-            INSERT INTO table (lab_id, lab_code) VALUES (:lab_id, :lab_code);
+            INSERT INTO hg_labs (lab_id, lab_code) VALUES (:lab_id, :lab_code);
             """,
             params={'lab_id': i + 1, 'lab_code': lab_name}
         )
