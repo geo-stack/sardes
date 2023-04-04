@@ -57,8 +57,11 @@ class HGParamValuesTableModel(StandardSardesTableModel):
             delegate=DateTimeDelegate,
             delegate_options={'display_format': "yyyy-MM-dd"}),
         sardes_table_column_factory(
-            'hg_param_values', 'lab_name', _('Lab Name'),
-            delegate=StringEditDelegate),
+            'hg_param_values', 'lab_id', _('Lab'),
+            delegate=GenericLibSelectDelegate,
+            delegate_options={
+                'lib_name': 'hg_labs',
+                'lib_column_name': 'lab_code'}),
         sardes_table_column_factory(
             'hg_param_values', 'method', _('Method'),
             delegate=StringEditDelegate),
@@ -69,7 +72,7 @@ class HGParamValuesTableModel(StandardSardesTableModel):
 
     __dataname__ = 'hg_param_values'
     __libnames__ = ['measurement_units', 'hg_params', 'hg_surveys',
-                    'observation_wells_data']
+                    'observation_wells_data', 'hg_labs']
 
 
 class HGParamValuesTableWidget(SardesTableWidget):
