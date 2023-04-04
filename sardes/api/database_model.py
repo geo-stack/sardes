@@ -455,6 +455,30 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
         )
     ),
     # ---- Hydrogeochemistry
+    'hg_labs': Table(
+        foreign_constraints=(
+            ForeignConstraint('lab_id', 'hg_param_values'),
+        ),
+        columns=(
+            Column(
+                name='lab_code',
+                dtype='str',
+                desc=("A unique code or short name to identify the lab."),
+                notnull=True,
+                unique=True,
+            ),
+            Column(
+                name='lab_name',
+                dtype='str',
+                desc=("The full or long name of the lab."),
+            ),
+            Column(
+                name='lab_contacts',
+                dtype='str',
+                desc=("Contact details of the lab."),
+            ),
+        )
+    ),
     'pump_types': Table(
         foreign_constraints=(
             ForeignConstraint('pump_type_id', 'purges'),
@@ -615,9 +639,9 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 desc=("The date of the lab report when applicable."),
             ),
             Column(
-                name='lab_name',
-                dtype='str',
-                desc=("The name of the lab that analysed the sample "
+                name='lab_id',
+                dtype='Int64',
+                desc=("The ID of the lab that analysed the sample "
                       "when applicable."),
             ),
             Column(
