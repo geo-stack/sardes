@@ -24,7 +24,9 @@ def _update_v3_to_v4(accessor: DatabaseAccessorSardesLite):
     Changelog:
     - Data in fields 'in_recharge_zone' and 'is_influenced' are now stored as
     integers instead of strings.
-    - Renamed the field 'static_water_level' of table 'purge' to
+    - Renamed table 'purge' to 'purges'.
+    - Added a new column 'purge_notes' to table 'purges'
+    - Renamed the field 'static_water_level' of table 'purges' to
     'water_level_drawdown'.
     - Add a new table named 'hg_labs' to hold the list of labs that can
     analyze groundwater samples and replace column 'lab_name' by 'lab_id'
@@ -83,14 +85,27 @@ def _update_v3_to_v4(accessor: DatabaseAccessorSardesLite):
         )
 
     # =========================================================================
-    # Rename column 'static_water_level' of table 'purge'
-    # to 'water_level_drawdown'
+    # Rename table 'purge' to 'purges', add a new column 'purge_notes' and
+    # rename column 'static_water_level' to 'water_level_drawdown'.
     # =========================================================================
 
     accessor.execute(
-        "ALTER TABLE purge RENAME COLUMN static_water_level TO "
+        "ALTER TABLE purge RENAME TO purges;"
+    )
+    accessor.execute(
+        "ALTER TABLE purges ADD purge_notes;"
+    )
+    accessor.execute(
+        "ALTER TABLE purges RENAME COLUMN static_water_level TO "
         "water_level_drawdown;"
     )
+
+    # =========================================================================
+    # Drop table 'pump_type' if it exists. The table used to hold that
+    # information is named 'pump_types'. This table is an old relic that was
+    # added during the first stages of the project.
+    # =========================================================================
+    accessor.execute("DROP TABLE IF EXISTS pump_type")
 
     # =========================================================================
     # Add new table 'hg_labs'.

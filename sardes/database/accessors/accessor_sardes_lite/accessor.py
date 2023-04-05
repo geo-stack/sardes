@@ -560,7 +560,7 @@ class Purge(BaseMixin, Base):
     """
     An object used to map the 'purge' library.
     """
-    __tablename__ = 'purge'
+    __tablename__ = 'purges'
 
     purge_id = Column(Integer, primary_key=True)
     hg_survey_id = Column(
@@ -575,6 +575,7 @@ class Purge(BaseMixin, Base):
         ForeignKey('pump_types.pump_type_id'))
     pumping_depth = Column(Float)
     water_level_drawdown = Column(Float)
+    purge_notes = Column(String)
 
 
 # ---- Processes
