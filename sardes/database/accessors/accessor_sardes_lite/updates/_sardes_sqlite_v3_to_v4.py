@@ -96,7 +96,7 @@ def _update_v3_to_v4(accessor: DatabaseAccessorSardesLite):
         "ALTER TABLE purges ADD purge_notes;"
     )
     accessor.execute(
-        "ALTER TABLE purge RENAME COLUMN static_water_level TO "
+        "ALTER TABLE purges RENAME COLUMN static_water_level TO "
         "water_level_drawdown;"
     )
 
