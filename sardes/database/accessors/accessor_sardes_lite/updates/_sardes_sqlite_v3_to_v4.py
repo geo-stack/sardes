@@ -101,6 +101,13 @@ def _update_v3_to_v4(accessor: DatabaseAccessorSardesLite):
     )
 
     # =========================================================================
+    # Drop table 'pump_type' if it exists. The table used to hold that
+    # information is named 'pump_types'. This table is an old relic that was
+    # added during the first stages of the project.
+    # =========================================================================
+    accessor.execute("DROP TABLE IF EXISTS pump_type")
+
+    # =========================================================================
     # Add new table 'hg_labs'.
     # =========================================================================
 
