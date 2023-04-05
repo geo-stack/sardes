@@ -10,8 +10,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1.0\n"
-"POT-Creation-Date: 2023-03-20 15:59-0400\n"
-"PO-Revision-Date: 2023-03-20 16:04-0400\n"
+"POT-Creation-Date: 2023-04-05 09:29-0400\n"
+"PO-Revision-Date: 2023-04-05 09:34-0400\n"
 "Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs."
 "ca.com>\n"
 "Language-Team: Python\n"
@@ -206,15 +206,15 @@ msgstr ""
 "Échec de la mise à jour de la base de données de la version {} vers la "
 "version {} : {}"
 
-#: ..\sardes\database\accessors\accessor_sardes_lite\accessor.py:740
+#: ..\sardes\database\accessors\accessor_sardes_lite\accessor.py:773
 msgid "'{}' does not exist."
 msgstr "'{}' n'existe pas."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite\accessor.py:747
+#: ..\sardes\database\accessors\accessor_sardes_lite\accessor.py:780
 msgid "'{}' is not a valid database file."
 msgstr "'{}' n'est pas un fichier de base de données valide."
 
-#: ..\sardes\database\accessors\accessor_sardes_lite\accessor.py:771
+#: ..\sardes\database\accessors\accessor_sardes_lite\accessor.py:804
 msgid ""
 "'{}' does not appear to be a Sardes SQLite database. The application id set "
 "in the database is {}, but should be {}."
@@ -228,12 +228,12 @@ msgid "Station"
 msgstr "Station"
 
 #: ..\sardes\database\database_manager.py:574
-#: ..\sardes\tables\table_observation_wells.py:81
+#: ..\sardes\tables\table_observation_wells.py:82
 msgid "Longitude"
 msgstr "Longitude"
 
 #: ..\sardes\database\database_manager.py:577
-#: ..\sardes\tables\table_observation_wells.py:76
+#: ..\sardes\tables\table_observation_wells.py:77
 msgid "Latitude"
 msgstr "Latitude"
 
@@ -247,13 +247,13 @@ msgstr "m NMM"
 
 #: ..\sardes\database\database_manager.py:583
 #: ..\sardes\tables\table_repere.py:59 ..\sardes\tools\hydrographs.py:373
-#: ..\sardes\tools\save2excel.py:264 ..\sardes\tools\waterquality.py:361
+#: ..\sardes\tools\save2excel.py:264 ..\sardes\tools\waterquality.py:355
 msgid "Geodesic"
 msgstr "Géodésique"
 
 #: ..\sardes\database\database_manager.py:583
 #: ..\sardes\tools\hydrographs.py:373 ..\sardes\tools\save2excel.py:264
-#: ..\sardes\tools\waterquality.py:361
+#: ..\sardes\tools\waterquality.py:355
 msgid "Approximate"
 msgstr "Approximative"
 
@@ -262,7 +262,7 @@ msgid "Water-table"
 msgstr "Nappe"
 
 #: ..\sardes\database\database_manager.py:588
-#: ..\sardes\tables\table_observation_wells.py:72
+#: ..\sardes\tables\table_observation_wells.py:73
 msgid "Influenced"
 msgstr "Influencé"
 
@@ -279,7 +279,7 @@ msgid "Inactive"
 msgstr "Inactive"
 
 #: ..\sardes\database\database_manager.py:599
-#: ..\sardes\tables\table_observation_wells.py:103
+#: ..\sardes\tables\table_observation_wells.py:104
 msgid "Active"
 msgstr "Active"
 
@@ -313,13 +313,13 @@ msgid "Graph"
 msgstr "Graphique"
 
 #: ..\sardes\database\database_manager.py:677
-#: ..\sardes\tools\waterquality.py:132
+#: ..\sardes\tools\waterquality.py:126
 msgid "water_quality_{}.xlsx"
 msgstr "qualité_eau_{}.xlsx"
 
 #: ..\sardes\database\database_manager.py:685
 #: ..\sardes\database\database_manager.py:700
-#: ..\sardes\plugins\network\widgets.py:92 ..\sardes\tools\waterquality.py:146
+#: ..\sardes\plugins\network\widgets.py:92 ..\sardes\tools\waterquality.py:140
 msgid "Water Quality"
 msgstr "Qualité de l'eau"
 
@@ -512,7 +512,7 @@ msgid "Well:"
 msgstr "Puits :"
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:147
-#: ..\sardes\tools\save2excel.py:199 ..\sardes\tools\waterquality.py:289
+#: ..\sardes\tools\save2excel.py:199 ..\sardes\tools\waterquality.py:283
 msgid "Municipality:"
 msgstr "Municipalité :"
 
@@ -589,7 +589,7 @@ msgstr ""
 "Chargez les données de lectures temporelles du prochain fichier sélectionné."
 
 #: ..\sardes\plugins\dataio\widgets\dataimportwizard.py:298
-#: ..\sardes\tables\table_observation_wells.py:202
+#: ..\sardes\tables\table_observation_wells.py:203
 msgid "View data"
 msgstr "Afficher les données"
 
@@ -766,7 +766,7 @@ msgid "Publish Piezometric Network Data"
 msgstr "Publier les données du réseau piézométrique"
 
 #: ..\sardes\plugins\network\widgets.py:80
-#: ..\sardes\tables\table_observation_wells.py:228
+#: ..\sardes\tables\table_observation_wells.py:229
 msgid "Construction Logs"
 msgstr "Schémas de construction"
 
@@ -907,44 +907,42 @@ msgstr "Documents XLSX :"
 msgid "Graphs:"
 msgstr "Graphiques :"
 
-#: ..\sardes\tables\delegates.py:87
+#: ..\sardes\tables\delegates.py:86
 msgid ""
 "Some {} data did not match the prescribed <i>yyyy-mm-dd hh:mm:ss</i> format"
 msgstr ""
 "Certaines données de {} ne correspondaient pas au format <i>aaaa-mm-jj hh: "
 "mm: ss</i> qui est prescrit"
 
-#: ..\sardes\tables\delegates.py:153
+#: ..\sardes\tables\delegates.py:152
 msgid "Some {} data could not be converted to integer value"
 msgstr "Certaines données de {} n'ont pas pu être converties en valeur entière"
 
-#: ..\sardes\tables\delegates.py:194
+#: ..\sardes\tables\delegates.py:193
 msgid "Some {} data could not be converted to numerical value"
 msgstr ""
 "Certaines données de {} n'ont pas pu être converties en valeur numérique"
 
-#: ..\sardes\tables\delegates.py:208 ..\sardes\tables\delegates.py:215
-#: ..\sardes\tables\delegates.py:230 ..\sardes\tables\delegates.py:242
-#: ..\sardes\tables\delegates.py:249
+#: ..\sardes\tables\delegates.py:207 ..\sardes\tables\delegates.py:214
+#: ..\sardes\tables\delegates.py:229 ..\sardes\tables\delegates.py:266
 msgid "Yes"
 msgstr "Oui"
 
-#: ..\sardes\tables\delegates.py:209 ..\sardes\tables\delegates.py:216
-#: ..\sardes\tables\delegates.py:230 ..\sardes\tables\delegates.py:241
-#: ..\sardes\tables\delegates.py:249
+#: ..\sardes\tables\delegates.py:208 ..\sardes\tables\delegates.py:215
+#: ..\sardes\tables\delegates.py:229 ..\sardes\tables\delegates.py:266
 msgid "No"
 msgstr "Non"
 
-#: ..\sardes\tables\delegates.py:220
+#: ..\sardes\tables\delegates.py:219
 msgid "Some {} data could notbe converted to boolean value."
 msgstr ""
 "Certaines données de {} n'ont pas pu être converties en valeur booléenne."
 
-#: ..\sardes\tables\delegates.py:243 ..\sardes\tables\delegates.py:249
+#: ..\sardes\tables\delegates.py:266
 msgid "NA"
 msgstr "ND"
 
-#: ..\sardes\tables\delegates.py:324
+#: ..\sardes\tables\delegates.py:340
 msgid "Some {} data did not match any well in the database"
 msgstr "Certains {} ne correspondaient à aucun puits de la base de données"
 
@@ -1012,22 +1010,43 @@ msgstr ""
 "de données.</p><p> Veuillez d'abord supprimer toutes les lectures liées à la "
 "station <b>{station_name}</b>."
 
+#: ..\sardes\tables\table_hg_labs.py:25
+msgid "HG Labs"
+msgstr "HG Labs"
+
+#: ..\sardes\tables\table_hg_labs.py:28 ..\sardes\tables\table_hg_params.py:28
+#: ..\sardes\tables\table_remark_types.py:28
+msgid "Code"
+msgstr "Code"
+
+#: ..\sardes\tables\table_hg_labs.py:31 ..\sardes\tables\table_hg_params.py:31
+#: ..\sardes\tables\table_hg_sampling_methods.py:28
+#: ..\sardes\tables\table_measurement_units.py:31
+#: ..\sardes\tables\table_pump_types.py:28
+#: ..\sardes\tables\table_remark_types.py:31
+msgid "Name"
+msgstr "Nom"
+
+#: ..\sardes\tables\table_hg_labs.py:34
+msgid "Contact Details"
+msgstr "Coordonnées"
+
 #: ..\sardes\tables\table_hg_param_values.py:27
 msgid "HG Values"
 msgstr "Valeurs HG"
 
 #: ..\sardes\tables\table_hg_param_values.py:30
-#: ..\sardes\tables\table_purges.py:31
+#: ..\sardes\tables\table_purges.py:30
 msgid "Survey Well ID - Date/Time"
 msgstr "Relevé ID puits - date/temps"
 
 #: ..\sardes\tables\table_hg_param_values.py:33
-#: ..\sardes\tools\waterquality.py:240
+#: ..\sardes\tools\waterquality.py:234
 msgid "Parameter"
 msgstr "Paramètre"
 
 #: ..\sardes\tables\table_hg_param_values.py:39
-#: ..\sardes\tools\waterquality.py:258
+#: ..\sardes\tools\waterquality.py:252
 msgid "Value"
 msgstr "Valeur"
 
@@ -1036,7 +1055,7 @@ msgid "Lim. Detection"
 msgstr "Lim. de détection"
 
 #: ..\sardes\tables\table_hg_param_values.py:47
-#: ..\sardes\tools\waterquality.py:267
+#: ..\sardes\tools\waterquality.py:261
 msgid "Units"
 msgstr "Unités"
 
@@ -1046,21 +1065,21 @@ msgstr "ID de l'échantillon"
 
 #: ..\sardes\tables\table_hg_param_values.py:56
 msgid "Lab Report Date"
-msgstr "Date du rapport de labo."
+msgstr "Date du rapport de lab"
 
 #: ..\sardes\tables\table_hg_param_values.py:60
-msgid "Lab Name"
-msgstr "Nom du labo."
+msgid "Lab"
+msgstr "Lab"
 
-#: ..\sardes\tables\table_hg_param_values.py:63
+#: ..\sardes\tables\table_hg_param_values.py:66
 msgid "Method"
 msgstr "Méthode"
 
-#: ..\sardes\tables\table_hg_param_values.py:66
+#: ..\sardes\tables\table_hg_param_values.py:69
 #: ..\sardes\tables\table_hg_surveys.py:55
 #: ..\sardes\tables\table_manual_measurements.py:41
-#: ..\sardes\tables\table_observation_wells.py:107
-#: ..\sardes\tables\table_repere.py:62
+#: ..\sardes\tables\table_observation_wells.py:108
+#: ..\sardes\tables\table_purges.py:65 ..\sardes\tables\table_repere.py:62
 #: ..\sardes\tables\table_sonde_installations.py:54
 #: ..\sardes\tables\table_sondes_inventory.py:58
 msgid "Notes"
@@ -1069,19 +1088,6 @@ msgstr "Notes"
 #: ..\sardes\tables\table_hg_params.py:25
 msgid "HG Parameters"
 msgstr "Paramètres HG"
-
-#: ..\sardes\tables\table_hg_params.py:28
-#: ..\sardes\tables\table_remark_types.py:28
-msgid "Code"
-msgstr "Code"
-
-#: ..\sardes\tables\table_hg_params.py:31
-#: ..\sardes\tables\table_hg_sampling_methods.py:28
-#: ..\sardes\tables\table_measurement_units.py:31
-#: ..\sardes\tables\table_pump_types.py:28
-#: ..\sardes\tables\table_remark_types.py:31
-msgid "Name"
-msgstr "Nom"
 
 #: ..\sardes\tables\table_hg_params.py:34
 msgid "Regex"
@@ -1108,7 +1114,7 @@ msgstr "Relevés HG"
 
 #: ..\sardes\tables\table_hg_surveys.py:31
 #: ..\sardes\tables\table_manual_measurements.py:29
-#: ..\sardes\tables\table_observation_wells.py:42
+#: ..\sardes\tables\table_observation_wells.py:43
 #: ..\sardes\tables\table_remarks.py:29 ..\sardes\tables\table_repere.py:33
 #: ..\sardes\tables\table_sonde_installations.py:35
 msgid "Well ID"
@@ -1152,47 +1158,47 @@ msgstr "Unités de mesure"
 msgid "Symbols"
 msgstr "Symboles"
 
-#: ..\sardes\tables\table_observation_wells.py:39
+#: ..\sardes\tables\table_observation_wells.py:40
 msgid "Observation Wells"
 msgstr "Puits d'observation"
 
-#: ..\sardes\tables\table_observation_wells.py:46
+#: ..\sardes\tables\table_observation_wells.py:47
 msgid "Common Name"
 msgstr "Nom Commun"
 
-#: ..\sardes\tables\table_observation_wells.py:50
+#: ..\sardes\tables\table_observation_wells.py:51
 msgid "Municipality"
 msgstr "Municipalité"
 
-#: ..\sardes\tables\table_observation_wells.py:54
+#: ..\sardes\tables\table_observation_wells.py:55
 msgid "Aquifer"
 msgstr "Aquifère"
 
-#: ..\sardes\tables\table_observation_wells.py:58
+#: ..\sardes\tables\table_observation_wells.py:59
 msgid "Aquifer Code"
 msgstr "Code aquifère"
 
-#: ..\sardes\tables\table_observation_wells.py:64
+#: ..\sardes\tables\table_observation_wells.py:65
 msgid "Confinement"
 msgstr "Confinement"
 
-#: ..\sardes\tables\table_observation_wells.py:68
+#: ..\sardes\tables\table_observation_wells.py:69
 msgid "Recharge Zone"
 msgstr "Zone de recharge"
 
-#: ..\sardes\tables\table_observation_wells.py:86
+#: ..\sardes\tables\table_observation_wells.py:87
 msgid "First Date"
 msgstr "Première date"
 
-#: ..\sardes\tables\table_observation_wells.py:92
+#: ..\sardes\tables\table_observation_wells.py:93
 msgid "Last Date"
 msgstr "Dernière date"
 
-#: ..\sardes\tables\table_observation_wells.py:98
+#: ..\sardes\tables\table_observation_wells.py:99
 msgid "Mean level (m)"
 msgstr "Niveau moyen (m)"
 
-#: ..\sardes\tables\table_observation_wells.py:203
+#: ..\sardes\tables\table_observation_wells.py:204
 msgid ""
 "Open a table showing all readings saved in the database for the currently "
 "selected observation well."
@@ -1200,24 +1206,24 @@ msgstr ""
 "Ouvrir un tableau affichant toutes les lectures enregistrées dans la base de "
 "données pour le puits d'observation actuellement sélectionné."
 
-#: ..\sardes\tables\table_observation_wells.py:213
+#: ..\sardes\tables\table_observation_wells.py:214
 msgid "Show in Google Maps"
 msgstr "Afficher dans Google Maps"
 
-#: ..\sardes\tables\table_observation_wells.py:214
+#: ..\sardes\tables\table_observation_wells.py:215
 msgid "Show the currently selected observation well in Google Maps."
 msgstr ""
 "Afficher le puits d'observation actuellement sélectionnée dans Google Maps."
 
-#: ..\sardes\tables\table_observation_wells.py:224
+#: ..\sardes\tables\table_observation_wells.py:225
 msgid "Construction Log"
 msgstr "Schéma de construction"
 
-#: ..\sardes\tables\table_observation_wells.py:226
+#: ..\sardes\tables\table_observation_wells.py:227
 msgid "Select a Construction Log for Station {}"
 msgstr "Sélectionner un schéma de construction pour la station {}"
 
-#: ..\sardes\tables\table_observation_wells.py:229
+#: ..\sardes\tables\table_observation_wells.py:230
 msgid ""
 "Open the menu to add a construction log to the currently selected station or "
 "to view or delete an existing construction log."
@@ -1225,29 +1231,29 @@ msgstr ""
 "Ouvrir le menu pour joindre un schéma de construction à la station "
 "actuellement sélectionnée ou pour afficher ou supprimer un schéma existant."
 
-#: ..\sardes\tables\table_observation_wells.py:233
+#: ..\sardes\tables\table_observation_wells.py:234
 msgid "Attach Construction Log..."
 msgstr "Joindre un schéma de construction..."
 
-#: ..\sardes\tables\table_observation_wells.py:234
+#: ..\sardes\tables\table_observation_wells.py:235
 msgid "Attach a construction log to the currently selected station."
 msgstr ""
 "Joindre un schéma de construction à la station actuellement sélectionnée."
 
-#: ..\sardes\tables\table_observation_wells.py:237
+#: ..\sardes\tables\table_observation_wells.py:238
 msgid "Show Construction Log..."
 msgstr "Montrer le schéma de construction..."
 
-#: ..\sardes\tables\table_observation_wells.py:238
+#: ..\sardes\tables\table_observation_wells.py:239
 msgid "Show the construction log attached to the currently selected station."
 msgstr ""
 "Afficher le schéma de construction de la station actuellement sélectionnée."
 
-#: ..\sardes\tables\table_observation_wells.py:241
+#: ..\sardes\tables\table_observation_wells.py:242
 msgid "Remove Construction Log"
 msgstr "Supprimer le schéma de construction"
 
-#: ..\sardes\tables\table_observation_wells.py:242
+#: ..\sardes\tables\table_observation_wells.py:243
 msgid "Remove the construction log attached to the currently selected station."
 msgstr ""
 "Supprimer le schéma de construction de la station actuellement sélectionnée."
@@ -1256,37 +1262,37 @@ msgstr ""
 msgid "Pump Types"
 msgstr "Types de pompes"
 
-#: ..\sardes\tables\table_purges.py:28
+#: ..\sardes\tables\table_purges.py:27
 msgid "Purges"
 msgstr "Purges"
 
-#: ..\sardes\tables\table_purges.py:34
+#: ..\sardes\tables\table_purges.py:33
 msgid "Sequence No."
 msgstr "No. de séquence"
 
-#: ..\sardes\tables\table_purges.py:37
+#: ..\sardes\tables\table_purges.py:36
 msgid "Date/Time Start"
 msgstr "Début date/temps"
 
-#: ..\sardes\tables\table_purges.py:41
+#: ..\sardes\tables\table_purges.py:40
 msgid "Date/Time End"
 msgstr "Fin date/temps"
 
-#: ..\sardes\tables\table_purges.py:45
+#: ..\sardes\tables\table_purges.py:44
 msgid "Outflow (L/min)"
 msgstr "Débit (L/min)"
 
-#: ..\sardes\tables\table_purges.py:50
+#: ..\sardes\tables\table_purges.py:49
 msgid "Pump Type"
 msgstr "Type de pompe"
 
-#: ..\sardes\tables\table_purges.py:56
+#: ..\sardes\tables\table_purges.py:55
 msgid "Pumping Depth (m)"
 msgstr "Prof. de pompage (m)"
 
-#: ..\sardes\tables\table_purges.py:61
-msgid "Static Water Level (mbgs)"
-msgstr "Prof. niveau statique (m)"
+#: ..\sardes\tables\table_purges.py:60
+msgid "Drawdown (m)"
+msgstr "Rabattement (m)"
 
 #: ..\sardes\tables\table_remark_types.py:25
 msgid "Remark Types"
@@ -1577,35 +1583,35 @@ msgstr "Température de l'eau (°C)"
 msgid "Water electrical conductivity (µS/cm)"
 msgstr "Conductivité électrique de l'eau (µS/cm)"
 
-#: ..\sardes\tools\save2excel.py:210 ..\sardes\tools\waterquality.py:302
+#: ..\sardes\tools\save2excel.py:210 ..\sardes\tools\waterquality.py:296
 msgid "Station number:"
 msgstr "Numéro de la station :"
 
-#: ..\sardes\tools\save2excel.py:221 ..\sardes\tools\waterquality.py:315
+#: ..\sardes\tools\save2excel.py:221 ..\sardes\tools\waterquality.py:309
 msgid "Latitude (degrees):"
 msgstr "Latitude (degrés) :"
 
-#: ..\sardes\tools\save2excel.py:239 ..\sardes\tools\waterquality.py:335
+#: ..\sardes\tools\save2excel.py:239 ..\sardes\tools\waterquality.py:329
 msgid "Longitude (degrees):"
 msgstr "Longitude (degrés) :"
 
-#: ..\sardes\tools\save2excel.py:257 ..\sardes\tools\waterquality.py:354
+#: ..\sardes\tools\save2excel.py:257 ..\sardes\tools\waterquality.py:348
 msgid "Ground altitude (m MSL):"
 msgstr "Altitude du sol (m NMM) :"
 
-#: ..\sardes\tools\save2excel.py:266 ..\sardes\tools\waterquality.py:363
+#: ..\sardes\tools\save2excel.py:266 ..\sardes\tools\waterquality.py:357
 msgid "Not Available"
 msgstr "Non disponible"
 
-#: ..\sardes\tools\waterquality.py:57
+#: ..\sardes\tools\waterquality.py:51
 msgid "Water Quality Report"
 msgstr "Rapport de qualité de l'eau"
 
-#: ..\sardes\tools\waterquality.py:59
+#: ..\sardes\tools\waterquality.py:53
 msgid "Show the water quality report for the selected monitoring station."
 msgstr "Afficher le rapport de qualité de l'eau de la station sélectionnée."
 
-#: ..\sardes\tools\waterquality.py:232
+#: ..\sardes\tools\waterquality.py:226
 msgid "Sampling Date"
 msgstr "Date d'échantillonnage"
 
@@ -2073,6 +2079,12 @@ msgid ""
 msgstr ""
 "Entrez une valeur comprise entre 0 et 99 points pour modifier la taille des "
 "marqueurs du tracé de la série chronologique actuellement sélectionnée."
+
+#~ msgid "Lab Name"
+#~ msgstr "Nom du labo."
+
+#~ msgid "Static Water Level (mbgs)"
+#~ msgstr "Prof. niveau statique (m)"
 
 #~ msgid "Select a water quality report for Station {}"
 #~ msgstr "Sélectionner un rapport de qualité de l'eau pour la station {}"
