@@ -15,7 +15,7 @@ from sardes.tables.models import StandardSardesTableModel
 from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.delegates import (
     IntEditDelegate, DateTimeDelegate, NumEditDelegate,
-    GenericLibSelectDelegate, HGSurveyEditDelegate)
+    GenericLibSelectDelegate, HGSurveyEditDelegate, TextEditDelegate)
 
 
 class PurgesTableModel(StandardSardesTableModel):
@@ -61,6 +61,9 @@ class PurgesTableModel(StandardSardesTableModel):
             delegate=NumEditDelegate,
             delegate_options={
                 'decimals': 3, 'minimum': 0, 'maximum': 99999}),
+        sardes_table_column_factory(
+            'purges', 'purge_notes', _('Notes'),
+            delegate=TextEditDelegate)
         ]
 
     __dataname__ = 'purges'
