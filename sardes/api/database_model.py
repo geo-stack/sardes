@@ -692,20 +692,22 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 name='pump_type_id',
                 dtype='Int64',
                 desc=("The ID of the pump type used to do the purge."),
-                notnull=True,
             ),
             Column(
                 name='pumping_depth',
                 dtype='float64',
                 desc=("The pumping depth."),
-                notnull=True,
             ),
             Column(
                 name='water_level_drawdown',
                 dtype='float64',
                 desc=("The water level drawdown, in meters below the static "
                       "water level."),
-                notnull=True,
+            ),
+            Column(
+                name='purge_notes',
+                dtype='str',
+                desc=("Notes related to the purge sequence."),
             ),
         )
     ),
