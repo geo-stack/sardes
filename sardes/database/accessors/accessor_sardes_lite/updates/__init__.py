@@ -4,7 +4,7 @@
 # https://github.com/cgq-qgc/sardes
 #
 # This file is part of SARDES.
-# Licensed under the terms of the MIT License.
+# Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
 from ._sardes_sqlite_v2_to_v3 import _update_v2_to_v3
