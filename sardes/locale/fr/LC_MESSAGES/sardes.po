@@ -10,8 +10,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1.0\n"
-"POT-Creation-Date: 2023-04-05 09:29-0400\n"
-"PO-Revision-Date: 2023-04-05 09:34-0400\n"
+"POT-Creation-Date: 2023-04-18 11:03-0400\n"
+"PO-Revision-Date: 2023-04-18 11:05-0400\n"
 "Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs."
 "ca.com>\n"
 "Language-Team: Python\n"
@@ -448,6 +448,11 @@ msgstr ""
 #: ..\sardes\plugins\databases\widgets.py:272
 msgid "Disconnect"
 msgstr "Déconnecter"
+
+#: ..\sardes\plugins\databases\widgets.py:292
+msgid "Do you want to update your database to version&nbsp;{}?"
+msgstr ""
+"Voulez-vous mettre à jour votre base de données vers la version&nbsp;{}?"
 
 #: ..\sardes\plugins\databases\widgets.py:308
 msgid "The connection to the database failed."

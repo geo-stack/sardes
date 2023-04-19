@@ -289,16 +289,16 @@ class DatabaseConnectionWidget(QDialog):
         if db_connection is None:
             QApplication.beep()
             if type(db_connect_error) == DatabaseVersionError:
+                question = _(
+                    'Do you want to update your database '
+                    'to version&nbsp;{}?'
+                    ).format(db_connect_error.req_version)
                 message = (
-                    '<font color="{}">{}:</font> {}'
-                    '<br><br>'
-                    '<b>Do you want to update your database '
-                    'to version&nbsp;{}?</b>'
+                    '<font color="{}">{}:</font>{}<br><br><b>{}</b>'
                     ).format(BLUE,
                              type(db_connect_error).__name__,
                              db_connect_error,
-                             db_connect_error.req_version,
-                             )
+                             question)
                 self.status_bar.show_update_icon(message)
             elif db_connect_error is not None:
                 message = ('<font color="{}">{}:</font> {}'.format(
