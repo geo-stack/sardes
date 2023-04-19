@@ -9,7 +9,6 @@ trigger:
 
 variables:
   AZURE: True
-  CODECOV_TOKEN: $(CODECOV_TOKEN)
   SARDES_OUTPUT_DIRNAME: 'sardes_0.13.1_win_amd64'
 
 pool:
