@@ -9,7 +9,6 @@ trigger:
 
 variables:
   AZURE: True
-  CODECOV_TOKEN: $(SECRET_CODECOV_TOKEN)
   SARDES_OUTPUT_DIRNAME: 'sardes_0.13.1_win_amd64'
 
 pool:
@@ -41,6 +40,8 @@ steps:
 
 - script: |
     codecov
+  env:
+    CODECOV_TOKEN: $(SECRET_CODECOV_TOKEN)
   displayName: 'Run codecov'
 
 - script: |
