@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2023-04-18 11:03-0400\n"
+"POT-Creation-Date: 2023-04-20 11:13-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -288,60 +288,43 @@ msgstr ""
 msgid "Water Quality"
 msgstr ""
 
-#: ..\sardes\database\dialogs\dialog_rsesq.py:50
-#: ..\sardes\database\dialogs\dialog_sardes_lite.py:67
-msgid "Database :"
-msgstr ""
-
-#: ..\sardes\database\dialogs\dialog_rsesq.py:52
-msgid "Username :"
-msgstr ""
-
-#: ..\sardes\database\dialogs\dialog_rsesq.py:54
-msgid "Hostname :"
-msgstr ""
-
-#: ..\sardes\database\dialogs\dialog_rsesq.py:56
-msgid "Port :"
-msgstr ""
-
-#: ..\sardes\database\dialogs\dialog_rsesq.py:58
-msgid "Password :"
-msgstr ""
-
-#: ..\sardes\database\dialogs\dialog_rsesq.py:60
-msgid "Encoding :"
-msgstr ""
-
-#: ..\sardes\database\dialogs\dialog_sardes_lite.py:49
-msgid "Select Database"
+#: ..\sardes\database\dialogs\dialog_sardes_lite.py:48
+msgid "Select..."
 msgstr ""
 
 #: ..\sardes\database\dialogs\dialog_sardes_lite.py:50
+msgid "Select Database"
+msgstr ""
+
+#: ..\sardes\database\dialogs\dialog_sardes_lite.py:51
 msgid "Select an existing Sardes SQLite database."
 msgstr ""
 
-#: ..\sardes\database\dialogs\dialog_sardes_lite.py:55
+#: ..\sardes\database\dialogs\dialog_sardes_lite.py:56
 msgid "Create..."
 msgstr ""
 
-#: ..\sardes\database\dialogs\dialog_sardes_lite.py:59
+#: ..\sardes\database\dialogs\dialog_sardes_lite.py:60
 msgid "Create Database"
 msgstr ""
 
-#: ..\sardes\database\dialogs\dialog_sardes_lite.py:60
+#: ..\sardes\database\dialogs\dialog_sardes_lite.py:61
 msgid "Create a new Sardes SQLite database."
 msgstr ""
 
-#: ..\sardes\database\dialogs\dialog_sardes_lite.py:110
+#: ..\sardes\database\dialogs\dialog_sardes_lite.py:68
+msgid "Database :"
+msgstr ""
+
+#: ..\sardes\database\dialogs\dialog_sardes_lite.py:112
 msgid "New Database"
 msgstr ""
 
-#: ..\sardes\database\dialogs\dialog_sardes_lite.py:137
+#: ..\sardes\database\dialogs\dialog_sardes_lite.py:139
 msgid "New Database Error"
 msgstr ""
 
-#: ..\sardes\database\dialogs\dialog_sardes_lite.py:138
+#: ..\sardes\database\dialogs\dialog_sardes_lite.py:140
 msgid "Cannot overwrite Sardes database at <i>{}</i>  because it is already in use by another application or user."
 msgstr ""
 
@@ -349,19 +332,19 @@ msgstr ""
 msgid "Database Connector"
 msgstr ""
 
-#: ..\sardes\plugins\databases\plugin.py:72
+#: ..\sardes\plugins\databases\plugin.py:66
 msgid "Connect to database"
 msgstr ""
 
-#: ..\sardes\plugins\databases\plugin.py:73
+#: ..\sardes\plugins\databases\plugin.py:67
 msgid "Open a dialog window to manage the connection to the database."
 msgstr ""
 
-#: ..\sardes\plugins\databases\plugin.py:83
+#: ..\sardes\plugins\databases\plugin.py:77
 msgid "Disconnect database"
 msgstr ""
 
-#: ..\sardes\plugins\databases\plugin.py:84
+#: ..\sardes\plugins\databases\plugin.py:78
 msgid "Close the connection with the database."
 msgstr ""
 
@@ -369,64 +352,68 @@ msgstr ""
 msgid "Database connection manager"
 msgstr ""
 
-#: ..\sardes\plugins\databases\widgets.py:77
+#: ..\sardes\plugins\databases\widgets.py:75
 msgid "Select database type :"
 msgstr ""
 
-#: ..\sardes\plugins\databases\widgets.py:94
-#: ..\sardes\plugins\databases\widgets.py:272
+#: ..\sardes\plugins\databases\widgets.py:85
+msgid "Sardes SQLite database connection settings :"
+msgstr ""
+
+#: ..\sardes\plugins\databases\widgets.py:101
+#: ..\sardes\plugins\databases\widgets.py:279
 msgid "Connect"
 msgstr ""
 
-#: ..\sardes\plugins\databases\widgets.py:99
+#: ..\sardes\plugins\databases\widgets.py:106
 #: ..\sardes\plugins\network\widgets.py:141 ..\sardes\widgets\console.py:68
 msgid "Close"
 msgstr ""
 
-#: ..\sardes\plugins\databases\widgets.py:104
+#: ..\sardes\plugins\databases\widgets.py:111
 #: ..\sardes\preferences\configdialog.py:90
 #: ..\sardes\widgets\tableviews.py:1558
 msgid "Cancel"
 msgstr ""
 
-#: ..\sardes\plugins\databases\widgets.py:111
+#: ..\sardes\plugins\databases\widgets.py:118
 msgid "Update"
 msgstr ""
 
-#: ..\sardes\plugins\databases\widgets.py:118
-#: ..\sardes\plugins\databases\widgets.py:121
+#: ..\sardes\plugins\databases\widgets.py:125
+#: ..\sardes\plugins\databases\widgets.py:128
 msgid "Auto connect"
 msgstr ""
 
-#: ..\sardes\plugins\databases\widgets.py:122
+#: ..\sardes\plugins\databases\widgets.py:129
 msgid "Connect automatically to the database when starting Sardes."
 msgstr ""
 
-#: ..\sardes\plugins\databases\widgets.py:272
+#: ..\sardes\plugins\databases\widgets.py:279
 msgid "Disconnect"
 msgstr ""
 
-#: ..\sardes\plugins\databases\widgets.py:292
+#: ..\sardes\plugins\databases\widgets.py:299
 msgid "Do you want to update your database to version&nbsp;{}?"
 msgstr ""
 
-#: ..\sardes\plugins\databases\widgets.py:308
+#: ..\sardes\plugins\databases\widgets.py:315
 msgid "The connection to the database failed."
 msgstr ""
 
-#: ..\sardes\plugins\databases\widgets.py:314
+#: ..\sardes\plugins\databases\widgets.py:321
 msgid "Connected to the database."
 msgstr ""
 
-#: ..\sardes\plugins\databases\widgets.py:339
+#: ..\sardes\plugins\databases\widgets.py:346
 msgid "Connecting to database..."
 msgstr ""
 
-#: ..\sardes\plugins\databases\widgets.py:353
+#: ..\sardes\plugins\databases\widgets.py:360
 msgid "Updating database..."
 msgstr ""
 
-#: ..\sardes\plugins\databases\widgets.py:362
+#: ..\sardes\plugins\databases\widgets.py:369
 msgid "Database updated successfully to version {}."
 msgstr ""
 
@@ -814,37 +801,37 @@ msgstr ""
 msgid "Graphs:"
 msgstr ""
 
-#: ..\sardes\tables\delegates.py:86
+#: ..\sardes\tables\delegates.py:87
 msgid "Some {} data did not match the prescribed <i>yyyy-mm-dd hh:mm:ss</i> format"
 msgstr ""
 
-#: ..\sardes\tables\delegates.py:152
+#: ..\sardes\tables\delegates.py:153
 msgid "Some {} data could not be converted to integer value"
 msgstr ""
 
-#: ..\sardes\tables\delegates.py:193
+#: ..\sardes\tables\delegates.py:194
 msgid "Some {} data could not be converted to numerical value"
 msgstr ""
 
-#: ..\sardes\tables\delegates.py:207 ..\sardes\tables\delegates.py:214
-#: ..\sardes\tables\delegates.py:229 ..\sardes\tables\delegates.py:266
+#: ..\sardes\tables\delegates.py:208 ..\sardes\tables\delegates.py:215
+#: ..\sardes\tables\delegates.py:230 ..\sardes\tables\delegates.py:267
 msgid "Yes"
 msgstr ""
 
-#: ..\sardes\tables\delegates.py:208 ..\sardes\tables\delegates.py:215
-#: ..\sardes\tables\delegates.py:229 ..\sardes\tables\delegates.py:266
+#: ..\sardes\tables\delegates.py:209 ..\sardes\tables\delegates.py:216
+#: ..\sardes\tables\delegates.py:230 ..\sardes\tables\delegates.py:267
 msgid "No"
 msgstr ""
 
-#: ..\sardes\tables\delegates.py:219
+#: ..\sardes\tables\delegates.py:220
 msgid "Some {} data could notbe converted to boolean value."
 msgstr ""
 
-#: ..\sardes\tables\delegates.py:266
+#: ..\sardes\tables\delegates.py:267
 msgid "NA"
 msgstr ""
 
-#: ..\sardes\tables\delegates.py:340
+#: ..\sardes\tables\delegates.py:341
 msgid "Some {} data did not match any well in the database"
 msgstr ""
 

@@ -54,12 +54,6 @@ class Databases(SardesPlugin):
             get_dbconfig(database_dialog.dbtype_name))
         database_dialogs.append(database_dialog)
 
-        from sardes.database.dialogs import DatabaseConnectDialogRSESQ
-        database_dialog = DatabaseConnectDialogRSESQ()
-        database_dialog.set_database_kargs(
-            get_dbconfig(database_dialog.dbtype_name))
-        database_dialogs.append(database_dialog)
-
         return database_dialogs
 
     def create_mainwindow_toolbars(self):

@@ -1,13 +1,11 @@
 atomicwrites
 appconfigs
-geoalchemy2
 HydroSensorReader >= 1.7.6
 keyring == 19.2.*
 matplotlib == 3.4.*
 numpy == 1.22.*
 pandas == 1.3.*
 pillow
-psycopg2 == 2.8.*
 pyqt5 == 5.15.*
 qtawesome == 1.0.*
 qtpy

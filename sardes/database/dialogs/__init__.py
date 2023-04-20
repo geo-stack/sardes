@@ -7,5 +7,4 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
-from sardes.database.dialogs.dialog_rsesq import DatabaseConnectDialogRSESQ
 from sardes.database.dialogs.dialog_sardes_lite import DatabaseConnectDialogSardesLite
