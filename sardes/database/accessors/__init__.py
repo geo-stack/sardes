@@ -7,5 +7,4 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
-from sardes.database.accessors.accessor_rsesq import DatabaseAccessorRSESQ
 from sardes.database.accessors.accessor_sardes_lite import DatabaseAccessorSardesLite
