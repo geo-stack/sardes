@@ -72,11 +72,18 @@ class DatabaseConnectionWidget(QDialog):
         """
         # Setup database type selection combobox.
         self.dbtype_combobox = QComboBox()
+        dtype_label = QLabel(_("Select database type :"))
 
         dbtype_layout = QHBoxLayout()
-        dbtype_layout.addWidget(QLabel(_("Select database type :")))
+        dbtype_layout.addWidget(dtype_label)
         dbtype_layout.addWidget(self.dbtype_combobox)
         dbtype_layout.setStretchFactor(self.dbtype_combobox, 1)
+
+        # For the moment, Sardes is only able to connect to one type
+        # of database. So at this point, there is no reason to show the
+        # database type combo box in the GUI. See geo-stack/sardes#4.
+        dtype_label.setText(_('Sardes SQLite database connection settings :'))
+        self.dbtype_combobox.setVisible(False)
 
         # Setup the status bar.
         self.status_bar = ProcessStatusBar(
