@@ -45,6 +45,7 @@ class DatabaseConnectDialogSardesLite(DatabaseConnectDialogBase):
 
         self.dbname_widget = PathBoxWidget(
             path_type='getOpenFileName', filters=self.FILEFILTER)
+        self.dbname_widget.browse_btn.setText(_('Select...'))
         self.dbname_widget.browse_btn.setToolTip(format_tooltip(
             text=_("Select Database"),
             tip=_("Select an existing Sardes SQLite database."),
@@ -63,9 +64,10 @@ class DatabaseConnectDialogSardesLite(DatabaseConnectDialogBase):
         self.create_btn.clicked.connect(lambda _: self.select_new_database())
         self.dbname_widget.layout().addWidget(self.create_btn, 0, 2)
 
-        self.form_layout.setRowMinimumHeight(0, 15)
+        self.form_layout.setRowMinimumHeight(0, 30)
         self.add_widget(QLabel(_("Database :")), 1, 0)
         self.add_widget(self.dbname_widget, 1, 1)
+        self.form_layout.setRowMinimumHeight(2, 30)
         self.add_stretch(1)
 
     @property
