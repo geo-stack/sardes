@@ -60,7 +60,7 @@ TO_DATETIME_ARGS = {'format': DATE_FORMAT}
 # ---- Register Adapters
 # =============================================================================
 # This is required to avoid a "can't adapt type 'numpy.int64' or
-# 'numpy.float64'" psycopg2.ProgrammingError.
+# 'numpy.float64'" error.
 # See https://stackoverflow.com/questions/50626058
 
 def addapt_numpy_float64(numpy_float64):
