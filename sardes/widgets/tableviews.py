@@ -1652,7 +1652,7 @@ class SardesTableView(QTableView):
 
 class SardesTableWidget(SardesPaneWidget):
     EDIT_ACTIONS = ['edit_item', 'new_row', 'delete_row', 'clear_item',
-                    'save_edits', 'cancel_edits', 'undo_edits']
+                    'save_edits', 'cancel_edits', 'undo_edits', 'redo_edits']
 
     def __init__(self, table_model, parent=None, multi_columns_sort=True,
                  sections_movable=True, sections_hidable=True,
