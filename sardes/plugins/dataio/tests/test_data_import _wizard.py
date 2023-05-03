@@ -82,6 +82,9 @@ def data_import_wizard(qtbot, dbconnmanager, testfiles, mocker):
     assert not data_import_wizard.duplicates_msgbox.isVisible()
     assert not data_import_wizard.datasaved_msgbox.isVisible()
 
+    # Assert that no 'edit' actions are available in the table widget.
+    assert data_import_wizard.table_widget.tableview._actions['edit'] == []
+
     yield data_import_wizard
 
     # We need to wait for the mainwindow to close properly to avoid
