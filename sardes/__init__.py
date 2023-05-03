@@ -30,10 +30,10 @@ __version__ = '.'.join(map(str, version_info))
 __appname__ = 'Sardes'
 __namever__ = __appname__ + " " + __version__
 __date__ = '05/04/2023'
-__project_url__ = "https://github.com/cgq-qgc/sardes"
+__project_url__ = "https://github.com/geo-stack/sardes"
 __releases_url__ = __project_url__ + "/releases"
 __issues_url__ = __project_url__ + "/issues"
-__releases_api__ = "https://api.github.com/repos/cgq-qgc/sardes/releases"
+__releases_api__ = "https://api.github.com/repos/geo-stack/sardes/releases"
 
 
 def get_versions(reporev=True):
