@@ -322,9 +322,11 @@ class SardesPluginBase(QObject):
         # to be displayed in Sardes main window for this plugin.
         self.dockwindow = None
 
+        # Plugin setup.
         self.setup_plugin()
         self.pane_widget = self.create_pane_widget()
         self.mainwindow_toolbars = self.create_mainwindow_toolbars()
+        self.__post_init__()
 
     def main_option_actions(self):
         return []
@@ -498,6 +500,10 @@ class SardesPlugin(SardesPluginBase):
         used for Sardes mainwindow.
         """
         return get_icon('master')
+
+    def __post_init__(self):
+        """A method that is called at the end of SardesPlugin constructor."""
+        pass
 
     def setup_plugin(self):
         pass
