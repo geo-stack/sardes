@@ -49,9 +49,9 @@ class ImportFromClipboardTool(SardesTool):
     A tool to append the Clipboard contents to a Sardes table widget.
     """
 
-    def __init__(self, parent):
+    def __init__(self, table):
         super().__init__(
-            parent,
+            table,
             name='import_from_clipboard',
             text=_('Import from Clipboard'),
             icon='import_clipboard',
@@ -59,18 +59,21 @@ class ImportFromClipboardTool(SardesTool):
             )
 
     def __triggered__(self):
-        new_data = pd.read_clipboard(sep='\t', dtype='str', header=None)
+        try:
+            new_data = pd.read_clipboard(sep='\t', dtype='str', header=None)
+        except pd.errors.EmptyDataError:
+            new_data = pd.DataFrame([])
         if new_data.empty:
-            self.parent.show_message(
+            self.table.show_message(
                 title=_("Warning"),
                 message=_("Nothing was added to the table because the "
                           "Clipboard was empty."),
                 func='warning')
             return
 
-        table_visible_columns = self.parent.tableview.visible_columns()
+        table_visible_columns = self.table.tableview.visible_columns()
         if len(new_data.columns) > len(table_visible_columns):
-            self.parent.show_message(
+            self.table.show_message(
                 title=_("Warning"),
                 message=_("The Clipboard contents cannot be added to "
                           "the table because the number of columns of the "
@@ -79,7 +82,7 @@ class ImportFromClipboardTool(SardesTool):
             return
 
         column_names_headers_map = (
-            self.parent.model().column_names_headers_map())
+            self.table.model().column_names_headers_map())
         table_visible_labels = [
             column_names_headers_map[column].lower().replace(' ', '')
             for column in table_visible_columns]
@@ -109,8 +112,8 @@ class ImportFromClipboardTool(SardesTool):
 
         warning_messages = []
         for column in new_data.columns:
-            delegate = self.parent.tableview.itemDelegateForColumn(
-                self.parent.model().column_names().index(column))
+            delegate = self.table.tableview.itemDelegateForColumn(
+                self.table.model().column_names().index(column))
             new_data[column], warning_message = delegate.format_data(
                 new_data[column])
             if warning_message is not None:
@@ -131,7 +134,7 @@ class ImportFromClipboardTool(SardesTool):
                         ';</li><li>'.join(warning_messages)))
         else:
             values = new_data.to_dict(orient='records')
-            self.parent.tableview._append_row(values)
+            self.table.tableview._append_row(values)
             if len(warning_messages):
                 formatted_message = _(
                     "The following error(s) occurred while adding the "
@@ -140,7 +143,7 @@ class ImportFromClipboardTool(SardesTool):
                     '<ul style="margin-left:-30px"><li>{}.</li></ul>'.format(
                         ';</li><li>'.join(warning_messages)))
         if formatted_message is not None:
-            self.parent.show_message(
+            self.table.show_message(
                 title=_("Warning"),
                 message=formatted_message,
                 func='warning')

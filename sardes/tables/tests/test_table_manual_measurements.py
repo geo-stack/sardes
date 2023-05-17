@@ -19,7 +19,8 @@ os.environ['SARDES_PYTEST'] = 'True'
 # ---- Third party imports
 import pandas as pd
 import pytest
-from qtpy.QtWidgets import QMessageBox
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QMessageBox, QApplication
 
 # ---- Local imports
 from sardes.utils.data_operations import are_values_equal
@@ -266,6 +267,49 @@ def test_unique_constraint(tablewidget, qtbot, mocker, dbaccessor):
         tablewidget.save_edits_action.trigger()
     assert qmsgbox_patcher.call_count == 1
     assert tablemodel.data_edit_count() == 0
+
+
+def test_import_from_clipboard(tablewidget, qtbot, mocker, dbaccessor):
+    """
+    Test that importing water level measurements from the clipboard is
+    working as expected.
+    """
+    import_tool = tablewidget._tools['import_from_clipboard']
+
+    # We need to patch the message box that appears to warn user when
+    # errors were encountered while importing the data.
+    qmsgbox_patcher = mocker.patch.object(
+        QMessageBox, 'warning', return_value=QMessageBox.Ok)
+
+    # Try importing manual measurements when the clipboard is empty.
+    QApplication.clipboard().clear()
+    qtbot.mouseClick(import_tool.toolbutton(), Qt.LeftButton)
+
+    assert qmsgbox_patcher.call_count == 1
+    assert tablewidget.visible_row_count() == 6
+
+    # Send new manual measurements data to the clipboard. Note that the
+    # second line is intentionnaly filled with bad data to trigger
+    # an error warning.
+    new_data = [
+        ['03040002', '2023-04-23 4:25', 34.56, 'Imported from clipboard'],
+        ['unknown', '2023-45-45 4:25', 'erreur', None]
+        ]
+    pd.DataFrame(
+        new_data,
+        columns=["Well ID", "Date", "Water LEvel", "Notes"]
+        ).to_clipboard(sep='\t')
+
+    # Import the data from the clipboard.
+    qtbot.mouseClick(import_tool.toolbutton(), Qt.LeftButton)
+
+    assert qmsgbox_patcher.call_count == 2
+    assert tablewidget.visible_row_count() == 6 + 2
+
+    assert tablewidget.get_data_for_row(6) == [
+        '03040002', '2023-04-23 04:25:00', '34.56', 'Imported from clipboard']
+    assert tablewidget.get_data_for_row(7) == [
+        '', '', '', '']
 
 
 if __name__ == "__main__":
