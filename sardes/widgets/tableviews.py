@@ -59,7 +59,10 @@ class ImportFromClipboardTool(SardesTool):
             )
 
     def __triggered__(self):
-        new_data = pd.read_clipboard(sep='\t', dtype='str', header=None)
+        try:
+            new_data = pd.read_clipboard(sep='\t', dtype='str', header=None)
+        except pd.errors.EmptyDataError:
+            new_data = pd.DataFrame([])
         if new_data.empty:
             self.parent.show_message(
                 title=_("Warning"),
