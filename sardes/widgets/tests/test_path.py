@@ -16,14 +16,10 @@ import os.path as osp
 
 # ---- Third party imports
 import pytest
-from qtpy.QtGui import QWheelEvent
-from qtpy.QtCore import Qt, QSize, QPoint
-from qtpy.QtWidgets import QToolBar, QToolButton
+from qtpy.QtCore import Qt
 
 # ---- Local imports
-from sardes.config.gui import get_iconsize
 from sardes.widgets.path import PathBoxWidget, QFileDialog, get_home_dir
-
 
 
 # =============================================================================
