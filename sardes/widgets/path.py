@@ -71,17 +71,16 @@ class PathBoxWidget(QFrame):
 
     def browse_path(self):
         """Open a dialog to select a new directory."""
-        dialog_title = _('Modify Location')
         if self._path_type == 'getExistingDirectory':
             path = QFileDialog.getExistingDirectory(
-                self, dialog_title, self.workdir(),
+                self, _('Get Existing Directory'), self.workdir(),
                 options=QFileDialog.ShowDirsOnly)
         elif self._path_type == 'getOpenFileName':
             path, ext = QFileDialog.getOpenFileName(
-                self, dialog_title, self.workdir(), self.filters)
+                self, _('Select File Name'), self.workdir(), self.filters)
         elif self._path_type == 'getSaveFileName':
             path, ext = QFileDialog.getSaveFileName(
-                self, dialog_title, self.workdir())
+                self, _('Save File Name'), self.workdir())
         if path:
             self.set_path(path)
 
