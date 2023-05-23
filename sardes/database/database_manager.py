@@ -484,6 +484,7 @@ class DatabaseConnectionWorker(WorkerBase):
         results : bool
             Whether the publishing of the piezometric network was successful.
         """
+        from sardes.plugins.network.base import format_kml_station_info
         self._stop_kml_publishing = False
 
         # Create the files and folder architecture.
@@ -550,7 +551,7 @@ class DatabaseConnectionWorker(WorkerBase):
             for station_uuid, station_data in loc_stations_data.iterrows():
                 progress += 1
                 station_data = stations_data.loc[station_uuid]
-                is_station_active = station_data['is_station_active']
+
                 station_repere_data = (
                     repere_data
                     [repere_data['sampling_feature_uuid'] == station_uuid]
@@ -562,41 +563,23 @@ class DatabaseConnectionWorker(WorkerBase):
                 else:
                     station_repere_data = pd.Series([], dtype=object)
                 last_repere_data = station_repere_data.iloc[-1]
+
                 ground_altitude = (
                     last_repere_data['top_casing_alt'] -
                     last_repere_data['casing_length'])
                 is_alt_geodesic = last_repere_data['is_alt_geodesic']
 
-                pnt_desc += '{} = {}<br/>'.format(
-                    _('Station'),
-                    station_data['obs_well_id'])
-                pnt_desc += '{} = {:0.4f}<br/>'.format(
-                    _('Longitude'),
-                    station_data['longitude'])
-                pnt_desc += '{} = {:0.4f}<br/>'.format(
-                    _('Latitude'),
-                    station_data['latitude'])
-                pnt_desc += '{} = {:0.2f} {} ({})<br/>'.format(
-                    _('Ground Alt.'),
-                    ground_altitude,
-                    _('m MSL'),
-                    _('Geodesic') if is_alt_geodesic else _('Approximate'))
-                pnt_desc += '{} = {}<br/>'.format(
-                    _('Water-table'),
-                    station_data['confinement'])
-                pnt_desc += '{} = {}<br/>'.format(
-                    _('Influenced'),
-                    station_data['is_influenced'])
-                pnt_desc += '<br/>'
                 if station_uuid in stations_data_overview.index:
                     last_reading = (stations_data_overview
                                     .loc[station_uuid]['last_date'])
-                    pnt_desc += '{} = {}<br/>'.format(
-                        _('Last reading'),
-                        last_reading.strftime('%Y-%m-%d'))
-                pnt_desc += '{} = {}<br/>'.format(
-                    _('Status'),
-                    _('Active') if is_station_active else _('Inactive'))
+                else:
+                    last_reading = None
+
+                # Format the info for the current station.
+                pnt_desc += format_kml_station_info(
+                    station_data, ground_altitude, is_alt_geodesic,
+                    last_reading
+                    )
 
                 # Fetch data from the database.
                 if iri_data is not None or iri_graphs is not None:
