@@ -6,6 +6,7 @@
 # This file is part of SARDES.
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
+from __future__ import annotations
 
 # ---- Standard library imports
 import os.path as osp
@@ -62,27 +63,26 @@ class PathBoxWidget(QFrame):
         """Return the path of this pathbox widget."""
         return self.path_lineedit.text()
 
-    def set_path(self, path):
+    def set_path(self, path: str):
         """Set the path to the specified value."""
-        return self.path_lineedit.setText(path)
+        self.path_lineedit.setText(path)
+        self.path_lineedit.setToolTip(path)
+        self.set_workdir(osp.dirname(path))
 
     def browse_path(self):
         """Open a dialog to select a new directory."""
-        dialog_title = _('Modify Location')
         if self._path_type == 'getExistingDirectory':
             path = QFileDialog.getExistingDirectory(
-                self, dialog_title, self.workdir(),
+                self, _('Select Existing Directory'), self.workdir(),
                 options=QFileDialog.ShowDirsOnly)
         elif self._path_type == 'getOpenFileName':
             path, ext = QFileDialog.getOpenFileName(
-                self, dialog_title, self.workdir(), self.filters)
+                self, _('Select File'), self.workdir(), self.filters)
         elif self._path_type == 'getSaveFileName':
             path, ext = QFileDialog.getSaveFileName(
-                self, dialog_title, self.workdir())
+                self, _('Save File'), self.workdir())
         if path:
-            self.set_workdir(osp.dirname(path))
-            self.path_lineedit.setText(path)
-            self.path_lineedit.setToolTip(path)
+            self.set_path(path)
 
     def workdir(self):
         """Return the directory that is used by the QFileDialog."""
