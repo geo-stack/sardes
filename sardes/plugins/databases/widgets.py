@@ -301,7 +301,7 @@ class DatabaseConnectionWidget(QDialog):
                     'to version&nbsp;{}?'
                     ).format(db_connect_error.req_version)
                 message = (
-                    '<font color="{}">{}:</font>{}<br><br><b>{}</b>'
+                    '<font color="{}">{}: </font>{}<br><br><b>{}</b>'
                     ).format(BLUE,
                              type(db_connect_error).__name__,
                              db_connect_error,
