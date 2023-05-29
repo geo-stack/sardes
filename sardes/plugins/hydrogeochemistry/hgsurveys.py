@@ -125,6 +125,7 @@ class HGSurveyImportDialog(QDialog):
     """
     sig_closed = Signal()
     sig_import_request = Signal(bool)
+    sig_continue_import = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -283,7 +284,7 @@ class HGSurveyImportDialog(QDialog):
         in the "unsaved table changes" dialog.
         """
         self.close_unsaved_changes_dialog()
-        self.sig_import_request.emit(False)
+        self.sig_continue_import.emit()
 
     def _handle_cancel_import(self):
         """
