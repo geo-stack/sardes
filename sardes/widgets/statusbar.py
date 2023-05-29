@@ -12,6 +12,7 @@ import sys
 
 # ---- Third party imports
 from qtpy.QtCore import QSize, Qt, Signal
+from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (QGridLayout, QLabel, QWidget, QPushButton,
                             QToolButton, QStyle, QFrame, QApplication,
                             QHBoxLayout)
@@ -148,6 +149,7 @@ class ProcessStatusBar(QWidget):
         """
         super().__init__(parent)
         self._status = self.HIDDEN
+        self._iconsize = iconsize
 
         VALIGN_DICT = {
             'center': Qt.AlignVCenter,
@@ -166,19 +168,14 @@ class ProcessStatusBar(QWidget):
 
         self._spinner = create_waitspinner(iconsize, ndots, self)
 
+        # Setup status icons.
         self._failed_icon = QLabel()
-        self._failed_icon.setPixmap(
-            get_icon('failed').pixmap(QSize(iconsize, iconsize)))
         self._failed_icon.hide()
 
         self._success_icon = QLabel()
-        self._success_icon.setPixmap(
-            get_icon('succes').pixmap(QSize(iconsize, iconsize)))
         self._success_icon.hide()
 
         self._update_icon = QLabel()
-        self._update_icon.setPixmap(
-            get_icon('update_blue').pixmap(QSize(iconsize, iconsize)))
         self._update_icon.hide()
 
         self._icons = {
@@ -187,6 +184,11 @@ class ProcessStatusBar(QWidget):
             'update': self._update_icon
             }
 
+        self.set_icon('failed', get_icon('failed'))
+        self.set_icon('success', get_icon('succes'))
+        self.set_icon('update', get_icon('update_blue'))
+
+        # Setup layout.
         layout = QGridLayout(self)
         if contents_margin is None:
             contents_margin = [0, 0, 0, 0]
@@ -242,6 +244,12 @@ class ProcessStatusBar(QWidget):
         """Hide all icons."""
         for icon in self._icons.values():
             icon.hide()
+
+    def set_icon(self, name: str, icon: QIcon):
+        """Set the icon named 'name'."""
+        self._icons[name].setPixmap(
+            icon.pixmap(QSize(self._iconsize, self._iconsize))
+            )
 
     @property
     def status(self):
