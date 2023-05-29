@@ -1,3 +1,123 @@
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------
+# Copyright © SARDES Project Contributors
+# https://github.com/cgq-qgc/sardes
+#
+# This file is part of SARDES.
+# Licensed under the terms of the GNU General Public License.
+# -----------------------------------------------------------------------------
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from sardes.tables.models import StandardSardesTableModel
+    from sardes.plugins.hydrogeochemistry.plugin import Hydrogeochemistry
+
+# ---- Standard imports
+import os.path as osp
+
+# ---- Third party imports
+from qtpy.QtCore import Qt, Signal, QObject
+from qtpy.QtWidgets import (
+    QDialog, QDialogButtonBox, QLabel, QPushButton, QVBoxLayout,
+    QStackedWidget, QWidget, QApplication)
+
+# ---- Local imports
+from sardes.config.icons import (
+    get_icon, get_standard_iconsize, get_standard_icon)
+from sardes.config.locale import _
+from sardes.config.ospath import (
+    get_select_file_dialog_dir, set_select_file_dialog_dir)
+from sardes.widgets.statusbar import ProcessStatusBar
+from sardes.utils.qthelpers import format_tooltip
+from sardes.utils.qthelpers import create_toolbutton
+from sardes.widgets.path import PathBoxWidget
+from sardes.utils.qthelpers import get_default_contents_margins
+
+
+class HGSurveyImportManager(QObject):
+    def __init__(self):
+        super().__init__()
+        self.plugin = None
+        self.table_models_manager = None
+
+        self.import_dialog = HGSurveyImportDialog()
+        self.import_dialog.sig_import_request.connect(
+            self._handle_import_request)
+        self.import_dialog.sig_continue_import.connect(
+            self._import_hg_surveys)
+
+        self.show_import_dialog_btn = create_toolbutton(
+            parent=None,
+            triggered=self.import_dialog.show,
+            text=_("Import HG Surveys"),
+            tip=_("Import HG surveys from an Excel Workbook."),
+            icon='image'
+            )
+
+    def install_manager(self, plugin: Hydrogeochemistry):
+        """Install this manager in the hydrogeochemistry plugin."""
+        self.plugin = plugin
+
+        plugin._tables['table_hg_surveys'].add_toolbar_widget(
+            self.show_import_dialog_btn, 'upper')
+
+        filepath = plugin.get_option('imput_hgsurvey_xlsx_filepath', None)
+        if filepath is not None and osp.exists(filepath):
+            self.import_dialog.input_file_pathbox.set_path(filepath)
+
+    def close_manager(self):
+        """Close this manager."""
+        self.plugin.set_option(
+            'imput_hgsurvey_xlsx_filepath',
+            self.import_dialog.input_file_pathbox.path()
+            )
+        self.import_dialog.close()
+
+    def _get_unsaved_tabletitles(self) -> list(StandardSardesTableModel):
+        unsaved_models = []
+        names = ['table_hg_surveys', 'table_purges', 'table_hg_param_values']
+        for name in names:
+            model = self.plugin.main.table_models_manager.get_table_model(name)
+            if model.has_unsaved_data_edits():
+                unsaved_models.append(model)
+        return [model.title() for model in unsaved_models]
+
+    def _handle_import_request(self):
+        """Handle import HG surveys requests."""
+        # Get the list of relevant HG table models with unsaved changes.
+        # unsaved_models = self._get_unsaved_tabletitles()
+        unsaved_models = ['HG Surveys', 'Purges', 'HG Params Value']
+        if len(unsaved_models) == 0:
+            self._import_hg_surveys()
+            return
+
+        # Display a message to warn the user that all unsaved changes
+        # will be lost when importing the hg surveys.
+        message = "<h3>Unsaved Changes</h3>"
+        message += "<p>"
+        if len(unsaved_models) == 1:
+            message += _(
+                "Table <i>{}</i> contains unsaved changes.")
+        elif len(unsaved_models) == 2:
+            message += _(
+                "Tables <i>{}</i> and <i>{}</i> contain unsaved changes.")
+        elif len(unsaved_models) == 3:
+            message += _(
+                "Tables <i>{}</i>, <i>{}</i>, and <i>{}</i> contain "
+                "unsaved changes.")
+        message += "</p><p>"
+        message += _("All unsaved changes will be lost. Do you want "
+                     "to continue?")
+        message += "</p>"
+
+        self.import_dialog.show_unsaved_changes_dialog(
+            message.format(*unsaved_models)
+            )
+
+    def _import_hg_surveys(self):
+        print("import_hg_surveys")
+        pass
+
 
 class HGSurveyImportDialog(QDialog):
     """
