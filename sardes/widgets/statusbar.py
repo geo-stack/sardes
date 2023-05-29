@@ -269,7 +269,7 @@ class ProcessStatusBar(QWidget):
     def show_fail_icon(self, message=None):
         """Stop and hide the spinner and show a failed icon instead."""
         self._status = self.PROCESS_FAILED
-        self.show_icon('fail')
+        self.show_icon('failed')
         if message is not None:
             self.set_label(message)
 
