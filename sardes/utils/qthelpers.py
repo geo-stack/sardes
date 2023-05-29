@@ -9,6 +9,9 @@
 
 """Qt utilities"""
 
+from __future__ import annotations
+
+
 # ---- Standard imports
 import sys
 from datetime import datetime
@@ -183,6 +186,20 @@ def get_shortcuts_native_text(shortcuts):
 
     return ', '.join([QKeySequence(sc).toString(QKeySequence.NativeText)
                       for sc in shortcuts])
+
+
+def get_default_contents_margins() -> list[int, int, int, int]:
+    """
+    Return the default [left, top, right, bottom] contents margins
+    of a QLayout.
+    """
+    style = QApplication.instance().style()
+    return [
+        style.pixelMetric(style.PM_LayoutLeftMargin),
+        style.pixelMetric(style.PM_LayoutTopMargin),
+        style.pixelMetric(style.PM_LayoutRightMargin),
+        style.pixelMetric(style.PM_LayoutBottomMargin),
+        ]
 
 
 def create_waitspinner(size=32, n=11, parent=None):
