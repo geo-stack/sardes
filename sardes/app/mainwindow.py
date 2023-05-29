@@ -329,12 +329,17 @@ class MainWindowBase(QMainWindow):
         menu, messages, etc.
         """
         if lang != get_lang_conf():
+            message = "<p>"
+            message += _("The language has been set to <i>{}</i>.")
+            message += "</p><p>"
+            message += _("Please restart Sardes to apply this change.")
+            message += "</p>"
+
             set_lang_conf(lang)
             QMessageBox.information(
                 self,
-                _("Language change"),
-                _("The language has been set to <i>{}</i>. Restart Sardes to "
-                  "apply this change.").format(LANGUAGE_CODES[lang]))
+                _("Language Change"),
+                message.format(LANGUAGE_CODES[lang]))
 
     # ---- Main window settings
     @Slot()
