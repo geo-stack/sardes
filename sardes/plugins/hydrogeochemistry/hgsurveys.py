@@ -134,6 +134,9 @@ class HGSurveyImportDialog(QDialog):
         self.setWindowIcon(get_icon('master'))
         self.setModal(False)
         self.setWindowModality(Qt.ApplicationModal)
+
+        self._import_in_progress = False
+
         self.__setup__()
 
     def __setup__(self):
@@ -182,24 +185,25 @@ class HGSurveyImportDialog(QDialog):
             lambda: self._handle_continue_import())
         self.continue_btn.setVisible(False)
 
-        button_box = QDialogButtonBox()
-        button_box.layout().addStretch(1)
-        button_box.layout().addWidget(self.import_btn)
-        button_box.layout().addWidget(self.close_btn)
-        button_box.layout().addWidget(self.cancel_btn)
-        button_box.layout().addWidget(self.continue_btn)
-        button_box.layout().setContentsMargins(*get_default_contents_margins())
+        self.button_box = QDialogButtonBox()
+        self.button_box.layout().addStretch(1)
+        self.button_box.layout().addWidget(self.import_btn)
+        self.button_box.layout().addWidget(self.close_btn)
+        self.button_box.layout().addWidget(self.cancel_btn)
+        self.button_box.layout().addWidget(self.continue_btn)
+        self.button_box.layout().setContentsMargins(
+            *get_default_contents_margins())
 
-        # Setup the base widget.
+        # Setup the main widget.
+        self.input_file_label = QLabel(
+            _("Select a valid hg survey input file :"))
+
         base_widget = QWidget()
-
         base_layout = QVBoxLayout(base_widget)
-        base_layout.addWidget(QLabel(
-            _("Select a valid hg survey input file :")
-            ))
+        base_layout.addWidget(self.input_file_label)
         base_layout.addWidget(self.input_file_pathbox)
         base_layout.addWidget(self.status_bar)
-        base_layout.setStretch(0, 1)
+        base_layout.addStretch(1)
 
         # Setup the unsaved changes warning message.
         self.unsaved_changes_dialog = ProcessStatusBar(
@@ -224,7 +228,7 @@ class HGSurveyImportDialog(QDialog):
 
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.stackwidget)
-        main_layout.addWidget(button_box)
+        main_layout.addWidget(self.button_box)
         main_layout.setSizeConstraint(main_layout.SetFixedSize)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
@@ -252,6 +256,25 @@ class HGSurveyImportDialog(QDialog):
         self.cancel_btn.setVisible(False)
         self.continue_btn.setVisible(False)
         self.stackwidget.setCurrentIndex(0)
+
+    def start_importing(self):
+        """
+        Start the publishing of the piezometric network.
+        """
+        self._import_in_progress = True
+        self.input_file_label.setEnabled(False)
+        self.input_file_pathbox.setEnabled(False)
+        self.button_box.setEnabled(False)
+        self.status_bar.show(_("Reading HG survey data..."))
+
+    def stop_importing(self):
+        """
+        Start the publishing of the piezometric network.
+        """
+        self._import_in_progress = False
+        self.input_file_pathbox.setEnabled(True)
+        self.button_box.setEnabled(True)
+        self.status_bar.show(_("Reading HG survey data..."))
 
     # ---- Handlers
     def _handle_continue_import(self):
