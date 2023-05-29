@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from sardes.database.database_manager import DatabaseConnectionManager
+    from sardes.tables.models import StandardSardesTableModel
 
 # ---- Standard imports
 import os
@@ -60,8 +61,12 @@ class SardesTableModelsManager(QObject):
         db_manager.sig_database_data_changed.connect(
             self._handle_database_data_changed)
 
-    # ---- Public API
-    def table_models(self):
+    # ---- Public Interface
+    def get_table_model(self, name: str) -> StandardSardesTableModel:
+        """Return the table model whose name is name."""
+        return self._table_models(name)
+
+    def table_models(self) -> list[StandardSardesTableModel]:
         """Return the list of table models registered to this manager."""
         return list(self._table_models.values())
 
@@ -73,7 +78,7 @@ class SardesTableModelsManager(QObject):
         """
         return self._dataname_map[dataname]
 
-    def register_table_model(self, table_model):
+    def register_table_model(self, table_model: StandardSardesTableModel):
         """
         Register a new sardes table model to the manager.
         """
@@ -136,7 +141,7 @@ class SardesTableModelsManager(QObject):
             )
         self.db_manager.run_tasks()
 
-    # ---- Private API
+    # ---- Private Methods
     def _save_table_model_edits_callback(self, dataf):
         """
         A callback that handles when edits made to a table model have been
