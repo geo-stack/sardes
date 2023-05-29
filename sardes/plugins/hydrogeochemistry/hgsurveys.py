@@ -135,10 +135,18 @@ class HGSurveyImportDialog(QDialog):
 
     # ---- Handlers
     def _handle_continue_import(self):
+        """
+        Handle when the user has chosen to continue the import process
+        in the "unsaved table changes" dialog.
+        """
         self.close_unsaved_changes_dialog()
         self.sig_import_request.emit(False)
 
     def _handle_cancel_import(self):
+        """
+        Handle when the user has chosen to cancel the import process
+        in the "unsaved table changes" dialog.
+        """
         self.close_unsaved_changes_dialog()
 
     def _handle_xlsxfile_selected(self, path):
