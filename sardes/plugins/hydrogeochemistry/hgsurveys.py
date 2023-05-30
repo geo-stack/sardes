@@ -285,6 +285,11 @@ class HGSurveyImportDialog(QDialog):
         in the "unsaved table changes" dialog.
         """
         self.close_unsaved_changes_dialog()
+
+        # This is required to avoid a glitch in the GUI.
+        for i in range(5):
+            QApplication.processEvents()
+
         self.sig_continue_import.emit()
 
     def _handle_cancel_import(self):
