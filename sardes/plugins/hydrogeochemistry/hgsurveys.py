@@ -353,6 +353,75 @@ def read_hgsurvey_data(filename: str) -> dict(dict):
 
     return all_surveys_data
 
+
+def format_hg_survey_imported_data(
+        imported_survey_data: dict, hg_surveys_data: pd.DataFrame,
+        stations_data: pd.DataFrame, hg_sampling_methods_data: pd.DataFrame
+        ) -> dict:
+    """
+    Format and sanitize HG survey data imported from a XLSX file.
+    """
+    new_hg_survey = {}
+
+    # --- sampling_feature_uuid
+    obs_well_id = imported_survey_data['obs_well_id']
+    if obs_well_id is None:
+        return 'obs_well_id cannot be None bitch!'
+    else:
+        try:
+            new_hg_survey['sampling_feature_uuid'] = stations_data[
+                stations_data['obs_well_id'] == obs_well_id
+                ].iloc[0]
+        except IndexError:
+            return 'This monitoring station does not exists bitch'
+
+    # --- hg_survey_datetime
+    hg_survey_datetime = imported_survey_data['hg_survey_datetime']
+    if hg_survey_datetime is None:
+        return 'hg_survey_datetime cannot be None bitch!'
+    elif not isinstance(hg_survey_datetime, datetime.datetime):
+        return 'This is not a valid date sucker!'
+    new_hg_survey['hg_survey_datetime'] = hg_survey_datetime
+
+    # --- hg_survey_depth
+    hg_survey_depth = imported_survey_data['hg_survey_depth']
+    if hg_survey_depth is not None:
+        try:
+            hg_survey_depth = float(hg_survey_depth)
+        except ValueError:
+            return 'Wrong survey depth value cunt'
+    new_hg_survey['hg_survey_depth'] = hg_survey_depth
+
+    # --- hg_sampling_method_id
+    hg_sampling_method_name = imported_survey_data[
+        'hg_sampling_method_name']
+    if hg_sampling_method_name is None:
+        hg_sampling_method_id = None
+    else:
+        try:
+            hg_sampling_method_id = hg_sampling_methods_data[
+                hg_sampling_methods_data['hg_sampling_method_name'] ==
+                hg_sampling_method_name
+                ].iloc[0].name
+        except IndexError:
+            return 'This sampling method does not exists fucker!'
+    new_hg_survey['hg_sampling_method_id'] = hg_sampling_method_id
+
+    # --- sample_filtered
+    sample_filtered = imported_survey_data['sample_filtered']
+    if sample_filtered is not None:
+        if sample_filtered not in (0, 1):
+            return 'sample_filtered must be either 0 or 1 prick!'
+    new_hg_survey['sample_filtered'] = sample_filtered
+
+    new_hg_survey['hg_survey_operator'] = (
+        imported_survey_data['hg_survey_operator'])
+    new_hg_survey['survey_note'] = (
+        imported_survey_data['survey_note'])
+
+    return new_hg_survey
+
+
 if __name__ == '__main__':
     import sys
     from qtpy.QtWidgets import QApplication
