@@ -303,6 +303,17 @@ class HGSurveyImportDialog(QDialog):
         """Handle when a new hg survey input xlsx file is selected."""
         self.import_btn.setEnabled(osp.exists(path) and osp.isfile(path))
 
+    def closeEvent(self, event):
+        """
+        Override Qt method to prevent closing this dialog when the piezometric
+        network is being published.
+        """
+        if self._import_in_progress:
+            QApplication.beep()
+            event.ignore()
+        else:
+            super().closeEvent(event)
+
 
 def read_hgsurvey_data(filename: str) -> dict(dict):
     """
