@@ -13,9 +13,12 @@ if TYPE_CHECKING:
     from sardes.plugins.hydrogeochemistry.plugin import Hydrogeochemistry
 
 # ---- Standard imports
+import datetime
 import os.path as osp
 
 # ---- Third party imports
+import pandas as pd
+import openpyxl
 from qtpy.QtCore import Qt, Signal, QObject
 from qtpy.QtWidgets import (
     QDialog, QDialogButtonBox, QLabel, QPushButton, QVBoxLayout,
@@ -25,8 +28,6 @@ from qtpy.QtWidgets import (
 from sardes.config.icons import (
     get_icon, get_standard_iconsize, get_standard_icon)
 from sardes.config.locale import _
-from sardes.config.ospath import (
-    get_select_file_dialog_dir, set_select_file_dialog_dir)
 from sardes.widgets.statusbar import ProcessStatusBar
 from sardes.utils.qthelpers import format_tooltip
 from sardes.utils.qthelpers import create_toolbutton
@@ -296,6 +297,61 @@ class HGSurveyImportDialog(QDialog):
     def _handle_xlsxfile_selected(self, path):
         """Handle when a new hg survey input xlsx file is selected."""
         self.import_btn.setEnabled(osp.exists(path) and osp.isfile(path))
+
+
+def read_hgsurvey_data(filename: str) -> dict(dict):
+    """
+    Read HG survey data from a XLSX file.
+    """
+    wb = openpyxl.load_workbook(filename, data_only=True)
+    sheet_names = wb.sheetnames
+
+    all_surveys_data = {}
+    for sheet_name in sheet_names:
+        sheet = wb[sheet_name]
+
+        hg_surveys_data = {
+            'obs_well_id': sheet['C2'].value,
+            'hg_survey_datetime': sheet['C3'].value,
+            'hg_survey_operator': sheet['C4'].value,
+            'survey_note': sheet['B7'].value,
+            'pump_type_name': sheet['D24'].value,
+            'hg_survey_depth': sheet['D25'].value,
+            'hg_sampling_method_name': sheet['D26'].value,
+            'sample_filtered': sheet['D27'].value,
+            }
+
+        purges_data = []
+        for row in range(11, 21):
+            if sheet[f'D{row}'].value is None:
+                break
+            purges_data.append({
+                'purge_sequence_no': sheet[f'B{row}'].value,
+                'purge_seq_start': sheet[f'C{row}'].value,
+                'purge_seq_end': sheet[f'D{row}'].value,
+                'purge_outflow': sheet[f'F{row}'].value,
+                'pumping_depth': sheet[f'H{row}'].value,
+                'water_level_drawdown': sheet[f'I{row}'].value
+                })
+
+        hg_param_values_data = []
+        for row in range(31, 41):
+            if sheet[f'B{row}'].value is None:
+                break
+
+            hg_param_values_data.append({
+                'hg_param_name': sheet[f'B{row}'].value,
+                'hg_param_value': sheet[f'D{row}'].value,
+                'meas_units_abb': sheet[f'E{row}'].value,
+                })
+
+        all_surveys_data[sheet_name] = {
+            'hg_surveys_data': hg_surveys_data,
+            'purges_data': purges_data,
+            'hg_param_values_data': hg_param_values_data
+            }
+
+    return all_surveys_data
 
 if __name__ == '__main__':
     import sys
