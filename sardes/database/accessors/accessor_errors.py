@@ -11,6 +11,12 @@
 from sardes.config.locale import _
 
 
+class ImportHGSurveysError(Exception):
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+
 class SardesVersionError(Exception):
     """
     Exception that should be raised when the version of Sardes is outdated
