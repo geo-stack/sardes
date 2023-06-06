@@ -129,6 +129,14 @@ class HGSurveyImportManager(QObject):
             )
         self.plugin.main.db_connection_manager.run_tasks()
 
+    def _handle_import_hg_surveys_results(self, error):
+        """
+        Handle the check foreign constraints results.
+        """
+        if error is not None:
+            # Display the import error message to the user.
+            message = f"<h3>Import Error</h3><p>{error.message}<p>"
+            self.import_dialog.show_import_error_message(message)
 
 
 class HGSurveyImportDialog(QDialog):
