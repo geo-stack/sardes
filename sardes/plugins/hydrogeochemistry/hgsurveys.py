@@ -597,6 +597,75 @@ def format_purge_imported_data(
         return new_purges
 
 
+def format_params_data_imported_data(
+        imported_survey_name: str,
+        imported_param_data: dict,
+        hg_params_data: pd.DataFrame,
+        measurement_units_data: pd.DataFrame
+        ) -> dict:
+    """
+    Format and sanitize in-situ parameters data imported from a XLSX file.
+    """
+    new_param_values = []
+    for new_param_data in imported_param_data:
+        new_param_value = {}
+
+        # --- Get and check hg_param_name
+        param_name = new_param_data['hg_param_name']
+        for index, row in hg_params_data.iterrows():
+            regex = row.hg_param_regex
+            if regex is None or '':
+                continue
+            if len(re.findall(regex, param_name)) > 0:
+                hg_param_id = index
+                break
+        else:
+            error_message = _(
+                """
+                In survey <i>{}</i>, there is no HG parameter in the
+                database that matches the in-situ parameter
+                named <i>{}</i>.
+                """
+                ).format(imported_survey_name, param_name)
+            raise ImportHGSurveysError(error_message)
+        new_param_value['hg_param_id'] = hg_param_id
+
+        # --- Get and check meas_units_id
+        meas_units_abb = new_param_data['meas_units_abb']
+        try:
+            meas_units_id = measurement_units_data[
+                measurement_units_data['meas_units_abb'] == meas_units_abb
+                ].iloc[0].name
+        except IndexError:
+            error_message = _(
+                """
+                In survey <i>{}</i>, the measurement units provided
+                for the parameter <i>{}</i> is not valid.
+                """
+                ).format(imported_survey_name, param_name)
+            raise ImportHGSurveysError(error_message)
+        new_param_value['meas_units_id'] = meas_units_id
+
+        # --- Get and check hg_param_value.
+        hg_param_value = new_param_data['meas_units_abb']
+        try:
+            assert hg_param_value is not None
+            float(hg_param_value.replace('<', '').replace('>', ''))
+        except (AssertionError, ValueError):
+            error_message = _(
+                """
+                In survey <i>{}</i>, the value provided
+                for the parameter <i>{}</i> is not valid.
+                """
+                )
+            raise ImportHGSurveysError(error_message)
+        new_param_value['hg_param_value'] = hg_param_value
+
+        new_param_values.append(new_param_value)
+
+        return new_param_values
+
+
 if __name__ == '__main__':
     import sys
     from qtpy.QtWidgets import QApplication
