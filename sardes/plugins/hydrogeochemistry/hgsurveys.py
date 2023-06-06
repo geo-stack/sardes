@@ -369,7 +369,6 @@ def read_hgsurvey_data(filename: str) -> dict(dict):
             'hg_survey_datetime': sheet['C3'].value,
             'hg_survey_operator': sheet['C4'].value,
             'survey_note': sheet['B7'].value,
-            'pump_type_name': sheet['D24'].value,
             'hg_survey_depth': sheet['D25'].value,
             'hg_sampling_method_name': sheet['D26'].value,
             'sample_filtered': sheet['D27'].value,
@@ -385,6 +384,7 @@ def read_hgsurvey_data(filename: str) -> dict(dict):
                 'purge_seq_end': sheet[f'D{row}'].value,
                 'purge_outflow': sheet[f'F{row}'].value,
                 'pumping_depth': sheet[f'H{row}'].value,
+                'pump_type_name': sheet['D24'].value,
                 'water_level_drawdown': sheet[f'I{row}'].value
                 })
 
@@ -516,6 +516,85 @@ def format_hg_survey_imported_data(
         imported_survey_data['survey_note'])
 
     return new_hg_survey
+
+
+def format_purge_imported_data(
+        imported_survey_name: str,
+        imported_purge_data: dict,
+        pump_type_data: pd.DataFrame
+        ) -> dict:
+    """
+    Format and sanitize purge data imported from a XLSX file.
+    """
+    new_purges = []
+    for i, purge_seq_data in enumerate(imported_purge_data):
+        new_purge = {
+            'hg_survey_id': imported_survey_name,
+            'purge_sequence_no': i
+            }
+
+        purge_seq_start = purge_seq_data['purge_seq_start']
+        if not isinstance(purge_seq_start, datetime.datetime):
+            error_message = _(
+                "For survey <i>{}</i>, the start date-time of purge "
+                "sequence #{} is not valid."
+                ).format(imported_survey_name, i)
+            raise ImportHGSurveysError(error_message)
+        new_purge['purge_seq_start'] = purge_seq_start
+
+        purge_seq_end = purge_seq_data['purge_seq_end']
+        if not isinstance(purge_seq_end, datetime.datetime):
+            error_message = _(
+                "For survey <i>{}</i>, the end date-time of purge "
+                "sequence #{} is not valid."
+                ).format(imported_survey_name, i)
+            raise ImportHGSurveysError(error_message)
+        new_purge['purge_seq_end'] = purge_seq_end
+
+        if purge_seq_end <= purge_seq_start:
+            error_message = _(
+                "For survey <i>{}</i>, the end date-time of purge "
+                "sequence #{} must be greater than its start date-time."
+                ).format(imported_survey_name, i)
+
+        try:
+            purge_outflow = float(purge_seq_data['purge_outflow'])
+            assert purge_outflow > 0
+        except (TypeError, ValueError, AssertionError):
+            error_message = _(
+                "The <i>purge outflow</i> provided for survey <i>{}</i> "
+                "is not valid."
+                ).format(imported_survey_name)
+            raise ImportHGSurveysError(error_message)
+        new_purge['purge_outflow'] = purge_outflow
+
+        pumping_depth = purge_seq_data['pumping_depth']
+        if pumping_depth is not None:
+            try:
+                pumping_depth = float(pumping_depth)
+            except ValueError:
+                error_message = _(
+                    "The <i>pumping depth</i> provided for survey <i>{}</i> "
+                    "is not valid."
+                    ).format(imported_survey_name)
+                raise ImportHGSurveysError(error_message)
+        new_purge['pumping_depth'] = pumping_depth
+
+        water_level_drawdown = purge_seq_data['water_level_drawdown']
+        if water_level_drawdown is not None:
+            try:
+                water_level_drawdown = float(water_level_drawdown)
+            except ValueError:
+                error_message = _(
+                    "The <i>water level drawdown</i> provided for "
+                    "survey <i>{}</i> is not valid."
+                    ).format(imported_survey_name)
+                raise ImportHGSurveysError(error_message)
+        new_purge['water_level_drawdown'] = water_level_drawdown
+
+        new_purges.append(new_purge)
+
+        return new_purges
 
 
 if __name__ == '__main__':
