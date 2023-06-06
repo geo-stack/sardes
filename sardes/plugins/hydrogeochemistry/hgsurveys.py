@@ -431,7 +431,7 @@ def format_hg_survey_imported_data(
         try:
             sampling_feature_uuid = stations_data[
                 stations_data['obs_well_id'] == obs_well_id
-                ].iloc[0]
+                ].iloc[0].name
         except IndexError:
             error_message = _(
                 "The <i>observation well ID</i> provided for survey <i>{}</i> "
