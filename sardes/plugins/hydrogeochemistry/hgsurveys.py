@@ -53,13 +53,14 @@ class HGSurveyImportManager(QObject):
             triggered=self.import_dialog.show,
             text=_("Import HG Surveys"),
             tip=_("Import HG surveys from an Excel Workbook."),
-            icon='image'
+            icon='import_geochemistry'
             )
 
     def install_manager(self, plugin: Hydrogeochemistry):
         """Install this manager in the hydrogeochemistry plugin."""
         self.plugin = plugin
 
+        plugin._tables['table_hg_surveys'].add_toolbar_separator('upper')
         plugin._tables['table_hg_surveys'].add_toolbar_widget(
             self.show_import_dialog_btn, 'upper')
 

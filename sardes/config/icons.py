@@ -156,6 +156,9 @@ FA_ICONS = {
     'import_clipboard': [
         ('mdi.clipboard-plus-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'import_geochemistry': [
+        ('mdi.flask-plus-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'information': [
         ('mdi.information-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
