@@ -455,7 +455,7 @@ def format_hg_survey_imported_data(
         raise ImportHGSurveysError(error_message)
     new_hg_survey['hg_survey_datetime'] = hg_survey_datetime
 
-    # --- Check duplicates.
+    # --- Check for duplicates
     dups = hg_surveys_data[
         (hg_surveys_data['sampling_feature_uuid'] == sampling_feature_uuid) &
         (hg_surveys_data['hg_survey_datetime'] == hg_survey_datetime)
@@ -467,7 +467,7 @@ def format_hg_survey_imported_data(
             ).format(imported_survey_name)
         raise ImportHGSurveysError(error_message)
 
-    # --- hg_survey_depth
+    # --- Get and check hg_survey_depth
     hg_survey_depth = imported_survey_data['hg_survey_depth']
     if hg_survey_depth is not None:
         try:
@@ -480,7 +480,7 @@ def format_hg_survey_imported_data(
             raise ImportHGSurveysError(error_message)
     new_hg_survey['hg_survey_depth'] = hg_survey_depth
 
-    # --- hg_sampling_method_id
+    # --- Get and check hg_sampling_method_id
     hg_sampling_method_name = imported_survey_data[
         'hg_sampling_method_name']
     if hg_sampling_method_name is None:
@@ -499,7 +499,7 @@ def format_hg_survey_imported_data(
             raise ImportHGSurveysError(error_message)
     new_hg_survey['hg_sampling_method_id'] = hg_sampling_method_id
 
-    # --- sample_filtered
+    # --- Get and check sample_filtered
     sample_filtered = imported_survey_data['sample_filtered']
     if sample_filtered is not None:
         if sample_filtered not in (0, 1):
@@ -536,8 +536,10 @@ def format_purge_imported_data(
         purge_seq_start = purge_seq_data['purge_seq_start']
         if not isinstance(purge_seq_start, datetime.datetime):
             error_message = _(
-                "For survey <i>{}</i>, the start date-time of purge "
-                "sequence #{} is not valid."
+                """
+                For survey <i>{}</i>, the start date-time of purge
+                sequence #{} is not valid.
+                """
                 ).format(imported_survey_name, i)
             raise ImportHGSurveysError(error_message)
         new_purge['purge_seq_start'] = purge_seq_start
@@ -545,16 +547,20 @@ def format_purge_imported_data(
         purge_seq_end = purge_seq_data['purge_seq_end']
         if not isinstance(purge_seq_end, datetime.datetime):
             error_message = _(
-                "For survey <i>{}</i>, the end date-time of purge "
-                "sequence #{} is not valid."
+                """
+                In survey <i>{}</i>, the end date-time of purge
+                sequence #{} is not valid.
+                """
                 ).format(imported_survey_name, i)
             raise ImportHGSurveysError(error_message)
         new_purge['purge_seq_end'] = purge_seq_end
 
         if purge_seq_end <= purge_seq_start:
             error_message = _(
-                "For survey <i>{}</i>, the end date-time of purge "
-                "sequence #{} must be greater than its start date-time."
+                """
+                In survey <i>{}</i>, the end date-time of purge
+                sequence #{} must be greater than its start date-time.
+                """
                 ).format(imported_survey_name, i)
 
         try:
@@ -562,8 +568,10 @@ def format_purge_imported_data(
             assert purge_outflow > 0
         except (TypeError, ValueError, AssertionError):
             error_message = _(
-                "The <i>purge outflow</i> provided for survey <i>{}</i> "
-                "is not valid."
+                """
+                The purge outflow provided in survey <i>{}</i>
+                is not valid."
+                """
                 ).format(imported_survey_name)
             raise ImportHGSurveysError(error_message)
         new_purge['purge_outflow'] = purge_outflow
@@ -574,8 +582,10 @@ def format_purge_imported_data(
                 pumping_depth = float(pumping_depth)
             except ValueError:
                 error_message = _(
-                    "The <i>pumping depth</i> provided for survey <i>{}</i> "
-                    "is not valid."
+                    """
+                    The pumping depth provided in survey <i>{}</i>
+                    is not valid.
+                    """
                     ).format(imported_survey_name)
                 raise ImportHGSurveysError(error_message)
         new_purge['pumping_depth'] = pumping_depth
@@ -586,8 +596,10 @@ def format_purge_imported_data(
                 water_level_drawdown = float(water_level_drawdown)
             except ValueError:
                 error_message = _(
-                    "The <i>water level drawdown</i> provided for "
-                    "survey <i>{}</i> is not valid."
+                    """
+                    The water level drawdown provided in survey <i>{}</i>
+                    is not valid.
+                    """
                     ).format(imported_survey_name)
                 raise ImportHGSurveysError(error_message)
         new_purge['water_level_drawdown'] = water_level_drawdown
