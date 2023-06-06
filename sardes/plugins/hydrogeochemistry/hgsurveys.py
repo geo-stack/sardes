@@ -188,12 +188,24 @@ class HGSurveyImportDialog(QDialog):
             lambda: self._handle_continue_import())
         self.continue_btn.setVisible(False)
 
+        self.ok_err_btn = QPushButton(_('Ok'))
+        self.ok_err_btn.setDefault(False)
+        self.ok_err_btn.setAutoDefault(False)
+        self.ok_err_btn.clicked.connect(self.close_message_dialogs)
+        self.ok_err_btn.setVisible(False)
+
+        self._buttons = [
+            self.import_btn,
+            self.close_btn,
+            self.cancel_btn,
+            self.continue_btn,
+            self.ok_err_btn
+            ]
+
         self.button_box = QDialogButtonBox()
         self.button_box.layout().addStretch(1)
-        self.button_box.layout().addWidget(self.import_btn)
-        self.button_box.layout().addWidget(self.close_btn)
-        self.button_box.layout().addWidget(self.cancel_btn)
-        self.button_box.layout().addWidget(self.continue_btn)
+        for btn in self._buttons:
+            self.button_box.layout().addWidget(btn)
         self.button_box.layout().setContentsMargins(
             *get_default_contents_margins())
 
@@ -224,10 +236,27 @@ class HGSurveyImportDialog(QDialog):
             palette.light().color())
         self.unsaved_changes_dialog.setPalette(palette)
 
+        # Setup the widget to show import error messages.
+        self.import_error_dialog = ProcessStatusBar(
+            spacing=10,
+            icon_valign='top',
+            iconsize=get_standard_iconsize('messagebox'),
+            contents_margin=get_default_contents_margins())
+        self.import_error_dialog.set_icon(
+            'failed', get_standard_icon('SP_MessageBoxCritical'))
+
+        self.import_error_dialog.setAutoFillBackground(True)
+        palette = QApplication.instance().palette()
+        palette.setColor(
+            self.import_error_dialog.backgroundRole(),
+            palette.light().color())
+        self.import_error_dialog.setPalette(palette)
+
         # Setup the stacked widget.
         self.stackwidget = QStackedWidget()
         self.stackwidget.addWidget(base_widget)
         self.stackwidget.addWidget(self.unsaved_changes_dialog)
+        self.stackwidget.addWidget(self.import_error_dialog)
 
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.stackwidget)
@@ -237,6 +266,16 @@ class HGSurveyImportDialog(QDialog):
         main_layout.setSpacing(0)
 
     # ---- Public Interface
+    def show_import_error_message(self, message: str):
+        """
+        Show the message of an error that occured during the import process.
+        """
+        for btn in self._buttons:
+            btn.setVisible(btn == self.ok_err_btn)
+        self.import_error_dialog.show_fail_icon(message)
+        self.stackwidget.setCurrentWidget(self.import_error_dialog)
+        QApplication.beep()
+
     def show_unsaved_changes_dialog(self, message: str):
         """
         Show a message to warn the user that there are unsaved changes in
@@ -250,14 +289,12 @@ class HGSurveyImportDialog(QDialog):
         self.stackwidget.setCurrentWidget(self.unsaved_changes_dialog)
         QApplication.beep()
 
-    def close_unsaved_changes_dialog(self):
+    def close_message_dialogs(self):
         """
-        Close the unsaved changes dialog.
+        Close all message dialogs and show the main interface.
         """
-        self.import_btn.setVisible(True)
-        self.close_btn.setVisible(True)
-        self.cancel_btn.setVisible(False)
-        self.continue_btn.setVisible(False)
+        for btn in self._buttons:
+            btn.setVisible(btn in (self.import_btn, self.close_btn))
         self.stackwidget.setCurrentIndex(0)
 
     def start_importing(self):
@@ -285,7 +322,7 @@ class HGSurveyImportDialog(QDialog):
         Handle when the user has chosen to continue the import process
         in the "unsaved table changes" dialog.
         """
-        self.close_unsaved_changes_dialog()
+        self.close_message_dialogs()
 
         # This is required to avoid a glitch in the GUI.
         for i in range(5):
@@ -298,7 +335,7 @@ class HGSurveyImportDialog(QDialog):
         Handle when the user has chosen to cancel the import process
         in the "unsaved table changes" dialog.
         """
-        self.close_unsaved_changes_dialog()
+        self.close_message_dialogs()
 
     def _handle_xlsxfile_selected(self, path):
         """Handle when a new hg survey input xlsx file is selected."""
