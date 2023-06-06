@@ -31,6 +31,7 @@ from sardes.config.locale import _
 from sardes.config.ospath import get_documents_logo_filename
 from sardes.config.main import CONF
 from sardes.database.accessors.accessor_helpers import create_empty_readings
+from sardes.database.accessors.accessor_errors import ImportHGSurveysError
 from sardes.tools.hydrographs import HydrographCanvas
 from sardes.tools.save2excel import _save_reading_data_to_xlsx
 from sardes.tools.waterquality import _save_hg_data_to_xlsx
@@ -456,7 +457,7 @@ class DatabaseConnectionWorker(WorkerBase):
 
         return sonde_install,
 
-    # ---- Publish Network Data
+    # ---- Complex operations
     def _publish_to_kml(self, kml_filename, iri_data=None, iri_logs=None,
                         iri_graphs=None, iri_quality=None):
         """
@@ -708,6 +709,57 @@ class DatabaseConnectionWorker(WorkerBase):
             pnt.description = pnt_desc
         kml.save(kml_filename)
         return True,
+
+    def _add_hg_survey_data(self, imported_survey_data: dict(dict)):
+        """
+        Add HG survey data imported from a XLSX file.
+        """
+        from sardes.plugins.hydrogeochemistry.hgsurveys import (
+            format_hg_survey_imported_data,
+            format_purge_imported_data,
+            format_params_data_imported_data
+            )
+
+        # We want to make sure to get the latest version of the data from
+        # the database.
+        hg_surveys_data, = self._get('hg_surveys')
+        stations_data, = self._get('observation_wells_data')
+        hg_sampling_methods_data, = self._get('hg_sampling_methods')
+        pump_types_data, = self._get('pump_types')
+        hg_params_data, = self._get('hg_params')
+        measurement_units_data, = self._get('measurement_units')
+
+        new_hg_surveys = []
+        new_purges = []
+        new_hg_param_vals = []
+        for sheet_name, sheet_data in imported_survey_data.items():
+            # imported_paramval_data = sheet_data['hg_param_values_data']
+            try:
+                new_hg_surveys.append(
+                    format_hg_survey_imported_data(
+                        sheet_name,
+                        sheet_data['hg_surveys_data'],
+                        hg_surveys_data,
+                        stations_data,
+                        hg_sampling_methods_data
+                        ))
+                new_purges.append(
+                    format_purge_imported_data(
+                        sheet_name,
+                        sheet_data['purges_data'],
+                        pump_types_data
+                        ))
+                new_hg_param_vals.append(
+                    format_params_data_imported_data(
+                        sheet_name,
+                        sheet_data['hg_param_values_data'],
+                        hg_params_data,
+                        measurement_units_data
+                        ))
+            except ImportHGSurveysError as e:
+                return e,
+
+        return None,
 
 
 class DatabaseConnectionManager(TaskManagerBase):
