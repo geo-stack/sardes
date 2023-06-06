@@ -33,6 +33,7 @@ from sardes.utils.qthelpers import format_tooltip
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.path import PathBoxWidget
 from sardes.utils.qthelpers import get_default_contents_margins
+from sardes.database.accessors.accessor_errors import ImportHGSurveysError
 
 
 class HGSurveyImportManager(QObject):
@@ -371,33 +372,63 @@ def read_hgsurvey_data(filename: str) -> dict(dict):
 
 
 def format_hg_survey_imported_data(
-        imported_survey_data: dict, hg_surveys_data: pd.DataFrame,
-        stations_data: pd.DataFrame, hg_sampling_methods_data: pd.DataFrame
+        imported_survey_name: str,
+        imported_survey_data: dict,
+        hg_surveys_data: pd.DataFrame,
+        stations_data: pd.DataFrame,
+        hg_sampling_methods_data: pd.DataFrame
         ) -> dict:
     """
     Format and sanitize HG survey data imported from a XLSX file.
     """
     new_hg_survey = {}
 
-    # --- sampling_feature_uuid
+    # --- Get and check sampling_feature_uuid
     obs_well_id = imported_survey_data['obs_well_id']
     if obs_well_id is None:
-        return 'obs_well_id cannot be None bitch!'
+        error_message = _(
+            "No <i>observation well ID</i> is provided for survey <i>{}</i>."
+            ).format(imported_survey_name)
+        raise ImportHGSurveysError(error_message)
     else:
         try:
-            new_hg_survey['sampling_feature_uuid'] = stations_data[
+            sampling_feature_uuid = stations_data[
                 stations_data['obs_well_id'] == obs_well_id
                 ].iloc[0]
         except IndexError:
-            return 'This monitoring station does not exists bitch'
+            error_message = _(
+                "The <i>observation well ID</i> provided for survey <i>{}</i> "
+                "does not exist in the database."
+                ).format(imported_survey_name)
+            raise ImportHGSurveysError(error_message)
+    new_hg_survey['sampling_feature_uuid'] = sampling_feature_uuid
 
-    # --- hg_survey_datetime
+    # --- Get and check hg_survey_datetime
     hg_survey_datetime = imported_survey_data['hg_survey_datetime']
     if hg_survey_datetime is None:
-        return 'hg_survey_datetime cannot be None bitch!'
+        error_message = _(
+            "No <i>date-time</i> is provided for survey <i>{}</i>."
+            ).format(imported_survey_name)
+        raise ImportHGSurveysError(error_message)
     elif not isinstance(hg_survey_datetime, datetime.datetime):
-        return 'This is not a valid date sucker!'
+        error_message = _(
+            "The <i>date-time</i> value provided for survey <i>{}</i> "
+            "is not valid."
+            ).format(imported_survey_name)
+        raise ImportHGSurveysError(error_message)
     new_hg_survey['hg_survey_datetime'] = hg_survey_datetime
+
+    # --- Check duplicates.
+    dups = hg_surveys_data[
+        (hg_surveys_data['sampling_feature_uuid'] == sampling_feature_uuid) &
+        (hg_surveys_data['hg_survey_datetime'] == hg_survey_datetime)
+        ]
+    if len(dups) > 0:
+        error_message = _(
+            "A survey already exists in the database for the <i>observation "
+            "well</i> and <i>date-time</i> provided for survey <i>{}</i>."
+            ).format(imported_survey_name)
+        raise ImportHGSurveysError(error_message)
 
     # --- hg_survey_depth
     hg_survey_depth = imported_survey_data['hg_survey_depth']
@@ -405,7 +436,11 @@ def format_hg_survey_imported_data(
         try:
             hg_survey_depth = float(hg_survey_depth)
         except ValueError:
-            return 'Wrong survey depth value cunt'
+            error_message = _(
+                "The <i>survey depth</i> provided for survey <i>{}</i> "
+                "is not valid."
+                ).format(imported_survey_name)
+            raise ImportHGSurveysError(error_message)
     new_hg_survey['hg_survey_depth'] = hg_survey_depth
 
     # --- hg_sampling_method_id
@@ -420,14 +455,22 @@ def format_hg_survey_imported_data(
                 hg_sampling_method_name
                 ].iloc[0].name
         except IndexError:
-            return 'This sampling method does not exists fucker!'
+            error_message = _(
+                "The <i>sampling method</i> provided for survey <i>{}</i> "
+                "is not valid."
+                ).format(imported_survey_name)
+            raise ImportHGSurveysError(error_message)
     new_hg_survey['hg_sampling_method_id'] = hg_sampling_method_id
 
     # --- sample_filtered
     sample_filtered = imported_survey_data['sample_filtered']
     if sample_filtered is not None:
         if sample_filtered not in (0, 1):
-            return 'sample_filtered must be either 0 or 1 prick!'
+            error_message = _(
+                "In survey <i>{}</i>, the filtered value must be either "
+                "0 or 1."
+                )
+            raise ImportHGSurveysError(error_message)
     new_hg_survey['sample_filtered'] = sample_filtered
 
     new_hg_survey['hg_survey_operator'] = (
