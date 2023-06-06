@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 # ---- Standard imports
 import datetime
 import os.path as osp
+import re
 
 # ---- Third party imports
 import pandas as pd
@@ -118,8 +119,16 @@ class HGSurveyImportManager(QObject):
             )
 
     def _import_hg_surveys(self):
-        print("import_hg_surveys")
-        pass
+        imported_surveys_data = read_hgsurvey_data(
+            self.import_dialog.input_file_pathbox.path()
+            )
+        self.plugin.main.db_connection_manager.add_task(
+            'add_hg_survey_data',
+            self._handle_import_hg_surveys_results,
+            imported_surveys_data
+            )
+        self.plugin.main.db_connection_manager.run_tasks()
+
 
 
 class HGSurveyImportDialog(QDialog):
