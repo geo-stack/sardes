@@ -247,43 +247,33 @@ class HGSurveyImportDialog(QDialog):
         base_layout.addWidget(self.status_bar)
         base_layout.addStretch(1)
 
-        # Setup the unsaved changes warning message.
-        self.unsaved_changes_dialog = ProcessStatusBar(
-            spacing=10,
-            icon_valign='top',
-            iconsize=get_standard_iconsize('messagebox'),
-            contents_margin=get_default_contents_margins())
-        self.unsaved_changes_dialog.set_icon(
-            'failed', get_standard_icon('SP_MessageBoxWarning'))
+        # Setup the warning and error message dialogs.
+        def create_msg_dialog(std_icon_name: str):
+            dialog = ProcessStatusBar(
+                spacing=10,
+                icon_valign='top',
+                vsize_policy='expanding',
+                text_valign='top',
+                iconsize=get_standard_iconsize('messagebox'),
+                contents_margin=get_default_contents_margins())
+            dialog.set_icon('failed', get_standard_icon(std_icon_name))
+            dialog.setAutoFillBackground(True)
 
-        self.unsaved_changes_dialog.setAutoFillBackground(True)
-        palette = QApplication.instance().palette()
-        palette.setColor(
-            self.unsaved_changes_dialog.backgroundRole(),
-            palette.light().color())
-        self.unsaved_changes_dialog.setPalette(palette)
+            palette = QApplication.instance().palette()
+            palette.setColor(dialog.backgroundRole(), palette.light().color())
+            dialog.setPalette(palette)
 
-        # Setup the widget to show import error messages.
-        self.import_error_dialog = ProcessStatusBar(
-            spacing=10,
-            icon_valign='top',
-            iconsize=get_standard_iconsize('messagebox'),
-            contents_margin=get_default_contents_margins())
-        self.import_error_dialog.set_icon(
-            'failed', get_standard_icon('SP_MessageBoxCritical'))
+            return dialog
 
-        self.import_error_dialog.setAutoFillBackground(True)
-        palette = QApplication.instance().palette()
-        palette.setColor(
-            self.import_error_dialog.backgroundRole(),
-            palette.light().color())
-        self.import_error_dialog.setPalette(palette)
+        self.unsaved_changes_dialog = create_msg_dialog('SP_MessageBoxWarning')
+        self.import_error_dialog = create_msg_dialog('SP_MessageBoxCritical')
 
         # Setup the stacked widget.
         self.stackwidget = QStackedWidget()
         self.stackwidget.addWidget(base_widget)
         self.stackwidget.addWidget(self.unsaved_changes_dialog)
         self.stackwidget.addWidget(self.import_error_dialog)
+        self.stackwidget.setMinimumHeight(100)
 
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.stackwidget)
