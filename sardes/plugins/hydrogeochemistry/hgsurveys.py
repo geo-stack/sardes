@@ -135,7 +135,16 @@ class HGSurveyImportManager(QObject):
         """
         if error is not None:
             # Display the import error message to the user.
-            message = f"<h3>Import Error</h3><p>{error.message}<p>"
+            message = (
+                """
+                <h3>Import Error</h3>
+                <p>{}</p>
+                <p>
+                  Please resolve this problem in your Excel workbook
+                  and try importing your data again.
+                </p>
+                """
+                ).format(error.message)
             self.import_dialog.show_import_error_message(message)
 
 
