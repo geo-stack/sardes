@@ -408,7 +408,7 @@ def read_hgsurvey_data(filename: str) -> dict(dict):
         hg_param_values_data = []
         for row in range(31, 41):
             if sheet[f'B{row}'].value is None:
-                break
+                continue
 
             new_param_data = {
                 'hg_param_name': sheet[f'B{row}'].value,
