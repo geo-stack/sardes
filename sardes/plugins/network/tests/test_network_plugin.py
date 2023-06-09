@@ -15,12 +15,9 @@ Tests for the Publish plugin.
 import re
 import os
 import os.path as osp
-import sys
-from unittest.mock import Mock
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
-import pandas as pd
 import pytest
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QFileDialog
@@ -28,22 +25,11 @@ from qtpy.QtWidgets import QFileDialog
 # ---- Local imports
 from sardes.app.mainwindow import MainWindowBase
 from sardes.plugins.network import SARDES_PLUGIN_CLASS
-from sardes.database.accessors import DatabaseAccessorSardesLite
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
-@pytest.fixture
-def dbaccessor(tmp_path, database_filler):
-    dbaccessor = DatabaseAccessorSardesLite(
-        osp.join(tmp_path, 'sqlite_database_test.db'))
-    dbaccessor.init_database()
-    database_filler(dbaccessor)
-
-    return dbaccessor
-
-
 @pytest.fixture
 def mainwindow(qtbot, mocker, dbaccessor):
     class MainWindow(MainWindowBase):
