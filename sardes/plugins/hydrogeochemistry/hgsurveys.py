@@ -410,11 +410,14 @@ def read_hgsurvey_data(filename: str) -> dict(dict):
             if sheet[f'B{row}'].value is None:
                 break
 
-            hg_param_values_data.append({
+            new_param_data = {
                 'hg_param_name': sheet[f'B{row}'].value,
                 'hg_param_value': sheet[f'D{row}'].value,
-                'meas_units_abb': sheet[f'E{row}'].value,
-                })
+                'meas_units_abb': sheet[f'E{row}'].value
+                }
+            for key, val in new_param_data.items():
+                new_param_data[key] = str(val) if val is not None else None
+            hg_param_values_data.append(new_param_data)
 
         all_surveys_data[sheet_name] = {
             'hg_surveys_data': hg_surveys_data,
