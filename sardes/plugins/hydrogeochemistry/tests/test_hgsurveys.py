@@ -200,5 +200,134 @@ def test_format_hgsurvey_imported_data(dbaccessor):
         }
 
 
+def test_format_purge_imported_data(dbaccessor):
+    kwargs = {
+        'pump_type_data': dbaccessor.get('pump_types'),
+        }
+
+    data = [{'purge_sequence_no': None,
+             'purge_seq_start': None,
+             'purge_seq_end': None,
+             'purge_outflow': None,
+             'pumping_depth': None,
+             'pump_type_name': None,
+             'water_level_drawdown': None},
+            {'purge_sequence_no': None,
+             'purge_seq_start': None,
+             'purge_seq_end': None,
+             'purge_outflow': None,
+             'pumping_depth': None,
+             'pump_type_name': None,
+             'water_level_drawdown': None
+             }]
+
+    # The purge_seq_start is not valid.
+    with pytest.raises(ImportHGSurveysError) as excinfo:
+        format_purge_imported_data('survey_test', data, **kwargs)
+    assert excinfo.value.code == 8
+
+    data[0]['purge_seq_start'] = datetime.datetime(2013, 5, 25, 10, 15)
+
+    # The purge_seq_end is not valid.
+    with pytest.raises(ImportHGSurveysError) as excinfo:
+        format_purge_imported_data('survey_test', data, **kwargs)
+    assert excinfo.value.code == 10
+
+    # The purge_seq_end < purge_seq_start.
+    data[0]['purge_seq_end'] = datetime.datetime(2013, 5, 25, 10, 15)
+
+    with pytest.raises(ImportHGSurveysError) as excinfo:
+        format_purge_imported_data('survey_test', data, **kwargs)
+    assert excinfo.value.code == 11
+
+    data[0]['purge_seq_end'] = datetime.datetime(2013, 5, 25, 10, 20)
+
+    # The pump type name is not valid.
+    with pytest.raises(ImportHGSurveysError) as excinfo:
+        format_purge_imported_data('survey_test', data, **kwargs)
+    assert excinfo.value.code == 15
+
+    data[0]['pump_type_name'] = 'PUMP#1'
+    data[1]['pump_type_name'] = 'PUMP#1'
+
+    # The purge outflow is not valid.
+    with pytest.raises(ImportHGSurveysError) as excinfo:
+        format_purge_imported_data('survey_test', data, **kwargs)
+    assert excinfo.value.code == 12
+
+    data[0]['purge_outflow'] = 13.5
+    data[1]['purge_outflow'] = 15.8
+
+    # The purge_seq_end[0] > purge_seq_start[1].
+    data[1]['purge_seq_start'] = datetime.datetime(2013, 5, 25, 10, 18)
+    data[1]['purge_seq_end'] = datetime.datetime(2013, 5, 25, 10, 30)
+
+    with pytest.raises(ImportHGSurveysError) as excinfo:
+        format_purge_imported_data('survey_test', data, **kwargs)
+    assert excinfo.value.code == 9
+
+    data[1]['purge_seq_start'] = datetime.datetime(2013, 5, 25, 10, 20)
+
+    # The next call should not raise any error.
+    fmt_data = format_purge_imported_data('survey_test', data, **kwargs)
+    assert fmt_data == [
+        {'hg_survey_id': 'survey_test',
+         'purge_sequence_no': 1,
+         'purge_seq_start': datetime.datetime(2013, 5, 25, 10, 15),
+         'purge_seq_end': datetime.datetime(2013, 5, 25, 10, 20),
+         'purge_outflow': 13.5,
+         'pumping_depth': None,
+         'pump_type_id': 1,
+         'water_level_drawdown': None},
+        {'hg_survey_id': 'survey_test',
+         'purge_sequence_no': 2,
+         'purge_seq_start': datetime.datetime(2013, 5, 25, 10, 20),
+         'purge_seq_end': datetime.datetime(2013, 5, 25, 10, 30),
+         'purge_outflow': 15.8,
+         'pumping_depth': None,
+         'pump_type_id': 1,
+         'water_level_drawdown': None
+         }]
+
+    # The pumping_depth is not valid.
+    data[0]['pumping_depth'] = 'dummy'
+
+    with pytest.raises(ImportHGSurveysError) as excinfo:
+        format_purge_imported_data('survey_test', data, **kwargs)
+    assert excinfo.value.code == 13
+
+    data[0]['pumping_depth'] = 24.65
+    data[1]['pumping_depth'] = 12.333
+
+    # The water_level_drawdown is not valid.
+    data[0]['water_level_drawdown'] = 'dummy'
+    with pytest.raises(ImportHGSurveysError) as excinfo:
+        format_purge_imported_data('survey_test', data, **kwargs)
+    assert excinfo.value.code == 14
+
+    data[0]['water_level_drawdown'] = 3.12
+    data[1]['water_level_drawdown'] = 8.45
+
+    # The next call should not raise any error.
+    fmt_data = format_purge_imported_data('survey_test', data, **kwargs)
+    assert fmt_data == [
+        {'hg_survey_id': 'survey_test',
+         'purge_sequence_no': 1,
+         'purge_seq_start': datetime.datetime(2013, 5, 25, 10, 15),
+         'purge_seq_end': datetime.datetime(2013, 5, 25, 10, 20),
+         'purge_outflow': 13.5,
+         'pumping_depth': 24.65,
+         'pump_type_id': 1,
+         'water_level_drawdown': 3.12},
+        {'hg_survey_id': 'survey_test',
+         'purge_sequence_no': 2,
+         'purge_seq_start': datetime.datetime(2013, 5, 25, 10, 20),
+         'purge_seq_end': datetime.datetime(2013, 5, 25, 10, 30),
+         'purge_outflow': 15.8,
+         'pumping_depth': 12.333,
+         'pump_type_id': 1,
+         'water_level_drawdown': 8.45
+         }]
+
 if __name__ == "__main__":
     pytest.main(['-x', __file__, '-v', '-rw'])
