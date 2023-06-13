@@ -580,8 +580,9 @@ def format_purge_imported_data(
                 sequence #{} is not valid.
                 """
                 ).format(imported_survey_name, i)
-            raise ImportHGSurveysError(error_message, code=9)
+            raise ImportHGSurveysError(error_message, code=10)
         new_purge['purge_seq_end'] = purge_seq_end
+        prev_seq_end = purge_seq_end
 
         if purge_seq_end <= purge_seq_start:
             error_message = _(
@@ -590,18 +591,18 @@ def format_purge_imported_data(
                 sequence #{} must be greater than its start date-time.
                 """
                 ).format(imported_survey_name, i)
+            raise ImportHGSurveysError(error_message, code=11)
 
         try:
-            purge_outflow = float(purge_seq_data['purge_outflow'])
-            assert purge_outflow > 0
-        except (TypeError, ValueError, AssertionError):
+            purge_outflow = abs(float(purge_seq_data['purge_outflow']))
+        except (TypeError, ValueError):
             error_message = _(
                 """
                 The purge outflow provided in survey <i>{}</i>
                 is not valid."
                 """
                 ).format(imported_survey_name)
-            raise ImportHGSurveysError(error_message, code=10)
+            raise ImportHGSurveysError(error_message, code=12)
         new_purge['purge_outflow'] = purge_outflow
 
         pumping_depth = purge_seq_data['pumping_depth']
@@ -615,7 +616,7 @@ def format_purge_imported_data(
                     is not valid.
                     """
                     ).format(imported_survey_name)
-                raise ImportHGSurveysError(error_message, code=11)
+                raise ImportHGSurveysError(error_message, code=13)
         new_purge['pumping_depth'] = pumping_depth
 
         water_level_drawdown = purge_seq_data['water_level_drawdown']
@@ -629,12 +630,12 @@ def format_purge_imported_data(
                     is not valid.
                     """
                     ).format(imported_survey_name)
-                raise ImportHGSurveysError(error_message, code=12)
+                raise ImportHGSurveysError(error_message, code=14)
         new_purge['water_level_drawdown'] = water_level_drawdown
 
         new_purges.append(new_purge)
 
-        return new_purges
+    return new_purges
 
 
 def format_params_data_imported_data(
