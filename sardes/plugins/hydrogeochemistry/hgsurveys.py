@@ -593,6 +593,21 @@ def format_purge_imported_data(
                 ).format(imported_survey_name, i)
             raise ImportHGSurveysError(error_message, code=11)
 
+        # --- Get and check pump_type_id
+        pump_type_name = purge_seq_data['pump_type_name']
+        try:
+            pump_type_id = pump_type_data[
+                pump_type_data['pump_type_name'] == pump_type_name
+                ].iloc[0].name
+        except (IndexError, AssertionError):
+            error_message = _(
+                "The <i>pump type</i> provided for survey <i>{}</i> "
+                "does not exist in the database."
+                ).format(imported_survey_name)
+            raise ImportHGSurveysError(error_message, code=15)
+        new_purge['pump_type_id'] = pump_type_id
+
+        # --- Get and check purge_outflow
         try:
             purge_outflow = abs(float(purge_seq_data['purge_outflow']))
         except (TypeError, ValueError):
