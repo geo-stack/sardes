@@ -541,6 +541,7 @@ def format_purge_imported_data(
     """
     Format and sanitize purge data imported from a XLSX file.
     """
+    prev_seq_end = None
     new_purges = []
     for i, purge_seq_data in enumerate(imported_purge_data):
         new_purge = {
@@ -558,6 +559,18 @@ def format_purge_imported_data(
                 ).format(imported_survey_name, i)
             raise ImportHGSurveysError(error_message, code=8)
         new_purge['purge_seq_start'] = purge_seq_start
+
+        # Check that the start of the current sequence happens after
+        # the end of the last sequence.
+        if prev_seq_end is not None and prev_seq_end > purge_seq_start:
+            error_message = _(
+                """
+                For survey <i>{}</i>, the start date-time of purge
+                sequence #{} is less than the end-time of the previous
+                sequence.
+                """
+                ).format(imported_survey_name, i)
+            raise ImportHGSurveysError(error_message, code=9)
 
         purge_seq_end = purge_seq_data['purge_seq_end']
         if not isinstance(purge_seq_end, datetime.datetime):
