@@ -668,6 +668,15 @@ def format_params_data_imported_data(
 
         # --- Get and check hg_param_name
         param_name = new_param_data['hg_param_name']
+        if param_name is None or param_name == '':
+            error_message = _(
+                """
+                In survey <i>{}</i>, one of the in-situ parameter
+                has en empty name.
+                """
+                ).format(imported_survey_name)
+            raise ImportHGSurveysError(error_message, code=301)
+
         for index, row in hg_params_data.iterrows():
             regex = row.hg_param_regex
             if regex is None or '':
