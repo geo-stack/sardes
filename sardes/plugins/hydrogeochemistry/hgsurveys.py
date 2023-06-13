@@ -546,7 +546,7 @@ def format_purge_imported_data(
     for i, purge_seq_data in enumerate(imported_purge_data):
         new_purge = {
             'hg_survey_id': imported_survey_name,
-            'purge_sequence_no': i
+            'purge_sequence_no': i + 1
             }
 
         purge_seq_start = purge_seq_data['purge_seq_start']
