@@ -15,6 +15,7 @@ Tests for the HG survey import tool.
 import os
 import os.path as osp
 import datetime
+from uuid import UUID
 os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third party imports
@@ -22,8 +23,10 @@ import pytest
 
 # ---- Local imports
 from sardes import __rootdir__
+from sardes.database.accessors.accessor_errors import ImportHGSurveysError
 from sardes.plugins.hydrogeochemistry.hgsurveys import (
-    read_hgsurvey_data)
+    read_hgsurvey_data, format_hg_survey_imported_data,
+    format_purge_imported_data)
 
 
 # =============================================================================
@@ -81,7 +84,121 @@ def test_read_hgsurvey_data():
             ]
 
 
-def test_read_hgsurvey_data():
+def test_format_hgsurvey_imported_data(dbaccessor):
+    kwargs = {
+        'hg_surveys_data': dbaccessor.get('hg_surveys'),
+        'stations_data': dbaccessor.get('observation_wells_data'),
+        'hg_sampling_methods_data': dbaccessor.get('hg_sampling_methods')
+        }
+
+    data = {
+        'obs_well_id': None,
+        'hg_survey_datetime': None,
+        'hg_survey_operator': None,
+        'survey_note': None,
+        'hg_survey_depth': None,
+        'hg_sampling_method_name': None,
+        'sample_filtered': None,
+        }
+
+    # Work through all expected error that could be
+    # raised in the tested function for the required attributes.
+
+    # The obs_well_id is None.
+    with pytest.raises(ImportHGSurveysError) as excinfo:
+        format_hg_survey_imported_data('survey_test', data, **kwargs)
+    assert excinfo.value.code == 1
+
+    # The obs_well_id does not exist.
+    data['obs_well_id'] = '12345'
+    with pytest.raises(ImportHGSurveysError) as excinfo:
+        format_hg_survey_imported_data('survey_test', data, **kwargs)
+    assert excinfo.value.code == 2
+
+    data['obs_well_id'] = '03037041'
+
+    # The hg_survey_datetime is not valid.
+    with pytest.raises(ImportHGSurveysError) as excinfo:
+        format_hg_survey_imported_data('survey_test', data, **kwargs)
+    assert excinfo.value.code == 3
+
+    # Duplicate HG survey.
+    data['hg_survey_datetime'] = datetime.datetime(2011, 8, 2, 15, 20)
+    with pytest.raises(ImportHGSurveysError) as excinfo:
+        format_hg_survey_imported_data('survey_test', data, **kwargs)
+    assert excinfo.value.code == 4
+
+    # The next call should not raise any error.
+    data['hg_survey_datetime'] = datetime.datetime(2013, 5, 25, 10, 15)
+    fmt_data = format_hg_survey_imported_data('survey_test', data, **kwargs)
+
+    assert fmt_data == {
+        'sampling_feature_uuid': UUID('3c6d0e15-6775-4304-964a-5db89e463c55'),
+        'hg_survey_datetime': datetime.datetime(2013, 5, 25, 10, 15),
+        'hg_survey_operator': None,
+        'survey_note': None,
+        'hg_survey_depth': None,
+        'hg_sampling_method_id': None,
+        'sample_filtered': None,
+        }
+
+    # Work through all expected error that could be
+    # raised in the tested function for the optional attributes.
+    data['hg_survey_depth'] = 'dummy'
+    data['hg_sampling_method_name'] = 'dummy'
+    data['sample_filtered'] = '4'
+
+    # The hg_survey_depth is not valid.
+    with pytest.raises(ImportHGSurveysError) as excinfo:
+        format_hg_survey_imported_data('survey_test', data, **kwargs)
+    assert excinfo.value.code == 5
+
+    data['hg_survey_depth'] = 12.5
+
+    # The hg_sampling_method_name does not exist.
+    with pytest.raises(ImportHGSurveysError) as excinfo:
+        format_hg_survey_imported_data('survey_test', data, **kwargs)
+    assert excinfo.value.code == 6
+
+    data['hg_sampling_method_name'] = 'Method #1'
+
+    # The sample_filtered is not valid.
+    with pytest.raises(ImportHGSurveysError) as excinfo:
+        format_hg_survey_imported_data('survey_test', data, **kwargs)
+    assert excinfo.value.code == 7
+
+    data['sample_filtered'] = 1
+
+    # The next call should not raise any error.
+    data['hg_survey_datetime'] = datetime.datetime(2013, 5, 25, 10, 15)
+    fmt_data = format_hg_survey_imported_data('survey_test', data, **kwargs)
+
+    assert fmt_data == {
+        'sampling_feature_uuid': UUID('3c6d0e15-6775-4304-964a-5db89e463c55'),
+        'hg_survey_datetime': datetime.datetime(2013, 5, 25, 10, 15),
+        'hg_survey_operator': None,
+        'survey_note': None,
+        'hg_survey_depth': 12.5,
+        'hg_sampling_method_id': 1,
+        'sample_filtered': 1,
+        }
+
+    # Test that hg_survey_operator and survey_note are
+    # preserved as expected.
+    data['hg_survey_operator'] = 'Test survey operator'
+    data['survey_note'] = 'Test survey note'
+    fmt_data = format_hg_survey_imported_data('survey_test', data, **kwargs)
+
+    assert fmt_data == {
+        'sampling_feature_uuid': UUID('3c6d0e15-6775-4304-964a-5db89e463c55'),
+        'hg_survey_datetime': datetime.datetime(2013, 5, 25, 10, 15),
+        'hg_survey_operator': 'Test survey operator',
+        'survey_note': 'Test survey note',
+        'hg_survey_depth': 12.5,
+        'hg_sampling_method_id': 1,
+        'sample_filtered': 1,
+        }
+
 
 if __name__ == "__main__":
     pytest.main(['-x', __file__, '-v', '-rw'])
