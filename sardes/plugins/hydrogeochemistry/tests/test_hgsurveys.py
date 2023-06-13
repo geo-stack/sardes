@@ -26,7 +26,7 @@ from sardes import __rootdir__
 from sardes.database.accessors.accessor_errors import ImportHGSurveysError
 from sardes.plugins.hydrogeochemistry.hgsurveys import (
     read_hgsurvey_data, format_hg_survey_imported_data,
-    format_purge_imported_data)
+    format_purge_imported_data, format_params_data_imported_data)
 
 
 # =============================================================================
@@ -107,26 +107,26 @@ def test_format_hgsurvey_imported_data(dbaccessor):
     # The obs_well_id is None.
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_hg_survey_imported_data('survey_test', data, **kwargs)
-    assert excinfo.value.code == 1
+    assert excinfo.value.code == 101
 
     # The obs_well_id does not exist.
     data['obs_well_id'] = '12345'
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_hg_survey_imported_data('survey_test', data, **kwargs)
-    assert excinfo.value.code == 2
+    assert excinfo.value.code == 102
 
     data['obs_well_id'] = '03037041'
 
     # The hg_survey_datetime is not valid.
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_hg_survey_imported_data('survey_test', data, **kwargs)
-    assert excinfo.value.code == 3
+    assert excinfo.value.code == 103
 
     # Duplicate HG survey.
     data['hg_survey_datetime'] = datetime.datetime(2011, 8, 2, 15, 20)
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_hg_survey_imported_data('survey_test', data, **kwargs)
-    assert excinfo.value.code == 4
+    assert excinfo.value.code == 104
 
     # The next call should not raise any error.
     data['hg_survey_datetime'] = datetime.datetime(2013, 5, 25, 10, 15)
@@ -151,21 +151,21 @@ def test_format_hgsurvey_imported_data(dbaccessor):
     # The hg_survey_depth is not valid.
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_hg_survey_imported_data('survey_test', data, **kwargs)
-    assert excinfo.value.code == 5
+    assert excinfo.value.code == 105
 
     data['hg_survey_depth'] = 12.5
 
     # The hg_sampling_method_name does not exist.
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_hg_survey_imported_data('survey_test', data, **kwargs)
-    assert excinfo.value.code == 6
+    assert excinfo.value.code == 106
 
     data['hg_sampling_method_name'] = 'Method #1'
 
     # The sample_filtered is not valid.
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_hg_survey_imported_data('survey_test', data, **kwargs)
-    assert excinfo.value.code == 7
+    assert excinfo.value.code == 107
 
     data['sample_filtered'] = 1
 
@@ -224,28 +224,28 @@ def test_format_purge_imported_data(dbaccessor):
     # The purge_seq_start is not valid.
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_purge_imported_data('survey_test', data, **kwargs)
-    assert excinfo.value.code == 8
+    assert excinfo.value.code == 201
 
     data[0]['purge_seq_start'] = datetime.datetime(2013, 5, 25, 10, 15)
 
     # The purge_seq_end is not valid.
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_purge_imported_data('survey_test', data, **kwargs)
-    assert excinfo.value.code == 10
+    assert excinfo.value.code == 203
 
     # The purge_seq_end < purge_seq_start.
     data[0]['purge_seq_end'] = datetime.datetime(2013, 5, 25, 10, 15)
 
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_purge_imported_data('survey_test', data, **kwargs)
-    assert excinfo.value.code == 11
+    assert excinfo.value.code == 204
 
     data[0]['purge_seq_end'] = datetime.datetime(2013, 5, 25, 10, 20)
 
     # The pump type name is not valid.
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_purge_imported_data('survey_test', data, **kwargs)
-    assert excinfo.value.code == 15
+    assert excinfo.value.code == 205
 
     data[0]['pump_type_name'] = 'PUMP#1'
     data[1]['pump_type_name'] = 'PUMP#1'
@@ -253,7 +253,7 @@ def test_format_purge_imported_data(dbaccessor):
     # The purge outflow is not valid.
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_purge_imported_data('survey_test', data, **kwargs)
-    assert excinfo.value.code == 12
+    assert excinfo.value.code == 206
 
     data[0]['purge_outflow'] = 13.5
     data[1]['purge_outflow'] = 15.8
@@ -264,7 +264,7 @@ def test_format_purge_imported_data(dbaccessor):
 
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_purge_imported_data('survey_test', data, **kwargs)
-    assert excinfo.value.code == 9
+    assert excinfo.value.code == 202
 
     data[1]['purge_seq_start'] = datetime.datetime(2013, 5, 25, 10, 20)
 
@@ -294,7 +294,7 @@ def test_format_purge_imported_data(dbaccessor):
 
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_purge_imported_data('survey_test', data, **kwargs)
-    assert excinfo.value.code == 13
+    assert excinfo.value.code == 207
 
     data[0]['pumping_depth'] = 24.65
     data[1]['pumping_depth'] = 12.333
@@ -303,7 +303,7 @@ def test_format_purge_imported_data(dbaccessor):
     data[0]['water_level_drawdown'] = 'dummy'
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_purge_imported_data('survey_test', data, **kwargs)
-    assert excinfo.value.code == 14
+    assert excinfo.value.code == 208
 
     data[0]['water_level_drawdown'] = 3.12
     data[1]['water_level_drawdown'] = 8.45

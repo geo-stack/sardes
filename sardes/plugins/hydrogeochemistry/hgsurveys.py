@@ -446,7 +446,7 @@ def format_hg_survey_imported_data(
         error_message = _(
             "No <i>observation well ID</i> is provided for survey <i>{}</i>."
             ).format(imported_survey_name)
-        raise ImportHGSurveysError(error_message, code=1)
+        raise ImportHGSurveysError(error_message, code=101)
     else:
         try:
             sampling_feature_uuid = stations_data[
@@ -457,7 +457,7 @@ def format_hg_survey_imported_data(
                 "The <i>observation well ID</i> provided for survey <i>{}</i> "
                 "does not exist in the database."
                 ).format(imported_survey_name)
-            raise ImportHGSurveysError(error_message, code=2)
+            raise ImportHGSurveysError(error_message, code=102)
     new_hg_survey['sampling_feature_uuid'] = sampling_feature_uuid
 
     # --- Get and check hg_survey_datetime
@@ -467,7 +467,7 @@ def format_hg_survey_imported_data(
             "The <i>date-time</i> value provided for survey <i>{}</i> "
             "is not valid."
             ).format(imported_survey_name)
-        raise ImportHGSurveysError(error_message, code=3)
+        raise ImportHGSurveysError(error_message, code=103)
     new_hg_survey['hg_survey_datetime'] = hg_survey_datetime
 
     # --- Check for duplicates
@@ -480,7 +480,7 @@ def format_hg_survey_imported_data(
             "A survey already exists in the database for the <i>observation "
             "well</i> and <i>date-time</i> provided for survey <i>{}</i>."
             ).format(imported_survey_name)
-        raise ImportHGSurveysError(error_message, code=4)
+        raise ImportHGSurveysError(error_message, code=104)
 
     # --- Get and check hg_survey_depth
     hg_survey_depth = imported_survey_data['hg_survey_depth']
@@ -492,7 +492,7 @@ def format_hg_survey_imported_data(
                 "The <i>survey depth</i> provided for survey <i>{}</i> "
                 "is not valid."
                 ).format(imported_survey_name)
-            raise ImportHGSurveysError(error_message, code=5)
+            raise ImportHGSurveysError(error_message, code=105)
     new_hg_survey['hg_survey_depth'] = hg_survey_depth
 
     # --- Get and check hg_sampling_method_id
@@ -511,7 +511,7 @@ def format_hg_survey_imported_data(
                 "The <i>sampling method</i> provided for survey <i>{}</i> "
                 "is not valid."
                 ).format(imported_survey_name)
-            raise ImportHGSurveysError(error_message, code=6)
+            raise ImportHGSurveysError(error_message, code=106)
     new_hg_survey['hg_sampling_method_id'] = hg_sampling_method_id
 
     # --- Get and check sample_filtered
@@ -522,7 +522,7 @@ def format_hg_survey_imported_data(
                 "In survey <i>{}</i>, the filtered value must be either "
                 "0 or 1."
                 )
-            raise ImportHGSurveysError(error_message, code=7)
+            raise ImportHGSurveysError(error_message, code=107)
     new_hg_survey['sample_filtered'] = sample_filtered
 
     new_hg_survey['hg_survey_operator'] = (
@@ -557,7 +557,7 @@ def format_purge_imported_data(
                 sequence #{} is not valid.
                 """
                 ).format(imported_survey_name, i)
-            raise ImportHGSurveysError(error_message, code=8)
+            raise ImportHGSurveysError(error_message, code=201)
         new_purge['purge_seq_start'] = purge_seq_start
 
         # Check that the start of the current sequence happens after
@@ -570,7 +570,7 @@ def format_purge_imported_data(
                 sequence.
                 """
                 ).format(imported_survey_name, i)
-            raise ImportHGSurveysError(error_message, code=9)
+            raise ImportHGSurveysError(error_message, code=202)
 
         purge_seq_end = purge_seq_data['purge_seq_end']
         if not isinstance(purge_seq_end, datetime.datetime):
@@ -580,7 +580,7 @@ def format_purge_imported_data(
                 sequence #{} is not valid.
                 """
                 ).format(imported_survey_name, i)
-            raise ImportHGSurveysError(error_message, code=10)
+            raise ImportHGSurveysError(error_message, code=203)
         new_purge['purge_seq_end'] = purge_seq_end
         prev_seq_end = purge_seq_end
 
@@ -591,7 +591,7 @@ def format_purge_imported_data(
                 sequence #{} must be greater than its start date-time.
                 """
                 ).format(imported_survey_name, i)
-            raise ImportHGSurveysError(error_message, code=11)
+            raise ImportHGSurveysError(error_message, code=204)
 
         # --- Get and check pump_type_id
         pump_type_name = purge_seq_data['pump_type_name']
@@ -604,7 +604,7 @@ def format_purge_imported_data(
                 "The <i>pump type</i> provided for survey <i>{}</i> "
                 "does not exist in the database."
                 ).format(imported_survey_name)
-            raise ImportHGSurveysError(error_message, code=15)
+            raise ImportHGSurveysError(error_message, code=205)
         new_purge['pump_type_id'] = pump_type_id
 
         # --- Get and check purge_outflow
@@ -617,7 +617,7 @@ def format_purge_imported_data(
                 is not valid."
                 """
                 ).format(imported_survey_name)
-            raise ImportHGSurveysError(error_message, code=12)
+            raise ImportHGSurveysError(error_message, code=206)
         new_purge['purge_outflow'] = purge_outflow
 
         pumping_depth = purge_seq_data['pumping_depth']
@@ -631,7 +631,7 @@ def format_purge_imported_data(
                     is not valid.
                     """
                     ).format(imported_survey_name)
-                raise ImportHGSurveysError(error_message, code=13)
+                raise ImportHGSurveysError(error_message, code=207)
         new_purge['pumping_depth'] = pumping_depth
 
         water_level_drawdown = purge_seq_data['water_level_drawdown']
@@ -645,7 +645,7 @@ def format_purge_imported_data(
                     is not valid.
                     """
                     ).format(imported_survey_name)
-                raise ImportHGSurveysError(error_message, code=14)
+                raise ImportHGSurveysError(error_message, code=208)
         new_purge['water_level_drawdown'] = water_level_drawdown
 
         new_purges.append(new_purge)
@@ -683,7 +683,7 @@ def format_params_data_imported_data(
                 named <i>{}</i>.
                 """
                 ).format(imported_survey_name, param_name)
-            raise ImportHGSurveysError(error_message, code=14)
+            raise ImportHGSurveysError(error_message, code=302)
         new_param_value['hg_param_id'] = hg_param_id
 
         # --- Get and check meas_units_id
@@ -699,7 +699,7 @@ def format_params_data_imported_data(
                 for the parameter <i>{}</i> is not valid.
                 """
                 ).format(imported_survey_name, param_name)
-            raise ImportHGSurveysError(error_message, code=15)
+            raise ImportHGSurveysError(error_message, code=303)
         new_param_value['meas_units_id'] = meas_units_id
 
         # --- Get and check hg_param_value.
@@ -714,7 +714,7 @@ def format_params_data_imported_data(
                 for the parameter <i>{}</i> is not valid.
                 """
                 )
-            raise ImportHGSurveysError(error_message, code=16)
+            raise ImportHGSurveysError(error_message, code=304)
         new_param_value['hg_param_value'] = hg_param_value
 
         new_param_values.append(new_param_value)
