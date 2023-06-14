@@ -717,7 +717,7 @@ def format_params_data_imported_data(
         hg_param_value = new_param_data['hg_param_value']
         try:
             assert hg_param_value is not None
-            float(hg_param_value.replace('<', '').replace('>', ''))
+            float(str(hg_param_value).replace('<', '').replace('>', ''))
         except (AssertionError, ValueError):
             error_message = _(
                 """
@@ -726,11 +726,11 @@ def format_params_data_imported_data(
                 """
                 )
             raise ImportHGSurveysError(error_message, code=304)
-        new_param_value['hg_param_value'] = hg_param_value
+        new_param_value['hg_param_value'] = str(hg_param_value)
 
         new_param_values.append(new_param_value)
 
-        return new_param_values
+    return new_param_values
 
 
 if __name__ == '__main__':
