@@ -344,11 +344,16 @@ def test_format_params_data_imported_data(dbaccessor):
         'measurement_units_data': dbaccessor.get('measurement_units'),
         'hg_params_data': dbaccessor.get('hg_params'),
         }
-    data = [{
-        'hg_param_name': None,
-        'hg_param_value': None,
-        'meas_units_abb': None
-        }]
+    data = [
+        {'hg_param_name': 'param in-situ #1',
+         'hg_param_value': 25,
+         'meas_units_abb': '‰'
+         },
+        {'hg_param_name': None,
+         'hg_param_value': None,
+         'meas_units_abb': None
+         },
+        ]
 
     # The hg_param_name is not valid.
     with pytest.raises(ImportHGSurveysError) as excinfo:
@@ -356,20 +361,20 @@ def test_format_params_data_imported_data(dbaccessor):
     assert excinfo.value.code == 301
 
     # The hg_param_name is not found.
-    data[0]['hg_param_name'] = 'no match dummy'
+    data[1]['hg_param_name'] = 'no match dummy'
 
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_params_data_imported_data('survey_test', data, **kwargs)
     assert excinfo.value.code == 302
 
-    data[0]['hg_param_name'] = 'param in-situ #2'
+    data[1]['hg_param_name'] = 'param in-situ #2'
 
     # The meas_units_abb is not found.
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_params_data_imported_data('survey_test', data, **kwargs)
     assert excinfo.value.code == 303
 
-    data[0]['meas_units_abb'] = '‰'
+    data[1]['meas_units_abb'] = '‰'
 
     # The hg_param_value is None.
     with pytest.raises(ImportHGSurveysError) as excinfo:
@@ -377,22 +382,27 @@ def test_format_params_data_imported_data(dbaccessor):
     assert excinfo.value.code == 304
 
     # The hg_param_value is not valid.
-    data[0]['hg_param_value'] = 'dummy'
+    data[1]['hg_param_value'] = 'dummy'
 
     with pytest.raises(ImportHGSurveysError) as excinfo:
         format_params_data_imported_data('survey_test', data, **kwargs)
     assert excinfo.value.code == 304
 
-    data[0]['hg_param_value'] = '< 304'
+    data[1]['hg_param_value'] = '< 304'
 
     # The next call should not raise any error.
     fmt_data = format_params_data_imported_data('survey_test', data, **kwargs)
-    assert fmt_data == [{
-        'hg_survey_id': 'survey_test',
-        'hg_param_id': 2,
-        'meas_units_id': 3,
-        'hg_param_value': '< 304'
-        }]
+    assert fmt_data == [
+        {'hg_survey_id': 'survey_test',
+         'hg_param_id': 1,
+         'meas_units_id': 3,
+         'hg_param_value': '25'
+         },
+        {'hg_survey_id': 'survey_test',
+         'hg_param_id': 2,
+         'meas_units_id': 3,
+         'hg_param_value': '< 304'
+         }]
 
 
 if __name__ == "__main__":
