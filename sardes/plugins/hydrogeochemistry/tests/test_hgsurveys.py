@@ -85,6 +85,9 @@ def test_read_hgsurvey_data():
 
 
 def test_format_hgsurvey_imported_data(dbaccessor):
+    """
+    Test that formatting imported HG survey data is working as expected.
+    """
     kwargs = {
         'hg_surveys_data': dbaccessor.get('hg_surveys'),
         'stations_data': dbaccessor.get('observation_wells_data'),
@@ -201,6 +204,9 @@ def test_format_hgsurvey_imported_data(dbaccessor):
 
 
 def test_format_purge_imported_data(dbaccessor):
+    """
+    Test that formatting imported HG survey data is working as expected.
+    """
     kwargs = {
         'pump_type_data': dbaccessor.get('pump_types'),
         }
@@ -331,6 +337,9 @@ def test_format_purge_imported_data(dbaccessor):
 
 
 def test_format_params_data_imported_data(dbaccessor):
+    """
+    Test that formatting imported HG survey data is working as expected.
+    """
     kwargs = {
         'measurement_units_data': dbaccessor.get('measurement_units'),
         'hg_params_data': dbaccessor.get('hg_params'),
