@@ -664,7 +664,9 @@ def format_params_data_imported_data(
     """
     new_param_values = []
     for new_param_data in imported_param_data:
-        new_param_value = {}
+        new_param_value = {
+            'hg_survey_id': imported_survey_name
+            }
 
         # --- Get and check hg_param_name
         param_name = new_param_data['hg_param_name']
@@ -681,7 +683,7 @@ def format_params_data_imported_data(
             regex = row.hg_param_regex
             if regex is None or '':
                 continue
-            if len(re.findall(regex, param_name)) > 0:
+            if re.match(regex, param_name, flags=re.IGNORECASE) is not None:
                 hg_param_id = index
                 break
         else:
@@ -712,7 +714,7 @@ def format_params_data_imported_data(
         new_param_value['meas_units_id'] = meas_units_id
 
         # --- Get and check hg_param_value.
-        hg_param_value = new_param_data['meas_units_abb']
+        hg_param_value = new_param_data['hg_param_value']
         try:
             assert hg_param_value is not None
             float(hg_param_value.replace('<', '').replace('>', ''))
