@@ -122,6 +122,7 @@ class HGSurveyImportManager(QObject):
         """
         Import HG surveys from an XLSX file and add them to the database.
         """
+        self.import_dialog.start_importing()
         imported_surveys_data = read_hgsurvey_data(
             self.import_dialog.input_file_pathbox.path()
             )
@@ -147,10 +148,11 @@ class HGSurveyImportManager(QObject):
                 """
                 ).format(response.message)
             self.import_dialog.show_import_error_message(message)
+            self.import_dialog.stop_importing(_(
+                "Failed to import HG surveys into the database."))
+
         else:
-            message = "<h3>" + _("Import Successful") + "</h3>"
-            message += "<p>" + response + "</p>"
-            self.import_dialog.show_success_dialog(message)
+            self.import_dialog.stop_importing(response)
 
 
 class HGSurveyImportDialog(QDialog):
@@ -272,14 +274,12 @@ class HGSurveyImportDialog(QDialog):
 
         self.unsaved_changes_dialog = create_msg_dialog('SP_MessageBoxWarning')
         self.import_error_dialog = create_msg_dialog('SP_MessageBoxCritical')
-        self.success_dialog = create_msg_dialog('SP_MessageBoxInformation')
 
         # Setup the stacked widget.
         self.stackwidget = QStackedWidget()
         self.stackwidget.addWidget(base_widget)
         self.stackwidget.addWidget(self.unsaved_changes_dialog)
         self.stackwidget.addWidget(self.import_error_dialog)
-        self.stackwidget.addWidget(self.success_dialog)
         self.stackwidget.setMinimumHeight(100)
 
         main_layout = QVBoxLayout(self)
@@ -321,12 +321,6 @@ class HGSurveyImportDialog(QDialog):
         self.stackwidget.setCurrentWidget(self.unsaved_changes_dialog)
         QApplication.beep()
 
-    def show_success_dialog(self, message: str):
-        for btn in self._buttons:
-            btn.setVisible(btn == self.ok_err_btn)
-        self.success_dialog.show_fail_icon(message)
-        self.stackwidget.setCurrentWidget(self.success_dialog)
-
     def close_message_dialogs(self):
         """
         Close all message dialogs and show the main interface.
@@ -343,9 +337,9 @@ class HGSurveyImportDialog(QDialog):
         self.input_file_label.setEnabled(False)
         self.input_file_pathbox.setEnabled(False)
         self.button_box.setEnabled(False)
-        self.status_bar.show(_("Reading HG survey data..."))
+        self.status_bar.show(_("Importing HG survey data..."))
 
-    def stop_importing(self):
+    def stop_importing(self, message: str):
         """
         Start the publishing of the piezometric network.
         """
@@ -353,7 +347,7 @@ class HGSurveyImportDialog(QDialog):
         self._import_in_progress = False
         self.input_file_pathbox.setEnabled(True)
         self.button_box.setEnabled(True)
-        self.status_bar.show(_("Reading HG survey data..."))
+        self.status_bar.show_sucess_icon(message)
 
     # ---- Handlers
     def _handle_continue_import(self):
