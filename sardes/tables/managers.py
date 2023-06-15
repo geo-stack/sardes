@@ -64,7 +64,7 @@ class SardesTableModelsManager(QObject):
     # ---- Public Interface
     def get_table_model(self, name: str) -> StandardSardesTableModel:
         """Return the table model whose name is name."""
-        return self._table_models(name)
+        return self._table_models[name]
 
     def table_models(self) -> list[StandardSardesTableModel]:
         """Return the list of table models registered to this manager."""
