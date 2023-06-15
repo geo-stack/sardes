@@ -78,6 +78,7 @@ class HGSurveyImportManager(QObject):
         self.import_dialog.close()
 
     def _get_unsaved_tabletitles(self) -> list(StandardSardesTableModel):
+        """Return the list of table names that contain unsaved changes."""
         unsaved_models = []
         names = ['table_hg_surveys', 'table_purges', 'table_hg_param_values']
         for name in names:
@@ -89,8 +90,7 @@ class HGSurveyImportManager(QObject):
     def _handle_import_request(self):
         """Handle import HG surveys requests."""
         # Get the list of relevant HG table models with unsaved changes.
-        # unsaved_models = self._get_unsaved_tabletitles()
-        unsaved_models = ['HG Surveys', 'Purges', 'HG Params Value']
+        unsaved_models = self._get_unsaved_tabletitles()
         if len(unsaved_models) == 0:
             self._import_hg_surveys()
             return
@@ -119,6 +119,9 @@ class HGSurveyImportManager(QObject):
             )
 
     def _import_hg_surveys(self):
+        """
+        Import HG surveys from an XLSX file and add them to the database.
+        """
         imported_surveys_data = read_hgsurvey_data(
             self.import_dialog.input_file_pathbox.path()
             )
@@ -127,13 +130,13 @@ class HGSurveyImportManager(QObject):
             callback=self._handle_import_hg_surveys_results
             )
 
-    def _handle_import_hg_surveys_results(self, error):
+    def _handle_import_hg_surveys_results(self, response):
         """
         Handle the check foreign constraints results.
         """
-        if error is not None:
-            # Display the import error message to the user.
-            message = (
+        # Display the import error message to the user.
+        if isinstance(response, ImportHGSurveysError):
+            message = _(
                 """
                 <h3>Import Error</h3>
                 <p>{}</p>
@@ -142,8 +145,10 @@ class HGSurveyImportManager(QObject):
                   and try importing your data again.
                 </p>
                 """
-                ).format(error.message)
+                ).format(response.message)
             self.import_dialog.show_import_error_message(message)
+        else:
+            self.import_dialog.show_success_dialog(response)
 
 
 class HGSurveyImportDialog(QDialog):
@@ -265,12 +270,14 @@ class HGSurveyImportDialog(QDialog):
 
         self.unsaved_changes_dialog = create_msg_dialog('SP_MessageBoxWarning')
         self.import_error_dialog = create_msg_dialog('SP_MessageBoxCritical')
+        self.success_dialog = create_msg_dialog('SP_MessageBoxInformation')
 
         # Setup the stacked widget.
         self.stackwidget = QStackedWidget()
         self.stackwidget.addWidget(base_widget)
         self.stackwidget.addWidget(self.unsaved_changes_dialog)
         self.stackwidget.addWidget(self.import_error_dialog)
+        self.stackwidget.addWidget(self.success_dialog)
         self.stackwidget.setMinimumHeight(100)
 
         main_layout = QVBoxLayout(self)
@@ -303,6 +310,12 @@ class HGSurveyImportDialog(QDialog):
         self.unsaved_changes_dialog.show_fail_icon(message)
         self.stackwidget.setCurrentWidget(self.unsaved_changes_dialog)
         QApplication.beep()
+
+    def show_success_dialog(self, message: str):
+        for btn in self._buttons:
+            btn.setVisible(btn == self.ok_err_btn)
+        self.success_dialog.show_fail_icon(message)
+        self.stackwidget.setCurrentWidget(self.success_dialog)
 
     def close_message_dialogs(self):
         """
