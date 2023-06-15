@@ -787,15 +787,12 @@ class DatabaseConnectionWorker(WorkerBase):
         self.db_accessor.add(
             'hg_param_values', new_hg_param_vals, auto_commit=True)
 
-        message = "<h3>" + _("Import Successful") + "</h3>"
-        message += "<p>"
         if len(imported_survey_data) == 1:
-            message += _("1 new HG survey was added to the database.")
+            message = _("1 new HG survey was added to the database.")
         else:
-            message += _(
+            message = _(
                 "{} new HG surveys were added to the database."
                 ).format(len(imported_survey_data))
-        message += "</p>"
         return message,
 
 

@@ -148,7 +148,9 @@ class HGSurveyImportManager(QObject):
                 ).format(response.message)
             self.import_dialog.show_import_error_message(message)
         else:
-            self.import_dialog.show_success_dialog(response)
+            message = "<h3>" + _("Import Successful") + "</h3>"
+            message += "<p>" + response + "</p>"
+            self.import_dialog.show_success_dialog(message)
 
 
 class HGSurveyImportDialog(QDialog):
