@@ -122,12 +122,10 @@ class HGSurveyImportManager(QObject):
         imported_surveys_data = read_hgsurvey_data(
             self.import_dialog.input_file_pathbox.path()
             )
-        self.plugin.main.db_connection_manager.add_task(
-            'add_hg_survey_data',
-            self._handle_import_hg_surveys_results,
-            imported_surveys_data
+        self.plugin.main.db_connection_manager.add_hg_survey_data(
+            imported_surveys_data,
+            callback=self._handle_import_hg_surveys_results
             )
-        self.plugin.main.db_connection_manager.run_tasks()
 
     def _handle_import_hg_surveys_results(self, error):
         """

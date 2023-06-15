@@ -720,8 +720,6 @@ class DatabaseConnectionWorker(WorkerBase):
             format_params_data_imported_data
             )
 
-        # We want to make sure to get the latest version of the data from
-        # the database.
         hg_surveys_data, = self._get('hg_surveys')
         stations_data, = self._get('observation_wells_data')
         hg_sampling_methods_data, = self._get('hg_sampling_methods')
@@ -758,6 +756,11 @@ class DatabaseConnectionWorker(WorkerBase):
                         ))
             except ImportHGSurveysError as e:
                 return e,
+
+        # Clear the cache.
+        for name in ['hg_surveys', 'purges', 'hg_param_values']:
+            if name in self._cache:
+                del self._cache[name]
 
         # We first add the new HG surveys to the database.
         indexes = self.db_accessor.add(
@@ -1095,6 +1098,7 @@ class DatabaseConnectionManager(TaskManagerBase):
         Handle when all tasks that needed to be run by the worker are
         completed.
         """
+        print(self._data_changed)
         if len(self._data_changed):
             self.sig_database_data_changed.emit(list(self._data_changed))
             self._data_changed = set()
@@ -1103,7 +1107,7 @@ class DatabaseConnectionManager(TaskManagerBase):
                 list(self._tseries_data_changed))
             self._tseries_data_changed = set()
 
-    # ---- Publish Network Data
+    # ---- Other
     def publish_to_kml(self, filename, iri_data=None, iri_logs=None,
                        iri_graphs=None, iri_quality=None, callback=None,
                        postpone_exec=False):
@@ -1112,6 +1116,19 @@ class DatabaseConnectionManager(TaskManagerBase):
         """
         self.add_task('publish_to_kml', callback, filename,
                       iri_data, iri_logs, iri_graphs, iri_quality)
+        if not postpone_exec:
+            self.run_tasks()
+
+    def add_hg_survey_data(self, imported_survey_data: dict(dict),
+                           callback: Callable = None,
+                           postpone_exec: bool = False):
+        """
+        Add HG survey data imported from a XLSX file.
+        """
+        self._data_changed.add('hg_surveys')
+        self._data_changed.add('purges')
+        self._data_changed.add('hg_param_values')
+        self.add_task('add_hg_survey_data', callback, imported_survey_data)
         if not postpone_exec:
             self.run_tasks()
 
