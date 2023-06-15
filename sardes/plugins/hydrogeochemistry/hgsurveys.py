@@ -289,11 +289,18 @@ class HGSurveyImportDialog(QDialog):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
+    def show(self):
+        """Overide Qt method."""
+        super().show()
+        self.activateWindow()
+        self.raise_()
+
     # ---- Public Interface
     def show_import_error_message(self, message: str):
         """
         Show the message of an error that occured during the import process.
         """
+        self.show()
         for btn in self._buttons:
             btn.setVisible(btn == self.ok_err_btn)
         self.import_error_dialog.show_fail_icon(message)
@@ -305,6 +312,7 @@ class HGSurveyImportDialog(QDialog):
         Show a message to warn the user that there are unsaved changes in
         some tables that will be lost after importing hg survey data.
         """
+        self.show()
         self.import_btn.setVisible(False)
         self.close_btn.setVisible(False)
         self.cancel_btn.setVisible(True)
@@ -341,6 +349,7 @@ class HGSurveyImportDialog(QDialog):
         """
         Start the publishing of the piezometric network.
         """
+        self.show()
         self._import_in_progress = False
         self.input_file_pathbox.setEnabled(True)
         self.button_box.setEnabled(True)
@@ -370,17 +379,6 @@ class HGSurveyImportDialog(QDialog):
     def _handle_xlsxfile_selected(self, path):
         """Handle when a new hg survey input xlsx file is selected."""
         self.import_btn.setEnabled(osp.exists(path) and osp.isfile(path))
-
-    def closeEvent(self, event):
-        """
-        Override Qt method to prevent closing this dialog when the piezometric
-        network is being published.
-        """
-        if self._import_in_progress:
-            QApplication.beep()
-            event.ignore()
-        else:
-            super().closeEvent(event)
 
 
 def read_hgsurvey_data(filename: str) -> dict(dict):
