@@ -788,10 +788,12 @@ class DatabaseConnectionWorker(WorkerBase):
             'hg_param_values', new_hg_param_vals, auto_commit=True)
 
         if len(imported_survey_data) == 1:
-            message = _("1 new HG survey was added to the database.")
+            message = _(
+                "1 new survey has been imported into the database."
+                )
         else:
             message = _(
-                "{} new HG surveys were added to the database."
+                "{} new surveys have been imported into the database."
                 ).format(len(imported_survey_data))
         return message,
 
