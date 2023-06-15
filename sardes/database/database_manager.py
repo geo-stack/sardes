@@ -732,8 +732,8 @@ class DatabaseConnectionWorker(WorkerBase):
         new_hg_surveys = []
         new_purges = []
         new_hg_param_vals = []
+
         for sheet_name, sheet_data in imported_survey_data.items():
-            # imported_paramval_data = sheet_data['hg_param_values_data']
             try:
                 new_hg_surveys.append(
                     format_hg_survey_imported_data(
@@ -743,13 +743,13 @@ class DatabaseConnectionWorker(WorkerBase):
                         stations_data,
                         hg_sampling_methods_data
                         ))
-                new_purges.append(
+                new_purges.extend(
                     format_purge_imported_data(
                         sheet_name,
                         sheet_data['purges_data'],
                         pump_types_data
                         ))
-                new_hg_param_vals.append(
+                new_hg_param_vals.extend(
                     format_params_data_imported_data(
                         sheet_name,
                         sheet_data['hg_param_values_data'],
@@ -758,6 +758,31 @@ class DatabaseConnectionWorker(WorkerBase):
                         ))
             except ImportHGSurveysError as e:
                 return e,
+
+        # We first add the new HG surveys to the database.
+        indexes = self.db_accessor.add(
+            'hg_surveys', new_hg_surveys, auto_commit=False)
+
+        # Substitute the right HG survey id for the purges and HG param values.
+        sheet_names = list(imported_survey_data.keys())
+        indexes_map = {
+            sheet_name: hg_survey_id for
+            sheet_name, hg_survey_id in
+            zip(sheet_names, indexes)
+            }
+
+        for new_purge in new_purges:
+            new_purge['hg_survey_id'] = indexes_map[
+                new_purge['hg_survey_id']]
+        for new_hg_param_val in new_hg_param_vals:
+            new_hg_param_val['hg_survey_id'] = indexes_map[
+                new_hg_param_val['hg_survey_id']]
+
+        # Add the new purges and HG parameter values to the database.
+        self.db_accessor.add(
+            'purges', new_purges, auto_commit=False)
+        self.db_accessor.add(
+            'hg_param_values', new_hg_param_vals, auto_commit=True)
 
         return None,
 
