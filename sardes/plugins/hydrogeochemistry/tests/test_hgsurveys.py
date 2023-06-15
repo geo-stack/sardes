@@ -39,7 +39,7 @@ def test_read_hgsurvey_data():
     """
     xlsx_filename = osp.join(
         __rootdir__, 'plugins', 'hydrogeochemistry', 'tests',
-        'test_releve_hydrogeochimique.xlsx')
+        'test_read_hgsurveys.xlsx')
 
     data_surveys = read_hgsurvey_data(xlsx_filename)
     for name in ['relevé x', 'relevé x (2)']:
