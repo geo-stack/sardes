@@ -1104,7 +1104,6 @@ class DatabaseConnectionManager(TaskManagerBase):
         Handle when all tasks that needed to be run by the worker are
         completed.
         """
-        print(self._data_changed)
         if len(self._data_changed):
             self.sig_database_data_changed.emit(list(self._data_changed))
             self._data_changed = set()
