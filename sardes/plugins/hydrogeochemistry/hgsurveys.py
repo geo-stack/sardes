@@ -30,6 +30,7 @@ from sardes.config.icons import (
     get_icon, get_standard_iconsize, get_standard_icon)
 from sardes.config.locale import _
 from sardes.widgets.statusbar import ProcessStatusBar
+from sardes.widgets.dialogs import UserMessageDialogBase
 from sardes.utils.qthelpers import format_tooltip
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.path import PathBoxWidget
@@ -155,7 +156,7 @@ class HGSurveyImportManager(QObject):
             self.import_dialog.stop_importing(response, success=True)
 
 
-class HGSurveyImportDialog(QDialog):
+class HGSurveyImportDialog(UserMessageDialogBase):
     """
     A dialog window to import hg surveys from an Excel Workbook.
     """
@@ -166,18 +167,13 @@ class HGSurveyImportDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(_('Import HG Surveys'))
-        self.setWindowFlags(
-            self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setWindowIcon(get_icon('master'))
         self.setModal(False)
         self.setWindowModality(Qt.ApplicationModal)
 
         self._import_in_progress = False
 
-        self.__setup__()
-
-    def __setup__(self):
-        """Setup the dialog with the provided settings."""
+        # Setup the input file path widget.
         self.input_file_pathbox = PathBoxWidget(
             path_type='getOpenFileName',
             filters="Excel Workbook (*.xlsx)")
@@ -197,137 +193,67 @@ class HGSurveyImportDialog(QDialog):
         self.status_bar.hide()
 
         # Setup the dialog button box.
-        self.import_btn = QPushButton(_('Import'))
-        self.import_btn.setDefault(True)
-        self.import_btn.clicked.connect(
-            lambda: self.sig_import_request.emit(True))
-        self.import_btn.setEnabled(False)
-
-        self.close_btn = QPushButton(_('Close'))
-        self.close_btn.setDefault(False)
-        self.close_btn.setAutoDefault(False)
-        self.close_btn.clicked.connect(self.close)
-
-        self.cancel_btn = QPushButton(_('Cancel'))
-        self.cancel_btn.setDefault(False)
-        self.cancel_btn.setAutoDefault(False)
-        self.cancel_btn.clicked.connect(
-            lambda: self._handle_cancel_import())
-        self.cancel_btn.setVisible(False)
-
-        self.continue_btn = QPushButton(_('Continue'))
-        self.continue_btn.setDefault(False)
-        self.continue_btn.setAutoDefault(False)
-        self.continue_btn.clicked.connect(
-            lambda: self._handle_continue_import())
-        self.continue_btn.setVisible(False)
-
-        self.ok_err_btn = QPushButton(_('Ok'))
-        self.ok_err_btn.setDefault(False)
-        self.ok_err_btn.setAutoDefault(False)
-        self.ok_err_btn.clicked.connect(self.close_message_dialogs)
-        self.ok_err_btn.setVisible(False)
-
-        self._buttons = [
-            self.import_btn,
-            self.close_btn,
-            self.cancel_btn,
-            self.continue_btn,
-            self.ok_err_btn
-            ]
-
-        self.button_box = QDialogButtonBox()
-        self.button_box.layout().addStretch(1)
-        for btn in self._buttons:
-            self.button_box.layout().addWidget(btn)
-        self.button_box.layout().setContentsMargins(
-            *get_default_contents_margins())
+        self.import_btn = self.create_button(
+            _('Import'), enabled=False, default=True,
+            triggered=lambda: self.sig_import_request.emit(True)
+            )
+        self.close_btn = self.create_button(
+            _('Close'), enabled=True, default=False,
+            triggered=self.close
+            )
+        self.add_button(self.import_btn)
+        self.add_button(self.close_btn)
 
         # Setup the main widget.
         self.input_file_label = QLabel(
             _("Select a valid hg survey input file :"))
 
-        base_widget = QWidget()
-        base_layout = QVBoxLayout(base_widget)
-        base_layout.addWidget(self.input_file_label)
-        base_layout.addWidget(self.input_file_pathbox)
-        base_layout.addWidget(self.status_bar)
-        base_layout.addStretch(1)
+        self.central_layout.addWidget(self.input_file_label)
+        self.central_layout.addWidget(self.input_file_pathbox)
+        self.central_layout.addWidget(self.status_bar)
+        self.central_layout.addStretch(1)
 
-        # Setup the warning and error message dialogs.
-        def create_msg_dialog(std_icon_name: str):
-            dialog = ProcessStatusBar(
-                spacing=10,
-                icon_valign='top',
-                vsize_policy='expanding',
-                text_valign='top',
-                iconsize=get_standard_iconsize('messagebox'),
-                contents_margin=get_default_contents_margins())
-            dialog.set_icon('failed', get_standard_icon(std_icon_name))
-            dialog.setAutoFillBackground(True)
+        # Setup the unsaved warning message dialog.
+        self.cancel_btn = self.create_button(
+            _('Cancel'), enabled=True, default=False, visible=False,
+            triggered=lambda: self._handle_cancel_import()
+            )
+        self.continue_btn = self.create_button(
+            _('Continue'), enabled=True, default=False, visible=False,
+            triggered=lambda: self._handle_continue_import()
+            )
+        self.unsaved_changes_dialog = self.create_msg_dialog(
+            std_icon_name='SP_MessageBoxWarning',
+            buttons=[self.continue_btn, self.cancel_btn]
+            )
+        self.add_msg_dialog(self.unsaved_changes_dialog)
 
-            palette = QApplication.instance().palette()
-            palette.setColor(dialog.backgroundRole(), palette.light().color())
-            dialog.setPalette(palette)
-
-            return dialog
-
-        self.unsaved_changes_dialog = create_msg_dialog('SP_MessageBoxWarning')
-        self.import_error_dialog = create_msg_dialog('SP_MessageBoxCritical')
-
-        # Setup the stacked widget.
-        self.stackwidget = QStackedWidget()
-        self.stackwidget.addWidget(base_widget)
-        self.stackwidget.addWidget(self.unsaved_changes_dialog)
-        self.stackwidget.addWidget(self.import_error_dialog)
-        self.stackwidget.setMinimumHeight(100)
-
-        main_layout = QVBoxLayout(self)
-        main_layout.addWidget(self.stackwidget)
-        main_layout.addWidget(self.button_box)
-        main_layout.setSizeConstraint(main_layout.SetFixedSize)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
-
-    def show(self):
-        """Overide Qt method."""
-        super().show()
-        self.activateWindow()
-        self.raise_()
+        # Setup the import error dialog.
+        self.ok_err_btn = self.create_button(
+            _('Ok'), enabled=True, default=False, visible=False,
+            triggered=self.close_message_dialogs
+            )
+        self.import_error_dialog = self.create_msg_dialog(
+            std_icon_name='SP_MessageBoxCritical',
+            buttons=[self.ok_err_btn]
+            )
+        self.add_msg_dialog(self.import_error_dialog)
 
     # ---- Public Interface
     def show_import_error_message(self, message: str):
         """
         Show the message of an error that occured during the import process.
         """
-        self.show()
-        for btn in self._buttons:
-            btn.setVisible(btn == self.ok_err_btn)
-        self.import_error_dialog.show_fail_icon(message)
-        self.stackwidget.setCurrentWidget(self.import_error_dialog)
-        QApplication.beep()
+        self.show_message_dialog(
+            self.import_error_dialog, message, beep=True)
 
     def show_unsaved_changes_dialog(self, message: str):
         """
         Show a message to warn the user that there are unsaved changes in
         some tables that will be lost after importing hg survey data.
         """
-        self.show()
-        self.import_btn.setVisible(False)
-        self.close_btn.setVisible(False)
-        self.cancel_btn.setVisible(True)
-        self.continue_btn.setVisible(True)
-        self.unsaved_changes_dialog.show_fail_icon(message)
-        self.stackwidget.setCurrentWidget(self.unsaved_changes_dialog)
-        QApplication.beep()
-
-    def close_message_dialogs(self):
-        """
-        Close all message dialogs and show the main interface.
-        """
-        for btn in self._buttons:
-            btn.setVisible(btn in (self.import_btn, self.close_btn))
-        self.stackwidget.setCurrentIndex(0)
+        self.show_message_dialog(
+            self.unsaved_changes_dialog, message, beep=True)
 
     def start_importing(self):
         """
