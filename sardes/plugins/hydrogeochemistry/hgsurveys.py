@@ -148,11 +148,11 @@ class HGSurveyImportManager(QObject):
                 """
                 ).format(response.message)
             self.import_dialog.show_import_error_message(message)
-            self.import_dialog.stop_importing(_(
-                "Failed to import HG surveys into the database."))
-
+            self.import_dialog.stop_importing(
+                _("Failed to import HG surveys into the database."),
+                success=False)
         else:
-            self.import_dialog.stop_importing(response)
+            self.import_dialog.stop_importing(response, success=True)
 
 
 class HGSurveyImportDialog(QDialog):
@@ -339,7 +339,7 @@ class HGSurveyImportDialog(QDialog):
         self.button_box.setEnabled(False)
         self.status_bar.show(_("Importing HG survey data..."))
 
-    def stop_importing(self, message: str):
+    def stop_importing(self, message: str, success: bool):
         """
         Start the publishing of the piezometric network.
         """
@@ -347,7 +347,10 @@ class HGSurveyImportDialog(QDialog):
         self._import_in_progress = False
         self.input_file_pathbox.setEnabled(True)
         self.button_box.setEnabled(True)
-        self.status_bar.show_sucess_icon(message)
+        if success is True:
+            self.status_bar.show_sucess_icon(message)
+        else:
+            self.status_bar.show_fail_icon(message)
 
     # ---- Handlers
     def _handle_continue_import(self):
