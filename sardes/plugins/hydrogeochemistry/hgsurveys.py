@@ -21,20 +21,16 @@ import re
 import pandas as pd
 import openpyxl
 from qtpy.QtCore import Qt, Signal, QObject
-from qtpy.QtWidgets import (
-    QDialog, QDialogButtonBox, QLabel, QPushButton, QVBoxLayout,
-    QStackedWidget, QWidget, QApplication)
+from qtpy.QtWidgets import QLabel, QApplication
 
 # ---- Local imports
-from sardes.config.icons import (
-    get_icon, get_standard_iconsize, get_standard_icon)
+from sardes.config.icons import get_icon
 from sardes.config.locale import _
 from sardes.widgets.statusbar import ProcessStatusBar
 from sardes.widgets.dialogs import UserMessageDialogBase
 from sardes.utils.qthelpers import format_tooltip
 from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.path import PathBoxWidget
-from sardes.utils.qthelpers import get_default_contents_margins
 from sardes.database.accessors.accessor_errors import ImportHGSurveysError
 
 
