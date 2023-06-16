@@ -78,6 +78,9 @@ def test_add_hg_survey_data(mainwindow, qtbot, mocker, dbaccessor):
 
     assert dialog.isVisible() is True
     assert dialog.import_btn.isEnabled() is False
+    assert dialog.import_btn.isVisible()
+    assert dialog.close_btn.isEnabled() is True
+    assert dialog.close_btn.isVisible()
     assert dialog.input_file_pathbox.path() == ''
 
     # Select a input XLSX file.
