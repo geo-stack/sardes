@@ -125,26 +125,6 @@ def test_import_hg_survey_error(mainwindow, qtbot, mocker, dbaccessor):
         'test_save_hgsurveys.xlsx')
     dialog.input_file_pathbox.set_path(fpath)
 
-    # Patch the DatabaseConnectionWorker to mock an import error.
-    mocker.patch.object(
-        DatabaseConnectionWorker,
-        '_add_hg_survey_data',
-        return_value=(ImportHGSurveysError('test_import_error', code=999),)
-        )
-
-    # Try importing the data and assert that an error message is shown.
-    assert dialog.import_error_dialog.isVisible() is False
-
-    qtbot.mouseClick(dialog.import_btn, Qt.LeftButton)
-    assert dialog._import_in_progress is True
-    qtbot.waitUntil(
-        lambda: dialog._import_in_progress is False
-        )
-
-    assert dialog.import_error_dialog.isVisible() is True
-    qtbot.mouseClick(dialog.ok_err_btn, Qt.LeftButton)
-    assert dialog.import_error_dialog.isVisible() is False
-
     # Patch the HGSurveyImportManager to mock unsaved table changes.
     mocker.patch.object(
         HGSurveyImportManager,
@@ -152,11 +132,80 @@ def test_import_hg_survey_error(mainwindow, qtbot, mocker, dbaccessor):
         return_value=(['Table#1, Table#2, Table #3'])
         )
 
+    # Patch the DatabaseConnectionWorker to mock an import error.
+    mocker.patch.object(
+        DatabaseConnectionWorker,
+        '_add_hg_survey_data',
+        return_value=(ImportHGSurveysError('test_import_error', code=999),)
+        )
+
     assert dialog.unsaved_changes_dialog.isVisible() is False
+    assert dialog.import_error_dialog.isVisible() is False
+    assert dialog.import_btn.isVisible() is True
+    assert dialog.close_btn.isVisible() is True
+    assert dialog.cancel_btn.isVisible() is False
+    assert dialog.continue_btn.isVisible() is False
+    assert dialog.ok_err_btn.isVisible() is False
+    assert dialog.status_bar.status == dialog.status_bar.HIDDEN
+
     qtbot.mouseClick(dialog.import_btn, Qt.LeftButton)
     assert dialog.unsaved_changes_dialog.isVisible() is True
+    assert dialog.import_error_dialog.isVisible() is False
+    assert dialog.import_btn.isVisible() is False
+    assert dialog.close_btn.isVisible() is False
+    assert dialog.cancel_btn.isVisible() is True
+    assert dialog.continue_btn.isVisible() is True
+    assert dialog.ok_err_btn.isVisible() is False
+    assert dialog.status_bar.status == dialog.status_bar.HIDDEN
+
+    qtbot.mouseClick(dialog.continue_btn, Qt.LeftButton)
+    assert dialog.unsaved_changes_dialog.isVisible() is False
+    assert dialog.import_error_dialog.isVisible() is False
+    assert dialog.import_btn.isVisible() is True
+    assert dialog.close_btn.isVisible() is True
+    assert dialog.cancel_btn.isVisible() is False
+    assert dialog.continue_btn.isVisible() is False
+    assert dialog.ok_err_btn.isVisible() is False
+    assert dialog._import_in_progress is True
+    assert dialog.status_bar.status == dialog.status_bar.IN_PROGRESS
+
+    qtbot.waitUntil(lambda: dialog._import_in_progress is False)
+    assert dialog.unsaved_changes_dialog.isVisible() is False
+    assert dialog.import_error_dialog.isVisible() is True
+    assert dialog.import_btn.isVisible() is False
+    assert dialog.close_btn.isVisible() is False
+    assert dialog.cancel_btn.isVisible() is False
+    assert dialog.continue_btn.isVisible() is False
+    assert dialog.ok_err_btn.isVisible() is True
+    assert dialog.status_bar.status == dialog.status_bar.PROCESS_FAILED
+
     qtbot.mouseClick(dialog.ok_err_btn, Qt.LeftButton)
     assert dialog.unsaved_changes_dialog.isVisible() is False
+    assert dialog.import_error_dialog.isVisible() is False
+    assert dialog.import_btn.isVisible() is True
+    assert dialog.close_btn.isVisible() is True
+    assert dialog.cancel_btn.isVisible() is False
+    assert dialog.continue_btn.isVisible() is False
+    assert dialog.ok_err_btn.isVisible() is False
+
+    # Patch the DatabaseConnectionWorker to mock a success.
+    mocker.patch.object(
+        DatabaseConnectionWorker,
+        '_add_hg_survey_data',
+        return_value=('test sucess import',)
+        )
+
+    qtbot.mouseClick(dialog.import_btn, Qt.LeftButton)
+    qtbot.mouseClick(dialog.continue_btn, Qt.LeftButton)
+    qtbot.waitUntil(lambda: dialog._import_in_progress is False)
+    assert dialog.unsaved_changes_dialog.isVisible() is False
+    assert dialog.import_error_dialog.isVisible() is False
+    assert dialog.import_btn.isVisible() is True
+    assert dialog.close_btn.isVisible() is True
+    assert dialog.cancel_btn.isVisible() is False
+    assert dialog.continue_btn.isVisible() is False
+    assert dialog.ok_err_btn.isVisible() is False
+    assert dialog.status_bar.status == dialog.status_bar.PROCESS_SUCCEEDED
 
 
 if __name__ == "__main__":
