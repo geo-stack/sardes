@@ -7,6 +7,7 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
+
 # ---- Local imports
 from sardes.config.main import CONF
 from sardes.api.plugins import SardesPlugin
@@ -14,7 +15,7 @@ from sardes.config.locale import _
 from sardes.widgets.tableviews import SardesStackedTableWidget
 from sardes.tables import (
     PurgesTableWidget, HGSurveysTableWidget, HGParamValuesTableWidget)
-
+from .hgsurveys import HGSurveyImportManager
 
 """Hydrogeochemistry plugin"""
 
@@ -22,11 +23,6 @@ from sardes.tables import (
 class Hydrogeochemistry(SardesPlugin):
 
     CONF_SECTION = 'hydrogeochemistry'
-
-    def __init__(self, parent):
-        super().__init__(parent)
-        self._tables = {}
-        self._setup_tables()
 
     # ---- SardesPlugin public API
     def current_table(self):
@@ -53,6 +49,13 @@ class Hydrogeochemistry(SardesPlugin):
         self.tabwidget = SardesStackedTableWidget(self.main)
         return self.tabwidget
 
+    def __post_init__(self):
+        self._tables = {}
+        self._setup_tables()
+
+        self.hgsurvey_import_manager = HGSurveyImportManager()
+        self.hgsurvey_import_manager.install_manager(self)
+
     def close_plugin(self):
         """
         Extend Sardes plugin method to save user inputs in the
@@ -74,6 +77,9 @@ class Hydrogeochemistry(SardesPlugin):
                      sort_by_columns)
             CONF.set(table_id, 'horiz_header/columns_sort_order',
                      columns_sort_order)
+
+        # Close the hgsurvey import manager.
+        self.hgsurvey_import_manager.close_manager()
 
     def register_plugin(self):
         """

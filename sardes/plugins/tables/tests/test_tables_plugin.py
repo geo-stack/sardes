@@ -12,9 +12,7 @@ Tests for the Tables plugin.
 """
 
 # ---- Standard imports
-import datetime
 import os
-import os.path as osp
 from unittest.mock import Mock
 os.environ['SARDES_PYTEST'] = 'True'
 
@@ -26,23 +24,12 @@ from qtpy.QtCore import Qt
 from sardes.config.main import CONF
 from sardes.plugins.tables import SARDES_PLUGIN_CLASS
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
-from sardes.database.accessors import DatabaseAccessorSardesLite
 from sardes.app.mainwindow import MainWindowBase
 
 
 # =============================================================================
 # ---- Fixtures
 # =============================================================================
-@pytest.fixture
-def dbaccessor(tmp_path, database_filler):
-    dbaccessor = DatabaseAccessorSardesLite(
-        osp.join(tmp_path, 'sqlite_database_test.db'))
-    dbaccessor.init_database()
-    database_filler(dbaccessor)
-
-    return dbaccessor
-
-
 @pytest.fixture
 def mainwindow(qtbot, mocker, dbaccessor):
     class MainWindowMock(MainWindowBase):

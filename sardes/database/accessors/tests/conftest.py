@@ -285,10 +285,10 @@ def pump_types():
 @pytest.fixture
 def hg_params():
     df = pd.DataFrame(
-        data=[['PARAM#1', 'Name param #1', 'PARAM#1 Regex', '111-0-11'],
-              ['PARAM#2', 'Name param #2', 'PARAM#2 Regex', '22-0-23'],
-              ['PARAM#3', 'Name param #3', 'PARAM#3 Regex', '34-5-12'],
-              ['PARAM#4', 'Name param #4', 'PARAM#4 Regex', '73-2-9']],
+        data=[['PARAM#1', 'Name param #1', 'PARAM(.*)?1', '111-0-11'],
+              ['PARAM#2', 'Name param #2', 'PARAM(.*)?2', '22-0-23'],
+              ['PARAM#3', 'Name param #3', 'PARAM(.*)?3', '34-5-12'],
+              ['PARAM#4', 'Name param #4', 'PARAM(.*)?4', '73-2-9']],
         index=[1, 2, 3, 4],
         columns=['hg_param_code', 'hg_param_name', 'hg_param_regex',
                  'cas_registry_number']
