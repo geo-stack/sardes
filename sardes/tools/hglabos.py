@@ -160,3 +160,42 @@ class HGSurveyImportDialog(UserMessageDialogBase):
         """Handle when a new hg lab report is selected."""
         self.import_btn.setEnabled(osp.exists(path) and osp.isfile(path))
 
+
+def read_hglab_report(filename: str) -> dict[list[dict]]:
+    """Read HG lab report data from a XLSX file."""
+    wb = openpyxl.load_workbook(filename, data_only=True)
+    sheet_names = wb.sheetnames
+
+    all_lab_reports = {}
+    for sheet_name in sheet_names:
+        new_lab_report = []
+
+        sheet = wb[sheet_name]
+
+        lab_report_date = sheet['C2'].value
+        lab_code = sheet['C3'].value
+
+        row = 6
+        while True:
+            if sheet[f'B{row}'].value is None:
+                break
+
+            new_lab_report.append({
+                'lab_report_date': lab_report_date,
+                'lab_code': lab_code,
+                'obs_well_id': sheet[f'B{row}'].value,
+                'hg_survey_datetime': sheet[f'C{row}'].value,
+                'lab_sample_id': sheet[f'D{row}'].value,
+                'hg_param_expr': sheet[f'E{row}'].value,
+                'hg_param_value': sheet[f'F{row}'].value,
+                'lim_detection': sheet[f'G{row}'].value,
+                'meas_units_abb': sheet[f'H{row}'].value,
+                'method': sheet[f'I{row}'].value,
+                'notes': sheet[f'J{row}'].value,
+                })
+            row += 1
+
+        all_lab_reports[sheet_name] = new_lab_report
+
+    return all_lab_reports
+
