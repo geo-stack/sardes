@@ -163,7 +163,7 @@ class HGSurveyImportDialog(UserMessageDialogBase):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(_('Import HG Surveys'))
-        self.setWindowIcon(get_icon('master'))
+        self.setWindowIcon(get_icon('import_geochemistry'))
         self.setModal(False)
         self.setWindowModality(Qt.ApplicationModal)
 
