@@ -67,15 +67,16 @@ class Hydrogeochemistry(SardesPlugin):
         self.set_option('last_focused_tab', self.tabwidget.currentIndex())
 
         # Save in the configs the state of the tables.
-        for table_id, table in self._tables.items():
-            CONF.set(table_id, 'horiz_header/state',
-                     table.get_table_horiz_header_state())
-
+        for table_name, table in self._tables.items():
             sort_by_columns, columns_sort_order = (
                 table.get_columns_sorting_state())
-            CONF.set(table_id, 'horiz_header/sort_by_columns',
+
+            CONF.set(table_name,
+                     'horiz_header/state',
+                     table.get_table_horiz_header_state())
+            CONF.set(table_name, 'horiz_header/sort_by_columns',
                      sort_by_columns)
-            CONF.set(table_id, 'horiz_header/columns_sort_order',
+            CONF.set(table_name, 'horiz_header/columns_sort_order',
                      columns_sort_order)
 
         # Close the hgsurvey import manager.
