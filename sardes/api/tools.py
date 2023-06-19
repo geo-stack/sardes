@@ -99,6 +99,7 @@ class SardesToolBase(QAction):
         """Close this tool."""
         if self._toolwidget is not None:
             self._toolwidget.close()
+        self.__on_close__()
 
     def hide(self):
         """Hide this tool."""
@@ -202,6 +203,12 @@ class SardesTool(SardesToolBase):
         method.
         """
         return self._text
+
+    def __on_close__(self):
+        """
+        A method that is called when the Sardes app is closed.
+        """
+        pass
 
 
 class SardesToolExample(SardesTool):
