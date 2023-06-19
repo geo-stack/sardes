@@ -200,15 +200,14 @@ class UserMessageDialogBase(QDialog):
 
         self._buttons = []
 
-        self.button_box = QDialogButtonBox()
-        self.button_box.layout().addStretch(1)
-        self.button_box.layout().setContentsMargins(
-            *get_default_contents_margins())
-
         # Setup the main widget.
         self.central_widget = QWidget()
         self.central_layout = QVBoxLayout(self.central_widget)
         self.central_layout.addStretch(1)
+
+        # Setup the button box.
+        self.button_box = QDialogButtonBox()
+        self.button_box.layout().addStretch(1)
 
         # Setup the stacked widget.
         self._dialogs = []
@@ -223,6 +222,11 @@ class UserMessageDialogBase(QDialog):
         main_layout.setSizeConstraint(main_layout.SetFixedSize)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
+
+        # We need to set the margins after adding the button box to the
+        # main layout or else, it has no effect.
+        self.button_box.layout().setContentsMargins(
+            *get_default_contents_margins())
 
     # ---- Helpers Methods
     def create_button(self, text: str, enabled: bool = True,
