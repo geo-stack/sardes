@@ -79,6 +79,8 @@ class Hydrogeochemistry(SardesPlugin):
             CONF.set(table_name, 'horiz_header/columns_sort_order',
                      columns_sort_order)
 
+            table.close()
+
         # Close the hgsurvey import manager.
         self.hgsurvey_import_manager.close_manager()
 

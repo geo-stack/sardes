@@ -81,6 +81,8 @@ class Tables(SardesPlugin):
                      'horiz_header/columns_sort_order',
                      columns_sort_order)
 
+            table.close()
+
     def register_plugin(self):
         """
         Extend base class method to do some connection with the database
