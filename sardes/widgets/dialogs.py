@@ -226,8 +226,7 @@ class UserMessageDialogBase(QDialog):
 
     # ---- Helpers Methods
     def create_button(self, text: str, enabled: bool = True,
-                      triggered: Callable = None, default: bool = False,
-                      visible: bool = True
+                      triggered: Callable = None, default: bool = False
                       ) -> QPushButton:
         """Create a pushbutton to add to the button box."""
         button = QPushButton(text)
@@ -236,7 +235,6 @@ class UserMessageDialogBase(QDialog):
         if triggered is not None:
             button.clicked.connect(triggered)
         button.setEnabled(enabled)
-        button.setVisible(visible)
         return button
 
     def add_button(self, button):
@@ -262,6 +260,10 @@ class UserMessageDialogBase(QDialog):
         palette = QApplication.instance().palette()
         palette.setColor(dialog.backgroundRole(), palette.light().color())
         dialog.setPalette(palette)
+
+        # Hide the buttons of the dialogs.
+        for btn in buttons:
+            btn.setVisible(False)
 
         return dialog
 

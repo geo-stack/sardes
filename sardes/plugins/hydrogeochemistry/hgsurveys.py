@@ -211,11 +211,11 @@ class HGSurveyImportDialog(UserMessageDialogBase):
 
         # Setup the unsaved warning message dialog.
         self.cancel_btn = self.create_button(
-            _('Cancel'), enabled=True, default=False, visible=False,
+            _('Cancel'), enabled=True, default=False,
             triggered=lambda: self._handle_cancel_import()
             )
         self.continue_btn = self.create_button(
-            _('Continue'), enabled=True, default=False, visible=False,
+            _('Continue'), enabled=True, default=False,
             triggered=lambda: self._handle_continue_import()
             )
         self.unsaved_changes_dialog = self.create_msg_dialog(
@@ -226,7 +226,7 @@ class HGSurveyImportDialog(UserMessageDialogBase):
 
         # Setup the import error dialog.
         self.ok_err_btn = self.create_button(
-            _('Ok'), enabled=True, default=False, visible=False,
+            _('Ok'), enabled=True, default=False,
             triggered=self.close_message_dialogs
             )
         self.import_error_dialog = self.create_msg_dialog(
