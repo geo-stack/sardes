@@ -598,7 +598,7 @@ def format_params_data_imported_data(
             'hg_survey_id': imported_survey_name
             }
 
-        # --- Get and check hg_param_name
+        # --- Get and check hg_param_id
         param_name = new_param_data['hg_param_name']
         if param_name is None or param_name == '':
             error_message = _(

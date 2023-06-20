@@ -199,3 +199,184 @@ def read_hglab_report(filename: str) -> dict[list[dict]]:
 
     return all_lab_reports
 
+
+def format_hglab_data(
+        all_lab_reports: dict,
+        observation_wells_data: pd.DataFrame,
+        hg_surveys_data: pd.DataFrame,
+        hg_params_data: pd.DataFrame,
+        measurement_units_data: pd.DataFrame,
+        hg_labs_data: pd.DataFrame,
+        ) -> list(dict):
+    """
+    Format HG lab report data that were read from a XLSX file.
+    """
+    fmt_hglab_data = []
+    for hglab_name, hglab_data in all_lab_reports.items():
+        for i, param_data in enumerate(hglab_data):
+            new_hg_param = {}
+
+            # --- Check lab report date and labo code.
+            lab_report_date = param_data['lab_report_date']
+            if (lab_report_date is not None and
+                    not isinstance(lab_report_date, datetime.datetime)):
+                error_message = _(
+                    """
+                    The date of the lab report <i>{}</i> is not valid.
+                    """
+                    ).format(hglab_name)
+            new_hg_param['lab_report_date'] = lab_report_date
+
+            lab_code = param_data['lab_code']
+            if lab_code is not None:
+                try:
+                    lab_id = hg_labs_data[
+                        hg_labs_data['lab_code'] == lab_code
+                        ].iloc[0].name
+                except IndexError:
+                    error_message = _(
+                        """
+                        The lab code of the lab report <i>{}</i>
+                        is not valid.
+                        """
+                        ).format(hglab_name, i + 1)
+                    raise ImportHGSurveysError(error_message, code=401)
+                new_hg_param['lab_id'] = lab_id
+            else:
+                new_hg_param['lab_id'] = None
+
+            # ---- Get sampling_feature_uuid
+            obs_well_id = param_data['obs_well_id']
+            try:
+                assert obs_well_id is not None
+                sampling_feature_uuid = observation_wells_data[
+                    observation_wells_data['obs_well_id'] == obs_well_id
+                    ].iloc[0].name
+            except (IndexError, AssertionError):
+                error_message = _(
+                    """
+                    In the lab report <i>{}</i>, the <i>observation well ID</i>
+                    provided for the parameter #{} is not valid.
+                    """
+                    ).format(hglab_name, i + 1)
+                raise ImportHGSurveysError(error_message, code=401)
+
+            # --- Get and check hg_survey_datetime
+            hg_survey_datetime = param_data['hg_survey_datetime']
+            if not isinstance(hg_survey_datetime, datetime.datetime):
+                error_message = _(
+                    """
+                    In the lab report <i>{}</i>, the <i>survey date-time</i>
+                    provided for the parameter #{} is not valid.
+                    """
+                    ).format(hglab_name, i + 1)
+                raise ImportHGSurveysError(error_message, code=402)
+
+            # --- Get the hg_survey_id.
+            try:
+                hg_survey_id = (
+                    hg_surveys_data[
+                        (hg_surveys_data['sampling_feature_uuid'] ==
+                         sampling_feature_uuid) &
+                        (hg_surveys_data['hg_survey_datetime'] ==
+                         hg_survey_datetime)]
+                    ).iloc[0].name
+            except IndexError:
+                error_message = _(
+                    """
+                    In the lab report <i>{}</i>, no HG survey was found
+                    in the database for well ID <i>{}</i> and date-time
+                    <i>{}</i>.
+                    """
+                    ).format(hglab_name,
+                             obs_well_id,
+                             hg_survey_datetime.strftime("%Y-%m-%d %H:%M"))
+            new_hg_param['hg_survey_id'] = hg_survey_id
+
+            # --- Get and check meas_units_id
+            meas_units_abb = param_data['meas_units_abb']
+            try:
+                meas_units_id = measurement_units_data[
+                    measurement_units_data['meas_units_abb'] == meas_units_abb
+                    ].iloc[0].name
+            except IndexError:
+                error_message = _(
+                    """
+                    In the lab report <i>{}</i>, the measurement units
+                    provided for the parameter #{} is not valid.
+                    """
+                    ).format(hglab_name, i + 1)
+                raise ImportHGSurveysError(error_message, code=303)
+            new_hg_param['meas_units_id'] = meas_units_id
+
+            # --- Get and check hg_param_value.
+            hg_param_value = param_data['hg_param_value']
+            try:
+                assert hg_param_value is not None
+                float(str(hg_param_value).replace('<', '').replace('>', ''))
+            except (AssertionError, ValueError):
+                error_message = _(
+                    """
+                    In the lab report <i>{}</i>, the value
+                    provided for the parameter #{} is not valid.
+                    """
+                    ).format(hglab_name, i + 1)
+                raise ImportHGSurveysError(error_message, code=304)
+            new_hg_param['hg_param_value'] = str(hg_param_value)
+
+            # --- Check lim_detection
+            lim_detection = param_data['lim_detection']
+            if lim_detection is not None:
+                try:
+                    lim_detection = float(lim_detection)
+                except ValueError:
+                    error_message = _(
+                        """
+                        In the lab report <i>{}</i>, the limit detection
+                        provided for the parameter #{} is not valid.
+                        """
+                        ).format(hglab_name, i + 1)
+                    raise ImportHGSurveysError(error_message, code=304)
+                new_hg_param['lim_detection'] = lim_detection
+            else:
+                new_hg_param['lim_detection'] = None
+
+            # --- Get and check hg_param_id
+            param_expr = param_data['hg_param_expr']
+            if param_expr is None or param_expr == '':
+                error_message = _(
+                    """
+                    In the lab report <i>{}</i>, the name
+                    provided for the parameter #{} is not valid.
+                    """
+                    ).format(hglab_name, i + 1)
+                raise ImportHGSurveysError(error_message, code=301)
+
+            for index, row in hg_params_data.iterrows():
+                regex = row.hg_param_regex
+                if regex is None or '':
+                    continue
+                if re.match(regex, param_expr,
+                            flags=re.IGNORECASE) is not None:
+                    hg_param_id = index
+                    break
+            else:
+                error_message = _(
+                    """
+                    In the lab report <i>{}</i>, there is no HG parameter
+                    in the database that matches the name
+                    provided for the parameter #{}.
+                    """
+                    ).format(hglab_name, i + 1)
+                raise ImportHGSurveysError(error_message, code=302)
+
+            new_hg_param['hg_param_id'] = hg_param_id
+
+            new_hg_param['lab_sample_id'] = param_data['lab_sample_id']
+            new_hg_param['method'] = param_data['method']
+            new_hg_param['lab_sample_id'] = param_data['lab_sample_id']
+            new_hg_param['notes'] = param_data['notes']
+
+            fmt_hglab_data.append(new_hg_param)
+
+    return fmt_hglab_data
