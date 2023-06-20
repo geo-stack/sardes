@@ -24,12 +24,12 @@ from qtpy.QtCore import Qt, Signal, QObject
 from qtpy.QtWidgets import QLabel, QApplication
 
 # ---- Local imports
+from sardes.config.main import CONF
 from sardes.config.icons import get_icon
 from sardes.config.locale import _
 from sardes.widgets.statusbar import ProcessStatusBar
 from sardes.widgets.dialogs import UserMessageDialogBase
 from sardes.utils.qthelpers import format_tooltip
-from sardes.utils.qthelpers import create_toolbutton
 from sardes.widgets.path import PathBoxWidget
 from sardes.database.accessors.accessor_errors import ImportHGSurveysError
 from sardes.api.tools import SardesTool
@@ -50,26 +50,86 @@ class HGLaboImportTool(SardesTool):
         pass
 
     def __create_toolwidget__(self):
-        return HGSurveyImportDialog(
+        import_dialog = HGLabReportImportDialog(
             win_title=_("Import HG Lab Report"),
             parent=self.table
             )
+        import_dialog.sig_import_request.connect(self._import_hg_surveys)
+
+        filepath = CONF.get(
+            self.table.table_name(),
+            'path_import_hglab_reports_tool',
+            None)
+        if filepath is not None and osp.exists(filepath):
+            import_dialog.input_file_pathbox.set_path(filepath)
+
+        return import_dialog
+
+    def __on_close__(self):
+        CONF.set(
+            self.table.table_name(),
+            'path_import_hglab_reports_tool',
+            self.toolwidget().input_file_pathbox.path()
+            )
+
+    # ---- Handlers
+    def _import_hg_surveys(self):
+        """
+        Import HG surveys from an XLSX file and add them to the database.
+        """
+        self.toolwidget().start_importing(_("Importing HG lab report..."))
+        hglab_data = read_hglab_data(
+            self.toolwidget().input_file_pathbox.path())
+        try:
+            libraries = self.table.model().libraries
+            fmt_hglab_data = format_hglab_data(
+                hglab_data,
+                observation_wells_data=libraries['observation_wells_data'],
+                hg_surveys_data=libraries['hg_surveys'],
+                hg_params_data=libraries['hg_params'],
+                measurement_units_data=libraries['measurement_units'],
+                hg_labs_data=libraries['hg_labs']
+                )
+            print(fmt_hglab_data)
+        except ImportHGSurveysError as e:
+            self._handle_import_error(e)
+        else:
+            self.table.tableview._append_row(fmt_hglab_data)
+            msg = _("Lab report data was successfully imported.")
+            self.toolwidget().stop_importing(msg, success=True)
+
+    def _handle_import_error(self, error):
+        """
+        Handle the check foreign constraints results.
+        """
+        message = _(
+            """
+            <h3>Import Error</h3>
+            <p>{}</p>
+            <p>
+              Please resolve this problem in your lab report
+              and try importing your data again.
+            </p>
+            """
+            ).format(error.message)
+        self.toolwidget().show_import_error_message(message)
+        self.toolwidget().stop_importing(
+            _("Failed to import lab report data."),
+            success=False)
 
 
-class HGSurveyImportDialog(UserMessageDialogBase):
+class HGLabReportImportDialog(UserMessageDialogBase):
     """
     A dialog window to import hg surveys from an Excel Workbook.
     """
     sig_closed = Signal()
-    sig_import_request = Signal(bool)
-    sig_continue_import = Signal()
+    sig_import_request = Signal(str)
 
     def __init__(self, win_title: str, parent=None):
         super().__init__(parent)
         self.setWindowTitle(win_title)
         self.setWindowIcon(get_icon('import_lab_report'))
         self.setModal(False)
-        self.setWindowModality(Qt.ApplicationModal)
 
         self._import_in_progress = False
 
@@ -95,7 +155,8 @@ class HGSurveyImportDialog(UserMessageDialogBase):
         # Setup the dialog button box.
         self.import_btn = self.create_button(
             _('Import'), enabled=False, default=True,
-            triggered=lambda: self.sig_import_request.emit(True)
+            triggered=lambda: self.sig_import_request.emit(
+                self.input_file_pathbox.path())
             )
         self.close_btn = self.create_button(
             _('Close'), enabled=True, default=False,
@@ -132,7 +193,7 @@ class HGSurveyImportDialog(UserMessageDialogBase):
         self.show_message_dialog(
             self.import_error_dialog, message, beep=True)
 
-    def start_importing(self):
+    def start_importing(self, text: str):
         """
         Start the publishing of the piezometric network.
         """
@@ -140,7 +201,7 @@ class HGSurveyImportDialog(UserMessageDialogBase):
         self.input_file_label.setEnabled(False)
         self.input_file_pathbox.setEnabled(False)
         self.button_box.setEnabled(False)
-        self.status_bar.show(_("Importing HG lab report..."))
+        self.status_bar.show(text)
 
     def stop_importing(self, message: str, success: bool):
         """
