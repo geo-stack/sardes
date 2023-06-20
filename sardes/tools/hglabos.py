@@ -161,8 +161,10 @@ class HGSurveyImportDialog(UserMessageDialogBase):
         self.import_btn.setEnabled(osp.exists(path) and osp.isfile(path))
 
 
-def read_hglab_report(filename: str) -> dict[list[dict]]:
-    """Read HG lab report data from a XLSX file."""
+def read_hglab_data(filename: str) -> dict[list[dict]]:
+    """
+    Read HG lab report data from a XLSX file.
+    """
     wb = openpyxl.load_workbook(filename, data_only=True)
     sheet_names = wb.sheetnames
 
@@ -195,7 +197,8 @@ def read_hglab_report(filename: str) -> dict[list[dict]]:
                 })
             row += 1
 
-        all_lab_reports[sheet_name] = new_lab_report
+        if len(new_lab_report) > 0:
+            all_lab_reports[sheet_name] = new_lab_report
 
     return all_lab_reports
 
