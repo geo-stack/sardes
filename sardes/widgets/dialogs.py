@@ -205,9 +205,11 @@ class UserMessageDialogBase(QDialog):
         self.central_layout = QVBoxLayout(self.central_widget)
         self.central_layout.addStretch(1)
 
-        # Setup the button box.
-        self.button_box = QDialogButtonBox()
-        self.button_box.layout().addStretch(1)
+        # Setup the main layout.
+        main_layout = QVBoxLayout(self)
+        main_layout.setSizeConstraint(main_layout.SetFixedSize)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
         # Setup the stacked widget.
         self._dialogs = []
@@ -216,15 +218,16 @@ class UserMessageDialogBase(QDialog):
         self.stackwidget.addWidget(self.central_widget)
         self.stackwidget.setMinimumHeight(100)
 
-        main_layout = QVBoxLayout(self)
         main_layout.addWidget(self.stackwidget)
-        main_layout.addWidget(self.button_box)
-        main_layout.setSizeConstraint(main_layout.SetFixedSize)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
 
-        # We need to set the margins after adding the button box to the
-        # main layout or else, it has no effect.
+        # Setup the button box.
+        self.button_box = QDialogButtonBox()
+        self.button_box.layout().addStretch(1)
+
+        main_layout.addWidget(self.button_box)
+
+        # Note that we need to set the margins of the button box after
+        # adding it to the main layout or else, it has no effect.
         self.button_box.layout().setContentsMargins(
             *get_default_contents_margins())
 
