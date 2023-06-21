@@ -16,7 +16,7 @@ from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.delegates import (
     StringEditDelegate, NumEditDelegate, DateTimeDelegate,
     TextEditDelegate, GenericLibSelectDelegate, HGSurveyEditDelegate)
-from sardes.tools.hglabos import HGLaboImportTool
+from sardes.tools import HGLaboImportTool
 
 
 class HGParamValuesTableModel(StandardSardesTableModel):
