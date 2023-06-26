@@ -66,11 +66,12 @@ class HGLaboImportTool(SardesTool):
         return import_dialog
 
     def __on_close__(self):
-        CONF.set(
-            self.table.table_name(),
-            'path_import_hglab_reports_tool',
-            self.toolwidget().input_file_pathbox.path()
-            )
+        if self.toolwidget() is not None:
+            CONF.set(
+                self.table.table_name(),
+                'path_import_hglab_reports_tool',
+                self.toolwidget().input_file_pathbox.path()
+                )
 
     # ---- Handlers
     def _import_hg_surveys(self):
@@ -90,7 +91,6 @@ class HGLaboImportTool(SardesTool):
                 measurement_units_data=libraries['measurement_units'],
                 hg_labs_data=libraries['hg_labs']
                 )
-            print(fmt_hglab_data)
         except ImportHGSurveysError as e:
             self._handle_import_error(e)
         else:
