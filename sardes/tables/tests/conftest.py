@@ -22,6 +22,7 @@ from sardes.database.accessors.tests.conftest import *
 from sardes.plugins.tables import SARDES_PLUGIN_CLASS as TABLE_PLUGIN_CLASS
 from sardes.plugins.librairies import SARDES_PLUGIN_CLASS as LIB_PLUGIN_CLASS
 from sardes.plugins.readings import SARDES_PLUGIN_CLASS as READ_PLUGIN_CLASS
+from sardes.plugins.hydrogeochemistry import SARDES_PLUGIN_CLASS as HG_PLUGIN_CLASS
 from sardes.app.mainwindow import MainWindowBase
 
 
@@ -54,6 +55,10 @@ def mainwindow(qtbot, dbaccessor):
             self.readings_plugin = READ_PLUGIN_CLASS(self)
             self.readings_plugin.register_plugin()
             self.internal_plugins.append(self.readings_plugin)
+
+            self.hydrogeochemistry_plugin = HG_PLUGIN_CLASS(self)
+            self.hydrogeochemistry_plugin.register_plugin()
+            self.internal_plugins.append(self.hydrogeochemistry_plugin)
 
             # Tabify dockwidget.
             self.tabifyDockWidget(
