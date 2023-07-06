@@ -27,16 +27,6 @@ from sardes.app.mainwindow import MainWindowBase
 
 
 @pytest.fixture
-def dbaccessor(tmp_path, database_filler):
-    dbaccessor = DatabaseAccessorSardesLite(
-        osp.join(tmp_path, 'sqlite_database_test.db'))
-    dbaccessor.init_database()
-    database_filler(dbaccessor)
-
-    return dbaccessor
-
-
-@pytest.fixture
 def mainwindow(qtbot, dbaccessor):
     class MainWindowMock(MainWindowBase):
         def __init__(self):
