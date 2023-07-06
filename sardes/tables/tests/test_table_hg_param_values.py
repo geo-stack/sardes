@@ -26,6 +26,7 @@ from qtpy.QtWidgets import QFileDialog
 from sardes import __rootdir__
 from sardes.utils.data_operations import are_values_equal
 from sardes.widgets.tableviews import MSEC_MIN_PROGRESS_DISPLAY
+from sardes.database.accessors.accessor_errors import ImportHGSurveysError
 
 
 # =============================================================================
@@ -264,6 +265,62 @@ def test_import_hglab_report_tool(tablewidget, qtbot, dbaccessor, mocker):
     for name, val1 in expected_values.items():
         val2 = hg_param_values.iloc[-1][name]
         assert are_values_equal(val1, val2)
+
+
+def test_import_hglabs_error(tablewidget, qtbot, dbaccessor, mocker):
+    """
+    Test that errors are displayed as expected when importing HG lab data.
+    """
+    import_hglab_tool = tablewidget.import_hglab_tool
+    import_hglab_tool.trigger()
+    dialog = import_hglab_tool.toolwidget()
+
+    dialog.input_file_pathbox.set_path(
+        osp.join(__rootdir__, 'tools', 'tests', 'test_save_hglabo.xlsx')
+        )
+
+    # Patch the read_hglab_data to mock an import error.
+    mocker.patch(
+        'sardes.tools.hglabos.read_hglab_data',
+        return_value={
+            'report #1':
+                [{'lab_report_date': 'dummy',
+                  'lab_code': 'dummy',
+                  'obs_well_id': None,
+                  'hg_survey_datetime': None,
+                  'lab_sample_id': 1234567890,
+                  'hg_param_expr': None,
+                  'hg_param_value': None,
+                  'lim_detection': 'dummy',
+                  'meas_units_abb': None,
+                  'method': 1234567890,
+                  'notes': 1234567890}]
+        }
+    )
+
+    assert dialog.import_error_dialog.isVisible() is False
+    assert dialog.import_btn.isVisible() is True
+    assert dialog.close_btn.isVisible() is True
+    assert dialog.ok_err_btn.isVisible() is False
+    assert dialog.status_bar.status == dialog.status_bar.HIDDEN
+
+    qtbot.mouseClick(dialog.import_btn, Qt.LeftButton)
+    assert dialog.import_error_dialog.isVisible() is True
+    assert dialog.import_btn.isVisible() is False
+    assert dialog.close_btn.isVisible() is False
+    assert dialog.ok_err_btn.isVisible() is True
+    assert dialog.status_bar.status == dialog.status_bar.PROCESS_FAILED
+
+    # Close the error dialog.
+    qtbot.mouseClick(dialog.ok_err_btn, Qt.LeftButton)
+    assert dialog.import_error_dialog.isVisible() is False
+    assert dialog.import_btn.isVisible() is True
+    assert dialog.close_btn.isVisible() is True
+    assert dialog.ok_err_btn.isVisible() is False
+
+    # Close the dialog.
+    qtbot.mouseClick(dialog.close_btn, Qt.LeftButton)
+    assert not dialog.isVisible()
 
 
 if __name__ == "__main__":
