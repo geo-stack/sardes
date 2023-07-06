@@ -289,8 +289,10 @@ def format_hglab_data(
                     The date of the lab report <i>{}</i> is not valid.
                     """
                     ).format(hglab_name)
+                raise ImportHGSurveysError(error_message, code=401)
             new_hg_param['lab_report_date'] = lab_report_date
 
+            # --- Check lab code.
             lab_code = param_data['lab_code']
             if lab_code is not None:
                 try:
@@ -304,7 +306,7 @@ def format_hglab_data(
                         is not valid.
                         """
                         ).format(hglab_name, i + 1)
-                    raise ImportHGSurveysError(error_message, code=401)
+                    raise ImportHGSurveysError(error_message, code=402)
                 new_hg_param['lab_id'] = lab_id
             else:
                 new_hg_param['lab_id'] = None
@@ -323,7 +325,7 @@ def format_hglab_data(
                     provided for the parameter #{} is not valid.
                     """
                     ).format(hglab_name, i + 1)
-                raise ImportHGSurveysError(error_message, code=401)
+                raise ImportHGSurveysError(error_message, code=403)
 
             # --- Get and check hg_survey_datetime
             hg_survey_datetime = param_data['hg_survey_datetime']
@@ -334,7 +336,7 @@ def format_hglab_data(
                     provided for the parameter #{} is not valid.
                     """
                     ).format(hglab_name, i + 1)
-                raise ImportHGSurveysError(error_message, code=402)
+                raise ImportHGSurveysError(error_message, code=404)
 
             # --- Get the hg_survey_id.
             try:
@@ -355,6 +357,7 @@ def format_hglab_data(
                     ).format(hglab_name,
                              obs_well_id,
                              hg_survey_datetime.strftime("%Y-%m-%d %H:%M"))
+                raise ImportHGSurveysError(error_message, code=405)
             new_hg_param['hg_survey_id'] = hg_survey_id
 
             # --- Get and check meas_units_id
@@ -370,7 +373,7 @@ def format_hglab_data(
                     provided for the parameter #{} is not valid.
                     """
                     ).format(hglab_name, i + 1)
-                raise ImportHGSurveysError(error_message, code=303)
+                raise ImportHGSurveysError(error_message, code=406)
             new_hg_param['meas_units_id'] = meas_units_id
 
             # --- Get and check hg_param_value.
@@ -385,7 +388,7 @@ def format_hglab_data(
                     provided for the parameter #{} is not valid.
                     """
                     ).format(hglab_name, i + 1)
-                raise ImportHGSurveysError(error_message, code=304)
+                raise ImportHGSurveysError(error_message, code=407)
             new_hg_param['hg_param_value'] = str(hg_param_value)
 
             # --- Check lim_detection
@@ -400,7 +403,7 @@ def format_hglab_data(
                         provided for the parameter #{} is not valid.
                         """
                         ).format(hglab_name, i + 1)
-                    raise ImportHGSurveysError(error_message, code=304)
+                    raise ImportHGSurveysError(error_message, code=408)
                 new_hg_param['lim_detection'] = lim_detection
             else:
                 new_hg_param['lim_detection'] = None
@@ -410,11 +413,11 @@ def format_hglab_data(
             if param_expr is None or param_expr == '':
                 error_message = _(
                     """
-                    In the lab report <i>{}</i>, the name
-                    provided for the parameter #{} is not valid.
+                    In the lab report <i>{}</i>, the parameter #{}
+                    is not valid.
                     """
                     ).format(hglab_name, i + 1)
-                raise ImportHGSurveysError(error_message, code=301)
+                raise ImportHGSurveysError(error_message, code=409)
 
             for index, row in hg_params_data.iterrows():
                 regex = row.hg_param_regex
@@ -432,14 +435,15 @@ def format_hglab_data(
                     provided for the parameter #{}.
                     """
                     ).format(hglab_name, i + 1)
-                raise ImportHGSurveysError(error_message, code=302)
+                raise ImportHGSurveysError(error_message, code=410)
 
             new_hg_param['hg_param_id'] = hg_param_id
 
-            new_hg_param['lab_sample_id'] = param_data['lab_sample_id']
-            new_hg_param['method'] = param_data['method']
-            new_hg_param['lab_sample_id'] = param_data['lab_sample_id']
-            new_hg_param['notes'] = param_data['notes']
+            for name in ['lab_sample_id', 'method', 'lab_sample_id', 'notes']:
+                if param_data[name] is None:
+                    new_hg_param[name] = None
+                else:
+                    new_hg_param[name] = str(param_data[name])
 
             fmt_hglab_data.append(new_hg_param)
 
