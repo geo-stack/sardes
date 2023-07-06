@@ -103,9 +103,7 @@ def test_add_hg_survey_data(mainwindow, qtbot, mocker, dbaccessor):
 
     qtbot.mouseClick(dialog.import_btn, Qt.LeftButton)
     assert dialog._import_in_progress is True
-    qtbot.waitUntil(
-        lambda: dialog._import_in_progress is False
-        )
+    qtbot.waitUntil(lambda: dialog._import_in_progress is False)
 
     assert len(dbaccessor.get('hg_surveys')) == 4 + 1
     assert len(dbaccessor.get('purges')) == 3 + 5
