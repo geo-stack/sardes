@@ -58,17 +58,6 @@ FA_ICONS = {
     'close': [
         ('fa.close', 'fa.close', 'fa.close'),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
-    'close_all': [
-        ('fa.close', 'fa.close', 'fa.close'),
-        {'options': [{'scale_factor': 0.6,
-                      'offset': (0.3, -0.3),
-                      'color': ICON_COLOR},
-                     {'scale_factor': 0.6,
-                      'offset': (-0.3, -0.3),
-                      'color': ICON_COLOR},
-                     {'scale_factor': 0.6,
-                      'offset': (0.3, 0.3),
-                      'color': ICON_COLOR}]}],
     'commit_changes': [
         ('mdi.check-circle-outline',),
         {'color': GREEN, 'scale_factor': 1.2}],
