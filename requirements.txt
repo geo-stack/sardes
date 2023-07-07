@@ -7,7 +7,7 @@ numpy == 1.22.*
 pandas == 1.3.*
 pillow
 pyqt5 == 5.15.*
-qtawesome == 1.0.*
+qtawesome == 1.1.*
 qtpy
 simplekml
 sqlalchemy == 1.4.*

@@ -26,6 +26,7 @@ import pandas as pd
 import pytest
 
 # ---- Local imports
+from sardes.database.accessors import DatabaseAccessorSardesLite
 from sardes.api.timeseries import DataType
 
 
@@ -433,3 +434,13 @@ def database_filler(
                 readings_data, obs_well_uuid, install_uuid)
 
     return fill_database
+
+
+@pytest.fixture
+def dbaccessor(tmp_path, database_filler):
+    dbaccessor = DatabaseAccessorSardesLite(
+        osp.join(tmp_path, 'sqlite_database_test.db'))
+    dbaccessor.init_database()
+    database_filler(dbaccessor)
+
+    return dbaccessor

@@ -78,6 +78,9 @@ def test_add_hg_survey_data(mainwindow, qtbot, mocker, dbaccessor):
 
     assert dialog.isVisible() is True
     assert dialog.import_btn.isEnabled() is False
+    assert dialog.import_btn.isVisible()
+    assert dialog.close_btn.isEnabled() is True
+    assert dialog.close_btn.isVisible()
     assert dialog.input_file_pathbox.path() == ''
 
     # Select a input XLSX file.
@@ -100,9 +103,7 @@ def test_add_hg_survey_data(mainwindow, qtbot, mocker, dbaccessor):
 
     qtbot.mouseClick(dialog.import_btn, Qt.LeftButton)
     assert dialog._import_in_progress is True
-    qtbot.waitUntil(
-        lambda: dialog._import_in_progress is False
-        )
+    qtbot.waitUntil(lambda: dialog._import_in_progress is False)
 
     assert len(dbaccessor.get('hg_surveys')) == 4 + 1
     assert len(dbaccessor.get('purges')) == 3 + 5

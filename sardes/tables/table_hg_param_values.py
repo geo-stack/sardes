@@ -16,6 +16,7 @@ from sardes.widgets.tableviews import SardesTableWidget
 from sardes.tables.delegates import (
     StringEditDelegate, NumEditDelegate, DateTimeDelegate,
     TextEditDelegate, GenericLibSelectDelegate, HGSurveyEditDelegate)
+from sardes.tools import HGLaboImportTool
 
 
 class HGParamValuesTableModel(StandardSardesTableModel):
@@ -79,3 +80,7 @@ class HGParamValuesTableWidget(SardesTableWidget):
     def __init__(self, *args, **kargs):
         table_model = HGParamValuesTableModel()
         super().__init__(table_model, *args, **kargs)
+
+        self.add_toolbar_separator()
+        self.import_hglab_tool = HGLaboImportTool(self)
+        self.install_tool(self.import_hglab_tool)
