@@ -56,7 +56,7 @@ FA_ICONS = {
         ('mdi.close-box-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'close': [
-        ('fa.close', 'fa.close', 'fa.close'),
+        ('mdi.close-thick',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'commit_changes': [
         ('mdi.check-circle-outline',),
