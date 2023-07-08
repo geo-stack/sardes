@@ -87,7 +87,7 @@ FA_ICONS = {
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'exit': [
         ('mdi.power',),
-        {'color': ICON_COLOR, 'scale_factor': 1.3}],
+        {'color': ICON_COLOR, 'scale_factor': 1.4}],
     'eye_off': [
         ('mdi.eye-off',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
@@ -219,8 +219,8 @@ FA_ICONS = {
         ('fa.undo',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'save': [
-        ('fa.save',),
-        {'color': ICON_COLOR}],
+        ('mdi.content-save-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'save_to_db': [
         ('mdi.database-import',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
