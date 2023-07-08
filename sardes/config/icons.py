@@ -35,8 +35,8 @@ FA_ICONS = {
         ('mdi.attachment',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'browse_files': [
-        ('fa5.folder-open',),
-        {'color': ICON_COLOR, 'scale_factor': 1}],
+        ('mdi.folder-open',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'bug': [
         ('mdi.bug',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
@@ -56,19 +56,8 @@ FA_ICONS = {
         ('mdi.close-box-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'close': [
-        ('fa.close', 'fa.close', 'fa.close'),
+        ('mdi.close-thick',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
-    'close_all': [
-        ('fa.close', 'fa.close', 'fa.close'),
-        {'options': [{'scale_factor': 0.6,
-                      'offset': (0.3, -0.3),
-                      'color': ICON_COLOR},
-                     {'scale_factor': 0.6,
-                      'offset': (-0.3, -0.3),
-                      'color': ICON_COLOR},
-                     {'scale_factor': 0.6,
-                      'offset': (0.3, 0.3),
-                      'color': ICON_COLOR}]}],
     'commit_changes': [
         ('mdi.check-circle-outline',),
         {'color': GREEN, 'scale_factor': 1.2}],
@@ -97,8 +86,8 @@ FA_ICONS = {
         ('mdi.eraser',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'exit': [
-        ('fa.power-off',),
-        {'color': ICON_COLOR}],
+        ('mdi.power',),
+        {'color': ICON_COLOR, 'scale_factor': 1.4}],
     'eye_off': [
         ('mdi.eye-off',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
@@ -227,11 +216,11 @@ FA_ICONS = {
         ('mdi.table-row-remove',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'reset_layout': [
-        ('fa.undo',),
-        {'color': ICON_COLOR, 'scale_factor': 1.1}],
+        ('mdi.restore',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'save': [
-        ('fa.save',),
-        {'color': ICON_COLOR}],
+        ('mdi.content-save-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'save_to_db': [
         ('mdi.database-import',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
@@ -269,8 +258,8 @@ FA_ICONS = {
         ('mdi.table',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'table_columns': [
-        ('fa.columns',),
-        {'color': ICON_COLOR, 'scale_factor': 0.9, 'offset': (0, -0.1)}],
+        ('mdi.view-column-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'table_column_lock': [
         ('mdi.lock-outline',),
         {'color': ICON_COLOR}],
@@ -278,8 +267,8 @@ FA_ICONS = {
         ('mdi.wrench',),
         {'color': ICON_COLOR}],
     'tooloptions': [
-        ('fa.bars',),
-        {'color': ICON_COLOR}],
+        ('mdi.menu',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'undo': [
         ('mdi.undo-variant',),
         {'color': ICON_COLOR}],
