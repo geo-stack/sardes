@@ -35,8 +35,8 @@ FA_ICONS = {
         ('mdi.attachment',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'browse_files': [
-        ('fa5.folder-open',),
-        {'color': ICON_COLOR, 'scale_factor': 1}],
+        ('mdi.folder-open',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'bug': [
         ('mdi.bug',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
