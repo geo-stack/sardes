@@ -86,8 +86,8 @@ FA_ICONS = {
         ('mdi.eraser',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'exit': [
-        ('fa.power-off',),
-        {'color': ICON_COLOR}],
+        ('mdi.power',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'eye_off': [
         ('mdi.eye-off',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
