@@ -267,8 +267,8 @@ FA_ICONS = {
         ('mdi.wrench',),
         {'color': ICON_COLOR}],
     'tooloptions': [
-        ('fa.bars',),
-        {'color': ICON_COLOR}],
+        ('mdi.menu',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'undo': [
         ('mdi.undo-variant',),
         {'color': ICON_COLOR}],
