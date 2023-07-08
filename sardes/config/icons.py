@@ -258,8 +258,8 @@ FA_ICONS = {
         ('mdi.table',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'table_columns': [
-        ('fa.columns',),
-        {'color': ICON_COLOR, 'scale_factor': 0.9, 'offset': (0, -0.1)}],
+        ('mdi.view-column-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'table_column_lock': [
         ('mdi.lock-outline',),
         {'color': ICON_COLOR}],
