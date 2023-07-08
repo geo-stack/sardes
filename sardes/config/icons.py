@@ -216,8 +216,8 @@ FA_ICONS = {
         ('mdi.table-row-remove',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'reset_layout': [
-        ('fa.undo',),
-        {'color': ICON_COLOR, 'scale_factor': 1.1}],
+        ('mdi.restore',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'save': [
         ('mdi.content-save-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
