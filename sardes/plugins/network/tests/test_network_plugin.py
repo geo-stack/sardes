@@ -171,5 +171,37 @@ def test_publish_to_kml(mainwindow, qtbot, mocker, tmp_path):
     assert len(re.findall(">Water Quality</a>", content)) == 1
 
 
+def test_station_info(mainwindow, qtbot, mocker, tmp_path):
+    """
+    Test that station info are formatted as expected in the KML file.
+
+    Regression test for geo-stack/sardes#12
+    """
+    kmlfilename = osp.join(tmp_path, 'test_piezo_network.kml')
+
+    # We then ask the manager to publish network to kml.
+    with qtbot.waitSignal(
+            mainwindow.plugin.sig_network_published, timeout=50000):
+        mainwindow.plugin._start_publishing_network(kmlfilename)
+    qtbot.wait(150)
+
+    # Check the content of the kml file.
+    with open(kmlfilename) as f:
+        content = f.read()
+
+    # There is 5 stations in the test database, but one has no data,
+    # no diagram, no graph and no quality data.
+    assert len(re.findall("Placemark id", content)) == 5
+    assert len(re.findall("Last reading = 2020-12-31", content)) == 4
+
+    assert len(re.findall("Influenced = No", content)) == 4
+    assert len(re.findall("Influenced = NA", content)) == 1
+
+    assert len(re.findall("Water-table = Confined", content)) == 2
+    assert len(re.findall("Water-table = Unconfined", content)) == 1
+    assert len(re.findall("Water-table = Captive", content)) == 1
+    assert len(re.findall("Water-table = Libre", content)) == 1
+
+
 if __name__ == "__main__":
     pytest.main(['-x', __file__, '-v', '-rw'])
