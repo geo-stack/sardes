@@ -26,38 +26,36 @@ def format_kml_station_info(
     """
     Format the description of the station for the info buble of the kml file.
     """
-    is_station_active = station_data['is_station_active']
-    is_influenced = (
-        [_('No'), _('Yes'), _('NA')][station_data['is_influenced']]
-        )
+    is_station_active = (
+        _('Active') if station_data['is_station_active'] else _('Inactive'))
+    is_influenced = {
+        0: _('No'), 1: _('Yes'), 2: _('NA')
+        }[station_data['is_influenced']]
 
     desc = '{} = {}<br/>'.format(
-        _('Station'),
-        station_data['obs_well_id'])
+        _('Station'), station_data['obs_well_id'])
+
     desc += '{} = {:0.4f}<br/>'.format(
-        _('Longitude'),
-        station_data['longitude'])
+        _('Longitude'), station_data['longitude'])
     desc += '{} = {:0.4f}<br/>'.format(
-        _('Latitude'),
-        station_data['latitude'])
+        _('Latitude'), station_data['latitude'])
+
     desc += '{} = {:0.2f} {} ({})<br/>'.format(
-        _('Ground Alt.'),
-        ground_altitude,
-        _('m MSL'),
-        _('Geodesic') if is_alt_geodesic else _('Approximate'))
+        _('Ground Alt.'), ground_altitude, _('m MSL'),
+        _('Geodesic') if is_alt_geodesic else _('Approximate')
+        )
+
     desc += '{} = {}<br/>'.format(
-        _('Water-table'),
-        station_data['confinement'])
-    desc += '{} = {}<br/>'.format(
-        _('Influenced'),
-        station_data['is_influenced'])
-    desc += '<br/>'
+        _('Water-table'), station_data['confinement'])
+
+    desc += '{} = {}<br/><br/>'.format(
+        _('Influenced'), is_influenced)
+
     if last_reading is not None:
         desc += '{} = {}<br/>'.format(
-            _('Last reading'),
-            last_reading.strftime('%Y-%m-%d'))
+            _('Last reading'), last_reading.strftime('%Y-%m-%d'))
+
     desc += '{} = {}<br/>'.format(
-        _('Status'),
-        _('Active') if is_station_active else _('Inactive'))
+        _('Status'), is_station_active)
 
     return desc
