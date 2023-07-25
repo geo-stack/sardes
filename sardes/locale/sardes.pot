@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2023-07-12 14:56-0400\n"
+"POT-Creation-Date: 2023-07-25 00:23-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -809,12 +809,12 @@ msgstr ""
 
 #:
 #: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:376
-msgid "No <i>observation well ID</i> is provided for survey <i>{}</i>."
+msgid "No <i>well ID</i> is provided for survey <i>{}</i>."
 msgstr ""
 
 #:
 #: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:386
-msgid "The <i>observation well ID</i> provided for survey <i>{}</i> does not exist in the database."
+msgid "The <i>well ID</i> provided for survey <i>{}</i> does not exist in the database."
 msgstr ""
 
 #:
@@ -1758,84 +1758,43 @@ msgid "Select a valid HG lab report file :"
 msgstr ""
 
 #: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:287
-msgid ""
-"\n"
-"                    The date of the lab report <i>{}</i> is not valid.\n"
-"                    "
+msgid "The date of the lab report <i>{}</i> is not valid."
 msgstr ""
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:303
-msgid ""
-"\n"
-"                        The lab code of the lab report <i>{}</i>\n"
-"                        is not valid.\n"
-"                        "
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:301
+msgid "The lab code of the lab report <i>{}</i> is not valid."
 msgstr ""
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:322
-msgid ""
-"\n"
-"                    In the lab report <i>{}</i>, the <i>observation well ID</i>\n"
-"                    provided for the parameter #{} is not valid.\n"
-"                    "
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:318
+msgid "In the lab report <i>{}</i>, the <i>well ID</i> provided for the parameter #{} is not valid."
 msgstr ""
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:333
-msgid ""
-"\n"
-"                    In the lab report <i>{}</i>, the <i>survey date-time</i>\n"
-"                    provided for the parameter #{} is not valid.\n"
-"                    "
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:327
+msgid "In the lab report <i>{}</i>, the survey <i>date-time</i> provided for the parameter #{} is not valid."
 msgstr ""
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:351
-msgid ""
-"\n"
-"                    In the lab report <i>{}</i>, no HG survey was found\n"
-"                    in the database for well ID <i>{}</i> and date-time\n"
-"                    <i>{}</i>.\n"
-"                    "
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:343
+msgid "In the lab report <i>{}</i>, no HG survey was found in the database for well ID <i>{}</i> and date-time <i>{}</i>."
 msgstr ""
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:370
-msgid ""
-"\n"
-"                    In the lab report <i>{}</i>, the measurement units\n"
-"                    provided for the parameter #{} is not valid.\n"
-"                    "
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:360
+msgid "In the lab report <i>{}</i>, the measurement units provided for the parameter #{} is not valid."
 msgstr ""
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:385
-msgid ""
-"\n"
-"                    In the lab report <i>{}</i>, the value\n"
-"                    provided for the parameter #{} is not valid.\n"
-"                    "
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:373
+msgid "In the lab report <i>{}</i>, the value provided for the parameter #{} is not valid."
 msgstr ""
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:400
-msgid ""
-"\n"
-"                        In the lab report <i>{}</i>, the limit detection\n"
-"                        provided for the parameter #{} is not valid.\n"
-"                        "
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:386
+msgid "In the lab report <i>{}</i>, the limit detection provided for the parameter #{} is not valid."
 msgstr ""
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:414
-msgid ""
-"\n"
-"                    In the lab report <i>{}</i>, the parameter #{}\n"
-"                    is not valid.\n"
-"                    "
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:398
+msgid "In the lab report <i>{}</i>, the parameter #{} is not valid."
 msgstr ""
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:431
-msgid ""
-"\n"
-"                    In the lab report <i>{}</i>, there is no HG parameter\n"
-"                    in the database that matches the name\n"
-"                    provided for the parameter #{}.\n"
-"                    "
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:413
+msgid "In the lab report <i>{}</i>, there is no HG parameter in the database that matches the name provided for the parameter #{}."
 msgstr ""
 
 #: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrographs.py:50
