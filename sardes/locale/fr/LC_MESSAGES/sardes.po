@@ -10,8 +10,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1.0\n"
-"POT-Creation-Date: 2023-07-12 14:56-0400\n"
-"PO-Revision-Date: 2023-07-25 00:09-0400\n"
+"POT-Creation-Date: 2023-07-25 00:23-0400\n"
+"PO-Revision-Date: 2023-07-25 00:37-0400\n"
 "Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs."
 "ca.com>\n"
 "Language-Team: Python\n"
@@ -782,13 +782,13 @@ msgid "Importing HG survey data..."
 msgstr "Importation des relevés hydrogéochimiques..."
 
 #: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:376
-msgid "No <i>observation well ID</i> is provided for survey <i>{}</i>."
+msgid "No <i>well ID</i> is provided for survey <i>{}</i>."
 msgstr "Aucun <i>ID de puits</i> n'est donné dans le relevé <i>{}</i>."
 
 #: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:386
 msgid ""
-"The <i>observation well ID</i> provided for survey <i>{}</i> does not exist "
-"in the database."
+"The <i>well ID</i> provided for survey <i>{}</i> does not exist in the "
+"database."
 msgstr ""
 "Le <i>ID du puits</i> indiqué dans le relevé <i>{}</i> n'existe pas dans la "
 "base de données."
@@ -1721,94 +1721,79 @@ msgid ""
 "report."
 msgstr ""
 "Sélectionner un fichier xlsx contenant les données formatées d'un rapport de "
-"labo. hydrogéochimique."
+"labo hydrogéochimique."
 
 #: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:170
 msgid "Select a valid HG lab report file :"
-msgstr "Sélectionner un rapport de labo. HG valide :"
+msgstr "Sélectionner un rapport de labo HG valide :"
 
 #: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:287
-msgid ""
-"\n"
-"                    The date of the lab report <i>{}</i> is not valid.\n"
-"                    "
-msgstr ""
+msgid "The date of the lab report <i>{}</i> is not valid."
+msgstr "La date du rapport de labo <i>{}</i> n'est pas valide."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:303
-msgid ""
-"\n"
-"                        The lab code of the lab report <i>{}</i>\n"
-"                        is not valid.\n"
-"                        "
-msgstr ""
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:301
+msgid "The lab code of the lab report <i>{}</i> is not valid."
+msgstr "Le code de laboratoire du rapport de labo <i>{}</i> n'est pas valide."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:322
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:318
 msgid ""
-"\n"
-"                    In the lab report <i>{}</i>, the <i>observation well ID</"
-"i>\n"
-"                    provided for the parameter #{} is not valid.\n"
-"                    "
+"In the lab report <i>{}</i>, the <i>well ID</i> provided for the parameter "
+"#{} is not valid."
 msgstr ""
+"Dans le rapport de labo <i>{}</i>, le <i>ID du puits</i> indiqué pour le "
+"paramètre #{} n'est pas valide."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:333
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:327
 msgid ""
-"\n"
-"                    In the lab report <i>{}</i>, the <i>survey date-time</"
-"i>\n"
-"                    provided for the parameter #{} is not valid.\n"
-"                    "
+"In the lab report <i>{}</i>, the survey <i>date-time</i> provided for the "
+"parameter #{} is not valid."
 msgstr ""
+"Dans le rapport de labo <i>{}</i>, la <i>date-heure</i> du relevé indiquée "
+"pour le paramètre #{} n'est pas valide."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:351
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:343
 msgid ""
-"\n"
-"                    In the lab report <i>{}</i>, no HG survey was found\n"
-"                    in the database for well ID <i>{}</i> and date-time\n"
-"                    <i>{}</i>.\n"
-"                    "
+"In the lab report <i>{}</i>, no HG survey was found in the database for well "
+"ID <i>{}</i> and date-time <i>{}</i>."
 msgstr ""
+"Dans le rapport de labo <i>{}</i>, aucun relevé HD n'existe dans la base de "
+"données pour le ID de puits <i>{}</i> et la date-heure <i>{}</i>."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:370
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:360
 msgid ""
-"\n"
-"                    In the lab report <i>{}</i>, the measurement units\n"
-"                    provided for the parameter #{} is not valid.\n"
-"                    "
+"In the lab report <i>{}</i>, the measurement units provided for the "
+"parameter #{} is not valid."
 msgstr ""
+"Dans le rapport de labo <i>{}</i>, les unités de mesure indiquées pour le "
+"paramètre #{} ne sont pas valides."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:385
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:373
 msgid ""
-"\n"
-"                    In the lab report <i>{}</i>, the value\n"
-"                    provided for the parameter #{} is not valid.\n"
-"                    "
+"In the lab report <i>{}</i>, the value provided for the parameter #{} is not "
+"valid."
 msgstr ""
+"Dans le rapport de labo <i>{}</i>, la valeur indiquée pour le paramètre #{} "
+"n'est pas valide."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:400
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:386
 msgid ""
-"\n"
-"                        In the lab report <i>{}</i>, the limit detection\n"
-"                        provided for the parameter #{} is not valid.\n"
-"                        "
+"In the lab report <i>{}</i>, the limit detection provided for the parameter "
+"#{} is not valid."
 msgstr ""
+"Dans le rapport de labo <i>{}</i>, la limite de détection indiquée pour le "
+"paramètre #{} n'est pas valide."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:414
-msgid ""
-"\n"
-"                    In the lab report <i>{}</i>, the parameter #{}\n"
-"                    is not valid.\n"
-"                    "
-msgstr ""
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:398
+msgid "In the lab report <i>{}</i>, the parameter #{} is not valid."
+msgstr "Dans le rapport de labo <i>{}</i>, le paramètre #{} n'est pas valide."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:431
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hglabos.py:413
 msgid ""
-"\n"
-"                    In the lab report <i>{}</i>, there is no HG parameter\n"
-"                    in the database that matches the name\n"
-"                    provided for the parameter #{}.\n"
-"                    "
+"In the lab report <i>{}</i>, there is no HG parameter in the database that "
+"matches the name provided for the parameter #{}."
 msgstr ""
+"Dans le rapport de labo <i>{}</i>, il n'y a pas de paramètre HG dans la base "
+"de données correspondant au nom indiqué pour le paramètre #{}."
 
 #: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrographs.py:50
 msgid "Create Hydrograph"
