@@ -135,14 +135,10 @@ class HGSurveyImportManager(QObject):
         # Display the import error message to the user.
         if isinstance(response, ImportHGSurveysError):
             message = _(
-                """
-                <h3>Import Error</h3>
-                <p>{}</p>
-                <p>
-                  Please resolve this problem in your Excel workbook
-                  and try importing your data again.
-                </p>
-                """
+                "<h3>Import Error</h3>"
+                "<p>{}</p>"
+                "<p>Please resolve this problem in your Excel workbook "
+                "and try importing your data again.</p>"
                 ).format(response.message)
             self.import_dialog.show_import_error_message(message)
             self.import_dialog.stop_importing(

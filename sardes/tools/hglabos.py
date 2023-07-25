@@ -103,14 +103,10 @@ class HGLaboImportTool(SardesTool):
         Handle the check foreign constraints results.
         """
         message = _(
-            """
-            <h3>Import Error</h3>
-            <p>{}</p>
-            <p>
-              Please resolve this problem in your lab report
-              and try importing your data again.
-            </p>
-            """
+            "<h3>Import Error</h3>"
+            "<p>{}</p>"
+            "<p>Please resolve this problem in your lab report "
+            "and try importing your data again.</p>"
             ).format(error.message)
         self.toolwidget().show_import_error_message(message)
         self.toolwidget().stop_importing(
