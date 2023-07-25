@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2023-07-25 00:23-0400\n"
+"POT-Creation-Date: 2023-07-25 00:51-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -844,108 +844,62 @@ msgstr ""
 
 #:
 #: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:484
-msgid ""
-"\n"
-"                For survey <i>{}</i>, the start date-time of purge\n"
-"                sequence #{} is not valid.\n"
-"                "
+msgid "For survey <i>{}</i>, the start date-time of purge sequence #{} is not valid."
 msgstr ""
 
 #:
-#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:496
-msgid ""
-"\n"
-"                For survey <i>{}</i>, the start date-time of purge\n"
-"                sequence #{} is less than the end-time of the previous\n"
-"                sequence.\n"
-"                "
+#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:494
+msgid "For survey <i>{}</i>, the start date-time of purge sequence #{} is less than the end-time of the previous sequence."
 msgstr ""
 
 #:
-#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:507
-msgid ""
-"\n"
-"                In survey <i>{}</i>, the end date-time of purge\n"
-"                sequence #{} is not valid.\n"
-"                "
+#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:503
+msgid "In survey <i>{}</i>, the end date-time of purge sequence #{} is not valid."
 msgstr ""
 
 #:
-#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:518
-msgid ""
-"\n"
-"                In survey <i>{}</i>, the end date-time of purge\n"
-"                sequence #{} must be greater than its start date-time.\n"
-"                "
+#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:512
+msgid "In survey <i>{}</i>, the end date-time of purge sequence #{} must be greater than its start date-time."
 msgstr ""
 
 #:
-#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:533
+#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:525
 msgid "The <i>pump type</i> provided for survey <i>{}</i> does not exist in the database."
 msgstr ""
 
 #:
-#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:544
-msgid ""
-"\n"
-"                The purge outflow provided in survey <i>{}</i>\n"
-"                is not valid.\"\n"
-"                "
+#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:536
+msgid "The purge outflow provided in survey <i>{}</i> is not valid."
 msgstr ""
 
 #:
-#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:558
-msgid ""
-"\n"
-"                    The pumping depth provided in survey <i>{}</i>\n"
-"                    is not valid.\n"
-"                    "
+#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:547
+msgid "The pumping depth provided in survey <i>{}</i> is not valid."
 msgstr ""
 
 #:
-#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:572
-msgid ""
-"\n"
-"                    The water level drawdown provided in survey <i>{}</i>\n"
-"                    is not valid.\n"
-"                    "
+#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:559
+msgid "The water level drawdown provided in survey <i>{}</i> is not valid."
 msgstr ""
 
 #:
-#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:604
-msgid ""
-"\n"
-"                In survey <i>{}</i>, one of the in-situ parameter\n"
-"                has en empty name.\n"
-"                "
+#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:589
+msgid "In survey <i>{}</i>, one of the in-situ parameter has en empty name."
 msgstr ""
 
 #:
-#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:620
-msgid ""
-"\n"
-"                In survey <i>{}</i>, there is no HG parameter in the\n"
-"                database that matches the in-situ parameter\n"
-"                named <i>{}</i>.\n"
-"                "
+#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:603
+msgid "In survey <i>{}</i>, there is no HG parameter in the database that matches the in-situ parameter named <i>{}</i>."
 msgstr ""
 
 #:
-#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:637
-msgid ""
-"\n"
-"                In survey <i>{}</i>, the measurement units provided\n"
-"                for the parameter <i>{}</i> is not valid.\n"
-"                "
+#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:618
+msgid "In survey <i>{}</i>, the measurement units provided for the parameter <i>{}</i> is not valid."
 msgstr ""
 
 #:
-#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:652
-msgid ""
-"\n"
-"                In survey <i>{}</i>, the value provided\n"
-"                for the parameter <i>{}</i> is not valid.\n"
-"                "
+#: c:\users\jean-\documents\projets\sardes\sardes\plugins\hydrogeochemistry\hgsurveys.py:631
+msgid "In survey <i>{}</i>, the value provided for the parameter <i>{}</i> is not valid."
 msgstr ""
 
 #:
