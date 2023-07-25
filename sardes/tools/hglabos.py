@@ -103,14 +103,10 @@ class HGLaboImportTool(SardesTool):
         Handle the check foreign constraints results.
         """
         message = _(
-            """
-            <h3>Import Error</h3>
-            <p>{}</p>
-            <p>
-              Please resolve this problem in your lab report
-              and try importing your data again.
-            </p>
-            """
+            "<h3>Import Error</h3>"
+            "<p>{}</p>"
+            "<p>Please resolve this problem in your lab report "
+            "and try importing your data again.</p>"
             ).format(error.message)
         self.toolwidget().show_import_error_message(message)
         self.toolwidget().stop_importing(
@@ -285,9 +281,7 @@ def format_hglab_data(
             if (lab_report_date is not None and
                     not isinstance(lab_report_date, datetime.datetime)):
                 error_message = _(
-                    """
-                    The date of the lab report <i>{}</i> is not valid.
-                    """
+                    "The date of the lab report <i>{}</i> is not valid."
                     ).format(hglab_name)
                 raise ImportHGSurveysError(error_message, code=401)
             new_hg_param['lab_report_date'] = lab_report_date
@@ -301,10 +295,8 @@ def format_hglab_data(
                         ].iloc[0].name
                 except IndexError:
                     error_message = _(
-                        """
-                        The lab code of the lab report <i>{}</i>
-                        is not valid.
-                        """
+                        "The lab code of the lab report <i>{}</i> "
+                        "is not valid."
                         ).format(hglab_name, i + 1)
                     raise ImportHGSurveysError(error_message, code=402)
                 new_hg_param['lab_id'] = lab_id
@@ -320,10 +312,8 @@ def format_hglab_data(
                     ].iloc[0].name
             except (IndexError, AssertionError):
                 error_message = _(
-                    """
-                    In the lab report <i>{}</i>, the <i>observation well ID</i>
-                    provided for the parameter #{} is not valid.
-                    """
+                    "In the lab report <i>{}</i>, the <i>well ID</i> "
+                    "provided for the parameter #{} is not valid."
                     ).format(hglab_name, i + 1)
                 raise ImportHGSurveysError(error_message, code=403)
 
@@ -331,10 +321,8 @@ def format_hglab_data(
             hg_survey_datetime = param_data['hg_survey_datetime']
             if not isinstance(hg_survey_datetime, datetime.datetime):
                 error_message = _(
-                    """
-                    In the lab report <i>{}</i>, the <i>survey date-time</i>
-                    provided for the parameter #{} is not valid.
-                    """
+                    "In the lab report <i>{}</i>, the survey <i>date-time</i> "
+                    "provided for the parameter #{} is not valid."
                     ).format(hglab_name, i + 1)
                 raise ImportHGSurveysError(error_message, code=404)
 
@@ -349,11 +337,9 @@ def format_hglab_data(
                     ).iloc[0].name
             except IndexError:
                 error_message = _(
-                    """
-                    In the lab report <i>{}</i>, no HG survey was found
-                    in the database for well ID <i>{}</i> and date-time
-                    <i>{}</i>.
-                    """
+                    "In the lab report <i>{}</i>, no HG survey was found "
+                    "in the database for well ID <i>{}</i> and date-time "
+                    "<i>{}</i>."
                     ).format(hglab_name,
                              obs_well_id,
                              hg_survey_datetime.strftime("%Y-%m-%d %H:%M"))
@@ -368,10 +354,8 @@ def format_hglab_data(
                     ].iloc[0].name
             except IndexError:
                 error_message = _(
-                    """
-                    In the lab report <i>{}</i>, the measurement units
-                    provided for the parameter #{} is not valid.
-                    """
+                    "In the lab report <i>{}</i>, the measurement units "
+                    "provided for the parameter #{} is not valid."
                     ).format(hglab_name, i + 1)
                 raise ImportHGSurveysError(error_message, code=406)
             new_hg_param['meas_units_id'] = meas_units_id
@@ -383,10 +367,8 @@ def format_hglab_data(
                 float(str(hg_param_value).replace('<', '').replace('>', ''))
             except (AssertionError, ValueError):
                 error_message = _(
-                    """
-                    In the lab report <i>{}</i>, the value
-                    provided for the parameter #{} is not valid.
-                    """
+                    "In the lab report <i>{}</i>, the value "
+                    "provided for the parameter #{} is not valid."
                     ).format(hglab_name, i + 1)
                 raise ImportHGSurveysError(error_message, code=407)
             new_hg_param['hg_param_value'] = str(hg_param_value)
@@ -398,10 +380,8 @@ def format_hglab_data(
                     lim_detection = float(lim_detection)
                 except ValueError:
                     error_message = _(
-                        """
-                        In the lab report <i>{}</i>, the limit detection
-                        provided for the parameter #{} is not valid.
-                        """
+                        "In the lab report <i>{}</i>, the limit detection "
+                        "provided for the parameter #{} is not valid."
                         ).format(hglab_name, i + 1)
                     raise ImportHGSurveysError(error_message, code=408)
                 new_hg_param['lim_detection'] = lim_detection
@@ -412,10 +392,8 @@ def format_hglab_data(
             param_expr = param_data['hg_param_expr']
             if param_expr is None or param_expr == '':
                 error_message = _(
-                    """
-                    In the lab report <i>{}</i>, the parameter #{}
-                    is not valid.
-                    """
+                    "In the lab report <i>{}</i>, the parameter #{} "
+                    "is not valid."
                     ).format(hglab_name, i + 1)
                 raise ImportHGSurveysError(error_message, code=409)
 
@@ -429,11 +407,9 @@ def format_hglab_data(
                     break
             else:
                 error_message = _(
-                    """
-                    In the lab report <i>{}</i>, there is no HG parameter
-                    in the database that matches the name
-                    provided for the parameter #{}.
-                    """
+                    "In the lab report <i>{}</i>, there is no HG parameter "
+                    "in the database that matches the name "
+                    "provided for the parameter #{}."
                     ).format(hglab_name, i + 1)
                 raise ImportHGSurveysError(error_message, code=410)
 

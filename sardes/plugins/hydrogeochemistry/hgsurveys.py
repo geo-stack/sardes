@@ -135,14 +135,10 @@ class HGSurveyImportManager(QObject):
         # Display the import error message to the user.
         if isinstance(response, ImportHGSurveysError):
             message = _(
-                """
-                <h3>Import Error</h3>
-                <p>{}</p>
-                <p>
-                  Please resolve this problem in your Excel workbook
-                  and try importing your data again.
-                </p>
-                """
+                "<h3>Import Error</h3>"
+                "<p>{}</p>"
+                "<p>Please resolve this problem in your Excel workbook "
+                "and try importing your data again.</p>"
                 ).format(response.message)
             self.import_dialog.show_import_error_message(message)
             self.import_dialog.stop_importing(
@@ -374,7 +370,7 @@ def format_hg_survey_imported_data(
     obs_well_id = imported_survey_data['obs_well_id']
     if obs_well_id is None:
         error_message = _(
-            "No <i>observation well ID</i> is provided for survey <i>{}</i>."
+            "No <i>well ID</i> is provided for survey <i>{}</i>."
             ).format(imported_survey_name)
         raise ImportHGSurveysError(error_message, code=101)
     else:
@@ -384,7 +380,7 @@ def format_hg_survey_imported_data(
                 ].iloc[0].name
         except IndexError:
             error_message = _(
-                "The <i>observation well ID</i> provided for survey <i>{}</i> "
+                "The <i>well ID</i> provided for survey <i>{}</i> "
                 "does not exist in the database."
                 ).format(imported_survey_name)
             raise ImportHGSurveysError(error_message, code=102)
@@ -482,10 +478,8 @@ def format_purge_imported_data(
         purge_seq_start = purge_seq_data['purge_seq_start']
         if not isinstance(purge_seq_start, datetime.datetime):
             error_message = _(
-                """
-                For survey <i>{}</i>, the start date-time of purge
-                sequence #{} is not valid.
-                """
+                "For survey <i>{}</i>, the start date-time of purge "
+                "sequence #{} is not valid."
                 ).format(imported_survey_name, i)
             raise ImportHGSurveysError(error_message, code=201)
         new_purge['purge_seq_start'] = purge_seq_start
@@ -494,21 +488,17 @@ def format_purge_imported_data(
         # the end of the last sequence.
         if prev_seq_end is not None and prev_seq_end > purge_seq_start:
             error_message = _(
-                """
-                For survey <i>{}</i>, the start date-time of purge
-                sequence #{} is less than the end-time of the previous
-                sequence.
-                """
+                "For survey <i>{}</i>, the start date-time of purge "
+                "sequence #{} is less than the end-time of the previous "
+                "sequence."
                 ).format(imported_survey_name, i)
             raise ImportHGSurveysError(error_message, code=202)
 
         purge_seq_end = purge_seq_data['purge_seq_end']
         if not isinstance(purge_seq_end, datetime.datetime):
             error_message = _(
-                """
-                In survey <i>{}</i>, the end date-time of purge
-                sequence #{} is not valid.
-                """
+                "In survey <i>{}</i>, the end date-time of purge "
+                "sequence #{} is not valid."
                 ).format(imported_survey_name, i)
             raise ImportHGSurveysError(error_message, code=203)
         new_purge['purge_seq_end'] = purge_seq_end
@@ -516,10 +506,8 @@ def format_purge_imported_data(
 
         if purge_seq_end <= purge_seq_start:
             error_message = _(
-                """
-                In survey <i>{}</i>, the end date-time of purge
-                sequence #{} must be greater than its start date-time.
-                """
+                "In survey <i>{}</i>, the end date-time of purge "
+                "sequence #{} must be greater than its start date-time."
                 ).format(imported_survey_name, i)
             raise ImportHGSurveysError(error_message, code=204)
 
@@ -542,10 +530,7 @@ def format_purge_imported_data(
             purge_outflow = abs(float(purge_seq_data['purge_outflow']))
         except (TypeError, ValueError):
             error_message = _(
-                """
-                The purge outflow provided in survey <i>{}</i>
-                is not valid."
-                """
+                "The purge outflow provided in survey <i>{}</i> is not valid."
                 ).format(imported_survey_name)
             raise ImportHGSurveysError(error_message, code=206)
         new_purge['purge_outflow'] = purge_outflow
@@ -556,10 +541,8 @@ def format_purge_imported_data(
                 pumping_depth = float(pumping_depth)
             except ValueError:
                 error_message = _(
-                    """
-                    The pumping depth provided in survey <i>{}</i>
-                    is not valid.
-                    """
+                    "The pumping depth provided in survey <i>{}</i> "
+                    "is not valid."
                     ).format(imported_survey_name)
                 raise ImportHGSurveysError(error_message, code=207)
         new_purge['pumping_depth'] = pumping_depth
@@ -570,10 +553,8 @@ def format_purge_imported_data(
                 water_level_drawdown = float(water_level_drawdown)
             except ValueError:
                 error_message = _(
-                    """
-                    The water level drawdown provided in survey <i>{}</i>
-                    is not valid.
-                    """
+                    "The water level drawdown provided in survey <i>{}</i> "
+                    "is not valid."
                     ).format(imported_survey_name)
                 raise ImportHGSurveysError(error_message, code=208)
         new_purge['water_level_drawdown'] = water_level_drawdown
@@ -602,10 +583,8 @@ def format_params_data_imported_data(
         param_name = new_param_data['hg_param_name']
         if param_name is None or param_name == '':
             error_message = _(
-                """
-                In survey <i>{}</i>, one of the in-situ parameter
-                has en empty name.
-                """
+                "In survey <i>{}</i>, one of the in-situ parameter "
+                "has en empty name."
                 ).format(imported_survey_name)
             raise ImportHGSurveysError(error_message, code=301)
 
@@ -618,11 +597,9 @@ def format_params_data_imported_data(
                 break
         else:
             error_message = _(
-                """
-                In survey <i>{}</i>, there is no HG parameter in the
-                database that matches the in-situ parameter
-                named <i>{}</i>.
-                """
+                "In survey <i>{}</i>, there is no HG parameter in the "
+                "database that matches the in-situ parameter "
+                "named <i>{}</i>."
                 ).format(imported_survey_name, param_name)
             raise ImportHGSurveysError(error_message, code=302)
         new_param_value['hg_param_id'] = hg_param_id
@@ -635,10 +612,8 @@ def format_params_data_imported_data(
                 ].iloc[0].name
         except IndexError:
             error_message = _(
-                """
-                In survey <i>{}</i>, the measurement units provided
-                for the parameter <i>{}</i> is not valid.
-                """
+                "In survey <i>{}</i>, the measurement units provided "
+                "for the parameter <i>{}</i> is not valid."
                 ).format(imported_survey_name, param_name)
             raise ImportHGSurveysError(error_message, code=303)
         new_param_value['meas_units_id'] = meas_units_id
@@ -650,10 +625,8 @@ def format_params_data_imported_data(
             float(str(hg_param_value).replace('<', '').replace('>', ''))
         except (AssertionError, ValueError):
             error_message = _(
-                """
-                In survey <i>{}</i>, the value provided
-                for the parameter <i>{}</i> is not valid.
-                """
+                "In survey <i>{}</i>, the value provided "
+                "for the parameter <i>{}</i> is not valid."
                 )
             raise ImportHGSurveysError(error_message, code=304)
         new_param_value['hg_param_value'] = str(hg_param_value)
