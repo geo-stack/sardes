@@ -374,7 +374,7 @@ def format_hg_survey_imported_data(
     obs_well_id = imported_survey_data['obs_well_id']
     if obs_well_id is None:
         error_message = _(
-            "No <i>observation well ID</i> is provided for survey <i>{}</i>."
+            "No <i>well ID</i> is provided for survey <i>{}</i>."
             ).format(imported_survey_name)
         raise ImportHGSurveysError(error_message, code=101)
     else:
@@ -384,7 +384,7 @@ def format_hg_survey_imported_data(
                 ].iloc[0].name
         except IndexError:
             error_message = _(
-                "The <i>observation well ID</i> provided for survey <i>{}</i> "
+                "The <i>well ID</i> provided for survey <i>{}</i> "
                 "does not exist in the database."
                 ).format(imported_survey_name)
             raise ImportHGSurveysError(error_message, code=102)
