@@ -99,6 +99,10 @@ class MainWindowBase(QMainWindow):
             self.db_connection_manager)
         print("Table models manager set up succesfully.")
 
+        # Setup the update manager.
+        from sardes.widgets.updates import UpdatesManager
+        self.updates_manager = UpdatesManager(parent=self)
+
         self.setup()
 
     def set_splash(self, message):
@@ -298,6 +302,10 @@ class MainWindowBase(QMainWindow):
             self, _('About Sardes...'), icon='information',
             shortcut='Ctrl+Shift+I',
             context=Qt.ApplicationShortcut
+            )
+        update_action = create_action(
+            self, _('Check for updates...'), icon='update',
+            triggered=lambda: self.updates_manager.start_updates_check()
             )
         exit_action = create_action(
             self, _('Exit'), icon='exit', triggered=self.close,
