@@ -266,6 +266,15 @@ class MainWindowBase(QMainWindow):
             triggered=self.confdialog.show
             )
 
+        # Create show console action.
+        self.console_action = None
+        if self.console is not None:
+            self.console_action = create_action(
+                self, _('Sardes Console...'), icon='console',
+                shortcut='Ctrl+Shift+J', context=Qt.ApplicationShortcut,
+                triggered=self.console.show
+                )
+
         # Create the panes and toolbars menus and actions
         self.panes_menu = QMenu(_("Panes"), self)
         self.panes_menu.setIcon(get_icon('panes'))
@@ -286,13 +295,6 @@ class MainWindowBase(QMainWindow):
             triggered=self.reset_window_layout)
 
         # Create help related actions and menus.
-        self.console_action = None
-        if self.console is not None:
-            self.console_action = create_action(
-                self, _('Sardes Console...'), icon='console',
-                shortcut='Ctrl+Shift+J', context=Qt.ApplicationShortcut,
-                triggered=self.console.show
-                )
         report_action = create_action(
             self, _('Report an issue...'), icon='bug',
             shortcut='Ctrl+Shift+R', context=Qt.ApplicationShortcut,
@@ -314,11 +316,12 @@ class MainWindowBase(QMainWindow):
 
         # Add the actions and menus to the options menu.
         options_menu_items = [
-            self.lang_menu, preferences_action, Separator(),
-            self.panes_menu, self.toolbars_menu,
+            self.lang_menu, preferences_action, self.console_action,
+            Separator(), self.panes_menu, self.toolbars_menu,
             self.lock_dockwidgets_and_toolbars_action,
             self.reset_window_layout_action, Separator(),
-            self.console_action, report_action, about_action, exit_action
+            report_action, update_action, about_action,
+            Separator(), exit_action
             ]
         for item in options_menu_items:
             if isinstance(item, Separator):
