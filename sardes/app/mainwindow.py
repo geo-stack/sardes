@@ -624,6 +624,8 @@ class MainWindow(MainWindowBase):
         if self.databases_plugin.get_option('auto_connect_to_database'):
             self.databases_plugin.connect_to_database()
 
+        self.updates_manager.start_updates_check(startup_check=True)
+
 
 class ExceptHook(QObject):
     """
