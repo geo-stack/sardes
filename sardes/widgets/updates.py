@@ -19,6 +19,7 @@
 #
 # See gwhat/__init__.py for more details.
 # -----------------------------------------------------------------------------
+from __future__ import annotations
 
 # ---- Standard imports
 import re
@@ -26,7 +27,7 @@ from distutils.version import LooseVersion
 
 # ---- Third party imports
 from qtpy.QtCore import QObject, Qt, QThread, Signal
-from qtpy.QtWidgets import QApplication, QMessageBox
+from qtpy.QtWidgets import QApplication, QMessageBox, QCheckBox
 import requests
 
 # ---- Local imports
@@ -35,6 +36,7 @@ from sardes import (
     __namever__, __project_url__)
 from sardes.config.icons import get_icon
 from sardes.config.locale import _
+from sardes.config.main import CONF
 
 
 class UpdatesManager(QObject):
@@ -47,9 +49,7 @@ class UpdatesManager(QObject):
         super().__init__()
 
         self.dialog_updates = UpdatesDialog(parent)
-        self._latest_release = None
-        self._update_available = None
-        self._show_only_if_update = False
+        self._startup_check = False
 
         self.thread_updates = QThread()
 
@@ -59,16 +59,26 @@ class UpdatesManager(QObject):
 
         self.thread_updates.started.connect(self.worker_updates.start)
 
-    def start_updates_check(self, show_only_if_update: bool = False):
+    def start_updates_check(self, startup_check: bool = False):
         """Check if updates are available."""
-        self._show_only_if_update = show_only_if_update
+        self._startup_check = startup_check
         self.thread_updates.start()
 
-    def _receive_updates_check(self, update_available, latest_release, error):
+    def _receive_updates_check(self, releases: list[str], error: str):
         """Receive results from an update check."""
         self.thread_updates.quit()
-        if update_available is False and self._show_only_if_update is True:
-            return
+
+        update_available, latest_release = check_update_available(
+            __version__, releases)
+
+        if self._startup_check:
+            if update_available is False:
+                return
+
+            last_shown_update = CONF.get(
+                'main', 'last_shown_update', __version__)
+            if check_version(latest_release, last_shown_update, '<='):
+                return
 
         if error is not None:
             icn = QMessageBox.Warning
@@ -94,9 +104,17 @@ class UpdatesManager(QObject):
                     "new features on our <a href={}>Issues Tracker</a>.</p>"
                     ).format(__namever__, __releases_url__, url_m, url_t)
 
+        if self._startup_check:
+            # Add some space between text and checkbox.
+            msg += "<br>"
+        self.dialog_updates.chkbox.setVisible(self._startup_check)
+
         self.dialog_updates.setText(msg)
         self.dialog_updates.setIcon(icn)
         self.dialog_updates.exec_()
+
+        if self.dialog_updates.chkbox.isChecked():
+            CONF.set('main', 'last_update_shown', latest_release)
 
 
 class UpdatesDialog(QMessageBox):
@@ -110,8 +128,12 @@ class UpdatesDialog(QMessageBox):
         self.setWindowTitle(_('Updates'))
         self.setWindowIcon(get_icon('master'))
         self.setMinimumSize(800, 700)
+
         self.setWindowFlags(
             Qt.Window | Qt.CustomizeWindowHint | Qt.WindowCloseButtonHint)
+
+        self.chkbox = QCheckBox(_("Do not show this message again."))
+        self.setCheckBox(self.chkbox)
 
         self.setStandardButtons(QMessageBox.Ok)
         self.setDefaultButton(QMessageBox.Ok)
@@ -119,22 +141,19 @@ class UpdatesDialog(QMessageBox):
 
 class WorkerUpdates(QObject):
     """
-    Worker that checks for releases using the Github API.
+    Worker that fetch available releases using the Github API.
     """
-    sig_ready = Signal(object, object, object)
+    sig_ready = Signal(object, object)
 
     def __init__(self):
         super(WorkerUpdates, self).__init__()
-        self.error = None
-        self.latest_release = None
-        self.update_available = False
+        self._error = None
+        self._releases = None
 
     def start(self):
         """Main method of the WorkerUpdates worker."""
-        self.update_available = False
-        self.latest_release = __version__
-        self.error = None
-
+        error = None
+        releases = []
         try:
             page = requests.get(__releases_api__)
             data = page.json()
@@ -155,14 +174,13 @@ class WorkerUpdates(QObject):
                 "an unexpected error.")
 
         releases = [item['tag_name'] for item in data]
-        result = check_update_available(__version__, releases)
-        self.update_available, self.latest_release = result
 
-        self.sig_ready.emit(
-            self.update_available, self.latest_release, self.error)
+        self._error = error
+        self._releases = releases
+        self.sig_ready.emit(releases, error)
 
 
-def check_update_available(version, releases):
+def check_update_available(version: str, releases: list[str]):
     """
     Checks if there is an update available.
 
@@ -173,12 +191,12 @@ def check_update_available(version, releases):
     Copyright (c) Spyder Project Contributors
     Licensed under the terms of the MIT License
     """
+    if len(releases) == 0:
+        return False, None
+
     if is_stable_version(version):
         # Remove non stable versions from the list.
         releases = [r for r in releases if is_stable_version(r)]
-
-    if len(releases) == 0:
-        return False, None
 
     latest_release = releases[0]
     if version.endswith('dev'):
@@ -253,5 +271,5 @@ if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
     updates_manager = UpdatesManager()
-    updates_manager.start_updates_check(show_only_if_update=False)
+    updates_manager.start_updates_check(startup_check=False)
     sys.exit(app.exec_())
