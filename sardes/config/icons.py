@@ -272,6 +272,9 @@ FA_ICONS = {
     'undo': [
         ('mdi.undo-variant',),
         {'color': ICON_COLOR}],
+    'update': [
+        ('mdi.update',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'update_blue': [
         ('mdi.update',),
         {'color': BLUE, 'scale_factor': 1.3}],
