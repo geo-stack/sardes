@@ -70,15 +70,14 @@ class UpdatesManager(QObject):
 
         update_available, latest_release = check_update_available(
             __version__, releases)
+        muted_updates = CONF.get('main', 'muted_updates', [])
 
         if self._startup_check:
             if update_available is False:
                 return
-
-            last_shown_update = CONF.get(
-                'main', 'last_shown_update', __version__)
-            if check_version(latest_release, last_shown_update, '<='):
-                return
+            for release in muted_updates:
+                if check_version(latest_release, release, '='):
+                    return
 
         if error is not None:
             icn = QMessageBox.Warning
@@ -114,7 +113,9 @@ class UpdatesManager(QObject):
         self.dialog_updates.exec_()
 
         if self.dialog_updates.chkbox.isChecked():
-            CONF.set('main', 'last_update_shown', latest_release)
+            muted_updates.append(latest_release)
+            muted_updates = list(set(muted_updates))
+            CONF.set('main', 'muted_updates', muted_updates)
 
 
 class UpdatesDialog(QMessageBox):
