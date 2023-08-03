@@ -174,7 +174,7 @@ class WorkerUpdates(QObject):
                 "Unable to check for updates because of "
                 "an unexpected error.")
 
-        releases = [item['tag_name'] for item in data]
+        releases = [item['tag_name'][1:] for item in data]
 
         self._error = error
         self._releases = releases
