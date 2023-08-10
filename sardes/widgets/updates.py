@@ -34,7 +34,8 @@ import requests
 from sardes import (
     __version__, __releases_url__, __releases_api__,
     __namever__, __project_url__)
-from sardes.config.icons import get_icon
+from sardes.config.icons import (
+    get_icon, get_standard_iconsize, get_standard_icon)
 from sardes.config.locale import _
 from sardes.config.main import CONF
 
@@ -80,17 +81,18 @@ class UpdatesManager(QObject):
                     return
 
         if error is not None:
-            icn = QMessageBox.Warning
             msg = error
+            icon = get_standard_icon('SP_MessageBoxWarning')
         else:
-            icn = QMessageBox.Information
             if update_available:
+                icon = get_icon('update_blue')
                 msg = _(
                     "<p><b>Sardes {} is available!</b></p>"
                     "<p>This new version can be downloaded from our "
                     "<a href={}>Releases</a> page.</p>"
                     ).format(latest_release, __releases_url__)
             else:
+                icon = get_icon('commit_changes')
                 url_m = __project_url__ + "/milestones"
                 url_t = __project_url__ + "/issues"
                 msg = _(
@@ -109,7 +111,8 @@ class UpdatesManager(QObject):
         self.dialog_updates.chkbox.setVisible(self._startup_check)
 
         self.dialog_updates.setText(msg)
-        self.dialog_updates.setIcon(icn)
+        self.dialog_updates.setIconPixmap(
+            icon.pixmap(get_standard_iconsize('messagebox')))
         self.dialog_updates.exec_()
 
         if self.dialog_updates.chkbox.isChecked():
@@ -155,6 +158,7 @@ class WorkerUpdates(QObject):
         """Main method of the WorkerUpdates worker."""
         error = None
         releases = []
+
         try:
             page = requests.get(__releases_api__)
             data = page.json()
