@@ -11,13 +11,12 @@
 #
 # Some parts of this file is a derivative work of the Spyder project.
 # Licensed under the terms of the MIT License.
-# https://github.com/spyder-ide/spyder/master/spyder/workers/updates.py
-# https://github.com/spyder-ide/spyder/blob/master/spyder/utils/programs.py
 #
 # Copyright (C) 2013 The IPython Development Team
 # https://github.com/ipython/ipython
 #
-# See gwhat/__init__.py for more details.
+# Some parts of this file is a derivative work of the IPython project.
+# Licensed under the terms of the BSD License.
 # -----------------------------------------------------------------------------
 from __future__ import annotations
 
