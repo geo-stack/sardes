@@ -23,7 +23,7 @@ from __future__ import annotations
 
 # ---- Standard imports
 import re
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 # ---- Third party imports
 from qtpy.QtCore import QObject, Qt, QThread, Signal
@@ -76,7 +76,7 @@ class UpdatesManager(QObject):
             if update_available is False:
                 return
             for release in muted_updates:
-                if check_version(latest_release, release, '='):
+                if check_version(latest_release, release, '=='):
                     return
 
         if error is not None:
@@ -207,7 +207,7 @@ def check_update_available(version: str, releases: list[str]):
                 latest_release)
 
 
-def check_version(actver, version, cmp_op):
+def check_version(actver: str, version: str, cmp_op: str):
     """
     Check version string of an active module against a required version.
 
@@ -221,26 +221,17 @@ def check_version(actver, version, cmp_op):
     if isinstance(version, tuple):
         version = '.'.join([str(i) for i in version])
 
-    # Hacks needed so that LooseVersion understands that (for example)
-    # version = '3.0.0' is in fact bigger than actver = '3.0.0rc1'
-    if (is_stable_version(version) and not is_stable_version(actver) and
-            actver.startswith(version) and version != actver):
-        version = version + 'zz'
-    elif (is_stable_version(actver) and not is_stable_version(version) and
-            version.startswith(actver) and version != actver):
-        actver = actver + 'zz'
-
     try:
         if cmp_op == '>':
-            return LooseVersion(actver) > LooseVersion(version)
+            return Version(actver) > Version(version)
         elif cmp_op == '>=':
-            return LooseVersion(actver) >= LooseVersion(version)
-        elif cmp_op == '=':
-            return LooseVersion(actver) == LooseVersion(version)
+            return Version(actver) >= Version(version)
+        elif cmp_op == '==':
+            return Version(actver) == Version(version)
         elif cmp_op == '<':
-            return LooseVersion(actver) < LooseVersion(version)
+            return Version(actver) < Version(version)
         elif cmp_op == '<=':
-            return LooseVersion(actver) <= LooseVersion(version)
+            return Version(actver) <= Version(version)
         else:
             return False
     except TypeError:
