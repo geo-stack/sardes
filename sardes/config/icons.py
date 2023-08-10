@@ -319,7 +319,7 @@ def get_iconsize(size):
     return QSize(*ICON_SIZES[size])
 
 
-def get_standard_icon(constant):
+def get_standard_icon(constant: str) -> QIcon:
     """
     Return a QIcon of a standard pixmap.
 
