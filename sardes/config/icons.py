@@ -6,7 +6,7 @@
 # This file is part of SARDES.
 # Licensed under the terms of the GNU General Public License.
 # ----------------------------------------------------------------------------
-
+from __future__ import annotations
 
 # ---- Standard imports
 import os
@@ -331,7 +331,7 @@ def get_standard_icon(constant):
     return style.standardIcon(constant)
 
 
-def get_standard_iconsize(constant):
+def get_standard_iconsize(constant: str) -> int:
     """
     Return the standard size of various component of the gui.
 
@@ -342,3 +342,8 @@ def get_standard_iconsize(constant):
         return style.pixelMetric(QStyle.PM_MessageBoxIconSize)
     elif constant == 'small':
         return style.pixelMetric(QStyle.PM_SmallIconSize)
+    else:
+        raise ValueError((
+            "Valid values for the 'constant' parameter are "
+            "'messagebox' or 'small', but '{}' was provided"
+            ).format(constant))
