@@ -613,7 +613,8 @@ class MainWindow(MainWindowBase):
 
     def show(self):
         """
-        Extend Qt method to call show_plugin on each installed plugin.
+        Extend base class method to perform specific actions of certain
+        plugins after the mainwindow has been shown.
         """
         super().show()
 
