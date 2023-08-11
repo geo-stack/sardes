@@ -55,7 +55,8 @@ class UpdatesManager(QObject):
 
         self.worker_updates = WorkerUpdates()
         self.worker_updates.moveToThread(self.thread_updates)
-        self.worker_updates.sig_ready.connect(self._receive_updates_check)
+        self.worker_updates.sig_releases_fetched.connect(
+            self._receive_updates_check)
 
         self.thread_updates.started.connect(self.worker_updates.start)
 
@@ -146,49 +147,50 @@ class WorkerUpdates(QObject):
     """
     Worker that fetch available releases using the Github API.
     """
-    sig_ready = Signal(object, object)
+    sig_releases_fetched = Signal(object, object)
 
     def __init__(self):
         super(WorkerUpdates, self).__init__()
-        self._error = None
-        self._releases = None
 
     def start(self):
         """Main method of the WorkerUpdates worker."""
-        error = None
-        releases = []
+        releases, error = fetch_available_releases(__releases_api__)
+        self.sig_releases_fetched.emit(releases, error)
 
-        try:
-            page = requests.get(__releases_api__)
-            data = page.json()
-        except requests.exceptions.HTTPError:
-            self.error = _(
-                "Unable to retrieve information because of an http error.")
-        except requests.exceptions.ConnectionError:
-            self.error = (
-                "Unable to connect to the internet. Make "
-                "sure that your connection is working properly.")
-        except requests.exceptions.Timeout:
-            self.error = (
-                "Unable to retrieve information because the "
-                "connection timed out.")
-        except Exception:
-            self.error = (
-                "Unable to check for updates because of "
-                "an unexpected error.")
 
+def fetch_available_releases(url: str) -> (list[str], str):
+    """Retrieve the list of released versions available on GitHub."""
+    error = None
+    releases = []
+
+    try:
+        page = requests.get(__releases_api__)
+        data = page.json()
         releases = [item['tag_name'][1:] for item in data]
+    except requests.exceptions.HTTPError:
+        error = _(
+            "Unable to retrieve information because of an http error.")
+    except requests.exceptions.ConnectionError:
+        error = _(
+            "Unable to connect to the internet. Make "
+            "sure that your connection is working properly.")
+    except requests.exceptions.Timeout:
+        error = _(
+            "Unable to retrieve information because the "
+            "connection timed out.")
+    except Exception:
+        error = _(
+            "Unable to check for updates because of "
+            "an unexpected error.")
 
-        self._error = error
-        self._releases = releases
-        self.sig_ready.emit(releases, error)
+    return releases, error
 
 
 def check_update_available(version: str, releases: list[str]):
     """
     Checks if there is an update available.
 
-    It takes as parameters the current version of GWHAT and a list of
+    It takes as parameters the current version of Sardes and a list of
     valid cleaned releases in chronological order (what github api returns
     by default). Example: ['2.3.4', '2.3.3' ...]
 
