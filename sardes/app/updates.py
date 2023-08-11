@@ -149,9 +149,6 @@ class WorkerUpdates(QObject):
     """
     sig_releases_fetched = Signal(object, object)
 
-    def __init__(self):
-        super(WorkerUpdates, self).__init__()
-
     def start(self):
         """Main method of the WorkerUpdates worker."""
         releases, error = fetch_available_releases(__releases_api__)
