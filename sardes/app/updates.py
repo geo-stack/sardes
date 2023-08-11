@@ -108,14 +108,14 @@ class UpdatesManager(QObject):
         if self._startup_check:
             # Add some space between text and checkbox.
             msg += "<br>"
-        self.dialog_updates.chkbox.setVisible(self._startup_check)
+        self.dialog.chkbox.setVisible(self._startup_check)
 
-        self.dialog_updates.setText(msg)
-        self.dialog_updates.setIconPixmap(
+        self.dialog.setText(msg)
+        self.dialog.setIconPixmap(
             icon.pixmap(get_standard_iconsize('messagebox')))
-        self.dialog_updates.exec_()
+        self.dialog.exec_()
 
-        if self.dialog_updates.chkbox.isChecked():
+        if self.dialog.chkbox.isChecked():
             muted_updates.append(latest_release)
             muted_updates = list(set(muted_updates))
             CONF.set('main', 'muted_updates', muted_updates)
