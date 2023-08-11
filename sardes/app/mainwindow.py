@@ -100,7 +100,7 @@ class MainWindowBase(QMainWindow):
         print("Table models manager set up succesfully.")
 
         # Setup the update manager.
-        from sardes.widgets.updates import UpdatesManager
+        from sardes.app.updates import UpdatesManager
         self.updates_manager = UpdatesManager(parent=self)
 
         self.setup()
