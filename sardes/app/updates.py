@@ -183,7 +183,7 @@ def fetch_available_releases(url: str) -> (list[str], str):
     return releases, error
 
 
-def check_update_available(version: str, releases: list[str]):
+def check_update_available(version: str, releases: list[str]) -> (bool, str):
     """
     Checks if there is an update available.
 
@@ -201,12 +201,8 @@ def check_update_available(version: str, releases: list[str]):
         # Remove non stable versions from the list.
         releases = [r for r in releases if is_stable_version(r)]
 
-    latest_release = releases[0]
-    if version.endswith('dev'):
-        return (False, latest_release)
-    else:
-        return (check_version(version, latest_release, '<'),
-                latest_release)
+    latest_release = str(max([Version(r) for r in releases]))
+    return check_version(version, latest_release, '<'), latest_release
 
 
 def check_version(actver: str, version: str, cmp_op: str):
