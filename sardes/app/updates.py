@@ -48,26 +48,26 @@ class UpdatesManager(QObject):
     def __init__(self, parent=None):
         super().__init__()
 
-        self.dialog_updates = UpdatesDialog(parent)
         self._startup_check = False
+        self.dialog = UpdatesDialog(parent)
 
-        self.thread_updates = QThread()
+        self.thread = QThread()
 
-        self.worker_updates = WorkerUpdates()
-        self.worker_updates.moveToThread(self.thread_updates)
-        self.worker_updates.sig_releases_fetched.connect(
+        self.worker = WorkerUpdates()
+        self.worker.moveToThread(self.thread)
+        self.worker.sig_releases_fetched.connect(
             self._receive_updates_check)
 
-        self.thread_updates.started.connect(self.worker_updates.start)
+        self.thread.started.connect(self.worker.start)
 
     def start_updates_check(self, startup_check: bool = False):
         """Check if updates are available."""
         self._startup_check = startup_check
-        self.thread_updates.start()
+        self.thread.start()
 
     def _receive_updates_check(self, releases: list[str], error: str):
         """Receive results from an update check."""
-        self.thread_updates.quit()
+        self.thread.quit()
 
         update_available, latest_release = check_update_available(
             __version__, releases)
