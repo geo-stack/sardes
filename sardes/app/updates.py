@@ -47,7 +47,6 @@ class UpdatesManager(QObject):
 
     def __init__(self, parent=None):
         super().__init__()
-        self._is_checking_for_updates = False
 
         self._startup_check = False
         self.dialog = UpdatesDialog(parent)
@@ -63,7 +62,6 @@ class UpdatesManager(QObject):
 
     def start_updates_check(self, startup_check: bool = False):
         """Check if updates are available."""
-        self._is_checking_for_updates = True
         self._startup_check = startup_check
         self.thread.start()
 
@@ -77,11 +75,9 @@ class UpdatesManager(QObject):
 
         if self._startup_check:
             if update_available is False or error is not None:
-                self._is_checking_for_updates = False
                 return
             for release in muted_updates:
                 if check_version(latest_release, release, '=='):
-                    self._is_checking_for_updates = False
                     return
 
         if error is not None:
@@ -123,8 +119,6 @@ class UpdatesManager(QObject):
             muted_updates.append(latest_release)
             muted_updates = list(set(muted_updates))
             CONF.set('main', 'muted_updates', muted_updates)
-
-        self._is_checking_for_updates = False
 
 
 class UpdatesDialog(QMessageBox):

@@ -27,10 +27,11 @@ from sardes.config.main import CONF
 def updates_manager(qtbot):
     CONF.reset_to_defaults()
     updates_manager = UpdatesManager()
-
     assert updates_manager.dialog.isVisible() is False
+    yield updates_manager
 
-    return updates_manager
+    # To avoid: Thread: Destroyed while thread is still running.
+    qtbot.wait(300)
 
 
 # =============================================================================
