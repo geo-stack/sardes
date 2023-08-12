@@ -16,7 +16,7 @@ import pytest
 from qtpy.QtCore import QTimer
 
 # ---- Local imports
-from sardes.app.updates import UpdatesManager, QMessageBox
+from sardes.app.updates import UpdatesManager
 from sardes.config.main import CONF
 
 
@@ -28,7 +28,6 @@ def updates_manager(qtbot):
     CONF.reset_to_defaults()
     updates_manager = UpdatesManager()
 
-    updates_manager.dialog.setModal(False)
     assert updates_manager.dialog.isVisible() is False
 
     return updates_manager
@@ -104,50 +103,30 @@ def test_no_update_available(updates_manager, qtbot, mocker):
     assert updates_manager.dialog.isVisible() is False
 
 
-#     # Assert the updates manager is working as expected when there is
-#     # an error.
-#     fetch_patcher.return_value = (['0.9.0', '1.1.0rc2', '1.0.0'], 'Some error')
+def test_update_error(updates_manager, qtbot, mocker):
+    """
+    Assert that the worker to check for updates on the GitHub API is
+    working as expected when there is an error.
+    """
+    mocker.patch(
+        'sardes.app.updates.fetch_available_releases',
+        return_value=(['0.9.0', '1.1.0rc2', '1.0.0'], 'some error')
+        )
 
-#     with qtbot.waitSignal(updates_manager.worker.sig_releases_fetched):
-#         updates_manager.start_updates_check()
+    def handle_dialog(on_startup: bool):
+        assert updates_manager.dialog.isVisible() is True
+        assert updates_manager.dialog.chkbox.isVisible() == on_startup
+        assert 'some error' in updates_manager.dialog.text()
+        updates_manager.dialog.close()
 
-#     assert updates_manager.dialog.isVisible() is True
-#     assert updates_manager.dialog.chkbox.isVisible() is False
-#     assert 'Some error' in updates_manager.dialog.text()
-#     updates_manager.dialog.close()
+    with qtbot.waitSignal(updates_manager.worker.sig_releases_fetched):
+        QTimer.singleShot(300, lambda: handle_dialog(on_startup=False))
+        updates_manager.start_updates_check()
 
-
-# def test_updates_manager_startup(updates_manager, qtbot, mocker):
-#     """
-#     Assert that the worker to check for updates on the GitHub API is
-#     working as expected when on Sardes startup.
-#     """
-#     mocker.patch('sardes.app.updates.__version__', '1.0.0')
-
-#     # Assert the updates manager is working as expected when up-to-date.
-#     fetch_patcher = mocker.patch(
-#         'sardes.app.updates.fetch_available_releases',
-#         return_value=(['0.9.0', '1.0.0'], None)
-#         )
-
-#     with qtbot.waitSignal(updates_manager.worker.sig_releases_fetched):
-#         updates_manager.start_updates_check(startup_check=True)
-
-#     assert updates_manager.dialog.isVisible() is False
-
-#     # Assert the updates manager is working as expected when an error occured.
-#     fetch_patcher.return_value = (['0.9.0', '1.0.0'], 'Some error')
-
-#     with qtbot.waitSignal(updates_manager.worker.sig_releases_fetched):
-#         updates_manager.start_updates_check(startup_check=True)
-
-#     assert updates_manager.dialog.isVisible() is False
-
-#     # Assert the updates manager is working as expected when an update
-#     # is available.
-#     fetch_patcher.return_value = (['0.9.0', '1.1.0', '1.0.0'], None)
-
-
+    # Test that the error message is not shown during STARTUP.
+    with qtbot.waitSignal(updates_manager.worker.sig_releases_fetched):
+        updates_manager.start_updates_check(startup_check=True)
+    assert updates_manager.dialog.isVisible() is False
 
 
 if __name__ == "__main__":
