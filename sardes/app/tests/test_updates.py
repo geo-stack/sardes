@@ -78,6 +78,9 @@ def test_no_update_available(updates_manager, qtbot, mocker):
     """
     Assert that the worker to check for updates on the GitHub API is
     working as expected when no update is available.
+
+    Note that since we are forcing the current version to a stable version,
+    the '1.1.0rc2  update should be proposed to the user.
     """
     mocker.patch('sardes.app.updates.__version__', '1.1.0')
     mocker.patch(
@@ -85,24 +88,20 @@ def test_no_update_available(updates_manager, qtbot, mocker):
         return_value=(['0.9.0', '1.1.0rc2', '1.0.0'], None)
         )
 
-    # Note that since the current version is stable, the '1.1.0rc2 update
-    # should not be proposed to the user.
+    def handle_dialog(on_startup: bool):
+        assert updates_manager.dialog.isVisible() is True
+        assert updates_manager.dialog.chkbox.isVisible() == on_startup
+        assert 'is up to date' in updates_manager.dialog.text()
+        updates_manager.dialog.close()
 
+    with qtbot.waitSignal(updates_manager.worker.sig_releases_fetched):
+        QTimer.singleShot(300, lambda: handle_dialog(on_startup=False))
+        updates_manager.start_updates_check()
 
-
-#     assert updates_manager.dialog.isVisible() is True
-#     assert updates_manager.dialog.chkbox.isVisible() is False
-#     assert 'is up to date' in updates_manager.dialog.text()
-#     updates_manager.dialog.close()
-
-#     # Assert the updates manager is working as expected when an update
-#     # is available.
-
-
-#     mocker.patch('sardes.app.updates.__version__', '1.1.0rc1')
-
-#     with qtbot.waitSignal(updates_manager.worker.sig_releases_fetched):
-#         updates_manager.start_updates_check()
+    # Test that the 'up-to-date' message is not shown during STARTUP.
+    with qtbot.waitSignal(updates_manager.worker.sig_releases_fetched):
+        updates_manager.start_updates_check(startup_check=True)
+    assert updates_manager.dialog.isVisible() is False
 
 
 #     # Assert the updates manager is working as expected when there is
