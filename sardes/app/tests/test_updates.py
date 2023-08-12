@@ -13,6 +13,7 @@ os.environ['SARDES_PYTEST'] = 'True'
 
 # ---- Third parties imports
 import pytest
+from qtpy.QtCore import QTimer
 
 # ---- Local imports
 from sardes.app.updates import UpdatesManager, QMessageBox
@@ -40,42 +41,37 @@ def test_update_available(updates_manager, qtbot, mocker):
     """
     Assert that the worker to check for updates on the GitHub API is
     working as expected when an update is available.
+
+    Note that since we are forcing the current version to a not stable version,
+    the '1.1.0rc2  update should be proposed to the user.
     """
     mocker.patch('sardes.app.updates.__version__', '1.1.0rc1')
     mocker.patch(
         'sardes.app.updates.fetch_available_releases',
         return_value=(['0.9.0', '1.1.0rc2', '1.0.0'], None)
         )
-    msgbox_patcher = mocker.patch.object(
-        QMessageBox, 'exec_', return_value=True)
 
-    # Note that since the current version is not stable, the '1.1.0rc2
-    # update should be proposed to the user.
+    def handle_dialog(on_startup: bool):
+        assert updates_manager.dialog.isVisible() is True
+        assert updates_manager.dialog.chkbox.isVisible() == on_startup
+        assert 'Sardes 1.1.0rc2 is available!' in updates_manager.dialog.text()
+        updates_manager.dialog.close()
 
     with qtbot.waitSignal(updates_manager.worker.sig_releases_fetched):
+        QTimer.singleShot(300, lambda: handle_dialog(on_startup=False))
         updates_manager.start_updates_check()
 
-    assert msgbox_patcher.call_count == 1
-    assert updates_manager.dialog.chkbox.isVisible() is False
-    assert 'Sardes 1.1.0rc2 is available!' in updates_manager.dialog.text()
-    updates_manager.dialog.close()
-
-    # Test that this is working also as expected during STARTUP.
+    # Test that this is working also as expected during STARTUP and mute
+    # the message on next startups.
     with qtbot.waitSignal(updates_manager.worker.sig_releases_fetched):
         updates_manager.dialog.chkbox.setChecked(True)
+        QTimer.singleShot(300, lambda: handle_dialog(on_startup=True))
         updates_manager.start_updates_check(startup_check=True)
 
-    assert msgbox_patcher.call_count == 2
-    assert updates_manager.dialog.chkbox.isVisible() is True
-    assert 'Sardes 1.1.0rc2 is available!' in updates_manager.dialog.text()
-    updates_manager.dialog.close()
-
-    # Assert the update is muted as expected because the checkbox was checked
-    # by the user on last show.
+    # Assert the update is muted as expected.
     with qtbot.waitSignal(updates_manager.worker.sig_releases_fetched):
         updates_manager.start_updates_check(startup_check=True)
-
-    assert msgbox_patcher.call_count == 2
+    assert updates_manager.dialog.isVisible() is False
 
 
 def test_no_update_available(updates_manager, qtbot, mocker):
