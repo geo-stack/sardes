@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
 # Copyright © SARDES Project Contributors
-# https://github.com/cgq-qgc/sardes
+# https://github.com/geo-stack/sardes
 #
 # This file is part of SARDES.
 # Licensed under the terms of the GNU General Public License.
 # ----------------------------------------------------------------------------
-
+from __future__ import annotations
 
 # ---- Standard imports
 import os
@@ -272,6 +272,9 @@ FA_ICONS = {
     'undo': [
         ('mdi.undo-variant',),
         {'color': ICON_COLOR}],
+    'update': [
+        ('mdi.update',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'update_blue': [
         ('mdi.update',),
         {'color': BLUE, 'scale_factor': 1.3}],
@@ -316,7 +319,7 @@ def get_iconsize(size):
     return QSize(*ICON_SIZES[size])
 
 
-def get_standard_icon(constant):
+def get_standard_icon(constant: str) -> QIcon:
     """
     Return a QIcon of a standard pixmap.
 
@@ -328,7 +331,7 @@ def get_standard_icon(constant):
     return style.standardIcon(constant)
 
 
-def get_standard_iconsize(constant):
+def get_standard_iconsize(constant: str) -> int:
     """
     Return the standard size of various component of the gui.
 
@@ -339,3 +342,8 @@ def get_standard_iconsize(constant):
         return style.pixelMetric(QStyle.PM_MessageBoxIconSize)
     elif constant == 'small':
         return style.pixelMetric(QStyle.PM_SmallIconSize)
+    else:
+        raise ValueError((
+            "Valid values for the 'constant' parameter are "
+            "'messagebox' or 'small', but '{}' was provided"
+            ).format(constant))

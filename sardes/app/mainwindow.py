@@ -99,6 +99,10 @@ class MainWindowBase(QMainWindow):
             self.db_connection_manager)
         print("Table models manager set up succesfully.")
 
+        # Setup the update manager.
+        from sardes.app.updates import UpdatesManager
+        self.updates_manager = UpdatesManager(parent=self)
+
         self.setup()
 
     def set_splash(self, message):
@@ -262,6 +266,15 @@ class MainWindowBase(QMainWindow):
             triggered=self.confdialog.show
             )
 
+        # Create show console action.
+        self.console_action = None
+        if self.console is not None:
+            self.console_action = create_action(
+                self, _('Sardes Console...'), icon='console',
+                shortcut='Ctrl+Shift+J', context=Qt.ApplicationShortcut,
+                triggered=self.console.show
+                )
+
         # Create the panes and toolbars menus and actions
         self.panes_menu = QMenu(_("Panes"), self)
         self.panes_menu.setIcon(get_icon('panes'))
@@ -282,13 +295,6 @@ class MainWindowBase(QMainWindow):
             triggered=self.reset_window_layout)
 
         # Create help related actions and menus.
-        self.console_action = None
-        if self.console is not None:
-            self.console_action = create_action(
-                self, _('Sardes Console...'), icon='console',
-                shortcut='Ctrl+Shift+J', context=Qt.ApplicationShortcut,
-                triggered=self.console.show
-                )
         report_action = create_action(
             self, _('Report an issue...'), icon='bug',
             shortcut='Ctrl+Shift+R', context=Qt.ApplicationShortcut,
@@ -299,6 +305,10 @@ class MainWindowBase(QMainWindow):
             shortcut='Ctrl+Shift+I',
             context=Qt.ApplicationShortcut
             )
+        update_action = create_action(
+            self, _('Check for updates...'), icon='update',
+            triggered=lambda: self.updates_manager.start_updates_check()
+            )
         exit_action = create_action(
             self, _('Exit'), icon='exit', triggered=self.close,
             shortcut='Ctrl+Shift+Q', context=Qt.ApplicationShortcut
@@ -306,11 +316,12 @@ class MainWindowBase(QMainWindow):
 
         # Add the actions and menus to the options menu.
         options_menu_items = [
-            self.lang_menu, preferences_action, Separator(),
-            self.panes_menu, self.toolbars_menu,
+            self.lang_menu, preferences_action, self.console_action,
+            Separator(), self.panes_menu, self.toolbars_menu,
             self.lock_dockwidgets_and_toolbars_action,
             self.reset_window_layout_action, Separator(),
-            self.console_action, report_action, about_action, exit_action
+            report_action, update_action, about_action,
+            Separator(), exit_action
             ]
         for item in options_menu_items:
             if isinstance(item, Separator):
@@ -602,7 +613,8 @@ class MainWindow(MainWindowBase):
 
     def show(self):
         """
-        Extend Qt method to call show_plugin on each installed plugin.
+        Extend base class method to perform specific actions of certain
+        plugins after the mainwindow has been shown.
         """
         super().show()
 
@@ -612,6 +624,8 @@ class MainWindow(MainWindowBase):
         # manager connection signals.
         if self.databases_plugin.get_option('auto_connect_to_database'):
             self.databases_plugin.connect_to_database()
+
+        self.updates_manager.start_updates_check(startup_check=True)
 
 
 class ExceptHook(QObject):

@@ -529,10 +529,11 @@ class SardesPlugin(SardesPluginBase):
 
         This method is called by the mainwindow after it is shown.
         """
-        is_visible = self.get_option('is_visible', False)
-        is_docked = self.get_option('is_docked', True)
-        if is_visible and not is_docked:
-            self.dockwindow.undock()
+        if self.dockwindow is not None:
+            is_visible = self.get_option('is_visible', False)
+            is_docked = self.get_option('is_docked', True)
+            if is_visible and not is_docked:
+                self.dockwindow.undock()
 
     def close_plugin(self):
         """
