@@ -632,6 +632,8 @@ class MainWindow(MainWindowBase):
 
         self.updates_manager.start_updates_check(startup_check=True)
 
+        self.about_sardes.close()
+
 
 class ExceptHook(QObject):
     """
