@@ -103,6 +103,10 @@ class MainWindowBase(QMainWindow):
         from sardes.app.updates import UpdatesManager
         self.updates_manager = UpdatesManager(parent=self)
 
+        # Setup the about Sardes dialog.
+        from sardes.app.about import AboutDialog
+        self.about_sardes = AboutDialog(parent=self)
+
         self.setup()
 
     def set_splash(self, message):
@@ -300,10 +304,11 @@ class MainWindowBase(QMainWindow):
             shortcut='Ctrl+Shift+R', context=Qt.ApplicationShortcut,
             triggered=lambda: QDesktopServices.openUrl(QUrl(GITHUB_ISSUES_URL))
             )
-        about_action = create_action(
+        self.about_action = create_action(
             self, _('About Sardes...'), icon='information',
             shortcut='Ctrl+Shift+I',
-            context=Qt.ApplicationShortcut
+            context=Qt.ApplicationShortcut,
+            triggered=lambda: self.about_sardes.show()
             )
         update_action = create_action(
             self, _('Check for updates...'), icon='update',
@@ -320,7 +325,7 @@ class MainWindowBase(QMainWindow):
             Separator(), self.panes_menu, self.toolbars_menu,
             self.lock_dockwidgets_and_toolbars_action,
             self.reset_window_layout_action, Separator(),
-            report_action, update_action, about_action,
+            report_action, update_action, self.about_action,
             Separator(), exit_action
             ]
         for item in options_menu_items:
@@ -438,6 +443,10 @@ class MainWindowBase(QMainWindow):
             # Close Sardes console.
             if self.console is not None:
                 self.console.close()
+
+            # Close the About Sardes and Updates dialogs.
+            self.updates_manager.dialog.close()
+            self.about_sardes.close()
 
             # Close all internal and thirdparty plugins.
             for plugin in self.internal_plugins + self.thirdparty_plugins:
