@@ -444,6 +444,10 @@ class MainWindowBase(QMainWindow):
             if self.console is not None:
                 self.console.close()
 
+            # Close the About Sardes and Updates dialogs.
+            self.updates_manager.dialog.close()
+            self.about_sardes.close()
+
             # Close all internal and thirdparty plugins.
             for plugin in self.internal_plugins + self.thirdparty_plugins:
                 plugin.close_plugin()
@@ -631,8 +635,6 @@ class MainWindow(MainWindowBase):
             self.databases_plugin.connect_to_database()
 
         self.updates_manager.start_updates_check(startup_check=True)
-
-        self.about_sardes.close()
 
 
 class ExceptHook(QObject):
