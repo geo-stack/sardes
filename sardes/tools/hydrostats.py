@@ -387,7 +387,7 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
         percentiles.index = MONTHS[self.figure._mth_idx]
         percentiles.index.name = _('months')
         percentiles = percentiles.round(2)
-        percentiles['nyear'] = self.figure._nyear.astype(str)
+        percentiles[_('nyears')] = self.figure._nyear.astype(str)
         percentiles.to_clipboard(excel=True)
 
     def save_multipdf_statistical_graphs(self, filename):

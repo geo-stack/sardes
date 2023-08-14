@@ -23,7 +23,8 @@ import numpy as np
 import pytest
 import pandas as pd
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QToolBar, QFileDialog, QMessageBox, QWidget
+from qtpy.QtWidgets import (
+    QApplication, QToolBar, QFileDialog, QMessageBox, QWidget)
 
 
 # ---- Local imports
@@ -366,6 +367,32 @@ def test_multipage_pdf_creation(qtbot, hydrostats_tool, mocker, tmp_path):
         hydrostats_tool.toolwidget().save_multipdf_statistical_graphs_btn,
         Qt.LeftButton)
     assert osp.exists(selectedfilename) is True
+
+
+def test_copy_data(hydrostats_tool, mocker, tmp_path, qtbot):
+    """
+    Test that copying the numerical data on the clipboard is working
+    as expected.
+    """
+    hydrostats_tool.trigger()
+    qtbot.waitExposed(hydrostats_tool._toolwidget)
+
+    QApplication.clipboard().clear()
+    assert QApplication.clipboard().text() == ''
+
+    qtbot.mouseClick(hydrostats_tool.toolwidget().copy_data_btn, Qt.LeftButton)
+
+    data = pd.read_clipboard()
+    assert list(data.columns) == [
+        'months', '0', '10', '25', '50', '75', '90', '100', 'nyears']
+    assert list(data['nyears']) == [6, 6, 6, 6, 0, 6, 6, 6, 6, 6, 6, 5]
+    assert np.nansum(data['0']) == 1.0 * 11
+    assert np.nansum(data['10']) == 1.0 * 11
+    assert np.nansum(data['25']) == 1.0 * 11
+    assert np.nansum(data['50']) == 5.5 * 11
+    assert np.nansum(data['75']) == 15.0 * 11
+    assert np.nansum(data['90']) == 15.0 * 11
+    assert np.nansum(data['100']) == 15.0 * 11
 
 
 if __name__ == "__main__":
