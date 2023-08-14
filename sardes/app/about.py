@@ -32,7 +32,7 @@ class AboutDialog(QDialog):
         super().__init__(parent=parent)
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
-        self.setWindowIcon(get_icon('information'))
+        self.setWindowIcon(get_icon('master'))
         self.setWindowTitle(_("About Sardes"))
         versions = get_versions()
 
