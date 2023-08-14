@@ -21,14 +21,14 @@ from qtpy.QtWidgets import (
 
 # ---- Local imports
 from sardes import get_versions, __rootdir__
-from gwire.config.icons import get_icon
-from gwire.config.locale import _
+from sardes.config.icons import get_icon
+from sardes.config.locale import _
 
 
 class AboutDialog(QDialog):
 
     def __init__(self, parent=None):
-        """Create About Gwire dialog with general information."""
+        """Create About Sardes dialog with general information."""
         super().__init__(parent=parent)
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
