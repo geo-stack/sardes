@@ -367,6 +367,20 @@ class SatisticalHydrographCanvas(FigureCanvasQTAgg):
         QApplication.clipboard().setImage(QImage.fromData(buf.getvalue()))
         buf.close()
 
+    def copy_data_to_clipboard(self):
+        """Put a copy of the data on the clipboard."""
+        if self.figure._percentiles is None:
+            return
+        percentiles = (
+            self.figure._percentiles
+            [[0, 10, 25, 50, 75, 90, 100]]
+            .copy())
+        percentiles.index = MONTHS[self.figure._mth_idx]
+        percentiles.index.name = _('months')
+        percentiles = percentiles.round(2)
+        percentiles['nyear'] = self.figure._nyear.astype(str)
+        percentiles.to_clipboard(excel=True)
+
     def save_multipdf_statistical_graphs(self, filename):
         """
         Create a multipage pdf file containing the statistical hydrographs
