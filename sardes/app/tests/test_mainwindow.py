@@ -62,6 +62,8 @@ def mainwindow(qtbot, mocker):
         if plugin.dockwindow is not None:
             assert not plugin.dockwindow.isVisible()
 
+    assert not mainwindow.about_sardes.isVisible()
+
 
 # =============================================================================
 # ---- Tests for MainWindow
@@ -102,6 +104,16 @@ def test_sardes_console(qtbot, mocker):
     with qtbot.waitSignal(mainwindow.sig_about_to_close):
         mainwindow.close()
     assert not mainwindow.console.isVisible()
+
+
+def test_about_sardes(mainwindow, qtbot, mocker):
+    """
+    Test that sardes about dialog is working as expected.
+    """
+    assert mainwindow.about_sardes is not None
+    assert not mainwindow.about_sardes.isVisible()
+    mainwindow.about_action.trigger()
+    assert mainwindow.about_sardes.isVisible()
 
 
 @pytest.mark.skipif(

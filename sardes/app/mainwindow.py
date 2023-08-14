@@ -304,7 +304,7 @@ class MainWindowBase(QMainWindow):
             shortcut='Ctrl+Shift+R', context=Qt.ApplicationShortcut,
             triggered=lambda: QDesktopServices.openUrl(QUrl(GITHUB_ISSUES_URL))
             )
-        about_action = create_action(
+        self.about_action = create_action(
             self, _('About Sardes...'), icon='information',
             shortcut='Ctrl+Shift+I',
             context=Qt.ApplicationShortcut,
@@ -325,7 +325,7 @@ class MainWindowBase(QMainWindow):
             Separator(), self.panes_menu, self.toolbars_menu,
             self.lock_dockwidgets_and_toolbars_action,
             self.reset_window_layout_action, Separator(),
-            report_action, update_action, about_action,
+            report_action, update_action, self.about_action,
             Separator(), exit_action
             ]
         for item in options_menu_items:
