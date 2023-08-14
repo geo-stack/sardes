@@ -103,6 +103,10 @@ class MainWindowBase(QMainWindow):
         from sardes.app.updates import UpdatesManager
         self.updates_manager = UpdatesManager(parent=self)
 
+        # Setup the about Sardes dialog.
+        from sardes.app.about import AboutDialog
+        self.about_sardes = AboutDialog(parent=self)
+
         self.setup()
 
     def set_splash(self, message):
@@ -303,7 +307,8 @@ class MainWindowBase(QMainWindow):
         about_action = create_action(
             self, _('About Sardes...'), icon='information',
             shortcut='Ctrl+Shift+I',
-            context=Qt.ApplicationShortcut
+            context=Qt.ApplicationShortcut,
+            triggered=lambda: self.about_sardes.show()
             )
         update_action = create_action(
             self, _('Check for updates...'), icon='update',
