@@ -5,7 +5,7 @@
 #
 # This file is part of SARDES.
 # Licensed under the terms of the GNU General Public License.
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 from __future__ import annotations
 
 # ---- Standard imports
@@ -152,7 +152,7 @@ FA_ICONS = {
         ('mdi.notebook-plus-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'information': [
-        ('mdi.information-outline',),
+        ('mdi.information-variant',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'languages': [
         ('mdi.web',),
