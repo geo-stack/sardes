@@ -455,6 +455,10 @@ class SatisticalHydrographFigure(Figure):
             (25, 10): "#4eb3d3",
             (10, 0): "#2b8cbe"}
 
+        self._percentiles = None
+        self._nyear = None
+        self._mth_idx = None
+
         self.setup_axes()
         self.setup_artists()
         self.setup_legend()
@@ -631,20 +635,22 @@ class SatisticalHydrographFigure(Figure):
             [50] +
             [item for sublist in self.percentile_qpairs for item in sublist]
             ))
+
         percentiles, nyear = compute_monthly_percentiles(
             wlevels, q, pool=pool)
-        percentiles = percentiles.iloc[mth_idx]
-        nyear = nyear[mth_idx]
+        self._percentiles = percentiles.iloc[mth_idx]
+        self._nyear = nyear[mth_idx]
+        self._mth_idx = mth_idx
 
         # Update the percentile bars and median plot.
         for qpair in self.percentile_qpairs:
             container = self.percentile_bars[qpair]
             for i, bar in enumerate(container.patches):
-                ytop = percentiles.iloc[i][qpair[0]]
-                ybot = percentiles.iloc[i][qpair[1]]
+                ytop = self._percentiles.iloc[i][qpair[0]]
+                ybot = self._percentiles.iloc[i][qpair[1]]
                 bar.set_y(ybot)
                 bar.set_height(ytop - ybot)
-        self.med_wlvl_plot.set_ydata(percentiles[50])
+        self.med_wlvl_plot.set_ydata(self._percentiles[50])
 
         # Plot the current water level data series.
         cur_wlevels = wlevels[
@@ -687,7 +693,7 @@ class SatisticalHydrographFigure(Figure):
         yoffset = 0.1 / self.get_figwidth() * yrange
         ax.axis([-0.75, 11.75, ymin - yoffset, ymax + yoffset])
 
-        for i, (m, n) in enumerate(zip(MONTHS[mth_idx], nyear)):
+        for i, (m, n) in enumerate(zip(MONTHS[mth_idx], self._nyear)):
             self.monthlabels[i].set_text(m)
             self.ncountlabels[i].set_text('(%d)' % n)
 
