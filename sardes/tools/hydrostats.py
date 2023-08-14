@@ -172,6 +172,15 @@ class SatisticalHydrographWidget(QMainWindow):
             iconsize=get_iconsize())
         toolbar.addWidget(self.copy_to_clipboard_btn)
 
+        self.copy_data_btn = create_toolbutton(
+            self, icon='copy_table_clipboard',
+            text=_("Copy Data"),
+            tip=_("Put a copy of the numerical data on the Clipboard."),
+            triggered=self.canvas.copy_data_to_clipboard,
+            shortcut='Ctrl+E',
+            iconsize=get_iconsize())
+        toolbar.addWidget(self.copy_data_btn)
+
         self.save_multipdf_statistical_graphs_btn = create_toolbutton(
             self, icon='file_multi_pages',
             text=_("Multi Pages PDF"),
