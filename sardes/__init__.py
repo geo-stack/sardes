@@ -57,7 +57,7 @@ def get_versions(reporev=True):
         system = 'Darwin'
 
     return {
-        'version': __version__,
+        'sardes': __version__,
         'python': platform.python_version(),
         'bitness': 64 if sys.maxsize > 2**32 else 32,
         'qt': qtpy.QtCore.__version__,
