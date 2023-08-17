@@ -47,6 +47,9 @@ def _transaction_wrapper(self, func, mode, *args, **kwargs):
     self.begin_transaction()
     try:
         results = func(self, *args, **kwargs)
+        # TODO: I am not sure we should auto commit transaction for every
+        # read. What if we want to do a read in-between two write within
+        # the same transaction?
         if mode == 'read' or kwargs.get('auto_commit', True):
             self.commit_transaction()
     finally:

@@ -135,7 +135,7 @@ class LogoSelector(QWidget):
         """
         self._filename = None
         default_image = qta.icon(
-            'fa.image', color='#b3b3b3'
+            'fa5.image', color='#b3b3b3'
             ).pixmap(self.logo_size, self.logo_size)
         self.logo_preview_label.setPixmap(default_image)
         self.sig_logo_changed.emit()

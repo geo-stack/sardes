@@ -7,6 +7,4 @@
 # Licensed under the terms of the GNU General Public License.
 # -----------------------------------------------------------------------------
 
-
-import pytest
 from sardes.database.accessors.tests.conftest import *

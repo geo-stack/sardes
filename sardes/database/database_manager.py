@@ -31,6 +31,7 @@ from sardes.config.locale import _
 from sardes.config.ospath import get_documents_logo_filename
 from sardes.config.main import CONF
 from sardes.database.accessors.accessor_helpers import create_empty_readings
+from sardes.database.accessors.accessor_errors import ImportHGSurveysError
 from sardes.tools.hydrographs import HydrographCanvas
 from sardes.tools.save2excel import _save_reading_data_to_xlsx
 from sardes.tools.waterquality import _save_hg_data_to_xlsx
@@ -456,7 +457,7 @@ class DatabaseConnectionWorker(WorkerBase):
 
         return sonde_install,
 
-    # ---- Publish Network Data
+    # ---- Complex operations
     def _publish_to_kml(self, kml_filename, iri_data=None, iri_logs=None,
                         iri_graphs=None, iri_quality=None):
         """
@@ -484,6 +485,7 @@ class DatabaseConnectionWorker(WorkerBase):
         results : bool
             Whether the publishing of the piezometric network was successful.
         """
+        from sardes.plugins.network.base import format_kml_station_info
         self._stop_kml_publishing = False
 
         # Create the files and folder architecture.
@@ -550,7 +552,7 @@ class DatabaseConnectionWorker(WorkerBase):
             for station_uuid, station_data in loc_stations_data.iterrows():
                 progress += 1
                 station_data = stations_data.loc[station_uuid]
-                is_station_active = station_data['is_station_active']
+
                 station_repere_data = (
                     repere_data
                     [repere_data['sampling_feature_uuid'] == station_uuid]
@@ -562,41 +564,23 @@ class DatabaseConnectionWorker(WorkerBase):
                 else:
                     station_repere_data = pd.Series([], dtype=object)
                 last_repere_data = station_repere_data.iloc[-1]
+
                 ground_altitude = (
                     last_repere_data['top_casing_alt'] -
                     last_repere_data['casing_length'])
                 is_alt_geodesic = last_repere_data['is_alt_geodesic']
 
-                pnt_desc += '{} = {}<br/>'.format(
-                    _('Station'),
-                    station_data['obs_well_id'])
-                pnt_desc += '{} = {:0.4f}<br/>'.format(
-                    _('Longitude'),
-                    station_data['longitude'])
-                pnt_desc += '{} = {:0.4f}<br/>'.format(
-                    _('Latitude'),
-                    station_data['latitude'])
-                pnt_desc += '{} = {:0.2f} {} ({})<br/>'.format(
-                    _('Ground Alt.'),
-                    ground_altitude,
-                    _('m MSL'),
-                    _('Geodesic') if is_alt_geodesic else _('Approximate'))
-                pnt_desc += '{} = {}<br/>'.format(
-                    _('Water-table'),
-                    station_data['confinement'])
-                pnt_desc += '{} = {}<br/>'.format(
-                    _('Influenced'),
-                    station_data['is_influenced'])
-                pnt_desc += '<br/>'
                 if station_uuid in stations_data_overview.index:
                     last_reading = (stations_data_overview
                                     .loc[station_uuid]['last_date'])
-                    pnt_desc += '{} = {}<br/>'.format(
-                        _('Last reading'),
-                        last_reading.strftime('%Y-%m-%d'))
-                pnt_desc += '{} = {}<br/>'.format(
-                    _('Status'),
-                    _('Active') if is_station_active else _('Inactive'))
+                else:
+                    last_reading = None
+
+                # Format the info for the current station.
+                pnt_desc += format_kml_station_info(
+                    station_data, ground_altitude, is_alt_geodesic,
+                    last_reading
+                    )
 
                 # Fetch data from the database.
                 if iri_data is not None or iri_graphs is not None:
@@ -708,6 +692,93 @@ class DatabaseConnectionWorker(WorkerBase):
             pnt.description = pnt_desc
         kml.save(kml_filename)
         return True,
+
+    def _add_hg_survey_data(self, imported_survey_data: dict(dict)):
+        """
+        Add HG survey data imported from a XLSX file.
+        """
+        from sardes.plugins.hydrogeochemistry.hgsurveys import (
+            format_hg_survey_imported_data,
+            format_purge_imported_data,
+            format_params_data_imported_data
+            )
+
+        hg_surveys_data, = self._get('hg_surveys')
+        stations_data, = self._get('observation_wells_data')
+        hg_sampling_methods_data, = self._get('hg_sampling_methods')
+        pump_types_data, = self._get('pump_types')
+        hg_params_data, = self._get('hg_params')
+        measurement_units_data, = self._get('measurement_units')
+
+        new_hg_surveys = []
+        new_purges = []
+        new_hg_param_vals = []
+
+        for sheet_name, sheet_data in imported_survey_data.items():
+            try:
+                new_hg_surveys.append(
+                    format_hg_survey_imported_data(
+                        sheet_name,
+                        sheet_data['hg_surveys_data'],
+                        hg_surveys_data,
+                        stations_data,
+                        hg_sampling_methods_data
+                        ))
+                new_purges.extend(
+                    format_purge_imported_data(
+                        sheet_name,
+                        sheet_data['purges_data'],
+                        pump_types_data
+                        ))
+                new_hg_param_vals.extend(
+                    format_params_data_imported_data(
+                        sheet_name,
+                        sheet_data['hg_param_values_data'],
+                        hg_params_data,
+                        measurement_units_data
+                        ))
+            except ImportHGSurveysError as e:
+                return e,
+
+        # Clear the cache.
+        for name in ['hg_surveys', 'purges', 'hg_param_values']:
+            if name in self._cache:
+                del self._cache[name]
+
+        # We first add the new HG surveys to the database.
+        indexes = self.db_accessor.add(
+            'hg_surveys', new_hg_surveys, auto_commit=False)
+
+        # Substitute the right HG survey id for the purges and HG param values.
+        sheet_names = list(imported_survey_data.keys())
+        indexes_map = {
+            sheet_name: hg_survey_id for
+            sheet_name, hg_survey_id in
+            zip(sheet_names, indexes)
+            }
+
+        for new_purge in new_purges:
+            new_purge['hg_survey_id'] = indexes_map[
+                new_purge['hg_survey_id']]
+        for new_hg_param_val in new_hg_param_vals:
+            new_hg_param_val['hg_survey_id'] = indexes_map[
+                new_hg_param_val['hg_survey_id']]
+
+        # Add the new purges and HG parameter values to the database.
+        self.db_accessor.add(
+            'purges', new_purges, auto_commit=False)
+        self.db_accessor.add(
+            'hg_param_values', new_hg_param_vals, auto_commit=True)
+
+        if len(imported_survey_data) == 1:
+            message = _(
+                "1 new survey has been imported into the database."
+                )
+        else:
+            message = _(
+                "{} new surveys have been imported into the database."
+                ).format(len(imported_survey_data))
+        return message,
 
 
 class DatabaseConnectionManager(TaskManagerBase):
@@ -1026,7 +1097,7 @@ class DatabaseConnectionManager(TaskManagerBase):
                 list(self._tseries_data_changed))
             self._tseries_data_changed = set()
 
-    # ---- Publish Network Data
+    # ---- Other
     def publish_to_kml(self, filename, iri_data=None, iri_logs=None,
                        iri_graphs=None, iri_quality=None, callback=None,
                        postpone_exec=False):
@@ -1035,6 +1106,19 @@ class DatabaseConnectionManager(TaskManagerBase):
         """
         self.add_task('publish_to_kml', callback, filename,
                       iri_data, iri_logs, iri_graphs, iri_quality)
+        if not postpone_exec:
+            self.run_tasks()
+
+    def add_hg_survey_data(self, imported_survey_data: dict(dict),
+                           callback: Callable = None,
+                           postpone_exec: bool = False):
+        """
+        Add HG survey data imported from a XLSX file.
+        """
+        self._data_changed.add('hg_surveys')
+        self._data_changed.add('purges')
+        self._data_changed.add('hg_param_values')
+        self.add_task('add_hg_survey_data', callback, imported_survey_data)
         if not postpone_exec:
             self.run_tasks()
 

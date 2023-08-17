@@ -26,6 +26,7 @@ import pandas as pd
 import pytest
 
 # ---- Local imports
+from sardes.database.accessors import DatabaseAccessorSardesLite
 from sardes.api.timeseries import DataType
 
 
@@ -285,10 +286,10 @@ def pump_types():
 @pytest.fixture
 def hg_params():
     df = pd.DataFrame(
-        data=[['PARAM#1', 'Name param #1', 'PARAM#1 Regex', '111-0-11'],
-              ['PARAM#2', 'Name param #2', 'PARAM#2 Regex', '22-0-23'],
-              ['PARAM#3', 'Name param #3', 'PARAM#3 Regex', '34-5-12'],
-              ['PARAM#4', 'Name param #4', 'PARAM#4 Regex', '73-2-9']],
+        data=[['PARAM#1', 'Name param #1', 'PARAM(.*)?1', '111-0-11'],
+              ['PARAM#2', 'Name param #2', 'PARAM(.*)?2', '22-0-23'],
+              ['PARAM#3', 'Name param #3', 'PARAM(.*)?3', '34-5-12'],
+              ['PARAM#4', 'Name param #4', 'PARAM(.*)?4', '73-2-9']],
         index=[1, 2, 3, 4],
         columns=['hg_param_code', 'hg_param_name', 'hg_param_regex',
                  'cas_registry_number']
@@ -433,3 +434,13 @@ def database_filler(
                 readings_data, obs_well_uuid, install_uuid)
 
     return fill_database
+
+
+@pytest.fixture
+def dbaccessor(tmp_path, database_filler):
+    dbaccessor = DatabaseAccessorSardesLite(
+        osp.join(tmp_path, 'sqlite_database_test.db'))
+    dbaccessor.init_database()
+    database_filler(dbaccessor)
+
+    return dbaccessor

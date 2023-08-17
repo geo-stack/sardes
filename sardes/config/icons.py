@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
 # Copyright © SARDES Project Contributors
-# https://github.com/cgq-qgc/sardes
+# https://github.com/geo-stack/sardes
 #
 # This file is part of SARDES.
 # Licensed under the terms of the GNU General Public License.
-# ----------------------------------------------------------------------------
-
+# -----------------------------------------------------------------------------
+from __future__ import annotations
 
 # ---- Standard imports
 import os
@@ -35,8 +35,8 @@ FA_ICONS = {
         ('mdi.attachment',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'browse_files': [
-        ('fa5.folder-open',),
-        {'color': ICON_COLOR, 'scale_factor': 1}],
+        ('mdi.folder-open',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'bug': [
         ('mdi.bug',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
@@ -56,19 +56,8 @@ FA_ICONS = {
         ('mdi.close-box-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'close': [
-        ('fa.close', 'fa.close', 'fa.close'),
+        ('mdi.close-thick',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
-    'close_all': [
-        ('fa.close', 'fa.close', 'fa.close'),
-        {'options': [{'scale_factor': 0.6,
-                      'offset': (0.3, -0.3),
-                      'color': ICON_COLOR},
-                     {'scale_factor': 0.6,
-                      'offset': (-0.3, -0.3),
-                      'color': ICON_COLOR},
-                     {'scale_factor': 0.6,
-                      'offset': (0.3, 0.3),
-                      'color': ICON_COLOR}]}],
     'commit_changes': [
         ('mdi.check-circle-outline',),
         {'color': GREEN, 'scale_factor': 1.2}],
@@ -97,8 +86,8 @@ FA_ICONS = {
         ('mdi.eraser',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'exit': [
-        ('fa.power-off',),
-        {'color': ICON_COLOR}],
+        ('mdi.power',),
+        {'color': ICON_COLOR, 'scale_factor': 1.4}],
     'eye_off': [
         ('mdi.eye-off',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
@@ -156,8 +145,14 @@ FA_ICONS = {
     'import_clipboard': [
         ('mdi.clipboard-plus-outline',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'import_geochemistry': [
+        ('mdi.flask-plus-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
+    'import_lab_report': [
+        ('mdi.notebook-plus-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'information': [
-        ('mdi.information-outline',),
+        ('mdi.information-variant',),
         {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'languages': [
         ('mdi.web',),
@@ -221,11 +216,11 @@ FA_ICONS = {
         ('mdi.table-row-remove',),
         {'color': ICON_COLOR, 'scale_factor': 1.1}],
     'reset_layout': [
-        ('fa.undo',),
-        {'color': ICON_COLOR, 'scale_factor': 1.1}],
+        ('mdi.restore',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'save': [
-        ('fa.save',),
-        {'color': ICON_COLOR}],
+        ('mdi.content-save-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'save_to_db': [
         ('mdi.database-import',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
@@ -263,8 +258,8 @@ FA_ICONS = {
         ('mdi.table',),
         {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'table_columns': [
-        ('fa.columns',),
-        {'color': ICON_COLOR, 'scale_factor': 0.9, 'offset': (0, -0.1)}],
+        ('mdi.view-column-outline',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'table_column_lock': [
         ('mdi.lock-outline',),
         {'color': ICON_COLOR}],
@@ -272,11 +267,14 @@ FA_ICONS = {
         ('mdi.wrench',),
         {'color': ICON_COLOR}],
     'tooloptions': [
-        ('fa.bars',),
-        {'color': ICON_COLOR}],
+        ('mdi.menu',),
+        {'color': ICON_COLOR, 'scale_factor': 1.2}],
     'undo': [
         ('mdi.undo-variant',),
         {'color': ICON_COLOR}],
+    'update': [
+        ('mdi.update',),
+        {'color': ICON_COLOR, 'scale_factor': 1.3}],
     'update_blue': [
         ('mdi.update',),
         {'color': BLUE, 'scale_factor': 1.3}],
@@ -321,7 +319,7 @@ def get_iconsize(size):
     return QSize(*ICON_SIZES[size])
 
 
-def get_standard_icon(constant):
+def get_standard_icon(constant: str) -> QIcon:
     """
     Return a QIcon of a standard pixmap.
 
@@ -333,7 +331,7 @@ def get_standard_icon(constant):
     return style.standardIcon(constant)
 
 
-def get_standard_iconsize(constant):
+def get_standard_iconsize(constant: str) -> int:
     """
     Return the standard size of various component of the gui.
 
@@ -344,3 +342,8 @@ def get_standard_iconsize(constant):
         return style.pixelMetric(QStyle.PM_MessageBoxIconSize)
     elif constant == 'small':
         return style.pixelMetric(QStyle.PM_SmallIconSize)
+    else:
+        raise ValueError((
+            "Valid values for the 'constant' parameter are "
+            "'messagebox' or 'small', but '{}' was provided"
+            ).format(constant))

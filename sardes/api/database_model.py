@@ -534,7 +534,8 @@ DATABASE_CONCEPTUAL_MODEL = ReadOnlyDict({
                 name='hg_param_name',
                 dtype='str',
                 desc=("The name of the hydrogeochemical parameter."
-                      "Used when importing results from a lab report."),
+                      "Used when exporting results to a water "
+                      "quality report."),
             ),
             Column(
                 name='hg_param_regex',

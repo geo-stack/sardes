@@ -13,6 +13,7 @@ import os.path as osp
 
 # ---- Third party imports
 from appconfigs.base import get_home_dir
+from qtpy.QtCore import Signal
 from qtpy.QtWidgets import (
     QCheckBox, QFrame, QLineEdit, QLabel, QFileDialog, QPushButton,
     QGridLayout)
@@ -25,6 +26,7 @@ class PathBoxWidget(QFrame):
     """
     A widget to display and select a directory or file location.
     """
+    sig_path_changed = Signal(str)
 
     def __init__(self, parent=None, path='', workdir='',
                  path_type='getExistingDirectory', filters=None):
@@ -68,6 +70,7 @@ class PathBoxWidget(QFrame):
         self.path_lineedit.setText(path)
         self.path_lineedit.setToolTip(path)
         self.set_workdir(osp.dirname(path))
+        self.sig_path_changed.emit(path)
 
     def browse_path(self):
         """Open a dialog to select a new directory."""
