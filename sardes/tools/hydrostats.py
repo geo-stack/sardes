@@ -175,7 +175,7 @@ class SatisticalHydrographWidget(QMainWindow):
         self.copy_data_btn = create_toolbutton(
             self, icon='copy_data_clipboard',
             text=_("Copy Data"),
-            tip=_("Put a copy of the numerical data on the Clipboard."),
+            tip=_("Put a copy of the quartile data on the Clipboard."),
             triggered=self.canvas.copy_data_to_clipboard,
             shortcut='Ctrl+E',
             iconsize=get_iconsize())
