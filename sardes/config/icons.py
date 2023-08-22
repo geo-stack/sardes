@@ -69,7 +69,7 @@ FA_ICONS = {
         {'color': ICON_COLOR, 'scale_factor': 1}],
     'copy_data_clipboard': [
         ('mdi.file-table-box-multiple-outline',),
-        {'color': ICON_COLOR, 'scale_factor': 1}],
+        {'color': ICON_COLOR, 'scale_factor': 1, 'rotated': 90}],
     'database_connect': [
         ('mdi.power-plug',),
         {'color': GREEN, 'scale_factor': 1.3}],
