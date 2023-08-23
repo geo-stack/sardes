@@ -32,7 +32,7 @@ class AboutDialog(QDialog):
         super().__init__(parent=parent)
         self.setWindowFlags(
             self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
-        self.setWindowIcon(get_icon('information'))
+        self.setWindowIcon(get_icon('master'))
         self.setWindowTitle(_("About Sardes"))
         versions = get_versions()
 
@@ -45,7 +45,7 @@ class AboutDialog(QDialog):
             "Sardes is an open-source software designed for storing, "
             "managing, visualizing, and interpreting data from a groundwater "
             "monitoring network. "
-            "See the project GitHub repository for more information."
+            "See the project's GitHub repository for more information."
             ""
             ) + "</p>"
         self.label = QLabel(_(
