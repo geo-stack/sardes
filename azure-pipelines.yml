@@ -9,7 +9,7 @@ trigger:
 
 variables:
   AZURE: True
-  SARDES_OUTPUT_DIRNAME: 'sardes_1.0.0.dev0_win_amd64'
+  SARDES_OUTPUT_DIRNAME: 'sardes_1.0.0rc1_win_amd64'
 
 pool:
   vmImage: 'windows-2019'

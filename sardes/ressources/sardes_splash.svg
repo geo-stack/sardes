@@ -695,17 +695,17 @@
    guidetolerance="10"
    inkscape:pageopacity="0"
    inkscape:pageshadow="2"
-   inkscape:window-width="1920"
-   inkscape:window-height="1017"
+   inkscape:window-width="2560"
+   inkscape:window-height="1057"
    id="namedview404"
    showgrid="false"
-   inkscape:zoom="1.0182132"
-   inkscape:cx="768.08631"
-   inkscape:cy="227.43814"
-   inkscape:window-x="352"
-   inkscape:window-y="1072"
+   inkscape:zoom="1.8753419"
+   inkscape:cx="809.00733"
+   inkscape:cy="331.0189"
+   inkscape:window-x="-8"
+   inkscape:window-y="-8"
    inkscape:window-maximized="1"
-   inkscape:current-layer="g1698-8"
+   inkscape:current-layer="Calque_1"
    showguides="true"
    inkscape:snap-global="false"
    inkscape:guide-bbox="true"
@@ -818,6 +818,7 @@
 
 
 
+
 </g><text
    id="text5236-32"
    y="267.39911"
@@ -835,6 +836,7 @@
      x="409.6062"
      sodipodi:role="line"
      id="tspan1499">de données d’eau souterraine</tspan></text>
+
 
 
 
@@ -925,14 +927,15 @@
    transform="translate(665.00269,-489.90287)"><text
    xml:space="preserve"
    style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:229.81596375px;line-height:1.25;font-family:Carlito;-inkscape-font-specification:Carlito;letter-spacing:0px;word-spacing:0px;fill:#001844;fill-opacity:1;stroke:none;stroke-width:1"
-   x="272.0181"
+   x="357.14923"
    y="558.4408"
    id="text5228-05-4"><tspan
      sodipodi:role="line"
      id="tspan5226-7-2"
-     x="272.0181"
+     x="357.14923"
      y="558.4408"
-     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:41.33333206px;font-family:Carlito;-inkscape-font-specification:'Carlito Bold';fill:#001844;fill-opacity:1;stroke-width:1">dev0</tspan></text>
+     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:41.33333206px;font-family:Carlito;-inkscape-font-specification:'Carlito Bold';text-align:end;text-anchor:end;fill:#001844;fill-opacity:1;stroke-width:1">1.0.0rc1</tspan></text>
+
 
 
 

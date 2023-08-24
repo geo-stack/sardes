@@ -25,11 +25,11 @@ import os
 import sys
 
 
-version_info = (1, 0, 0, 'dev0')
+version_info = (1, 0, '0rc1')
 __version__ = '.'.join(map(str, version_info))
 __appname__ = 'Sardes'
 __namever__ = __appname__ + " " + __version__
-__date__ = '05/04/2023'
+__date__ = '24/08/2023'
 __project_url__ = "https://github.com/geo-stack/sardes"
 __releases_url__ = __project_url__ + "/releases"
 __issues_url__ = __project_url__ + "/issues"
