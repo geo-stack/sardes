@@ -10,8 +10,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1.0\n"
-"POT-Creation-Date: 2023-07-25 01:05-0400\n"
-"PO-Revision-Date: 2023-07-25 01:07-0400\n"
+"POT-Creation-Date: 2023-08-24 07:47-0400\n"
+"PO-Revision-Date: 2023-08-24 07:58-0400\n"
 "Last-Translator: Jean-Sébastien Gosselin <jean-sebastien.gosselin@ete.inrs."
 "ca.com>\n"
 "Language-Team: Python\n"
@@ -103,91 +103,113 @@ msgstr "Conductivité électrique de l'eau"
 msgid "Conductivity"
 msgstr "Conductivité"
 
+#: c:\users\jean-\documents\projets\sardes\sardes\app\about.py:36
+msgid "About Sardes"
+msgstr "À propos de Sardes"
+
+#: c:\users\jean-\documents\projets\sardes\sardes\app\about.py:43
+msgid "Sardes Project Contributors"
+msgstr "Contributeurs au Projet Sardes"
+
+#: c:\users\jean-\documents\projets\sardes\sardes\app\about.py:44
+msgid ""
+"Sardes is an open-source software designed for storing, managing, "
+"visualizing, and interpreting data from a groundwater monitoring network. "
+"See the project's GitHub repository for more information."
+msgstr ""
+"Sardes est un logiciel open source conçu pour stocker, gérer, visualiser et "
+"interpréter les données d'un réseau de surveillance des eaux souterraines. "
+"Consultez le répertoire GitHub du projet pour plus d'informations."
+
 #: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:91
 msgid "Setting up the database connection manager..."
 msgstr ""
 "Configuration du gestionnaire de connexions à la base de données en cours..."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:156
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:537
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:547
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:164
 #: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:557
 #: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:567
 #: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:577
 #: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:587
 #: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:597
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:607
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:617
 msgid "Loading the {} plugin..."
 msgstr "Chargement du plugin {} en cours..."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:202
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:210
 msgid "Unlock panes and toolbars"
 msgstr "Déverrouiller les volets et les barres d'outils"
 
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:203
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:273
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:211
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:290
 msgid "Lock panes and toolbars"
 msgstr "Verrouiller les volets et les barres d'outils"
 
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:224
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:232
 msgid "Tools and options"
 msgstr "Outils et options"
 
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:225
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:233
 msgid "Open the tools and options menu."
 msgstr "Ouvrir le menu des outils et des options."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:245
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:253
 msgid "Languages"
 msgstr "Langues"
 
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:260
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:268
 msgid "Preferences..."
 msgstr "Préférences..."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:266
-msgid "Panes"
-msgstr "Volets"
-
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:269
-msgid "Toolbars"
-msgstr "Barres d'outils"
-
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:281
-msgid "Reset window layout"
-msgstr "Réinitialiser la disposition de l'interface"
-
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:288
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:277
 msgid "Sardes Console..."
 msgstr "Console Sardes..."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:293
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:283
+msgid "Panes"
+msgstr "Volets"
+
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:286
+msgid "Toolbars"
+msgstr "Barres d'outils"
+
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:298
+msgid "Reset window layout"
+msgstr "Réinitialiser la disposition de l'interface"
+
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:303
 msgid "Report an issue..."
 msgstr "Signaler un problème..."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:298
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:308
 msgid "About Sardes..."
 msgstr "À propos de Sardes..."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:303
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:314
+msgid "Check for updates..."
+msgstr "Vérifier les mises à jour..."
+
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:318
 msgid "Exit"
 msgstr "Quitter"
 
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:335
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:351
 msgid "Language change"
 msgstr "Changement de langue"
 
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:336
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:352
 msgid ""
 "The language has been set to <i>{}</i>. Restart Sardes to apply this change."
 msgstr ""
 "La langue a été définie sur <i>{}</i>. Redémarrez Sardes pour appliquer "
 "cette modification."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:346
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:362
 msgid "Reset Window Layout"
 msgstr "Réinitialiser la disposition de l'interface"
 
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:347
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:363
 msgid ""
 "Window layout will be reset to default settings.<br><br>Do you want to "
 "continue?"
@@ -195,9 +217,62 @@ msgstr ""
 "La disposition de l'interface sera réinitialisée à la configuration par "
 "défaut.<br><br> Voulez-vous continuer?"
 
-#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:644
+#: c:\users\jean-\documents\projets\sardes\sardes\app\mainwindow.py:667
 msgid "Initializing {}..."
 msgstr "Initialisation de {}..."
+
+#: c:\users\jean-\documents\projets\sardes\sardes\app\updates.py:89
+msgid ""
+"<p><b>Sardes {} is available!</b></p><p>This new version can be downloaded "
+"from our <a href={}>Releases</a> page.</p>"
+msgstr ""
+"<p><b>Sardes {} est disponible!</b></p><p>Cette nouvelle version peut être "
+"téléchargée depuis notre page <a href={}>Releases</a>.</p>"
+
+#: c:\users\jean-\documents\projets\sardes\sardes\app\updates.py:98
+msgid ""
+"<p><b>{} is up to date</b></p><p>Further information about Sardes releases "
+"are available on our <a href={}>Releases</a> page.</p><p>The roadmap of the "
+"Sardes project can be consulted on our <a href={}>Milestones</a> page.</"
+"p><p>Please help Sardes by reporting bugs or proposing new features on our "
+"<a href={}>Issues Tracker</a>.</p>"
+msgstr ""
+"<p><b>{} est à jour</b></p><p>De plus amples informations sur les versions "
+"de Sardes sont disponibles sur notre page <a href={}>Releases</a>.</p> <p>La "
+"feuille de route du projet Sardes peut être consultée sur notre page <a "
+"href={}>Milestones</a>.</p><p>Vous pouvez aider Sardes en signalant des bugs "
+"ou en proposant de nouvelles fonctionnalités sur notre page <a href ={}"
+">Issues</a>.</p>"
+
+#: c:\users\jean-\documents\projets\sardes\sardes\app\updates.py:132
+msgid "Updates"
+msgstr "Mises à jour"
+
+#: c:\users\jean-\documents\projets\sardes\sardes\app\updates.py:139
+msgid "Do not show this message again."
+msgstr "Ne plus afficher ce message."
+
+#: c:\users\jean-\documents\projets\sardes\sardes\app\updates.py:168
+msgid "Unable to retrieve information because of an http error."
+msgstr "Impossible de récupérer les informations à cause d'une erreur HTTP."
+
+#: c:\users\jean-\documents\projets\sardes\sardes\app\updates.py:171
+msgid ""
+"Unable to connect to the internet. Make sure that your connection is working "
+"properly."
+msgstr ""
+"Impossible de se connecter à internet. Assurez-vous que votre connexion "
+"fonctionne correctement."
+
+#: c:\users\jean-\documents\projets\sardes\sardes\app\updates.py:175
+msgid "Unable to retrieve information because the connection timed out."
+msgstr ""
+"Impossible de récupérer les informations car le délai de connexion a expiré."
+
+#: c:\users\jean-\documents\projets\sardes\sardes\app\updates.py:179
+msgid "Unable to check for updates because of an unexpected error."
+msgstr ""
+"Impossible de vérifier les mises à jour en raison d'une erreur inattendue."
 
 #: c:\users\jean-\documents\projets\sardes\sardes\database\accessors\accessor_errors.py:35
 msgid ""
@@ -924,8 +999,7 @@ msgstr "Active"
 #: c:\users\jean-\documents\projets\sardes\sardes\tables\delegates.py:208
 #: c:\users\jean-\documents\projets\sardes\sardes\tables\delegates.py:215
 #: c:\users\jean-\documents\projets\sardes\sardes\tables\delegates.py:230
-#: c:\users\jean-\documents\projets\sardes\sardes\tables\delegates.py:242
-#: c:\users\jean-\documents\projets\sardes\sardes\tables\delegates.py:249
+#: c:\users\jean-\documents\projets\sardes\sardes\tables\delegates.py:267
 msgid "Yes"
 msgstr "Oui"
 
@@ -933,14 +1007,12 @@ msgstr "Oui"
 #: c:\users\jean-\documents\projets\sardes\sardes\tables\delegates.py:209
 #: c:\users\jean-\documents\projets\sardes\sardes\tables\delegates.py:216
 #: c:\users\jean-\documents\projets\sardes\sardes\tables\delegates.py:230
-#: c:\users\jean-\documents\projets\sardes\sardes\tables\delegates.py:241
-#: c:\users\jean-\documents\projets\sardes\sardes\tables\delegates.py:249
+#: c:\users\jean-\documents\projets\sardes\sardes\tables\delegates.py:267
 msgid "No"
 msgstr "Non"
 
 #: c:\users\jean-\documents\projets\sardes\sardes\plugins\network\base.py:32
-#: c:\users\jean-\documents\projets\sardes\sardes\tables\delegates.py:243
-#: c:\users\jean-\documents\projets\sardes\sardes\tables\delegates.py:249
+#: c:\users\jean-\documents\projets\sardes\sardes\tables\delegates.py:267
 msgid "NA"
 msgstr "ND"
 
@@ -1186,7 +1258,7 @@ msgid "Some {} data could notbe converted to boolean value."
 msgstr ""
 "Certaines données de {} n'ont pas pu être converties en valeur booléenne."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tables\delegates.py:324
+#: c:\users\jean-\documents\projets\sardes\sardes\tables\delegates.py:341
 msgid "Some {} data did not match any well in the database"
 msgstr "Certains {} ne correspondaient à aucun puits de la base de données"
 
@@ -1786,7 +1858,7 @@ msgid "Save Hydrograph"
 msgstr "Enregistrer l'hydrogramme"
 
 #: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrographs.py:143
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:677
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:706
 #: c:\users\jean-\documents\projets\sardes\sardes\tools\save2excel.py:142
 msgid "Water level altitude (m MSL)"
 msgstr "Altitude du niveau d'eau (m NMM)"
@@ -1864,10 +1936,18 @@ msgid "Show the statistical hydrograph for this record."
 msgstr "Montrer l'hydrogramme statistique des données de niveau d'eau."
 
 #: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:177
+msgid "Copy Data"
+msgstr "Copier les données"
+
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:178
+msgid "Put a copy of the quartile data on the Clipboard."
+msgstr "Placer une copie des données quartiles dans le presse-papiers."
+
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:186
 msgid "Multi Pages PDF"
 msgstr "PDF multi-pages"
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:178
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:187
 msgid ""
 "Create a multi-page pdf file containing the statistical hydrographs (one per "
 "page) for each year where data are available."
@@ -1875,48 +1955,56 @@ msgstr ""
 "Créer un fichier pdf de plusieurs pages contenant les hydrogrammes "
 "statistiques (un par page) pour chaque année où des données sont disponibles."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:190
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:199
 msgid "Move Backward"
 msgstr "Reculer"
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:191
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:200
 msgid "Move the x-axis of the statistical hydrograph one month backward."
 msgstr ""
 "Déplacer l'axe des x de l'hydrogramme statistique d'un mois en arrière."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:199
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:208
 msgid "Move Forward"
 msgstr "Avancer"
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:200
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:209
 msgid "Move the x-axis of the statistical hydrograph one month forward."
 msgstr "Déplacer l'axe des x de l'hydrogramme statistique d'un mois en avant."
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:206
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:215
 msgid "Year:"
 msgstr "Année :"
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:219
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:228
 msgid "Month:"
 msgstr "Mois :"
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:265
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:274
 msgid "Save Multi Statistical Graphs"
 msgstr "Enregistrer les hydrogrammes statistiques"
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:615
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:388
+msgid "months"
+msgstr "mois"
+
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:390
+msgid "nyears"
+msgstr "nannées"
+
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:642
 msgid "Year"
 msgstr "Année"
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:620
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:647
 msgid "Years {:d}-{:d}"
 msgstr "Années {:d}-{:d}"
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:749
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:778
 msgid "Median"
 msgstr "Médianes"
 
-#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:760
+#: c:\users\jean-\documents\projets\sardes\sardes\tools\hydrostats.py:789
 msgid "Measures"
 msgstr "Mesures"
 
